@@ -9,11 +9,13 @@ import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.{Router, Server}
 
+import scala.concurrent.ExecutionContext
+
 object BakeryControllerService {
 
-  def resource(hostname: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
+  def resource(hostname: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
     for {
-      binding <- BlazeServerBuilder[IO]
+      binding <- BlazeServerBuilder[IO](ec)
         .bindSocketAddress(hostname)
         .withHttpApp(new BakeryControllerService().build)
         .resource
@@ -26,7 +28,7 @@ final class BakeryControllerService(implicit cs: ContextShift[IO]) {
   def build: HttpApp[IO] =
     api.orNotFound
 
-  def api: HttpRoutes[IO] = Router("/api/v3" -> HttpRoutes.of[IO] {
+  def api: HttpRoutes[IO] = Router("/api/bakery" -> HttpRoutes.of[IO] {
 
     case GET -> Root / "health" =>
       Ok("Ok")

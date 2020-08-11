@@ -1,9 +1,8 @@
 package com.ing.baker.baas.mocks
 
 import cats.effect.{ContextShift, IO}
-import com.ing.baker.runtime.akka.EventSink
+import com.ing.baker.baas.state.EventSink
 import com.ing.baker.runtime.common.{BakerEvent, EventInstance}
-import com.ing.baker.runtime.scaladsl.RecipeEventMetadata
 
 import scala.collection.mutable
 

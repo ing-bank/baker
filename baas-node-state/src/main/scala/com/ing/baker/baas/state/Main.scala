@@ -1,5 +1,6 @@
 package com.ing.baker.baas.state
 
+import java.io.File
 import java.net.InetSocketAddress
 import java.util.concurrent.Executors
 
@@ -7,43 +8,64 @@ import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{ExitCode, IO, IOApp, Resource}
-import cats.implicits._
+import com.ing.baker.baas.interaction.BakeryHttp
 import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
-import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig, KafkaEventSink}
-import com.ing.baker.runtime.scaladsl.Baker
-import com.typesafe.config.ConfigFactory
+import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
+import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.scalalogging.LazyLogging
+import javax.net.ssl.SSLContext
+import kamon.Kamon
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import org.http4s.client.blaze.BlazeClientBuilder
 import skuber.api.client.KubernetesClient
 
 import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success, Try}
 
-object Main extends IOApp {
+object Main extends IOApp with LazyLogging {
 
   override def run(args: List[String]): IO[ExitCode] = {
+    Kamon.init()
+
     // Config
-    val config = ConfigFactory.load()
+    val config = mergeConfig(executeLoad(getExtraConfig))
 
     val httpServerPort = config.getInt("baas-component.http-api-port")
     val recipeDirectory = config.getString("baas-component.recipe-directory")
+
+    val interactionClientHttpsEnabled = config.getBoolean("baas-component.interaction-client.https-enabled")
+    lazy val interactionClientKeystorePath = config.getString("baas-component.interaction-client.https-keystore-path")
+    lazy val interactionClientKeystorePassword = config.getString("baas-component.interaction-client.https-keystore-password")
+    lazy val interactionClientKeystoreType = config.getString("baas-component.interaction-client.https-keystore-type")
 
     val eventSinkSettings = config.getConfig("baker.kafka-event-sink").as[KafkaEventSinkSettings]
 
     // Core dependencies
     implicit val system: ActorSystem =
-      ActorSystem("BaaSStateNodeSystem")
+      ActorSystem("BaaSStateNodeSystem", config)
     implicit val materializer: Materializer =
       ActorMaterializer()
-    val connectionPool: ExecutionContext =
+    implicit val connectionPool: ExecutionContext =
       ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
     val hostname: InetSocketAddress =
       InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort)
     val k8s: KubernetesClient = skuber.k8sInit
 
+    val tlsConfig: Option[SSLContext] =
+      if(interactionClientHttpsEnabled)
+        Some(BakeryHttp.loadSSLContext(BakeryHttp.TLSConfig(
+          password = interactionClientKeystorePassword,
+          keystorePath = interactionClientKeystorePath,
+          keystoreType = interactionClientKeystoreType
+        )))
+      else None
+
     val mainResource = for {
-      serviceDiscovery <- ServiceDiscovery.resource(connectionPool, k8s)
+      interactionHttpClient <- BlazeClientBuilder[IO](connectionPool, tlsConfig).withCheckEndpointAuthentication(false).resource
+      serviceDiscovery <- ServiceDiscovery.resource(interactionHttpClient, k8s)
       eventSink <- KafkaEventSink.resource(eventSinkSettings)
-      baker: Baker = AkkaBaker
+      baker = AkkaBaker
         .withConfig(AkkaBakerConfig(
           interactionManager = serviceDiscovery.buildInteractionManager,
           bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
@@ -51,16 +73,46 @@ object Main extends IOApp {
           timeouts = AkkaBakerConfig.Timeouts.from(config),
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config),
         )(system))
-        .withEventSink(eventSink)
+      _ <- Resource.liftF(eventSink.attach(baker))
       _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(recipeDirectory, baker))
       _ <- Resource.liftF(IO.async[Unit] { callback =>
         Cluster(system).registerOnMemberUp {
           callback(Right(()))
         }
       })
-      _ <- StateNodeService.resource(baker, recipeDirectory, hostname)
+      _ <- StateNodeService.resource(baker, hostname, serviceDiscovery)
     } yield ()
 
     mainResource.use(_ => IO.never).as(ExitCode.Success)
   }
+
+  /** Merges all configuration giving priority to values in front of the list, and as final fallback the configuration from
+    * ConfigFactory.load */
+  def mergeConfig(cs: List[Config]): Config =
+    (cs match {
+      case c :: tail => c.withFallback(mergeConfig(tail))
+      case Nil => ConfigFactory.load()
+    }).resolve()
+
+  def executeLoad(from: IO[List[Config]]): List[Config] =
+    from.attempt.unsafeRunSync() match {
+      case Left(e) => logger.error(s"Error while loading config: ${e.getMessage}"); List.empty
+      case Right(a) => a
+    }
+
+  def getExtraConfig: IO[List[Config]] =
+    loadExtraConfig(IO(new File("/bakery-config")))
+
+  def loadExtraConfig(from: IO[File]): IO[List[Config]] =
+    from.map {
+      _.listFiles
+        .filter(f => """.*\.conf$""".r.findFirstIn(f.getName).isDefined)
+        .map(f => Try(ConfigFactory.parseFile(f) -> f.getName))
+        .map {
+          case Failure(e) => logger.error("Failed to parse extra config: " + e.getMessage); None
+          case Success((v, name)) => logger.info(s"Loaded extra configuration from '$name'"); Some(v)
+        }
+        .toList
+        .flatten
+    }
 }

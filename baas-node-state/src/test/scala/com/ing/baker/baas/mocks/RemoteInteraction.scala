@@ -1,31 +1,18 @@
 package com.ing.baker.baas.mocks
 
 import cats.effect.IO
-import com.ing.baker.baas.mocks.Utils._
-import com.ing.baker.baas.protocol.InteractionSchedulingProto._
-import com.ing.baker.baas.protocol.ProtocolInteractionExecution
+import com.ing.baker.baas.protocol.{InteractionExecution=>I}
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance}
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.matchers.Times
+import org.mockserver.model.HttpRequest
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.verify.VerificationTimes
+import io.circe.syntax._
 
 class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance) {
-
-  def publishesItsInterface: IO[Unit] = IO {
-    mock.when(
-      request()
-        .withMethod("GET")
-        .withPath("/api/v3/interaction")
-        .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost")
-    ).respond(
-      response()
-        .withStatusCode(200)
-        .withBody(serialize(ProtocolInteractionExecution.Interfaces(List(
-          ProtocolInteractionExecution.InstanceInterface(interaction.shaBase64, interaction.name, interaction.input)))))
-    )
-  }
+  import com.ing.baker.baas.protocol.InteractionExecutionJsonCodecs._
 
   def processesSuccessfullyAndFires(event: EventInstance): IO[Unit] = IO {
     mock.when(
@@ -34,7 +21,7 @@ class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance)
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody(serialize(ProtocolInteractionExecution.InstanceExecutedSuccessfully(Some(event)))),
+        .withBody(I.ExecutionResult(Right(I.Success(Some(event)))).asJson.toString),
     )
   }
 
@@ -45,7 +32,7 @@ class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance)
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody(serialize(ProtocolInteractionExecution.InstanceExecutionFailed(e.getMessage)))
+        .withBody(I.ExecutionResult(Left(I.Failure(I.InteractionError(e.getMessage)))).asJson.toString)
     )
   }
 
@@ -57,10 +44,10 @@ class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance)
     mock.verify(applyMatch, VerificationTimes.exactly(1))
   }
 
-  private def applyMatch =
+  private def applyMatch: HttpRequest =
     request()
       .withMethod("POST")
-      .withPath(s"/api/v3/interaction/apply")
+//      .withPath(s"/api/bakery/interaction/apply")
       .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost")
 
 }

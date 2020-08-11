@@ -1,0 +1,63 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - feature*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: BakeryOSSFeedCredentials
+  - name: CACHE
+    value: $(HOME)/.cache
+  - name: IVY_HOME
+    value: $(Pipeline.Workspace)/.ivy2
+
+steps:
+  - task: DownloadSecureFile@1
+    name: sourceScan
+    inputs:
+      secureFile: sourceScan.sh
+
+  - task: Bash@3
+    displayName: Scan sources
+    inputs:
+      targetType: 'inline'
+      script: bash $(sourceScan.secureFilePath)
+      failOnStderr: true
+
+  - task: CacheBeta@1
+    displayName: Package resolver cache
+    inputs:
+      key: 'cache'
+      path: '$(CACHE)'
+
+  - task: CacheBeta@1
+    displayName: Ivy resolver cache
+    inputs:
+      key: 'ivy_home'
+      path: '$(IVY_HOME)'
+
+  - task: Bash@3
+    displayName: Generate artifacts' version
+    inputs:
+      targetType: 'inline'
+      script: bash ./set-version.sh
+
+  - task: Bash@3
+    displayName: 'Prepare publishing credentials'
+    inputs:
+      targetType: 'inline'
+      script: printf "realm=pkgs.dev.azure.com\nhost=pkgs.dev.azure.com\nuser=${FEEDUSER}\npassword=${FEEDPASSWORD}\n" > ~/.credentials
+    env:
+      FEEDPASSWORD: $(feedPassword) # secrets extracted explicitly, other vars - from the group
+
+  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} clean coverage test coverageReport
+    displayName: 'Building and testing main Baker'
+
+  - script: bash <(curl -s https://codecov.io/bash)
+    displayName: 'Updating code coverage report'
+
+  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project baas-interaction-example-make-payment-and-ship-items; test; project baas-interaction-example-reserve-items; test; project baas-client-example; test; project baas-kafka-listener-example; test"
+    displayName: 'Building and testing examples'

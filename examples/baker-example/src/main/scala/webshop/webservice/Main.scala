@@ -3,8 +3,7 @@ package webshop.webservice
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import cats.effect.concurrent.Ref
-import cats.effect.{ExitCode, IO, IOApp, Resource}
-import cats.implicits._
+import cats.effect.{ExitCode, IO, IOApp, Resource, SyncIO}
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.scaladsl._
 import com.typesafe.config.ConfigFactory
@@ -12,7 +11,7 @@ import kamon.Kamon
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.log4s.Logger
 
-import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 
 object Main extends IOApp {
 
@@ -57,7 +56,7 @@ object Main extends IOApp {
 
       sys.addShutdownHook(r.baker.gracefulShutdown())
 
-      BlazeServerBuilder[IO]
+      BlazeServerBuilder[IO](ExecutionContext.global)
         .bindHttp(r.port, "0.0.0.0")
         .withHttpApp(r.app.buildHttpService(r.shuttingDown))
         .resource

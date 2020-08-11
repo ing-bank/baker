@@ -1,54 +1,74 @@
 package com.ing.baker.baas.interaction
 
-import java.net.{InetSocketAddress, URLDecoder}
+import java.net.InetSocketAddress
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import com.ing.baker.baas.interaction.BakeryHttp.ProtoEntityEncoders._
-import com.ing.baker.baas.protocol.InteractionSchedulingProto._
-import com.ing.baker.baas.protocol.ProtocolInteractionExecution
-import com.ing.baker.runtime.scaladsl.InteractionInstance
+import com.ing.baker.baas.protocol.{InteractionExecution => I}
+import com.ing.baker.runtime.scaladsl.{IngredientInstance, InteractionInstance}
 import org.http4s._
+import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.server.blaze._
 import org.http4s.server.{Router, Server}
+
+import scala.concurrent.ExecutionContext
 
 object RemoteInteractionService {
 
-  def resource(interactions: List[InteractionInstance], address: InetSocketAddress)(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] =
-    BlazeServerBuilder[IO]
+  def resource(interactions: List[InteractionInstance], address: InetSocketAddress, tlsConfig: Option[BakeryHttp.TLSConfig])(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] = {
+    val tls = tlsConfig.map { tlsConfig =>
+      val sslConfig = BakeryHttp.loadSSLContext(tlsConfig)
+      val sslParams = sslConfig.getDefaultSSLParameters
+      sslParams.setNeedClientAuth(true)
+      (sslConfig, sslParams)
+    }
+    val service = new RemoteInteractionService(interactions)
+    val builder0 = BlazeServerBuilder[IO](ExecutionContext.global)
       .bindSocketAddress(address)
-      .withHttpApp(new RemoteInteractionService(interactions).build)
-      .resource
+      .withHttpApp(service.build)
+    val builder1 = tls match {
+      case Some((sslConfig, sslParams)) => builder0.withSslContextAndParameters(sslConfig, sslParams)
+      case None => builder0
+    }
+    builder1.resource
+  }
 }
 
 final class RemoteInteractionService(interactions: List[InteractionInstance])(implicit timer: Timer[IO], cs: ContextShift[IO]) {
 
+  import com.ing.baker.baas.protocol.InteractionExecutionJsonCodecs._
+
+  implicit val interactionEntityEncoder: EntityEncoder[IO, List[I.Interaction]] = jsonEncoderOf[IO,  List[I.Interaction]]
+
+  implicit val executeRequestEntityDecoder: EntityDecoder[IO, List[IngredientInstance]] = jsonOf[IO, List[IngredientInstance]]
+  implicit val executeResponseEntityEncoder: EntityEncoder[IO, I.ExecutionResult] = jsonEncoderOf[IO, I.ExecutionResult]
+
   def build: HttpApp[IO] =
     api.orNotFound
 
-  def api: HttpRoutes[IO] = Router("/api/v3" -> HttpRoutes.of[IO] {
+  private val Interactions = interactions.map(interaction =>
+    I.Interaction(interaction.shaBase64, interaction.name, interaction.input.toList))
 
-    case GET -> Root / "health" =>
-      Ok("Ok")
+  def api: HttpRoutes[IO] = Router("/api/bakery" -> HttpRoutes.of[IO] {
 
-    case GET -> Root / "interaction" =>
-      Ok(ProtocolInteractionExecution.Interfaces(interactions.map(interaction =>
-        ProtocolInteractionExecution.InstanceInterface(interaction.shaBase64, interaction.name, interaction.input))))
+    case GET -> Root / "health" => Ok("Ok")
 
-    case req@POST -> Root /  "interaction" / "apply" =>
+    case GET -> Root / "interactions" => Ok(Interactions)
+
+    case req@POST -> Root /  "interactions" / id / "execute" =>
       for {
-        request <- req.as[ProtocolInteractionExecution.ExecuteInstance]
-        response <- interactions.find(_.shaBase64 == request.id) match {
+        request <- req.as[List[IngredientInstance]]
+        response <- interactions.find(_.shaBase64 == id) match {
           case Some(interaction) =>
-            IO.fromFuture(IO(interaction.run(request.input))).attempt.flatMap {
+            IO.fromFuture(IO(interaction.run(request))).attempt.flatMap {
               case Right(value) =>
-                Ok(ProtocolInteractionExecution.InstanceExecutedSuccessfully(value))
+                Ok(I.ExecutionResult(Right(I.Success(value))))
               case Left(e) =>
-                Ok(ProtocolInteractionExecution.InstanceExecutionFailed(e.getMessage))
+                Ok(I.ExecutionResult(Left(I.Failure(I.InteractionError(e.getMessage)))))
             }
           case None =>
-            Ok(ProtocolInteractionExecution.NoInstanceFound)
+            Ok(I.ExecutionResult(Left(I.Failure(I.NoInstanceFound))))
         }
       } yield response
   })

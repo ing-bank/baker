@@ -179,7 +179,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     case CheckForProcessesToBeDeleted =>
       val toBeDeleted = index.values.filter(shouldDelete)
       if (toBeDeleted.nonEmpty)
-        log.debug(s"Deleting processes: {}", toBeDeleted.mkString(","))
+        log.debug(s"Deleting recipe instance: {}", toBeDeleted.mkString(","))
 
       toBeDeleted.foreach(meta => getOrCreateProcessActor(meta.recipeInstanceId) ! Stop(delete = true))
 
@@ -199,7 +199,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
             index.update(recipeInstanceId, meta.copy(processStatus = Deleted))
           }
         case Some(meta) if meta.isDeleted =>
-          log.logWithMDC(Logging.WarningLevel, s"Received Terminated message for already deleted process: ${meta.recipeInstanceId}", mdc)
+          log.logWithMDC(Logging.WarningLevel, s"Received Terminated message for already deleted recipe instance: ${meta.recipeInstanceId}", mdc)
         case Some(_) =>
           persist(ActorPassivated(recipeInstanceId)) { _ => }
         case None =>

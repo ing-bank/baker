@@ -34,13 +34,13 @@ spec:
     spec:
       containers:
         - name: kafka-listener
-          image: baas-kafka-listener-example:3.0.2-SNAPSHOT
+          image: baas-kafka-listener-example:local
           resources:
             requests:
               memory: 256M
               cpu: 200m
         - name: client-app
-          image: baas-client-example:3.0.2-SNAPSHOT
+          image: baas-client-example:local
           imagePullPolicy: Never
           resources:
             requests:
@@ -60,6 +60,6 @@ spec:
               protocol: TCP
           env:
             - name: BAAS_STATE_NODE_HOSTNAME
-              value: http://baas-state-service-webshop-baker:8081/
+              value: http://webshop-baker:8081/
             - name: BAAS_COMPONENT_HTTP_API_PORT
               value: "8082"

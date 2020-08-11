@@ -1,0 +1,51 @@
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: BakeryOSSFeedCredentials
+  - name: CACHE
+    value: $(HOME)/.cache
+  - name: IVY_HOME
+    value: $(Pipeline.Workspace)/.ivy2
+
+steps:
+  - task: CacheBeta@1
+    displayName: Package resolver cache
+    inputs:
+      key: 'cache'
+      path: '$(CACHE)'
+
+  - task: CacheBeta@1
+    displayName: Ivy resolver cache
+    inputs:
+      key: 'ivy_home'
+      path: '$(IVY_HOME)'
+
+  - task: Bash@3
+    displayName: Generate artifacts' version
+    inputs:
+      targetType: 'inline'
+      script: bash ./set-version.sh
+
+  - task: Bash@3
+    displayName: 'Prepare publishing credentials'
+    inputs:
+      targetType: 'inline'
+      script: printf "realm=pkgs.dev.azure.com\nhost=pkgs.dev.azure.com\nuser=${FEEDUSER}\npassword=${FEEDPASSWORD}\n" > ~/.credentials
+    env:
+      FEEDPASSWORD: $(feedPassword) # secrets extracted explicitly, other vars - from the group
+
+  - script: |
+      sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} clean coverage test coverageReport
+      bash <(curl -s https://codecov.io/bash)
+    displayName: 'Building and testing main Baker with code coverage instrumentation'
+
+  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "clean; aetherDeploy; project baas-interaction-example-make-payment-and-ship-items; aetherDeploy; project baas-interaction-example-reserve-items; aetherDeploy; project baas-client-example; aetherDeploy; project baas-kafka-listener-example; aetherDeploy"
+    displayName: 'Building and publishing Baker with examples'
+    condition:  eq(variables['Build.SourceBranch'], 'refs/heads/master')

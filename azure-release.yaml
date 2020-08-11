@@ -1,0 +1,63 @@
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: SonaTypeCredentials
+  - group: gpg key
+  - group: github_token
+
+steps:
+  - task: DownloadSecureFile@1
+    name: pubring
+    inputs:
+      secureFile: pubring.asc
+
+  - task: DownloadSecureFile@1
+    name: secring
+    inputs:
+      secureFile: secring.asc
+
+  - task: Bash@3
+    displayName: 'Build, sign and publish'
+    inputs:
+      targetType: 'inline'
+      script: |
+        echo $(tty)
+        ls -la $(pubring.secureFilePath)
+        ls -la $(secring.secureFilePath)
+        mkdir ~/.gnupg
+        chmod -R 700 ~/.gnupg
+        echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+
+        gpg --import  $(pubring.secureFilePath)
+        gpg --batch --import $(secring.secureFilePath)
+        gpg --version
+        gpg --list-keys
+        gpg --list-secret-keys
+
+        git checkout master
+        git config --global user.email "bakery-release@github.com"
+        git config --global user.name "baker release pipeline"
+        git remote set-url origin "https://jacum:${GIT_AUTH_TOKEN}@github.com/ing-bank/baker"
+
+        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "release with-defaults"
+
+        rm -rf $(pubring.secureFilePath)
+        rm -rf $(secring.secureFilePath)
+        rm -rf ~/.gnupg
+
+    env:
+      # secrets must be extracted explicitly
+      USERNAME: $(username)
+      PASSWORD: $(password)
+      # passphrase will be passed to sbt plugin from here
+      PGP_PASSPHRASE: $(gpg key)
+      # neeeded for gpg to work on headless azure agents
+      GPG_TTY: /dev/pts/0
+      GIT_AUTH_TOKEN: $(github_token)

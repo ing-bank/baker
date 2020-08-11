@@ -57,16 +57,18 @@ object Pod {
       _ = assert(podsComplete(pods))
     } yield()
 
-  private val setupWaitTime = 1.minute
+  private val setupWaitTime = 10.minute
 
-  private val setupWaitSplit = 10
+  private val setupWaitSplit = 100
 
   def waitUntilAllPodsAreReady(namespace: Namespace)(implicit timer: Timer[IO]): IO[Unit] =
     within(setupWaitTime, setupWaitSplit)(for {
       _ <- printGreen(s"\nWaiting for all pods to become active (5s)...")
-      _ <- Pod.printPodsStatuses(namespace)
       _ <- Pod.allPodsAreReady(namespace)
-    } yield ())
+    } yield ()) *> Pod.printPodsStatuses(namespace).void.attempt.flatMap {
+    case Left(_) => printRed("ERROR Pods were not ready on time, will terminate...")
+    case Right(_) => IO.unit
+  }
 
   def getPodsNames(name: String, namespace: Namespace): IO[List[String]] =
     for {

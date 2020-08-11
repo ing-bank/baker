@@ -1,0 +1,502 @@
+{
+  "apiVersion": "v1",
+  "kind": "PodList",
+  "metadata": {
+    "selfLink": "/api/v1/namespaces/d2e15589-100b-471a-b45e-d122e3b98a74/pods",
+    "resourceVersion": "488108"
+  },
+  "items": [
+    {
+      "metadata": {
+        "name": "reserve-items-57dddb68f7-kp7w8",
+        "generateName": "reserve-items-57dddb68f7-",
+        "namespace": "d2e15589-100b-471a-b45e-d122e3b98a74",
+        "uid": "5e431444-3963-4408-9ade-a5dc3686621b",
+        "selfLink": "/api/v1/namespaces/d2e15589-100b-471a-b45e-d122e3b98a74/pods/reserve-items-57dddb68f7-kp7w8",
+        "resourceVersion": "488016",
+        "creationTimestamp": "2020-04-29T10:06:38Z",
+        "labels": {
+          "interaction": "reserve-items",
+          "pod-template-hash": "57dddb68f7"
+        },
+        "ownerReferences": [
+          {
+            "apiVersion": "apps/v1",
+            "kind": "ReplicaSet",
+            "name": "reserve-items-57dddb68f7",
+            "uid": "c27f3a8f-f9b2-47ca-aa0a-7e731523d79d",
+            "controller": true,
+            "blockOwnerDeletion": true
+          }
+        ]
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "reserve-items",
+            "image": "baas-interaction-example-reserve-items:1.0.0",
+            "ports": [
+              {
+                "containerPort": 8080,
+                "protocol": "TCP",
+                "name": "http-api"
+              }
+            ],
+            "env": [
+              {
+                "name": "JAVA_TOOL_OPTIONS",
+                "value": "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0"
+              }
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "200m",
+                "memory": "256M"
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "default-token-jhw4s",
+                "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                "readOnly": true
+              }
+            ],
+            "livenessProbe": {
+              "httpGet": {
+                "port": "http-api",
+                "path": "/api/bakery/health",
+                "scheme": "HTTP"
+              },
+              "initialDelaySeconds": 15,
+              "timeoutSeconds": 10,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "failureThreshold": 3
+            },
+            "readinessProbe": {
+              "httpGet": {
+                "port": "http-api",
+                "path": "/api/bakery/health",
+                "scheme": "HTTP"
+              },
+              "initialDelaySeconds": 15,
+              "timeoutSeconds": 10,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "failureThreshold": 3
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "imagePullPolicy": "IfNotPresent"
+          }
+        ],
+        "volumes": [
+          {
+            "name": "default-token-jhw4s",
+            "secret": {
+              "secretName": "default-token-jhw4s",
+              "defaultMode": 420
+            }
+          }
+        ],
+        "restartPolicy": "Always",
+        "terminationGracePeriodSeconds": 30,
+        "dnsPolicy": "ClusterFirst",
+        "serviceAccountName": "default",
+        "nodeName": "docker-desktop",
+        "tolerations": [
+          {
+            "key": "node.kubernetes.io/not-ready",
+            "operator": "Exists",
+            "effect": "NoExecute",
+            "tolerationSeconds": 300
+          },
+          {
+            "key": "node.kubernetes.io/unreachable",
+            "operator": "Exists",
+            "effect": "NoExecute",
+            "tolerationSeconds": 300
+          }
+        ],
+        "securityContext": {},
+        "priority": 0,
+        "schedulerName": "default-scheduler"
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Initialized",
+            "status": "True",
+            "lastTransitionTime": "2020-04-29T10:06:38Z"
+          },
+          {
+            "type": "Ready",
+            "status": "True",
+            "lastTransitionTime": "2020-04-29T10:06:59Z"
+          },
+          {
+            "type": "ContainersReady",
+            "status": "True",
+            "lastTransitionTime": "2020-04-29T10:06:59Z"
+          },
+          {
+            "type": "PodScheduled",
+            "status": "True",
+            "lastTransitionTime": "2020-04-29T10:06:38Z"
+          }
+        ],
+        "hostIP": "192.168.65.3",
+        "podIP": "10.1.3.48",
+        "startTime": "2020-04-29T10:06:38Z",
+        "containerStatuses": [
+          {
+            "name": "reserve-items",
+            "ready": true,
+            "restartCount": 0,
+            "image": "baas-interaction-example-reserve-items:1.0.0",
+            "imageID": "docker://sha256:24c532fbd1e0032e21ffa4829db3ebc721200aad479a3b6269e85dcdad4ee7f3",
+            "state": {
+              "running": {
+                "startedAt": "2020-04-29T10:06:38Z"
+              }
+            },
+            "lastState": {
+              "waiting": {}
+            },
+            "containerID": "docker://cf85caa399715f617683ad63964bbfda770032c24b90986c384efa6b53a7a180"
+          }
+        ],
+        "qosClass": "Burstable"
+      }
+    },
+    {
+      "metadata": {
+        "name": "reserve-items-57dddb68f7-vxbq5",
+        "generateName": "reserve-items-57dddb68f7-",
+        "namespace": "d2e15589-100b-471a-b45e-d122e3b98a74",
+        "uid": "a9781706-2f8e-44c0-a9ae-02d606c2ec95",
+        "selfLink": "/api/v1/namespaces/d2e15589-100b-471a-b45e-d122e3b98a74/pods/reserve-items-57dddb68f7-vxbq5",
+        "resourceVersion": "487825",
+        "creationTimestamp": "2020-04-29T10:05:45Z",
+        "labels": {
+          "interaction": "reserve-items",
+          "pod-template-hash": "57dddb68f7"
+        },
+        "ownerReferences": [
+          {
+            "apiVersion": "apps/v1",
+            "kind": "ReplicaSet",
+            "name": "reserve-items-57dddb68f7",
+            "uid": "c27f3a8f-f9b2-47ca-aa0a-7e731523d79d",
+            "controller": true,
+            "blockOwnerDeletion": true
+          }
+        ]
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "reserve-items",
+            "image": "baas-interaction-example-reserve-items:1.0.0",
+            "ports": [
+              {
+                "containerPort": 8080,
+                "protocol": "TCP",
+                "name": "http-api"
+              }
+            ],
+            "env": [
+              {
+                "name": "JAVA_TOOL_OPTIONS",
+                "value": "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0"
+              }
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "200m",
+                "memory": "256M"
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "default-token-jhw4s",
+                "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                "readOnly": true
+              }
+            ],
+            "livenessProbe": {
+              "httpGet": {
+                "port": "http-api",
+                "path": "/api/bakery/health",
+                "scheme": "HTTP"
+              },
+              "initialDelaySeconds": 15,
+              "timeoutSeconds": 10,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "failureThreshold": 3
+            },
+            "readinessProbe": {
+              "httpGet": {
+                "port": "http-api",
+                "path": "/api/bakery/health",
+                "scheme": "HTTP"
+              },
+              "initialDelaySeconds": 15,
+              "timeoutSeconds": 10,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "failureThreshold": 3
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "imagePullPolicy": "IfNotPresent"
+          }
+        ],
+        "volumes": [
+          {
+            "name": "default-token-jhw4s",
+            "secret": {
+              "secretName": "default-token-jhw4s",
+              "defaultMode": 420
+            }
+          }
+        ],
+        "restartPolicy": "Always",
+        "terminationGracePeriodSeconds": 30,
+        "dnsPolicy": "ClusterFirst",
+        "serviceAccountName": "default",
+        "nodeName": "docker-desktop",
+        "tolerations": [
+          {
+            "key": "node.kubernetes.io/not-ready",
+            "operator": "Exists",
+            "effect": "NoExecute",
+            "tolerationSeconds": 300
+          },
+          {
+            "key": "node.kubernetes.io/unreachable",
+            "operator": "Exists",
+            "effect": "NoExecute",
+            "tolerationSeconds": 300
+          }
+        ],
+        "securityContext": {},
+        "priority": 0,
+        "schedulerName": "default-scheduler"
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Initialized",
+            "status": "True",
+            "lastTransitionTime": "2020-04-29T10:05:45Z"
+          },
+          {
+            "type": "Ready",
+            "status": "True",
+            "lastTransitionTime": "2020-04-29T10:06:03Z"
+          },
+          {
+            "type": "ContainersReady",
+            "status": "True",
+            "lastTransitionTime": "2020-04-29T10:06:03Z"
+          },
+          {
+            "type": "PodScheduled",
+            "status": "True",
+            "lastTransitionTime": "2020-04-29T10:05:45Z"
+          }
+        ],
+        "hostIP": "192.168.65.3",
+        "podIP": "10.1.3.42",
+        "startTime": "2020-04-29T10:05:45Z",
+        "containerStatuses": [
+          {
+            "name": "reserve-items",
+            "ready": true,
+            "restartCount": 0,
+            "image": "baas-interaction-example-reserve-items:1.0.0",
+            "imageID": "docker://sha256:24c532fbd1e0032e21ffa4829db3ebc721200aad479a3b6269e85dcdad4ee7f3",
+            "state": {
+              "running": {
+                "startedAt": "2020-04-29T10:05:46Z"
+              }
+            },
+            "lastState": {
+              "waiting": {}
+            },
+            "containerID": "docker://77cb4041a969e503c2bd1a675731200e20b5058df9e7bd410c1edb7a668410c8"
+          }
+        ],
+        "qosClass": "Burstable"
+      }
+    },
+    {
+      "metadata": {
+        "name": "reserve-items-57dddb68f7-wsmg8",
+        "generateName": "reserve-items-57dddb68f7-",
+        "namespace": "d2e15589-100b-471a-b45e-d122e3b98a74",
+        "uid": "5e3224f4-8820-4c8d-92c7-615bddfe1ce4",
+        "selfLink": "/api/v1/namespaces/d2e15589-100b-471a-b45e-d122e3b98a74/pods/reserve-items-57dddb68f7-wsmg8",
+        "resourceVersion": "487836",
+        "creationTimestamp": "2020-04-29T10:05:45Z",
+        "labels": {
+          "interaction": "reserve-items",
+          "pod-template-hash": "57dddb68f7"
+        },
+        "ownerReferences": [
+          {
+            "apiVersion": "apps/v1",
+            "kind": "ReplicaSet",
+            "name": "reserve-items-57dddb68f7",
+            "uid": "c27f3a8f-f9b2-47ca-aa0a-7e731523d79d",
+            "controller": true,
+            "blockOwnerDeletion": true
+          }
+        ]
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "reserve-items",
+            "image": "baas-interaction-example-reserve-items:1.0.0",
+            "ports": [
+              {
+                "containerPort": 8080,
+                "protocol": "TCP",
+                "name": "http-api"
+              }
+            ],
+            "env": [
+              {
+                "name": "JAVA_TOOL_OPTIONS",
+                "value": "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0"
+              }
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "200m",
+                "memory": "256M"
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "default-token-jhw4s",
+                "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                "readOnly": true
+              }
+            ],
+            "livenessProbe": {
+              "httpGet": {
+                "port": "http-api",
+                "path": "/api/bakery/health",
+                "scheme": "HTTP"
+              },
+              "initialDelaySeconds": 15,
+              "timeoutSeconds": 10,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "failureThreshold": 3
+            },
+            "readinessProbe": {
+              "httpGet": {
+                "port": "http-api",
+                "path": "/api/bakery/health",
+                "scheme": "HTTP"
+              },
+              "initialDelaySeconds": 15,
+              "timeoutSeconds": 10,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "failureThreshold": 3
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "imagePullPolicy": "IfNotPresent"
+          }
+        ],
+        "volumes": [
+          {
+            "name": "default-token-jhw4s",
+            "secret": {
+              "secretName": "default-token-jhw4s",
+              "defaultMode": 420
+            }
+          }
+        ],
+        "restartPolicy": "Always",
+        "terminationGracePeriodSeconds": 30,
+        "dnsPolicy": "ClusterFirst",
+        "serviceAccountName": "default",
+        "nodeName": "docker-desktop",
+        "tolerations": [
+          {
+            "key": "node.kubernetes.io/not-ready",
+            "operator": "Exists",
+            "effect": "NoExecute",
+            "tolerationSeconds": 300
+          },
+          {
+            "key": "node.kubernetes.io/unreachable",
+            "operator": "Exists",
+            "effect": "NoExecute",
+            "tolerationSeconds": 300
+          }
+        ],
+        "securityContext": {},
+        "priority": 0,
+        "schedulerName": "default-scheduler"
+      },
+      "status": {
+        "phase": "Running",
+        "conditions": [
+          {
+            "type": "Initialized",
+            "status": "True",
+            "lastTransitionTime": "2020-04-29T10:05:45Z"
+          },
+          {
+            "type": "Ready",
+            "status": "True",
+            "lastTransitionTime": "2020-04-29T10:06:07Z"
+          },
+          {
+            "type": "ContainersReady",
+            "status": "True",
+            "lastTransitionTime": "2020-04-29T10:06:07Z"
+          },
+          {
+            "type": "PodScheduled",
+            "status": "True",
+            "lastTransitionTime": "2020-04-29T10:05:45Z"
+          }
+        ],
+        "hostIP": "192.168.65.3",
+        "podIP": "10.1.3.43",
+        "startTime": "2020-04-29T10:05:45Z",
+        "containerStatuses": [
+          {
+            "name": "reserve-items",
+            "ready": true,
+            "restartCount": 0,
+            "image": "baas-interaction-example-reserve-items:1.0.0",
+            "imageID": "docker://sha256:24c532fbd1e0032e21ffa4829db3ebc721200aad479a3b6269e85dcdad4ee7f3",
+            "state": {
+              "running": {
+                "startedAt": "2020-04-29T10:05:46Z"
+              }
+            },
+            "lastState": {
+              "waiting": {}
+            },
+            "containerID": "docker://7e7c9d44c8058ea42cb7a7b655ecf1a43a4ebc01be921b3e9e6240e98b878fc2"
+          }
+        ],
+        "qosClass": "Burstable"
+      }
+    }
+  ]
+}

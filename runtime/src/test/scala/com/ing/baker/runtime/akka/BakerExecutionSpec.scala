@@ -128,6 +128,17 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       } yield succeed
     }
 
+    "bake and terminate baker successfully" in {
+      val terminationActorSystem = ActorSystem("termination-actor-system")
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("FirstTimeBaking")(terminationActorSystem)
+        id = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, id)
+        _ <- baker.gracefulShutdown()
+        _ <- terminationActorSystem.whenTerminated
+      } yield succeed
+    }
+
     "throw an ProcessAlreadyExistsException if baking a process with the same identifier twice" in {
       for {
         (baker, recipeId) <- setupBakerWithRecipe("DuplicateIdentifierRecipe")

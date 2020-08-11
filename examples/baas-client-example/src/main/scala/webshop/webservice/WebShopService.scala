@@ -39,15 +39,27 @@ object WebShopService {
   }
 }
 
-class WebShopService(webshop: WebShop)(implicit timer: Timer[IO], cs: ContextShift[IO]) {
+class WebShopService(webshop: WebShop, managementClient: StateNodeManagementClient)(implicit timer: Timer[IO], cs: ContextShift[IO]) {
 
   def build: HttpApp[IO] =
-    (root <+> api).orNotFound
+    (root <+> api <+> management).orNotFound
 
   def root: HttpRoutes[IO] = Router("/" -> HttpRoutes.of[IO] {
 
     case GET -> Root => Ok("Ok")
   })
+
+  def management: HttpRoutes[IO] = Router("/management" -> HttpRoutes.of[IO] {
+    case GET -> Root / "interaction" =>
+      managementClient.knownInteractionNames.flatMap(interactions => Ok(interactions.mkString(",")))
+
+    case GET -> Root / "recipe-instance" / recipeInstanceId / "events" =>
+      managementClient.getEvents(recipeInstanceId).flatMap(interactions => Ok(interactions.mkString(",")))
+
+    case GET -> Root / "recipe-instance" / recipeInstanceId / "ingredients" =>
+      managementClient.getIngredients(recipeInstanceId).flatMap(interactions => Ok(interactions.mkString(",")))
+  })
+
 
   def api: HttpRoutes[IO] = Router("/api" -> HttpRoutes.of[IO] {
 
