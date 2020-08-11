@@ -16,6 +16,14 @@ variables:
 
 
 steps:
+  - task: Bash@3
+    displayName: Scan sources
+    inputs:
+      targetType: 'inline'
+      script: |
+        echo $(Build.Repository.Name)
+      failOnStderr: true
+
   - task: DownloadSecureFile@1
     displayName: Get source scan script
     name: sourceScan
@@ -27,7 +35,8 @@ steps:
     condition: ne(variables['System.PullRequest.IsFork'], true)
     inputs:
       targetType: 'inline'
-      script: bash $(sourceScan.secureFilePath)
+      script: |
+        bash $(sourceScan.secureFilePath)
       failOnStderr: true
 
   - task: CacheBeta@1
