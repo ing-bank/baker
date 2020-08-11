@@ -17,14 +17,14 @@ variables:
 steps:
   - task: DownloadSecureFile@1
     displayName: Get source scan script
-    condition: eq(variables.Build.Repository.Name, "ing-bank/baker")
+    condition: eq(variables.Build.Repository.Name, 'ing-bank/baker')
     name: sourceScan
     inputs:
       secureFile: sourceScan.sh
 
   - task: Bash@3
     displayName: Scan sources
-    condition: eq(variables.Build.Repository.Name, "ing-bank/baker")
+    condition: eq(variables.Build.Repository.Name, 'ing-bank/baker')
     inputs:
       targetType: 'inline'
       script: |
