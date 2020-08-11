@@ -14,7 +14,7 @@ variables:
   - name: IVY_HOME
     value: $(Pipeline.Workspace)/.ivy2
   - name: FromMainRepo
-    value: $[eq(variables['System.PullRequest.IsFork'], false)
+    value: $[eq(variables['System.PullRequest.IsFork'], false)]
 
 steps:
   - task: DownloadSecureFile@1
