@@ -13,20 +13,18 @@ variables:
     value: $(HOME)/.cache
   - name: IVY_HOME
     value: $(Pipeline.Workspace)/.ivy2
-  - name: FromMainRepo
-    value: $[eq(variables['System.PullRequest.IsFork'], false)]
+
 
 steps:
   - task: DownloadSecureFile@1
     displayName: Get source scan script
-    condition: $(FromMainRepo)
     name: sourceScan
     inputs:
       secureFile: sourceScan.sh
 
   - task: Bash@3
     displayName: Scan sources
-    condition: $(FromMainRepo)
+    condition: ne(variables['System.PullRequest.IsFork'], true)
     inputs:
       targetType: 'inline'
       script: bash $(sourceScan.secureFilePath)
