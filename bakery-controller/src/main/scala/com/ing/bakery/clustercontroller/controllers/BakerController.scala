@@ -124,7 +124,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         ))
         .mount("recipes", recipesMountPath, readOnly = true)
         .mount("config", "/bakery-config", readOnly = true)
-        .maybe(serviceAccountSecret.isDefined, _.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true))
+        .applyIfDefined(serviceAccountSecret, (_: String, c) => c.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true))
         .setEnvVar("STATE_CLUSTER_SELECTOR", bakerCrdName)
         .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
         .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
@@ -136,10 +136,11 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         name = bakerCrdName + "-sidecar",
         image = sidecarSpec.image
       )
-        .maybe(sidecarSpec.configVolumeMountPath.isDefined,  _.mount("config", sidecarSpec.configVolumeMountPath.get, readOnly = true))
-        .maybe(serviceAccountSecret.isDefined, _.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true))
-        .maybe(sidecarSpec.environment.isDefined, _.withEnvironment(sidecarSpec.environment.get))
+        .applyIfDefined(sidecarSpec.configVolumeMountPath, (v: String, c) => c.mount("config", v, readOnly = true))
+        .applyIfDefined(sidecarSpec.environment, (e: Map[String, String], c) => c.withEnvironment(e))
         .withMaybeResources(sidecarSpec.resources)
+        .applyIfDefined(sidecarSpec.livenessProbe, (p: skuber.Probe, c) => c.withLivenessProbe(p))
+        .applyIfDefined(sidecarSpec.readinessProbe, (p: skuber.Probe, c) => c.withReadinessProbe(p))
         .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
     }
 
@@ -156,7 +157,6 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
           source = ProjectedVolumeSource(
             sources = List(
               Some(ConfigMapProjection(intermediateRecipesManifestConfigMapName(bakerResource))),
-              serviceAccountSecret.map(SecretProjection(_)),
               bakerResource.spec.config.map(ConfigMapProjection(_)),
               bakerResource.spec.secrets.map(SecretProjection(_)),
               interactionClientTLS.map(c => SecretProjection(c.secretName))
