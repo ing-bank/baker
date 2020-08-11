@@ -5,7 +5,7 @@ object Dependencies {
 
   val akkaVersion = "2.5.29"
   val akkaManagementVersion = "1.0.8"
-  val http4sVersion = "0.21.6"
+  val http4sVersion = "0.21.7"
   val circeVersion = "0.13.0"
   val kamonAkkaVersion = "2.1.4"
 
@@ -19,7 +19,7 @@ object Dependencies {
       .exclude("com.typesafe.akka", "akka-stream")
 
   val scalaJava8Compat =          "org.scala-lang.modules"     %% "scala-java8-compat"                 % "0.9.1"
-  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.2.0"
+  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.2.1"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
   val mockServer =                "org.mock-server"            %  "mockserver-netty"                   % "5.11.1"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"

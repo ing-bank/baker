@@ -14,14 +14,17 @@ variables:
   - name: IVY_HOME
     value: $(Pipeline.Workspace)/.ivy2
 
+
 steps:
   - task: DownloadSecureFile@1
+    displayName: Get source scan script
     name: sourceScan
     inputs:
       secureFile: sourceScan.sh
 
   - task: Bash@3
     displayName: Scan sources
+    condition: ne(variables['System.PullRequest.IsFork'], true)
     inputs:
       targetType: 'inline'
       script: bash $(sourceScan.secureFilePath)
