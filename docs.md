@@ -2,6 +2,7 @@
 
 This documentation is for developers of Baker.
 
+
 ## Creating a release
 
 To create a release run the following:
