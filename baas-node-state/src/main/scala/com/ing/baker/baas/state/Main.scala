@@ -28,8 +28,8 @@ object Main extends IOApp with LazyLogging {
   override def run(args: List[String]): IO[ExitCode] = {
     Kamon.init()
 
-    // Config
-    val config = mergeConfig(executeLoad(getExtraConfig))
+
+    val config = ConfigFactory.load(ConfigFactory.parseFile(new File("/bakery-config/application.conf")))
 
     val httpServerPort = config.getInt("baas-component.http-api-port")
     val recipeDirectory = config.getString("baas-component.recipe-directory")
@@ -85,34 +85,4 @@ object Main extends IOApp with LazyLogging {
 
     mainResource.use(_ => IO.never).as(ExitCode.Success)
   }
-
-  /** Merges all configuration giving priority to values in front of the list, and as final fallback the configuration from
-    * ConfigFactory.load */
-  def mergeConfig(cs: List[Config]): Config =
-    (cs match {
-      case c :: tail => c.withFallback(mergeConfig(tail))
-      case Nil => ConfigFactory.load()
-    }).resolve()
-
-  def executeLoad(from: IO[List[Config]]): List[Config] =
-    from.attempt.unsafeRunSync() match {
-      case Left(e) => logger.error(s"Error while loading config: ${e.getMessage}"); List.empty
-      case Right(a) => a
-    }
-
-  def getExtraConfig: IO[List[Config]] =
-    loadExtraConfig(IO(new File("/bakery-config")))
-
-  def loadExtraConfig(from: IO[File]): IO[List[Config]] =
-    from.map {
-      _.listFiles
-        .filter(f => """.*\.conf$""".r.findFirstIn(f.getName).isDefined)
-        .map(f => Try(ConfigFactory.parseFile(f) -> f.getName))
-        .map {
-          case Failure(e) => logger.error("Failed to parse extra config: " + e.getMessage); None
-          case Success((v, name)) => logger.info(s"Loaded extra configuration from '$name'"); Some(v)
-        }
-        .toList
-        .flatten
-    }
 }
