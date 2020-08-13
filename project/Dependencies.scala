@@ -29,6 +29,7 @@ object Dependencies {
   val akkaStream =                "com.typesafe.akka"          %% "akka-stream"                        % akkaVersion
   val akkaProtobuf =              "com.typesafe.akka"          %% "akka-protobuf"                      % akkaVersion
   val akkaPersistence =           "com.typesafe.akka"          %% "akka-persistence"                   % akkaVersion
+  val akkaDiscovery =             "com.typesafe.akka"          %% "akka-discovery"                     % akkaVersion
   val akkaPersistenceQuery =      "com.typesafe.akka"          %% "akka-persistence-query"             % akkaVersion
   val akkaPersistenceCassandra =  "com.typesafe.akka"          %% "akka-persistence-cassandra"         % "0.103"
   val akkaCluster =               "com.typesafe.akka"          %% "akka-cluster"                       % akkaVersion
@@ -38,10 +39,10 @@ object Dependencies {
   val akkaTestKit =               "com.typesafe.akka"          %% "akka-testkit"                       % akkaVersion
   val akkaStreamTestKit =         "com.typesafe.akka"          %% "akka-stream-testkit"                % akkaVersion
   val akkaMultiNodeTestkit =      "com.typesafe.akka"          %% "akka-multi-node-testkit"            % akkaVersion
+
   val akkaManagementHttp =        "com.lightbend.akka.management" %% "akka-management-cluster-http"      % akkaManagementVersion
   val akkaClusterBoostrap =       "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
   val akkaDiscoveryKube =         "com.lightbend.akka.discovery"  %% "akka-discovery-kubernetes-api"     % akkaManagementVersion
-  val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
 
   val scalaKafkaClient =          "net.cakesolutions"          %% "scala-kafka-client"                 % "2.3.1"
   val fs2kafka =                  "com.github.fd4s"            %% "fs2-kafka"                          % "1.0.0"
@@ -59,7 +60,23 @@ object Dependencies {
   val kamonAkka =                 "io.kamon"                   %% "kamon-akka"                         % kamonAkkaVersion
   val kamonPrometheus =           "io.kamon"                   %% "kamon-prometheus"                   % kamonAkkaVersion
 
-  val skuber =                    "io.skuber"                  %% "skuber"                             % "2.5.0"
+  val play   =                    ("com.typesafe.play"          %%  "play-json"                         % "2.9.0")
+    .excludeAll (
+      ExclusionRule("com.fasterxml.jackson.core", "jackson-databind"),
+      ExclusionRule("com.fasterxml.jackson.core", "jackson-core"),
+      ExclusionRule("com.fasterxml.jackson.core", "jackson-annotations"),
+      ExclusionRule("com.fasterxml.jackson.datatype", "jackson-datatype-jdk8"),
+      ExclusionRule("com.fasterxml.jackson.datatype", "jackson-datatype-jsr310")
+    )
+
+  val skuber =                   ("io.skuber"                  %% "skuber"                             % "2.5.0")
+    .excludeAll (
+      ExclusionRule("org.yaml", "snakeyaml"),
+      ExclusionRule("com.typesafe.play", "play-json")
+    )
+
+  val jackson =                   "com.fasterxml.jackson.core" %  "jackson-databind"                   % "2.11.2"
+
   val http4s =                    "org.http4s"                 %% "http4s-core"                        % http4sVersion
   val http4sDsl =                 "org.http4s"                 %% "http4s-dsl"                         % http4sVersion
   val http4sServer =              "org.http4s"                 %% "http4s-blaze-server"                % http4sVersion
