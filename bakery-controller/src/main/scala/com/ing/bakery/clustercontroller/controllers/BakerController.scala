@@ -95,12 +95,12 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         ))
         .exposePort(managementPort)
         .exposePort(Container.Port(
-          name = "prometheus",
+          name = "app-metrics",
           containerPort = 9095,
           protocol = Protocol.TCP
         ))
         .exposePort(Container.Port(
-          name = "http-api",
+          name = "naked-http-api",
           containerPort = 8080,
           protocol = Protocol.TCP
         ))
@@ -139,6 +139,11 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         .exposePort(Container.Port(
           name = "sidecar-http-api",
           containerPort = 8443,
+          protocol = Protocol.TCP
+        ))
+        .exposePort(Container.Port(
+          name = "sidecar-metrics",
+          containerPort = 10080,
           protocol = Protocol.TCP
         ))
         .applyIfDefined(sidecarSpec.configVolumeMountPath, (v: String, c) => c.mount("config", v, readOnly = true))
@@ -213,19 +218,25 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
       .addLabel("metrics" -> "collect")
       .withSelector(recipeNameLabel(bakerResource))
       .setPorts(List(
-        Service.Port(
-          name = "state-node-api",
+        Some(Service.Port(
+          name = "http-api",
           port = baasStateServicePort,
           targetPort = Some(Right(
             if (bakerResource.spec.sidecar.isDefined) "sidecar-http-api"
-            else "http-api"))
-        ),
-        Service.Port(
-          name = "prometheus",
+            else "naked-http-api"))
+        )),
+        Some(Service.Port(
+          name = "app-metrics",
           port = 9095,
-          targetPort = Some(Right("prometheus"))
-        )
-      ))
+          targetPort = Some(Right("app-metrics"))
+        )),
+        bakerResource.spec.sidecar.map(_ =>
+          Service.Port(
+            name = "sidecar-metrics",
+            port = 10080,
+            targetPort = Some(Right("sidecar-metrics"))
+          ))
+      ).flatten)
   }
 
   private def intermediateRecipesManifestConfigMap(bakerResource: BakerResource): ConfigMap = {
