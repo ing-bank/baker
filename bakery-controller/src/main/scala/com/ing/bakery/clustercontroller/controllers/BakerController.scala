@@ -136,6 +136,11 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         name = bakerCrdName + "-sidecar",
         image = sidecarSpec.image
       )
+        .exposePort(Container.Port(
+          name = "sidecar-http-api",
+          containerPort = 8443,
+          protocol = Protocol.TCP
+        ))
         .applyIfDefined(sidecarSpec.configVolumeMountPath, (v: String, c) => c.mount("config", v, readOnly = true))
         .applyIfDefined(sidecarSpec.environment, (e: Map[String, String], c) => c.withEnvironment(e))
         .withMaybeResources(sidecarSpec.resources)
@@ -209,9 +214,11 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
       .withSelector(recipeNameLabel(bakerResource))
       .setPorts(List(
         Service.Port(
-          name = "http-api",
+          name = "state-node-api",
           port = baasStateServicePort,
-          targetPort = Some(Right("http-api"))
+          targetPort = Some(Right(
+            if (bakerResource.spec.sidecar.isDefined) "sidecar-http-api"
+            else "http-api"))
         ),
         Service.Port(
           name = "prometheus",
