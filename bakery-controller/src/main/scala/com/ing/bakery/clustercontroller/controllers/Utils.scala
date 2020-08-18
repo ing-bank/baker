@@ -18,6 +18,9 @@ object Utils {
     def applyIfDefined[T](option: Option[T], apply: (T, Container) => Container): Container =
       option.map(value => apply(value, container)).getOrElse(container)
 
+    def applyIfNotDefined[T](option: Option[T], apply: Container => Container): Container =
+      option.fold(apply(container))(_ => container)
+
     def maybeWithKeyStoreConfig(prefix: String, config: Option[MutualAuthKeystoreConfig]): Container = config map { tls => {
       container
         .setEnvVar(s"${prefix}_HTTPS_ENABLED", "true")

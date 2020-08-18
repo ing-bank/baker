@@ -99,11 +99,11 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
           containerPort = 9095,
           protocol = Protocol.TCP
         ))
-        .exposePort(Container.Port(
-          name = "naked-api",
+        .applyIfNotDefined(bakerResource.spec.sidecar, _.exposePort(Container.Port(
+          name = "http-api",
           containerPort = 8080,
           protocol = Protocol.TCP
-        ))
+        )))
         .withReadinessProbe(skuber.Probe(
           action = skuber.HTTPGetAction(
             port = Right(managementPort.name),
@@ -137,7 +137,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         image = sidecarSpec.image
       )
         .exposePort(Container.Port(
-          name = "sidecar-api",
+          name = "http-api",
           containerPort = 8443,
           protocol = Protocol.TCP
         ))
@@ -221,9 +221,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         Some(Service.Port(
           name = "http-api",
           port = baasStateServicePort,
-          targetPort = Some(Right(
-            if (bakerResource.spec.sidecar.isDefined) "sidecar-api"
-            else "naked-api"))
+          targetPort = Some(Right("http-api"))
         )),
         Some(Service.Port(
           name = "app-metrics",
