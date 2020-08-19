@@ -276,6 +276,9 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       mockServer,
       circe,
       circeGeneric
+    ),
+    dependencyOverrides ++= Seq(
+      play
     )
   )
   .dependsOn(
@@ -355,6 +358,9 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
       mockServer,
       circe,
       circeGeneric
+    ),
+    dependencyOverrides ++= Seq(
+      play
     )
   )
   .dependsOn(bakertypes, recipeCompiler, recipeDsl, intermediateLanguage, `baas-node-client`, `baas-protocol-interaction-scheduling`)
