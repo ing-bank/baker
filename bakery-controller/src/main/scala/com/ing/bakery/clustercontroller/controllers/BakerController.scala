@@ -95,15 +95,15 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         ))
         .exposePort(managementPort)
         .exposePort(Container.Port(
-          name = "prometheus",
+          name = "app-metrics",
           containerPort = 9095,
           protocol = Protocol.TCP
         ))
-        .exposePort(Container.Port(
+        .applyIfNotDefined(bakerResource.spec.sidecar, _.exposePort(Container.Port(
           name = "http-api",
           containerPort = 8080,
           protocol = Protocol.TCP
-        ))
+        )))
         .withReadinessProbe(skuber.Probe(
           action = skuber.HTTPGetAction(
             port = Right(managementPort.name),
@@ -136,6 +136,16 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         name = bakerCrdName + "-sidecar",
         image = sidecarSpec.image
       )
+        .exposePort(Container.Port(
+          name = "http-api",
+          containerPort = 8443,
+          protocol = Protocol.TCP
+        ))
+        .exposePort(Container.Port(
+          name = "sidecar-metrics",
+          containerPort = 10080,
+          protocol = Protocol.TCP
+        ))
         .applyIfDefined(sidecarSpec.configVolumeMountPath, (v: String, c) => c.mount("config", v, readOnly = true))
         .applyIfDefined(sidecarSpec.environment, (e: Map[String, String], c) => c.withEnvironment(e))
         .withMaybeResources(sidecarSpec.resources)
@@ -208,17 +218,23 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
       .addLabel("metrics" -> "collect")
       .withSelector(recipeNameLabel(bakerResource))
       .setPorts(List(
-        Service.Port(
+        Some(Service.Port(
           name = "http-api",
           port = baasStateServicePort,
           targetPort = Some(Right("http-api"))
-        ),
-        Service.Port(
-          name = "prometheus",
+        )),
+        Some(Service.Port(
+          name = "app-metrics",
           port = 9095,
-          targetPort = Some(Right("prometheus"))
-        )
-      ))
+          targetPort = Some(Right("app-metrics"))
+        )),
+        bakerResource.spec.sidecar.map(_ =>
+          Service.Port(
+            name = "sidecar-metrics",
+            port = 10080,
+            targetPort = Some(Right("sidecar-metrics"))
+          ))
+      ).flatten)
   }
 
   private def intermediateRecipesManifestConfigMap(bakerResource: BakerResource): ConfigMap = {
