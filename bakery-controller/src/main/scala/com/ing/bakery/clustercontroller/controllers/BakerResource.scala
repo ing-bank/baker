@@ -46,6 +46,7 @@ object BakerResource {
     , Utils.optional(Utils.resourcesFromConfigMap(configMap))
     , Utils.extractValidatedStringOption(configMap, "config")
     , Utils.extractValidatedStringOption(configMap, "secrets")
+    , Utils.extractValidatedBoolean(configMap, "apiLoggingEnabled")
     , Utils.optional(Utils.sidecarFromConfigMap(configMap))
     ).mapN(Spec).map(spec => BakerResource(metadata = configMap.metadata, spec = spec))
   }
@@ -69,6 +70,7 @@ object BakerResource {
     resources: Option[Resource.Requirements],
     config: Option[String],
     secrets: Option[String],
+    apiLoggingEnabled: Boolean,
     sidecar: Option[SidecarSpec]
   )
 
@@ -126,6 +128,7 @@ object BakerResource {
     (JsPath \ "resources").formatNullableWithDefault[Resource.Requirements](None) and
     (JsPath \ "config").formatNullableWithDefault[String](None) and
     (JsPath \ "secrets").formatNullableWithDefault[String](None) and
+    (JsPath \ "apiLoggingEnabled").formatWithDefault[Boolean](false) and
     (JsPath \ "sidecar").formatNullableWithDefault[SidecarSpec](None)
   )(Spec.apply, unlift(Spec.unapply))
 

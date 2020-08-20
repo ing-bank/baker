@@ -127,6 +127,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         .applyIfDefined(serviceAccountSecret, (_: String, c) => c.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true))
         .setEnvVar("STATE_CLUSTER_SELECTOR", bakerCrdName)
         .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
+        .setEnvVar("API_LOGGING_ENABLED", bakerResource.spec.apiLoggingEnabled.toString)
         .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
         .maybeWithKeyStoreConfig("INTERACTION_CLIENT", interactionClientTLS)
         .withMaybeResources(bakerResource.spec.resources)
