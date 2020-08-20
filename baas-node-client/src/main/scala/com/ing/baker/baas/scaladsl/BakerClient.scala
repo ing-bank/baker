@@ -1,10 +1,13 @@
 package com.ing.baker.baas.scaladsl
 
+import java.io.{File, FileInputStream, InputStream}
+import java.security.{KeyStore, SecureRandom}
 import java.util.concurrent.Executors
 
 import cats.implicits._
 import cats.effect.{Blocker, ContextShift, IO, Resource, Timer}
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
+import com.ing.baker.baas.common.TLSConfig
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, EventResolutions, InteractionInstance, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
 import com.ing.baker.runtime.serialization.JsonDecoders._
@@ -12,7 +15,7 @@ import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.types.Value
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Decoder, DecodingFailure}
-import javax.net.ssl.SSLContext
+import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import org.http4s.Method.{POST, _}
 import org.http4s._
 import org.http4s.circe._
@@ -24,12 +27,36 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object BakerClient {
 
+  def loadSSLContext(config: TLSConfig): SSLContext = {
+    // Try resource directory as root first
+    val keystoreResource: InputStream = getClass.getClassLoader.getResourceAsStream(config.keystorePath)
+    // Otherwise try absolute path
+    val keystore: InputStream =
+      if(keystoreResource == null) new FileInputStream(new File(config.keystorePath))
+      else keystoreResource
+    require(keystore != null, s"Keystore of type '${config.keystoreType}' not found on path '${config.keystorePath}', tried classpath resources and then absolute path")
+    loadSSLContextFromInputStream(keystore, config.password, config.keystoreType)
+  }
+
+  def loadSSLContextFromInputStream(keystore: InputStream, password: String, keystoreType: String): SSLContext = {
+    val ks: KeyStore = KeyStore.getInstance(keystoreType)
+    val passwordArray: Array[Char] = password.toCharArray
+    ks.load(keystore, passwordArray)
+    val keyManagerFactory: KeyManagerFactory = KeyManagerFactory.getInstance("SunX509")
+    keyManagerFactory.init(ks, passwordArray)
+    val tmf: TrustManagerFactory = TrustManagerFactory.getInstance("SunX509")
+    tmf.init(ks)
+    val sslContext: SSLContext = SSLContext.getInstance("TLS")
+    sslContext.init(keyManagerFactory.getKeyManagers, tmf.getTrustManagers, new SecureRandom)
+    sslContext
+  }
+
   /** use method `use` of the Resource, the client will be acquired and shut down automatically each time
     * the resulting `IO` is run, each time using the common connection pool.
     */
-  def resource(hostname: Uri, pool: ExecutionContext, filters: Seq[Request[IO] => Request[IO]] = Seq.empty)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
+  def resource(hostname: Uri, pool: ExecutionContext, filters: Seq[Request[IO] => Request[IO]] = Seq.empty, tlsConfig: Option[TLSConfig] = None)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
     implicit val ev0 = pool
-    BlazeClientBuilder[IO](pool)
+    BlazeClientBuilder[IO](pool, tlsConfig.map(loadSSLContext))
       .resource
       .map(client => {
         new BakerClient(client, hostname, filters)

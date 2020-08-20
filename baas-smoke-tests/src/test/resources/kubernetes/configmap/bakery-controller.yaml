@@ -35,7 +35,7 @@ spec:
         - name: INTERACTION_HTTPS_KEYSTORE_SECRET
           value: interaction-https-keystore
         - name: INTERACTION_HTTPS_KEYSTORE_NAME
-          value: interaction.ing-bank.github.io.jks
+          value: server.jks
         - name: INTERACTION_HTTPS_KEYSTORE_PASSWORD
           value: changeit
         - name: INTERACTION_HTTPS_KEYSTORE_TYPE
@@ -43,7 +43,7 @@ spec:
         - name: INTERACTION_CLIENT_HTTPS_KEYSTORE_SECRET
           value: interaction-client-https-keystore
         - name: INTERACTION_CLIENT_HTTPS_KEYSTORE_NAME
-          value: client.interaction.ing-bank.github.io.jks
+          value: client.jks
         - name: INTERACTION_CLIENT_HTTPS_KEYSTORE_PASSWORD
           value: changeit
         - name: INTERACTION_CLIENT_HTTPS_KEYSTORE_TYPE
