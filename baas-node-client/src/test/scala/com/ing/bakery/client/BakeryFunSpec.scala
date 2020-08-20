@@ -1,6 +1,10 @@
 package com.ing.bakery.client
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
+import org.scalactic.source
+import org.scalatest.compatible.Assertion
+import org.scalatest.funspec.FixtureAsyncFunSpecLike
+import org.scalatest.{ConfigMap, FutureOutcome, Tag}
 
 import scala.concurrent.duration._
 

@@ -2,23 +2,30 @@ package com.ing.bakery.client
 
 import java.net.InetSocketAddress
 
+import cats.effect.concurrent.MVar
 import cats.effect.{IO, Resource}
 import com.ing.baker.baas.common.TLSConfig
+import com.ing.baker.baas.javadsl
 import com.ing.baker.baas.scaladsl.BakerClient
-import com.ing.baker.runtime.javadsl.{Baker => JavaBaker}
-import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
-import com.ing.baker.types.{CharArray, Int64, PrimitiveValue}
-import org.http4s.Header
-import org.http4s._
+import com.ing.baker.runtime.common.RecipeInstanceMetadata
+import com.ing.baker.runtime.scaladsl.BakerResult
+import com.ing.baker.runtime.serialization.JsonEncoders._
+import io.circe.generic.auto._
+import org.http4s.{Header, _}
+import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
+import org.http4s.server.Router
 import org.http4s.server.blaze._
+import org.scalatest.ConfigMap
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.collection.JavaConverters._
+import scala.compat.java8.FutureConverters
+import scala.concurrent.ExecutionContext
 
 class BakerClientSpec extends BakeryFunSpec {
 
-  case class Context(receivedHeaders: IO[List[Header]])
+  case class Context(serverAddress: InetSocketAddress, receivedHeaders: IO[List[Header]])
 
   val serviceTLSConfig: TLSConfig =
     TLSConfig("changeit", "test-certs/server.jks", "JKS")
@@ -32,8 +39,6 @@ class BakerClientSpec extends BakeryFunSpec {
   /** Represents external arguments to the test context builder. */
   type TestArguments = Unit
 
-
-
   /** Creates a `Resource` which allocates and liberates the expensive resources each test can use.
    * For example web servers, network connection, database mocks.
    *
@@ -44,14 +49,29 @@ class BakerClientSpec extends BakeryFunSpec {
    * @return the resources each test can use
    */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
+
+    def testServer(receivedHeaders: MVar[IO, List[Header]]): HttpApp[IO] = {
+      implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
+      Router("/api/bakery/instances" ->  HttpRoutes.of[IO] {
+        case request@GET -> Root =>
+          for {
+            _ <- receivedHeaders.put(request.headers.toList)
+            response <- Ok(BakerResult(List.empty[RecipeInstanceMetadata]))
+          } yield response
+      }).orNotFound
+    }
+
     val sslConfig = BakerClient.loadSSLContext(serviceTLSConfig)
     val sslParams = sslConfig.getDefaultSSLParameters
     sslParams.setNeedClientAuth(true)
-    BlazeServerBuilder[IO](executionContext)
-      .withSslContextAndParameters(sslConfig, sslParams)
-      .bindSocketAddress(InetSocketAddress.createUnresolved("localhost", 0))
-      .withHttpApp(new HealthService().build)
-      .resource
+    for {
+      receivedHeaders <- Resource.liftF(MVar.empty[IO, List[Header]])
+      service <- BlazeServerBuilder[IO](ExecutionContext.global)
+        .withSslContextAndParameters(sslConfig, sslParams)
+        .bindSocketAddress(InetSocketAddress.createUnresolved("localhost", 0))
+        .withHttpApp(testServer(receivedHeaders))
+        .resource
+    } yield Context(service.address, receivedHeaders.take)
   }
 
   /** Refines the `ConfigMap` populated with the -Dkey=value arguments coming from the "sbt testOnly" command.
@@ -61,64 +81,29 @@ class BakerClientSpec extends BakeryFunSpec {
    */
   def argumentsBuilder(config: ConfigMap): TestArguments = ()
 
-  describe("The remote interaction") {
+  describe("The baker client") {
 
-    def result(input0: String, input1: Int) = EventInstance(
-      name = "Result",
-      providedIngredients = Map(
-        "data" -> PrimitiveValue(input0 + input1)
-      )
-    )
-
-    val implementation0 = InteractionInstance(
-      name = "TestInteraction0",
-      input = Seq(CharArray, Int64).toList,
-      run = input => Future.successful(Some(result(input.head.value.as[String], input(1).value.as[Int])))
-    )
-
-    val implementation1 = InteractionInstance(
-      name = "TestInteraction1",
-      input = Seq(CharArray, Int64),
-      run = input => Future.successful(Some(result(input.head.value.as[String] + "!", input(1).value.as[Int] + 1)))
-    )
-
-    test("publishes its interface") { context =>
-      context.withInteractionInstances(List(implementation0, implementation1)) { client =>
+    test("scaladsl - connects with mutual tls and adds headers to requests") { context =>
+      val uri = Uri.unsafeFromString(s"http://localhost:${context.serverAddress.getPort}/")
+      val testHeader = Header("X-Test", "Foo")
+      val filter: Request[IO] => Request[IO] = _.putHeaders(testHeader)
+      BakerClient.resource(uri, executionContext, List(filter), Some(clientTLSConfig)).use { client =>
         for {
-          result <- client.interface
-        } yield assert(result == List(
-          I.Interaction(implementation0.shaBase64, implementation0.name, implementation0.input.toList),
-          I.Interaction(implementation1.shaBase64, implementation1.name, implementation1.input.toList)
-        ))
+          _ <- IO.fromFuture(IO(client.getAllRecipeInstancesMetadata))
+          headers <- context.receivedHeaders
+        } yield assert(headers.contains(testHeader))
       }
     }
 
-    test("executes the interaction") { context =>
-      context.withInteractionInstances(List(implementation0, implementation1)) { client =>
-        val ingredient0 = IngredientInstance("input0", PrimitiveValue("A"))
-        val ingredient1 = IngredientInstance("input1", PrimitiveValue(1))
-        for {
-          result0 <- client.runInteraction(implementation0.shaBase64, Seq(ingredient0, ingredient1))
-          result1 <- client.runInteraction(implementation1.shaBase64, Seq(ingredient0, ingredient1))
-        } yield {
-          assert(result0 === Some(result("A", 1)))
-          assert(result1 === Some(result("A!", 2)))
-        }
-      }
-    }
-
-    test("does not make connections with clients that does not trust") { context =>
-      context.withNoTrustClient(List(implementation0)) { client =>
-        val ingredient0 = IngredientInstance("input0", PrimitiveValue("A"))
-        val ingredient1 = IngredientInstance("input1", PrimitiveValue(1))
-        val result: IO[Option[String]] = client.runInteraction(implementation0.shaBase64, Seq(ingredient0, ingredient1))
-          .map(_ => None)
-          .handleErrorWith {
-            case e: java.net.ConnectException => IO.pure(Some("connection error"))
-            case e => IO.raiseError(e)
-          }
-        result.map(result => assert(result === Some("connection error")))
-      }
+    test("javadsl - connects with mutual tls and adds headers to requests") { context =>
+      val uri = s"http://localhost:${context.serverAddress.getPort}/"
+      val testHeader = Header("X-Test", "Foo")
+      val filter: java.util.function.Function[Request[IO], Request[IO]] = _.putHeaders(testHeader)
+      for {
+        client <- IO.fromFuture(IO(FutureConverters.toScala(javadsl.BakerClient.build(uri, List(filter).asJava, java.util.Optional.of(clientTLSConfig)))))
+        _ <- IO.fromFuture(IO(FutureConverters.toScala(client.getAllRecipeInstancesMetadata)))
+        headers <- context.receivedHeaders
+      } yield assert(headers.contains(testHeader))
     }
   }
 }

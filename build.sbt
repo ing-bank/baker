@@ -239,7 +239,11 @@ lazy val `baas-node-client` = project.in(file("baas-node-client"))
       http4sDsl,
       http4sClient,
       http4sCirce,
-      scalaLogging
+      scalaLogging,
+      http4sServer % "test",
+      slf4jApi % "test",
+      logback % "test",
+      scalaTest % "test"
     )
   )
   .dependsOn(`baker-interface`)

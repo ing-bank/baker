@@ -16,8 +16,10 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
 object BakerClient {
 
+  type HttpRequest = Request[IO]
+
   //TODO add resource cleanup possibility.
-  def build(hostname: String, filters: java.util.List[Request[IO] => Request[IO]], tlsConfig: java.util.Optional[TLSConfig]): CompletableFuture[JavaBaker] = {
+  def build(hostname: String, filters: java.util.List[java.util.function.Function[HttpRequest, HttpRequest]], tlsConfig: java.util.Optional[TLSConfig]): CompletableFuture[JavaBaker] = {
     val connectionPool: ExecutionContextExecutor =
       ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
 
@@ -27,7 +29,7 @@ object BakerClient {
 
     val future = BlazeClientBuilder[IO](connectionPool, Option.apply(tlsConfig.orElse(null)).map(scaladsl.BakerClient.loadSSLContext))
       .resource
-      .map(client => new scaladsl.BakerClient(client, Uri.unsafeFromString(hostname), filters.asScala))
+      .map(client => new scaladsl.BakerClient(client, Uri.unsafeFromString(hostname), filters.asScala.map(javaFun => req => javaFun.apply(req))))
       .allocated
       .map{
         case (client, _) => new JavaBaker(client)
@@ -36,15 +38,15 @@ object BakerClient {
     FutureConverters.toJava(future).toCompletableFuture
   }
 
-  def build(hostname: String, filters: java.util.List[Request[IO] => Request[IO]]): CompletableFuture[JavaBaker] = {
+  def build(hostname: String, filters: java.util.List[java.util.function.Function[HttpRequest, HttpRequest]]): CompletableFuture[JavaBaker] = {
     build(hostname, filters, java.util.Optional.empty())
   }
 
   def build(hostname: String, tlsConfig: java.util.Optional[TLSConfig]): CompletableFuture[JavaBaker] = {
-    build(hostname, new util.ArrayList[Request[IO] => Request[IO]](), tlsConfig)
+    build(hostname, new util.ArrayList[java.util.function.Function[HttpRequest, HttpRequest]](), tlsConfig)
   }
 
   def build(hostname: String): Unit = {
-    build(hostname, new util.ArrayList[Request[IO] => Request[IO]](), java.util.Optional.empty())
+    build(hostname, new util.ArrayList[java.util.function.Function[HttpRequest, HttpRequest]](), java.util.Optional.empty())
   }
 }

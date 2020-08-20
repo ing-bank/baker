@@ -16,7 +16,6 @@ import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.{Router, Server}
 import com.ing.baker.runtime.serialization.JsonEncoders._
-import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.{ExecutionContext, Future}
