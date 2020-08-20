@@ -18,17 +18,28 @@ import org.http4s.server.{Router, Server}
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.typesafe.scalalogging.LazyLogging
+import org.http4s.server.middleware.Logger
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object StateNodeService  {
 
-  def resource(baker: Baker, hostname: InetSocketAddress, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+  def resource(baker: Baker, hostname: InetSocketAddress, serviceDiscovery: ServiceDiscovery, loggingEnabled: Boolean)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+    val apiLoggingAction: Option[String => IO[Unit]] = if (loggingEnabled) {
+      val apiLogger = LoggerFactory.getLogger("API")
+      Some(s => IO(apiLogger.info(s)))
+    } else None
     for {
       binding <- BlazeServerBuilder[IO](ec)
         .bindSocketAddress(hostname)
-        .withHttpApp(new StateNodeService(baker, serviceDiscovery).build)
-        .resource
+        .withHttpApp(
+          Logger.httpApp(
+            logHeaders = loggingEnabled,
+            logBody = loggingEnabled,
+            logAction = apiLoggingAction)
+          (new StateNodeService(baker, serviceDiscovery).build)
+        ).resource
     } yield binding
   }
 }

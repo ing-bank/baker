@@ -89,6 +89,9 @@ object Utils {
   def extractValidatedString(configMap: ConfigMap, path: String): FromConfigMapValidation[String] =
     configMap.data.get(path).fold(s"required path '$path' not found in ConfigMap '${configMap.name}'".invalidNel[String])(_.validNel)
 
+  def extractValidatedBoolean(configMap: ConfigMap, path: String): FromConfigMapValidation[Boolean] =
+    configMap.data.get(path).map(_.equalsIgnoreCase("true").validNel).getOrElse(false.validNel)
+
   def extractValidatedStringOption(configMap: ConfigMap, path: String): FromConfigMapValidation[Option[String]] =
     configMap.data.get(path).map(Some(_).validNel).getOrElse(None.validNel)
 
