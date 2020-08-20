@@ -30,7 +30,7 @@ keytool -export -v \
 keytool -genkeypair -v \
   -alias interaction.ing-bank.github.io \
   -dname "CN=interaction.ing-bank.github.io, OU=Bakery, O=Bakery, L=Amsterdam, ST=North Holland, C=Netherlands" \
-  -keystore server.jks \
+  -keystore interaction.ing-bank.github.io.jks \
   -keypass:env PW \
   -storepass:env PW \
   -keyalg RSA \
@@ -42,7 +42,7 @@ keytool -certreq -v \
   -alias interaction.ing-bank.github.io \
   -keypass:env PW \
   -storepass:env PW \
-  -keystore server.jks \
+  -keystore interaction.ing-bank.github.io.jks \
   -file interaction.ing-bank.github.io.csr
 
 # Tell interactionca to sign the interaction.ing-bank.github.io certificate. Note the extension is on the request, not the
@@ -60,21 +60,21 @@ keytool -gencert -v \
   -ext SAN="dns:localhost,ip:127.0.0.1,ip:::1" \
   -rfc
 
-# Tell server.jks it can trust interactionca as a signer.
+# Tell interaction.ing-bank.github.io.jks it can trust interactionca as a signer.
 keytool -import -v \
   -alias interactionca \
   -file interactionca.crt \
-  -keystore server.jks \
+  -keystore interaction.ing-bank.github.io.jks \
   -storetype JKS \
   -storepass:env PW << EOF
 yes
 EOF
 
-# Import the signed certificate back into server.jks
+# Import the signed certificate back into interaction.ing-bank.github.io.jks
 keytool -import -v \
   -alias interaction.ing-bank.github.io \
   -file interaction.ing-bank.github.io.crt \
-  -keystore server.jks \
+  -keystore interaction.ing-bank.github.io.jks \
   -storetype JKS \
   -storepass:env PW
 
@@ -86,7 +86,7 @@ keytool -import -v \
 keytool -genkeypair -v \
   -alias interactionclientca \
   -dname "CN=interactionclientca, OU=Bakery, O=Bakery, L=Amsterdam, ST=North Holland, C=Netherlands" \
-  -keystore client.jks \
+  -keystore client.interaction.ing-bank.github.io.jks \
   -keypass:env PW \
   -storepass:env PW \
   -keyalg RSA \
@@ -98,7 +98,7 @@ keytool -genkeypair -v \
 # Create key pair that will act as the client.
 keytool -genkeypair -v \
   -alias client.interaction.ing-bank.github.io \
-  -keystore client.jks \
+  -keystore client.interaction.ing-bank.github.io.jks \
   -dname "CN=client.interaction.ing-bank.github.io, OU=Bakery, O=Bakery, L=Amsterdam, ST=North Holland, C=Netherlands" \
   -keypass:env PW \
   -storepass:env PW \
@@ -110,7 +110,7 @@ keytool -certreq -v \
   -alias client.interaction.ing-bank.github.io \
   -keypass:env PW \
   -storepass:env PW \
-  -keystore client.jks \
+  -keystore client.interaction.ing-bank.github.io.jks \
   -file client.interaction.ing-bank.github.io.csr
 
 # Make interactionclientca create a certificate chain saying that client.interaction.ing-bank.github.io is signed by interactionclientca.
@@ -118,7 +118,7 @@ keytool -gencert -v \
   -alias interactionclientca \
   -keypass:env PW \
   -storepass:env PW \
-  -keystore client.jks \
+  -keystore client.interaction.ing-bank.github.io.jks \
   -infile client.interaction.ing-bank.github.io.csr \
   -outfile client.interaction.ing-bank.github.io.crt \
   -ext EKU="clientAuth" \
@@ -130,22 +130,22 @@ keytool -export -v \
   -alias interactionclientca \
   -file interactionclientca.crt \
   -storepass:env PW \
-  -keystore client.jks \
+  -keystore client.interaction.ing-bank.github.io.jks \
   -rfc
 
-# Import the signed certificate back into client.jks.  This is important, as JSSE won't send a client.interaction.ing-bank.github.io
+# Import the signed certificate back into client.interaction.ing-bank.github.io.jks.  This is important, as JSSE won't send a client.interaction.ing-bank.github.io
 # certificate if it can't find one signed by the client.interaction.ing-bank.github.io-ca presented in the CertificateRequest.
 keytool -import -v \
   -alias client.interaction.ing-bank.github.io \
   -file client.interaction.ing-bank.github.io.crt \
-  -keystore client.jks \
+  -keystore client.interaction.ing-bank.github.io.jks \
   -storetype JKS \
   -storepass:env PW
 
 # Export the interactionclientca's certificate and private key to pkcs12, so it's safe.
 #keytool -importkeystore -v \
 #  -srcalias interactionclientca \
-#  -srckeystore client.jks \
+#  -srckeystore client.interaction.ing-bank.github.io.jks \
 #  -srcstorepass:env PW \
 #  -destkeystore interactionclientca.p12 \
 #  -deststorepass:env PW \
@@ -161,11 +161,11 @@ keytool -import -v \
 yes
 EOF
 
-# Then, strip out the interactionclientca alias from client.jks, just leaving the signed certificate.
+# Then, strip out the interactionclientca alias from client.interaction.ing-bank.github.io.jks, just leaving the signed certificate.
 keytool -delete -v \
  -alias interactionclientca \
  -storepass:env PW \
- -keystore client.jks
+ -keystore client.interaction.ing-bank.github.io.jks
 
 ##
 ## Mutual trust
@@ -175,7 +175,7 @@ keytool -delete -v \
 keytool -import \
   -alias interactionca \
   -file interactionca.crt \
-  -keystore client.jks \
+  -keystore client.interaction.ing-bank.github.io.jks \
   -storetype JKS \
   -storepass:env PW << EOF
 yes
@@ -185,7 +185,7 @@ EOF
 keytool -import \
   -alias interactionclientca \
   -file interactionclientca.crt \
-  -keystore server.jks \
+  -keystore interaction.ing-bank.github.io.jks \
   -storepass:env PW << EOF
 yes
 EOF

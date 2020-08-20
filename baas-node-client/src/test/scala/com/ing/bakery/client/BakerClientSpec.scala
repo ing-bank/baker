@@ -56,7 +56,7 @@ class BakerClientSpec extends BakeryFunSpec {
         case request@GET -> Root =>
           for {
             _ <- receivedHeaders.put(request.headers.toList)
-            response <- Ok(BakerResult(List.empty[RecipeInstanceMetadata]))
+            response <- Ok(BakerResult(List.empty[Int]))
           } yield response
       }).orNotFound
     }
@@ -84,7 +84,7 @@ class BakerClientSpec extends BakeryFunSpec {
   describe("The baker client") {
 
     test("scaladsl - connects with mutual tls and adds headers to requests") { context =>
-      val uri = Uri.unsafeFromString(s"http://localhost:${context.serverAddress.getPort}/")
+      val uri = Uri.unsafeFromString(s"https://localhost:${context.serverAddress.getPort}/")
       val testHeader = Header("X-Test", "Foo")
       val filter: Request[IO] => Request[IO] = _.putHeaders(testHeader)
       BakerClient.resource(uri, executionContext, List(filter), Some(clientTLSConfig)).use { client =>
@@ -96,7 +96,7 @@ class BakerClientSpec extends BakeryFunSpec {
     }
 
     test("javadsl - connects with mutual tls and adds headers to requests") { context =>
-      val uri = s"http://localhost:${context.serverAddress.getPort}/"
+      val uri = s"https://localhost:${context.serverAddress.getPort}/"
       val testHeader = Header("X-Test", "Foo")
       val filter: java.util.function.Function[Request[IO], Request[IO]] = _.putHeaders(testHeader)
       for {
