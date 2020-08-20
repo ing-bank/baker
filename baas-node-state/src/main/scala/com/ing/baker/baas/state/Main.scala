@@ -39,6 +39,9 @@ object Main extends IOApp with LazyLogging {
     lazy val interactionClientKeystorePassword = config.getString("baas-component.interaction-client.https-keystore-password")
     lazy val interactionClientKeystoreType = config.getString("baas-component.interaction-client.https-keystore-type")
 
+    val loggingEnabled = config.getBoolean("baas-component.api-logging-enabled")
+    logger.info(s"Logging of API: ${loggingEnabled}  - MUST NEVER BE SET TO 'true' IN PRODUCTION")
+
     val eventSinkSettings = config.getConfig("baker.kafka-event-sink").as[KafkaEventSinkSettings]
 
     // Core dependencies
@@ -80,7 +83,7 @@ object Main extends IOApp with LazyLogging {
           callback(Right(()))
         }
       })
-      _ <- StateNodeService.resource(baker, hostname, serviceDiscovery)
+      _ <- StateNodeService.resource(baker, hostname, serviceDiscovery, loggingEnabled)
     } yield ()
 
     mainResource.use(_ => IO.never).as(ExitCode.Success)

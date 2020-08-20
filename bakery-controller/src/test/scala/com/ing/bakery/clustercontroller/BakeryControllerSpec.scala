@@ -88,6 +88,7 @@ object BakeryControllerSpec {
       )),
       config = None,
       secrets = None,
+      apiLoggingEnabled = true,
       sidecar = None
     )
   )
@@ -120,6 +121,7 @@ object BakeryControllerSpec {
       )),
       config = None,
       secrets = None,
+      apiLoggingEnabled = true,
       sidecar = Some(
         SidecarSpec(
           image = "baas-node-state:local",

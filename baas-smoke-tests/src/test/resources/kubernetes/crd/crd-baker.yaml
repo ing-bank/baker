@@ -59,6 +59,8 @@ spec:
               type: string
             secrets:
               type: string
+            apiLoggingEnabled:
+              type: boolean
             sidecar:
               required:
                 - image
