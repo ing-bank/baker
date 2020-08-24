@@ -7,8 +7,8 @@ import cats.effect.IO
 import com.ing.baker.baas.common.TLSConfig
 import com.ing.baker.baas.scaladsl
 import com.ing.baker.runtime.javadsl.{Baker => JavaBaker}
-import org.http4s.{Request, Uri}
 import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.{Request, Uri}
 
 import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters
@@ -25,7 +25,7 @@ object BakerClient {
     implicit val contextShift = IO.contextShift(ec)
     implicit val timer = IO.timer(ec)
 
-    val future = BlazeClientBuilder[IO](connectionPool, Option.apply(tlsConfig.orElse(null)).map(scaladsl.BakerClient.loadSSLContext))
+    val future = BlazeClientBuilder[IO](connectionPool, Option.apply(tlsConfig.orElse(null)).map(_.loadSSLContext))
       .resource
       .map(client => new scaladsl.BakerClient(client, Uri.unsafeFromString(hostname), filters.asScala.map(javaFun => req => javaFun.apply(req))))
       .allocated

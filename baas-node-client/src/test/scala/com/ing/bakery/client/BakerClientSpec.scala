@@ -4,7 +4,7 @@ import java.net.InetSocketAddress
 
 import cats.effect.concurrent.MVar
 import cats.effect.{IO, Resource}
-import com.ing.baker.baas.common.TLSConfig
+import com.ing.baker.baas.common.{KeystoreConfig, TLSConfig}
 import com.ing.baker.baas.javadsl
 import com.ing.baker.baas.scaladsl.BakerClient
 import com.ing.baker.runtime.common.RecipeInstanceMetadata
@@ -28,7 +28,10 @@ class BakerClientSpec extends BakeryFunSpec {
   case class Context(serverAddress: InetSocketAddress, receivedHeaders: IO[List[Header]])
 
   val serviceTLSConfig: TLSConfig =
-    TLSConfig("changeit", "test-certs/server.jks", "JKS")
+    TLSConfig(
+      KeystoreConfig("changeit", "test-certs/server.jks", "JKS"),
+      KeystoreConfig("changeit", "test-certs/server.jks", "JKS")
+    )
 
   val clientTLSConfig: TLSConfig =
     TLSConfig("changeit", "test-certs/client.jks", "JKS")
@@ -61,7 +64,7 @@ class BakerClientSpec extends BakeryFunSpec {
       }).orNotFound
     }
 
-    val sslConfig = BakerClient.loadSSLContext(serviceTLSConfig)
+    val sslConfig = serviceTLSConfig.loadSSLContext
     val sslParams = sslConfig.getDefaultSSLParameters
     sslParams.setNeedClientAuth(true)
     for {
