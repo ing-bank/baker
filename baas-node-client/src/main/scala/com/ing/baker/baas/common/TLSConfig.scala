@@ -1,11 +1,14 @@
 package com.ing.baker.baas.common
 
-/**
-  * Use this to configure the SSLContext of the client, you only need to provide the location and password of a keystore.
-  *
-  * @param password of the keystore
-  * @param keystorePath first the client tries to load it relative to the classpath resources and then absolute to the machine.
-  * @param keystoreType for example, JKS
-  */
-case class TLSConfig(password: String, keystorePath: String, keystoreType: String)
+import java.security.SecureRandom
 
+import javax.net.ssl.SSLContext
+
+case class TLSConfig(keyManagementKeystore: KeystoreConfig, trustManagementKeystore: KeystoreConfig) {
+
+  def loadSSLContext: SSLContext = {
+    val sslContext: SSLContext = SSLContext.getInstance("TLS")
+    sslContext.init(keyManagementKeystore.loadAsKeyManager.getKeyManagers, trustManagementKeystore.loadAsTrustManager.getTrustManagers, new SecureRandom)
+    sslContext
+  }
+}
