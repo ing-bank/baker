@@ -38,7 +38,7 @@ object Main extends IOApp with LazyLogging {
     lazy val interactionClientKeystorePassword = config.getString("bakery-component.interaction-client.https-keystore-password")
     lazy val interactionClientKeystoreType = config.getString("bakery-component.interaction-client.https-keystore-type")
 
-    val loggingEnabled = config.getBoolean("baas-component.api-logging-enabled")
+    val loggingEnabled = config.getBoolean("bakery-component.api-logging-enabled")
     logger.info(s"Logging of API: ${loggingEnabled}  - MUST NEVER BE SET TO 'true' IN PRODUCTION")
 
     val eventSinkSettings = config.getConfig("baker.kafka-event-sink").as[KafkaEventSinkSettings]
