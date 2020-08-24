@@ -34,10 +34,7 @@ class BakerClientSpec extends BakeryFunSpec {
     )
 
   val clientTLSConfig: TLSConfig =
-    TLSConfig(
-      KeystoreConfig("changeit", "test-certs/client.jks", "JKS"),
-      KeystoreConfig("changeit", "test-certs/client.jks", "JKS")
-    )
+    TLSConfig("changeit", "test-certs/client.jks", "JKS")
 
   /** Represents the "sealed resources context" that each test can use. */
   type TestContext = Context

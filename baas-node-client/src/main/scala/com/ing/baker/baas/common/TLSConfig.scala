@@ -12,3 +12,12 @@ case class TLSConfig(keyManagementKeystore: KeystoreConfig, trustManagementKeyst
     sslContext
   }
 }
+
+object TLSConfig {
+
+  def apply(password: String, keystorePath: String, keystoreType: String): TLSConfig =
+    TLSConfig(
+      KeystoreConfig(password, keystorePath, keystoreType),
+      KeystoreConfig(password, keystorePath, keystoreType)
+    )
+}
