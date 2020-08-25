@@ -1,9 +1,7 @@
 package com.ing.baker.baas.scaladsl
 
-import java.util.concurrent.Executors
-
-import cats.implicits._
-import cats.effect.{Blocker, ContextShift, IO, Resource, Timer}
+import cats.effect.{ContextShift, IO, Resource, Timer}
+import com.ing.baker.baas.common.TLSConfig
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, EventResolutions, InteractionInstance, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
@@ -11,44 +9,32 @@ import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.types.Value
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.{Decoder, DecodingFailure}
+import io.circe.Decoder
 import org.http4s.Method.{POST, _}
 import org.http4s._
 import org.http4s.circe._
+import org.http4s.client.Client
 import org.http4s.client.blaze._
 import org.http4s.client.dsl.io._
-import org.http4s.client.{Client, JavaNetClientBuilder}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object BakerClient {
 
-
-  /** Uses the global execution context, which is limited to the amount of available cores in the machine. */
-  //TODO rewrite this to a non blocking HTTP client that is usable in Java
-  def blocking(hostname: String): BakerClient = {
-    implicit val ec = ExecutionContext.Implicits.global
-    implicit val contextShift = IO.contextShift(ec)
-
-    val blockingPool = Executors.newFixedThreadPool(5)
-    val blocker = Blocker.liftExecutorService(blockingPool)
-    val httpClient: Client[IO] = JavaNetClientBuilder[IO](blocker).create
-
-    new BakerClient(httpClient, Uri.unsafeFromString(hostname))
-  }
-
   /** use method `use` of the Resource, the client will be acquired and shut down automatically each time
-   * the resulting `IO` is run, each time using the common connection pool.
-   */
-  def resource(hostname: Uri, pool: ExecutionContext)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
+    * the resulting `IO` is run, each time using the common connection pool.
+    */
+  def resource(hostname: Uri, pool: ExecutionContext, filters: Seq[Request[IO] => Request[IO]] = Seq.empty, tlsConfig: Option[TLSConfig] = None)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
     implicit val ev0 = pool
-    BlazeClientBuilder[IO](pool)
+    BlazeClientBuilder[IO](pool, tlsConfig.map(_.loadSSLContext))
       .resource
-      .map(new BakerClient(_, hostname))
+      .map(client => {
+        new BakerClient(client, hostname, filters)
+      })
   }
 }
 
-final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: ExecutionContext) extends ScalaBaker with LazyLogging {
+final class BakerClient(client: Client[IO], hostname: Uri, filters: Seq[Request[IO] => Request[IO]] = Seq.empty)(implicit ec: ExecutionContext) extends ScalaBaker with LazyLogging {
 
   val Root = hostname / "api" / "bakery"
 
@@ -66,7 +52,9 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
   }
 
   private def callRemoteBaker[A](request: IO[Request[IO]])(implicit decoder: Decoder[A]): Future[A] = {
-    client.expect(request)(jsonOf[IO, BakerResult]).map(r => {
+    client.expect(request.map({ request: Request[IO] =>
+      filters.foldLeft(request)((acc, filter) => filter(acc))
+    }))(jsonOf[IO, BakerResult]).map(r => {
       parse(r)(decoder)
     }).unsafeToFuture() flatMap {
       case Left(bakerException: BakerException) =>
