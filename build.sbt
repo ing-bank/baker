@@ -120,7 +120,7 @@ lazy val `baker-akka-runtime` = project.in(file("core/akka-runtime"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
   .settings(
-    moduleName := "baker-akka-runtime",
+    moduleName := "baker-runtime",
     libraryDependencies ++=
       compileDeps(
         akkaActor,
@@ -189,7 +189,7 @@ lazy val `baker-recipe-dsl` = project.in(file("core/recipe-dsl"))
 lazy val `baker-recipe-compiler` = project.in(file("core/recipe-compiler"))
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "baker-recipe-compiler",
+    moduleName := "baker-compiler",
     libraryDependencies ++=
       testDeps(scalaTest, scalaCheck, junitJupiter)
   )
