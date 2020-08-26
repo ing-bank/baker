@@ -29,7 +29,7 @@ object Main extends IOApp {
         sd <- Ref.of[IO, Boolean](false)
         webShopBaker = new WebShopBaker(baker, checkoutRecipeId)(actorSystem.dispatcher)
         memoryDumpPath = config.getString("service.memory-dump-path")
-        httpPort = config.getInt("baas-component.http-api-port")
+        httpPort = config.getInt("bakery-component.http-api-port")
         app = new WebShopService(webShopBaker, memoryDumpPath)
         resources = SystemResources(actorSystem, baker, app, httpPort, sd)
       } yield resources
