@@ -322,6 +322,7 @@ lazy val `bakery-interaction-spring` = project.in(file("bakery/interaction-sprin
   .dependsOn(`bakery-interaction`, `baker-recipe-dsl`)
 
 lazy val `bakery-controller` = project.in(file("bakery/controller"))
+  .settings(defaultModuleSettings)
   .settings(
     moduleName := "bakery-controller",
     libraryDependencies ++= Seq(
@@ -334,6 +335,8 @@ lazy val `bakery-controller` = project.in(file("bakery/controller"))
       http4s,
       http4sDsl,
       http4sServer,
+      akkaStream,
+      akkaProtobuf,
       kamon,
       kamonPrometheus
     ) ++ testDeps(
@@ -348,7 +351,6 @@ lazy val `bakery-controller` = project.in(file("bakery/controller"))
       play
     )
   )
-  .settings(defaultModuleSettings)
   .dependsOn(`baker-types`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`, `bakery-baker-client`, `bakery-interaction-protocol`)
 
 lazy val `bakery-controller-docker-generate` = project.in(file("docker/bakery-controller-docker-generate"))
