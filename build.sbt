@@ -56,6 +56,8 @@ val dependencyOverrideSettings = Seq(
   dependencyOverrides ++= Seq(
     catsCore,
     akkaActor,
+    akkaStream,
+    akkaProtobuf,
     jnrConstants
   )
 )

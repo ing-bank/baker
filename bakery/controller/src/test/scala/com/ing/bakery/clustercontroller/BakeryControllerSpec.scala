@@ -133,7 +133,7 @@ object BakeryControllerSpec {
             "POD_IP" -> "@status.podIP",
             "CLUSTER_DNS_SUFFIX" -> ".test.local"
           )),
-          configVolumeMountPath =  Some("/home/app/config"),
+          configVolumeMountPath = Some("/home/app/config"),
           readinessProbe = Some(skuber.Probe(
             action = skuber.HTTPGetAction(
               port = Right("8443"),
@@ -183,7 +183,7 @@ object BakeryControllerSpec {
       "sidecar.readinessProbe.path" -> "/metrics",
       "sidecar.environment.POD_IP" -> "@status.podIP",
       "sidecar.environment.CLUSTER_DNS_SUFFIX" -> ".test.local"
-  )
+    )
   )
 
 }
@@ -193,7 +193,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
   describe("Interactions Controller (CRDs)") {
 
     test("Creates interactions (CRDs)") { context =>
-      context.interactionController.use( _ =>
+      context.interactionController.use(_ =>
         for {
           _ <- context.kubeApiServer.expectCreationOf("expectations/interaction-deployment.json", ResourcePath.DeploymentsPath)
           _ <- context.kubeApiServer.expectCreationOf("expectations/interaction-service.json", ResourcePath.ServicesPath, context.adaptHttpPortToMockServerPort)
@@ -211,7 +211,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
     }
 
     test("Creates interactions (With already previously created components)") { context =>
-      context.interactionController.use( _ =>
+      context.interactionController.use(_ =>
         for {
           _ <- context.kubeApiServer.expectCreationOfAndReport409(ResourcePath.DeploymentsPath)
           _ <- context.kubeApiServer.expectCreationOfAndReport409(ResourcePath.ServicesPath)
@@ -230,7 +230,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
     }
 
     test("Deletes interactions (CRDs)") { context =>
-      context.interactionController.use( _ =>
+      context.interactionController.use(_ =>
         for {
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("interactions-localhost", ResourcePath.ConfigMapsPath))
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("localhost", ResourcePath.DeploymentsPath))
@@ -250,7 +250,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
     }
 
     test("Updates interactions (CRDs)") { context =>
-      context.interactionController.use( _ =>
+      context.interactionController.use(_ =>
         for {
           _ <- context.kubeApiServer.expectUpdateOf("expectations/interaction-deployment.json", ResourcePath.Named("localhost", ResourcePath.DeploymentsPath))
           _ <- context.kubeApiServer.updateInteractions(interactionResource)
@@ -283,7 +283,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
     }
 
     test("Deletes interactions (Config Maps)") { context =>
-      context.interactionControllerConfigMaps.use( _ =>
+      context.interactionControllerConfigMaps.use(_ =>
         for {
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("localhost-manifest", ResourcePath.ConfigMapsPath))
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("localhost", ResourcePath.DeploymentsPath))
@@ -303,7 +303,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
     }
 
     test("Updates interactions (Config Maps)") { context =>
-      context.interactionControllerConfigMaps.use( _ =>
+      context.interactionControllerConfigMaps.use(_ =>
         for {
           _ <- context.kubeApiServer.expectUpdateOf("expectations/interaction-deployment.json", ResourcePath.Named("localhost", ResourcePath.DeploymentsPath))
           _ <- context.kubeApiServer.updateConfigMapFor("interactions", interactionConfigMapResource)
@@ -318,7 +318,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
   describe("Bakers Controller (CRDs)") {
 
     test("Creates state nodes (CRDs)") { context =>
-      context.bakerController.use( _ =>
+      context.bakerController.use(_ =>
         for {
           _ <- context.kubeApiServer.expectCreationOf("expectations/baker-deployment.json", ResourcePath.DeploymentsPath)
           _ <- context.kubeApiServer.expectCreationOf("expectations/baker-service.json", ResourcePath.ServicesPath, context.adaptHttpPortToMockServerPort)
@@ -334,7 +334,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
     }
 
     test("Creates state nodes with sidecars (CRDs)") { context =>
-      context.bakerController.use( _ =>
+      context.bakerController.use(_ =>
         for {
           _ <- context.kubeApiServer.expectCreationOf("expectations/baker-deployment-sidecar.json", ResourcePath.DeploymentsPath)
           _ <- context.kubeApiServer.expectCreationOf("expectations/baker-service.json", ResourcePath.ServicesPath, context.adaptHttpPortToMockServerPort)
@@ -351,7 +351,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
 
 
     test("Creates state nodes (With already created components)") { context =>
-      context.bakerController.use( _ =>
+      context.bakerController.use(_ =>
         for {
           _ <- context.kubeApiServer.expectCreationOfAndReport409(ResourcePath.DeploymentsPath)
           _ <- context.kubeApiServer.expectCreationOfAndReport409(ResourcePath.ServicesPath)
@@ -367,7 +367,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
     }
 
     test("Deletes state nodes (CRDs)") { context =>
-      context.bakerController.use( _ =>
+      context.bakerController.use(_ =>
         for {
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("RecipeOne-manifest", ResourcePath.ConfigMapsPath))
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("RecipeOne", ResourcePath.DeploymentsPath))
@@ -387,7 +387,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
     }
 
     test("Updates state nodes (CRDs)") { context =>
-      context.bakerController.use( _ =>
+      context.bakerController.use(_ =>
         for {
           _ <- context.kubeApiServer.expectUpdateOf("expectations/baker-creation-recipes.json", ResourcePath.Named("RecipeOne-manifest", ResourcePath.ConfigMapsPath))
           _ <- context.kubeApiServer.expectUpdateOf("expectations/baker-deployment.json", ResourcePath.Named("RecipeOne", ResourcePath.DeploymentsPath))
@@ -404,7 +404,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
   describe("Bakers Controller (Config Maps)") {
 
     test("Creates state nodes (Config Maps)") { context =>
-      context.bakerControllerConfigMaps.use( _ =>
+      context.bakerControllerConfigMaps.use(_ =>
         for {
           _ <- context.kubeApiServer.expectCreationOf("expectations/baker-deployment.json", ResourcePath.DeploymentsPath)
           _ <- context.kubeApiServer.expectCreationOf("expectations/baker-service.json", ResourcePath.ServicesPath, context.adaptHttpPortToMockServerPort)
@@ -420,7 +420,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
     }
 
     test("Creates state nodes with sidecar (Config Maps)") { context =>
-      context.bakerControllerConfigMaps.use( _ =>
+      context.bakerControllerConfigMaps.use(_ =>
         for {
           _ <- context.kubeApiServer.expectCreationOf("expectations/baker-deployment-sidecar.json", ResourcePath.DeploymentsPath)
           _ <- context.kubeApiServer.expectCreationOf("expectations/baker-service.json", ResourcePath.ServicesPath, context.adaptHttpPortToMockServerPort)
@@ -435,7 +435,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
       )
     }
     test("Deletes state nodes (Config Maps)") { context =>
-      context.bakerControllerConfigMaps.use( _ =>
+      context.bakerControllerConfigMaps.use(_ =>
         for {
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("RecipeOne-manifest", ResourcePath.ConfigMapsPath))
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("RecipeOne", ResourcePath.DeploymentsPath))
@@ -455,7 +455,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
     }
 
     test("Updates state nodes (Config Maps)") { context =>
-      context.bakerControllerConfigMaps.use( _ =>
+      context.bakerControllerConfigMaps.use(_ =>
         for {
           _ <- context.kubeApiServer.expectUpdateOf("expectations/baker-creation-recipes.json", ResourcePath.Named("RecipeOne-manifest", ResourcePath.ConfigMapsPath))
           _ <- context.kubeApiServer.expectUpdateOf("expectations/baker-deployment.json", ResourcePath.Named("RecipeOne", ResourcePath.DeploymentsPath))
@@ -468,15 +468,16 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
       )
     }
   }
+
   case class Context(
-    kubeApiServer: KubeApiServer,
-    remoteInteraction: RemoteInteraction,
-    adaptHttpPortToMockServerPort: String => String,
-    bakerController: Resource[IO, Unit],
-    interactionController: Resource[IO, Unit],
-    bakerControllerConfigMaps: Resource[IO, Unit],
-    interactionControllerConfigMaps: Resource[IO, Unit]
-  )
+                      kubeApiServer: KubeApiServer,
+                      remoteInteraction: RemoteInteraction,
+                      adaptHttpPortToMockServerPort: String => String,
+                      bakerController: Resource[IO, Unit],
+                      interactionController: Resource[IO, Unit],
+                      bakerControllerConfigMaps: Resource[IO, Unit],
+                      interactionControllerConfigMaps: Resource[IO, Unit]
+                    )
 
   /** Represents the "sealed resources context" that each test can use. */
   type TestContext = Context
@@ -506,27 +507,32 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
             |  stdout-loglevel = "OFF"
             |  loglevel = "OFF"
             |}
-            |""".stripMargin)) }
+            |""".stripMargin))
+      }
       stopActorSystem = (system: ActorSystem) => IO.fromFuture(IO {
-        system.terminate().flatMap(_ => system.whenTerminated) }).void
+        system.terminate().flatMap(_ => system.whenTerminated)
+      }).void
       system <- Resource.make(makeActorSystem)(stopActorSystem)
-      materializer = ActorMaterializer()(system)
-      k8s: KubernetesClient = skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system, materializer)
+      k8s: KubernetesClient = {
+        implicit val sys = system
+        skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))
+      }
 
     } yield {
       implicit val as: ActorSystem = system
-      implicit val mat: Materializer = materializer
+      import InteractionResource.interactionResourceFormat
+      import InteractionResource.resourceDefinitionInteractionResource
+
       val interactionController =
-        Resource.liftF(kubeApiServer.noNewInteractionEvents).flatMap( _ =>
-          new InteractionController(executionContext).watch(k8s)(contextShift, timer, system, materializer, InteractionResource.interactionResourceFormat, InteractionResource.resourceDefinitionInteractionResource))
+        Resource.liftF(kubeApiServer.noNewInteractionEvents).flatMap(_ => new InteractionController(executionContext).watch(k8s))
       val bakerController =
-        Resource.liftF(kubeApiServer.noNewBakerEvents).flatMap( _ =>
+        Resource.liftF(kubeApiServer.noNewBakerEvents).flatMap(_ =>
           new BakerController().watch(k8s))
       val interactionControllerConfigMaps =
-        Resource.liftF(kubeApiServer.noNewConfigMapEventsFor("interactions")).flatMap( _ =>
+        Resource.liftF(kubeApiServer.noNewConfigMapEventsFor("interactions")).flatMap(_ =>
           new InteractionController(executionContext).fromConfigMaps(InteractionResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "interactions")))
       val bakerControllerConfigMaps =
-        Resource.liftF(kubeApiServer.noNewConfigMapEventsFor("bakers")).flatMap( _ =>
+        Resource.liftF(kubeApiServer.noNewConfigMapEventsFor("bakers")).flatMap(_ =>
           new BakerController().fromConfigMaps(BakerResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "bakers")))
 
       Context(
