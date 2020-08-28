@@ -171,11 +171,9 @@ trait BakerRuntimeTestBase
          |
          |  actor.provider = "akka.cluster.ClusterActorRefProvider"
          |
-         |  remote {
-         |    netty.tcp {
-         |      hostname = localhost
-         |      port = $port
-         |    }
+         |  remote.artery {
+         |    canonical.hostname = localhost
+         |    canonical.port = $port
          |  }
          |}
          |
