@@ -134,7 +134,6 @@ lazy val `baker-akka-runtime` = project.in(file("core/akka-runtime"))
         akkaClusterBoostrap,
         akkaDiscovery,
         akkaSlf4j,
-        akkaInmemoryJournal,
         ficusConfig,
         catsCore,
         catsEffect,
@@ -143,6 +142,7 @@ lazy val `baker-akka-runtime` = project.in(file("core/akka-runtime"))
         slf4jApi,
         scalaLogging
       ) ++ testDeps(
+        akkaInmemoryJournal,
         akkaStream,
         akkaTestKit,
         akkaMultiNodeTestkit,
@@ -322,7 +322,6 @@ lazy val `bakery-interaction-spring` = project.in(file("bakery/interaction-sprin
   .dependsOn(`bakery-interaction`, `baker-recipe-dsl`)
 
 lazy val `bakery-controller` = project.in(file("bakery/controller"))
-  .settings(defaultModuleSettings)
   .settings(
     moduleName := "bakery-controller",
     libraryDependencies ++= Seq(
@@ -349,6 +348,7 @@ lazy val `bakery-controller` = project.in(file("bakery/controller"))
       play
     )
   )
+  .settings(defaultModuleSettings)
   .dependsOn(`baker-types`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`, `bakery-baker-client`, `bakery-interaction-protocol`)
 
 lazy val `bakery-controller-docker-generate` = project.in(file("docker/bakery-controller-docker-generate"))
