@@ -71,5 +71,5 @@ steps:
   - script: bash <(curl -s https://codecov.io/bash)
     displayName: 'Updating code coverage report'
 
-  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project baas-interaction-example-make-payment-and-ship-items; test; project baas-interaction-example-reserve-items; test; project baas-client-example; test; project baas-kafka-listener-example; test"
+  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project bakery-interaction-example-make-payment-and-ship-items; test; project bakery-interaction-example-reserve-items; test; project bakery-client-example; test; project bakery-kafka-listener-example; test"
     displayName: 'Building and testing examples'
