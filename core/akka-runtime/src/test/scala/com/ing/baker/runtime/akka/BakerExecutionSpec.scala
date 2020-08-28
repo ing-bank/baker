@@ -74,8 +74,9 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           }
         }
         _ <- setupActorSystem.terminate()
-      } yield assert(exception.getMessage contains "akka.discovery.kubernetes-api.class must contain field `class` that is a FQN of a `akka.discovery.ServiceDiscovery` implementation")
+      } yield assert(exception.getMessage contains "akka.discovery.kubernetes-api.class must point to a FQN of a `akka.discovery.ServiceDiscovery` implementation")
     }
+
 
     "use akka seed node list" in {
       val config = ConfigFactory.parseString(

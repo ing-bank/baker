@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.actor.process_instance
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, Materializer}
 import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.TestProbe
 import akka.util.Timeout
@@ -26,8 +26,6 @@ class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") 
 
   private implicit val akkaTimout: Timeout = Timeout(2 seconds)
   private val timeOut: Duration = akkaTimout.duration
-
-  private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   private implicit val ec: ExecutionContext = system.dispatcher
 

@@ -46,8 +46,6 @@ object Main extends IOApp with LazyLogging {
     // Core dependencies
     implicit val system: ActorSystem =
       ActorSystem("bakery-baker-system", config)
-    implicit val materializer: Materializer =
-      ActorMaterializer()
     implicit val connectionPool: ExecutionContext =
       ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
     val hostname: InetSocketAddress =
