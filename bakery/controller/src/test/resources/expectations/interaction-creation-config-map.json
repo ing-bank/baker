@@ -1,0 +1,14 @@
+{
+  "kind" : "ConfigMap",
+  "apiVersion" : "v1",
+  "metadata" : {
+    "name" : "localhost-manifest",
+    "labels" : {
+      "bakery-manifest" : "interaction"
+    }
+  },
+  "data" : {
+    "address" : "http://localhost:{{http-api-port}}/",
+    "interfaces" : "CkMKD2ludGVyYWN0aW9uLW9uZRICCBEaLHkwWnNiNHNPc2I5dTNURmF0dFk3UXBIUElWeU5kQjlLNGs1WlBhbHpJMWM9"
+  }
+}
