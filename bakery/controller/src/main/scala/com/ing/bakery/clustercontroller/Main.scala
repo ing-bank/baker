@@ -25,8 +25,6 @@ object Main extends IOApp with LazyLogging {
 
     implicit val system: ActorSystem =
       ActorSystem("bakery-baker-system")
-    implicit val materializer: Materializer =
-      ActorMaterializer()
     val k8s: KubernetesClient =
       skuber.k8sInit
     implicit val connectionPool =

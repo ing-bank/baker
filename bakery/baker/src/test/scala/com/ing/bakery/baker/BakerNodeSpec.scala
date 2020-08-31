@@ -4,17 +4,14 @@ import java.net.InetSocketAddress
 import java.util.UUID
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import cats.effect.{IO, Resource}
-import com.ing.bakery.mocks.{KubeApiServer, RemoteInteraction}
-import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
-import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
-import com.ing.bakery.recipe.ItemReservationRecipe
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
+import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
+import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
 import com.ing.bakery.recipe.{Interactions, ItemReservationRecipe}
 import com.ing.bakery.scaladsl.BakerClient
 import com.ing.bakery.testing.BakeryFunSpec
@@ -78,7 +75,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
     }
   }
 
-  describe("Bakery State Node") {
+  describe("Bakery Baker") {
 
     test("Recipe management") { context =>
       for {
@@ -194,7 +191,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
         _ <- context.remoteInteraction.didNothing
       } yield {
         result shouldBe Some(BakerException.IllegalEventException("No event with name 'non-existent' found in recipe 'ItemReservation.recipe'"))
-        serverState.events.map(_.name) should not contain("OrderPlaced")
+        serverState.events.map(_.name) should not contain ("OrderPlaced")
       }
     }
 
@@ -365,11 +362,16 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
       stopActorSystem = (system: ActorSystem) => IO.fromFuture(IO {
         system.terminate().flatMap(_ => system.whenTerminated) }).void
       system <- Resource.make(makeActorSystem)(stopActorSystem)
-      materializer = ActorMaterializer()(system)
 
-      k8s: KubernetesClient = skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system, materializer)
+      k8s: KubernetesClient = {
+        implicit val sys = system
+        skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))
+      }
       httpClient <- BlazeClientBuilder[IO](executionContext).resource
-      serviceDiscovery <- ServiceDiscovery.resource(httpClient, k8s)(contextShift, timer, system, materializer)
+      serviceDiscovery <- {
+        implicit val sys = system
+        ServiceDiscovery.resource(httpClient, k8s)
+      }
       eventListener = new EventListener()
       baker = AkkaBaker
         .withConfig(AkkaBakerConfig.localDefault(system).copy(
