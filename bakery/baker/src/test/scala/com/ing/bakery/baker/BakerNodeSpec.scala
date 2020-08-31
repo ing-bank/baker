@@ -75,7 +75,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
     }
   }
 
-  describe("Bakery State Node") {
+  describe("Bakery Baker") {
 
     test("Recipe management") { context =>
       for {

@@ -261,7 +261,8 @@ lazy val `bakery-baker` = project.in(file("bakery/baker"))
       scalaTest,
       mockServer,
       circe,
-      circeGeneric
+      circeGeneric,
+      akkaInmemoryJournal
     ),
     dependencyOverrides ++= Seq(
       play
