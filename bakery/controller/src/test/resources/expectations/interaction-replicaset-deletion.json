@@ -1,0 +1,121 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "ReplicaSetList",
+  "metadata": {
+    "selfLink": "/apis/extensions/v1beta1/namespaces/d2e15589-100b-471a-b45e-d122e3b98a74/replicasets",
+    "resourceVersion": "488105"
+  },
+  "items": [
+    {
+      "metadata": {
+        "name": "reserve-items-57dddb68f7",
+        "namespace": "d2e15589-100b-471a-b45e-d122e3b98a74",
+        "uid": "c27f3a8f-f9b2-47ca-aa0a-7e731523d79d",
+        "selfLink": "/apis/extensions/v1beta1/namespaces/d2e15589-100b-471a-b45e-d122e3b98a74/replicasets/reserve-items-57dddb68f7",
+        "resourceVersion": "488018",
+        "creationTimestamp": "2020-04-29T10:05:45Z",
+        "labels": {
+          "interaction": "reserve-items",
+          "pod-template-hash": "57dddb68f7"
+        },
+        "annotations": {
+          "deployment.kubernetes.io/desired-replicas": "3",
+          "deployment.kubernetes.io/max-replicas": "4",
+          "deployment.kubernetes.io/revision": "1"
+        },
+        "ownerReferences": [
+          {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "name": "reserve-items",
+            "uid": "7ee8c5f4-0feb-42a2-ba3e-988329f8ab5c",
+            "controller": true,
+            "blockOwnerDeletion": true
+          }
+        ],
+        "generation": 2
+      },
+      "spec": {
+        "replicas": 3,
+        "selector": {
+          "matchLabels": {
+            "interaction": "reserve-items",
+            "pod-template-hash": "57dddb68f7"
+          }
+        },
+        "template": {
+          "metadata": {
+            "name": "reserve-items",
+            "labels": {
+              "interaction": "reserve-items",
+              "pod-template-hash": "57dddb68f7"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "reserve-items",
+                "image": "bakery-interaction-example-reserve-items:1.0.0",
+                "ports": [
+                  {
+                    "containerPort": 8080,
+                    "protocol": "TCP",
+                    "name": "http-api"
+                  }
+                ],
+                "env": [
+                  {
+                    "name": "JAVA_TOOL_OPTIONS",
+                    "value": "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0"
+                  }
+                ],
+                "resources": {
+                  "requests": {
+                    "cpu": "200m",
+                    "memory": "256M"
+                  }
+                },
+                "livenessProbe": {
+                  "httpGet": {
+                    "port": "http-api",
+                    "path": "/api/bakery/health",
+                    "scheme": "HTTP"
+                  },
+                  "initialDelaySeconds": 15,
+                  "timeoutSeconds": 10,
+                  "periodSeconds": 10,
+                  "successThreshold": 1,
+                  "failureThreshold": 3
+                },
+                "readinessProbe": {
+                  "httpGet": {
+                    "port": "http-api",
+                    "path": "/api/bakery/health",
+                    "scheme": "HTTP"
+                  },
+                  "initialDelaySeconds": 15,
+                  "timeoutSeconds": 10,
+                  "periodSeconds": 10,
+                  "successThreshold": 1,
+                  "failureThreshold": 3
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "imagePullPolicy": "IfNotPresent"
+              }
+            ],
+            "restartPolicy": "Always",
+            "terminationGracePeriodSeconds": 30,
+            "dnsPolicy": "ClusterFirst",
+            "securityContext": {},
+            "schedulerName": "default-scheduler"
+          }
+        }
+      },
+      "status": {
+        "replicas": 3,
+        "fullyLabeledReplicas": 3
+      }
+    }
+  ]
+}
