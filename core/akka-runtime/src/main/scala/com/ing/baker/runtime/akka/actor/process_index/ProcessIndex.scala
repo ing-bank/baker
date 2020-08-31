@@ -90,7 +90,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   // if there is a retention check interval defined we schedule a recurring message
   retentionCheckInterval.foreach { interval =>
-    context.system.scheduler.schedule(interval, interval, context.self, CheckForProcessesToBeDeleted)
+    context.system.scheduler.scheduleAtFixedRate(interval, interval, context.self, CheckForProcessesToBeDeleted)
   }
 
   def updateCache() = {

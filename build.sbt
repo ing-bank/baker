@@ -56,6 +56,8 @@ val dependencyOverrideSettings = Seq(
   dependencyOverrides ++= Seq(
     catsCore,
     akkaActor,
+    akkaStream,
+    akkaProtobuf,
     jnrConstants
   )
 )
@@ -132,7 +134,6 @@ lazy val `baker-akka-runtime` = project.in(file("core/akka-runtime"))
         akkaClusterBoostrap,
         akkaDiscovery,
         akkaSlf4j,
-        akkaInmemoryJournal,
         ficusConfig,
         catsCore,
         catsEffect,
@@ -141,6 +142,7 @@ lazy val `baker-akka-runtime` = project.in(file("core/akka-runtime"))
         slf4jApi,
         scalaLogging
       ) ++ testDeps(
+        akkaInmemoryJournal,
         akkaStream,
         akkaTestKit,
         akkaMultiNodeTestkit,
@@ -259,7 +261,8 @@ lazy val `bakery-baker` = project.in(file("bakery/baker"))
       scalaTest,
       mockServer,
       circe,
-      circeGeneric
+      circeGeneric,
+      akkaInmemoryJournal
     ),
     dependencyOverrides ++= Seq(
       play
@@ -333,6 +336,8 @@ lazy val `bakery-controller` = project.in(file("bakery/controller"))
       http4s,
       http4sDsl,
       http4sServer,
+      akkaStream,
+      akkaProtobuf,
       kamon,
       kamonPrometheus
     ) ++ testDeps(
