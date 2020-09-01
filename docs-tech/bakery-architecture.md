@@ -58,16 +58,68 @@ to the exposed baker clusters. One instance of the client is created per baker c
 
 ![Kubernetes diagram](./Bakery%20Kubernetes%20Architecture.png)
 
-# Bakery Controller
+## Bakery Controller
 
-# Baker and Interaction CRDs
+The Bakery Controller follows Kubernete's general architecture pattern called [Controller Pattern](https://kubernetes.io/docs/concepts/architecture/controller/)
+It is deployed as a single pod which uses Kubernete's API to watch the Baker and Interaction CRDs, which have the
+specification of the Baker clusters and Interactions to be deployed. The Baker Controller constantly watches for creation,
+changes and deletions of such CRDs, so that the state of the namespace always matches the textual specifications.
 
-## Baker Manifests
+The Bakery Controller also creates Kubernetes ConfigMaps which we call "Manifests", which are outcome of the creation of
+a CRD, these are config maps used as internal mechanisms to expose semantic data about the deployed components, more of
+that in the following section.
 
-## Interaction Manifests
+## Baker and Interaction CRDs
 
-# Baker Akka Clusters
+The 2 CRDs that we have contain all the requirements of the components to be deployed, like the amount of cluster nodes 
+/ replicas, the encoded recipes to be added to the bakers, or the docker images to be used for interactions.
 
-# Interactions
+The Bakery Controller can be configured to use ConfigMaps instead of CRDs in case you are not able to use CRDs in your cluster
+by adding `bakery-controller.use-crds = false` to the `application.conf` of the controller.
 
-# Configuration mounting
+An example of CRD can be found [here for a baker](../bakery-integration-tests/src/test/resources/kubernetes/crd/baker-webshop.yaml)
+and [here for an interaction](../bakery-integration-tests/src/test/resources/kubernetes/crd/interactions-example.yaml)
+
+Also the specification of the CRDs can be found [here for Baker](../bakery-integration-tests/src/test/resources/kubernetes/crd/crd-baker.yaml)
+and [here for Interaction](../bakery-integration-tests/src/test/resources/kubernetes/crd/crd-interaction.yaml)
+
+### Baker Manifests
+
+The Baker manifest is created by the Bakery Controller from a Baker CRD, and then uses it to mount the recipes that go
+into the Baker Clusters, the naming goes `<name-in-the-crd>-manifest`, and it can be used also to inspect the recipes
+deployed in the namespace.
+
+### Interaction Manifests
+
+The Interaction manifest is created by the Bakery Controller after deploying an interaction from the specification of an
+Interaction CRD, the controller uses the HTTP api of the deployed interaction to request the data structure that specifies
+all the interfaces of the interactions within the Interaction replicas, it aggregates this data structures into the manifest,
+and finally the Baker Clusters can use the Kubernetes API to query for all available interactions in the namespace, effectively
+working as a service discovery mechanism.
+
+## Baker Akka Clusters
+
+When a Baker CRD is created in the namespace, the Bakery Controller creates a Kubernetes Deployment and Service, the deployed
+Pods contain an Akka cluster which keep the state of the baker recipe instances and persists them into a Cassandra cluster, 
+it exposes the Baker API through HTTP, which is accessible from the Kubernetes Service, and it uses the Kubernetes API to discover
+available interactions in the namespace by querying for ConfigMaps with the corresponding interaction manifest labels.
+
+## Interactions
+
+When an Interaction CRD is created in the namespace, the Bakery Controller creates a Kubernetes Deployment and Service,
+from which the deployed Pods use the docker image specified at the Interaction CRD, such image must be built using the
+bakery interaction library, which adds the required http api layer to the interaction implementation from which the
+Bakery Controller can extract the implementations interface for the manifest and from which the Baker Cluster can request 
+the execution of an interaction given some ingredients.
+
+## Configuration mounting
+
+As part of the CRDs of both Bakers and Interactions, one can add the name of a secret and/or a configmap to mount configuration
+within the Bakers and Interaction pods, this is used for example to configure per environment cassandra connectivity or 
+specific configuration required by the interaction implementations. Alternatively the CRD interface allows for environment 
+variable configuration at the CRD level.
+
+## Baker Clients
+
+Baker clients can either consume the HTTP api or use our published bakery-baker-client library to use a baker scala/java 
+api as you would normally use the baker library.
