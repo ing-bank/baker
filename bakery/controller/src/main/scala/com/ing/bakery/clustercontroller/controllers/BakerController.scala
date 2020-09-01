@@ -95,7 +95,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         ))
         .exposePort(managementPort)
         .exposePort(Container.Port(
-          name = "app-metrics",
+          name = "prometheus",
           containerPort = 9095,
           protocol = Protocol.TCP
         ))
@@ -225,9 +225,9 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
           targetPort = Some(Right("http-api"))
         )),
         Some(Service.Port(
-          name = "app-metrics",
+          name = "prometheus",
           port = 9095,
-          targetPort = Some(Right("app-metrics"))
+          targetPort = Some(Right("prometheus"))
         )),
         bakerResource.spec.sidecar.map(_ =>
           Service.Port(
