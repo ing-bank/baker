@@ -1,4 +1,4 @@
-# Bakery Architecture
+# Bakery High Level Architecture
 
 ![Architecture diagram](./Bakery%20Architecture.png)
 
@@ -52,3 +52,22 @@ and are pure computations, which traditionally are called "sieves".
 A library to be included within the consumers of bakery, to ease the integration of old and new baker users. 
 It exposes the traditional baker java and scala api, but within its implementation it requests through http 
 to the exposed baker clusters. One instance of the client is created per baker cluster.
+
+
+# Bakery Kubernetes Implementation
+
+![Kubernetes diagram](./Bakery%20Kubernetes%20Architecture.png)
+
+# Bakery Controller
+
+# Baker and Interaction CRDs
+
+## Baker Manifests
+
+## Interaction Manifests
+
+# Baker Akka Clusters
+
+# Interactions
+
+# Configuration mounting
