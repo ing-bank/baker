@@ -108,7 +108,7 @@ object Dependencies {
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.12.4"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.13.0"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
 
