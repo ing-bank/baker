@@ -7,7 +7,7 @@ object Dependencies {
   val akkaManagementVersion = "1.0.8"
   val http4sVersion = "0.21.7"
   val circeVersion = "0.13.0"
-  val kamonAkkaVersion = "2.1.4"
+  val kamonAkkaVersion = "2.1.6"
 
   val jvmV = "1.8"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
@@ -108,7 +108,7 @@ object Dependencies {
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.12.4"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.13.0"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
 
