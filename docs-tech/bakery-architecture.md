@@ -71,7 +71,7 @@ that in the following section.
 
 ## Baker and Interaction CRDs
 
-The 2 CRDs that we have contain all the requirements of the components to be deployed, like the amount of cluster nodes 
+The 2 CRDs that we have contain all the requirements of the components to be deployed, like the number of cluster nodes 
 / replicas, the encoded recipes to be added to the bakers, or the docker images to be used for interactions.
 
 The Bakery Controller can be configured to use ConfigMaps instead of CRDs in case you are not able to use CRDs in your cluster
@@ -85,16 +85,26 @@ and [here for Interaction](../bakery-integration-tests/src/test/resources/kubern
 
 ### Baker Manifests
 
-The Baker manifest is created by the Bakery Controller from a Baker CRD, and then uses it to mount the recipes that go
-into the Baker Clusters, the naming goes `<name-in-the-crd>-manifest`, and it can be used also to inspect the recipes
-deployed in the namespace.
+The Baker manifest is a Kubernetes ConfigMap created by the Bakery Controller from a Baker CRD. 
+
+The controller uses the manifest to mount the recipes that go into the Baker clusters. For every Baker manifest there
+exists one Baker cluster. 
+
+The naming pattern of the manifests is: `<name-in-the-crd>-manifest`, and they are labeled `bakery-manifest: recipes`
+
+It is possible to use them to inspect the recipes deployed in the namespace.
 
 ### Interaction Manifests
 
 The Interaction manifest is created by the Bakery Controller after deploying an interaction from the specification of an
-Interaction CRD, the controller uses the HTTP api of the deployed interaction to request the data structure that specifies
-all the interfaces of the interactions within the Interaction replicas, it aggregates this data structures into the manifest,
-and finally the Baker Clusters can use the Kubernetes API to query for all available interactions in the namespace, effectively
+Interaction CRD. 
+
+The controller uses the HTTP api of the deployed interaction to request the data structure that specifies
+all the interfaces of the interactions within the Interaction replicas to aggregate them into the 
+manifest. 
+
+The Baker clusters use the Kubernetes API to query for all available interactions in the namespace (by querying 
+configmaps with the label `bakery-manifest: interactions`), effectively 
 working as a service discovery mechanism.
 
 ## Baker Akka Clusters
@@ -109,7 +119,7 @@ available interactions in the namespace by querying for ConfigMaps with the corr
 When an Interaction CRD is created in the namespace, the Bakery Controller creates a Kubernetes Deployment and Service,
 from which the deployed Pods use the docker image specified at the Interaction CRD, such image must be built using the
 bakery interaction library, which adds the required http api layer to the interaction implementation from which the
-Bakery Controller can extract the implementations interface for the manifest and from which the Baker Cluster can request 
+Bakery Controller can extract the implementations interface for the manifest and from which the Baker cluster can request 
 the execution of an interaction given some ingredients.
 
 ## Configuration mounting
