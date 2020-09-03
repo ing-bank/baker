@@ -1,8 +1,4 @@
 package com.ing.baker.runtime.akka.actor.process_instance
-
-import cats.instances.list._
-import cats.instances.option._
-import cats.instances.try_._
 import cats.syntax.traverse._
 import com.ing.baker.petrinet.api.{Id, Marking, MultiSet}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._

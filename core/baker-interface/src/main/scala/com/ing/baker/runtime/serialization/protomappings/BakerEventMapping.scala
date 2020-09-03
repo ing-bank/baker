@@ -1,6 +1,4 @@
 package com.ing.baker.runtime.serialization.protomappings
-
-import cats.implicits._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.common.RejectReason

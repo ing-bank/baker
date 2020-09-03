@@ -1,7 +1,4 @@
 package com.ing.baker.runtime.akka.actor.recipe_manager
-
-import cats.instances.list._
-import cats.instances.try_._
 import cats.syntax.traverse._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._

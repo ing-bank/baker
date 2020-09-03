@@ -1,6 +1,4 @@
 package com.ing.bakery.clustercontroller.controllers
-
-import cats.implicits._
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.bakery.clustercontroller.MutualAuthKeystoreConfig
 import com.typesafe.scalalogging.LazyLogging

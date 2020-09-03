@@ -4,7 +4,6 @@ import java.io.File
 import java.nio.file.Files
 
 import cats.effect.{ContextShift, IO, Timer}
-import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.common.BakerException.NoSuchRecipeException

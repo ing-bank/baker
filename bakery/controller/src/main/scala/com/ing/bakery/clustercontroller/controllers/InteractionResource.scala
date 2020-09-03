@@ -1,6 +1,4 @@
 package com.ing.bakery.clustercontroller.controllers
-
-import cats.implicits._
 import com.ing.bakery.clustercontroller.controllers.Utils.FromConfigMapValidation
 import play.api.libs.functional.syntax.{unlift, _}
 import play.api.libs.json.{Format, JsPath}

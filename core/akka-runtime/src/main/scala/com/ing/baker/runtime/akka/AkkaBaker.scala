@@ -4,7 +4,6 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Address, Props}
 import akka.pattern.{FutureRef, ask}
 import akka.util.Timeout
 import cats.data.NonEmptyList
-import cats.implicits._
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor._

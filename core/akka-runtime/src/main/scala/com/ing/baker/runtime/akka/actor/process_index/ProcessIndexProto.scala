@@ -3,8 +3,6 @@ package com.ing.baker.runtime.akka.actor.process_index
 import java.util.concurrent.TimeUnit
 
 import akka.actor.{ActorRef, ActorRefProvider}
-import cats.instances.list._
-import cats.instances.try_._
 import cats.syntax.traverse._
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._

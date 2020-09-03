@@ -2,7 +2,6 @@ package com.ing.bakery.clustercontroller.controllers
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.{IO, Timer}
-import cats.implicits._
 import com.ing.bakery.clustercontroller.MutualAuthKeystoreConfig
 import com.ing.bakery.clustercontroller.controllers.BakerResource.SidecarSpec
 import skuber.{ConfigMap, Container, Resource}

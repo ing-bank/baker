@@ -6,7 +6,6 @@ import akka.stream.{KillSwitches, Materializer, UniqueKillSwitch}
 import akka.{Done, NotUsed}
 import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import cats.implicits._
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.akka.internal.InteractionManager
 import com.ing.baker.runtime.scaladsl.InteractionInstance

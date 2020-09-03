@@ -3,7 +3,6 @@ package com.ing.bakery.baker
 import java.net.InetSocketAddress
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import cats.implicits._
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EventInstance}
 import io.circe._

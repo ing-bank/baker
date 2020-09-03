@@ -6,7 +6,6 @@ import akka.pattern.ask
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import cats.data.{EitherT, OptionT}
 import cats.effect.IO
-import cats.instances.future._
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api._

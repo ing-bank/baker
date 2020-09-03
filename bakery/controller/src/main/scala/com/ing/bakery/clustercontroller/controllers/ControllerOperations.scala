@@ -5,7 +5,6 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source}
 import akka.stream.{KillSwitches, Materializer, UniqueKillSwitch}
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import cats.implicits._
 import com.ing.bakery.clustercontroller.controllers.Utils.FromConfigMapValidation
 import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json.Format

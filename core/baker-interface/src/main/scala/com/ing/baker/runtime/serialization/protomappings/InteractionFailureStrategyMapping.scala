@@ -1,8 +1,6 @@
 package com.ing.baker.runtime.serialization.protomappings
 
 import java.util.concurrent.TimeUnit
-
-import cats.implicits._
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
 import com.ing.baker.runtime.akka.actor.protobuf

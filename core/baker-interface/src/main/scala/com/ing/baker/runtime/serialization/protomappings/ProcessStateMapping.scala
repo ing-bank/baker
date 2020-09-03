@@ -1,6 +1,4 @@
 package com.ing.baker.runtime.serialization.protomappings
-
-import cats.implicits._
 import com.ing.baker.types.Value
 import com.ing.baker.runtime.akka.actor.{protobuf => proto}
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
