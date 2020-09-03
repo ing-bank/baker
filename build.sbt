@@ -133,6 +133,7 @@ lazy val `baker-akka-runtime` = project.in(file("core/akka-runtime"))
         akkaClusterSharding,
         akkaClusterBoostrap,
         akkaDiscovery,
+        akkaInmemoryJournal,
         akkaSlf4j,
         ficusConfig,
         catsCore,
@@ -142,7 +143,6 @@ lazy val `baker-akka-runtime` = project.in(file("core/akka-runtime"))
         slf4jApi,
         scalaLogging
       ) ++ testDeps(
-        akkaInmemoryJournal,
         akkaStream,
         akkaTestKit,
         akkaMultiNodeTestkit,
