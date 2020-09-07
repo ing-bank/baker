@@ -70,7 +70,7 @@ object Dependencies {
       ExclusionRule("com.fasterxml.jackson.datatype", "jackson-datatype-jsr310")
     )
 
-  val skuber = ("io.skuber" %% "skuber" % "2.5.0")
+  val skuber = ("io.skuber" %% "skuber" % "2.6.0")
     .excludeAll(
       ExclusionRule("org.yaml", "snakeyaml"),
       ExclusionRule("com.typesafe.play", "play-json"),
