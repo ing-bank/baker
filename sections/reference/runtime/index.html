@@ -1,38 +1,17 @@
 
 
 
-
 <!doctype html>
 <html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
-      <meta http-equiv="x-ua-compatible" content="ie=edge">
       
       
-      
-      
-        <meta name="lang:clipboard.copy" content="Copy to clipboard">
-      
-        <meta name="lang:clipboard.copied" content="Copied to clipboard">
-      
-        <meta name="lang:search.language" content="en">
-      
-        <meta name="lang:search.pipeline.stopwords" content="True">
-      
-        <meta name="lang:search.pipeline.trimmer" content="True">
-      
-        <meta name="lang:search.result.none" content="No matching documents">
-      
-        <meta name="lang:search.result.one" content="1 matching document">
-      
-        <meta name="lang:search.result.other" content="# matching documents">
-      
-        <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.0">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-5.5.12">
     
     
       
@@ -40,21 +19,18 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/application.0284f74d.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.4dd2dd8d.min.css">
       
       
     
-    
-      <script src="../../../assets/javascripts/modernizr.74668098.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
-        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
       
     
-    <link rel="stylesheet" href="../../../assets/fonts/material-icons.css">
     
     
       <link rel="stylesheet" href="../../../css/ing.css">
@@ -65,71 +41,73 @@
     
   </head>
   
+  
     <body dir="ltr">
   
-    <svg class="md-svg">
-      <defs>
-        
-        
-          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
-        
-      </defs>
-    </svg>
+    
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
-    
-      <a href="#the-akka-based-runtime" tabindex="1" class="md-skip">
-        Skip to content
-      </a>
-    
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#the-akka-based-runtime" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
     
       <header class="md-header" data-md-component="header">
-  <nav class="md-header-nav md-grid">
-    <div class="md-flex">
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="../../.." title="Baker" class="md-header-nav__button md-logo">
-          
-            <i class="md-icon"></i>
-          
-        </a>
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
-      </div>
-      <div class="md-flex__cell md-flex__cell--stretch">
-        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
-          
-            <span class="md-header-nav__topic">
-              Baker
-            </span>
-            <span class="md-header-nav__topic">
-              
-                The Akka Based Runtime
-              
-            </span>
-          
+  <nav class="md-header-nav md-grid" aria-label="Header">
+    <a href="../../.." title="Baker" class="md-header-nav__button md-logo" aria-label="Baker">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      
+        <div class="md-header-nav__ellipsis">
+          <span class="md-header-nav__topic md-ellipsis">
+            Baker
+          </span>
+          <span class="md-header-nav__topic md-ellipsis">
+            
+              The Akka Based Runtime
+            
+          </span>
         </div>
-      </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        
-          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
-          
+      
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
 <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
-      <label class="md-icon md-search__icon" for="__search"></label>
-      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
-        &#xE5CD;
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active">
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
       </button>
     </form>
     <div class="md-search__output">
       <div class="md-search__scrollwrap" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="result">
+        <div class="md-search-result" data-md-component="search-result">
           <div class="md-search-result__meta">
-            Type to start searching
+            Initializing search
           </div>
           <ol class="md-search-result__list"></ol>
         </div>
@@ -137,71 +115,56 @@
     </div>
   </div>
 </div>
+    
+    
+      <div class="md-header-nav__source">
         
-      </div>
-      
-        <div class="md-flex__cell md-flex__cell--shrink">
-          <div class="md-header-nav__source">
-            
-
-
-  
-
-<a href="https://github.com/ing-bank/baker/" title="Go to repository" class="md-source" data-md-source="github">
-  
-    <div class="md-source__icon">
-      <svg viewBox="0 0 24 24" width="24" height="24">
-        <use xlink:href="#__github" width="24" height="24"></use>
-      </svg>
-    </div>
-  
+<a href="https://github.com/ing-bank/baker/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
   <div class="md-source__repository">
     ing-bank/baker
   </div>
 </a>
-          </div>
-        </div>
-      
-    </div>
+      </div>
+    
   </nav>
 </header>
     
-    <div class="md-container">
+    <div class="md-container" data-md-component="container">
       
         
       
       
-      <main class="md-main">
-        <div class="md-main__inner md-grid" data-md-component="container">
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
           
             
               <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
-                    <nav class="md-nav md-nav--primary" data-md-level="0">
-  <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="../../.." title="Baker" class="md-nav__button md-logo">
+                    <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Baker" class="md-nav__button md-logo" aria-label="Baker">
       
-        <i class="md-icon"></i>
-      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
     </a>
     Baker
   </label>
   
     <div class="md-nav__source">
       
-
-
-  
-
-<a href="https://github.com/ing-bank/baker/" title="Go to repository" class="md-source" data-md-source="github">
-  
-    <div class="md-source__icon">
-      <svg viewBox="0 0 24 24" width="24" height="24">
-        <use xlink:href="#__github" width="24" height="24"></use>
-      </svg>
-    </div>
-  
+<a href="https://github.com/ing-bank/baker/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
   <div class="md-source__repository">
     ing-bank/baker
   </div>
@@ -253,13 +216,15 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
     
     <label class="md-nav__link" for="nav-4">
       Development Life Cycle
+      <span class="md-nav__icon md-icon"></span>
     </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+    <nav class="md-nav" aria-label="Development Life Cycle" data-md-level="1">
       <label class="md-nav__title" for="nav-4">
+        <span class="md-nav__icon md-icon"></span>
         Development Life Cycle
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -375,13 +340,15 @@
 
   <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5" checked>
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5" checked>
     
     <label class="md-nav__link" for="nav-5">
       Reference
+      <span class="md-nav__icon md-icon"></span>
     </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+    <nav class="md-nav" aria-label="Reference" data-md-level="1">
       <label class="md-nav__title" for="nav-5">
+        <span class="md-nav__icon md-icon"></span>
         Reference
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -444,13 +411,14 @@
 
   <li class="md-nav__item md-nav__item--active">
     
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
     
       
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
         The Akka Based Runtime
+        <span class="md-nav__icon md-icon"></span>
       </label>
     
     <a href="./" title="The Akka Based Runtime" class="md-nav__link md-nav__link--active">
@@ -458,25 +426,28 @@
     </a>
     
       
-<nav class="md-nav md-nav--secondary">
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
     
   
   
-    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#bakerakkaconfig-actorsystem-materializer" title="Baker.akka(config, actorSystem, materializer)" class="md-nav__link">
-    Baker.akka(config, actorSystem, materializer)
+  <a href="#bakerakkaconfig-actorsystem" class="md-nav__link">
+    Baker.akka(config, actorSystem)
   </a>
   
-    <nav class="md-nav">
+    <nav class="md-nav" aria-label="Baker.akka(config, actorSystem)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#advantages-of-the-cluster-mode" title="Advantages of the Cluster Mode" class="md-nav__link">
+  <a href="#advantages-of-the-cluster-mode" class="md-nav__link">
     Advantages of the Cluster Mode
   </a>
   
@@ -488,71 +459,71 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#interactioninstancefromobject-reflection-api" title="InteractionInstance.from(object) (Reflection API)" class="md-nav__link">
+  <a href="#interactioninstancefromobject-reflection-api" class="md-nav__link">
     InteractionInstance.from(object) (Reflection API)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakeraddinteractioninstanceinteractioninstance" title="baker.addInteractionInstance(interactionInstance)" class="md-nav__link">
+  <a href="#bakeraddinteractioninstanceinteractioninstance" class="md-nav__link">
     baker.addInteractionInstance(interactionInstance)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#recipecompilercompilerecipe" title="RecipeCompiler.compile(recipe)" class="md-nav__link">
+  <a href="#recipecompilercompilerecipe" class="md-nav__link">
     RecipeCompiler.compile(recipe)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakeraddrecipecompiledrecipe" title="baker.addRecipe(compiledRecipe)" class="md-nav__link">
+  <a href="#bakeraddrecipecompiledrecipe" class="md-nav__link">
     baker.addRecipe(compiledRecipe)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakergetallrecipes" title="baker.getAllRecipes()" class="md-nav__link">
+  <a href="#bakergetallrecipes" class="md-nav__link">
     baker.getAllRecipes()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakerbakerecipeid-recipeinstanceid" title="baker.bake(recipeId, recipeInstanceId)" class="md-nav__link">
+  <a href="#bakerbakerecipeid-recipeinstanceid" class="md-nav__link">
     baker.bake(recipeId, recipeInstanceId)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#eventinstancefromobject" title="EventInstance.from(object)" class="md-nav__link">
+  <a href="#eventinstancefromobject" class="md-nav__link">
     EventInstance.from(object)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakerfireeventrecipeinstanceid-eventinstance" title="baker.fireEvent(recipeInstanceId, eventInstance)" class="md-nav__link">
+  <a href="#bakerfireeventrecipeinstanceid-eventinstance" class="md-nav__link">
     baker.fireEvent(recipeInstanceId, eventInstance)
   </a>
   
-    <nav class="md-nav">
+    <nav class="md-nav" aria-label="baker.fireEvent(recipeInstanceId, eventInstance)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#correlationid" title="correlationId" class="md-nav__link">
+  <a href="#correlationid" class="md-nav__link">
     correlationId
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#sensoryeventstatus" title="SensoryEventStatus" class="md-nav__link">
+  <a href="#sensoryeventstatus" class="md-nav__link">
     SensoryEventStatus
   </a>
   
@@ -564,64 +535,60 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakergetrecipeinstancestaterecipeinstanceid" title="baker.getRecipeInstanceState(recipeInstanceId)" class="md-nav__link">
+  <a href="#bakergetrecipeinstancestaterecipeinstanceid" class="md-nav__link">
     baker.getRecipeInstanceState(recipeInstanceId)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakergetallinteractioninstancesmetadata" title="baker.getAllInteractionInstancesMetadata()" class="md-nav__link">
+  <a href="#bakergetallinteractioninstancesmetadata" class="md-nav__link">
     baker.getAllInteractionInstancesMetadata()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakergetvisualstaterecipeinstanceid-style" title="baker.getVisualState(recipeInstanceId, style)" class="md-nav__link">
+  <a href="#bakergetvisualstaterecipeinstanceid-style" class="md-nav__link">
     baker.getVisualState(recipeInstanceId, style)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakerregistereventlistenerrecipename-listenerfunction" title="baker.registerEventListener(recipeName, listenerFunction)" class="md-nav__link">
+  <a href="#bakerregistereventlistenerrecipename-listenerfunction" class="md-nav__link">
     baker.registerEventListener(recipeName, listenerFunction)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakerregisterbakereventlistenerlistenerfunction" title="baker.registerBakerEventListener(listenerFunction)" class="md-nav__link">
+  <a href="#bakerregisterbakereventlistenerlistenerfunction" class="md-nav__link">
     baker.registerBakerEventListener(listenerFunction)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakerretryinteractionrecipeinstanceid-interactionname" title="baker.retryInteraction(recipeInstanceId, interactionName)" class="md-nav__link">
+  <a href="#bakerretryinteractionrecipeinstanceid-interactionname" class="md-nav__link">
     baker.retryInteraction(recipeInstanceId, interactionName)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakerresolveinteractionrecipeinstanceid-interactionname-event" title="baker.resolveInteraction(recipeInstanceId, interactionName, event)" class="md-nav__link">
+  <a href="#bakerresolveinteractionrecipeinstanceid-interactionname-event" class="md-nav__link">
     baker.resolveInteraction(recipeInstanceId, interactionName, event)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakerstopretryinginteractionrecipeinstanceid-interactionname" title="baker.stopRetryingInteraction(recipeInstanceId, interactionName)" class="md-nav__link">
+  <a href="#bakerstopretryinginteractionrecipeinstanceid-interactionname" class="md-nav__link">
     baker.stopRetryingInteraction(recipeInstanceId, interactionName)
   </a>
   
 </li>
-      
-      
-      
-      
       
     </ul>
   
@@ -678,13 +645,15 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-6" type="checkbox" id="nav-6">
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-6" type="checkbox" id="nav-6">
     
     <label class="md-nav__link" for="nav-6">
       Versions
+      <span class="md-nav__icon md-icon"></span>
     </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+    <nav class="md-nav" aria-label="Versions" data-md-level="1">
       <label class="md-nav__title" for="nav-6">
+        <span class="md-nav__icon md-icon"></span>
         Versions
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -754,25 +723,28 @@
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
-<nav class="md-nav md-nav--secondary">
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
     
   
   
-    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#bakerakkaconfig-actorsystem-materializer" title="Baker.akka(config, actorSystem, materializer)" class="md-nav__link">
-    Baker.akka(config, actorSystem, materializer)
+  <a href="#bakerakkaconfig-actorsystem" class="md-nav__link">
+    Baker.akka(config, actorSystem)
   </a>
   
-    <nav class="md-nav">
+    <nav class="md-nav" aria-label="Baker.akka(config, actorSystem)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#advantages-of-the-cluster-mode" title="Advantages of the Cluster Mode" class="md-nav__link">
+  <a href="#advantages-of-the-cluster-mode" class="md-nav__link">
     Advantages of the Cluster Mode
   </a>
   
@@ -784,71 +756,71 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#interactioninstancefromobject-reflection-api" title="InteractionInstance.from(object) (Reflection API)" class="md-nav__link">
+  <a href="#interactioninstancefromobject-reflection-api" class="md-nav__link">
     InteractionInstance.from(object) (Reflection API)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakeraddinteractioninstanceinteractioninstance" title="baker.addInteractionInstance(interactionInstance)" class="md-nav__link">
+  <a href="#bakeraddinteractioninstanceinteractioninstance" class="md-nav__link">
     baker.addInteractionInstance(interactionInstance)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#recipecompilercompilerecipe" title="RecipeCompiler.compile(recipe)" class="md-nav__link">
+  <a href="#recipecompilercompilerecipe" class="md-nav__link">
     RecipeCompiler.compile(recipe)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakeraddrecipecompiledrecipe" title="baker.addRecipe(compiledRecipe)" class="md-nav__link">
+  <a href="#bakeraddrecipecompiledrecipe" class="md-nav__link">
     baker.addRecipe(compiledRecipe)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakergetallrecipes" title="baker.getAllRecipes()" class="md-nav__link">
+  <a href="#bakergetallrecipes" class="md-nav__link">
     baker.getAllRecipes()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakerbakerecipeid-recipeinstanceid" title="baker.bake(recipeId, recipeInstanceId)" class="md-nav__link">
+  <a href="#bakerbakerecipeid-recipeinstanceid" class="md-nav__link">
     baker.bake(recipeId, recipeInstanceId)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#eventinstancefromobject" title="EventInstance.from(object)" class="md-nav__link">
+  <a href="#eventinstancefromobject" class="md-nav__link">
     EventInstance.from(object)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakerfireeventrecipeinstanceid-eventinstance" title="baker.fireEvent(recipeInstanceId, eventInstance)" class="md-nav__link">
+  <a href="#bakerfireeventrecipeinstanceid-eventinstance" class="md-nav__link">
     baker.fireEvent(recipeInstanceId, eventInstance)
   </a>
   
-    <nav class="md-nav">
+    <nav class="md-nav" aria-label="baker.fireEvent(recipeInstanceId, eventInstance)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#correlationid" title="correlationId" class="md-nav__link">
+  <a href="#correlationid" class="md-nav__link">
     correlationId
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#sensoryeventstatus" title="SensoryEventStatus" class="md-nav__link">
+  <a href="#sensoryeventstatus" class="md-nav__link">
     SensoryEventStatus
   </a>
   
@@ -860,64 +832,60 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakergetrecipeinstancestaterecipeinstanceid" title="baker.getRecipeInstanceState(recipeInstanceId)" class="md-nav__link">
+  <a href="#bakergetrecipeinstancestaterecipeinstanceid" class="md-nav__link">
     baker.getRecipeInstanceState(recipeInstanceId)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakergetallinteractioninstancesmetadata" title="baker.getAllInteractionInstancesMetadata()" class="md-nav__link">
+  <a href="#bakergetallinteractioninstancesmetadata" class="md-nav__link">
     baker.getAllInteractionInstancesMetadata()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakergetvisualstaterecipeinstanceid-style" title="baker.getVisualState(recipeInstanceId, style)" class="md-nav__link">
+  <a href="#bakergetvisualstaterecipeinstanceid-style" class="md-nav__link">
     baker.getVisualState(recipeInstanceId, style)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakerregistereventlistenerrecipename-listenerfunction" title="baker.registerEventListener(recipeName, listenerFunction)" class="md-nav__link">
+  <a href="#bakerregistereventlistenerrecipename-listenerfunction" class="md-nav__link">
     baker.registerEventListener(recipeName, listenerFunction)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakerregisterbakereventlistenerlistenerfunction" title="baker.registerBakerEventListener(listenerFunction)" class="md-nav__link">
+  <a href="#bakerregisterbakereventlistenerlistenerfunction" class="md-nav__link">
     baker.registerBakerEventListener(listenerFunction)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakerretryinteractionrecipeinstanceid-interactionname" title="baker.retryInteraction(recipeInstanceId, interactionName)" class="md-nav__link">
+  <a href="#bakerretryinteractionrecipeinstanceid-interactionname" class="md-nav__link">
     baker.retryInteraction(recipeInstanceId, interactionName)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakerresolveinteractionrecipeinstanceid-interactionname-event" title="baker.resolveInteraction(recipeInstanceId, interactionName, event)" class="md-nav__link">
+  <a href="#bakerresolveinteractionrecipeinstanceid-interactionname-event" class="md-nav__link">
     baker.resolveInteraction(recipeInstanceId, interactionName, event)
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakerstopretryinginteractionrecipeinstanceid-interactionname" title="baker.stopRetryingInteraction(recipeInstanceId, interactionName)" class="md-nav__link">
+  <a href="#bakerstopretryinginteractionrecipeinstanceid-interactionname" class="md-nav__link">
     baker.stopRetryingInteraction(recipeInstanceId, interactionName)
   </a>
   
 </li>
-      
-      
-      
-      
       
     </ul>
   
@@ -931,60 +899,49 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/ing-bank/baker/edit/master/docs/sections/reference/runtime.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/ing-bank/baker/edit/master/docs/sections/reference/runtime.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+                  </a>
+                
+                
+                  
                 
                 
                 <h1 id="the-akka-based-runtime">The Akka Based Runtime</h1>
-<h2 id="bakerakkaconfig-actorsystem-materializer">Baker.akka(config, actorSystem, materializer)</h2>
+<h2 id="bakerakkaconfig-actorsystem">Baker.akka(config, actorSystem)</h2>
 <p>Baker provider several constructors to build a runtime to run your Recipes on. The current implementations are o
 <a href="https://akka.io/">Akka</a> based, one in local mode, and another in cluster mode. </p>
 <p><em>Note: We recommend reviewing also Akka configuration.</em></p>
-<div class="superfences-tabs">
-<input name="__tabs_1" type="radio" id="__tab_1_0" checked="checked" />
-<label for="__tab_1_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">import</span> <span class="nn">akka.actor.ActorSystem</span>
-<span class="k">import</span> <span class="nn">akka.stream.</span><span class="o">{</span><span class="nc">ActorMaterializer</span><span class="o">,</span> <span class="nc">Materializer</span><span class="o">}</span>
-<span class="k">import</span> <span class="nn">com.ing.baker.runtime.scaladsl.Baker</span>
-<span class="k">import</span> <span class="nn">com.typesafe.config.</span><span class="o">{</span><span class="nc">Config</span><span class="o">,</span> <span class="nc">ConfigFactory</span><span class="o">}</span>
+<p>```scala tab="Scala"
+import akka.actor.ActorSystem
+import com.ing.baker.runtime.scaladsl.Baker
+import com.typesafe.config.{Config, ConfigFactory}</p>
+<p>val actorSystem: ActorSystem = ActorSystem("WebshopSystem")
+val config: Config = ConfigFactory.load()</p>
+<p>val baker: Baker = Baker.akka(config, actorSystem)
+<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
+import akka.actor.ActorSystem;
+import com.ing.baker.runtime.javadsl.Baker;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 
 
-<span class="k">val</span> <span class="n">actorSystem</span><span class="k">:</span> <span class="kt">ActorSystem</span> <span class="o">=</span> <span class="nc">ActorSystem</span><span class="o">(</span><span class="s">&quot;WebshopSystem&quot;</span><span class="o">)</span>
-<span class="k">val</span> <span class="n">materializer</span><span class="k">:</span> <span class="kt">Materializer</span> <span class="o">=</span> <span class="nc">ActorMaterializer</span><span class="o">()</span>
-<span class="k">val</span> <span class="n">config</span><span class="k">:</span> <span class="kt">Config</span> <span class="o">=</span> <span class="nc">ConfigFactory</span><span class="o">.</span><span class="n">load</span><span class="o">()</span>
+ActorSystem actorSystem = ActorSystem.create(&quot;WebshopSystem&quot;);
+Config config = ConfigFactory.load();
 
-<span class="k">val</span> <span class="n">baker</span><span class="k">:</span> <span class="kt">Baker</span> <span class="o">=</span> <span class="nc">Baker</span><span class="o">.</span><span class="n">akka</span><span class="o">(</span><span class="n">config</span><span class="o">,</span> <span class="n">actorSystem</span><span class="o">,</span> <span class="n">materializer</span><span class="o">)</span>
-</pre></div></div>
-<input name="__tabs_1" type="radio" id="__tab_1_1" />
-<label for="__tab_1_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">akka.actor.ActorSystem</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">akka.stream.ActorMaterializer</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">akka.stream.Materializer</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">com.ing.baker.runtime.javadsl.Baker</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">com.typesafe.config.Config</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">com.typesafe.config.ConfigFactory</span><span class="o">;</span>
-
-
-<span class="n">ActorSystem</span> <span class="n">actorSystem</span> <span class="o">=</span> <span class="n">ActorSystem</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="s">&quot;WebshopSystem&quot;</span><span class="o">);</span>
-<span class="n">Materializer</span> <span class="n">materializer</span> <span class="o">=</span> <span class="n">ActorMaterializer</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="n">actorSystem</span><span class="o">);</span>
-<span class="n">Config</span> <span class="n">config</span> <span class="o">=</span> <span class="n">ConfigFactory</span><span class="o">.</span><span class="na">load</span><span class="o">();</span>
-
-<span class="n">Baker</span> <span class="n">baker</span> <span class="o">=</span> <span class="n">Baker</span><span class="o">.</span><span class="na">akka</span><span class="o">(</span><span class="n">config</span><span class="o">,</span> <span class="n">actorSystem</span><span class="o">,</span> <span class="n">materializer</span><span class="o">);</span>
-</pre></div></div>
-</div>
+Baker baker = Baker.akka(config, actorSystem);
+</code></pre></div></p>
 <p>This last code snippet will build a Baker runtime and load all configuration from your default <code>application.conf</code> located 
 in the resources directory. You can see more about configuration on <a href="../../development-life-cycle/configure/">this section</a>.</p>
 <p>Alternatively there is a constructor that will provide the default configuration for a local mode Baker, this 
 is recommended for tests.</p>
-<div class="superfences-tabs">
-<input name="__tabs_2" type="radio" id="__tab_2_0" checked="checked" />
-<label for="__tab_2_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">baker</span><span class="k">:</span> <span class="kt">Baker</span> <span class="o">=</span> <span class="nc">Baker</span><span class="o">.</span><span class="n">akkaLocalDefault</span><span class="o">(</span><span class="n">actorSystem</span><span class="o">,</span> <span class="n">materializer</span><span class="o">)</span>
-</pre></div></div>
-<input name="__tabs_2" type="radio" id="__tab_2_1" />
-<label for="__tab_2_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">Baker</span> <span class="n">baker</span> <span class="o">=</span> <span class="n">Baker</span><span class="o">.</span><span class="na">akkaLocalDefault</span><span class="o">(</span><span class="n">actorSystem</span><span class="o">,</span> <span class="n">materializer</span><span class="o">);</span>
-</pre></div></div>
-</div>
+<p>```scala tab="Scala"</p>
+<p>val baker: Baker = AkkaBaker.localDefault(actorSystem)</p>
+<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
+
+Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
+</code></pre></div>
+
 <h3 id="advantages-of-the-cluster-mode">Advantages of the Cluster Mode</h3>
 <p>The capabilities gained when in cluster mode are:</p>
 <ul>
@@ -1003,91 +960,81 @@ Java reflection capabilities to create an <code>InteractionInstance</code> from 
 <p>The interface MUST declare a public method called <code>apply</code>, and the types must match those of the expected provided ingredients.</p>
 <p>Notice that his function might throw an exception if the instance is not correctly done (this is why in Scala the API is
 named "unsafe").</p>
-<div class="superfences-tabs">
-<input name="__tabs_3" type="radio" id="__tab_3_0" checked="checked" />
-<label for="__tab_3_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">import</span> <span class="nn">com.ing.baker.runtime.scaladsl.InteractionInstance</span>
+<p>```scala tab="Scala"
+import com.ing.baker.runtime.scaladsl.InteractionInstance</p>
+<p>import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global</p>
+<p>sealed trait ReserveItemsOutput
+case class OrderHadUnavailableItems(unavailableItems: List[String]) extends ReserveItemsOutput
+case class ItemsReserved(reservedItems: List[String]) extends ReserveItemsOutput</p>
+<p>trait ReserveItems {</p>
+<p>def apply(orderId: String, items: List[String]): Future[ReserveItemsOutput]
+}</p>
+<p>class ReserveItemsInstance extends ReserveItems {</p>
+<p>override def apply(orderId: String, items: List[String]): Future[ReserveItemsOutput] = {</p>
+<div class="codehilite"><pre><span></span><code>// Http call to the Warehouse service
+val response: Future[Either[List[String], List[String]]] =
+// This is mocked for the sake of the example
+  Future.successful(Right(items))
 
-<span class="k">import</span> <span class="nn">scala.concurrent.Future</span>
-<span class="k">import</span> <span class="nn">scala.concurrent.ExecutionContext.Implicits.global</span>
+// Build an event instance that Baker understands
+response.map {
+  case Left(unavailableItems) =&gt;
+    OrderHadUnavailableItems(unavailableItems)
+  case Right(reservedItems) =&gt;
+    ItemsReserved(reservedItems)
+}
+</code></pre></div>
 
-<span class="k">sealed</span> <span class="k">trait</span> <span class="nc">ReserveItemsOutput</span>
-<span class="k">case</span> <span class="k">class</span> <span class="nc">OrderHadUnavailableItems</span><span class="o">(</span><span class="n">unavailableItems</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">])</span> <span class="k">extends</span> <span class="nc">ReserveItemsOutput</span>
-<span class="k">case</span> <span class="k">class</span> <span class="nc">ItemsReserved</span><span class="o">(</span><span class="n">reservedItems</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">])</span> <span class="k">extends</span> <span class="nc">ReserveItemsOutput</span>
 
-<span class="k">trait</span> <span class="nc">ReserveItems</span> <span class="o">{</span>
+<p>}
+}</p>
+<p>val reserveItemsInstance: InteractionInstance =
+  InteractionInstance.unsafeFrom(new ReserveItemsInstance)
+<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
+import com.ing.baker.runtime.javadsl.InteractionInstance;
+import com.ing.baker.runtime.javadsl.Interaction;
 
-  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">orderId</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">items</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">])</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">ReserveItemsOutput</span><span class="o">]</span>
-<span class="o">}</span>
+/** Java interface used for the Recipe */
+public interface ReserveItems extends Interaction {
 
-<span class="k">class</span> <span class="nc">ReserveItemsInstance</span> <span class="k">extends</span> <span class="nc">ReserveItems</span> <span class="o">{</span>
+    interface ReserveItemsOutcome {}
 
-  <span class="k">override</span> <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">orderId</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">items</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">])</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">ReserveItemsOutput</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+    class OrderHadUnavailableItems implements ReserveItemsOutcome {
 
-    <span class="c1">// Http call to the Warehouse service</span>
-    <span class="k">val</span> <span class="n">response</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Either</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span>, <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">]]]</span> <span class="k">=</span>
-    <span class="c1">// This is mocked for the sake of the example</span>
-      <span class="nc">Future</span><span class="o">.</span><span class="n">successful</span><span class="o">(</span><span class="nc">Right</span><span class="o">(</span><span class="n">items</span><span class="o">))</span>
+        public final List&lt;String&gt; unavailableItems;
 
-    <span class="c1">// Build an event instance that Baker understands</span>
-    <span class="n">response</span><span class="o">.</span><span class="n">map</span> <span class="o">{</span>
-      <span class="k">case</span> <span class="nc">Left</span><span class="o">(</span><span class="n">unavailableItems</span><span class="o">)</span> <span class="k">=&gt;</span>
-        <span class="nc">OrderHadUnavailableItems</span><span class="o">(</span><span class="n">unavailableItems</span><span class="o">)</span>
-      <span class="k">case</span> <span class="nc">Right</span><span class="o">(</span><span class="n">reservedItems</span><span class="o">)</span> <span class="k">=&gt;</span>
-        <span class="nc">ItemsReserved</span><span class="o">(</span><span class="n">reservedItems</span><span class="o">)</span>
-    <span class="o">}</span>
-  <span class="o">}</span>
-<span class="o">}</span>
+        public OrderHadUnavailableItems(List&lt;String&gt; unavailableItems) {
+            this.unavailableItems = unavailableItems;
+        }
+    }
 
-<span class="k">val</span> <span class="n">reserveItemsInstance</span><span class="k">:</span> <span class="kt">InteractionInstance</span> <span class="o">=</span>
-  <span class="nc">InteractionInstance</span><span class="o">.</span><span class="n">unsafeFrom</span><span class="o">(</span><span class="k">new</span> <span class="nc">ReserveItemsInstance</span><span class="o">)</span>
-</pre></div></div>
-<input name="__tabs_3" type="radio" id="__tab_3_1" />
-<label for="__tab_3_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">com.ing.baker.runtime.javadsl.InteractionInstance</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">com.ing.baker.runtime.javadsl.Interaction</span><span class="o">;</span>
+    class ItemsReserved implements ReserveItemsOutcome {
 
-<span class="cm">/** Java interface used for the Recipe */</span>
-<span class="kd">public</span> <span class="kd">interface</span> <span class="nc">ReserveItems</span> <span class="kd">extends</span> <span class="n">Interaction</span> <span class="o">{</span>
+        public final List&lt;String&gt; reservedItems;
 
-    <span class="kd">interface</span> <span class="nc">ReserveItemsOutcome</span> <span class="o">{}</span>
+        public ItemsReserved(List&lt;String&gt; reservedItems) {
+            this.reservedItems = reservedItems;
+        }
+    }
 
-    <span class="kd">class</span> <span class="nc">OrderHadUnavailableItems</span> <span class="kd">implements</span> <span class="n">ReserveItemsOutcome</span> <span class="o">{</span>
+    @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
+    ReserveItemsOutcome apply(@RequiresIngredient(&quot;orderId&quot;) String id, @RequiresIngredient(&quot;items&quot;) List&lt;String&gt; items);
+}
 
-        <span class="kd">public</span> <span class="kd">final</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">unavailableItems</span><span class="o">;</span>
+/** Implementation of the interface used for creating an InteractionInstance */
+public class ReserveItems implements JWebshopRecipe.ReserveItems {
 
-        <span class="kd">public</span> <span class="nf">OrderHadUnavailableItems</span><span class="o">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">unavailableItems</span><span class="o">)</span> <span class="o">{</span>
-            <span class="k">this</span><span class="o">.</span><span class="na">unavailableItems</span> <span class="o">=</span> <span class="n">unavailableItems</span><span class="o">;</span>
-        <span class="o">}</span>
-    <span class="o">}</span>
+    // The body of this method is going to be executed by the Baker runtime when the ingredients are available.
+    @Override
+    public ReserveItemsOutcome apply(String id, List&lt;String&gt; items) {
+        return new ReserveItems.ItemsReserved(items);
+    }
+}
 
-    <span class="kd">class</span> <span class="nc">ItemsReserved</span> <span class="kd">implements</span> <span class="n">ReserveItemsOutcome</span> <span class="o">{</span>
-
-        <span class="kd">public</span> <span class="kd">final</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">reservedItems</span><span class="o">;</span>
-
-        <span class="kd">public</span> <span class="nf">ItemsReserved</span><span class="o">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">reservedItems</span><span class="o">)</span> <span class="o">{</span>
-            <span class="k">this</span><span class="o">.</span><span class="na">reservedItems</span> <span class="o">=</span> <span class="n">reservedItems</span><span class="o">;</span>
-        <span class="o">}</span>
-    <span class="o">}</span>
-
-    <span class="nd">@FiresEvent</span><span class="o">(</span><span class="n">oneOf</span> <span class="o">=</span> <span class="o">{</span><span class="n">OrderHadUnavailableItems</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">ItemsReserved</span><span class="o">.</span><span class="na">class</span><span class="o">})</span>
-    <span class="n">ReserveItemsOutcome</span> <span class="nf">apply</span><span class="o">(</span><span class="nd">@RequiresIngredient</span><span class="o">(</span><span class="s">&quot;orderId&quot;</span><span class="o">)</span> <span class="n">String</span> <span class="n">id</span><span class="o">,</span> <span class="nd">@RequiresIngredient</span><span class="o">(</span><span class="s">&quot;items&quot;</span><span class="o">)</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">items</span><span class="o">);</span>
-<span class="o">}</span>
-
-<span class="cm">/** Implementation of the interface used for creating an InteractionInstance */</span>
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">ReserveItems</span> <span class="kd">implements</span> <span class="n">JWebshopRecipe</span><span class="o">.</span><span class="na">ReserveItems</span> <span class="o">{</span>
-
-    <span class="c1">// The body of this method is going to be executed by the Baker runtime when the ingredients are available.</span>
-    <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">ReserveItemsOutcome</span> <span class="nf">apply</span><span class="o">(</span><span class="n">String</span> <span class="n">id</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">items</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="n">ReserveItems</span><span class="o">.</span><span class="na">ItemsReserved</span><span class="o">(</span><span class="n">items</span><span class="o">);</span>
-    <span class="o">}</span>
-<span class="o">}</span>
-
-<span class="cm">/** Create an InteractionInstance from an instance of the ReserveItems implementation */</span>        
-<span class="n">InteractionInstance</span> <span class="n">reserveItemsInstance</span> <span class="o">=</span> <span class="n">InteractionInstance</span><span class="o">.</span><span class="na">from</span><span class="o">(</span><span class="k">new</span> <span class="n">ReserveItems</span><span class="o">());</span>
-</pre></div></div>
-</div>
+/** Create an InteractionInstance from an instance of the ReserveItems implementation */        
+InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
+</code></pre></div></p>
 <h2 id="bakeraddinteractioninstanceinteractioninstance">baker.addInteractionInstance(interactionInstance)</h2>
 <p>The Baker runtime requires you to add all <code>InteractionInstances</code> before adding any related <code>CompiledRecipes</code>. This can
 be done using the <code>baker.addInteractionInstance(interactionInstance)</code> or the <code>baker.addInteractionInstances(intance1, instance2, ...)</code>
@@ -1095,79 +1042,57 @@ APIs.</p>
 <p><em>Note: in Java the api returns a <code>CompletableFuture&lt;BoxedUnit&gt;</code>, this is because the API is implemented in Scala, so 
 Scala's <code>Unit</code> get translated to <code>BoxedUnit</code>, but you should you ignore it and consider it as good as Java's <code>void</code>,
 except it comes in a <code>CompletableFuture</code> that will help you handle async programming.</em></p>
-<div class="superfences-tabs">
-<input name="__tabs_4" type="radio" id="__tab_4_0" checked="checked" />
-<label for="__tab_4_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">baker</span><span class="k">:</span> <span class="kt">Baker</span> <span class="o">=</span> <span class="nc">Baker</span><span class="o">.</span><span class="n">akkaLocalDefault</span><span class="o">(</span><span class="n">actorSystem</span><span class="o">,</span> <span class="n">materializer</span><span class="o">)</span>
+<p>```scala tab="Scala"</p>
+<p>val baker: Baker = AkkaBaker.localDefault(actorSystem)</p>
+<p>val reserveItemsInstance: InteractionInstance = InteractionInstance.unsafeFrom(new ReserveItems())</p>
+<p>val result: Future[Unit] = baker.addInteractionInstance(reserveItemsInstance)</p>
+<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
 
-<span class="k">val</span> <span class="n">reserveItemsInstance</span><span class="k">:</span> <span class="kt">InteractionInstance</span> <span class="o">=</span> <span class="nc">InteractionInstance</span><span class="o">.</span><span class="n">unsafeFrom</span><span class="o">(</span><span class="k">new</span> <span class="nc">ReserveItems</span><span class="o">())</span>
+Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
 
-<span class="k">val</span> <span class="n">result</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">addInteractionInstance</span><span class="o">(</span><span class="n">reserveItemsInstance</span><span class="o">)</span>
-</pre></div></div>
-<input name="__tabs_4" type="radio" id="__tab_4_1" />
-<label for="__tab_4_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">Baker</span> <span class="n">baker</span> <span class="o">=</span> <span class="n">Baker</span><span class="o">.</span><span class="na">akkaLocalDefault</span><span class="o">(</span><span class="n">actorSystem</span><span class="o">,</span> <span class="n">materializer</span><span class="o">);</span>
+InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
 
-<span class="n">InteractionInstance</span> <span class="n">reserveItemsInstance</span> <span class="o">=</span> <span class="n">InteractionInstance</span><span class="o">.</span><span class="na">from</span><span class="o">(</span><span class="k">new</span> <span class="n">ReserveItems</span><span class="o">());</span>
+CompletableFuture&lt;BoxedUnit&gt; = baker.addInteractionInstance(reserveItemsInstance);
+</code></pre></div>
 
-<span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">BoxedUnit</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">baker</span><span class="o">.</span><span class="na">addInteractionInstance</span><span class="o">(</span><span class="n">reserveItemsInstance</span><span class="o">);</span>
-</pre></div></div>
-</div>
 <h2 id="recipecompilercompilerecipe">RecipeCompiler.compile(recipe)</h2>
 <p><code>Recipes</code> once built must be converted into a data structure called <code>CompiledRecipe</code> that lets <code>RecipeInstances</code> 
 to understand, store and run your process. These can be used to create a new <code>RecipeInstance</code> from a <code>baker</code> 
 runtime that contains both a <code>CompiledRecipe</code> and the required <code>InteractionInstances</code>, or they can as well be converted
 into a <a href="../visualization/">visualziation</a>.</p>
-<div class="superfences-tabs">
-<input name="__tabs_5" type="radio" id="__tab_5_0" checked="checked" />
-<label for="__tab_5_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">import</span> <span class="nn">com.ing.baker.compiler.RecipeCompiler</span>
-<span class="k">import</span> <span class="nn">com.ing.baker.il.CompiledRecipe</span>
+<p>```scala tab="Scala"
+import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.il.CompiledRecipe</p>
+<p>val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
+import com.ing.baker.compiler.RecipeCompiler;
+import com.ing.baker.il.CompiledRecipe;
 
-<span class="k">val</span> <span class="n">compiledRecipe</span><span class="k">:</span> <span class="kt">CompiledRecipe</span> <span class="o">=</span> <span class="nc">RecipeCompiler</span><span class="o">.</span><span class="n">compileRecipe</span><span class="o">(</span><span class="n">recipe</span><span class="o">)</span>
-</pre></div></div>
-<input name="__tabs_5" type="radio" id="__tab_5_1" />
-<label for="__tab_5_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">com.ing.baker.compiler.RecipeCompiler</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">com.ing.baker.il.CompiledRecipe</span><span class="o">;</span>
-
-<span class="n">CompiledRecipe</span> <span class="n">compiledRecipe</span> <span class="o">=</span> <span class="n">RecipeCompiler</span><span class="o">.</span><span class="na">compileRecipe</span><span class="o">(</span><span class="n">recipe</span><span class="o">);</span>
-</pre></div></div>
-</div>
+CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
+</code></pre></div></p>
 <h2 id="bakeraddrecipecompiledrecipe">baker.addRecipe(compiledRecipe)</h2>
 <p>Once <code>Recipes</code> have been transformed into <code>CompiledRecipes</code> they must be added to a baker runtime. The <code>baker.addRecipe(compiledRecipe)</code>
 API will do so and return an id that you can use to reference the added recipe later on.</p>
 <p><em>Note: Before doing this, baker requires you to add all related <code>InteractionInstances</code> to the runtime, this is because baker 
 does validation to ensure that every recipe is runnable from the previously added <code>InteractionInstances</code>.</em></p>
-<div class="superfences-tabs">
-<input name="__tabs_6" type="radio" id="__tab_6_0" checked="checked" />
-<label for="__tab_6_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">recipeId</span> <span class="nc">Future</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">addRecipe</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">)</span>
-</pre></div></div>
-<input name="__tabs_6" type="radio" id="__tab_6_1" />
-<label for="__tab_6_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">recipeId</span> <span class="o">=</span> <span class="n">baker</span><span class="o">.</span><span class="na">addRecipe</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">);</span>
-</pre></div></div>
-</div>
+<p>```scala tab="Scala"
+val recipeId Future[String] = baker.addRecipe(compiledRecipe)
+<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
+CompletableFuture&lt;String&gt; recipeId = baker.addRecipe(compiledRecipe);
+</code></pre></div></p>
 <h2 id="bakergetallrecipes">baker.getAllRecipes()</h2>
 <p>The baker at runtime can give you a map of all the currently available recipes that has been previously added to Baker.</p>
-<div class="superfences-tabs">
-<input name="__tabs_7" type="radio" id="__tab_7_0" checked="checked" />
-<label for="__tab_7_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">import</span> <span class="nn">com.ing.baker.runtime.scaladsl.RecipeInformation</span>
-<span class="k">import</span> <span class="nn">scala.concurrent.Future</span>
+<p>```scala tab="Scala"
+import com.ing.baker.runtime.scaladsl.RecipeInformation
+import scala.concurrent.Future</p>
+<p>val allRecipes: Future[Map[String, RecipeInformation]] = baker.getAllRecipes
+<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
+import com.ing.baker.runtime.javadsl.RecipeInformation;
+import java.util.concurrent.CompletableFuture;
+import java.util.Map;
 
-<span class="k">val</span> <span class="n">allRecipes</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Map</span><span class="o">[</span><span class="kt">String</span>, <span class="kt">RecipeInformation</span><span class="o">]]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">getAllRecipes</span>
-</pre></div></div>
-<input name="__tabs_7" type="radio" id="__tab_7_1" />
-<label for="__tab_7_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">com.ing.baker.runtime.javadsl.RecipeInformation</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">java.util.concurrent.CompletableFuture</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">java.util.Map</span><span class="o">;</span>
-
-<span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">RecipeInformation</span><span class="o">&gt;&gt;</span> <span class="n">allRecipe</span> <span class="o">=</span> <span class="n">baker</span><span class="o">.</span><span class="na">getAllRecipes</span><span class="o">();</span>
-</pre></div></div>
-</div>
+CompletableFuture&lt;Map&lt;String, RecipeInformation&gt;&gt; allRecipe = baker.getAllRecipes();
+</code></pre></div></p>
 <h2 id="bakerbakerecipeid-recipeinstanceid">baker.bake(recipeId, recipeInstanceId)</h2>
 <p>Once the Baker runtime contains a <code>CompiledRecipe</code> and all the associated <code>InteractionInstances</code> then you can use the 
 <code>baker.bake(recipeId, recipeInstanceId)</code> API to create a <code>RecipeInstance</code> that will contain the state of your process
@@ -1177,24 +1102,19 @@ you can manage this reference as required.</em></p>
 <p><em>Note: in Java the api returns a <code>CompletableFuture&lt;BoxedUnit&gt;</code>, this is because the API is implemented in Scala, so 
 Scala's <code>Unit</code> get translated to <code>BoxedUnit</code>, but you should you ignore it and consider it as good as Java's <code>void</code>,
 except it comes in a <code>CompletableFuture</code> that will help you handle async programming.</em></p>
-<div class="superfences-tabs">
-<input name="__tabs_8" type="radio" id="__tab_8_0" checked="checked" />
-<label for="__tab_8_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">program</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> <span class="k">for</span> <span class="o">{</span>
-  <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">addInteractionInstance</span><span class="o">(</span><span class="n">interactionInstances</span><span class="o">)</span>
-  <span class="n">recipeId</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">addRecipe</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">)</span>
-  <span class="n">recipeInstanceId</span> <span class="k">=</span> <span class="s">&quot;my-id&quot;</span>
-  <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">bake</span><span class="o">(</span><span class="n">recipeId</span><span class="o">,</span> <span class="n">recipeInstanceId</span><span class="o">)</span>
-<span class="o">}</span> <span class="k">yield</span> <span class="o">()</span>
-</pre></div></div>
-<input name="__tabs_8" type="radio" id="__tab_8_1" />
-<label for="__tab_8_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">String</span> <span class="n">recipeInstanceId</span> <span class="o">=</span> <span class="s">&quot;my-id&quot;</span><span class="o">;</span>
-<span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">BoxedUnit</span><span class="o">&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">baker</span><span class="o">.</span><span class="na">addInteractionInstace</span><span class="o">(</span><span class="n">reserveItemsInstance</span><span class="o">)</span>
-    <span class="o">.</span><span class="na">thenCompose</span><span class="o">(</span><span class="n">ignore</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="o">.</span><span class="na">addRecipe</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">))</span>
-    <span class="o">.</span><span class="na">thenCompose</span><span class="o">(</span><span class="n">recipeId</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="o">.</span><span class="na">bake</span><span class="o">(</span><span class="n">recipeId</span><span class="o">,</span> <span class="n">recipeInstanceId</span><span class="o">));</span>
-</pre></div></div>
-</div>
+<p>```scala tab="Scala"
+val program: Future[Unit] = for {
+  _ &lt;- baker.addInteractionInstance(interactionInstances)
+  recipeId &lt;- baker.addRecipe(compiledRecipe)
+  recipeInstanceId = "my-id"
+  _ &lt;- baker.bake(recipeId, recipeInstanceId)
+} yield ()
+<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
+String recipeInstanceId = &quot;my-id&quot;;
+CompletableFuture&lt;BoxedUnit&gt; result = baker.addInteractionInstace(reserveItemsInstance)
+    .thenCompose(ignore -&gt; baker.addRecipe(compiledRecipe))
+    .thenCompose(recipeId -&gt; baker.bake(recipeId, recipeInstanceId));
+</code></pre></div></p>
 <h2 id="eventinstancefromobject">EventInstance.from(object)</h2>
 <p>As part of our efforts to ease the creation of <code>EventInstances</code>, we added a function that uses Java and Scala reflection 
 to create <code>EventInstances</code> from class objects.</p>
@@ -1203,35 +1123,28 @@ to create <code>EventInstances</code> from class objects.</p>
 translated to <code>IngredientInstances</code> with corresponding names and baker types.</p>
 <p>Notice that this function might throw an exception if the event is not correctly done (this is why in Scala the API is
 named "unsafe").</p>
-<div class="superfences-tabs">
-<input name="__tabs_9" type="radio" id="__tab_9_0" checked="checked" />
-<label for="__tab_9_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">import</span> <span class="nn">com.ing.baker.runtime.scaladsl.EventInstance</span>
+<p>```scala tab="Scala"
+import com.ing.baker.runtime.scaladsl.EventInstance</p>
+<p>case class OrderPlaced(orderId: String, items: List[String])</p>
+<p>val firstOrderPlaced: EventInstance = 
+    EventInstance.unsafeFrom(OrderPlaced("order-id", List("item1", "item2")))
+<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
+import com.ing.baker.runtime.javadsl.EventInstance;
 
-<span class="k">case</span> <span class="k">class</span> <span class="nc">OrderPlaced</span><span class="o">(</span><span class="n">orderId</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">items</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">])</span>
+class OrderPlaced {
 
-<span class="k">val</span> <span class="n">firstOrderPlaced</span><span class="k">:</span> <span class="kt">EventInstance</span> <span class="o">=</span> 
-    <span class="nc">EventInstance</span><span class="o">.</span><span class="n">unsafeFrom</span><span class="o">(</span><span class="nc">OrderPlaced</span><span class="o">(</span><span class="s">&quot;order-id&quot;</span><span class="o">,</span> <span class="nc">List</span><span class="o">(</span><span class="s">&quot;item1&quot;</span><span class="o">,</span> <span class="s">&quot;item2&quot;</span><span class="o">)))</span>
-</pre></div></div>
-<input name="__tabs_9" type="radio" id="__tab_9_1" />
-<label for="__tab_9_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">com.ing.baker.runtime.javadsl.EventInstance</span><span class="o">;</span>
+    String orderId;
+    List&lt;String&gt; items;
 
-<span class="kd">class</span> <span class="nc">OrderPlaced</span> <span class="o">{</span>
+    public OrderPlaced(String orderId, List&lt;String&gt; items) {
+        this.orderId = orderId;
+        this.items = items;
+    }
+}
 
-    <span class="n">String</span> <span class="n">orderId</span><span class="o">;</span>
-    <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">items</span><span class="o">;</span>
-
-    <span class="kd">public</span> <span class="nf">OrderPlaced</span><span class="o">(</span><span class="n">String</span> <span class="n">orderId</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">items</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">this</span><span class="o">.</span><span class="na">orderId</span> <span class="o">=</span> <span class="n">orderId</span><span class="o">;</span>
-        <span class="k">this</span><span class="o">.</span><span class="na">items</span> <span class="o">=</span> <span class="n">items</span><span class="o">;</span>
-    <span class="o">}</span>
-<span class="o">}</span>
-
-<span class="n">EventInstance</span> <span class="n">firstOrderPlaced</span> <span class="o">=</span>
-    <span class="n">EventInstance</span><span class="o">.</span><span class="na">from</span><span class="o">(</span><span class="k">new</span> <span class="n">JWebshopRecipe</span><span class="o">.</span><span class="na">OrderPlaced</span><span class="o">(</span><span class="s">&quot;order-uuid&quot;</span><span class="o">,</span> <span class="n">items</span><span class="o">));</span>
-</pre></div></div>
-</div>
+EventInstance firstOrderPlaced =
+    EventInstance.from(new JWebshopRecipe.OrderPlaced(&quot;order-uuid&quot;, items));
+</code></pre></div></p>
 <h2 id="bakerfireeventrecipeinstanceid-eventinstance">baker.fireEvent(recipeInstanceId, eventInstance)</h2>
 <p>After creation of a <code>RecipeInstance</code>, you use one of the variations of <code>baker.fireEvent(recipeInstanceId, eventInstance)</code>
 to fire your <code>EventInstances</code> and start/continue the process flow. There are several supported semantics for firing an 
@@ -1267,33 +1180,27 @@ to the moment the <code>onEventName</code> was fired.</p>
 <p>Optionally you may provide a <code>correlation id</code> when firing a <code>EventInstance</code>. The purpose of this identifier is idempotent 
 event delivery: when sending the same event correlation id multiple times, only the first will be processed.</p>
 <p>This can be applied to the <code>OrderPlaced</code> event for example.</p>
-<div class="superfences-tabs">
-<input name="__tabs_10" type="radio" id="__tab_10_0" checked="checked" />
-<label for="__tab_10_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">correlationOrderId</span> <span class="k">=</span> <span class="s">&quot;a unique order id&quot;</span>
+<p>``` scala tab="Scala"
+val correlationOrderId = "a unique order id"</p>
+<p>for {
+    statusA &lt;- baker.processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId)
+    _ = assert(statusA == Received)
+    statusB &lt;- baker.processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId)
+    _ = assert(statusB == AlreadyReceived)
+} yield ()
+<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
+String correlationOrderId = &quot;a unique order id&quot;;
 
-<span class="k">for</span> <span class="o">{</span>
-    <span class="n">statusA</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">processEventAndResolveWhenReceived</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">orderPlacedEvent</span><span class="o">,</span> <span class="n">correlationOrderId</span><span class="o">)</span>
-    <span class="k">_</span> <span class="k">=</span> <span class="n">assert</span><span class="o">(</span><span class="n">statusA</span> <span class="o">==</span> <span class="nc">Received</span><span class="o">)</span>
-    <span class="n">statusB</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">processEventAndResolveWhenReceived</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">orderPlacedEvent</span><span class="o">,</span> <span class="n">correlationOrderId</span><span class="o">)</span>
-    <span class="k">_</span> <span class="k">=</span> <span class="n">assert</span><span class="o">(</span><span class="n">statusB</span> <span class="o">==</span> <span class="nc">AlreadyReceived</span><span class="o">)</span>
-<span class="o">}</span> <span class="k">yield</span> <span class="o">()</span>
-</pre></div></div>
-<input name="__tabs_10" type="radio" id="__tab_10_1" />
-<label for="__tab_10_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">String</span> <span class="n">correlationOrderId</span> <span class="o">=</span> <span class="s">&quot;a unique order id&quot;</span><span class="o">;</span>
+SensoryEventStatus statusA = baker
+    .processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId);
+    .join();
+assert(statusA == Received);
 
-<span class="n">SensoryEventStatus</span> <span class="n">statusA</span> <span class="o">=</span> <span class="n">baker</span>
-    <span class="o">.</span><span class="na">processEventAndResolveWhenReceived</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">orderPlacedEvent</span><span class="o">,</span> <span class="n">correlationOrderId</span><span class="o">);</span>
-    <span class="o">.</span><span class="na">join</span><span class="o">();</span>
-<span class="k">assert</span><span class="o">(</span><span class="n">statusA</span> <span class="o">==</span> <span class="n">Received</span><span class="o">);</span>
-
-<span class="n">SensoryEventStatus</span> <span class="n">statusB</span> <span class="o">=</span> <span class="n">baker</span>
-    <span class="o">.</span><span class="na">processEventAndResolveWhenReceived</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">orderPlacedEvent</span><span class="o">,</span> <span class="n">correlationOrderId</span><span class="o">);</span>
-    <span class="o">.</span><span class="na">join</span><span class="o">();</span>
-<span class="k">assert</span><span class="o">(</span><span class="n">statusB</span> <span class="o">==</span> <span class="n">AlreadyReceived</span><span class="o">);</span>
-</pre></div></div>
-</div>
+SensoryEventStatus statusB = baker
+    .processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId);
+    .join();
+assert(statusB == AlreadyReceived);
+</code></pre></div></p>
 <h3 id="sensoryeventstatus">SensoryEventStatus</h3>
 <table>
 <thead>
@@ -1328,20 +1235,14 @@ event delivery: when sending the same event correlation id multiple times, only 
 <h2 id="bakergetrecipeinstancestaterecipeinstanceid">baker.getRecipeInstanceState(recipeInstanceId)</h2>
 <p><code>baker.getInteractionInstanceState(recipeInstanceId)</code> will return an <code>InteractionInstanceState</code> object which 
 contains all the event names with timestamps that have executed, and the current available provided ingredient data.</p>
-<div class="superfences-tabs">
-<input name="__tabs_11" type="radio" id="__tab_11_0" checked="checked" />
-<label for="__tab_11_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">import</span> <span class="nn">com.ing.baker.runtime.scaladsl.RecipeInstanceState</span>
+<p>```scala tab="Scala"
+import com.ing.baker.runtime.scaladsl.RecipeInstanceState</p>
+<p>val state: Future[RecipeInstanceState] = baker.getRecipeInstanceState(recipeInstanceId)
+<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
+import com.ing.baker.runtime.javadsl.RecipeInstanceState;
 
-<span class="k">val</span> <span class="n">state</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">RecipeInstanceState</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">getRecipeInstanceState</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">)</span>
-</pre></div></div>
-<input name="__tabs_11" type="radio" id="__tab_11_1" />
-<label for="__tab_11_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">com.ing.baker.runtime.javadsl.RecipeInstanceState</span><span class="o">;</span>
-
-<span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">RecipeInstanceState</span><span class="o">&gt;</span> <span class="n">state</span> <span class="o">=</span> <span class="n">baker</span><span class="o">.</span><span class="na">getRecipeInstanceState</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">);</span>
-</pre></div></div>
-</div>
+CompletableFuture&lt;RecipeInstanceState&gt; state = baker.getRecipeInstanceState(recipeInstanceId);
+</code></pre></div></p>
 <h2 id="bakergetallinteractioninstancesmetadata">baker.getAllInteractionInstancesMetadata()</h2>
 <p>Returns the recipeId, recipeInstanceId and creation timestamp of all running <code>RecipeInstances</code>.</p>
 <p><em>Note: Can potentially return a partial result when baker runs in cluster mode because not all shards might be reached within 
@@ -1352,16 +1253,11 @@ the given timeout.</em></p>
 API. This will return a GraphViz string like the <a href="">visualization api</a> that you can convert into an image.</p>
 <p>Here is a visualization of the state of another webshop example, one can clearly see that the process is flowing correctly
 without failures and that it is still waiting for the payment sensory event to be fired.</p>
-<div class="superfences-tabs">
-<input name="__tabs_12" type="radio" id="__tab_12_0" checked="checked" />
-<label for="__tab_12_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">state</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">getVisualState</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">)</span>
-</pre></div></div>
-<input name="__tabs_12" type="radio" id="__tab_12_1" />
-<label for="__tab_12_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">state</span> <span class="o">=</span> <span class="n">baker</span><span class="o">.</span><span class="na">getVisualState</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">);</span>
-</pre></div></div>
-</div>
+<p>```scala tab="Scala"
+val state: Future[String] = baker.getVisualState(recipeInstanceId)
+<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
+CompletableFuture&lt;String&gt; state = baker.getVisualState(recipeInstanceId);
+</code></pre></div></p>
 <p><img alt="" src="../../../images/webshop-state-1.svg" /></p>
 <h2 id="bakerregistereventlistenerrecipename-listenerfunction">baker.registerEventListener(recipeName, listenerFunction)</h2>
 <p>Registers a listener to all runtime events for this baker instance.</p>
@@ -1372,21 +1268,16 @@ without failures and that it is still waiting for the payment sensory event to b
 - logging
 - metrics
 - unit tests</p>
-<div class="superfences-tabs">
-<input name="__tabs_13" type="radio" id="__tab_13_0" checked="checked" />
-<label for="__tab_13_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">baker</span><span class="o">.</span><span class="n">registerEventListener</span><span class="o">((</span><span class="n">recipeInstanceId</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">event</span><span class="k">:</span> <span class="kt">EventInstance</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="o">{</span>
-  <span class="n">println</span><span class="o">(</span><span class="s">s&quot;Recipe instance : </span><span class="si">$recipeInstanceId</span><span class="s"> processed event </span><span class="si">${</span><span class="n">event</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s">&quot;</span><span class="o">)</span>
-<span class="o">})</span>
-</pre></div></div>
-<input name="__tabs_13" type="radio" id="__tab_13_1" />
-<label for="__tab_13_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">BiConsumer</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">EventInstance</span><span class="o">&gt;</span> <span class="n">handler</span> <span class="o">=</span> <span class="o">(</span><span class="n">String</span> <span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">EventInstance</span> <span class="n">event</span><span class="o">)</span> <span class="o">-&gt;</span>
-    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Recipe Instance &quot;</span> <span class="o">+</span> <span class="n">recipeInstanceId</span> <span class="o">+</span> <span class="s">&quot; processed event &quot;</span> <span class="o">+</span> <span class="n">event</span><span class="o">.</span><span class="na">name</span><span class="o">());</span>
+<p>```scala tab="Scala"
+baker.registerEventListener((recipeInstanceId: String, event: EventInstance) =&gt; {
+  println(s"Recipe instance : $recipeInstanceId processed event ${event.name}")
+})
+<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
+BiConsumer&lt;String, EventInstance&gt; handler = (String recipeInstanceId, EventInstance event) -&gt;
+    System.out.println(&quot;Recipe Instance &quot; + recipeInstanceId + &quot; processed event &quot; + event.name());
 
-<span class="n">baker</span><span class="o">.</span><span class="na">registerEventListener</span><span class="o">(</span><span class="n">handler</span><span class="o">);</span>
-</pre></div></div>
-</div>
+baker.registerEventListener(handler);
+</code></pre></div></p>
 <h2 id="bakerregisterbakereventlistenerlistenerfunction">baker.registerBakerEventListener(listenerFunction)</h2>
 <p>Registers a listener to all runtime BAKER events, these are events that notify what Baker is doing, like <code>RecipeInstances</code>
 received <code>EventInstances</code> or <code>CompiledRecipes</code> being added to baker.</p>
@@ -1397,30 +1288,24 @@ received <code>EventInstances</code> or <code>CompiledRecipes</code> being added
 - logging
 - metrics
 - unit tests</p>
-<div class="superfences-tabs">
-<input name="__tabs_14" type="radio" id="__tab_14_0" checked="checked" />
-<label for="__tab_14_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">import</span> <span class="nn">com.ing.baker.runtime.scaladsl._</span>
+<p>```scala tab="Scala"
+import com.ing.baker.runtime.scaladsl._</p>
+<p>baker.registerBakerEventListener((event: BakerEvent) =&gt; {
+  event match {
+    case e: EventReceived =&gt; println(e)
+    case e: EventRejected =&gt; println(e)
+    case e: InteractionFailed =&gt; println(e)
+    case e: InteractionStarted =&gt; println(e)
+    case e: InteractionCompleted =&gt; println(e)
+    case e: ProcessCreated =&gt; println(e)
+    case e: RecipeAdded =&gt; println(e)
+  }
+})
+<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
+import com.ing.baker.runtime.javadsl.BakerEvent;
 
-<span class="n">baker</span><span class="o">.</span><span class="n">registerBakerEventListener</span><span class="o">((</span><span class="n">event</span><span class="k">:</span> <span class="kt">BakerEvent</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="o">{</span>
-  <span class="n">event</span> <span class="k">match</span> <span class="o">{</span>
-    <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">EventReceived</span> <span class="o">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">e</span><span class="o">)</span>
-    <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">EventRejected</span> <span class="o">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">e</span><span class="o">)</span>
-    <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">InteractionFailed</span> <span class="o">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">e</span><span class="o">)</span>
-    <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">InteractionStarted</span> <span class="o">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">e</span><span class="o">)</span>
-    <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">InteractionCompleted</span> <span class="o">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">e</span><span class="o">)</span>
-    <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">ProcessCreated</span> <span class="o">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">e</span><span class="o">)</span>
-    <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">RecipeAdded</span> <span class="o">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">e</span><span class="o">)</span>
-  <span class="o">}</span>
-<span class="o">})</span>
-</pre></div></div>
-<input name="__tabs_14" type="radio" id="__tab_14_1" />
-<label for="__tab_14_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">com.ing.baker.runtime.javadsl.BakerEvent</span><span class="o">;</span>
-
-<span class="n">baker</span><span class="o">.</span><span class="na">registerBakerEventListener</span><span class="o">((</span><span class="n">BakerEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">event</span><span class="o">));</span>
-</pre></div></div>
-</div>
+baker.registerBakerEventListener((BakerEvent event) -&gt; System.out.println(event));
+</code></pre></div></p>
 <h2 id="bakerretryinteractionrecipeinstanceid-interactionname">baker.retryInteraction(recipeInstanceId, interactionName)</h2>
 <p>It is possible that during the execution of a <code>RecipeInstance</code> it becomes <em>blocked</em>, this can happen either because it 
 is <code>directly blocked</code> by an exception (and the <code>FailureStrategy</code> of the <code>Interaction</code> of the <code>Recipe</code> was set to block) 
@@ -1429,18 +1314,13 @@ This one involves forcing another try, resulting either on a successful continue
 to check this you will need to request the state of the <code>RecipeInstance</code> again.</p>
 <p><em>Note: this behaviour can be automatically preconfigured by using the <code>RetryWithIncrementalBackoff</code> <code>FailureStrategy</code>
 on the <code>Interaction</code> of the <code>Recipe</code></em></p>
-<div class="superfences-tabs">
-<input name="__tabs_15" type="radio" id="__tab_15_0" checked="checked" />
-<label for="__tab_15_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">program</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> 
-    <span class="n">baker</span><span class="o">.</span><span class="n">retryInteraction</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="s">&quot;ReserveItems&quot;</span><span class="o">)</span>
-</pre></div></div>
-<input name="__tabs_15" type="radio" id="__tab_15_1" />
-<label for="__tab_15_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">BoxedUnit</span><span class="o">&gt;</span> <span class="n">program</span> <span class="o">=</span> 
-    <span class="n">baker</span><span class="o">.</span><span class="na">retryInteraction</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="s">&quot;ReserveItems&quot;</span><span class="o">);</span>
-</pre></div></div>
-</div>
+<p>``` scala tab="Scala"
+val program: Future[Unit] = 
+    baker.retryInteraction(recipeInstanceId, "ReserveItems")
+<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
+CompletableFuture&lt;BoxedUnit&gt; program = 
+    baker.retryInteraction(recipeInstanceId, &quot;ReserveItems&quot;);
+</code></pre></div></p>
 <h2 id="bakerresolveinteractionrecipeinstanceid-interactionname-event">baker.resolveInteraction(recipeInstanceId, interactionName, event)</h2>
 <p>It is possible that during the execution of a <code>RecipeInstance</code> it becomes <em>blocked</em>, this can happen either because it 
 is <code>directly blocked</code> by an exception or that the retry strategy was exhausted. At this point it is possible to resolve 
@@ -1448,35 +1328,23 @@ the blocked interaction in two ways. This one involves resolving the interaction
 the one that would have had been computed by the <code>InteractionInstance</code>.</p>
 <p><em>Note: this behaviour can be automatically preconfigured by using the <code>FireEventAfterFailure(eventName)</code> <code>FailureStrategy</code>
 on the <code>Interaction</code> of the <code>Recipe</code></em></p>
-<div class="superfences-tabs">
-<input name="__tabs_16" type="radio" id="__tab_16_0" checked="checked" />
-<label for="__tab_16_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">program</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> 
-    <span class="n">baker</span><span class="o">.</span><span class="n">resolveInteraction</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="s">&quot;ReserveItems&quot;</span><span class="o">,</span> <span class="nc">ItemsReserved</span><span class="o">(</span><span class="nc">List</span><span class="o">(</span><span class="s">&quot;item1&quot;</span><span class="o">)))</span>
-</pre></div></div>
-<input name="__tabs_16" type="radio" id="__tab_16_1" />
-<label for="__tab_16_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">BoxedUnit</span><span class="o">&gt;</span> <span class="n">program</span> <span class="o">=</span> 
-    <span class="n">baker</span><span class="o">.</span><span class="na">resolveInteraction</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="s">&quot;ReserveItems&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="n">ItemsReserved</span><span class="o">(</span><span class="n">List</span><span class="o">(</span><span class="s">&quot;item1&quot;</span><span class="o">)));</span>
-</pre></div></div>
-</div>
+<p>``` scala tab="Scala"
+val program: Future[Unit] = 
+    baker.resolveInteraction(recipeInstanceId, "ReserveItems", ItemsReserved(List("item1")))
+<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
+CompletableFuture&lt;BoxedUnit&gt; program = 
+    baker.resolveInteraction(recipeInstanceId, &quot;ReserveItems&quot;, new ItemsReserved(List(&quot;item1&quot;)));
+</code></pre></div></p>
 <h2 id="bakerstopretryinginteractionrecipeinstanceid-interactionname">baker.stopRetryingInteraction(recipeInstanceId, interactionName)</h2>
 <p>If an <code>Interaction</code> is configured with a <code>RetryWithIncrementalBackoff</code> <code>FailureStrategy</code> then it will not stop retrying 
 until you call this API or a successful outcome happens from the <code>InteractionInstance</code>.</p>
-<div class="superfences-tabs">
-<input name="__tabs_17" type="radio" id="__tab_17_0" checked="checked" />
-<label for="__tab_17_0">Scala</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">program</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> 
-    <span class="n">baker</span><span class="o">.</span><span class="n">stopRetryingInteraction</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="s">&quot;ReserveItems&quot;</span><span class="o">)</span>
-</pre></div></div>
-<input name="__tabs_17" type="radio" id="__tab_17_1" />
-<label for="__tab_17_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">BoxedUnit</span><span class="o">&gt;</span> <span class="n">program</span> <span class="o">=</span> 
-    <span class="n">baker</span><span class="o">.</span><span class="na">stopRetryingInteraction</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="s">&quot;ReserveItems&quot;</span><span class="o">);</span>
-</pre></div></div>
-</div>
-                
-                  
+<p>``` scala tab="Scala"
+val program: Future[Unit] = 
+    baker.stopRetryingInteraction(recipeInstanceId, "ReserveItems")
+<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
+CompletableFuture&lt;BoxedUnit&gt; program = 
+    baker.stopRetryingInteraction(recipeInstanceId, &quot;ReserveItems&quot;);
+</code></pre></div></p>
                 
               
               
@@ -1493,34 +1361,34 @@ until you call this API or a successful outcome happens from the <code>Interacti
 <footer class="md-footer">
   
     <div class="md-footer-nav">
-      <nav class="md-footer-nav__inner md-grid">
+      <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
         
-          <a href="../dsls/" title="Recipe DSLs" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+          <a href="../dsls/" title="Recipe DSLs" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
             </div>
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
                 Recipe DSLs
-              </span>
+              </div>
             </div>
           </a>
         
         
-          <a href="../visualization/" title="Visualization" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-              <span class="md-flex__ellipsis">
+          <a href="../visualization/" title="Visualization" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
                 Visualization
-              </span>
+              </div>
             </div>
-            <div class="md-flex__cell md-flex__cell--shrink">
-              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
             </div>
           </a>
         
@@ -1531,11 +1399,10 @@ until you call this API or a successful outcome happens from the <code>Interacti
     <div class="md-footer-meta__inner md-grid">
       <div class="md-footer-copyright">
         
-        powered by
-        <a href="https://www.mkdocs.org">MkDocs</a>
-        and
-        <a href="https://squidfunk.github.io/mkdocs-material/">
-          Material for MkDocs</a>
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
       </div>
       
     </div>
@@ -1544,9 +1411,18 @@ until you call this API or a successful outcome happens from the <code>Interacti
       
     </div>
     
-      <script src="../../../assets/javascripts/application.245445c6.js"></script>
+      <script src="../../../assets/javascripts/vendor.3636a4ec.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.e9fe3281.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
       
-      <script>app.initialize({version:"1.0.4",url:{base:"../../.."}})</script>
+      <script>
+        app = initialize({
+          base: "../../..",
+          features: [],
+          search: Object.assign({
+            worker: "../../../assets/javascripts/worker/search.5eca75d3.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
       
     
   </body>
