@@ -61,7 +61,7 @@ object Dependencies {
   val kamonAkka = "io.kamon" %% "kamon-akka" % kamonAkkaVersion
   val kamonPrometheus = "io.kamon" %% "kamon-prometheus" % kamonAkkaVersion
 
-  val play = ("com.typesafe.play" %% "play-json" % "2.9.0")
+  val play = ("com.typesafe.play" %% "play-json" % "2.9.1")
     .excludeAll(
       ExclusionRule("com.fasterxml.jackson.core", "jackson-databind"),
       ExclusionRule("com.fasterxml.jackson.core", "jackson-core"),
