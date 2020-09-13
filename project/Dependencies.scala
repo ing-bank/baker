@@ -24,7 +24,7 @@ object Dependencies {
   val mockito = "org.mockito" % "mockito-all" % "1.10.19"
   val mockServer = "org.mock-server" % "mockserver-netty" % "5.11.1"
   val junitInterface = "com.novocode" % "junit-interface" % "0.11"
-  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.6.2"
+  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.7.0"
 
   val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
   val akkaStream = "com.typesafe.akka" %% "akka-stream" % akkaVersion
