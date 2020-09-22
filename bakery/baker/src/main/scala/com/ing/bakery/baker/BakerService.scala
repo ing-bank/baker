@@ -2,7 +2,6 @@ package com.ing.bakery.baker
 
 import java.net.InetSocketAddress
 
-import akka.actor.ActorPath
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
 import com.ing.baker.runtime.common.BakerException
