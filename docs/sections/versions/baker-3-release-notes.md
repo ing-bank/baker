@@ -73,24 +73,28 @@ The EventInstance in turn can be created form an Object.
 The difference now is that its clear that Baker uses EventInstances internally.
 Another advantage is that you are now also free to create EventInstances any other way.
 
-```scala tab="Scala"
-//From any Object
-val orderPlaced = EventInstance
-      .unsafeFrom(SimpleWebshopRecipeReflection.OrderPlaced(orderId, items))
-//Using constructor
-val orderPlace2 =
-        EventInstance.apply("OrderPlaced", Map("orderId"-> Converters.toValue(orderId), "items" -> Converters.toValue(items)))
+=== "Scala"
 
-```
+    ```scala 
+    //From any Object
+    val orderPlaced = EventInstance
+          .unsafeFrom(SimpleWebshopRecipeReflection.OrderPlaced(orderId, items))
+    //Using constructor
+    val orderPlace2 =
+            EventInstance.apply("OrderPlaced", Map("orderId"-> Converters.toValue(orderId), "items" -> Converters.toValue(items)))
 
-```java tab="Java"
-//From any Object
-EventInstance firstOrderPlaced =
-                EventInstance.from(new JWebshopRecipe.OrderPlaced(orderId, items));
-//Using constructor
-EventInstance firstOrderPlaced2 =
-                EventInstance.apply("OrderPlaced", ImmutableMap.of("orderId", Converters.toValue(orderId), "items", Converters.toValue(items)));
-```
+    ```
+
+=== "Java"
+
+    ```java 
+    //From any Object
+    EventInstance firstOrderPlaced =
+                    EventInstance.from(new JWebshopRecipe.OrderPlaced(orderId, items));
+    //Using constructor
+    EventInstance firstOrderPlaced2 =
+                    EventInstance.apply("OrderPlaced", ImmutableMap.of("orderId", Converters.toValue(orderId), "items", Converters.toValue(items)));
+    ```
 
 
 #### Decide on what to be notified on when firing the event
@@ -100,15 +104,19 @@ New in this release is that you can now specify this when firing the event itsel
 The advantage is that Baker can optimize the resources it uses in those cases.
 This is done using the fireEventAndResolveWhenReceived and fireEventAndResolveWhenCompleted methods.
 
-```scala tab="Scala"
-val result: Future[SensoryEventStatus] = baker.fireEventAndResolveWhenReceived(recipeInstanceId, orderPlaced)
-val result: Future[SensoryEventResult] = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade)
-```
+=== "Scala"
 
-```java tab="Java"
-CompletableFuture<SensoryEventStatus> result = baker.fireEventAndResolveWhenReceived(recipeInstanceId, paymentMade);
-CompletableFuture<SensoryEventResult> result = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced);
-```
+    ```scala 
+    val result: Future[SensoryEventStatus] = baker.fireEventAndResolveWhenReceived(recipeInstanceId, orderPlaced)
+    val result: Future[SensoryEventResult] = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade)
+    ```
+
+=== "Java"
+
+    ```java 
+    CompletableFuture<SensoryEventStatus> result = baker.fireEventAndResolveWhenReceived(recipeInstanceId, paymentMade);
+    CompletableFuture<SensoryEventResult> result = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced);
+    ```
 
 The old way of firing a event where you get both the co
 
@@ -119,14 +127,18 @@ You can use the fireEventAndResolveOnEvent method for this.
 
 The returned future will complete when a event with the given name is fired.
 
-```scala tab="Scala"
-val result: Future[SensoryEventResult] = baker.fireEventAndResolveOnEvent(recipeInstanceId, orderPlaced, "eventName")
-```
+=== "Scala"
 
-```java tab="Java"
-CompletableFuture<SensoryEventResult> result =
-                baker.fireEventAndResolveOnEvent(recipeInstanceId, firstOrderPlaced, "eventName");
-```
+    ```scala 
+    val result: Future[SensoryEventResult] = baker.fireEventAndResolveOnEvent(recipeInstanceId, orderPlaced, "eventName")
+    ```
+
+=== "Java"
+
+    ```java 
+    CompletableFuture<SensoryEventResult> result =
+                    baker.fireEventAndResolveOnEvent(recipeInstanceId, firstOrderPlaced, "eventName");
+    ```
 
 #### EventResult
 The fireEventAndResolveOnEvent and fireEventAndResolveWhenCompleted return an EventResult.
@@ -134,28 +146,32 @@ This EventResult object contains the SensoryEventStatus, event names and created
 The addition of the event names and ingredients can be very useful if you need to make a decision depending on the state.
 In these cases there is no need to inquire on Baker itself anymore.
 
-```scala tab="Scala"
-case class SensoryEventResult(
-                               sensoryEventStatus: SensoryEventStatus,
-                               eventNames: Seq[String],
-                               ingredients: Map[String, Value]
-) extends com.ing.baker.runtime.common.SensoryEventResult with ScalaApi
-```
+=== "Scala"
 
-```java tab="Java"
-case class SensoryEventResult(
-                               sensoryEventStatus: SensoryEventStatus,
-                               eventNames: java.util.List[String],
-                               ingredients: java.util.Map[String, Value]
-) extends com.ing.baker.runtime.common.SensoryEventResult with JavaApi {
+    ```scala 
+    case class SensoryEventResult(
+                                   sensoryEventStatus: SensoryEventStatus,
+                                   eventNames: Seq[String],
+                                   ingredients: Map[String, Value]
+    ) extends com.ing.baker.runtime.common.SensoryEventResult with ScalaApi
+    ```
 
-  def getSensoryEventStatus: SensoryEventStatus = sensoryEventStatus
+=== "Java"
 
-  def getEventName: java.util.List[String] = eventNames
+    ```java 
+    case class SensoryEventResult(
+                                   sensoryEventStatus: SensoryEventStatus,
+                                   eventNames: java.util.List[String],
+                                   ingredients: java.util.Map[String, Value]
+    ) extends com.ing.baker.runtime.common.SensoryEventResult with JavaApi {
 
-  def getIngredients: java.util.Map[String, Value] = ingredients
-}
-```
+      def getSensoryEventStatus: SensoryEventStatus = sensoryEventStatus
+
+      def getEventName: java.util.List[String] = eventNames
+
+      def getIngredients: java.util.Map[String, Value] = ingredients
+    }
+    ```
 
 ### New EventListener functions
 For the EventListener we have moved away from the annotation based approach.

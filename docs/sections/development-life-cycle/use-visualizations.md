@@ -7,25 +7,29 @@ create a bridge between developers and business oriented people.
 
 You can generate one from a compiled recipe.
 
-``` scala tab="Scala"
+=== "Scala"
 
-import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.compiler.RecipeCompiler
+    ```scala 
 
-val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
-val visualization: String = compiled.getRecipeVisualization
+    import com.ing.baker.il.CompiledRecipe
+    import com.ing.baker.compiler.RecipeCompiler
 
-```
+    val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
+    val visualization: String = compiled.getRecipeVisualization
 
-``` scala tab="Java"
+    ```
 
-import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.compiler.RecipeCompiler;
+=== "Java"
 
-CompiledRecipe recipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
-String visualization = recipe.getRecipeVisualization();
+    ```java 
 
-```
+    import com.ing.baker.il.CompiledRecipe;
+    import com.ing.baker.compiler.RecipeCompiler;
+
+    CompiledRecipe recipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+    String visualization = recipe.getRecipeVisualization();
+
+    ```
 
 The visualization is a [graphviz](http://www.graphviz.org/) string that will look like this:
 

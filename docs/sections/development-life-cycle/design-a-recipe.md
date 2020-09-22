@@ -27,54 +27,58 @@ A recipe always starts with initial events, also called `Sensory Events`, in the
 we could model the placing of an order as an event, which will provide 2 ingredients: the order id and the list
 of items.
 
-``` scala tab="Scala"
+=== "Scala"
 
-import com.ing.baker.recipe.scaladsl._
+    ```scala 
 
-object Ingredients {
+    import com.ing.baker.recipe.scaladsl._
 
-    val OrderId: Ingredient[String] =
-      Ingredient[String]("orderId")
+    object Ingredients {
 
-    val Items: Ingredient[List[String]] =
-      Ingredient[List[String]]("items")
-}
+        val OrderId: Ingredient[String] =
+          Ingredient[String]("orderId")
 
-object Events {
+        val Items: Ingredient[List[String]] =
+          Ingredient[List[String]]("items")
+    }
 
-    val OrderPlaced: Event = Event(
-      name = "OrderPlaced",
-      providedIngredients = Seq(
-        Ingredients.OrderId,
-        Ingredients.Items
-      ),
-      maxFiringLimit = Some(1)
-    )
-}
+    object Events {
 
-```
+        val OrderPlaced: Event = Event(
+          name = "OrderPlaced",
+          providedIngredients = Seq(
+            Ingredients.OrderId,
+            Ingredients.Items
+          ),
+          maxFiringLimit = Some(1)
+        )
+    }
 
-``` java tab="Java"
+    ```
 
-// In Java the data structures to represent Events and Ingredients 
-// will be extraxted from a class by the reflection API when building 
-// the Recipe. (see below for full example)
+=== "Java"
 
-public class JWebshopRecipe {
+    ```java 
 
-    public static class OrderPlaced {
+    // In Java the data structures to represent Events and Ingredients 
+    // will be extraxted from a class by the reflection API when building 
+    // the Recipe. (see below for full example)
 
-        public final String orderId;
-        public final List<String> items;
+    public class JWebshopRecipe {
 
-        public OrderPlaced(String orderId, List<String> items) {
-            this.orderId = orderId;
-            this.items = items;
+        public static class OrderPlaced {
+
+            public final String orderId;
+            public final List<String> items;
+
+            public OrderPlaced(String orderId, List<String> items) {
+                this.orderId = orderId;
+                this.items = items;
+            }
         }
     }
-}
 
-```
+    ```
 
 Depending on your programming language, you might want to import the corresponding dsl, i.e. `scaladsl` vs `javadsl`.
 
@@ -92,99 +96,103 @@ which we need to call to reserve the items, but this might either succeed or fai
 _Note: Notice that when using the reflection API, the Java interface or Scala trait that will represent your interaction
 must have a method named `apply`, this is the method that the reflection API will convert into Baker types/ingredients/events._
 
-```scala tab="Scala"
+=== "Scala"
 
-object Interactions {
-    
-    val ReserveItems: Interaction = Interaction(
-          name = "ReserveItems",
-          inputIngredients = Seq(
-            Ingredients.OrderId,
-            Ingredients.Items,
-          ),
-          output = Seq(
-            Events.OrderHadUnavailableItems,
-            Events.ItemsReserved
-          )
-        )
-}
+    ```scala 
 
-object Ingredients {
-
-    // ... previous ingredients
-    
-    val ReservedItems: Ingredient[List[String]] =
-      Ingredient[List[String]]("reservedItems")
-
-    val UnavailableItems: Ingredient[List[String]] =
-      Ingredient[List[String]]("unavailableItems")
-}
-
-object Events {
-
-    // ... previous events
-    
-    val OrderHadUnavailableItems: Event = Event(
-      name = "OrderHadUnavailableItems",
-      providedIngredients = Seq(
-        Ingredients.UnavailableItems
-      ),
-      maxFiringLimit = Some(1)
-    )
-
-    val ItemsReserved: Event = Event(
-      name = "ItemsReserved",
-      providedIngredients = Seq(
-        Ingredients.ReservedItems
-      ),
-      maxFiringLimit = Some(1)
-    )
-}
-
-```
-
-```scala tab="Java (Reflection API)"
-
-public class JWebshopRecipe {
-    
-    // ... previous event
-    
-    // Interface that will represent our Interaction, notice that it is declaring inner events.
-    
-    public interface ReserveItems extends Interaction {
-
-        interface ReserveItemsOutcome {
-        }
-
-        class OrderHadUnavailableItems implements ReserveItemsOutcome {
-
-            public final List<String> unavailableItems;
-
-            public OrderHadUnavailableItems(List<String> unavailableItems) {
-                this.unavailableItems = unavailableItems;
-            }
-        }
-
-        class ItemsReserved implements ReserveItemsOutcome {
-
-            public final List<String> reservedItems;
-
-            public ItemsReserved(List<String> reservedItems) {
-                this.reservedItems = reservedItems;
-            }
-        }
-
-        // The @FireEvent annotation communicates the reflection API about several possible outcome events.
-        @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
-        // The @RequiresIngredient annotation communicates the reflection API about the ingredient names that other events
-        // must provide to execute this interaction.
-        // The method MUST be named `apply`
-        ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") List<String> items);
+    object Interactions {
+        
+        val ReserveItems: Interaction = Interaction(
+              name = "ReserveItems",
+              inputIngredients = Seq(
+                Ingredients.OrderId,
+                Ingredients.Items,
+              ),
+              output = Seq(
+                Events.OrderHadUnavailableItems,
+                Events.ItemsReserved
+              )
+            )
     }
-    
-}
 
-```
+    object Ingredients {
+
+        // ... previous ingredients
+        
+        val ReservedItems: Ingredient[List[String]] =
+          Ingredient[List[String]]("reservedItems")
+
+        val UnavailableItems: Ingredient[List[String]] =
+          Ingredient[List[String]]("unavailableItems")
+    }
+
+    object Events {
+
+        // ... previous events
+        
+        val OrderHadUnavailableItems: Event = Event(
+          name = "OrderHadUnavailableItems",
+          providedIngredients = Seq(
+            Ingredients.UnavailableItems
+          ),
+          maxFiringLimit = Some(1)
+        )
+
+        val ItemsReserved: Event = Event(
+          name = "ItemsReserved",
+          providedIngredients = Seq(
+            Ingredients.ReservedItems
+          ),
+          maxFiringLimit = Some(1)
+        )
+    }
+
+    ```
+    
+=== "Java (Reflection API)"
+
+    ```java
+
+    public class JWebshopRecipe {
+        
+        // ... previous event
+        
+        // Interface that will represent our Interaction, notice that it is declaring inner events.
+        
+        public interface ReserveItems extends Interaction {
+
+            interface ReserveItemsOutcome {
+            }
+
+            class OrderHadUnavailableItems implements ReserveItemsOutcome {
+
+                public final List<String> unavailableItems;
+
+                public OrderHadUnavailableItems(List<String> unavailableItems) {
+                    this.unavailableItems = unavailableItems;
+                }
+            }
+
+            class ItemsReserved implements ReserveItemsOutcome {
+
+                public final List<String> reservedItems;
+
+                public ItemsReserved(List<String> reservedItems) {
+                    this.reservedItems = reservedItems;
+                }
+            }
+
+            // The @FireEvent annotation communicates the reflection API about several possible outcome events.
+            @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
+            // The @RequiresIngredient annotation communicates the reflection API about the ingredient names that other events
+            // must provide to execute this interaction.
+            // The method MUST be named `apply`
+            ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") List<String> items);
+        }
+        
+    }
+
+    ```
 
 An interaction resembles a function, it takes input ingredients and outputs 1 of several possible events. At runtime, when
 an event fires, baker tries to match the provided ingredients of 1 or several events to the input of awaiting interactions,
@@ -204,30 +212,34 @@ the "blueprint" of your process, it can define failure handling strategies, and 
 means it detects the composition between interactions by matching the ingredients provided by events to the input ingredients
 required by interactions.
 
-```scala tab="Scala"
+=== "Scala"
 
-object WebshopRecipe {
-  val recipe: Recipe = Recipe("Webshop")
-    .withSensoryEvents(
-      Events.OrderPlaced
-    )
-    .withInteractions(
-      Interactions.ReserveItems,
-    )
-}
-```
+    ```scala 
 
-```scala tab="Java"
+    object WebshopRecipe {
+      val recipe: Recipe = Recipe("Webshop")
+        .withSensoryEvents(
+          Events.OrderPlaced
+        )
+        .withInteractions(
+          Interactions.ReserveItems,
+        )
+    }
+    ```
 
-public class JWebshopRecipe {
+=== "Java"
 
-    // ... previous events and interactions.
+    ```java
 
-    public final static Recipe recipe = new Recipe("WebshopRecipe")
-            .withSensoryEvents(OrderPlaced.class)
-            .withInteractions(of(ReserveItems.class));
-}
-```
+    public class JWebshopRecipe {
+
+        // ... previous events and interactions.
+
+        public final static Recipe recipe = new Recipe("WebshopRecipe")
+                .withSensoryEvents(OrderPlaced.class)
+                .withInteractions(of(ReserveItems.class));
+    }
+    ```
 
 Let us remember that this is just a _description_ of what our program across multiple services should do, on the next 
 sections we will see how to visualize it, create runtime `instances` of our recipes and their parts, what common practices
@@ -241,99 +253,103 @@ same processes (simmering, boiling, cutting) you should reuse interactions acros
 As a bonus; you might have though that this API is verbose, we agree and that is why we developed an alternative 
 API which uses Java and Scala reflection.
 
-``` scala tab="Scala (Reflection API)"
+=== "Scala (Reflection API)"
 
-package webshop
+    ```scala 
 
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
+    package webshop
 
-object WebshopRecipeReflection {
+    import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 
-  case class OrderPlaced(orderId: String, items: List[String])
+    object WebshopRecipeReflection {
 
-  sealed trait ReserveItemsOutput
+      case class OrderPlaced(orderId: String, items: List[String])
 
-  case class OrderHadUnavailableItems(unavailableItems: List[String]) extends ReserveItemsOutput
+      sealed trait ReserveItemsOutput
 
-  case class ItemsReserved(reservedItems: List[String]) extends ReserveItemsOutput
+      case class OrderHadUnavailableItems(unavailableItems: List[String]) extends ReserveItemsOutput
 
-  val ReserveItems = Interaction(
-    name = "ReserveItems",
-    inputIngredients = Seq(
-      Ingredient[String]("orderId"),
-      Ingredient[List[String]]("items")
-    ),
-    output = Seq(
-      Event[OrderHadUnavailableItems],
-      Event[ItemsReserved]
-    )
-  )
+      case class ItemsReserved(reservedItems: List[String]) extends ReserveItemsOutput
 
-  val recipe: Recipe = Recipe("Webshop")
-    .withSensoryEvents(
-      Event[OrderPlaced])
-    .withInteractions(
-      ReserveItems)
-}
+      val ReserveItems = Interaction(
+        name = "ReserveItems",
+        inputIngredients = Seq(
+          Ingredient[String]("orderId"),
+          Ingredient[List[String]]("items")
+        ),
+        output = Seq(
+          Event[OrderHadUnavailableItems],
+          Event[ItemsReserved]
+        )
+      )
 
-```
-
-``` scala tab="Java (Reflection API)"
-
-package webshop;
-
-import com.ing.baker.recipe.annotations.FiresEvent;
-import com.ing.baker.recipe.annotations.RequiresIngredient;
-import com.ing.baker.recipe.javadsl.Interaction;
-import com.ing.baker.recipe.javadsl.Recipe;
-
-import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
-
-public class JWebshopRecipe {
-
-    public static class OrderPlaced {
-
-        public final String orderId;
-        public final List<String> items;
-
-        public OrderPlaced(String orderId, List<String> items) {
-            this.orderId = orderId;
-            this.items = items;
-        }
+      val recipe: Recipe = Recipe("Webshop")
+        .withSensoryEvents(
+          Event[OrderPlaced])
+        .withInteractions(
+          ReserveItems)
     }
 
-    public interface ReserveItems extends Interaction {
+    ```
 
-        interface ReserveItemsOutcome {
-        }
+=== "Java (Reflection API)"
 
-        class OrderHadUnavailableItems implements ReserveItemsOutcome {
+    ```java 
 
-            public final List<String> unavailableItems;
+    package webshop;
 
-            public OrderHadUnavailableItems(List<String> unavailableItems) {
-                this.unavailableItems = unavailableItems;
+    import com.ing.baker.recipe.annotations.FiresEvent;
+    import com.ing.baker.recipe.annotations.RequiresIngredient;
+    import com.ing.baker.recipe.javadsl.Interaction;
+    import com.ing.baker.recipe.javadsl.Recipe;
+
+    import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
+
+    public class JWebshopRecipe {
+
+        public static class OrderPlaced {
+
+            public final String orderId;
+            public final List<String> items;
+
+            public OrderPlaced(String orderId, List<String> items) {
+                this.orderId = orderId;
+                this.items = items;
             }
         }
 
-        class ItemsReserved implements ReserveItemsOutcome {
+        public interface ReserveItems extends Interaction {
 
-            public final List<String> reservedItems;
-
-            public ItemsReserved(List<String> reservedItems) {
-                this.reservedItems = reservedItems;
+            interface ReserveItemsOutcome {
             }
+
+            class OrderHadUnavailableItems implements ReserveItemsOutcome {
+
+                public final List<String> unavailableItems;
+
+                public OrderHadUnavailableItems(List<String> unavailableItems) {
+                    this.unavailableItems = unavailableItems;
+                }
+            }
+
+            class ItemsReserved implements ReserveItemsOutcome {
+
+                public final List<String> reservedItems;
+
+                public ItemsReserved(List<String> reservedItems) {
+                    this.reservedItems = reservedItems;
+                }
+            }
+
+            // The @FireEvent annotation communicates the reflection API about several possible outcome events.
+            @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
+            // The @RequiresIngredient annotation communicates the reflection API about the ingredient names that other events
+            // must provide to execute this interaction.
+            ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") List<String> items);
         }
 
-        // The @FireEvent annotation communicates the reflection API about several possible outcome events.
-        @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
-        // The @RequiresIngredient annotation communicates the reflection API about the ingredient names that other events
-        // must provide to execute this interaction.
-        ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") List<String> items);
+        public final static Recipe recipe = new Recipe("WebshopRecipe")
+                .withSensoryEvents(OrderPlaced.class)
+                .withInteractions(of(ReserveItems.class));
     }
-
-    public final static Recipe recipe = new Recipe("WebshopRecipe")
-            .withSensoryEvents(OrderPlaced.class)
-            .withInteractions(of(ReserveItems.class));
-}
-```
+    ```
