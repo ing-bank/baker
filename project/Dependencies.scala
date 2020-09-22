@@ -9,7 +9,7 @@ object Dependencies {
   val circeVersion = "0.13.0"
   val kamonAkkaVersion = "2.1.6"
 
-  val jvmV = "1.8"
+  val jvmV = "11"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
