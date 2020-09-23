@@ -733,15 +733,22 @@ transfer recipes and data between nodes and to match over such data, that is why
 They help not just to model your domain but also for Baker to identify when to execute interactions. </p>
 <p>If you are using all of our reflection APIs then you will not use them directly, but it is good to know of their 
 existence.</p>
-<p>``` scala tab="Scala"
-import com.ing.baker.types._</p>
-<p>val data: (Type, Value) = (Int32, PrimitiveValue(42))
-<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
-import com.ing.baker.types.*;
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">import</span> <span class="nn">com.ing.baker.types._</span>
 
-Type dataType = Int32$.MODULE$;
-Value dataValue = PrimitiveValue.apply(42);
-</code></pre></div></p>
+<span class="k">val</span> <span class="n">data</span><span class="k">:</span> <span class="o">(</span><span class="kt">Type</span><span class="o">,</span> <span class="kt">Value</span><span class="o">)</span> <span class="k">=</span> <span class="o">(</span><span class="nc">Int32</span><span class="o">,</span> <span class="nc">PrimitiveValue</span><span class="o">(</span><span class="mi">42</span><span class="o">))</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">com.ing.baker.types.*</span><span class="p">;</span>
+
+<span class="n">Type</span> <span class="n">dataType</span> <span class="o">=</span> <span class="n">Int32$</span><span class="p">.</span><span class="na">MODULE$</span><span class="p">;</span>
+<span class="n">Value</span> <span class="n">dataValue</span> <span class="o">=</span> <span class="n">PrimitiveValue</span><span class="p">.</span><span class="na">apply</span><span class="p">(</span><span class="mi">42</span><span class="p">);</span>
+</code></pre></div>
+
+</div>
+</div>
 <p><code>Types</code> are specifically used to describe <code>Ingredients</code>, specifically <code>Ingredients</code> are just a relation between a name and
 a type. </p>
 <p>In a similar way that a programming language variable is just a relation between a name and a type at compile time, the 

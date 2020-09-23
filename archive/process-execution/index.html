@@ -676,59 +676,81 @@
 <h2 id="recap">Recap</h2>
 <p>On the <a href="../baker-runtime/">runtime</a> page we discussed how you could initialize Baker and add your <a href="../dictionary/#recipe">recipe</a> to it.</p>
 <p>Lets summarize what we have done so far.</p>
-<p>```scala tab="Scala"
-// To execute a recipe you will need a Baker instance
-// This should be the same instance as you used to register your Recipe
-val baker: Baker = ???</p>
-<p>// The recipe id was given to us when we add our Recipe to Baker
-val recipeId: String = ???
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
-// To execute a recipe you will need a Baker instance
-// This should be the same instance as you used to register your Recipe
-JBaker baker = null; //
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// To execute a recipe you will need a Baker instance</span>
+<span class="c1">// This should be the same instance as you used to register your Recipe</span>
+<span class="k">val</span> <span class="n">baker</span><span class="k">:</span> <span class="kt">Baker</span> <span class="o">=</span> <span class="o">???</span>
 
-// The recipe id was given to us when we add our Recipe to Baker
-String recipeId = &quot;...&quot;;
-</code></pre></div></p>
+<span class="c1">// The recipe id was given to us when we add our Recipe to Baker</span>
+<span class="k">val</span> <span class="n">recipeId</span><span class="k">:</span> <span class="kt">String</span> <span class="o">=</span> <span class="o">???</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// To execute a recipe you will need a Baker instance</span>
+<span class="c1">// This should be the same instance as you used to register your Recipe</span>
+<span class="n">JBaker</span> <span class="n">baker</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span> <span class="c1">//</span>
+
+<span class="c1">// The recipe id was given to us when we add our Recipe to Baker</span>
+<span class="n">String</span> <span class="n">recipeId</span> <span class="o">=</span> <span class="s">&quot;...&quot;</span><span class="p">;</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="create-a-process-instance">Create a process instance</h2>
 <p>Given a valid <a href="../dictionary/#recipe-id">recipe id</a> we can now execute a Recipe.</p>
 <p>Or in other words we can create a <a href="../dictionary/#process-instance">process instance</a>.</p>
-<p>```scala tab="Scala"
-// Assuming you have a compiled recipe
-val recipe: CompiledRecipe = ???</p>
-<p>// A unique identifier ment to distinguish this process from other process instances
-val recipeInstanceId = "a-unique-process-id"</p>
-<p>// Tell Baker that we want to create a new process for a certain recipe.
-baker.bake(recipe.recipeId, recipeInstanceId)
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
-// Assuming you have a compiled recipe
-CompiledRecipe recipe = null; //
+<div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// Assuming you have a compiled recipe</span>
+<span class="k">val</span> <span class="n">recipe</span><span class="k">:</span> <span class="kt">CompiledRecipe</span> <span class="o">=</span> <span class="o">???</span>
 
-// A unique identifier ment to distinguish this process from other process instances
-String recipeInstanceId = &quot;a-unique-process-id&quot;;
+<span class="c1">// A unique identifier ment to distinguish this process from other process instances</span>
+<span class="k">val</span> <span class="n">recipeInstanceId</span> <span class="k">=</span> <span class="s">&quot;a-unique-process-id&quot;</span>
 
-// Tell Baker that we want to create a new process for a certain recipe.
-baker.bake(recipe.recipeId(), recipeInstanceId);
-</code></pre></div></p>
+<span class="c1">// Tell Baker that we want to create a new process for a certain recipe.</span>
+<span class="n">baker</span><span class="o">.</span><span class="n">bake</span><span class="o">(</span><span class="n">recipe</span><span class="o">.</span><span class="n">recipeId</span><span class="o">,</span> <span class="n">recipeInstanceId</span><span class="o">)</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// Assuming you have a compiled recipe</span>
+<span class="n">CompiledRecipe</span> <span class="n">recipe</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span> <span class="c1">//</span>
+
+<span class="c1">// A unique identifier ment to distinguish this process from other process instances</span>
+<span class="n">String</span> <span class="n">recipeInstanceId</span> <span class="o">=</span> <span class="s">&quot;a-unique-process-id&quot;</span><span class="p">;</span>
+
+<span class="c1">// Tell Baker that we want to create a new process for a certain recipe.</span>
+<span class="n">baker</span><span class="p">.</span><span class="na">bake</span><span class="p">(</span><span class="n">recipe</span><span class="p">.</span><span class="na">recipeId</span><span class="p">(),</span> <span class="n">recipeInstanceId</span><span class="p">);</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="providing-a-sensory-event">Providing a sensory event</h2>
 <p>In our <a href="../#visual-representation">webshop example</a> the first events that can happen are <code>OrderPlaced</code>, <code>PaymentMade</code> and <code>CustomerInfoReceived</code>.</p>
 <p>These are so called <a href="../dictionary/#sensory-event">sensory events</a> since they are not the result of an interaction but must be provided by the user of Baker.</p>
-<p>```scala tab="Scala"
-// The CustomerInfoReceived and OrderPlaced events require some data (Ingredients)
-val customerInfo = CustomerInfo("John", "Elm. Street", "johndoe@example.com")
-val order = "123";</p>
-<p>// Lets produce the <code>OrderPlaced</code> and <code>CustomerInfoReceived</code> sensory Events.
-baker.processEvent(recipeInstanceId, CustomerInfoRecived(customerInfo))
-baker.processEvent(recipeInstanceId, OrderPlaced(order))
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
-// The CustomerInfoReceived and OrderPlaced events require some data (Ingredients)
-CustomerInfo customerInfo = new CustomerInfo(&quot;John&quot;, &quot;Elm. Street&quot;, &quot;johndoe@example.com&quot;);
-String order = &quot;123&quot;;
+<div class="tabbed-set" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><label for="__tabbed_3_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// The CustomerInfoReceived and OrderPlaced events require some data (Ingredients)</span>
+<span class="k">val</span> <span class="n">customerInfo</span> <span class="k">=</span> <span class="nc">CustomerInfo</span><span class="o">(</span><span class="s">&quot;John&quot;</span><span class="o">,</span> <span class="s">&quot;Elm. Street&quot;</span><span class="o">,</span> <span class="s">&quot;johndoe@example.com&quot;</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">order</span> <span class="k">=</span> <span class="s">&quot;123&quot;</span><span class="o">;</span>
 
-// Lets produce the `OrderPlaced` and `CustomerInfoReceived` sensory Events.
-baker.processEvent(recipeInstanceId, new CustomerInfoReceived(customerInfo));
-baker.processEvent(recipeInstanceId, new OrderPlaced(order));
-</code></pre></div></p>
+<span class="c1">// Lets produce the `OrderPlaced` and `CustomerInfoReceived` sensory Events.</span>
+<span class="n">baker</span><span class="o">.</span><span class="n">processEvent</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="nc">CustomerInfoRecived</span><span class="o">(</span><span class="n">customerInfo</span><span class="o">))</span>
+<span class="n">baker</span><span class="o">.</span><span class="n">processEvent</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="nc">OrderPlaced</span><span class="o">(</span><span class="n">order</span><span class="o">))</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><label for="__tabbed_3_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// The CustomerInfoReceived and OrderPlaced events require some data (Ingredients)</span>
+<span class="n">CustomerInfo</span> <span class="n">customerInfo</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CustomerInfo</span><span class="p">(</span><span class="s">&quot;John&quot;</span><span class="p">,</span> <span class="s">&quot;Elm. Street&quot;</span><span class="p">,</span> <span class="s">&quot;johndoe@example.com&quot;</span><span class="p">);</span>
+<span class="n">String</span> <span class="n">order</span> <span class="o">=</span> <span class="s">&quot;123&quot;</span><span class="p">;</span>
+
+<span class="c1">// Lets produce the `OrderPlaced` and `CustomerInfoReceived` sensory Events.</span>
+<span class="n">baker</span><span class="p">.</span><span class="na">processEvent</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="k">new</span> <span class="n">CustomerInfoReceived</span><span class="p">(</span><span class="n">customerInfo</span><span class="p">));</span>
+<span class="n">baker</span><span class="p">.</span><span class="na">processEvent</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="k">new</span> <span class="n">OrderPlaced</span><span class="p">(</span><span class="n">order</span><span class="p">));</span>
+</code></pre></div>
+
+</div>
+</div>
 <p>When receiving events Baker will check which Interactions have all the required Ingredients and Events met.</p>
 <p>It will execute those interactions.</p>
 <p>Those interactions will raise more events.</p>
@@ -737,22 +759,29 @@ baker.processEvent(recipeInstanceId, new OrderPlaced(order));
 <p>Optionally you may provide a <code>correlation id</code> with an event. The purpose of this identifier is idempotent event delivery.</p>
 <p>When sending the same event correlation id multiple times, only the first will be processed.</p>
 <p>This can be applied to the <code>OrderPlaced</code> event for example.</p>
-<p>``` scala tab="Scala"
-val orderId = "a unique order id"</p>
-<p>val statusA: SensoryEventStatus = baker.processEvent(recipeInstanceId, new OrderPlaced(order), orderId)
-val statusB: SensoryEventStatus = baker.processEvent(recipeInstanceId, new OrderPlaced(order), orderId)</p>
-<p>// statusA == Received
-// statusB == AlreadyReceived</p>
-<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
-String orderId = &quot;a unique order id&quot;;
+<div class="tabbed-set" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><label for="__tabbed_4_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">orderId</span> <span class="k">=</span> <span class="s">&quot;a unique order id&quot;</span>
 
-SensoryEventStatus statusA = baker.processEvent(recipeInstanceId, new OrderPlaced(order), orderId);
-SensoryEventStatus statusB = baker.processEvent(recipeInstanceId, new OrderPlaced(order), orderId);
+<span class="k">val</span> <span class="n">statusA</span><span class="k">:</span> <span class="kt">SensoryEventStatus</span> <span class="o">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">processEvent</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="k">new</span> <span class="nc">OrderPlaced</span><span class="o">(</span><span class="n">order</span><span class="o">),</span> <span class="n">orderId</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">statusB</span><span class="k">:</span> <span class="kt">SensoryEventStatus</span> <span class="o">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">processEvent</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="k">new</span> <span class="nc">OrderPlaced</span><span class="o">(</span><span class="n">order</span><span class="o">),</span> <span class="n">orderId</span><span class="o">)</span>
 
-// statusA == Received
-// statusB == AlreadyReceived
+<span class="c1">// statusA == Received</span>
+<span class="c1">// statusB == AlreadyReceived</span>
 </code></pre></div>
 
+</div>
+<input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><label for="__tabbed_4_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">String</span> <span class="n">orderId</span> <span class="o">=</span> <span class="s">&quot;a unique order id&quot;</span><span class="p">;</span>
+
+<span class="n">SensoryEventStatus</span> <span class="n">statusA</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">processEvent</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="k">new</span> <span class="n">OrderPlaced</span><span class="p">(</span><span class="n">order</span><span class="p">),</span> <span class="n">orderId</span><span class="p">);</span>
+<span class="n">SensoryEventStatus</span> <span class="n">statusB</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">processEvent</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="k">new</span> <span class="n">OrderPlaced</span><span class="p">(</span><span class="n">order</span><span class="p">),</span> <span class="n">orderId</span><span class="p">);</span>
+
+<span class="c1">// statusA == Received</span>
+<span class="c1">// statusB == AlreadyReceived</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="sensory-event-status">Sensory event status</h2>
 <p>In response to receiving a sensory event Baker returns a status code indicating how it processed it.</p>
 <table>
@@ -792,29 +821,47 @@ SensoryEventStatus statusB = baker.processEvent(recipeInstanceId, new OrderPlace
 <h3 id="1-force-retry">1. Force retry</h3>
 <p>For example, the retry strategy for <em>"SendInvoice"</em> was exhausted after a few hours or retrying.</p>
 <p>However, we checked and know the <em>"invoice"</em> service is up again and want to continue to process for our customer.</p>
-<p>``` scala tab="Scala"
-baker.retryInteraction(recipeInstanceId, "SendInvoice")
-<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
-baker.retryInteraction(recipeInstanceId, &quot;SendInvoice&quot;);
-</code></pre></div></p>
+<div class="tabbed-set" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><label for="__tabbed_5_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">baker</span><span class="o">.</span><span class="n">retryInteraction</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="s">&quot;SendInvoice&quot;</span><span class="o">)</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><label for="__tabbed_5_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">baker</span><span class="p">.</span><span class="na">retryInteraction</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="s">&quot;SendInvoice&quot;</span><span class="p">);</span>
+</code></pre></div>
+
+</div>
+</div>
 <h3 id="2-specify-the-interaction-output">2. Specify the interaction output</h3>
 <p>For example, the <em>"ShipGoods"</em> backend service is not idempotent and failed with an exception. It is not retried but <em>blocked</em>.</p>
 <p>However, we checked and know the goods were actually shipped and want to continue the process for our customer.</p>
-<p>``` scala tab="Scala"
-baker.resolveInteraction(recipeInstanceId, "ShipGoods", GoodsShipped("some goods"))
-<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
-baker.resolveInteraction(recipeInstanceId, &quot;ShipGoods&quot;, new GoodsShipped(&quot;some goods&quot;));
-</code></pre></div></p>
+<div class="tabbed-set" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><label for="__tabbed_6_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">baker</span><span class="o">.</span><span class="n">resolveInteraction</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="s">&quot;ShipGoods&quot;</span><span class="o">,</span> <span class="nc">GoodsShipped</span><span class="o">(</span><span class="s">&quot;some goods&quot;</span><span class="o">))</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><label for="__tabbed_6_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">baker</span><span class="p">.</span><span class="na">resolveInteraction</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="s">&quot;ShipGoods&quot;</span><span class="p">,</span> <span class="k">new</span> <span class="n">GoodsShipped</span><span class="p">(</span><span class="s">&quot;some goods&quot;</span><span class="p">));</span>
+</code></pre></div>
+
+</div>
+</div>
 <p>Note that the event provided <em>SHOULD NOT</em> include any <a href="../recipe-dsl/#event-renames">event or ingredient renames</a> specified for the interaction.</p>
 <h2 id="state-inquiry">State inquiry</h2>
 <p>During runtime it is often useful to <em>inquire</em> on the state of a process instance.</p>
 <h2 id="visualize-process-instance-state">Visualize process instance state</h2>
 <p>We can use the visualizer to see what Baker has done with the given events.</p>
-<p>```scala tab="Scala"
-val dotRepresentation: String = baker.getVisualState(recipeInstanceId)
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
-String dotRepresentation = baker.getVisualState(recipeInstanceId);
-</code></pre></div></p>
+<div class="tabbed-set" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><label for="__tabbed_7_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">dotRepresentation</span><span class="k">:</span> <span class="kt">String</span> <span class="o">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">getVisualState</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">)</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><label for="__tabbed_7_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">String</span> <span class="n">dotRepresentation</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">getVisualState</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">);</span>
+</code></pre></div>
+
+</div>
+</div>
 <div class="admonition hint">
 <p class="admonition-title">Did you know?!</p>
 <p>You can ask baker for a visual representation of a certain process.
@@ -828,30 +875,43 @@ The <code>ValidateOrder</code> Interaction in turn produced the <code>Valid</cod
 <h3 id="events">Events</h3>
 <p>We can ask Baker for a list of all the events for our process.</p>
 <p>Using this list we can check if the <code>InvoiceWasSend</code> event was produced.</p>
-<p>```scala tab="Scala"
-// Get all events that have happend for this process instance
-val events: Seq[RuntimeEvent] = baker.getEvents(recipeInstanceId)
-if (events.exists(_.name == "InvoiceWasSend"))
-    // Yes the invoice was send!
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
-// Get all events that have happend for this process instance
-EventList events = baker.getEvents(recipeInstanceId);
-if (events.hasEventOccurred(InvoiceWasSend.class))
-    // Yes the invoice was send!
-</code></pre></div></p>
+<div class="tabbed-set" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><label for="__tabbed_8_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// Get all events that have happend for this process instance</span>
+<span class="k">val</span> <span class="n">events</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[</span><span class="kt">RuntimeEvent</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">getEvents</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">)</span>
+<span class="k">if</span> <span class="o">(</span><span class="n">events</span><span class="o">.</span><span class="n">exists</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s">&quot;InvoiceWasSend&quot;</span><span class="o">))</span>
+    <span class="c1">// Yes the invoice was send!</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><label for="__tabbed_8_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// Get all events that have happend for this process instance</span>
+<span class="n">EventList</span> <span class="n">events</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">getEvents</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">events</span><span class="p">.</span><span class="na">hasEventOccurred</span><span class="p">(</span><span class="n">InvoiceWasSend</span><span class="p">.</span><span class="na">class</span><span class="p">))</span>
+    <span class="c1">// Yes the invoice was send!</span>
+</code></pre></div>
+
+</div>
+</div>
 <h3 id="ingredients">Ingredients</h3>
 <p>Sometimes it is useful to know what the ingredient values are accumulated for a process instance.</p>
 <p>For example, you might want to know the value of the <code>trackingId</code>.</p>
-<p>```scala tab="Scala"
-// Get all ingredients that are accumulated for a process instance
-val ingredients: Map[String, Value] = baker.getIngredients(recipeInstanceId)</p>
-<p>val trackingId: String = ingredients("trackingId").as[String]
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
-// Get all ingredients that are accumulated for a process instance
-Map&lt;String, Value&gt; ingredients = baker.getIngredients(recipeInstanceId);
+<div class="tabbed-set" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><label for="__tabbed_9_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// Get all ingredients that are accumulated for a process instance</span>
+<span class="k">val</span> <span class="n">ingredients</span><span class="k">:</span> <span class="kt">Map</span><span class="o">[</span><span class="kt">String</span><span class="p">,</span> <span class="kt">Value</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">getIngredients</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">)</span>
 
-String trackingId = ingredients.get(&quot;trackingId&quot;).as(String.class);
-</code></pre></div></p>
+<span class="k">val</span> <span class="n">trackingId</span><span class="k">:</span> <span class="kt">String</span> <span class="o">=</span> <span class="n">ingredients</span><span class="o">(</span><span class="s">&quot;trackingId&quot;</span><span class="o">).</span><span class="n">as</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><label for="__tabbed_9_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// Get all ingredients that are accumulated for a process instance</span>
+<span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">Value</span><span class="o">&gt;</span> <span class="n">ingredients</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">getIngredients</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">);</span>
+
+<span class="n">String</span> <span class="n">trackingId</span> <span class="o">=</span> <span class="n">ingredients</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;trackingId&quot;</span><span class="p">).</span><span class="na">as</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+</code></pre></div>
+
+</div>
+</div>
                 
               
               

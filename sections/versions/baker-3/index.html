@@ -554,6 +554,20 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#creating-a-baker-instance" class="md-nav__link">
+    Creating a Baker instance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-interactions-into-baker" class="md-nav__link">
+    Adding Interactions into Baker
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#firing-events" class="md-nav__link">
     Firing events
   </a>
@@ -675,6 +689,20 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#creating-a-baker-instance" class="md-nav__link">
+    Creating a Baker instance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-interactions-into-baker" class="md-nav__link">
+    Adding Interactions into Baker
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#firing-events" class="md-nav__link">
     Firing events
   </a>
@@ -758,84 +786,104 @@ It is safer to bring the complete cluster down.</p>
 It is now up to the user to handle waiting for the completion of this future.
 This can either be by blocking directly or by 'correctly' programming with these Futures.
 We REALLY advise to invest in programming in a non blocking fashion!</p>
-<p>```scala tab="Scala"
-//Blocking
-val futureStatus: Future[SensoryEventStatus] = baker.fireEventAndResolveWhenReceived(orderId, event)
-val status: SensoryEventStatus = Await.result(futureStatus, 10 seconds)</p>
-<p>//Non Blocking
-val futureStatus: Future[SensoryEventStatus] = baker.fireEventAndResolveWhenReceived(orderId, event)
-futureStatus.map(sensoryEventStatus =&gt; {
-     //Code to handle status
-})
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
-//Blocking
-CompletableFuture&lt;SensoryEventStatus&gt; futureStatus =
-                baker.fireEventAndResolveWhenReceived(uuid.toString(), EventInstance.from(new ExampleEvent()));
-SensoryEventStatus sensoryEventStatus = futureStatus.get();
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">//Blocking</span>
+<span class="k">val</span> <span class="n">futureStatus</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">SensoryEventStatus</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveWhenReceived</span><span class="o">(</span><span class="n">orderId</span><span class="o">,</span> <span class="n">event</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">status</span><span class="k">:</span> <span class="kt">SensoryEventStatus</span> <span class="o">=</span> <span class="nc">Await</span><span class="o">.</span><span class="n">result</span><span class="o">(</span><span class="n">futureStatus</span><span class="o">,</span> <span class="mi">10</span> <span class="n">seconds</span><span class="o">)</span>
+
+<span class="c1">//Non Blocking</span>
+<span class="k">val</span> <span class="n">futureStatus</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">SensoryEventStatus</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveWhenReceived</span><span class="o">(</span><span class="n">orderId</span><span class="o">,</span> <span class="n">event</span><span class="o">)</span>
+<span class="n">futureStatus</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">sensoryEventStatus</span> <span class="k">=&gt;</span> <span class="o">{</span>
+     <span class="c1">//Code to handle status</span>
+<span class="o">})</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">//Blocking</span>
+<span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">SensoryEventStatus</span><span class="o">&gt;</span> <span class="n">futureStatus</span> <span class="o">=</span>
+                <span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenReceived</span><span class="p">(</span><span class="n">uuid</span><span class="p">.</span><span class="na">toString</span><span class="p">(),</span> <span class="n">EventInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span> <span class="n">ExampleEvent</span><span class="p">()));</span>
+<span class="n">SensoryEventStatus</span> <span class="n">sensoryEventStatus</span> <span class="o">=</span> <span class="n">futureStatus</span><span class="p">.</span><span class="na">get</span><span class="p">();</span>
 
 
-//Non blocking
-CompletableFuture&lt;SensoryEventStatus&gt; futureStatus =
-                baker.fireEventAndResolveWhenReceived(uuid.toString(), eventInstance));
+<span class="c1">//Non blocking</span>
+<span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">SensoryEventStatus</span><span class="o">&gt;</span> <span class="n">futureStatus</span> <span class="o">=</span>
+                <span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenReceived</span><span class="p">(</span><span class="n">uuid</span><span class="p">.</span><span class="na">toString</span><span class="p">(),</span> <span class="n">eventInstance</span><span class="p">));</span>
 
-futureStatus.thenApply(sensoryEventStatus -&gt; {
-      //Code to handle status
-});
-</code></pre></div></p>
+<span class="n">futureStatus</span><span class="p">.</span><span class="na">thenApply</span><span class="p">(</span><span class="n">sensoryEventStatus</span> <span class="o">-&gt;</span> <span class="p">{</span>
+      <span class="c1">//Code to handle status</span>
+<span class="p">});</span>
+</code></pre></div>
+
+</div>
+</div>
 <p>Any Exceptions that used to be thrown by Baker are now encapsulated in the Future/CompletableFuture.
 For the CompletableFuture the original exception is wrapped in the ExecutionException.
 This is how CompletableFuture work and there is no way around it.</p>
-<p>```java tab="Java"
-//Blocking
-try {
-    baker.fireEventAndResolveWhenCompleted(processId, EventInstance.from(new ExampleEventClass())).get();
-} catch (ExecutionException e) {
-    if(e.getCause() instanceof BakerException.NoSuchProcessException) {
-        //Code to handle NoSuchProcessException
-    }
-    //Code to handle other Exceptions
-}</p>
-<p>//Non blocking
-baker.fireEventAndResolveWhenCompleted(processId, EventInstance.from(new ExampleEventClass()))
-        .exceptionally(exception -&gt; {
-            if(exception.getCause() instanceof BakerException.NoSuchProcessException) {
-                //Decide on what to return on NoSuchProcessException
-            }
-            //Decide on what to return on other Exceptions
-        });
-<div class="highlight"><pre><span></span><code>### Creating a Baker instance
-A Baker instance is now created not with a constructor but via a static method.
-
-For Java the JBaker is gone and you now create a Baker under the javadsl package.
-
-```scala tab=&quot;Scala&quot;
-import com.ing.baker.runtime.scaladsl.*;
-......
-val actorSystem: ActorSystem = ActorSystem(&quot;WebshopSystem&quot;)
-val config: Config = ConfigFactory.load()
-val baker = Baker.akka(config, actorSystem);
-</code></pre></div></p>
-<p>```java tab="Java"
-import com.ing.baker.runtime.javadsl.*;
-......
-ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-Config config = ConfigFactory.load();
-Baker baker = Baker.akka(config, actorSystem);
-<div class="highlight"><pre><span></span><code>See the [runtime reference](../../reference/runtime) for more details
+<div class="tabbed-set" data-tabs="2:1"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">//Blocking</span>
+<span class="k">try</span> <span class="p">{</span>
+    <span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenCompleted</span><span class="p">(</span><span class="n">processId</span><span class="p">,</span> <span class="n">EventInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span> <span class="n">ExampleEventClass</span><span class="p">())).</span><span class="na">get</span><span class="p">();</span>
+<span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">ExecutionException</span> <span class="n">e</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="na">getCause</span><span class="p">()</span> <span class="k">instanceof</span> <span class="n">BakerException</span><span class="p">.</span><span class="na">NoSuchProcessException</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">//Code to handle NoSuchProcessException</span>
+    <span class="p">}</span>
+    <span class="c1">//Code to handle other Exceptions</span>
+<span class="p">}</span>
 
 
-### Adding Interactions into Baker
-When adding InteractionInstances formerly known as InteractionImplementations to Baker you now need to give a real InteractionInstance object.
+<span class="c1">//Non blocking</span>
+<span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenCompleted</span><span class="p">(</span><span class="n">processId</span><span class="p">,</span> <span class="n">EventInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span> <span class="n">ExampleEventClass</span><span class="p">()))</span>
+        <span class="p">.</span><span class="na">exceptionally</span><span class="p">(</span><span class="n">exception</span> <span class="o">-&gt;</span> <span class="p">{</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">exception</span><span class="p">.</span><span class="na">getCause</span><span class="p">()</span> <span class="k">instanceof</span> <span class="n">BakerException</span><span class="p">.</span><span class="na">NoSuchProcessException</span><span class="p">)</span> <span class="p">{</span>
+                <span class="c1">//Decide on what to return on NoSuchProcessException</span>
+            <span class="p">}</span>
+            <span class="c1">//Decide on what to return on other Exceptions</span>
+        <span class="p">});</span>
+</code></pre></div>
 
-```scala tab=&quot;Scala&quot;
-val reserveItemsInstance: InteractionInstance =
-    InteractionInstance.unsafeFrom(new ReserveItemsInstance)
-baker.addInteractionInstance(reserveItemsInstance)
-</code></pre></div></p>
-<p><code>java tab="Java"
-InteractionInstance reserveItemsInstance =
-    InteractionInstance.from(new ReserveItemsInstance());
-baker.addInteractionInstance(reserveItemsInstance)</code></p>
+</div>
+</div>
+<h3 id="creating-a-baker-instance">Creating a Baker instance</h3>
+<p>A Baker instance is now created not with a constructor but via a static method.</p>
+<p>For Java the JBaker is gone and you now create a Baker under the javadsl package.</p>
+<div class="tabbed-set" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><label for="__tabbed_3_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">import</span> <span class="nn">com.ing.baker.runtime.scaladsl.</span><span class="o">*;</span>
+<span class="o">......</span>
+<span class="k">val</span> <span class="n">actorSystem</span><span class="k">:</span> <span class="kt">ActorSystem</span> <span class="o">=</span> <span class="nc">ActorSystem</span><span class="o">(</span><span class="s">&quot;WebshopSystem&quot;</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">config</span><span class="k">:</span> <span class="kt">Config</span> <span class="o">=</span> <span class="nc">ConfigFactory</span><span class="o">.</span><span class="n">load</span><span class="o">()</span>
+<span class="k">val</span> <span class="n">baker</span> <span class="k">=</span> <span class="nc">Baker</span><span class="o">.</span><span class="n">akka</span><span class="o">(</span><span class="n">config</span><span class="o">,</span> <span class="n">actorSystem</span><span class="o">);</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><label for="__tabbed_3_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">com.ing.baker.runtime.javadsl.*</span><span class="p">;</span>
+<span class="p">......</span>
+<span class="n">ActorSystem</span> <span class="n">actorSystem</span> <span class="o">=</span> <span class="n">ActorSystem</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="s">&quot;WebshopSystem&quot;</span><span class="p">);</span>
+<span class="n">Config</span> <span class="n">config</span> <span class="o">=</span> <span class="n">ConfigFactory</span><span class="p">.</span><span class="na">load</span><span class="p">();</span>
+<span class="n">Baker</span> <span class="n">baker</span> <span class="o">=</span> <span class="n">Baker</span><span class="p">.</span><span class="na">akka</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">actorSystem</span><span class="p">);</span>
+</code></pre></div>
+
+</div>
+</div>
+<p>See the <a href="../../reference/runtime">runtime reference</a> for more details</p>
+<h3 id="adding-interactions-into-baker">Adding Interactions into Baker</h3>
+<p>When adding InteractionInstances formerly known as InteractionImplementations to Baker you now need to give a real InteractionInstance object.</p>
+<div class="tabbed-set" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><label for="__tabbed_4_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">reserveItemsInstance</span><span class="k">:</span> <span class="kt">InteractionInstance</span> <span class="o">=</span>
+    <span class="nc">InteractionInstance</span><span class="o">.</span><span class="n">unsafeFrom</span><span class="o">(</span><span class="k">new</span> <span class="nc">ReserveItemsInstance</span><span class="o">)</span>
+<span class="n">baker</span><span class="o">.</span><span class="n">addInteractionInstance</span><span class="o">(</span><span class="n">reserveItemsInstance</span><span class="o">)</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><label for="__tabbed_4_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">InteractionInstance</span> <span class="n">reserveItemsInstance</span> <span class="o">=</span>
+    <span class="n">InteractionInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span> <span class="n">ReserveItemsInstance</span><span class="p">());</span>
+<span class="n">baker</span><span class="p">.</span><span class="na">addInteractionInstance</span><span class="p">(</span><span class="n">reserveItemsInstance</span><span class="p">)</span>
+</code></pre></div>
+
+</div>
+</div>
 <h3 id="firing-events">Firing events</h3>
 <p>The processEvent has been completely rewritten and is now named FireEvent.
 See the <a href="../baker-3-release-notes/#firing-events-into-baker">release note</a> or <a href="../../development-life-cycle/bake-fire-events-and-inquiry/#fire-events">fire event section</a> for more details</p>

@@ -578,34 +578,46 @@
 and the <code>baker.registerBakerEventListener(listenerFunction)</code>. The former can notify of every <code>EventInstance</code> that is being
 fired globally or per <code>CompiledRecipe</code>. And the latter notifies of baker operations that happen like new <code>InteractionInstances</code> 
 being executed or failing. These accept a function that can call your logging or metrics system:</p>
-<p>```scala tab="Scala (Recipe Events)"
-baker.registerEventListener((recipeInstanceId: String, event: EventInstance) =&gt; {
-  println(s"Recipe instance : $recipeInstanceId processed event ${event.name}")
-})
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java (Recipe Events)&quot;
-BiConsumer&lt;String, EventInstance&gt; handler = (String recipeInstanceId, EventInstance event) -&gt;
-    System.out.println(&quot;Recipe Instance &quot; + recipeInstanceId + &quot; processed event &quot; + event.name());
+<div class="tabbed-set" data-tabs="1:4"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala (Recipe Events)</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">baker</span><span class="o">.</span><span class="n">registerEventListener</span><span class="o">((</span><span class="n">recipeInstanceId</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">event</span><span class="k">:</span> <span class="kt">EventInstance</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="o">{</span>
+  <span class="n">println</span><span class="o">(</span><span class="s">s&quot;Recipe instance : </span><span class="si">$recipeInstanceId</span><span class="s"> processed event </span><span class="si">${</span><span class="n">event</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s">&quot;</span><span class="o">)</span>
+<span class="o">})</span>
+</code></pre></div>
 
-baker.registerEventListener(handler);
-</code></pre></div></p>
-<p>```scala tab="Scala (Baker Events)"
-import com.ing.baker.runtime.scaladsl._</p>
-<p>baker.registerBakerEventListener((event: BakerEvent) =&gt; {
-  event match {
-    case e: EventReceived =&gt; println(e)
-    case e: EventRejected =&gt; println(e)
-    case e: InteractionFailed =&gt; println(e)
-    case e: InteractionStarted =&gt; println(e)
-    case e: InteractionCompleted =&gt; println(e)
-    case e: ProcessCreated =&gt; println(e)
-    case e: RecipeAdded =&gt; println(e)
-  }
-})
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java (Baker Events)&quot;
-import com.ing.baker.runtime.javadsl.BakerEvent;
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java (Recipe Events)</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">BiConsumer</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span> <span class="n">EventInstance</span><span class="o">&gt;</span> <span class="n">handler</span> <span class="o">=</span> <span class="p">(</span><span class="n">String</span> <span class="n">recipeInstanceId</span><span class="p">,</span> <span class="n">EventInstance</span> <span class="n">event</span><span class="p">)</span> <span class="o">-&gt;</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="s">&quot;Recipe Instance &quot;</span> <span class="o">+</span> <span class="n">recipeInstanceId</span> <span class="o">+</span> <span class="s">&quot; processed event &quot;</span> <span class="o">+</span> <span class="n">event</span><span class="p">.</span><span class="na">name</span><span class="p">());</span>
 
-baker.registerBakerEventListener((BakerEvent event) -&gt; System.out.println(event));
-</code></pre></div></p>
+<span class="n">baker</span><span class="p">.</span><span class="na">registerEventListener</span><span class="p">(</span><span class="n">handler</span><span class="p">);</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><label for="__tabbed_1_3">Scala (Baker Events)</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">import</span> <span class="nn">com.ing.baker.runtime.scaladsl._</span>
+
+<span class="n">baker</span><span class="o">.</span><span class="n">registerBakerEventListener</span><span class="o">((</span><span class="n">event</span><span class="k">:</span> <span class="kt">BakerEvent</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="o">{</span>
+  <span class="n">event</span> <span class="k">match</span> <span class="o">{</span>
+    <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">EventReceived</span> <span class="o">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">e</span><span class="o">)</span>
+    <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">EventRejected</span> <span class="o">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">e</span><span class="o">)</span>
+    <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">InteractionFailed</span> <span class="o">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">e</span><span class="o">)</span>
+    <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">InteractionStarted</span> <span class="o">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">e</span><span class="o">)</span>
+    <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">InteractionCompleted</span> <span class="o">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">e</span><span class="o">)</span>
+    <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">ProcessCreated</span> <span class="o">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">e</span><span class="o">)</span>
+    <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">RecipeAdded</span> <span class="o">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">e</span><span class="o">)</span>
+  <span class="o">}</span>
+<span class="o">})</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><label for="__tabbed_1_4">Java (Baker Events)</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">com.ing.baker.runtime.javadsl.BakerEvent</span><span class="p">;</span>
+
+<span class="n">baker</span><span class="p">.</span><span class="na">registerBakerEventListener</span><span class="p">((</span><span class="n">BakerEvent</span> <span class="n">event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">event</span><span class="p">));</span>
+</code></pre></div>
+
+</div>
+</div>
                 
               
               

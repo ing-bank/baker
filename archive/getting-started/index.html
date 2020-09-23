@@ -601,12 +601,15 @@
 <h2 id="project-setup">Project setup</h2>
 <p>Baker is released to <a href="https://search.maven.org/search?q=com.ing.baker">maven central</a>.</p>
 <p>You can add following dependencies to your <code>maven</code> or <code>sbt</code> project to start using it:</p>
-<p>``` scala tab="Sbt"
-dependencies += "com.ing.baker" %% "baker-recipe-dsl" % "2.0.3"
-dependencies += "com.ing.baker" %% "baker-compiler" % "2.0.3"
-dependencies += "com.ing.baker" %% "baker-runtime" % "2.0.3"
-<div class="highlight"><pre><span></span><code>``` maven tab=&quot;Maven&quot;
-&lt;dependency&gt;
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Sbt</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">dependencies</span> <span class="o">+=</span> <span class="s">&quot;com.ing.baker&quot;</span> <span class="o">%%</span> <span class="s">&quot;baker-recipe-dsl&quot;</span> <span class="o">%</span> <span class="s">&quot;2.0.3&quot;</span>
+<span class="n">dependencies</span> <span class="o">+=</span> <span class="s">&quot;com.ing.baker&quot;</span> <span class="o">%%</span> <span class="s">&quot;baker-compiler&quot;</span> <span class="o">%</span> <span class="s">&quot;2.0.3&quot;</span>
+<span class="n">dependencies</span> <span class="o">+=</span> <span class="s">&quot;com.ing.baker&quot;</span> <span class="o">%%</span> <span class="s">&quot;baker-runtime&quot;</span> <span class="o">%</span> <span class="s">&quot;2.0.3&quot;</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Maven</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>&lt;dependency&gt;
    &lt;groupId&gt;com.ing.baker&lt;/groupId&gt;
    &lt;artifactId&gt;baker-recipe-dsl_2.12&lt;/artifactId&gt;
    &lt;version&gt;2.0.3&lt;/version&gt;
@@ -621,7 +624,10 @@ dependencies += "com.ing.baker" %% "baker-runtime" % "2.0.3"
    &lt;artifactId&gt;baker-runtime_2.12&lt;/artifactId&gt;
    &lt;version&gt;2.0.3&lt;/version&gt;
 &lt;/dependency&gt;
-</code></pre></div></p>
+</code></pre></div>
+
+</div>
+</div>
 <p>This includes <em>ALL</em> baker modules to your project. If you only need partial functionality you can pick and choose the modules you need.</p>
 <h3 id="modules">Modules</h3>
 <p>An explanation of the baker modules.</p>

@@ -630,15 +630,21 @@ configuration for this.</p>
 <p>In order to use Baker <code>SplitBrainResolver</code>, first of all, you need to add
 baker-split-brain-resolver dependency to your project. See example
 below:</p>
-<p>``` scala tab="Sbt"
-libraryDependencies += "com.ing.baker" %% "baker-split-brain-resolver" % "2.0.3"
-<div class="highlight"><pre><span></span><code>``` xml tab=&quot;Maven&quot;
-&lt;dependency&gt;
-  &lt;groupId&gt;com.ing.baker&lt;/groupId&gt;
-  &lt;artifactId&gt;baker-split-brain-resolver_2.12&lt;/artifactId&gt;
-  &lt;version&gt;2.0.3&lt;/version&gt;
-&lt;/dependency&gt;
-</code></pre></div></p>
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Sbt</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">libraryDependencies</span> <span class="o">+=</span> <span class="s">&quot;com.ing.baker&quot;</span> <span class="o">%%</span> <span class="s">&quot;baker-split-brain-resolver&quot;</span> <span class="o">%</span> <span class="s">&quot;2.0.3&quot;</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Maven</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>com.ing.baker<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>baker-split-brain-resolver_2.12<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>2.0.3<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+</code></pre></div>
+
+</div>
+</div>
 <p>Then the algorithm needs to be configured as the Akka downing provider
 and the <code>stable-after</code> config needs to set to some duration depending
 on your cluster size.</p>
@@ -654,14 +660,14 @@ The suggested values and more information on this config can be found
 in the <a href="https://developer.lightbend.com/docs/akka-commercial-addons/current/split-brain-resolver.html#cluster-singleton-and-cluster-sharding">Cluster Singleton and Cluster Sharding</a>
 section of the commercial Lightbend Split Brain Resolver.</p>
 <p>Example config for a Baker cluster having less than 10 nodes is the
-following:
+following:</p>
 <div class="highlight"><pre><span></span><code>akka.cluster.down-removal-margin = 7 seconds
 akka.cluster.downing-provider-class = com.ing.baker.runtime.core.actor.downing.SplitBrainResolver
 
 baker-split-brain-resolver {
   stable-after = 7 seconds
 }
-</code></pre></div></p>
+</code></pre></div>
                 
               
               

@@ -582,65 +582,78 @@ to the Java DSL.</p>
 <p>For the Java DSL you need to implement the interface with the <code>apply</code> method that you used for the <code>Interaction</code> in the <code>Recipe</code> 
 and then use the <code>InteractionImplementation.from(new Implementation())</code> reflection API, this will create a new <code>InteractionImplementation</code>
 that we will later on add to a baker runtime.</p>
-<p>``` scala tab="Scala Reflection API"
-import com.ing.baker.runtime.scaladsl.InteractionInstance</p>
-<p>import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global</p>
-<p>trait ReserveItems {</p>
-<p>def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput]
-}</p>
-<p>class ReserveItemsInstance extends ReserveItems {</p>
-<p>override def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput] = {</p>
-<div class="codehilite"><pre><span></span><code>// Http call to the Warehouse service
-val response: Future[Either[List[String], List[String]]] =
-// This is mocked for the sake of the example
-  Future.successful(Right(items))
+<div class="tabbed-set" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala Reflection API</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">import</span> <span class="nn">com.ing.baker.runtime.scaladsl.InteractionInstance</span>
 
-// Build an event instance that Baker understands
-response.map {
-  case Left(unavailableItems) =&gt;
-    WebshopRecipeReflection.OrderHadUnavailableItems(unavailableItems)
-  case Right(reservedItems) =&gt;
-    WebshopRecipeReflection.ItemsReserved(reservedItems)
-}
+<span class="k">import</span> <span class="nn">scala.concurrent.Future</span>
+<span class="k">import</span> <span class="nn">scala.concurrent.ExecutionContext.Implicits.global</span>
+
+<span class="k">trait</span> <span class="nc">ReserveItems</span> <span class="o">{</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">orderId</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">items</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">])</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">WebshopRecipeReflection.ReserveItemsOutput</span><span class="o">]</span>
+<span class="o">}</span>
+
+<span class="k">class</span> <span class="nc">ReserveItemsInstance</span> <span class="k">extends</span> <span class="nc">ReserveItems</span> <span class="o">{</span>
+
+  <span class="k">override</span> <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">orderId</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">items</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">])</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">WebshopRecipeReflection.ReserveItemsOutput</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+
+    <span class="c1">// Http call to the Warehouse service</span>
+    <span class="k">val</span> <span class="n">response</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Either</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span><span class="p">,</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">]]]</span> <span class="k">=</span>
+    <span class="c1">// This is mocked for the sake of the example</span>
+      <span class="nc">Future</span><span class="o">.</span><span class="n">successful</span><span class="o">(</span><span class="nc">Right</span><span class="o">(</span><span class="n">items</span><span class="o">))</span>
+
+    <span class="c1">// Build an event instance that Baker understands</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">map</span> <span class="o">{</span>
+      <span class="k">case</span> <span class="nc">Left</span><span class="o">(</span><span class="n">unavailableItems</span><span class="o">)</span> <span class="k">=&gt;</span>
+        <span class="nc">WebshopRecipeReflection</span><span class="o">.</span><span class="nc">OrderHadUnavailableItems</span><span class="o">(</span><span class="n">unavailableItems</span><span class="o">)</span>
+      <span class="k">case</span> <span class="nc">Right</span><span class="o">(</span><span class="n">reservedItems</span><span class="o">)</span> <span class="k">=&gt;</span>
+        <span class="nc">WebshopRecipeReflection</span><span class="o">.</span><span class="nc">ItemsReserved</span><span class="o">(</span><span class="n">reservedItems</span><span class="o">)</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="k">val</span> <span class="n">reserveItemsInstance</span><span class="k">:</span> <span class="kt">InteractionInstance</span> <span class="o">=</span>
+  <span class="nc">InteractionInstance</span><span class="o">.</span><span class="n">unsafeFrom</span><span class="o">(</span><span class="k">new</span> <span class="nc">ReserveItemsInstance</span><span class="o">)</span>
 </code></pre></div>
 
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">import</span> <span class="nn">com.ing.baker.runtime.scaladsl.</span><span class="o">{</span><span class="nc">EventInstance</span><span class="o">,</span> <span class="nc">IngredientInstance</span><span class="o">,</span> <span class="nc">InteractionInstance</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.types.</span><span class="o">{</span><span class="nc">CharArray</span><span class="o">,</span> <span class="nc">ListType</span><span class="o">,</span> <span class="nc">ListValue</span><span class="o">,</span> <span class="nc">PrimitiveValue</span><span class="o">}</span>
 
-<p>}
-}</p>
-<p>val reserveItemsInstance: InteractionInstance =
-  InteractionInstance.unsafeFrom(new ReserveItemsInstance)
-<div class="highlight"><pre><span></span><code>``` scala tab=&quot;Scala&quot;
-import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
-import com.ing.baker.types.{CharArray, ListType, ListValue, PrimitiveValue}
+<span class="k">import</span> <span class="nn">scala.concurrent.Future</span>
+<span class="k">import</span> <span class="nn">scala.concurrent.ExecutionContext.Implicits.global</span>
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+<span class="k">val</span> <span class="nc">ReserveItemsInstance</span> <span class="k">=</span> <span class="nc">InteractionInstance</span><span class="o">(</span>
+    <span class="n">name</span> <span class="k">=</span> <span class="nc">ReserveItems</span><span class="o">.</span><span class="n">name</span><span class="o">,</span>
+    <span class="n">input</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span><span class="nc">CharArray</span><span class="o">,</span> <span class="nc">ListType</span><span class="o">(</span><span class="nc">CharArray</span><span class="o">))</span>
+    <span class="n">run</span> <span class="k">=</span> <span class="n">handleReserveItems</span>
+<span class="o">)</span>
 
-val ReserveItemsInstance = InteractionInstance(
-    name = ReserveItems.name,
-    input = Seq(CharArray, ListType(CharArray))
-    run = handleReserveItems
-)
-
-def handleReserveItems(input: Seq[IngredientInstance]): Future[Option[EventInstance]] = ???
-    // The body of this function is going to be executed by the Baker runtime when the ingredients are available.
-    // ListValue and PrimitiveValue are used in the body
-</code></pre></div></p>
-<p>``` java tab="Java"
-import com.ing.baker.runtime.javadsl.InteractionInstance;</p>
-<p>public class ReserveItems implements JWebshopRecipe.ReserveItems {</p>
-<div class="codehilite"><pre><span></span><code><span class="err">// The body of this method is going to be executed by the Baker runtime when the ingredients are available.</span>
-<span class="err">@Override</span>
-<span class="err">public ReserveItemsOutcome apply(String id, List&lt;String&gt; items) {</span>
-<span class="err">    return new JWebshopRecipe.ReserveItems.ItemsReserved(items);</span>
-<span class="err">}</span>
+<span class="k">def</span> <span class="n">handleReserveItems</span><span class="o">(</span><span class="n">input</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[</span><span class="kt">IngredientInstance</span><span class="o">])</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Option</span><span class="o">[</span><span class="kt">EventInstance</span><span class="o">]]</span> <span class="k">=</span> <span class="o">???</span>
+    <span class="c1">// The body of this function is going to be executed by the Baker runtime when the ingredients are available.</span>
+    <span class="c1">// ListValue and PrimitiveValue are used in the body</span>
 </code></pre></div>
 
+</div>
+<input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><label for="__tabbed_1_3">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">com.ing.baker.runtime.javadsl.InteractionInstance</span><span class="p">;</span>
 
-<p>}</p>
-<p>InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
-```</p>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">ReserveItems</span> <span class="kd">implements</span> <span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">ReserveItems</span> <span class="p">{</span>
+
+    <span class="c1">// The body of this method is going to be executed by the Baker runtime when the ingredients are available.</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ReserveItemsOutcome</span> <span class="nf">apply</span><span class="p">(</span><span class="n">String</span> <span class="n">id</span><span class="p">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">items</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">ReserveItems</span><span class="p">.</span><span class="na">ItemsReserved</span><span class="p">(</span><span class="n">items</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+
+<span class="n">InteractionInstance</span> <span class="n">reserveItemsInstance</span> <span class="o">=</span> <span class="n">InteractionInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span> <span class="n">ReserveItems</span><span class="p">());</span>
+</code></pre></div>
+
+</div>
+</div>
                 
               
               

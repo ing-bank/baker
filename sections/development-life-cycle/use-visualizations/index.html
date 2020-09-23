@@ -578,20 +578,25 @@
 <p>We have found that the visualization creates a great way to reason on very complex and big processes, and also they 
 create a bridge between developers and business oriented people.</p>
 <p>You can generate one from a compiled recipe.</p>
-<p>``` scala tab="Scala"</p>
-<p>import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.compiler.RecipeCompiler</p>
-<p>val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
-val visualization: String = compiled.getRecipeVisualization</p>
-<div class="highlight"><pre><span></span><code>``` scala tab=&quot;Java&quot;
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">import</span> <span class="nn">com.ing.baker.il.CompiledRecipe</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.compiler.RecipeCompiler</span>
 
-import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.compiler.RecipeCompiler;
-
-CompiledRecipe recipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
-String visualization = recipe.getRecipeVisualization();
+<span class="k">val</span> <span class="n">compiled</span> <span class="k">=</span> <span class="nc">RecipeCompiler</span><span class="o">.</span><span class="n">compileRecipe</span><span class="o">(</span><span class="nc">WebshopRecipe</span><span class="o">.</span><span class="n">recipe</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">visualization</span><span class="k">:</span> <span class="kt">String</span> <span class="o">=</span> <span class="n">compiled</span><span class="o">.</span><span class="n">getRecipeVisualization</span>
 </code></pre></div>
 
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">com.ing.baker.il.CompiledRecipe</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.compiler.RecipeCompiler</span><span class="p">;</span>
+
+<span class="n">CompiledRecipe</span> <span class="n">recipe</span> <span class="o">=</span> <span class="n">RecipeCompiler</span><span class="p">.</span><span class="na">compileRecipe</span><span class="p">(</span><span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">recipe</span><span class="p">);</span>
+<span class="n">String</span> <span class="n">visualization</span> <span class="o">=</span> <span class="n">recipe</span><span class="p">.</span><span class="na">getRecipeVisualization</span><span class="p">();</span>
+</code></pre></div>
+
+</div>
+</div>
 <p>The visualization is a <a href="http://www.graphviz.org/">graphviz</a> string that will look like this:</p>
 <div class="highlight"><pre><span></span><code>digraph {
     node [fontname = &quot;ING Me&quot;, fontsize = 22, fontcolor = white]

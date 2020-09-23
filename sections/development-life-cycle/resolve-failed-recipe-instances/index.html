@@ -791,8 +791,8 @@ into account when coming up with this number.</p>
 <p>When this happens 2 things may happen.</p>
 <p>Either the interaction becomes [blocked(#blocked-interaction).</p>
 <p>Or if you configure so, the process continues with a predefined event:</p>
-<div class="highlight"><pre><span></span><code>.withDefaultFailureStrategy(new RetryWithIncrementalBackoffBuilder()
-  .withFireRetryExhaustedEvent(SomeEvent.class))
+<div class="highlight"><pre><span></span><code><span class="p">.</span><span class="na">withDefaultFailureStrategy</span><span class="p">(</span><span class="k">new</span> <span class="n">RetryWithIncrementalBackoffBuilder</span><span class="p">()</span>
+  <span class="p">.</span><span class="na">withFireRetryExhaustedEvent</span><span class="p">(</span><span class="n">SomeEvent</span><span class="p">.</span><span class="na">class</span><span class="p">))</span>
 </code></pre></div>
 
 <p>Note that this event class <strong>requires</strong> an empty constructor to be present and <strong>cannot</strong> provide ingredients.</p>
@@ -817,13 +817,19 @@ This one involves forcing another try, resulting either on a successful continue
 to check this you will need to request the state of the <code>RecipeInstance</code> again.</p>
 <p><em>Note: this behaviour can be automatically preconfigured by using the <code>RetryWithIncrementalBackoff</code> <code>FailureStrategy</code>
 on the <code>Interaction</code> of the <code>Recipe</code></em></p>
-<p>``` scala tab="Scala"
-val program: Future[Unit] = 
-    baker.retryInteraction(recipeInstanceId, "ReserveItems")
-<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
-CompletableFuture&lt;BoxedUnit&gt; program = 
-    baker.retryInteraction(recipeInstanceId, &quot;ReserveItems&quot;);
-</code></pre></div></p>
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">program</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> 
+    <span class="n">baker</span><span class="o">.</span><span class="n">retryInteraction</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="s">&quot;ReserveItems&quot;</span><span class="o">)</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">BoxedUnit</span><span class="o">&gt;</span> <span class="n">program</span> <span class="o">=</span> 
+    <span class="n">baker</span><span class="p">.</span><span class="na">retryInteraction</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="s">&quot;ReserveItems&quot;</span><span class="p">);</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="bakerresolveinteractionrecipeinstanceid-interactionname-event">baker.resolveInteraction(recipeInstanceId, interactionName, event)</h2>
 <p>It is possible that during the execution of a <code>RecipeInstance</code> it becomes <em>blocked</em>, this can happen either because it 
 is <code>directly blocked</code> by an exception or that the retry strategy was exhausted. At this point it is possible to resolve 
@@ -831,23 +837,35 @@ the blocked interaction in 2 ways. This one involves resolving the interaction w
 the one that would have had been computed by the <code>InteractionInstance</code>.</p>
 <p><em>Note: this behaviour can be automatically preconfigured by using the <code>FireEventAfterFailure(eventName)</code> <code>FailureStrategy</code>
 on the <code>Interaction</code> of the <code>Recipe</code></em></p>
-<p>``` scala tab="Scala"
-val program: Future[Unit] = 
-    baker.resolveInteraction(recipeInstanceId, "ReserveItems", ItemsReserved(List("item1")))
-<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
-CompletableFuture&lt;BoxedUnit&gt; program = 
-    baker.resolveInteraction(recipeInstanceId, &quot;ReserveItems&quot;, new ItemsReserved(List(&quot;item1&quot;)));
-</code></pre></div></p>
+<div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">program</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> 
+    <span class="n">baker</span><span class="o">.</span><span class="n">resolveInteraction</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="s">&quot;ReserveItems&quot;</span><span class="o">,</span> <span class="nc">ItemsReserved</span><span class="o">(</span><span class="nc">List</span><span class="o">(</span><span class="s">&quot;item1&quot;</span><span class="o">)))</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">BoxedUnit</span><span class="o">&gt;</span> <span class="n">program</span> <span class="o">=</span> 
+    <span class="n">baker</span><span class="p">.</span><span class="na">resolveInteraction</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="s">&quot;ReserveItems&quot;</span><span class="p">,</span> <span class="k">new</span> <span class="n">ItemsReserved</span><span class="p">(</span><span class="n">List</span><span class="p">(</span><span class="s">&quot;item1&quot;</span><span class="p">)));</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="bakerstopretryinginteractionrecipeinstanceid-interactionname">baker.stopRetryingInteraction(recipeInstanceId, interactionName)</h2>
 <p>If an <code>Interaction</code> is configured with a <code>RetryWithIncrementalBackoff</code> <code>FailureStrategy</code> then it will not stop retrying 
 until you call this API or a successful outcome happens from the <code>InteractionInstance</code>.</p>
-<p>``` scala tab="Scala"
-val program: Future[Unit] = 
-    baker.stopRetryingInteraction(recipeInstanceId, "ReserveItems")
-<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
-CompletableFuture&lt;BoxedUnit&gt; program = 
-    baker.stopRetryingInteraction(recipeInstanceId, &quot;ReserveItems&quot;);
-</code></pre></div></p>
+<div class="tabbed-set" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><label for="__tabbed_3_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">program</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> 
+    <span class="n">baker</span><span class="o">.</span><span class="n">stopRetryingInteraction</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="s">&quot;ReserveItems&quot;</span><span class="o">)</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><label for="__tabbed_3_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">BoxedUnit</span><span class="o">&gt;</span> <span class="n">program</span> <span class="o">=</span> 
+    <span class="n">baker</span><span class="p">.</span><span class="na">stopRetryingInteraction</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="s">&quot;ReserveItems&quot;</span><span class="p">);</span>
+</code></pre></div>
+
+</div>
+</div>
                 
               
               

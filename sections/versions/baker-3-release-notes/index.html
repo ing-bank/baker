@@ -1001,72 +1001,95 @@ This is the internal object we where creating from the Object in the past.
 The EventInstance in turn can be created form an Object.
 The difference now is that its clear that Baker uses EventInstances internally.
 Another advantage is that you are now also free to create EventInstances any other way.</p>
-<p>```scala tab="Scala"
-//From any Object
-val orderPlaced = EventInstance
-      .unsafeFrom(SimpleWebshopRecipeReflection.OrderPlaced(orderId, items))
-//Using constructor
-val orderPlace2 =
-        EventInstance.apply("OrderPlaced", Map("orderId"-&gt; Converters.toValue(orderId), "items" -&gt; Converters.toValue(items)))</p>
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
-//From any Object
-EventInstance firstOrderPlaced =
-                EventInstance.from(new JWebshopRecipe.OrderPlaced(orderId, items));
-//Using constructor
-EventInstance firstOrderPlaced2 =
-                EventInstance.apply(&quot;OrderPlaced&quot;, ImmutableMap.of(&quot;orderId&quot;, Converters.toValue(orderId), &quot;items&quot;, Converters.toValue(items)));
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">//From any Object</span>
+<span class="k">val</span> <span class="n">orderPlaced</span> <span class="k">=</span> <span class="nc">EventInstance</span>
+      <span class="o">.</span><span class="n">unsafeFrom</span><span class="o">(</span><span class="nc">SimpleWebshopRecipeReflection</span><span class="o">.</span><span class="nc">OrderPlaced</span><span class="o">(</span><span class="n">orderId</span><span class="o">,</span> <span class="n">items</span><span class="o">))</span>
+<span class="c1">//Using constructor</span>
+<span class="k">val</span> <span class="n">orderPlace2</span> <span class="k">=</span>
+        <span class="nc">EventInstance</span><span class="o">.</span><span class="n">apply</span><span class="o">(</span><span class="s">&quot;OrderPlaced&quot;</span><span class="o">,</span> <span class="nc">Map</span><span class="o">(</span><span class="s">&quot;orderId&quot;</span><span class="o">-&gt;</span> <span class="nc">Converters</span><span class="o">.</span><span class="n">toValue</span><span class="o">(</span><span class="n">orderId</span><span class="o">),</span> <span class="s">&quot;items&quot;</span> <span class="o">-&gt;</span> <span class="nc">Converters</span><span class="o">.</span><span class="n">toValue</span><span class="o">(</span><span class="n">items</span><span class="o">)))</span>
 </code></pre></div>
 
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">//From any Object</span>
+<span class="n">EventInstance</span> <span class="n">firstOrderPlaced</span> <span class="o">=</span>
+                <span class="n">EventInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span> <span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">OrderPlaced</span><span class="p">(</span><span class="n">orderId</span><span class="p">,</span> <span class="n">items</span><span class="p">));</span>
+<span class="c1">//Using constructor</span>
+<span class="n">EventInstance</span> <span class="n">firstOrderPlaced2</span> <span class="o">=</span>
+                <span class="n">EventInstance</span><span class="p">.</span><span class="na">apply</span><span class="p">(</span><span class="s">&quot;OrderPlaced&quot;</span><span class="p">,</span> <span class="n">ImmutableMap</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;orderId&quot;</span><span class="p">,</span> <span class="n">Converters</span><span class="p">.</span><span class="na">toValue</span><span class="p">(</span><span class="n">orderId</span><span class="p">),</span> <span class="s">&quot;items&quot;</span><span class="p">,</span> <span class="n">Converters</span><span class="p">.</span><span class="na">toValue</span><span class="p">(</span><span class="n">items</span><span class="p">)));</span>
+</code></pre></div>
+
+</div>
+</div>
 <h4 id="decide-on-what-to-be-notified-on-when-firing-the-event">Decide on what to be notified on when firing the event</h4>
 <p>Like in the old versions you can ask Baker to notify on specific moments.
 This can be when the event is received or when the processing is completed.
 New in this release is that you can now specify this when firing the event itself.
 The advantage is that Baker can optimize the resources it uses in those cases.
 This is done using the fireEventAndResolveWhenReceived and fireEventAndResolveWhenCompleted methods.</p>
-<p>```scala tab="Scala"
-val result: Future[SensoryEventStatus] = baker.fireEventAndResolveWhenReceived(recipeInstanceId, orderPlaced)
-val result: Future[SensoryEventResult] = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade)
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
-CompletableFuture&lt;SensoryEventStatus&gt; result = baker.fireEventAndResolveWhenReceived(recipeInstanceId, paymentMade);
-CompletableFuture&lt;SensoryEventResult&gt; result = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced);
-</code></pre></div></p>
+<div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">result</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">SensoryEventStatus</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveWhenReceived</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">orderPlaced</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">result</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">SensoryEventResult</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveWhenCompleted</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">paymentMade</span><span class="o">)</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">SensoryEventStatus</span><span class="o">&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenReceived</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="n">paymentMade</span><span class="p">);</span>
+<span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">SensoryEventResult</span><span class="o">&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenCompleted</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="n">firstOrderPlaced</span><span class="p">);</span>
+</code></pre></div>
+
+</div>
+</div>
 <p>The old way of firing a event where you get both the co</p>
 <h4 id="wait-for-a-specific-event">Wait for a specific Event</h4>
 <p>In this new release we have added a highly requested feature.
 YOu can now ask baker to notify you on a a specific event.
 You can use the fireEventAndResolveOnEvent method for this.</p>
 <p>The returned future will complete when a event with the given name is fired.</p>
-<p>```scala tab="Scala"
-val result: Future[SensoryEventResult] = baker.fireEventAndResolveOnEvent(recipeInstanceId, orderPlaced, "eventName")
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
-CompletableFuture&lt;SensoryEventResult&gt; result =
-                baker.fireEventAndResolveOnEvent(recipeInstanceId, firstOrderPlaced, &quot;eventName&quot;);
-</code></pre></div></p>
+<div class="tabbed-set" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><label for="__tabbed_3_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">result</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">SensoryEventResult</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveOnEvent</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">orderPlaced</span><span class="o">,</span> <span class="s">&quot;eventName&quot;</span><span class="o">)</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><label for="__tabbed_3_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">SensoryEventResult</span><span class="o">&gt;</span> <span class="n">result</span> <span class="o">=</span>
+                <span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveOnEvent</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="n">firstOrderPlaced</span><span class="p">,</span> <span class="s">&quot;eventName&quot;</span><span class="p">);</span>
+</code></pre></div>
+
+</div>
+</div>
 <h4 id="eventresult">EventResult</h4>
 <p>The fireEventAndResolveOnEvent and fireEventAndResolveWhenCompleted return an EventResult.
 This EventResult object contains the SensoryEventStatus, event names and created ingredients.
 The addition of the event names and ingredients can be very useful if you need to make a decision depending on the state.
 In these cases there is no need to inquire on Baker itself anymore.</p>
-<p>```scala tab="Scala"
-case class SensoryEventResult(
-                               sensoryEventStatus: SensoryEventStatus,
-                               eventNames: Seq[String],
-                               ingredients: Map[String, Value]
-) extends com.ing.baker.runtime.common.SensoryEventResult with ScalaApi
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
-case class SensoryEventResult(
-                               sensoryEventStatus: SensoryEventStatus,
-                               eventNames: java.util.List[String],
-                               ingredients: java.util.Map[String, Value]
-) extends com.ing.baker.runtime.common.SensoryEventResult with JavaApi {
+<div class="tabbed-set" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><label for="__tabbed_4_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">case</span> <span class="k">class</span> <span class="nc">SensoryEventResult</span><span class="o">(</span>
+                               <span class="n">sensoryEventStatus</span><span class="k">:</span> <span class="kt">SensoryEventStatus</span><span class="o">,</span>
+                               <span class="n">eventNames</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[</span><span class="kt">String</span><span class="o">],</span>
+                               <span class="n">ingredients</span><span class="k">:</span> <span class="kt">Map</span><span class="o">[</span><span class="kt">String</span><span class="p">,</span> <span class="kt">Value</span><span class="o">]</span>
+<span class="o">)</span> <span class="k">extends</span> <span class="n">com</span><span class="o">.</span><span class="n">ing</span><span class="o">.</span><span class="n">baker</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="nc">SensoryEventResult</span> <span class="k">with</span> <span class="nc">ScalaApi</span>
+</code></pre></div>
 
-  def getSensoryEventStatus: SensoryEventStatus = sensoryEventStatus
+</div>
+<input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><label for="__tabbed_4_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">case</span> <span class="kd">class</span> <span class="nf">SensoryEventResult</span><span class="p">(</span>
+                               <span class="n">sensoryEventStatus</span><span class="p">:</span> <span class="n">SensoryEventStatus</span><span class="p">,</span>
+                               <span class="n">eventNames</span><span class="p">:</span> <span class="n">java</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">List</span><span class="o">[</span><span class="n">String</span><span class="o">]</span><span class="p">,</span>
+                               <span class="n">ingredients</span><span class="p">:</span> <span class="n">java</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">Map</span><span class="o">[</span><span class="n">String</span><span class="p">,</span> <span class="n">Value</span><span class="o">]</span>
+<span class="p">)</span> <span class="kd">extends</span> <span class="n">com</span><span class="p">.</span><span class="na">ing</span><span class="p">.</span><span class="na">baker</span><span class="p">.</span><span class="na">runtime</span><span class="p">.</span><span class="na">common</span><span class="p">.</span><span class="na">SensoryEventResult</span> <span class="n">with</span> <span class="n">JavaApi</span> <span class="p">{</span>
 
-  def getEventName: java.util.List[String] = eventNames
+  <span class="n">def</span> <span class="n">getSensoryEventStatus</span><span class="p">:</span> <span class="n">SensoryEventStatus</span> <span class="o">=</span> <span class="n">sensoryEventStatus</span>
 
-  def getIngredients: java.util.Map[String, Value] = ingredients
-}
-</code></pre></div></p>
+  <span class="n">def</span> <span class="n">getEventName</span><span class="p">:</span> <span class="n">java</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">List</span><span class="o">[</span><span class="n">String</span><span class="o">]</span> <span class="o">=</span> <span class="n">eventNames</span>
+
+  <span class="n">def</span> <span class="n">getIngredients</span><span class="p">:</span> <span class="n">java</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">Map</span><span class="o">[</span><span class="n">String</span><span class="p">,</span> <span class="n">Value</span><span class="o">]</span> <span class="o">=</span> <span class="n">ingredients</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</div>
+</div>
 <h3 id="new-eventlistener-functions">New EventListener functions</h3>
 <p>For the EventListener we have moved away from the annotation based approach.
 In this version you can add an EventListener function instead.

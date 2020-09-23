@@ -816,251 +816,250 @@ or error handling mechanics.</p>
 <p>These data structures are just that, data, and to ease their construction and improve the user experience of the library
 we provide an API that uses Java and Scala reflection to generate most of the data from language constructions like case 
 classes or interfaces.</p>
-<p>```scala tab="Scala"
-import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
-import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}</p>
-<p>import scala.concurrent.duration._</p>
-<p>object WebshopRecipe {</p>
-<p>val recipe: Recipe = Recipe("Webshop")
-    .withSensoryEvents(
-      Events.OrderPlaced,
-      Events.PaymentMade)
-    .withInteractions(
-      Interactions.ReserveItems
-        .withRequiredEvent(Events.PaymentMade))
-    .withDefaultFailureStrategy(
-      RetryWithIncrementalBackoff
-        .builder()
-        .withInitialDelay(100 milliseconds)
-        .withUntil(Some(UntilDeadline(24 hours)))
-        .withMaxTimeBetweenRetries(Some(10 minutes))
-        .build())</p>
-<p>object Ingredients {</p>
-<div class="codehilite"><pre><span></span><code>val OrderId: Ingredient[String] =
-  Ingredient[String](&quot;orderId&quot;)
+<div class="tabbed-set" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">import</span> <span class="nn">com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.recipe.scaladsl.</span><span class="o">{</span><span class="nc">Event</span><span class="o">,</span> <span class="nc">Ingredient</span><span class="o">,</span> <span class="nc">Interaction</span><span class="o">,</span> <span class="nc">Recipe</span><span class="o">}</span>
 
-val Items: Ingredient[List[String]] =
-  Ingredient[List[String]](&quot;items&quot;)
+<span class="k">import</span> <span class="nn">scala.concurrent.duration._</span>
 
-val ReservedItems: Ingredient[List[String]] =
-  Ingredient[List[String]](&quot;reservedItems&quot;)
+<span class="k">object</span> <span class="nc">WebshopRecipe</span> <span class="o">{</span>
 
-val UnavailableItems: Ingredient[List[String]] =
-  Ingredient[List[String]](&quot;unavailableItems&quot;)
+  <span class="k">val</span> <span class="n">recipe</span><span class="k">:</span> <span class="kt">Recipe</span> <span class="o">=</span> <span class="nc">Recipe</span><span class="o">(</span><span class="s">&quot;Webshop&quot;</span><span class="o">)</span>
+    <span class="o">.</span><span class="n">withSensoryEvents</span><span class="o">(</span>
+      <span class="nc">Events</span><span class="o">.</span><span class="nc">OrderPlaced</span><span class="o">,</span>
+      <span class="nc">Events</span><span class="o">.</span><span class="nc">PaymentMade</span><span class="o">)</span>
+    <span class="o">.</span><span class="n">withInteractions</span><span class="o">(</span>
+      <span class="nc">Interactions</span><span class="o">.</span><span class="nc">ReserveItems</span>
+        <span class="o">.</span><span class="n">withRequiredEvent</span><span class="o">(</span><span class="nc">Events</span><span class="o">.</span><span class="nc">PaymentMade</span><span class="o">))</span>
+    <span class="o">.</span><span class="n">withDefaultFailureStrategy</span><span class="o">(</span>
+      <span class="nc">RetryWithIncrementalBackoff</span>
+        <span class="o">.</span><span class="n">builder</span><span class="o">()</span>
+        <span class="o">.</span><span class="n">withInitialDelay</span><span class="o">(</span><span class="mi">100</span> <span class="n">milliseconds</span><span class="o">)</span>
+        <span class="o">.</span><span class="n">withUntil</span><span class="o">(</span><span class="nc">Some</span><span class="o">(</span><span class="nc">UntilDeadline</span><span class="o">(</span><span class="mi">24</span> <span class="n">hours</span><span class="o">)))</span>
+        <span class="o">.</span><span class="n">withMaxTimeBetweenRetries</span><span class="o">(</span><span class="nc">Some</span><span class="o">(</span><span class="mi">10</span> <span class="n">minutes</span><span class="o">))</span>
+        <span class="o">.</span><span class="n">build</span><span class="o">())</span>
+
+  <span class="k">object</span> <span class="nc">Ingredients</span> <span class="o">{</span>
+
+    <span class="k">val</span> <span class="nc">OrderId</span><span class="k">:</span> <span class="kt">Ingredient</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span> <span class="k">=</span>
+      <span class="nc">Ingredient</span><span class="o">[</span><span class="kt">String</span><span class="o">](</span><span class="s">&quot;orderId&quot;</span><span class="o">)</span>
+
+    <span class="k">val</span> <span class="nc">Items</span><span class="k">:</span> <span class="kt">Ingredient</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">]]</span> <span class="k">=</span>
+      <span class="nc">Ingredient</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">]](</span><span class="s">&quot;items&quot;</span><span class="o">)</span>
+
+    <span class="k">val</span> <span class="nc">ReservedItems</span><span class="k">:</span> <span class="kt">Ingredient</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">]]</span> <span class="k">=</span>
+      <span class="nc">Ingredient</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">]](</span><span class="s">&quot;reservedItems&quot;</span><span class="o">)</span>
+
+    <span class="k">val</span> <span class="nc">UnavailableItems</span><span class="k">:</span> <span class="kt">Ingredient</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">]]</span> <span class="k">=</span>
+      <span class="nc">Ingredient</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">]](</span><span class="s">&quot;unavailableItems&quot;</span><span class="o">)</span>
+  <span class="o">}</span>
+
+  <span class="k">object</span> <span class="nc">Events</span> <span class="o">{</span>
+
+    <span class="k">val</span> <span class="nc">OrderPlaced</span><span class="k">:</span> <span class="kt">Event</span> <span class="o">=</span> <span class="nc">Event</span><span class="o">(</span>
+      <span class="n">name</span> <span class="k">=</span> <span class="s">&quot;OrderPlaced&quot;</span><span class="o">,</span>
+      <span class="n">providedIngredients</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
+        <span class="nc">Ingredients</span><span class="o">.</span><span class="nc">OrderId</span><span class="o">,</span>
+        <span class="nc">Ingredients</span><span class="o">.</span><span class="nc">Items</span>
+      <span class="o">),</span>
+      <span class="n">maxFiringLimit</span> <span class="k">=</span> <span class="nc">Some</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
+    <span class="o">)</span>
+
+    <span class="k">val</span> <span class="nc">PaymentMade</span><span class="k">:</span> <span class="kt">Event</span> <span class="o">=</span> <span class="nc">Event</span><span class="o">(</span>
+      <span class="n">name</span> <span class="k">=</span> <span class="s">&quot;PaymentMade&quot;</span><span class="o">,</span>
+      <span class="n">providedIngredients</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">.</span><span class="n">empty</span><span class="o">,</span>
+      <span class="n">maxFiringLimit</span> <span class="k">=</span> <span class="nc">Some</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
+    <span class="o">)</span>
+
+    <span class="k">val</span> <span class="nc">OrderHadUnavailableItems</span><span class="k">:</span> <span class="kt">Event</span> <span class="o">=</span> <span class="nc">Event</span><span class="o">(</span>
+      <span class="n">name</span> <span class="k">=</span> <span class="s">&quot;OrderHadUnavailableItems&quot;</span><span class="o">,</span>
+      <span class="n">providedIngredients</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
+        <span class="nc">Ingredients</span><span class="o">.</span><span class="nc">UnavailableItems</span>
+      <span class="o">),</span>
+      <span class="n">maxFiringLimit</span> <span class="k">=</span> <span class="nc">Some</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
+    <span class="o">)</span>
+
+    <span class="k">val</span> <span class="nc">ItemsReserved</span><span class="k">:</span> <span class="kt">Event</span> <span class="o">=</span> <span class="nc">Event</span><span class="o">(</span>
+      <span class="n">name</span> <span class="k">=</span> <span class="s">&quot;ItemsReserved&quot;</span><span class="o">,</span>
+      <span class="n">providedIngredients</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
+        <span class="nc">Ingredients</span><span class="o">.</span><span class="nc">ReservedItems</span>
+      <span class="o">),</span>
+      <span class="n">maxFiringLimit</span> <span class="k">=</span> <span class="nc">Some</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
+    <span class="o">)</span>
+  <span class="o">}</span>
+
+  <span class="k">object</span> <span class="nc">Interactions</span> <span class="o">{</span>
+
+    <span class="k">val</span> <span class="nc">ReserveItems</span><span class="k">:</span> <span class="kt">Interaction</span> <span class="o">=</span> <span class="nc">Interaction</span><span class="o">(</span>
+      <span class="n">name</span> <span class="k">=</span> <span class="s">&quot;ReserveItems&quot;</span><span class="o">,</span>
+      <span class="n">inputIngredients</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
+        <span class="nc">Ingredients</span><span class="o">.</span><span class="nc">OrderId</span><span class="o">,</span>
+        <span class="nc">Ingredients</span><span class="o">.</span><span class="nc">Items</span><span class="o">,</span>
+      <span class="o">),</span>
+      <span class="n">output</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
+        <span class="nc">Events</span><span class="o">.</span><span class="nc">OrderHadUnavailableItems</span><span class="o">,</span>
+        <span class="nc">Events</span><span class="o">.</span><span class="nc">ItemsReserved</span>
+      <span class="o">)</span>
+    <span class="o">)</span>
+  <span class="o">}</span>
+<span class="o">}</span>
 </code></pre></div>
 
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Scala (Reflection API)</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">import</span> <span class="nn">com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.recipe.scaladsl.</span><span class="o">{</span><span class="nc">Event</span><span class="o">,</span> <span class="nc">Ingredient</span><span class="o">,</span> <span class="nc">Interaction</span><span class="o">,</span> <span class="nc">Recipe</span><span class="o">}</span>
 
-<p>}</p>
-<p>object Events {</p>
-<div class="codehilite"><pre><span></span><code>val OrderPlaced: Event = Event(
-  name = &quot;OrderPlaced&quot;,
-  providedIngredients = Seq(
-    Ingredients.OrderId,
-    Ingredients.Items
-  ),
-  maxFiringLimit = Some(1)
-)
+<span class="k">import</span> <span class="nn">scala.concurrent.duration._</span>
 
-val PaymentMade: Event = Event(
-  name = &quot;PaymentMade&quot;,
-  providedIngredients = Seq.empty,
-  maxFiringLimit = Some(1)
-)
+<span class="k">object</span> <span class="nc">WebshopRecipeReflection</span> <span class="o">{</span>
 
-val OrderHadUnavailableItems: Event = Event(
-  name = &quot;OrderHadUnavailableItems&quot;,
-  providedIngredients = Seq(
-    Ingredients.UnavailableItems
-  ),
-  maxFiringLimit = Some(1)
-)
+  <span class="k">case</span> <span class="k">class</span> <span class="nc">OrderPlaced</span><span class="o">(</span><span class="n">orderId</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">items</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">])</span>
 
-val ItemsReserved: Event = Event(
-  name = &quot;ItemsReserved&quot;,
-  providedIngredients = Seq(
-    Ingredients.ReservedItems
-  ),
-  maxFiringLimit = Some(1)
-)
+  <span class="k">case</span> <span class="k">class</span> <span class="nc">PaymentMade</span><span class="o">()</span>
+
+  <span class="k">sealed</span> <span class="k">trait</span> <span class="nc">ReserveItemsOutput</span>
+
+  <span class="k">case</span> <span class="k">class</span> <span class="nc">OrderHadUnavailableItems</span><span class="o">(</span><span class="n">unavailableItems</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">])</span> <span class="k">extends</span> <span class="nc">ReserveItemsOutput</span>
+
+  <span class="k">case</span> <span class="k">class</span> <span class="nc">ItemsReserved</span><span class="o">(</span><span class="n">reservedItems</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">])</span> <span class="k">extends</span> <span class="nc">ReserveItemsOutput</span>
+
+  <span class="k">val</span> <span class="nc">ReserveItems</span> <span class="k">=</span> <span class="nc">Interaction</span><span class="o">(</span>
+    <span class="n">name</span> <span class="k">=</span> <span class="s">&quot;ReserveItems&quot;</span><span class="o">,</span>
+    <span class="n">inputIngredients</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
+      <span class="nc">Ingredient</span><span class="o">[</span><span class="kt">String</span><span class="o">](</span><span class="s">&quot;orderId&quot;</span><span class="o">),</span>
+      <span class="nc">Ingredient</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">]](</span><span class="s">&quot;items&quot;</span><span class="o">)</span>
+    <span class="o">),</span>
+    <span class="n">output</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
+      <span class="nc">Event</span><span class="o">[</span><span class="kt">OrderHadUnavailableItems</span><span class="o">],</span>
+      <span class="nc">Event</span><span class="o">[</span><span class="kt">ItemsReserved</span><span class="o">]</span>
+    <span class="o">)</span>
+  <span class="o">)</span>
+
+  <span class="k">val</span> <span class="n">recipe</span><span class="k">:</span> <span class="kt">Recipe</span> <span class="o">=</span> <span class="nc">Recipe</span><span class="o">(</span><span class="s">&quot;Webshop&quot;</span><span class="o">)</span>
+    <span class="o">.</span><span class="n">withSensoryEvents</span><span class="o">(</span>
+      <span class="nc">Event</span><span class="o">[</span><span class="kt">OrderPlaced</span><span class="o">],</span>
+      <span class="nc">Event</span><span class="o">[</span><span class="kt">PaymentMade</span><span class="o">])</span>
+    <span class="o">.</span><span class="n">withInteractions</span><span class="o">(</span>
+      <span class="nc">ReserveItems</span>
+        <span class="o">.</span><span class="n">withRequiredEvent</span><span class="o">(</span><span class="nc">Event</span><span class="o">[</span><span class="kt">PaymentMade</span><span class="o">]))</span>
+    <span class="o">.</span><span class="n">withDefaultFailureStrategy</span><span class="o">(</span>
+      <span class="nc">RetryWithIncrementalBackoff</span>
+        <span class="o">.</span><span class="n">builder</span><span class="o">()</span>
+        <span class="o">.</span><span class="n">withInitialDelay</span><span class="o">(</span><span class="mi">100</span> <span class="n">milliseconds</span><span class="o">)</span>
+        <span class="o">.</span><span class="n">withUntil</span><span class="o">(</span><span class="nc">Some</span><span class="o">(</span><span class="nc">UntilDeadline</span><span class="o">(</span><span class="mi">24</span> <span class="n">hours</span><span class="o">)))</span>
+        <span class="o">.</span><span class="n">withMaxTimeBetweenRetries</span><span class="o">(</span><span class="nc">Some</span><span class="o">(</span><span class="mi">10</span> <span class="n">minutes</span><span class="o">))</span>
+        <span class="o">.</span><span class="n">build</span><span class="o">())</span>
+<span class="o">}</span>
 </code></pre></div>
 
+</div>
+<input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><label for="__tabbed_1_3">Java (Reflection API)</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">com.ing.baker.recipe.annotations.FiresEvent</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.recipe.annotations.RequiresIngredient</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.recipe.javadsl.InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.recipe.javadsl.Interaction</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.recipe.javadsl.Recipe</span><span class="p">;</span>
 
-<p>}</p>
-<p>object Interactions {</p>
-<div class="codehilite"><pre><span></span><code>val ReserveItems: Interaction = Interaction(
-  name = &quot;ReserveItems&quot;,
-  inputIngredients = Seq(
-    Ingredients.OrderId,
-    Ingredients.Items,
-  ),
-  output = Seq(
-    Events.OrderHadUnavailableItems,
-    Events.ItemsReserved
-  )
-)
+<span class="kn">import</span> <span class="nn">java.time.Duration</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">java.util.List</span><span class="p">;</span>
+
+<span class="kn">import static</span> <span class="nn">com.ing.baker.recipe.javadsl.InteractionDescriptor.of</span><span class="p">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">JWebshopRecipe</span> <span class="p">{</span>
+
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">OrderPlaced</span> <span class="p">{</span>
+
+        <span class="kd">public</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">orderId</span><span class="p">;</span>
+        <span class="kd">public</span> <span class="kd">final</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">items</span><span class="p">;</span>
+
+        <span class="kd">public</span> <span class="nf">OrderPlaced</span><span class="p">(</span><span class="n">String</span> <span class="n">orderId</span><span class="p">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">items</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="na">orderId</span> <span class="o">=</span> <span class="n">orderId</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="na">items</span> <span class="o">=</span> <span class="n">items</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">PaymentMade</span> <span class="p">{}</span>
+
+    <span class="kd">public</span> <span class="kd">interface</span> <span class="nc">ReserveItems</span> <span class="kd">extends</span> <span class="n">Interaction</span> <span class="p">{</span>
+
+        <span class="kd">interface</span> <span class="nc">ReserveItemsOutcome</span> <span class="p">{</span>
+        <span class="p">}</span>
+
+        <span class="kd">class</span> <span class="nc">OrderHadUnavailableItems</span> <span class="kd">implements</span> <span class="n">ReserveItemsOutcome</span> <span class="p">{</span>
+
+            <span class="kd">public</span> <span class="kd">final</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">unavailableItems</span><span class="p">;</span>
+
+            <span class="kd">public</span> <span class="nf">OrderHadUnavailableItems</span><span class="p">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">unavailableItems</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="na">unavailableItems</span> <span class="o">=</span> <span class="n">unavailableItems</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="kd">class</span> <span class="nc">ItemsReserved</span> <span class="kd">implements</span> <span class="n">ReserveItemsOutcome</span> <span class="p">{</span>
+
+            <span class="kd">public</span> <span class="kd">final</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">reservedItems</span><span class="p">;</span>
+
+            <span class="kd">public</span> <span class="nf">ItemsReserved</span><span class="p">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">reservedItems</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">this</span><span class="p">.</span><span class="na">reservedItems</span> <span class="o">=</span> <span class="n">reservedItems</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="nd">@FiresEvent</span><span class="p">(</span><span class="n">oneOf</span> <span class="o">=</span> <span class="p">{</span><span class="n">OrderHadUnavailableItems</span><span class="p">.</span><span class="na">class</span><span class="p">,</span> <span class="n">ItemsReserved</span><span class="p">.</span><span class="na">class</span><span class="p">})</span>
+        <span class="n">ReserveItemsOutcome</span> <span class="nf">apply</span><span class="p">(</span><span class="nd">@RequiresIngredient</span><span class="p">(</span><span class="s">&quot;orderId&quot;</span><span class="p">)</span> <span class="n">String</span> <span class="n">id</span><span class="p">,</span> <span class="nd">@RequiresIngredient</span><span class="p">(</span><span class="s">&quot;items&quot;</span><span class="p">)</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">items</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kd">public</span> <span class="kd">final</span> <span class="kd">static</span> <span class="n">Recipe</span> <span class="n">recipe</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Recipe</span><span class="p">(</span><span class="s">&quot;WebshopRecipe&quot;</span><span class="p">)</span>
+        <span class="p">.</span><span class="na">withSensoryEvents</span><span class="p">(</span>
+            <span class="n">OrderPlaced</span><span class="p">.</span><span class="na">class</span><span class="p">,</span>
+            <span class="n">PaymentMade</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+        <span class="p">.</span><span class="na">withInteractions</span><span class="p">(</span>
+            <span class="n">of</span><span class="p">(</span><span class="n">ReserveItems</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">withRequiredEvent</span><span class="p">(</span><span class="n">PaymentMade</span><span class="p">.</span><span class="na">class</span><span class="p">))</span>
+        <span class="p">.</span><span class="na">withDefaultFailureStrategy</span><span class="p">(</span>
+            <span class="k">new</span> <span class="n">RetryWithIncrementalBackoffBuilder</span><span class="p">()</span>
+                <span class="p">.</span><span class="na">withInitialDelay</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">ofMillis</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+                <span class="p">.</span><span class="na">withDeadline</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">ofHours</span><span class="p">(</span><span class="mi">24</span><span class="p">))</span>
+                <span class="p">.</span><span class="na">withMaxTimeBetweenRetries</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">ofMinutes</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+                <span class="p">.</span><span class="na">build</span><span class="p">());</span>
+<span class="p">}</span>
 </code></pre></div>
 
-
-<p>}
-}
-<code></code>scala tab="Scala (Reflection API)"
-
-import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
-import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
-
-import scala.concurrent.duration._
-
-object WebshopRecipeReflection {
-
-  case class OrderPlaced(orderId: String, items: List[String])
-
-  case class PaymentMade()
-
-  sealed trait ReserveItemsOutput
-
-  case class OrderHadUnavailableItems(unavailableItems: List[String]) extends ReserveItemsOutput
-
-  case class ItemsReserved(reservedItems: List[String]) extends ReserveItemsOutput
-
-  val ReserveItems = Interaction(
-    name = "ReserveItems",
-    inputIngredients = Seq(
-      Ingredient<a href="" title="orderId">String</a>,
-      Ingredient<a href="" title="items">List[String]</a>
-    ),
-    output = Seq(
-      Event[OrderHadUnavailableItems],
-      Event[ItemsReserved]
-    )
-  )
-
-  val recipe: Recipe = Recipe("Webshop")
-    .withSensoryEvents(
-      Event[OrderPlaced],
-      Event[PaymentMade])
-    .withInteractions(
-      ReserveItems
-        .withRequiredEvent(Event[PaymentMade]))
-    .withDefaultFailureStrategy(
-      RetryWithIncrementalBackoff
-        .builder()
-        .withInitialDelay(100 milliseconds)
-        .withUntil(Some(UntilDeadline(24 hours)))
-        .withMaxTimeBetweenRetries(Some(10 minutes))
-        .build())
-}
-
-```</p>
-<p>```java tab="Java (Reflection API)"</p>
-<p>import com.ing.baker.recipe.annotations.FiresEvent;
-import com.ing.baker.recipe.annotations.RequiresIngredient;
-import com.ing.baker.recipe.javadsl.InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder;
-import com.ing.baker.recipe.javadsl.Interaction;
-import com.ing.baker.recipe.javadsl.Recipe;</p>
-<p>import java.time.Duration;
-import java.util.List;</p>
-<p>import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;</p>
-<p>public class JWebshopRecipe {</p>
-<div class="codehilite"><pre><span></span><code><span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="n">OrderPlaced</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
-
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">final</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">orderId</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">final</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">items</span><span class="p">;</span><span class="w"></span>
-
-<span class="w">    </span><span class="k">public</span><span class="w"> </span><span class="n">OrderPlaced</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">orderId</span><span class="p">,</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">items</span><span class="p">)</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">this</span><span class="p">.</span><span class="n">orderId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">orderId</span><span class="p">;</span><span class="w"></span>
-<span class="w">        </span><span class="n">this</span><span class="p">.</span><span class="n">items</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">items</span><span class="p">;</span><span class="w"></span>
-<span class="w">    </span><span class="err">}</span><span class="w"></span>
-<span class="err">}</span><span class="w"></span>
-
-<span class="k">public</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="n">PaymentMade</span><span class="w"> </span><span class="err">{}</span><span class="w"></span>
-
-<span class="k">public</span><span class="w"> </span><span class="n">interface</span><span class="w"> </span><span class="n">ReserveItems</span><span class="w"> </span><span class="n">extends</span><span class="w"> </span><span class="n">Interaction</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
-
-<span class="w">    </span><span class="n">interface</span><span class="w"> </span><span class="n">ReserveItemsOutcome</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
-<span class="w">    </span><span class="err">}</span><span class="w"></span>
-
-<span class="w">    </span><span class="k">class</span><span class="w"> </span><span class="n">OrderHadUnavailableItems</span><span class="w"> </span><span class="n">implements</span><span class="w"> </span><span class="n">ReserveItemsOutcome</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
-
-<span class="w">        </span><span class="k">public</span><span class="w"> </span><span class="n">final</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">unavailableItems</span><span class="p">;</span><span class="w"></span>
-
-<span class="w">        </span><span class="k">public</span><span class="w"> </span><span class="n">OrderHadUnavailableItems</span><span class="p">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">unavailableItems</span><span class="p">)</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
-<span class="w">            </span><span class="n">this</span><span class="p">.</span><span class="n">unavailableItems</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">unavailableItems</span><span class="p">;</span><span class="w"></span>
-<span class="w">        </span><span class="err">}</span><span class="w"></span>
-<span class="w">    </span><span class="err">}</span><span class="w"></span>
-
-<span class="w">    </span><span class="k">class</span><span class="w"> </span><span class="n">ItemsReserved</span><span class="w"> </span><span class="n">implements</span><span class="w"> </span><span class="n">ReserveItemsOutcome</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
-
-<span class="w">        </span><span class="k">public</span><span class="w"> </span><span class="n">final</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">reservedItems</span><span class="p">;</span><span class="w"></span>
-
-<span class="w">        </span><span class="k">public</span><span class="w"> </span><span class="n">ItemsReserved</span><span class="p">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">reservedItems</span><span class="p">)</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
-<span class="w">            </span><span class="n">this</span><span class="p">.</span><span class="n">reservedItems</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">reservedItems</span><span class="p">;</span><span class="w"></span>
-<span class="w">        </span><span class="err">}</span><span class="w"></span>
-<span class="w">    </span><span class="err">}</span><span class="w"></span>
-
-<span class="w">    </span><span class="nv">@FiresEvent</span><span class="p">(</span><span class="n">oneOf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="err">{</span><span class="n">OrderHadUnavailableItems</span><span class="p">.</span><span class="k">class</span><span class="p">,</span><span class="w"> </span><span class="n">ItemsReserved</span><span class="p">.</span><span class="k">class</span><span class="err">}</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="n">ReserveItemsOutcome</span><span class="w"> </span><span class="n">apply</span><span class="p">(</span><span class="nv">@RequiresIngredient</span><span class="p">(</span><span class="ss">&quot;orderId&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="nv">@RequiresIngredient</span><span class="p">(</span><span class="ss">&quot;items&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">items</span><span class="p">);</span><span class="w"></span>
-<span class="err">}</span><span class="w"></span>
-
-<span class="k">public</span><span class="w"> </span><span class="n">final</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="n">Recipe</span><span class="w"> </span><span class="n">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Recipe</span><span class="p">(</span><span class="ss">&quot;WebshopRecipe&quot;</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">.</span><span class="n">withSensoryEvents</span><span class="p">(</span><span class="w"></span>
-<span class="w">        </span><span class="n">OrderPlaced</span><span class="p">.</span><span class="k">class</span><span class="p">,</span><span class="w"></span>
-<span class="w">        </span><span class="n">PaymentMade</span><span class="p">.</span><span class="k">class</span><span class="p">)</span><span class="w"></span>
-<span class="w">    </span><span class="p">.</span><span class="n">withInteractions</span><span class="p">(</span><span class="w"></span>
-<span class="w">        </span><span class="k">of</span><span class="p">(</span><span class="n">ReserveItems</span><span class="p">.</span><span class="k">class</span><span class="p">)</span><span class="w"></span>
-<span class="w">            </span><span class="p">.</span><span class="n">withRequiredEvent</span><span class="p">(</span><span class="n">PaymentMade</span><span class="p">.</span><span class="k">class</span><span class="p">))</span><span class="w"></span>
-<span class="w">    </span><span class="p">.</span><span class="n">withDefaultFailureStrategy</span><span class="p">(</span><span class="w"></span>
-<span class="w">        </span><span class="k">new</span><span class="w"> </span><span class="n">RetryWithIncrementalBackoffBuilder</span><span class="p">()</span><span class="w"></span>
-<span class="w">            </span><span class="p">.</span><span class="n">withInitialDelay</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="n">ofMillis</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span><span class="w"></span>
-<span class="w">            </span><span class="p">.</span><span class="n">withDeadline</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="n">ofHours</span><span class="p">(</span><span class="mi">24</span><span class="p">))</span><span class="w"></span>
-<span class="w">            </span><span class="p">.</span><span class="n">withMaxTimeBetweenRetries</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="n">ofMinutes</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span><span class="w"></span>
-<span class="w">            </span><span class="p">.</span><span class="n">build</span><span class="p">());</span><span class="w"></span>
-</code></pre></div>
-
-
-<p>}
-```
-</p>
+</div>
+</div>
 <h2 id="events">Events</h2>
-<p><a href="../../reference/main-abstractions/#event-and-eventinstance">Events</a> are simple <code>POJO</code> classes. For example:
-
-<code>scala tab="Scala"
-case class CustomerInfoReceived(customerInfo: CustomerInfo)</code></p>
-<p>``` java tab="Java"
-public class CustomerInfoReceived {
-    public final CustomerInfo customerInfo;</p>
-<div class="codehilite"><pre><span></span><code><span class="err">public CustomerInfoReceived(CustomerInfo customerInfo) {</span>
-<span class="err">    this.customerInfo = customerInfo;</span>
-<span class="err">}</span>
+<p><a href="../../reference/main-abstractions/#event-and-eventinstance">Events</a> are simple <code>POJO</code> classes. For example:</p>
+<div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">case</span> <span class="k">class</span> <span class="nc">CustomerInfoReceived</span><span class="o">(</span><span class="n">customerInfo</span><span class="k">:</span> <span class="kt">CustomerInfo</span><span class="o">)</span>
 </code></pre></div>
 
+</div>
+<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">CustomerInfoReceived</span> <span class="p">{</span>
+    <span class="kd">public</span> <span class="kd">final</span> <span class="n">CustomerInfo</span> <span class="n">customerInfo</span><span class="p">;</span>
 
-<p>}
-<code>``
+    <span class="kd">public</span> <span class="nf">CustomerInfoReceived</span><span class="p">(</span><span class="n">CustomerInfo</span> <span class="n">customerInfo</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="na">customerInfo</span> <span class="o">=</span> <span class="n">customerInfo</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
 
-The field types of the</code>POJO<code>class must be compatible with the baker type system.
-
-See the [supported types](../../reference/baker-types-and-values/#primitives) for more information.
-
-The names of the fields are obtained using reflection.
-
-They can be added using the</code>.withSensoryEvents(..)` method.
-
-
-</p>
+</div>
+</div>
+<p>The field types of the <code>POJO</code> class must be compatible with the baker type system.</p>
+<p>See the <a href="../../reference/baker-types-and-values/#primitives">supported types</a> for more information.</p>
+<p>The names of the fields are obtained using reflection.</p>
+<p>They can be added using the <code>.withSensoryEvents(..)</code> method.</p>
 <h3 id="firing-limit">Firing limit</h3>
 <p>A <em>firing limit</em> is a limit on the number of times a sensory event may be received by a 
-<a href="../../reference/main-abstractions/#recipe-and-recipeinstance">recipe instance</a>.
+<a href="../../reference/main-abstractions/#recipe-and-recipeinstance">recipe instance</a>.</p>
+<p>By default sensory events have a firing limit of <code>1</code> per process instance.</p>
+<p>This means the event will be rejected with status <code>FiringLimitMet</code> after the first time it is received.</p>
+<p>If you want to send an event more then once you may add it like this:</p>
+<div class="highlight"><pre><span></span><code>   <span class="p">.</span><span class="na">withSensoryEventsNoFiringLimit</span><span class="p">(</span><span class="n">CustomerInfoReceived</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+</code></pre></div>
 
-By default sensory events have a firing limit of <code>1</code> per process instance.
-
-This means the event will be rejected with status <code>FiringLimitMet</code> after the first time it is received.
-
-If you want to send an event more then once you may add it like this:
-
-<code>java
-   .withSensoryEventsNoFiringLimit(CustomerInfoReceived.class)</code></p>
 <p>In this example the <code>CustomerInfoReceived</code> can now be received multiple times by a process instance.</p>
 <h2 id="interactions">Interactions</h2>
 <p>Interactions are interfaces with some requirements. See <a href="../../development-life-cycle/design-a-recipe/#interactions">here</a> how to define them.</p>
@@ -1206,8 +1205,8 @@ into account when coming up with this number.</p>
 <p>When this happens 2 things may happen.</p>
 <p>Either the interaction becomes [blocked(#blocked-interaction).</p>
 <p>Or if you configure so, the process continues with a predefined event:</p>
-<div class="highlight"><pre><span></span><code>.withDefaultFailureStrategy(new RetryWithIncrementalBackoffBuilder()
-  .withFireRetryExhaustedEvent(SomeEvent.class))
+<div class="highlight"><pre><span></span><code><span class="p">.</span><span class="na">withDefaultFailureStrategy</span><span class="p">(</span><span class="k">new</span> <span class="n">RetryWithIncrementalBackoffBuilder</span><span class="p">()</span>
+  <span class="p">.</span><span class="na">withFireRetryExhaustedEvent</span><span class="p">(</span><span class="n">SomeEvent</span><span class="p">.</span><span class="na">class</span><span class="p">))</span>
 </code></pre></div>
 
 <p>Note that this event class <strong>requires</strong> an empty constructor to be present and <strong>cannot</strong> provide ingredients.</p>

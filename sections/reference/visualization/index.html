@@ -620,126 +620,149 @@
                 <h1 id="visualization">Visualization</h1>
 <p>A visualization is a visual graph representation of a Recipe and it is built from a compiled recipe.</p>
 <p>You can see an example of the output and of a rendered visualization <a href="../../development-life-cycle/use-visualizations">here</a>.</p>
-<p>``` scala tab="Scala"</p>
-<p>import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.compiler.RecipeCompiler</p>
-<p>val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
-val visualization: String = compiled.getRecipeVisualization</p>
-<div class="highlight"><pre><span></span><code>``` scala tab=&quot;Java&quot;
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">import</span> <span class="nn">com.ing.baker.il.CompiledRecipe</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.compiler.RecipeCompiler</span>
 
-import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.compiler.RecipeCompiler;
-
-CompiledRecipe recipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
-String visualization = recipe.getRecipeVisualization();
+<span class="k">val</span> <span class="n">compiled</span> <span class="k">=</span> <span class="nc">RecipeCompiler</span><span class="o">.</span><span class="n">compileRecipe</span><span class="o">(</span><span class="nc">WebshopRecipe</span><span class="o">.</span><span class="n">recipe</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">visualization</span><span class="k">:</span> <span class="kt">String</span> <span class="o">=</span> <span class="n">compiled</span><span class="o">.</span><span class="n">getRecipeVisualization</span>
 </code></pre></div>
 
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">com.ing.baker.il.CompiledRecipe</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.compiler.RecipeCompiler</span><span class="p">;</span>
+
+<span class="n">CompiledRecipe</span> <span class="n">recipe</span> <span class="o">=</span> <span class="n">RecipeCompiler</span><span class="p">.</span><span class="na">compileRecipe</span><span class="p">(</span><span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">recipe</span><span class="p">);</span>
+<span class="n">String</span> <span class="n">visualization</span> <span class="o">=</span> <span class="n">recipe</span><span class="p">.</span><span class="na">getRecipeVisualization</span><span class="p">();</span>
+</code></pre></div>
+
+</div>
+</div>
 <p>The aesthetics can be configured by passing a <code>com.ing.baker.il.RecipeVisualStyle</code> object to the 
 <code>recipe.getRecipeVisualization()</code> method, that object has <code>scalax.collection.io.dot._</code> objects that will change how
  your ingredients, events and interactions are rendered. </p>
 <p>The default configuration is:</p>
-<p>``` scala tab="Scala"</p>
-<p>case class RecipeVisualStyle(</p>
-<p>rootAttributes: List[DotAttr] = List(
-    DotAttr("pad", 0.2)
-  ),</p>
-<p>commonNodeAttributes: List[DotAttrStmt] = List(
-    DotAttrStmt(
-      Elem.node,
-      List(
-        DotAttr("fontname", "ING Me"),
-        DotAttr("fontsize", 22),
-        DotAttr("fontcolor", "white")
-      )
-    )
-  ),</p>
-<p>ingredientAttributes: List[DotAttr] = List(
-    DotAttr("shape", "circle"),
-    DotAttr("style", "filled"),
-    DotAttr("color", "\"#FF6200\"")
-  ),</p>
-<p>providedIngredientAttributes: List[DotAttr] = List(
-    DotAttr("shape", "circle"),
-    DotAttr("style", "filled"),
-    DotAttr("color", "\"#3b823a\"")
-  ),</p>
-<p>missingIngredientAttributes: List[DotAttr] = List(
-    DotAttr("shape", "circle"),
-    DotAttr("style", "filled"),
-    DotAttr("color", "\"#EE0000\""),
-    DotAttr("penwidth", "5.0")
-  ),</p>
-<p>eventAttributes: List[DotAttr] = List(
-    DotAttr("shape", "diamond"),
-    DotAttr("style", "rounded, filled"),
-    DotAttr("color", "\"#767676\""),
-    DotAttr("margin", 0.3D)
-  ),</p>
-<p>sensoryEventAttributes: List[DotAttr] = List(
-    DotAttr("shape", "diamond"),
-    DotAttr("style", "rounded, filled"),
-    DotAttr("color", "\"#767676\""),
-    DotAttr("fillcolor", "\"#D5D5D5\""),
-    DotAttr("fontcolor", "black"),
-    DotAttr("penwidth", 2),
-    DotAttr("margin", 0.3D)
-  ),</p>
-<p>interactionAttributes: List[DotAttr] = List(
-    DotAttr("shape", "rect"),
-    DotAttr("style", "rounded, filled"),
-    DotAttr("color", "\"#525199\""),
-    DotAttr("penwidth", 2),
-    DotAttr("margin", 0.5D),
-  ),</p>
-<p>eventFiredAttributes: List[DotAttr] = List(
-    DotAttr("shape", "diamond"),
-    DotAttr("style", "rounded, filled"),
-    DotAttr("color", "\"#3b823a\""),
-    DotAttr("margin", 0.3D)
-  ),</p>
-<p>firedInteractionAttributes: List[DotAttr] = List(
-    DotAttr("shape", "rect"),
-    DotAttr("style", "rounded, filled"),
-    DotAttr("color", "\"#3b823a\""),
-    DotAttr("penwidth", 2),
-    DotAttr("margin", 0.5D),
-  ),</p>
-<p>eventMissingAttributes: List[DotAttr] = List(
-    DotAttr("shape", "diamond"),
-    DotAttr("margin", 0.3D),
-    DotAttr("style", "rounded, filled"),
-    DotAttr("color", "\"#EE0000\""),
-    DotAttr("penwidth", "5.0")
-  ),</p>
-<p>choiceAttributes: List[DotAttr] = List(
-    DotAttr("shape", "point"),
-    DotAttr("fillcolor", "\"#D0D93C\""),
-    DotAttr("width", 0.3),
-    DotAttr("height", 0.3)
-  ),</p>
-<p>emptyEventAttributes: List[DotAttr] = List(
-    DotAttr("shape", "point"),
-    DotAttr("fillcolor", "\"#D0D93C\""),
-    DotAttr("width", 0.1),
-    DotAttr("height", 0.1)
-  ),</p>
-<p>preconditionORAttributes: List[DotAttr] = List(
-    DotAttr("shape", "circle"),
-    DotAttr("fillcolor", "\"#D0D93C\""),
-    DotAttr("fontcolor", "black"),
-    DotAttr("label", "OR"),
-    DotAttr("style", "filled")
-  ),</p>
-<p>// this will be removed soon
-  sieveAttributes: List[DotAttr] = List(
-    DotAttr("shape", "rect"),
-    DotAttr("margin", 0.5D),
-    DotAttr("color", "\"#7594d6\""),
-    DotAttr("style", "rounded, filled"),
-    DotAttr("penwidth", 2)
-  )
-)</p>
-<p>```</p>
+<div class="tabbed-set" data-tabs="2:1"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">case</span> <span class="k">class</span> <span class="nc">RecipeVisualStyle</span><span class="o">(</span>
+
+  <span class="n">rootAttributes</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">DotAttr</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;pad&quot;</span><span class="o">,</span> <span class="mf">0.2</span><span class="o">)</span>
+  <span class="o">),</span>
+
+  <span class="n">commonNodeAttributes</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">DotAttrStmt</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span>
+    <span class="nc">DotAttrStmt</span><span class="o">(</span>
+      <span class="nc">Elem</span><span class="o">.</span><span class="n">node</span><span class="o">,</span>
+      <span class="nc">List</span><span class="o">(</span>
+        <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;fontname&quot;</span><span class="o">,</span> <span class="s">&quot;ING Me&quot;</span><span class="o">),</span>
+        <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;fontsize&quot;</span><span class="o">,</span> <span class="mi">22</span><span class="o">),</span>
+        <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;fontcolor&quot;</span><span class="o">,</span> <span class="s">&quot;white&quot;</span><span class="o">)</span>
+      <span class="o">)</span>
+    <span class="o">)</span>
+  <span class="o">),</span>
+
+  <span class="n">ingredientAttributes</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">DotAttr</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;shape&quot;</span><span class="o">,</span> <span class="s">&quot;circle&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;style&quot;</span><span class="o">,</span> <span class="s">&quot;filled&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;color&quot;</span><span class="o">,</span> <span class="s">&quot;\&quot;#FF6200\&quot;&quot;</span><span class="o">)</span>
+  <span class="o">),</span>
+
+  <span class="n">providedIngredientAttributes</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">DotAttr</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;shape&quot;</span><span class="o">,</span> <span class="s">&quot;circle&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;style&quot;</span><span class="o">,</span> <span class="s">&quot;filled&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;color&quot;</span><span class="o">,</span> <span class="s">&quot;\&quot;#3b823a\&quot;&quot;</span><span class="o">)</span>
+  <span class="o">),</span>
+
+  <span class="n">missingIngredientAttributes</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">DotAttr</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;shape&quot;</span><span class="o">,</span> <span class="s">&quot;circle&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;style&quot;</span><span class="o">,</span> <span class="s">&quot;filled&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;color&quot;</span><span class="o">,</span> <span class="s">&quot;\&quot;#EE0000\&quot;&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;penwidth&quot;</span><span class="o">,</span> <span class="s">&quot;5.0&quot;</span><span class="o">)</span>
+  <span class="o">),</span>
+
+  <span class="n">eventAttributes</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">DotAttr</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;shape&quot;</span><span class="o">,</span> <span class="s">&quot;diamond&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;style&quot;</span><span class="o">,</span> <span class="s">&quot;rounded, filled&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;color&quot;</span><span class="o">,</span> <span class="s">&quot;\&quot;#767676\&quot;&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;margin&quot;</span><span class="o">,</span> <span class="mf">0.3D</span><span class="o">)</span>
+  <span class="o">),</span>
+
+  <span class="n">sensoryEventAttributes</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">DotAttr</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;shape&quot;</span><span class="o">,</span> <span class="s">&quot;diamond&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;style&quot;</span><span class="o">,</span> <span class="s">&quot;rounded, filled&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;color&quot;</span><span class="o">,</span> <span class="s">&quot;\&quot;#767676\&quot;&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;fillcolor&quot;</span><span class="o">,</span> <span class="s">&quot;\&quot;#D5D5D5\&quot;&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;fontcolor&quot;</span><span class="o">,</span> <span class="s">&quot;black&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;penwidth&quot;</span><span class="o">,</span> <span class="mi">2</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;margin&quot;</span><span class="o">,</span> <span class="mf">0.3D</span><span class="o">)</span>
+  <span class="o">),</span>
+
+  <span class="n">interactionAttributes</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">DotAttr</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;shape&quot;</span><span class="o">,</span> <span class="s">&quot;rect&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;style&quot;</span><span class="o">,</span> <span class="s">&quot;rounded, filled&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;color&quot;</span><span class="o">,</span> <span class="s">&quot;\&quot;#525199\&quot;&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;penwidth&quot;</span><span class="o">,</span> <span class="mi">2</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;margin&quot;</span><span class="o">,</span> <span class="mf">0.5D</span><span class="o">),</span>
+  <span class="o">),</span>
+
+  <span class="n">eventFiredAttributes</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">DotAttr</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;shape&quot;</span><span class="o">,</span> <span class="s">&quot;diamond&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;style&quot;</span><span class="o">,</span> <span class="s">&quot;rounded, filled&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;color&quot;</span><span class="o">,</span> <span class="s">&quot;\&quot;#3b823a\&quot;&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;margin&quot;</span><span class="o">,</span> <span class="mf">0.3D</span><span class="o">)</span>
+  <span class="o">),</span>
+
+  <span class="n">firedInteractionAttributes</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">DotAttr</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;shape&quot;</span><span class="o">,</span> <span class="s">&quot;rect&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;style&quot;</span><span class="o">,</span> <span class="s">&quot;rounded, filled&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;color&quot;</span><span class="o">,</span> <span class="s">&quot;\&quot;#3b823a\&quot;&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;penwidth&quot;</span><span class="o">,</span> <span class="mi">2</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;margin&quot;</span><span class="o">,</span> <span class="mf">0.5D</span><span class="o">),</span>
+  <span class="o">),</span>
+
+  <span class="n">eventMissingAttributes</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">DotAttr</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;shape&quot;</span><span class="o">,</span> <span class="s">&quot;diamond&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;margin&quot;</span><span class="o">,</span> <span class="mf">0.3D</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;style&quot;</span><span class="o">,</span> <span class="s">&quot;rounded, filled&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;color&quot;</span><span class="o">,</span> <span class="s">&quot;\&quot;#EE0000\&quot;&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;penwidth&quot;</span><span class="o">,</span> <span class="s">&quot;5.0&quot;</span><span class="o">)</span>
+  <span class="o">),</span>
+
+  <span class="n">choiceAttributes</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">DotAttr</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;shape&quot;</span><span class="o">,</span> <span class="s">&quot;point&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;fillcolor&quot;</span><span class="o">,</span> <span class="s">&quot;\&quot;#D0D93C\&quot;&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;width&quot;</span><span class="o">,</span> <span class="mf">0.3</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;height&quot;</span><span class="o">,</span> <span class="mf">0.3</span><span class="o">)</span>
+  <span class="o">),</span>
+
+  <span class="n">emptyEventAttributes</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">DotAttr</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;shape&quot;</span><span class="o">,</span> <span class="s">&quot;point&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;fillcolor&quot;</span><span class="o">,</span> <span class="s">&quot;\&quot;#D0D93C\&quot;&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;width&quot;</span><span class="o">,</span> <span class="mf">0.1</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;height&quot;</span><span class="o">,</span> <span class="mf">0.1</span><span class="o">)</span>
+  <span class="o">),</span>
+
+  <span class="n">preconditionORAttributes</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">DotAttr</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;shape&quot;</span><span class="o">,</span> <span class="s">&quot;circle&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;fillcolor&quot;</span><span class="o">,</span> <span class="s">&quot;\&quot;#D0D93C\&quot;&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;fontcolor&quot;</span><span class="o">,</span> <span class="s">&quot;black&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;label&quot;</span><span class="o">,</span> <span class="s">&quot;OR&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;style&quot;</span><span class="o">,</span> <span class="s">&quot;filled&quot;</span><span class="o">)</span>
+  <span class="o">),</span>
+
+  <span class="c1">// this will be removed soon</span>
+  <span class="n">sieveAttributes</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">DotAttr</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;shape&quot;</span><span class="o">,</span> <span class="s">&quot;rect&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;margin&quot;</span><span class="o">,</span> <span class="mf">0.5D</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;color&quot;</span><span class="o">,</span> <span class="s">&quot;\&quot;#7594d6\&quot;&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;style&quot;</span><span class="o">,</span> <span class="s">&quot;rounded, filled&quot;</span><span class="o">),</span>
+    <span class="nc">DotAttr</span><span class="o">(</span><span class="s">&quot;penwidth&quot;</span><span class="o">,</span> <span class="mi">2</span><span class="o">)</span>
+  <span class="o">)</span>
+<span class="o">)</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="recipe-instance-state-visualizations">Recipe Instance State Visualizations</h2>
 <p>Another type of visualization that can be done is the <code>Baker.getVisualState(recipeInstanceId)</code> API, this will generate the
 same GraphViz string but of the state of a currently running <code>ProcessInstance</code>, referenced by the input recipeInstanceId.</p>

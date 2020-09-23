@@ -669,21 +669,28 @@ between business logic and implementation through the <code>Recipe</code> and <c
 <p>First, one important notice is that currently Baker does not check at compile time the soundness of your Recipe (if your
 Recipe makes any sense), but it does so when compiling it with the <code>RecipeCompiler.compileRecipe(recipe)</code> API. Errors are 
 thrown in the form of exceptions describing the issue. So a simple unit test that simply compiles your <code>Recipe</code> is essential.</p>
-<p>```scala tab="Scala"
-class WebshopRecipeSpec extends FlatSpec with Matchers {</p>
-<p>"The WebshopRecipe" should "compile the recipe without errors" in {
-    RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
-  }
-}
-<div class="highlight"><pre><span></span><code>```scala tab=&quot;Java&quot;
-public class JWebshopRecipeTests {
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">WebshopRecipeSpec</span> <span class="k">extends</span> <span class="nc">FlatSpec</span> <span class="k">with</span> <span class="nc">Matchers</span> <span class="o">{</span>
 
-    @Test
-    public void shouldCompileTheRecipeWithoutIssues() {
-        RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
-    }
-}
-</code></pre></div></p>
+  <span class="s">&quot;The WebshopRecipe&quot;</span> <span class="n">should</span> <span class="s">&quot;compile the recipe without errors&quot;</span> <span class="n">in</span> <span class="o">{</span>
+    <span class="nc">RecipeCompiler</span><span class="o">.</span><span class="n">compileRecipe</span><span class="o">(</span><span class="nc">WebshopRecipe</span><span class="o">.</span><span class="n">recipe</span><span class="o">)</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">JWebshopRecipeTests</span> <span class="p">{</span>
+
+    <span class="nd">@Test</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">shouldCompileTheRecipeWithoutIssues</span><span class="p">()</span> <span class="p">{</span>
+        <span class="n">RecipeCompiler</span><span class="p">.</span><span class="na">compileRecipe</span><span class="p">(</span><span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">recipe</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="testing-recipes-for-correctness-mocking-interaction-implementations">Testing Recipes for Correctness: Mocking Interaction Implementations</h2>
 <p>The next layer is to test that the Recipe actually does what you expect it to do at the business logic level <strong>independently</strong>
 of the underlying implementations. One way of doing so is by providing <code>InteractionImplementations</code> that behave as expected
@@ -698,89 +705,105 @@ according to a testing scenario. </p>
 </ol>
 <p><em>Note: Take into consideration the asynchronous nature of Baker, some times the easiest is to use <code>fireAndResolveWhenCompleted</code>
 that will resolve when a sensory event has completely finished affecting the state of the recipe instance.</em></p>
-<p>```scala tab="Scala"</p>
-<p>/*<em> Interface used to mock the ReserveItems interaction using the reflection API. </em>/
-trait ReserveItems {</p>
-<p>def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput]
-}</p>
-<p>/*<em> Mock of the ReserveItems interaction. </em>/
-class ReserveItemsMock extends ReserveItems {</p>
-<p>override def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput] =
-    Future.successful(WebshopRecipeReflection.ItemsReserved(items))
-}</p>
-<p>"The Webshop Recipe" should "reserve items in happy conditions" in {</p>
-<p>val system: ActorSystem = ActorSystem("baker-webshop-system")
-  val baker: Baker =  AkkaBaker.localDefaul(system)</p>
-<p>val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
-  val recipeInstanceId: String = UUID.randomUUID().toString</p>
-<p>val orderId: String = "order-id"
-  val items: List[String] = List("item1", "item2")</p>
-<p>val orderPlaced = EventInstance
-    .unsafeFrom(WebshopRecipeReflection.OrderPlaced(orderId, items))
-  val paymentMade = EventInstance
-    .unsafeFrom(WebshopRecipeReflection.PaymentMade())</p>
-<p>val reserveItemsInstance: InteractionInstance =
-    InteractionInstance.unsafeFrom(new ReserveItemsMock)</p>
-<p>for {
-    _ &lt;- baker.addInteractionInstace(reserveItemsInstance)
-    recipeId &lt;- baker.addRecipe(compiled)
-    _ &lt;- baker.bake(recipeId, recipeInstanceId)
-    _ &lt;- baker.fireEventAndResolveWhenCompleted(
-      recipeInstanceId, orderPlaced)
-    _ &lt;- baker.fireEventAndResolveWhenCompleted(
-      recipeInstanceId, paymentMade)
-    state &lt;- baker.getRecipeInstanceState(recipeInstanceId)
-    provided = state
-      .ingredients
-      .find(<em>._1 == "reservedItems")
-      .map(</em>.<em>2.as[List[String]])
-      .map(</em>.mkString(", "))
-      .getOrElse("No reserved items")
-  } yield provided shouldBe items.mkString(", ")
-}
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
-static public class HappyFlowReserveItems implements JWebshopRecipe.ReserveItems {
+<div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="cm">/** Interface used to mock the ReserveItems interaction using the reflection API. */</span>
+<span class="k">trait</span> <span class="nc">ReserveItems</span> <span class="o">{</span>
 
-    @Override
-    public ReserveItemsOutcome apply(String id, List&lt;String&gt; items) {
-        return new ItemsReserved(items);
-    }
-}
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">orderId</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">items</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">])</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">WebshopRecipeReflection.ReserveItemsOutput</span><span class="o">]</span>
+<span class="o">}</span>
 
-@Test
-public void shouldRunSimpleInstance() {
+<span class="cm">/** Mock of the ReserveItems interaction. */</span>
+<span class="k">class</span> <span class="nc">ReserveItemsMock</span> <span class="k">extends</span> <span class="nc">ReserveItems</span> <span class="o">{</span>
 
-    ActorSystem actorSystem = ActorSystem.create(&quot;WebshopSystem&quot;);
-    Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
+  <span class="k">override</span> <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">orderId</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">items</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">])</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">WebshopRecipeReflection.ReserveItemsOutput</span><span class="o">]</span> <span class="k">=</span>
+    <span class="nc">Future</span><span class="o">.</span><span class="n">successful</span><span class="o">(</span><span class="nc">WebshopRecipeReflection</span><span class="o">.</span><span class="nc">ItemsReserved</span><span class="o">(</span><span class="n">items</span><span class="o">))</span>
+<span class="o">}</span>
 
-    List&lt;String&gt; items = new ArrayList&lt;&gt;(2);
-    items.add(&quot;item1&quot;);
-    items.add(&quot;item2&quot;);
+<span class="s">&quot;The Webshop Recipe&quot;</span> <span class="n">should</span> <span class="s">&quot;reserve items in happy conditions&quot;</span> <span class="n">in</span> <span class="o">{</span>
 
-    EventInstance firstOrderPlaced =
-            EventInstance.from(new JWebshopRecipe.OrderPlaced(&quot;order-uuid&quot;, items));
-    EventInstance paymentMade =
-            EventInstance.from(new JWebshopRecipe.PaymentMade());
+  <span class="k">val</span> <span class="n">system</span><span class="k">:</span> <span class="kt">ActorSystem</span> <span class="o">=</span> <span class="nc">ActorSystem</span><span class="o">(</span><span class="s">&quot;baker-webshop-system&quot;</span><span class="o">)</span>
+  <span class="k">val</span> <span class="n">baker</span><span class="k">:</span> <span class="kt">Baker</span> <span class="o">=</span>  <span class="nc">AkkaBaker</span><span class="o">.</span><span class="n">localDefaul</span><span class="o">(</span><span class="n">system</span><span class="o">)</span>
 
-    InteractionInstance reserveItemsInstance =
-            InteractionInstance.from(new HappyFlowReserveItems());
-    CompiledRecipe compiledRecipe =
-            RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+  <span class="k">val</span> <span class="n">compiled</span> <span class="k">=</span> <span class="nc">RecipeCompiler</span><span class="o">.</span><span class="n">compileRecipe</span><span class="o">(</span><span class="nc">WebshopRecipe</span><span class="o">.</span><span class="n">recipe</span><span class="o">)</span>
+  <span class="k">val</span> <span class="n">recipeInstanceId</span><span class="k">:</span> <span class="kt">String</span> <span class="o">=</span> <span class="nc">UUID</span><span class="o">.</span><span class="n">randomUUID</span><span class="o">().</span><span class="n">toString</span>
 
-    String recipeInstanceId = &quot;first-instance-id&quot;;
-    CompletableFuture&lt;List&lt;String&gt;&gt; result = baker.addInteractionInstace(reserveItemsInstance)
-            .thenCompose(ignore -&gt; baker.addRecipe(compiledRecipe))
-            .thenCompose(recipeId -&gt; baker.bake(recipeId, recipeInstanceId))
-            .thenCompose(ignore -&gt; baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
-            .thenCompose(ignore -&gt; baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))
-            .thenCompose(ignore -&gt; baker.getRecipeInstanceState(recipeInstanceId))
-            .thenApply(x -&gt; x.events().stream().map(EventMoment::getName).collect(Collectors.toList()));
+  <span class="k">val</span> <span class="n">orderId</span><span class="k">:</span> <span class="kt">String</span> <span class="o">=</span> <span class="s">&quot;order-id&quot;</span>
+  <span class="k">val</span> <span class="n">items</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span><span class="s">&quot;item1&quot;</span><span class="o">,</span> <span class="s">&quot;item2&quot;</span><span class="o">)</span>
 
-    List&lt;String&gt; blockedResult = result.join();
+  <span class="k">val</span> <span class="n">orderPlaced</span> <span class="k">=</span> <span class="nc">EventInstance</span>
+    <span class="o">.</span><span class="n">unsafeFrom</span><span class="o">(</span><span class="nc">WebshopRecipeReflection</span><span class="o">.</span><span class="nc">OrderPlaced</span><span class="o">(</span><span class="n">orderId</span><span class="o">,</span> <span class="n">items</span><span class="o">))</span>
+  <span class="k">val</span> <span class="n">paymentMade</span> <span class="k">=</span> <span class="nc">EventInstance</span>
+    <span class="o">.</span><span class="n">unsafeFrom</span><span class="o">(</span><span class="nc">WebshopRecipeReflection</span><span class="o">.</span><span class="nc">PaymentMade</span><span class="o">())</span>
 
-    assert(blockedResult.contains(&quot;OrderPlaced&quot;) &amp;&amp; blockedResult.contains(&quot;PaymentMade&quot;) &amp;&amp; blockedResult.contains(&quot;ItemsReserved&quot;));
-}
-</code></pre></div></p>
+  <span class="k">val</span> <span class="n">reserveItemsInstance</span><span class="k">:</span> <span class="kt">InteractionInstance</span> <span class="o">=</span>
+    <span class="nc">InteractionInstance</span><span class="o">.</span><span class="n">unsafeFrom</span><span class="o">(</span><span class="k">new</span> <span class="nc">ReserveItemsMock</span><span class="o">)</span>
+
+  <span class="k">for</span> <span class="o">{</span>
+    <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">addInteractionInstace</span><span class="o">(</span><span class="n">reserveItemsInstance</span><span class="o">)</span>
+    <span class="n">recipeId</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">addRecipe</span><span class="o">(</span><span class="n">compiled</span><span class="o">)</span>
+    <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">bake</span><span class="o">(</span><span class="n">recipeId</span><span class="o">,</span> <span class="n">recipeInstanceId</span><span class="o">)</span>
+    <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveWhenCompleted</span><span class="o">(</span>
+      <span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">orderPlaced</span><span class="o">)</span>
+    <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveWhenCompleted</span><span class="o">(</span>
+      <span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">paymentMade</span><span class="o">)</span>
+    <span class="n">state</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">getRecipeInstanceState</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">)</span>
+    <span class="n">provided</span> <span class="k">=</span> <span class="n">state</span>
+      <span class="o">.</span><span class="n">ingredients</span>
+      <span class="o">.</span><span class="n">find</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">_1</span> <span class="o">==</span> <span class="s">&quot;reservedItems&quot;</span><span class="o">)</span>
+      <span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">_2</span><span class="o">.</span><span class="n">as</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">]])</span>
+      <span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">mkString</span><span class="o">(</span><span class="s">&quot;, &quot;</span><span class="o">))</span>
+      <span class="o">.</span><span class="n">getOrElse</span><span class="o">(</span><span class="s">&quot;No reserved items&quot;</span><span class="o">)</span>
+  <span class="o">}</span> <span class="k">yield</span> <span class="n">provided</span> <span class="n">shouldBe</span> <span class="n">items</span><span class="o">.</span><span class="n">mkString</span><span class="o">(</span><span class="s">&quot;, &quot;</span><span class="o">)</span>
+<span class="o">}</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kd">static</span> <span class="kd">public</span> <span class="kd">class</span> <span class="nc">HappyFlowReserveItems</span> <span class="kd">implements</span> <span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">ReserveItems</span> <span class="p">{</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ReserveItemsOutcome</span> <span class="nf">apply</span><span class="p">(</span><span class="n">String</span> <span class="n">id</span><span class="p">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">items</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">ItemsReserved</span><span class="p">(</span><span class="n">items</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="nd">@Test</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">shouldRunSimpleInstance</span><span class="p">()</span> <span class="p">{</span>
+
+    <span class="n">ActorSystem</span> <span class="n">actorSystem</span> <span class="o">=</span> <span class="n">ActorSystem</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="s">&quot;WebshopSystem&quot;</span><span class="p">);</span>
+    <span class="n">Baker</span> <span class="n">baker</span> <span class="o">=</span> <span class="n">AkkaBaker</span><span class="p">.</span><span class="na">javaLocalDefault</span><span class="p">(</span><span class="n">actorSystem</span><span class="p">);</span>
+
+    <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">items</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    <span class="n">items</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="s">&quot;item1&quot;</span><span class="p">);</span>
+    <span class="n">items</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="s">&quot;item2&quot;</span><span class="p">);</span>
+
+    <span class="n">EventInstance</span> <span class="n">firstOrderPlaced</span> <span class="o">=</span>
+            <span class="n">EventInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span> <span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">OrderPlaced</span><span class="p">(</span><span class="s">&quot;order-uuid&quot;</span><span class="p">,</span> <span class="n">items</span><span class="p">));</span>
+    <span class="n">EventInstance</span> <span class="n">paymentMade</span> <span class="o">=</span>
+            <span class="n">EventInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span> <span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">PaymentMade</span><span class="p">());</span>
+
+    <span class="n">InteractionInstance</span> <span class="n">reserveItemsInstance</span> <span class="o">=</span>
+            <span class="n">InteractionInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span> <span class="n">HappyFlowReserveItems</span><span class="p">());</span>
+    <span class="n">CompiledRecipe</span> <span class="n">compiledRecipe</span> <span class="o">=</span>
+            <span class="n">RecipeCompiler</span><span class="p">.</span><span class="na">compileRecipe</span><span class="p">(</span><span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">recipe</span><span class="p">);</span>
+
+    <span class="n">String</span> <span class="n">recipeInstanceId</span> <span class="o">=</span> <span class="s">&quot;first-instance-id&quot;</span><span class="p">;</span>
+    <span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">addInteractionInstace</span><span class="p">(</span><span class="n">reserveItemsInstance</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">ignore</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">recipeId</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">bake</span><span class="p">(</span><span class="n">recipeId</span><span class="p">,</span> <span class="n">recipeInstanceId</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">ignore</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenCompleted</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="n">firstOrderPlaced</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">ignore</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenCompleted</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="n">paymentMade</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">ignore</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">getRecipeInstanceState</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">thenApply</span><span class="p">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">x</span><span class="p">.</span><span class="na">events</span><span class="p">().</span><span class="na">stream</span><span class="p">().</span><span class="na">map</span><span class="p">(</span><span class="n">EventMoment</span><span class="p">::</span><span class="n">getName</span><span class="p">).</span><span class="na">collect</span><span class="p">(</span><span class="n">Collectors</span><span class="p">.</span><span class="na">toList</span><span class="p">()));</span>
+
+    <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">blockedResult</span> <span class="o">=</span> <span class="n">result</span><span class="p">.</span><span class="na">join</span><span class="p">();</span>
+
+    <span class="k">assert</span><span class="p">(</span><span class="n">blockedResult</span><span class="p">.</span><span class="na">contains</span><span class="p">(</span><span class="s">&quot;OrderPlaced&quot;</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">blockedResult</span><span class="p">.</span><span class="na">contains</span><span class="p">(</span><span class="s">&quot;PaymentMade&quot;</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">blockedResult</span><span class="p">.</span><span class="na">contains</span><span class="p">(</span><span class="s">&quot;ItemsReserved&quot;</span><span class="p">));</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</div>
+</div>
 <p>This test is replicating a full round through a <code>Recipe</code>, the only difference with your normal production code is that 
 <code>InteractionInstances</code> are adapted to fit the scenario you want to check, so the objective here is to test that the <code>Recipe</code>
 ends on the desired state given a certain order of firing sensory events and that the interaction instances return the
@@ -791,96 +814,110 @@ on a test environment.</em></p>
 <h2 id="mocking-interaction-implementations-with-mockito">Mocking Interaction Implementations with Mockito</h2>
 <p>Baker supports <code>InteractionInstances</code> that are <a href="https://site.mockito.org/">mockito</a> mocks, this will give you the added 
 semantics of Mockito, like verifying that the interaction instance was called, or even called with the expected data.</p>
-<p>```scala tab="Scala" </p>
-<p>trait ReserveItems {</p>
-<p>def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput]
-}</p>
-<p>"The Webshop Recipe" should "reserve items in happy conditions (mockito)" in {</p>
-<p>val system: ActorSystem = ActorSystem("baker-webshop-system")
-  val baker: Baker = AkkaBaker.localDefault(system)</p>
-<p>val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
-  val recipeInstanceId: String = UUID.randomUUID().toString</p>
-<p>val orderId: String = "order-id"
-  val items: List[String] = List("item1", "item2")</p>
-<p>val orderPlaced = EventInstance
-    .unsafeFrom(WebshopRecipeReflection.OrderPlaced(orderId, items))
-  val paymentMade = EventInstance
-    .unsafeFrom(WebshopRecipeReflection.PaymentMade())</p>
-<p>// The ReserveItems interaction being mocked by Mockito
-  val mockedReserveItems: ReserveItems = mock[ReserveItems]
-  val reserveItemsInstance: InteractionInstance =
-    InteractionInstance.unsafeFrom(mockedReserveItems)</p>
-<p>when(mockedReserveItems.apply(orderId, items))
-    .thenReturn(Future.successful(WebshopRecipeReflection.ItemsReserved(items)))</p>
-<p>for {
-    _ &lt;- baker.addInteractionInstace(reserveItemsInstance)
-    recipeId &lt;- baker.addRecipe(compiled)
-    _ &lt;- baker.bake(recipeId, recipeInstanceId)
-    _ &lt;- baker.fireEventAndResolveWhenCompleted(
-      recipeInstanceId, orderPlaced)
-    _ &lt;- baker.fireEventAndResolveWhenCompleted(
-      recipeInstanceId, paymentMade)
-    state &lt;- baker.getRecipeInstanceState(recipeInstanceId)
-    provided = state
-      .ingredients
-      .find(<em>._1 == "reservedItems")
-      .map(</em>.<em>2.as[List[String]])
-      .map(</em>.mkString(", "))
-      .getOrElse("No reserved items")</p>
-<div class="codehilite"><pre><span></span><code><span class="err">// Verify that the mock was called with the expected data</span>
-<span class="err">_ = verify(mockedReserveItems).apply(orderId, items)</span>
+<div class="tabbed-set" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><label for="__tabbed_3_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">trait</span> <span class="nc">ReserveItems</span> <span class="o">{</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">orderId</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">items</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">])</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">WebshopRecipeReflection.ReserveItemsOutput</span><span class="o">]</span>
+<span class="o">}</span>
+
+
+<span class="s">&quot;The Webshop Recipe&quot;</span> <span class="n">should</span> <span class="s">&quot;reserve items in happy conditions (mockito)&quot;</span> <span class="n">in</span> <span class="o">{</span>
+
+  <span class="k">val</span> <span class="n">system</span><span class="k">:</span> <span class="kt">ActorSystem</span> <span class="o">=</span> <span class="nc">ActorSystem</span><span class="o">(</span><span class="s">&quot;baker-webshop-system&quot;</span><span class="o">)</span>
+  <span class="k">val</span> <span class="n">baker</span><span class="k">:</span> <span class="kt">Baker</span> <span class="o">=</span> <span class="nc">AkkaBaker</span><span class="o">.</span><span class="n">localDefault</span><span class="o">(</span><span class="n">system</span><span class="o">)</span>
+
+  <span class="k">val</span> <span class="n">compiled</span> <span class="k">=</span> <span class="nc">RecipeCompiler</span><span class="o">.</span><span class="n">compileRecipe</span><span class="o">(</span><span class="nc">WebshopRecipe</span><span class="o">.</span><span class="n">recipe</span><span class="o">)</span>
+  <span class="k">val</span> <span class="n">recipeInstanceId</span><span class="k">:</span> <span class="kt">String</span> <span class="o">=</span> <span class="nc">UUID</span><span class="o">.</span><span class="n">randomUUID</span><span class="o">().</span><span class="n">toString</span>
+
+  <span class="k">val</span> <span class="n">orderId</span><span class="k">:</span> <span class="kt">String</span> <span class="o">=</span> <span class="s">&quot;order-id&quot;</span>
+  <span class="k">val</span> <span class="n">items</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span><span class="s">&quot;item1&quot;</span><span class="o">,</span> <span class="s">&quot;item2&quot;</span><span class="o">)</span>
+
+  <span class="k">val</span> <span class="n">orderPlaced</span> <span class="k">=</span> <span class="nc">EventInstance</span>
+    <span class="o">.</span><span class="n">unsafeFrom</span><span class="o">(</span><span class="nc">WebshopRecipeReflection</span><span class="o">.</span><span class="nc">OrderPlaced</span><span class="o">(</span><span class="n">orderId</span><span class="o">,</span> <span class="n">items</span><span class="o">))</span>
+  <span class="k">val</span> <span class="n">paymentMade</span> <span class="k">=</span> <span class="nc">EventInstance</span>
+    <span class="o">.</span><span class="n">unsafeFrom</span><span class="o">(</span><span class="nc">WebshopRecipeReflection</span><span class="o">.</span><span class="nc">PaymentMade</span><span class="o">())</span>
+
+  <span class="c1">// The ReserveItems interaction being mocked by Mockito</span>
+  <span class="k">val</span> <span class="n">mockedReserveItems</span><span class="k">:</span> <span class="kt">ReserveItems</span> <span class="o">=</span> <span class="n">mock</span><span class="o">[</span><span class="kt">ReserveItems</span><span class="o">]</span>
+  <span class="k">val</span> <span class="n">reserveItemsInstance</span><span class="k">:</span> <span class="kt">InteractionInstance</span> <span class="o">=</span>
+    <span class="nc">InteractionInstance</span><span class="o">.</span><span class="n">unsafeFrom</span><span class="o">(</span><span class="n">mockedReserveItems</span><span class="o">)</span>
+
+  <span class="n">when</span><span class="o">(</span><span class="n">mockedReserveItems</span><span class="o">.</span><span class="n">apply</span><span class="o">(</span><span class="n">orderId</span><span class="o">,</span> <span class="n">items</span><span class="o">))</span>
+    <span class="o">.</span><span class="n">thenReturn</span><span class="o">(</span><span class="nc">Future</span><span class="o">.</span><span class="n">successful</span><span class="o">(</span><span class="nc">WebshopRecipeReflection</span><span class="o">.</span><span class="nc">ItemsReserved</span><span class="o">(</span><span class="n">items</span><span class="o">)))</span>
+
+  <span class="k">for</span> <span class="o">{</span>
+    <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">addInteractionInstace</span><span class="o">(</span><span class="n">reserveItemsInstance</span><span class="o">)</span>
+    <span class="n">recipeId</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">addRecipe</span><span class="o">(</span><span class="n">compiled</span><span class="o">)</span>
+    <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">bake</span><span class="o">(</span><span class="n">recipeId</span><span class="o">,</span> <span class="n">recipeInstanceId</span><span class="o">)</span>
+    <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveWhenCompleted</span><span class="o">(</span>
+      <span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">orderPlaced</span><span class="o">)</span>
+    <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveWhenCompleted</span><span class="o">(</span>
+      <span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">paymentMade</span><span class="o">)</span>
+    <span class="n">state</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">getRecipeInstanceState</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">)</span>
+    <span class="n">provided</span> <span class="k">=</span> <span class="n">state</span>
+      <span class="o">.</span><span class="n">ingredients</span>
+      <span class="o">.</span><span class="n">find</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">_1</span> <span class="o">==</span> <span class="s">&quot;reservedItems&quot;</span><span class="o">)</span>
+      <span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">_2</span><span class="o">.</span><span class="n">as</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">String</span><span class="o">]])</span>
+      <span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">mkString</span><span class="o">(</span><span class="s">&quot;, &quot;</span><span class="o">))</span>
+      <span class="o">.</span><span class="n">getOrElse</span><span class="o">(</span><span class="s">&quot;No reserved items&quot;</span><span class="o">)</span>
+
+    <span class="c1">// Verify that the mock was called with the expected data</span>
+    <span class="k">_</span> <span class="k">=</span> <span class="n">verify</span><span class="o">(</span><span class="n">mockedReserveItems</span><span class="o">).</span><span class="n">apply</span><span class="o">(</span><span class="n">orderId</span><span class="o">,</span> <span class="n">items</span><span class="o">)</span>
+  <span class="o">}</span> <span class="k">yield</span> <span class="n">provided</span> <span class="n">shouldBe</span> <span class="n">items</span><span class="o">.</span><span class="n">mkString</span><span class="o">(</span><span class="s">&quot;, &quot;</span><span class="o">)</span>
+<span class="o">}</span>
 </code></pre></div>
 
+</div>
+<input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><label for="__tabbed_3_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">import static</span> <span class="nn">org.mockito.Mockito.*</span><span class="p">;</span>
 
-<p>} yield provided shouldBe items.mkString(", ")
-}
-<code></code>java tab="Java" 
-import static org.mockito.Mockito.*;
+<span class="nd">@Test</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">shouldRunSimpleInstanceMockitoSample</span><span class="p">()</span> <span class="p">{</span>
 
-@Test
-public void shouldRunSimpleInstanceMockitoSample() {
+    <span class="n">ActorSystem</span> <span class="n">actorSystem</span> <span class="o">=</span> <span class="n">ActorSystem</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="s">&quot;WebshopSystem&quot;</span><span class="p">);</span>
+    <span class="n">Baker</span> <span class="n">baker</span> <span class="o">=</span> <span class="n">AkkaBaker</span><span class="p">.</span><span class="na">javaLocalDefault</span><span class="p">(</span><span class="n">actorSystem</span><span class="p">);</span>
 
-    ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-    Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
+    <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">items</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    <span class="n">items</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="s">&quot;item1&quot;</span><span class="p">);</span>
+    <span class="n">items</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="s">&quot;item2&quot;</span><span class="p">);</span>
 
-    List<String> items = new ArrayList&lt;&gt;(2);
-    items.add("item1");
-    items.add("item2");
+    <span class="n">EventInstance</span> <span class="n">firstOrderPlaced</span> <span class="o">=</span>
+            <span class="n">EventInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span> <span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">OrderPlaced</span><span class="p">(</span><span class="s">&quot;order-uuid&quot;</span><span class="p">,</span> <span class="n">items</span><span class="p">));</span>
+    <span class="n">EventInstance</span> <span class="n">paymentMade</span> <span class="o">=</span>
+            <span class="n">EventInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span> <span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">PaymentMade</span><span class="p">());</span>
 
-    EventInstance firstOrderPlaced =
-            EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
-    EventInstance paymentMade =
-            EventInstance.from(new JWebshopRecipe.PaymentMade());
+    <span class="c1">// The ReserveItems interaction being mocked by Mockito</span>
+    <span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">ReserveItems</span> <span class="n">reserveItemsMock</span> <span class="o">=</span>
+            <span class="n">mock</span><span class="p">(</span><span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">ReserveItems</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+    <span class="n">InteractionInstance</span> <span class="n">reserveItemsInstance</span> <span class="o">=</span>
+            <span class="n">InteractionInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">reserveItemsMock</span><span class="p">);</span>
+    <span class="n">CompiledRecipe</span> <span class="n">compiledRecipe</span> <span class="o">=</span>
+            <span class="n">RecipeCompiler</span><span class="p">.</span><span class="na">compileRecipe</span><span class="p">(</span><span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">recipe</span><span class="p">);</span>
 
-    // The ReserveItems interaction being mocked by Mockito
-    JWebshopRecipe.ReserveItems reserveItemsMock =
-            mock(JWebshopRecipe.ReserveItems.class);
-    InteractionInstance reserveItemsInstance =
-            InteractionInstance.from(reserveItemsMock);
-    CompiledRecipe compiledRecipe =
-            RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+    <span class="c1">// Add input expectations and their returned event instances</span>
+    <span class="n">when</span><span class="p">(</span><span class="n">reserveItemsMock</span><span class="p">.</span><span class="na">apply</span><span class="p">(</span><span class="s">&quot;order-uuid&quot;</span><span class="p">,</span> <span class="n">items</span><span class="p">)).</span><span class="na">thenReturn</span><span class="p">(</span>
+            <span class="k">new</span> <span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">ReserveItems</span><span class="p">.</span><span class="na">ItemsReserved</span><span class="p">(</span><span class="n">items</span><span class="p">));</span>
 
-    // Add input expectations and their returned event instances
-    when(reserveItemsMock.apply("order-uuid", items)).thenReturn(
-            new JWebshopRecipe.ReserveItems.ItemsReserved(items));
+    <span class="n">String</span> <span class="n">recipeInstanceId</span> <span class="o">=</span> <span class="s">&quot;first-instance-id&quot;</span><span class="p">;</span>
+    <span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">addInteractionInstace</span><span class="p">(</span><span class="n">reserveItemsInstance</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">ignore</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">recipeId</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">bake</span><span class="p">(</span><span class="n">recipeId</span><span class="p">,</span> <span class="n">recipeInstanceId</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">ignore</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenCompleted</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="n">firstOrderPlaced</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">ignore</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenCompleted</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="n">paymentMade</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">ignore</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">getRecipeInstanceState</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">thenApply</span><span class="p">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">x</span><span class="p">.</span><span class="na">events</span><span class="p">().</span><span class="na">stream</span><span class="p">().</span><span class="na">map</span><span class="p">(</span><span class="n">EventMoment</span><span class="p">::</span><span class="n">getName</span><span class="p">).</span><span class="na">collect</span><span class="p">(</span><span class="n">Collectors</span><span class="p">.</span><span class="na">toList</span><span class="p">()));</span>
 
-    String recipeInstanceId = "first-instance-id";
-    CompletableFuture<List\<String>> result = baker.addInteractionInstace(reserveItemsInstance)
-            .thenCompose(ignore -&gt; baker.addRecipe(compiledRecipe))
-            .thenCompose(recipeId -&gt; baker.bake(recipeId, recipeInstanceId))
-            .thenCompose(ignore -&gt; baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
-            .thenCompose(ignore -&gt; baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))
-            .thenCompose(ignore -&gt; baker.getRecipeInstanceState(recipeInstanceId))
-            .thenApply(x -&gt; x.events().stream().map(EventMoment::getName).collect(Collectors.toList()));
+    <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">blockedResult</span> <span class="o">=</span> <span class="n">result</span><span class="p">.</span><span class="na">join</span><span class="p">();</span>
 
-    List<String> blockedResult = result.join();
+    <span class="c1">// Verify that the mock was called with the expected data</span>
+    <span class="n">verify</span><span class="p">(</span><span class="n">reserveItemsMock</span><span class="p">).</span><span class="na">apply</span><span class="p">(</span><span class="s">&quot;order-uuid&quot;</span><span class="p">,</span> <span class="n">items</span><span class="p">);</span>
 
-    // Verify that the mock was called with the expected data
-    verify(reserveItemsMock).apply("order-uuid", items);
+    <span class="k">assert</span><span class="p">(</span><span class="n">blockedResult</span><span class="p">.</span><span class="na">contains</span><span class="p">(</span><span class="s">&quot;OrderPlaced&quot;</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">blockedResult</span><span class="p">.</span><span class="na">contains</span><span class="p">(</span><span class="s">&quot;PaymentMade&quot;</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">blockedResult</span><span class="p">.</span><span class="na">contains</span><span class="p">(</span><span class="s">&quot;ItemsReserved&quot;</span><span class="p">));</span>
+<span class="p">}</span>
+</code></pre></div>
 
-    assert(blockedResult.contains("OrderPlaced") &amp;&amp; blockedResult.contains("PaymentMade") &amp;&amp; blockedResult.contains("ItemsReserved"));
-}
-```</p>
+</div>
+</div>
 <h2 id="testing-individual-implementations">Testing Individual Implementations</h2>
 <p>The final layer is to individually test your implementations, which will resemble your normal e2e tests, interconnectivity 
 tests, or unit tests which mock the dependencies. If we put a code example here it would be more of a tutorial on how to 

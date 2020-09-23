@@ -700,51 +700,62 @@ Scala (IO interface will come in the future depending on demand) and <code>Compl
 with these constructs we highly recommend checking one of the many tutorials and documentation pages in the internet, 
 otherwise for now you can do <code>.join</code> on any <code>CompletableFuture</code> or <code>Await.result(yourFuture, 1.second)</code> on any <code>Future</code>
 to block and do normal synchronous/blocking programming.</em></p>
-<p>```scala tab="Scala"
-import akka.actor.ActorSystem
-import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.akka.AkkaBaker</p>
-<p>import scala.concurrent.{Await, Future}
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global</p>
-<p>implicit val actorSystem: ActorSystem =
-  ActorSystem("WebshopSystem")</p>
-<p>val baker: Baker = AkkaBaker.akkaLocalDefault(actorSystem)</p>
-<p>val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)</p>
-<p>val program: Future[Unit] = for {
-  _ &lt;- baker.addInteractionInstance(WebshopInstancesReflection.reserveItemsInstance)
-  recipeId &lt;- baker.addRecipe(compiledRecipe)
-} yield ()</p>
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
-import akka.actor.ActorSystem;
-import com.ing.baker.compiler.RecipeCompiler;
-import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.akka.AkkaBaker;
-import com.ing.baker.runtime.javadsl.InteractionInstance;
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">import</span> <span class="nn">akka.actor.ActorSystem</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.compiler.RecipeCompiler</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.il.CompiledRecipe</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.runtime.scaladsl.EventInstance</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.runtime.akka.AkkaBaker</span>
 
-import java.util.concurrent.CompletableFuture;
+<span class="k">import</span> <span class="nn">scala.concurrent.</span><span class="o">{</span><span class="nc">Await</span><span class="o">,</span> <span class="nc">Future</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">scala.concurrent.duration._</span>
+<span class="k">import</span> <span class="nn">scala.concurrent.ExecutionContext.Implicits.global</span>
 
-public class JMain {
 
-    static public void main(String[] args) {
+<span class="k">implicit</span> <span class="k">val</span> <span class="n">actorSystem</span><span class="k">:</span> <span class="kt">ActorSystem</span> <span class="o">=</span>
+  <span class="nc">ActorSystem</span><span class="o">(</span><span class="s">&quot;WebshopSystem&quot;</span><span class="o">)</span>
 
-        ActorSystem actorSystem = ActorSystem.create(&quot;WebshopSystem&quot;);
-        Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
+<span class="k">val</span> <span class="n">baker</span><span class="k">:</span> <span class="kt">Baker</span> <span class="o">=</span> <span class="nc">AkkaBaker</span><span class="o">.</span><span class="n">akkaLocalDefault</span><span class="o">(</span><span class="n">actorSystem</span><span class="o">)</span>
 
-        InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
-        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+<span class="k">val</span> <span class="n">compiledRecipe</span><span class="k">:</span> <span class="kt">CompiledRecipe</span> <span class="o">=</span> <span class="nc">RecipeCompiler</span><span class="o">.</span><span class="n">compileRecipe</span><span class="o">(</span><span class="nc">WebshopRecipe</span><span class="o">.</span><span class="n">recipe</span><span class="o">)</span>
 
-        CompletableFuture&lt;String&gt; asyncRecipeId = baker.addInteractionInstance(reserveItemsInstance)
-            .thenCompose(ignore -&gt; baker.addRecipe(compiledRecipe));
-
-        // Blocks, not recommended but useful for testing or trying things out
-        String recipeId = asyncRecipeId.join();
-    }
-}
+<span class="k">val</span> <span class="n">program</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> <span class="k">for</span> <span class="o">{</span>
+  <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">addInteractionInstance</span><span class="o">(</span><span class="nc">WebshopInstancesReflection</span><span class="o">.</span><span class="n">reserveItemsInstance</span><span class="o">)</span>
+  <span class="n">recipeId</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">addRecipe</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">)</span>
+<span class="o">}</span> <span class="k">yield</span> <span class="o">()</span>
 </code></pre></div>
 
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">akka.actor.ActorSystem</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.compiler.RecipeCompiler</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.il.CompiledRecipe</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.runtime.akka.AkkaBaker</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.runtime.javadsl.InteractionInstance</span><span class="p">;</span>
+
+<span class="kn">import</span> <span class="nn">java.util.concurrent.CompletableFuture</span><span class="p">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">JMain</span> <span class="p">{</span>
+
+    <span class="kd">static</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="n">ActorSystem</span> <span class="n">actorSystem</span> <span class="o">=</span> <span class="n">ActorSystem</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="s">&quot;WebshopSystem&quot;</span><span class="p">);</span>
+        <span class="n">Baker</span> <span class="n">baker</span> <span class="o">=</span> <span class="n">AkkaBaker</span><span class="p">.</span><span class="na">javaLocalDefault</span><span class="p">(</span><span class="n">actorSystem</span><span class="p">);</span>
+
+        <span class="n">InteractionInstance</span> <span class="n">reserveItemsInstance</span> <span class="o">=</span> <span class="n">InteractionInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span> <span class="n">ReserveItems</span><span class="p">());</span>
+        <span class="n">CompiledRecipe</span> <span class="n">compiledRecipe</span> <span class="o">=</span> <span class="n">RecipeCompiler</span><span class="p">.</span><span class="na">compileRecipe</span><span class="p">(</span><span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">recipe</span><span class="p">);</span>
+
+        <span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">asyncRecipeId</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">addInteractionInstance</span><span class="p">(</span><span class="n">reserveItemsInstance</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">ignore</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">));</span>
+
+        <span class="c1">// Blocks, not recommended but useful for testing or trying things out</span>
+        <span class="n">String</span> <span class="n">recipeId</span> <span class="o">=</span> <span class="n">asyncRecipeId</span><span class="p">.</span><span class="na">join</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="bake">Bake</h2>
 <p>Next, you can start one instance of your process by <code>baking</code> a recipe, this will internally create a <code>RecipeInstance</code>
 which will hold the state of your process, listen to <code>EventInstances</code>, execute your <code>InteractionInstances</code> when 
@@ -757,55 +768,65 @@ creating a <code>RecipeInstance</code>.</p>
 cluster will ensure that there is 1 <code>RecipeInstance</code> running on 1 node, and if the node dies, it will detect it and 
 restore the <code>RecipeInstance</code> in another available node, for this you need to configure an underlying distributed store;
 for more on this please refer to the <a href="../../development-life-cycle/configure/">configuration section</a> and the <a href="../../reference/runtime/">runtime section</a>.</em></p>
-<p>```scala tab="Scala"
-import akka.actor.ActorSystem
-import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.akka.AkkaBaker</p>
-<p>import scala.concurrent.{Await, Future}
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global</p>
-<p>implicit val actorSystem: ActorSystem =
-  ActorSystem("WebshopSystem")
-val baker: Baker = AkkaBaker.localDefault(actorSystem)</p>
-<p>val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)</p>
-<p>val program: Future[Unit] = for {
-  _ &lt;- baker.addInteractionInstance(WebshopInstancesReflection.reserveItemsInstance)
-  recipeId &lt;- baker.addRecipe(compiledRecipe)
-  _ &lt;- baker.bake(recipeId, "first-instance-id")
-} yield ()</p>
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
-import akka.actor.ActorSystem;
-import com.ing.baker.compiler.RecipeCompiler;
-import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.akka.AkkaBaker;
-import com.ing.baker.runtime.javadsl.InteractionInstance;
+<div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">import</span> <span class="nn">akka.actor.ActorSystem</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.compiler.RecipeCompiler</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.il.CompiledRecipe</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.runtime.scaladsl.EventInstance</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.runtime.akka.AkkaBaker</span>
 
-import java.util.concurrent.CompletableFuture;
+<span class="k">import</span> <span class="nn">scala.concurrent.</span><span class="o">{</span><span class="nc">Await</span><span class="o">,</span> <span class="nc">Future</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">scala.concurrent.duration._</span>
+<span class="k">import</span> <span class="nn">scala.concurrent.ExecutionContext.Implicits.global</span>
 
-// As a small quirk ok the Java API, all operations which are ment to not return something, will return a 
-// scala.runtime.BoxedUnit object. You should think of it like Java&#39;s Void or void and you can safely
-// ignore it except for your type signatures.
-import scala.runtime.BoxedUnit;
 
-public class JMain {
+<span class="k">implicit</span> <span class="k">val</span> <span class="n">actorSystem</span><span class="k">:</span> <span class="kt">ActorSystem</span> <span class="o">=</span>
+  <span class="nc">ActorSystem</span><span class="o">(</span><span class="s">&quot;WebshopSystem&quot;</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">baker</span><span class="k">:</span> <span class="kt">Baker</span> <span class="o">=</span> <span class="nc">AkkaBaker</span><span class="o">.</span><span class="n">localDefault</span><span class="o">(</span><span class="n">actorSystem</span><span class="o">)</span>
 
-    static public void main(String[] args) {
+<span class="k">val</span> <span class="n">compiledRecipe</span><span class="k">:</span> <span class="kt">CompiledRecipe</span> <span class="o">=</span> <span class="nc">RecipeCompiler</span><span class="o">.</span><span class="n">compileRecipe</span><span class="o">(</span><span class="nc">WebshopRecipe</span><span class="o">.</span><span class="n">recipe</span><span class="o">)</span>
 
-        ActorSystem actorSystem = ActorSystem.create(&quot;WebshopSystem&quot;);
-        Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
-
-        InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
-        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
-
-        CompletableFuture&lt;BoxedUnit&gt; asyncRecipeId = baker.addInteractionInstance(reserveItemsInstance)
-            .thenCompose(ignore -&gt; baker.addRecipe(compiledRecipe))
-            .thenCompose(recipeId -&gt; baker.bake(recipeId, recipeInstanceId));
-    }
-}
+<span class="k">val</span> <span class="n">program</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> <span class="k">for</span> <span class="o">{</span>
+  <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">addInteractionInstance</span><span class="o">(</span><span class="nc">WebshopInstancesReflection</span><span class="o">.</span><span class="n">reserveItemsInstance</span><span class="o">)</span>
+  <span class="n">recipeId</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">addRecipe</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">)</span>
+  <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">bake</span><span class="o">(</span><span class="n">recipeId</span><span class="o">,</span> <span class="s">&quot;first-instance-id&quot;</span><span class="o">)</span>
+<span class="o">}</span> <span class="k">yield</span> <span class="o">()</span>
 </code></pre></div>
 
+</div>
+<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">akka.actor.ActorSystem</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.compiler.RecipeCompiler</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.il.CompiledRecipe</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.runtime.akka.AkkaBaker</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.runtime.javadsl.InteractionInstance</span><span class="p">;</span>
+
+<span class="kn">import</span> <span class="nn">java.util.concurrent.CompletableFuture</span><span class="p">;</span>
+
+<span class="c1">// As a small quirk ok the Java API, all operations which are ment to not return something, will return a </span>
+<span class="c1">// scala.runtime.BoxedUnit object. You should think of it like Java&#39;s Void or void and you can safely</span>
+<span class="c1">// ignore it except for your type signatures.</span>
+<span class="kn">import</span> <span class="nn">scala.runtime.BoxedUnit</span><span class="p">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">JMain</span> <span class="p">{</span>
+
+    <span class="kd">static</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="n">ActorSystem</span> <span class="n">actorSystem</span> <span class="o">=</span> <span class="n">ActorSystem</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="s">&quot;WebshopSystem&quot;</span><span class="p">);</span>
+        <span class="n">Baker</span> <span class="n">baker</span> <span class="o">=</span> <span class="n">AkkaBaker</span><span class="p">.</span><span class="na">javaLocalDefault</span><span class="p">(</span><span class="n">actorSystem</span><span class="p">);</span>
+
+        <span class="n">InteractionInstance</span> <span class="n">reserveItemsInstance</span> <span class="o">=</span> <span class="n">InteractionInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span> <span class="n">ReserveItems</span><span class="p">());</span>
+        <span class="n">CompiledRecipe</span> <span class="n">compiledRecipe</span> <span class="o">=</span> <span class="n">RecipeCompiler</span><span class="p">.</span><span class="na">compileRecipe</span><span class="p">(</span><span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">recipe</span><span class="p">);</span>
+
+        <span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">BoxedUnit</span><span class="o">&gt;</span> <span class="n">asyncRecipeId</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">addInteractionInstance</span><span class="p">(</span><span class="n">reserveItemsInstance</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">ignore</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">recipeId</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">bake</span><span class="p">(</span><span class="n">recipeId</span><span class="p">,</span> <span class="n">recipeInstanceId</span><span class="p">));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="fire-events">Fire Events</h2>
 <p>Next, we want our process to start flowing through it's state, and start executing <code>InteractionInstances</code>, for that we
 need to fire the nicknamed <code>SensoryEvents</code> which are just <code>EventInstances</code> which match the root <code>Events</code> from our <code>Recipe</code>.</p>
@@ -837,73 +858,83 @@ a similar <code>Future[EventResult</code> to the one returned by <code>Baker.fir
 to the moment the <code>onEventName</code> was fired.</p>
 </li>
 </ol>
-<p>```scala tab="Scala"
-import akka.actor.ActorSystem
-import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.akka.AkkaBaker</p>
-<p>import scala.concurrent.{Await, Future}
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global</p>
-<p>implicit val actorSystem: ActorSystem =
-  ActorSystem("WebshopSystem")
-val baker: Baker = AkkaBaker.localDefault(actorSystem)</p>
-<p>val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)</p>
-<p>val program: Future[Unit] = for {
-  _ &lt;- baker.addInteractionInstance(WebshopInstancesReflection.reserveItemsInstance)
-  recipeId &lt;- baker.addRecipe(compiledRecipe)
-  _ &lt;- baker.bake(recipeId, "first-instance-id")
-  firstOrderPlaced: EventInstance =
-    EventInstance.unsafeFrom(WebshopRecipeReflection.OrderPlaced("order-uuid", List("item1", "item2")))
-  result &lt;- baker.fireEventAndResolveWhenCompleted("first-instance-id", firstOrderPlaced)
-  _ = assert(result.events == Seq(
-    WebshopRecipe.Events.OrderPlaced.name,
-    WebshopRecipe.Events.ItemsReserved.name
-  )
-} yield ()</p>
-<div class="highlight"><pre><span></span><code>```java tab=&quot;Java&quot;
-import akka.actor.ActorSystem;
-import com.ing.baker.compiler.RecipeCompiler;
-import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.akka.AkkaBaker;
-import com.ing.baker.runtime.javadsl.EventInstance;
-import com.ing.baker.runtime.javadsl.EventResult;
-import com.ing.baker.runtime.javadsl.InteractionInstance;
+<div class="tabbed-set" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><label for="__tabbed_3_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">import</span> <span class="nn">akka.actor.ActorSystem</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.compiler.RecipeCompiler</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.il.CompiledRecipe</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.runtime.scaladsl.EventInstance</span>
+<span class="k">import</span> <span class="nn">com.ing.baker.runtime.akka.AkkaBaker</span>
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
+<span class="k">import</span> <span class="nn">scala.concurrent.</span><span class="o">{</span><span class="nc">Await</span><span class="o">,</span> <span class="nc">Future</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">scala.concurrent.duration._</span>
+<span class="k">import</span> <span class="nn">scala.concurrent.ExecutionContext.Implicits.global</span>
 
-public class JMain {
 
-    static public void main(String[] args) {
+<span class="k">implicit</span> <span class="k">val</span> <span class="n">actorSystem</span><span class="k">:</span> <span class="kt">ActorSystem</span> <span class="o">=</span>
+  <span class="nc">ActorSystem</span><span class="o">(</span><span class="s">&quot;WebshopSystem&quot;</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">baker</span><span class="k">:</span> <span class="kt">Baker</span> <span class="o">=</span> <span class="nc">AkkaBaker</span><span class="o">.</span><span class="n">localDefault</span><span class="o">(</span><span class="n">actorSystem</span><span class="o">)</span>
 
-        ActorSystem actorSystem = ActorSystem.create(&quot;WebshopSystem&quot;);
-        Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
+<span class="k">val</span> <span class="n">compiledRecipe</span><span class="k">:</span> <span class="kt">CompiledRecipe</span> <span class="o">=</span> <span class="nc">RecipeCompiler</span><span class="o">.</span><span class="n">compileRecipe</span><span class="o">(</span><span class="nc">WebshopRecipe</span><span class="o">.</span><span class="n">recipe</span><span class="o">)</span>
 
-        List&lt;String&gt; items = new ArrayList&lt;&gt;(2);
-        items.add(&quot;item1&quot;);
-        items.add(&quot;item2&quot;);
-        EventInstance firstOrderPlaced =
-            EventInstance.from(new JWebshopRecipe.OrderPlaced(&quot;order-uuid&quot;, items));
-
-        InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
-        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
-
-        String recipeInstanceId = &quot;first-instance-id&quot;;
-        CompletableFuture&lt;List&lt;String&gt;&gt; result = baker.addInteractionInstance(reserveItemsInstance)
-            .thenCompose(ignore -&gt; baker.addRecipe(compiledRecipe))
-            .thenCompose(recipeId -&gt; baker.bake(recipeId, recipeInstanceId))
-            .thenCompose(ignore -&gt; baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
-            .thenApply(EventResult::events);
-
-        List&lt;String&gt; blockedResult = result.join();
-        assert(blockedResult.contains(&quot;OrderPlaced&quot;) &amp;&amp; blockedResult.contains(&quot;ReservedItems&quot;));
-    }
-}
+<span class="k">val</span> <span class="n">program</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> <span class="k">for</span> <span class="o">{</span>
+  <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">addInteractionInstance</span><span class="o">(</span><span class="nc">WebshopInstancesReflection</span><span class="o">.</span><span class="n">reserveItemsInstance</span><span class="o">)</span>
+  <span class="n">recipeId</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">addRecipe</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">)</span>
+  <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">bake</span><span class="o">(</span><span class="n">recipeId</span><span class="o">,</span> <span class="s">&quot;first-instance-id&quot;</span><span class="o">)</span>
+  <span class="n">firstOrderPlaced</span><span class="k">:</span> <span class="kt">EventInstance</span> <span class="o">=</span>
+    <span class="nc">EventInstance</span><span class="o">.</span><span class="n">unsafeFrom</span><span class="o">(</span><span class="nc">WebshopRecipeReflection</span><span class="o">.</span><span class="nc">OrderPlaced</span><span class="o">(</span><span class="s">&quot;order-uuid&quot;</span><span class="o">,</span> <span class="nc">List</span><span class="o">(</span><span class="s">&quot;item1&quot;</span><span class="o">,</span> <span class="s">&quot;item2&quot;</span><span class="o">)))</span>
+  <span class="n">result</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveWhenCompleted</span><span class="o">(</span><span class="s">&quot;first-instance-id&quot;</span><span class="o">,</span> <span class="n">firstOrderPlaced</span><span class="o">)</span>
+  <span class="k">_</span> <span class="k">=</span> <span class="n">assert</span><span class="o">(</span><span class="n">result</span><span class="o">.</span><span class="n">events</span> <span class="o">==</span> <span class="nc">Seq</span><span class="o">(</span>
+    <span class="nc">WebshopRecipe</span><span class="o">.</span><span class="nc">Events</span><span class="o">.</span><span class="nc">OrderPlaced</span><span class="o">.</span><span class="n">name</span><span class="o">,</span>
+    <span class="nc">WebshopRecipe</span><span class="o">.</span><span class="nc">Events</span><span class="o">.</span><span class="nc">ItemsReserved</span><span class="o">.</span><span class="n">name</span>
+  <span class="o">)</span>
+<span class="o">}</span> <span class="k">yield</span> <span class="o">()</span>
 </code></pre></div>
 
+</div>
+<input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><label for="__tabbed_3_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">akka.actor.ActorSystem</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.compiler.RecipeCompiler</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.il.CompiledRecipe</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.runtime.akka.AkkaBaker</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.runtime.javadsl.EventInstance</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.runtime.javadsl.EventResult</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">com.ing.baker.runtime.javadsl.InteractionInstance</span><span class="p">;</span>
+
+<span class="kn">import</span> <span class="nn">java.util.ArrayList</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">java.util.List</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">java.util.concurrent.CompletableFuture</span><span class="p">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">JMain</span> <span class="p">{</span>
+
+    <span class="kd">static</span> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="n">ActorSystem</span> <span class="n">actorSystem</span> <span class="o">=</span> <span class="n">ActorSystem</span><span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="s">&quot;WebshopSystem&quot;</span><span class="p">);</span>
+        <span class="n">Baker</span> <span class="n">baker</span> <span class="o">=</span> <span class="n">AkkaBaker</span><span class="p">.</span><span class="na">javaLocalDefault</span><span class="p">(</span><span class="n">actorSystem</span><span class="p">);</span>
+
+        <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">items</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+        <span class="n">items</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="s">&quot;item1&quot;</span><span class="p">);</span>
+        <span class="n">items</span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="s">&quot;item2&quot;</span><span class="p">);</span>
+        <span class="n">EventInstance</span> <span class="n">firstOrderPlaced</span> <span class="o">=</span>
+            <span class="n">EventInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span> <span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">OrderPlaced</span><span class="p">(</span><span class="s">&quot;order-uuid&quot;</span><span class="p">,</span> <span class="n">items</span><span class="p">));</span>
+
+        <span class="n">InteractionInstance</span> <span class="n">reserveItemsInstance</span> <span class="o">=</span> <span class="n">InteractionInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span> <span class="n">ReserveItems</span><span class="p">());</span>
+        <span class="n">CompiledRecipe</span> <span class="n">compiledRecipe</span> <span class="o">=</span> <span class="n">RecipeCompiler</span><span class="p">.</span><span class="na">compileRecipe</span><span class="p">(</span><span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">recipe</span><span class="p">);</span>
+
+        <span class="n">String</span> <span class="n">recipeInstanceId</span> <span class="o">=</span> <span class="s">&quot;first-instance-id&quot;</span><span class="p">;</span>
+        <span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">addInteractionInstance</span><span class="p">(</span><span class="n">reserveItemsInstance</span><span class="p">)</span>
+            <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">ignore</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">recipeId</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">bake</span><span class="p">(</span><span class="n">recipeId</span><span class="p">,</span> <span class="n">recipeInstanceId</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">ignore</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenCompleted</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="n">firstOrderPlaced</span><span class="p">))</span>
+            <span class="p">.</span><span class="na">thenApply</span><span class="p">(</span><span class="n">EventResult</span><span class="p">::</span><span class="n">events</span><span class="p">);</span>
+
+        <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">blockedResult</span> <span class="o">=</span> <span class="n">result</span><span class="p">.</span><span class="na">join</span><span class="p">();</span>
+        <span class="k">assert</span><span class="p">(</span><span class="n">blockedResult</span><span class="p">.</span><span class="na">contains</span><span class="p">(</span><span class="s">&quot;OrderPlaced&quot;</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">blockedResult</span><span class="p">.</span><span class="na">contains</span><span class="p">(</span><span class="s">&quot;ReservedItems&quot;</span><span class="p">));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="inquiry">Inquiry</h2>
 <h3 id="recipe-instance-state">Recipe Instance State</h3>
 <p>As a final step on what you might want to do with Baker (without considering handling failed <code>RecipeInstances</code>),

@@ -634,24 +634,32 @@
 <p>You might be interested which <a href="../concepts/#event">Events</a> are raised for process instances of a recipe.</p>
 <p>For this purpose there is an <a href="https://github.com/ing-bank/baker/blob/master/runtime/src/main/scala/com/ing/baker/runtime/core/EventListener.scala">EventListener</a> interface.</p>
 <p>You may implement this interface and register it to Baker.</p>
-<p>``` scala tab="Scala"
-val listener: EventListener = new EventListener {
-   override def processEvent(recipeInstanceId: String, event: RuntimeEvent) = ???
-}</p>
-<p>val baker: Baker = ??? // initialize baker</p>
-<p>baker.registerEventListener(listener);
-<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
-EventListener listener = new EventListener() {
-   @Override
-   public void processEvent(String recipeInstanceId, RuntimeEvent event) {
-      //
-   }
-}
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">listener</span><span class="k">:</span> <span class="kt">EventListener</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">EventListener</span> <span class="o">{</span>
+   <span class="k">override</span> <span class="k">def</span> <span class="n">processEvent</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">event</span><span class="k">:</span> <span class="kt">RuntimeEvent</span><span class="o">)</span> <span class="k">=</span> <span class="o">???</span>
+<span class="o">}</span>
 
-JBaker baker = null; // initialize baker
+<span class="k">val</span> <span class="n">baker</span><span class="k">:</span> <span class="kt">Baker</span> <span class="o">=</span> <span class="o">???</span> <span class="c1">// initialize baker</span>
 
-baker.registerEventListener(listener);
-</code></pre></div></p>
+<span class="n">baker</span><span class="o">.</span><span class="n">registerEventListener</span><span class="o">(</span><span class="n">listener</span><span class="o">);</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">EventListener</span> <span class="n">listener</span> <span class="o">=</span> <span class="k">new</span> <span class="n">EventListener</span><span class="p">()</span> <span class="p">{</span>
+   <span class="nd">@Override</span>
+   <span class="kd">public</span> <span class="kt">void</span> <span class="nf">processEvent</span><span class="p">(</span><span class="n">String</span> <span class="n">recipeInstanceId</span><span class="p">,</span> <span class="n">RuntimeEvent</span> <span class="n">event</span><span class="p">)</span> <span class="p">{</span>
+      <span class="c1">//</span>
+   <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">JBaker</span> <span class="n">baker</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span> <span class="c1">// initialize baker</span>
+
+<span class="n">baker</span><span class="p">.</span><span class="na">registerEventListener</span><span class="p">(</span><span class="n">listener</span><span class="p">);</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="internal-events">Internal events</h2>
 <p>For the purpose of logging, tracing, etc.. is is possible to register to <em>internal</em> events that happen inside Baker.</p>
 <h3 id="list-of-events">List of events</h3>
@@ -699,32 +707,36 @@ baker.registerEventListener(listener);
 <p>In java you can register objects that have methods annotated with <code>@Subscribe</code>.</p>
 <p>In case you are interested in <em>ALL</em> events you can register to the general <a href="https://github.com/ing-bank/baker/blob/master/runtime/src/main/scala/com/ing/baker/runtime/core/events/BakerEvent.scala">BakerEvent</a>.</p>
 <p>In the example below a listener is registered that is only interested in <code>EventReceived</code>:</p>
-<p>``` scala tab="Scala"
-import com.ing.baker.runtime.core.events._</p>
-<p>val baker: com.ing.baker.runtime.scaladsl.Baker = ??? // initialize baker</p>
-<p>baker.registerListenerPF {</p>
-<div class="codehilite"><pre><span></span><code><span class="err">case e: EventReceived =&gt; // ...</span>
+<div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">import</span> <span class="nn">com.ing.baker.runtime.core.events._</span>
+
+<span class="k">val</span> <span class="n">baker</span><span class="k">:</span> <span class="kt">com.ing.baker.runtime.scaladsl.Baker</span> <span class="o">=</span> <span class="o">???</span> <span class="c1">// initialize baker</span>
+
+<span class="n">baker</span><span class="o">.</span><span class="n">registerListenerPF</span> <span class="o">{</span>
+
+    <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">EventReceived</span> <span class="o">=&gt;</span> <span class="c1">// ...</span>
+<span class="o">}</span>
 </code></pre></div>
 
+</div>
+<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">com.ing.baker.runtime.core.events.*</span><span class="p">;</span>
 
-<p>}
-<code></code> java tab="Java"
+<span class="kd">class</span> <span class="nc">Subscriber</span> <span class="p">{</span>
 
-import com.ing.baker.runtime.core.events.*;
+   <span class="nd">@Subscribe</span>
+   <span class="kd">public</span> <span class="kt">void</span> <span class="nf">receiveEventReceived</span><span class="p">(</span><span class="n">EventReceived</span> <span class="n">event</span><span class="p">)</span> <span class="p">{</span>
+      <span class="c1">// ...</span>
+   <span class="p">}</span>
+<span class="p">}</span>
 
-class Subscriber {
+<span class="n">com</span><span class="p">.</span><span class="na">ing</span><span class="p">.</span><span class="na">baker</span><span class="p">.</span><span class="na">runtime</span><span class="p">.</span><span class="na">javadsl</span><span class="p">.</span><span class="na">JBaker</span> <span class="n">baker</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span> <span class="c1">// initialize baker</span>
 
-   @Subscribe
-   public void receiveEventReceived(EventReceived event) {
-      // ...
-   }
-}
+<span class="n">baker</span><span class="p">.</span><span class="na">registerEventListener</span><span class="p">(</span><span class="k">new</span> <span class="n">Subscriber</span><span class="p">());</span>
+</code></pre></div>
 
-com.ing.baker.runtime.javadsl.JBaker baker = null; // initialize baker
-
-baker.registerEventListener(new Subscriber());
-
-```</p>
+</div>
+</div>
                 
               
               

@@ -698,18 +698,23 @@
 
 <h2 id="sensory-events">Sensory events</h2>
 <p><a href="../concepts/#event">Events</a> are simple <code>POJO</code> classes. For example:</p>
-<p>``` scala tab="Scala"
-case class CustomerInfoReceived(customerInfo: CustomerInfo)</p>
-<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
-public class CustomerInfoReceived {
-    public final CustomerInfo customerInfo;
-
-    public CustomerInfoReceived(CustomerInfo customerInfo) {
-        this.customerInfo = customerInfo;
-    }
-}
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">case</span> <span class="k">class</span> <span class="nc">CustomerInfoReceived</span><span class="o">(</span><span class="n">customerInfo</span><span class="k">:</span> <span class="kt">CustomerInfo</span><span class="o">)</span>
 </code></pre></div>
 
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">CustomerInfoReceived</span> <span class="p">{</span>
+    <span class="kd">public</span> <span class="kd">final</span> <span class="n">CustomerInfo</span> <span class="n">customerInfo</span><span class="p">;</span>
+
+    <span class="kd">public</span> <span class="nf">CustomerInfoReceived</span><span class="p">(</span><span class="n">CustomerInfo</span> <span class="n">customerInfo</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="na">customerInfo</span> <span class="o">=</span> <span class="n">customerInfo</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</div>
+</div>
 <p>The field types of the <code>POJO</code> class must be compatible with the Baker type system.</p>
 <p>See the <a href="../type-system/#default-supported-types">supported types</a> for more information.</p>
 <p>The names of the fields are obtained using java reflection.</p>

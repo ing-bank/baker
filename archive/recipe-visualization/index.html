@@ -622,14 +622,21 @@
 <p>Here we explain how to create a visual representation of your recipe like <a href="../#visual-representation">this one</a></p>
 <h2 id="generate-a-dot-representation">Generate a .dot representation</h2>
 <p>Baker can turn a recipe into a .dot representation. <code>.dot</code> is a notation for representing graphs.</p>
-<p>``` scala tab="Scala"
-val recipe = RecipeCompiler.compileRecipe(Examples.webshop.webShopRecipe)</p>
-<p>println(recipe.getRecipeVisualization)
-<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
-final CompiledRecipe recipe = RecipeCompiler.compileRecipe(Examples.webshop.webShopRecipe);
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">recipe</span> <span class="k">=</span> <span class="nc">RecipeCompiler</span><span class="o">.</span><span class="n">compileRecipe</span><span class="o">(</span><span class="nc">Examples</span><span class="o">.</span><span class="n">webshop</span><span class="o">.</span><span class="n">webShopRecipe</span><span class="o">)</span>
 
-System.out.println(recipe.getRecipeVisualization());
-</code></pre></div></p>
+<span class="n">println</span><span class="o">(</span><span class="n">recipe</span><span class="o">.</span><span class="n">getRecipeVisualization</span><span class="o">)</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kd">final</span> <span class="n">CompiledRecipe</span> <span class="n">recipe</span> <span class="o">=</span> <span class="n">RecipeCompiler</span><span class="p">.</span><span class="na">compileRecipe</span><span class="p">(</span><span class="n">Examples</span><span class="p">.</span><span class="na">webshop</span><span class="p">.</span><span class="na">webShopRecipe</span><span class="p">);</span>
+
+<span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">recipe</span><span class="p">.</span><span class="na">getRecipeVisualization</span><span class="p">());</span>
+</code></pre></div>
+
+</div>
+</div>
 <p>This should output something like this:</p>
 <div class="highlight"><pre><span></span><code>digraph d {
   A [label=&quot;Hello&quot;]
@@ -655,20 +662,27 @@ install it. On mac you can use <code>brew</code>.</p>
 
 <h3 id="in-application">In application</h3>
 <p>Alternatively you can use <a href="https://github.com/nidi3/graphviz-java">graphviz-java</a> to generate the SVG in your code:</p>
-<p>``` scala tab="Scala"
-import guru.nidi.graphviz.engine.{Format, Graphviz}
-import guru.nidi.graphviz.parse.Parser</p>
-<p>val graph = Parser.read(recipe.getRecipeVisualization)
-Graphviz.fromGraph(graph).render(Format.SVG).toString
-<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
-import guru.nidi.graphviz.engine.Format;
-import guru.nidi.graphviz.engine.Graphviz;
-import guru.nidi.graphviz.parse.Parser;
-import guru.nidi.graphviz.model.MutableGraph;
+<div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">import</span> <span class="nn">guru.nidi.graphviz.engine.</span><span class="o">{</span><span class="nc">Format</span><span class="o">,</span> <span class="nc">Graphviz</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">guru.nidi.graphviz.parse.Parser</span>
 
-MutableGraph graph = Parser.read(recipe.getRecipeVisualization);
-Graphviz.fromGraph(graph).render(Format.SVG).toString;
-</code></pre></div></p>
+<span class="k">val</span> <span class="n">graph</span> <span class="k">=</span> <span class="nc">Parser</span><span class="o">.</span><span class="n">read</span><span class="o">(</span><span class="n">recipe</span><span class="o">.</span><span class="n">getRecipeVisualization</span><span class="o">)</span>
+<span class="nc">Graphviz</span><span class="o">.</span><span class="n">fromGraph</span><span class="o">(</span><span class="n">graph</span><span class="o">).</span><span class="n">render</span><span class="o">(</span><span class="nc">Format</span><span class="o">.</span><span class="nc">SVG</span><span class="o">).</span><span class="n">toString</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">guru.nidi.graphviz.engine.Format</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">guru.nidi.graphviz.engine.Graphviz</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">guru.nidi.graphviz.parse.Parser</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">guru.nidi.graphviz.model.MutableGraph</span><span class="p">;</span>
+
+<span class="n">MutableGraph</span> <span class="n">graph</span> <span class="o">=</span> <span class="n">Parser</span><span class="p">.</span><span class="na">read</span><span class="p">(</span><span class="n">recipe</span><span class="p">.</span><span class="na">getRecipeVisualization</span><span class="p">);</span>
+<span class="n">Graphviz</span><span class="p">.</span><span class="na">fromGraph</span><span class="p">(</span><span class="n">graph</span><span class="p">).</span><span class="na">render</span><span class="p">(</span><span class="n">Format</span><span class="p">.</span><span class="na">SVG</span><span class="p">).</span><span class="na">toString</span><span class="p">;</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="style-customization">Style customization</h2>
 <p>It is possible to define a custom visual style for your recipes.</p>
 <p>To do so you need to add some configuration in your <code>application.conf</code>:</p>

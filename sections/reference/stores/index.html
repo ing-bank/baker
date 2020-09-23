@@ -630,12 +630,16 @@ the store the team has tested and used on production, for such you need to use a
 <a href="https://doc.akka.io/docs/akka-persistence-cassandra/current/index.html">plugin like this one.</a></p>
 <h2 id="configuration-examples">Configuration examples</h2>
 <p><code>application.conf</code></p>
-<p>```config tab="Local non-cluster"
-include "baker.conf"</p>
-<p>akka.cluster.sharding.state-store-mode = persistence
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Local non-cluster</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>include &quot;baker.conf&quot;
+
+akka.cluster.sharding.state-store-mode = persistence
 akka.actor.allow-java-serialization = off
-<div class="highlight"><pre><span></span><code>```config tab=&quot;Cluster with distributed store&quot;
-include &quot;baker.conf&quot;
+</code></pre></div>
+
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Cluster with distributed store</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>include &quot;baker.conf&quot;
 
 service {
 
@@ -699,7 +703,10 @@ akka {
     auto-down-unreachable-after = 10s
   }
 }
-</code></pre></div></p>
+</code></pre></div>
+
+</div>
+</div>
                 
               
               

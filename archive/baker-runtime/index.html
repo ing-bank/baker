@@ -611,55 +611,87 @@
 <p>To execute &amp; manage your recipes you require the <em>Baker Runtime</em>.</p>
 <h2 id="starting-the-baker-runtime">Starting the baker runtime</h2>
 <p>Creating a baker runtime is as easy as calling the empty constructor.</p>
-<p>``` scala tab="Scala"
-// Create a Baker Runtime
-val baker = new Baker();
-<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
-// Create a Baker Runtime
-JBaker baker = new JBaker();
-</code></pre></div></p>
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// Create a Baker Runtime</span>
+<span class="k">val</span> <span class="n">baker</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Baker</span><span class="o">();</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// Create a Baker Runtime</span>
+<span class="n">JBaker</span> <span class="n">baker</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JBaker</span><span class="p">();</span>
+</code></pre></div>
+
+</div>
+</div>
 <p>Baker is build on top of <a href="https://www.akka.io">akka</a>.</p>
 <p>It requires an <code>ActorSystem</code> to start. In the previous example the actor system is not provided. In that case baker will create an actor system for you.</p>
 <p>If you already have an actor system then you can give it to Baker.</p>
-<p>``` scala tab="Scala"
-val actorSystem = ActorSystem();</p>
-<p>Baker baker = new Baker(actorSystem);
-<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
-ActorSystem actorSystem = ActorSystem.create();
+<div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">actorSystem</span> <span class="k">=</span> <span class="nc">ActorSystem</span><span class="o">();</span>
 
-JBaker baker = new JBaker(actorSystem);
-</code></pre></div></p>
+<span class="nc">Baker</span> <span class="n">baker</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Baker</span><span class="o">(</span><span class="n">actorSystem</span><span class="o">);</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">ActorSystem</span> <span class="n">actorSystem</span> <span class="o">=</span> <span class="n">ActorSystem</span><span class="p">.</span><span class="na">create</span><span class="p">();</span>
+
+<span class="n">JBaker</span> <span class="n">baker</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JBaker</span><span class="p">(</span><span class="n">actorSystem</span><span class="p">);</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="adding-interaction-implementations">Adding interaction implementations</h2>
 <p>Before you can add a recipe all the interactions for that recipe <em>MUST</em> have an implemention in Baker.</p>
 <p>You can add them like this:</p>
-<p>``` scala tab="Scala"
-val validateOrderImpl = new ValidateOrderImpl()</p>
-<p>baker.addInteractionInstance(validateOrderImpl)
-<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
-ValidateOrderImpl validateOrderImpl = new ValidateOrderImpl();
+<div class="tabbed-set" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><label for="__tabbed_3_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">validateOrderImpl</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">ValidateOrderImpl</span><span class="o">()</span>
 
-baker.addInteractionInstance(validateOrderImpl);
-</code></pre></div></p>
+<span class="n">baker</span><span class="o">.</span><span class="n">addInteractionInstance</span><span class="o">(</span><span class="n">validateOrderImpl</span><span class="o">)</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><label for="__tabbed_3_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">ValidateOrderImpl</span> <span class="n">validateOrderImpl</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ValidateOrderImpl</span><span class="p">();</span>
+
+<span class="n">baker</span><span class="p">.</span><span class="na">addInteractionInstance</span><span class="p">(</span><span class="n">validateOrderImpl</span><span class="p">);</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="compiling-your-recipe">Compiling your Recipe</h2>
 <p>A recipe is writen in a <code>DSL</code>. This is just a declarative description of your process.</p>
 <p>In order to execute it we need to compile it. This connects all the pieces into a graph (more precisly a <a href="https://en.wikipedia.org/wiki/Petri_net">petri net</a>).</p>
 <p>For this purpose there is the <code>RecipeCompiler</code>.</p>
-<p>``` scala tab="Scala"
-val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
-CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
-</code></pre></div></p>
+<div class="tabbed-set" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><label for="__tabbed_4_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">compiledRecipe</span><span class="k">:</span> <span class="kt">CompiledRecipe</span> <span class="o">=</span> <span class="nc">RecipeCompiler</span><span class="o">.</span><span class="n">compileRecipe</span><span class="o">(</span><span class="n">recipe</span><span class="o">)</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><label for="__tabbed_4_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">CompiledRecipe</span> <span class="n">compiledRecipe</span> <span class="o">=</span> <span class="n">RecipeCompiler</span><span class="p">.</span><span class="na">compileRecipe</span><span class="p">(</span><span class="n">recipe</span><span class="p">);</span>
+</code></pre></div>
+
+</div>
+</div>
 <div class="admonition hint">
 <p class="admonition-title">Did you know?!</p>
 <p>You can use a compiled recipe to create a visual representation. <a href="../recipe-visualization/">See the visualization page how to create a visual graph.</a></p>
 </div>
 <h2 id="adding-your-compiled-recipe">Adding your Compiled Recipe</h2>
 <p>Once you have compiled your recipe you can add it to Baker.</p>
-<p>``` scala tab="Scala"
-baker.addRecipe(compiledRecipe)
-<div class="highlight"><pre><span></span><code>``` java tab=&quot;Java&quot;
-baker.addRecipe(compiledRecipe);
-</code></pre></div></p>
+<div class="tabbed-set" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><label for="__tabbed_5_1">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">baker</span><span class="o">.</span><span class="n">addRecipe</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">)</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><label for="__tabbed_5_2">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">);</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="putting-it-all-together">Putting it all together</h2>
 <p>Combining all these steps gives us the following:</p>
 <div class="highlight"><pre><span></span><code><span class="c1">// Implementations, probably defined in other files</span>
