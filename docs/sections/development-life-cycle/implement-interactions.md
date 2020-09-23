@@ -11,70 +11,76 @@ For the Java DSL you need to implement the interface with the `apply` method tha
 and then use the `InteractionImplementation.from(new Implementation())` reflection API, this will create a new `InteractionImplementation`
 that we will later on add to a baker runtime.
 
-``` scala tab="Scala Reflection API"
-import com.ing.baker.runtime.scaladsl.InteractionInstance
+=== "Scala Reflection API"
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+    ```scala 
+    import com.ing.baker.runtime.scaladsl.InteractionInstance
 
-trait ReserveItems {
+    import scala.concurrent.Future
+    import scala.concurrent.ExecutionContext.Implicits.global
 
-  def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput]
-}
+    trait ReserveItems {
 
-class ReserveItemsInstance extends ReserveItems {
-
-  override def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput] = {
-
-    // Http call to the Warehouse service
-    val response: Future[Either[List[String], List[String]]] =
-    // This is mocked for the sake of the example
-      Future.successful(Right(items))
-
-    // Build an event instance that Baker understands
-    response.map {
-      case Left(unavailableItems) =>
-        WebshopRecipeReflection.OrderHadUnavailableItems(unavailableItems)
-      case Right(reservedItems) =>
-        WebshopRecipeReflection.ItemsReserved(reservedItems)
+      def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput]
     }
-  }
-}
 
-val reserveItemsInstance: InteractionInstance =
-  InteractionInstance.unsafeFrom(new ReserveItemsInstance)
-```
+    class ReserveItemsInstance extends ReserveItems {
 
-``` scala tab="Scala"
-import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
-import com.ing.baker.types.{CharArray, ListType, ListValue, PrimitiveValue}
+      override def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput] = {
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+        // Http call to the Warehouse service
+        val response: Future[Either[List[String], List[String]]] =
+        // This is mocked for the sake of the example
+          Future.successful(Right(items))
 
-val ReserveItemsInstance = InteractionInstance(
-    name = ReserveItems.name,
-    input = Seq(CharArray, ListType(CharArray))
-    run = handleReserveItems
-)
-
-def handleReserveItems(input: Seq[IngredientInstance]): Future[Option[EventInstance]] = ???
-    // The body of this function is going to be executed by the Baker runtime when the ingredients are available.
-    // ListValue and PrimitiveValue are used in the body
-```
-
-``` java tab="Java"
-import com.ing.baker.runtime.javadsl.InteractionInstance;
-
-public class ReserveItems implements JWebshopRecipe.ReserveItems {
-
-    // The body of this method is going to be executed by the Baker runtime when the ingredients are available.
-    @Override
-    public ReserveItemsOutcome apply(String id, List<String> items) {
-        return new JWebshopRecipe.ReserveItems.ItemsReserved(items);
+        // Build an event instance that Baker understands
+        response.map {
+          case Left(unavailableItems) =>
+            WebshopRecipeReflection.OrderHadUnavailableItems(unavailableItems)
+          case Right(reservedItems) =>
+            WebshopRecipeReflection.ItemsReserved(reservedItems)
+        }
+      }
     }
-}
-        
-        
-InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
-```
+
+    val reserveItemsInstance: InteractionInstance =
+      InteractionInstance.unsafeFrom(new ReserveItemsInstance)
+    ```
+
+=== "Scala"
+
+    ```scala 
+    import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
+    import com.ing.baker.types.{CharArray, ListType, ListValue, PrimitiveValue}
+
+    import scala.concurrent.Future
+    import scala.concurrent.ExecutionContext.Implicits.global
+
+    val ReserveItemsInstance = InteractionInstance(
+        name = ReserveItems.name,
+        input = Seq(CharArray, ListType(CharArray))
+        run = handleReserveItems
+    )
+
+    def handleReserveItems(input: Seq[IngredientInstance]): Future[Option[EventInstance]] = ???
+        // The body of this function is going to be executed by the Baker runtime when the ingredients are available.
+        // ListValue and PrimitiveValue are used in the body
+    ```
+
+=== "Java"
+
+    ```java 
+    import com.ing.baker.runtime.javadsl.InteractionInstance;
+
+    public class ReserveItems implements JWebshopRecipe.ReserveItems {
+
+        // The body of this method is going to be executed by the Baker runtime when the ingredients are available.
+        @Override
+        public ReserveItemsOutcome apply(String id, List<String> items) {
+            return new JWebshopRecipe.ReserveItems.ItemsReserved(items);
+        }
+    }
+            
+            
+    InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
+    ```

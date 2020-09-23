@@ -6,17 +6,21 @@ Here we explain how to create a visual representation of your recipe like [this 
 
 Baker can turn a recipe into a .dot representation. `.dot` is a notation for representing graphs.
 
-``` scala tab="Scala"
-val recipe = RecipeCompiler.compileRecipe(Examples.webshop.webShopRecipe)
+=== "Scala"
 
-println(recipe.getRecipeVisualization)
-```
+    ``` scala 
+    val recipe = RecipeCompiler.compileRecipe(Examples.webshop.webShopRecipe)
 
-``` java tab="Java"
-final CompiledRecipe recipe = RecipeCompiler.compileRecipe(Examples.webshop.webShopRecipe);
+    println(recipe.getRecipeVisualization)
+    ```
 
-System.out.println(recipe.getRecipeVisualization());
-```
+=== "Java"
+
+    ```java 
+    final CompiledRecipe recipe = RecipeCompiler.compileRecipe(Examples.webshop.webShopRecipe);
+
+    System.out.println(recipe.getRecipeVisualization());
+    ```
 
 This should output something like this:
 
@@ -55,23 +59,27 @@ dot -v -Tsvg -O graph.dot
 
 Alternatively you can use [graphviz-java](https://github.com/nidi3/graphviz-java) to generate the SVG in your code:
 
-``` scala tab="Scala"
-import guru.nidi.graphviz.engine.{Format, Graphviz}
-import guru.nidi.graphviz.parse.Parser
+=== "Scala"
 
-val graph = Parser.read(recipe.getRecipeVisualization)
-Graphviz.fromGraph(graph).render(Format.SVG).toString
-```
+    ``` scala 
+    import guru.nidi.graphviz.engine.{Format, Graphviz}
+    import guru.nidi.graphviz.parse.Parser
 
-``` java tab="Java"
-import guru.nidi.graphviz.engine.Format;
-import guru.nidi.graphviz.engine.Graphviz;
-import guru.nidi.graphviz.parse.Parser;
-import guru.nidi.graphviz.model.MutableGraph;
+    val graph = Parser.read(recipe.getRecipeVisualization)
+    Graphviz.fromGraph(graph).render(Format.SVG).toString
+    ```
 
-MutableGraph graph = Parser.read(recipe.getRecipeVisualization);
-Graphviz.fromGraph(graph).render(Format.SVG).toString;
-```
+=== "Java"
+
+    ```java 
+    import guru.nidi.graphviz.engine.Format;
+    import guru.nidi.graphviz.engine.Graphviz;
+    import guru.nidi.graphviz.parse.Parser;
+    import guru.nidi.graphviz.model.MutableGraph;
+
+    MutableGraph graph = Parser.read(recipe.getRecipeVisualization);
+    Graphviz.fromGraph(graph).render(Format.SVG).toString;
+    ```
 
 ## Style customization
 

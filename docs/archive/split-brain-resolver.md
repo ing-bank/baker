@@ -47,17 +47,21 @@ In order to use Baker `SplitBrainResolver`, first of all, you need to add
 baker-split-brain-resolver dependency to your project. See example
 below:
 
-``` scala tab="Sbt"
-libraryDependencies += "com.ing.baker" %% "baker-split-brain-resolver" % "2.0.3"
-```
+=== "Sbt"
 
-``` xml tab="Maven"
-<dependency>
-  <groupId>com.ing.baker</groupId>
-  <artifactId>baker-split-brain-resolver_2.12</artifactId>
-  <version>2.0.3</version>
-</dependency>
-```
+    ```scala 
+    libraryDependencies += "com.ing.baker" %% "baker-split-brain-resolver" % "2.0.3"
+    ```
+
+=== "Maven"
+
+    ```xml 
+    <dependency>
+      <groupId>com.ing.baker</groupId>
+      <artifactId>baker-split-brain-resolver_2.12</artifactId>
+      <version>2.0.3</version>
+    </dependency>
+    ```
 
 Then the algorithm needs to be configured as the Akka downing provider
 and the `stable-after` config needs to set to some duration depending
@@ -78,6 +82,7 @@ section of the commercial Lightbend Split Brain Resolver.
 
 Example config for a Baker cluster having less than 10 nodes is the
 following:
+
 ```
 akka.cluster.down-removal-margin = 7 seconds
 akka.cluster.downing-provider-class = com.ing.baker.runtime.core.actor.downing.SplitBrainResolver

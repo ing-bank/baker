@@ -7,18 +7,22 @@ They help not just to model your domain but also for Baker to identify when to e
 If you are using all of our reflection APIs then you will not use them directly, but it is good to know of their 
 existence.
 
-``` scala tab="Scala"
-import com.ing.baker.types._
+=== "Scala"
 
-val data: (Type, Value) = (Int32, PrimitiveValue(42))
-```
+    ```scala 
+    import com.ing.baker.types._
 
-``` java tab="Java"
-import com.ing.baker.types.*;
+    val data: (Type, Value) = (Int32, PrimitiveValue(42))
+    ```
 
-Type dataType = Int32$.MODULE$;
-Value dataValue = PrimitiveValue.apply(42);
-```
+=== "Java"
+
+    ```java 
+    import com.ing.baker.types.*;
+
+    Type dataType = Int32$.MODULE$;
+    Value dataValue = PrimitiveValue.apply(42);
+    ```
 
 `Types` are specifically used to describe `Ingredients`, specifically `Ingredients` are just a relation between a name and
 a type. 

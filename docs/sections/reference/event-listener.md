@@ -16,18 +16,21 @@ Because of these constraints you should not use an event listener for critical f
 - metrics
 - unit tests
 
-```scala tab="Scala"
-baker.registerEventListener((recipeInstanceId: String, event: EventInstance) => {
-  println(s"Recipe instance : $recipeInstanceId processed event ${event.name}")
-})
-```
+=== "Scala"
 
-```java tab="Java"
-BiConsumer<String, EventInstance> handler = (String recipeInstanceId, EventInstance event) ->
-    System.out.println("Recipe Instance " + recipeInstanceId + " processed event " + event.name());
-    
-baker.registerEventListener(handler);
-```
+    ```scala 
+    baker.registerEventListener((recipeInstanceId: String, event: EventInstance) => {
+      println(s"Recipe instance : $recipeInstanceId processed event ${event.name}")
+    })
+    ```
+=== "Java"
+
+    ```java 
+    BiConsumer<String, EventInstance> handler = (String recipeInstanceId, EventInstance event) ->
+        System.out.println("Recipe Instance " + recipeInstanceId + " processed event " + event.name());
+        
+    baker.registerEventListener(handler);
+    ```
 
 ## baker.registerBakerEventListener(listenerFunction)
 
@@ -45,25 +48,29 @@ Because of these constraints you should not use an event listener for critical f
 * metrics
 * unit tests
 
-```scala tab="Scala"
-import com.ing.baker.runtime.scaladsl._
+=== "Scala"
 
-baker.registerBakerEventListener((event: BakerEvent) => {
-  event match {
-    case e: EventReceived => println(e)
-    case e: EventRejected => println(e)
-    case e: InteractionFailed => println(e)
-    case e: InteractionStarted => println(e)
-    case e: InteractionCompleted => println(e)
-    case e: ProcessCreated => println(e)
-    case e: RecipeAdded => println(e)
-  }
-})
-```
+    ```scala 
+    import com.ing.baker.runtime.scaladsl._
 
-```java tab="Java"
-import com.ing.baker.runtime.javadsl.BakerEvent;
+    baker.registerBakerEventListener((event: BakerEvent) => {
+      event match {
+        case e: EventReceived => println(e)
+        case e: EventRejected => println(e)
+        case e: InteractionFailed => println(e)
+        case e: InteractionStarted => println(e)
+        case e: InteractionCompleted => println(e)
+        case e: ProcessCreated => println(e)
+        case e: RecipeAdded => println(e)
+      }
+    })
+    ```
 
-baker.registerBakerEventListener((BakerEvent event) -> System.out.println(event));
-```
+=== "Java"
+
+    ```java 
+    import com.ing.baker.runtime.javadsl.BakerEvent;
+
+    baker.registerBakerEventListener((BakerEvent event) -> System.out.println(event));
+    ```
 
