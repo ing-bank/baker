@@ -1,5 +1,5 @@
 import Dependencies._
-import sbt.Keys._
+import Keys._
 import sbt.file
 
 def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = project % "test->test;test->compile"
@@ -358,12 +358,19 @@ lazy val `bakery-controller-docker-generate` = project.in(file("docker/bakery-co
   .settings(commonSettings, noPublishSettings)
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(
-    packageSummary in Docker := "The bakery controller",
-    packageName in Docker := "bakery-controller",
     mainClass in Compile := Some("com.ing.bakery.clustercontroller.Main"),
+    dockerRepository := Some("ingbakery"),
+    dockerExposedPorts ++= Seq(8080),
+    maintainer in Docker := "Bakery OSS",
+    packageSummary in Docker := "Prometheus operator implementation for Bakery workloads",
+    packageName in Docker := "bakery-controller",
+    dockerBaseImage := "openjdk8:latest",
     libraryDependencies ++= Seq(
-      logback
-    )
+      logback,
+      logstash
+    ),
+    dockerUpdateLatest := true, // todo only for master branch
+    version in Docker := Keys.version.value
   )
   .dependsOn(`bakery-controller`)
 
@@ -565,3 +572,4 @@ lazy val `sbt-bakery-docker-generate` = project.in(file("docker/sbt-bakery-docke
   .enablePlugins(SbtPlugin)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .dependsOn(`bakery-interaction`, `bakery-interaction-spring`)
+
