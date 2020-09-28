@@ -240,6 +240,7 @@ lazy val `bakery-baker` = project.in(file("bakery/baker"))
     libraryDependencies ++= Seq(
       slf4jApi,
       akkaPersistenceCassandra,
+      akkaHttpSprayJson,
       akkaManagementHttp,
       akkaClusterBoostrap,
       akkaDiscovery,
