@@ -3,7 +3,7 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.6.8"
+  val akkaVersion = "2.6.9"
   val akkaManagementVersion = "1.0.8"
   val akkaHttpVersion = "10.1.12"
   val http4sVersion = "0.21.7"
@@ -63,18 +63,8 @@ object Dependencies {
   val kamonAkka = "io.kamon" %% "kamon-akka" % kamonAkkaVersion
   val kamonPrometheus = "io.kamon" %% "kamon-prometheus" % kamonAkkaVersion
 
-  val play = ("com.typesafe.play" %% "play-json" % "2.9.0")
-    .excludeAll(
-      ExclusionRule("com.fasterxml.jackson.core", "jackson-databind"),
-      ExclusionRule("com.fasterxml.jackson.core", "jackson-core"),
-      ExclusionRule("com.fasterxml.jackson.core", "jackson-annotations"),
-      ExclusionRule("com.fasterxml.jackson.datatype", "jackson-datatype-jdk8"),
-      ExclusionRule("com.fasterxml.jackson.datatype", "jackson-datatype-jsr310")
-    )
-
   val skuber = ("io.skuber" %% "skuber" % "2.6.0")
-
-  val jackson = "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.2"
+  val play = "com.typesafe.play" %% "play-json" % "2.9.1"
 
   val http4s = "org.http4s" %% "http4s-core" % http4sVersion
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sVersion

@@ -247,7 +247,6 @@ lazy val `bakery-baker` = project.in(file("bakery/baker"))
       akkaDiscoveryKube,
       skuber,
       play,
-      jackson,
       http4s,
       http4sDsl,
       http4sCirce,
@@ -264,9 +263,6 @@ lazy val `bakery-baker` = project.in(file("bakery/baker"))
       circe,
       circeGeneric,
       akkaInmemoryJournal
-    ),
-    dependencyOverrides ++= Seq(
-      play
     )
   )
   .dependsOn(
@@ -333,7 +329,6 @@ lazy val `bakery-controller` = project.in(file("bakery/controller"))
       scalaLogging,
       skuber,
       play,
-      jackson,
       http4s,
       http4sDsl,
       http4sServer,
@@ -348,9 +343,6 @@ lazy val `bakery-controller` = project.in(file("bakery/controller"))
       mockServer,
       circe,
       circeGeneric
-    ),
-    dependencyOverrides ++= Seq(
-      play
     )
   )
   .dependsOn(`baker-types`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`, `bakery-baker-client`, `bakery-interaction-protocol`)
