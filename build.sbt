@@ -364,7 +364,7 @@ lazy val `bakery-controller-docker-generate` = project.in(file("docker/bakery-co
     maintainer in Docker := "Bakery OSS",
     packageSummary in Docker := "Prometheus operator implementation for Bakery workloads",
     packageName in Docker := "bakery-controller",
-    dockerBaseImage := "openjdk8:latest",
+    dockerBaseImage := "openjdk:8",
     libraryDependencies ++= Seq(
       logback,
       logstash
