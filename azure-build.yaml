@@ -66,7 +66,7 @@ steps:
     env:
       FEEDPASSWORD: $(feedPassword) # secrets extracted explicitly, other vars - from the group
 
-  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package # clean coverage test coverageReport
+  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package clean coverage test coverageReport
     displayName: 'Building and testing main Baker'
 
   - task: Docker@2
