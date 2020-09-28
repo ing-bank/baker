@@ -1,5 +1,5 @@
 import Dependencies._
-import sbt.Keys._
+import Keys._
 import sbt.file
 
 def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = project % "test->test;test->compile"
@@ -357,28 +357,42 @@ lazy val `bakery-controller` = project.in(file("bakery/controller"))
 lazy val `bakery-controller-docker-generate` = project.in(file("docker/bakery-controller-docker-generate"))
   .settings(commonSettings, noPublishSettings)
   .enablePlugins(JavaAppPackaging, DockerPlugin)
-  .settings(
-    packageSummary in Docker := "The bakery controller",
-    packageName in Docker := "bakery-controller",
-    mainClass in Compile := Some("com.ing.bakery.clustercontroller.Main"),
-    libraryDependencies ++= Seq(
-      logback
-    )
-  )
   .dependsOn(`bakery-controller`)
+  .settings(
+    mainClass in Compile := Some("com.ing.bakery.clustercontroller.Main"),
+    dockerRepository := Some("ingbakery"),
+    dockerExposedPorts ++= Seq(8080),
+    maintainer in Docker := "Bakery OSS",
+    packageSummary in Docker := "Prometheus operator implementation for Bakery workloads",
+    packageName in Docker := "controller",
+    dockerBaseImage := "openjdk:8",
+    libraryDependencies ++= Seq(
+      logback,
+      logstash
+    ),
+    dockerUpdateLatest := true, // todo only for master branch
+    version in Docker := Keys.version.value
+  )
 
 lazy val `bakery-baker-docker-generate` = project.in(file("docker/bakery-baker-docker-generate"))
   .settings(commonSettings, noPublishSettings)
   .enablePlugins(JavaAppPackaging, DockerPlugin)
-  .settings(
-    packageSummary in Docker := "The bakery state node",
-    packageName in Docker := "bakery-baker",
-    mainClass in Compile := Some("com.ing.bakery.baker.Main"),
-    libraryDependencies ++= Seq(
-      logback
-    )
-  )
   .dependsOn(`bakery-baker`)
+  .settings(
+    mainClass in Compile := Some("com.ing.bakery.baker.Main"),
+    dockerRepository := Some("ingbakery"),
+    dockerExposedPorts ++= Seq(8080),
+    maintainer in Docker := "Bakery OSS",
+    packageSummary in Docker := "Baker state node, running Akka Cluster and keeping recipe states",
+    packageName in Docker := "baker",
+    dockerBaseImage := "openjdk:8",
+    libraryDependencies ++= Seq(
+      logback,
+      logstash
+    ),
+    dockerUpdateLatest := true, // todo only for master branch
+    version in Docker := Keys.version.value
+  )
 
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
@@ -565,3 +579,4 @@ lazy val `sbt-bakery-docker-generate` = project.in(file("docker/sbt-bakery-docke
   .enablePlugins(SbtPlugin)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .dependsOn(`bakery-interaction`, `bakery-interaction-spring`)
+

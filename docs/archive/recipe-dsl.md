@@ -6,7 +6,7 @@ Let's start with the [web shop](index.md#visual-representation) recipe as an exa
 
 The complete code example can be found [here](https://github.com/ing-bank/baker/blob/master/runtime/src/test/java/com/ing/baker/Webshop.java).
 
-``` java
+```java
 final Recipe webshopRecipe = new Recipe("webshop")
     .withSensoryEvents(
         OrderPlaced.class,
@@ -31,20 +31,24 @@ final Recipe webshopRecipe = new Recipe("webshop")
 
 [Events](concepts.md#event) are simple `POJO` classes. For example:
 
-``` scala tab="Scala"
-case class CustomerInfoReceived(customerInfo: CustomerInfo)
+=== "Scala"
 
-```
+    ```scala 
+    case class CustomerInfoReceived(customerInfo: CustomerInfo)
 
-``` java tab="Java"
-public class CustomerInfoReceived {
-    public final CustomerInfo customerInfo;
+    ```
 
-    public CustomerInfoReceived(CustomerInfo customerInfo) {
-        this.customerInfo = customerInfo;
+=== "Java"
+
+    ```java 
+    public class CustomerInfoReceived {
+        public final CustomerInfo customerInfo;
+
+        public CustomerInfoReceived(CustomerInfo customerInfo) {
+            this.customerInfo = customerInfo;
+        }
     }
-}
-```
+    ```
 
 The field types of the `POJO` class must be compatible with the Baker type system.
 
@@ -66,7 +70,7 @@ This means the event will be rejected with status `FiringLimitMet` after the fir
 
 If you want to send an event more then once you may add it like this:
 
-``` java
+```java
    .withSensoryEventsNoFiringLimit(CustomerInfoReceived.class)
 ```
 
@@ -78,7 +82,7 @@ Interactions are interfaces with some requirements. See [here](interactions.md) 
 
 You can include interactions in your recipe using the static `of(..)` method.
 
-``` java
+```java
 import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
 
 final Recipe webshopRecipe = new Recipe("webshop")
@@ -97,7 +101,7 @@ Sometimes you may want to set a limit.
 
 For example, to ensure the goods are shipped only once.
 
-``` java
+```java
     .withInteractions(
         of(ShipGoods.class).withMaximumInteractionCount(1)
      )
@@ -116,7 +120,7 @@ For example:
 
 This can be done by:
 
-``` java
+```java
   .withInteractions(
     of(SendEmail.class)
       .withPredefinedIngredient("emailTemplate", "Welcome to ING!")
@@ -135,7 +139,7 @@ Sometimes it useful to rename an interaction event and/or its ingredients to fit
 
 For example, to rename the `GoodsManufactured` event and its ingredient.
 
-``` java
+```java
   .withInteractions(
     of(ManufactureGoods.class)
       .withEventTransformation(
@@ -154,7 +158,7 @@ However, sometimes data requirements are not enough.
 
 For example, you might want to be sure to only send an invoice (`SendInvoice`) *AFTER* the goods where shipped (`GoodsShipped`).
 
-``` java
+```java
     of(SendInvoice.class)
         .withRequiredEvents(ShipGoods.GoodsShipped.class)
 ```
@@ -165,7 +169,7 @@ You can specify multiple events in a single clause. These are bundled with an `A
 
 You can also require a single event from a number of options.
 
-``` java
+```java
     of(SendInvoice.class)
         .withRequiredOneOfEvents(EventA.class, EventB.class)
 ```
@@ -195,7 +199,7 @@ event to fire. So instead of failing the process continues.
 
 Example:
 
-``` java
+```java
   .withInteractions(
     of(ValidateOrder.class)
     .withInteractionFailureStrategy(
@@ -209,7 +213,7 @@ Example:
 Incremental backoff allows you to configure a retry mechanism that takes longer for each retry.
 The idea here is that you quickly retry at first but slower over time. To not overload your system but give it time to recover.
 
-``` java
+```java
   .withInteractions(
     of(ValidateOrder.class)
       .withFailureStrategy(new RetryWithIncrementalBackoffBuilder()
@@ -274,7 +278,7 @@ This then serves as a fallback if none is defined for an interaction.
 
 For example:
 
-``` java
+```java
 final Recipe webshopRecipe = new Recipe("webshop")
     .withDefaultFailureStrategy(
         new RetryWithIncrementalBackoffBuilder()

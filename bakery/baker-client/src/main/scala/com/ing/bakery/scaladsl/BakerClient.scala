@@ -1,6 +1,7 @@
 package com.ing.bakery.scaladsl
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.implicits._
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, EventResolutions, InteractionInstance, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
@@ -18,6 +19,7 @@ import org.http4s.client.blaze._
 import org.http4s.client.dsl.io._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NoStackTrace
 
 object BakerClient {
 
@@ -34,9 +36,12 @@ object BakerClient {
   }
 }
 
+final case class ResponseError(status: Int, msg: String)
+  extends RuntimeException(status.toString + msg) with NoStackTrace
+
 final class BakerClient(client: Client[IO], hostname: Uri, filters: Seq[Request[IO] => Request[IO]] = Seq.empty)(implicit ec: ExecutionContext) extends ScalaBaker with LazyLogging {
 
-  val Root = hostname / "api" / "bakery"
+  val Root: Uri = hostname / "api" / "bakery"
 
   implicit val eventInstanceResultEntityEncoder: EntityEncoder[IO, EventInstance] = jsonEncoderOf[IO, EventInstance]
 
@@ -51,10 +56,13 @@ final class BakerClient(client: Client[IO], hostname: Uri, filters: Seq[Request[
     }
   }
 
+  private def handleHttpErrors(errorResponse: Response[IO]): IO[Throwable] =
+    errorResponse.bodyText.compile.foldMonoid.map(body => ResponseError(errorResponse.status.code, body))
+
   private def callRemoteBaker[A](request: IO[Request[IO]])(implicit decoder: Decoder[A]): Future[A] = {
-    client.expect(request.map({ request: Request[IO] =>
+    client.expectOr(request.map({ request: Request[IO] =>
       filters.foldLeft(request)((acc, filter) => filter(acc))
-    }))(jsonOf[IO, BakerResult]).map(r => {
+    }))(handleHttpErrors)(jsonOf[IO, BakerResult]).map(r => {
       parse(r)(decoder)
     }).unsafeToFuture() flatMap {
       case Left(bakerException: BakerException) =>

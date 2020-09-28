@@ -9,15 +9,19 @@ To execute & manage your recipes you require the *Baker Runtime*.
 ## Starting the baker runtime
 Creating a baker runtime is as easy as calling the empty constructor.
 
-``` scala tab="Scala"
-// Create a Baker Runtime
-val baker = new Baker();
-```
+=== "Scala"
 
-``` java tab="Java"
-// Create a Baker Runtime
-JBaker baker = new JBaker();
-```
+    ```scala 
+    // Create a Baker Runtime
+    val baker = new Baker();
+    ```
+    
+=== "Java"
+
+    ```java 
+    // Create a Baker Runtime
+    JBaker baker = new JBaker();
+    ```
 
 Baker is build on top of [akka](https://www.akka.io).
 
@@ -25,17 +29,21 @@ It requires an `ActorSystem` to start. In the previous example the actor system 
 
 If you already have an actor system then you can give it to Baker.
 
-``` scala tab="Scala"
-val actorSystem = ActorSystem();
+=== "Scala"
 
-Baker baker = new Baker(actorSystem);
-```
+    ```scala 
+    val actorSystem = ActorSystem();
 
-``` java tab="Java"
-ActorSystem actorSystem = ActorSystem.create();
+    Baker baker = new Baker(actorSystem);
+    ```
+    
+=== "Java"
 
-JBaker baker = new JBaker(actorSystem);
-```
+    ```java 
+    ActorSystem actorSystem = ActorSystem.create();
+
+    JBaker baker = new JBaker(actorSystem);
+    ```
 
 ## Adding interaction implementations
 
@@ -43,17 +51,21 @@ Before you can add a recipe all the interactions for that recipe *MUST* have an 
 
 You can add them like this:
 
-``` scala tab="Scala"
-val validateOrderImpl = new ValidateOrderImpl()
+=== "Scala"
 
-baker.addInteractionInstance(validateOrderImpl)
-```
+    ```scala 
+    val validateOrderImpl = new ValidateOrderImpl()
 
-``` java tab="Java"
-ValidateOrderImpl validateOrderImpl = new ValidateOrderImpl();
+    baker.addInteractionInstance(validateOrderImpl)
+    ```
+    
+=== "Java"
 
-baker.addInteractionInstance(validateOrderImpl);
-```
+    ```java 
+    ValidateOrderImpl validateOrderImpl = new ValidateOrderImpl();
+
+    baker.addInteractionInstance(validateOrderImpl);
+    ```
 
 ## Compiling your Recipe
 
@@ -63,13 +75,17 @@ In order to execute it we need to compile it. This connects all the pieces into 
 
 For this purpose there is the `RecipeCompiler`.
 
-``` scala tab="Scala"
-val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-```
+=== "Scala"
 
-``` java tab="Java"
-CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
-```
+    ```scala 
+    val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+    ```
+    
+=== "Java"
+
+    ```java 
+    CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
+    ```
 
 !!! hint "Did you know?!"
     You can use a compiled recipe to create a visual representation. [See the visualization page how to create a visual graph.](recipe-visualization.md)
@@ -79,13 +95,17 @@ CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
 
 Once you have compiled your recipe you can add it to Baker.
 
-``` scala tab="Scala"
-baker.addRecipe(compiledRecipe)
-```
+=== "Scala"
 
-``` java tab="Java"
-baker.addRecipe(compiledRecipe);
-```
+    ```scala 
+    baker.addRecipe(compiledRecipe)
+    ```
+    
+=== "Java"
+
+    ```java 
+    baker.addRecipe(compiledRecipe);
+    ```
 
 ## Putting it all together
 

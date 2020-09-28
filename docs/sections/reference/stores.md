@@ -16,76 +16,80 @@ the store the team has tested and used on production, for such you need to use a
 
 `application.conf`
 
-```config tab="Local non-cluster"
-include "baker.conf"
+=== "Local non-cluster"
 
-akka.cluster.sharding.state-store-mode = persistence
-akka.actor.allow-java-serialization = off
-```
+    ```config 
+    include "baker.conf"
 
-```config tab="Cluster with distributed store"
-include "baker.conf"
+    akka.cluster.sharding.state-store-mode = persistence
+    akka.actor.allow-java-serialization = off
+    ```
+    
+=== "Cluster with distributed store"
 
-service {
+    ```config 
+    include "baker.conf"
 
-  actorSystemName = "CheckoutService"
-  actorSystemName = ${?ACTOR_SYSTEM_NAME}
+    service {
 
-  clusterHost = "127.0.0.1"
-  clusterHost = ${?CLUSTER_HOST}
+      actorSystemName = "CheckoutService"
+      actorSystemName = ${?ACTOR_SYSTEM_NAME}
 
-  clusterPort = 2551
-  clusterPort = ${?CLUSTER_PORT}
+      clusterHost = "127.0.0.1"
+      clusterHost = ${?CLUSTER_HOST}
 
-  seedHost = "127.0.0.1"
-  seedHost = ${?CLUSTER_SEED_HOST}
+      clusterPort = 2551
+      clusterPort = ${?CLUSTER_PORT}
 
-  seedPort = 2551
-  seedPort = ${?CLUSTER_SEED_PORT}
+      seedHost = "127.0.0.1"
+      seedHost = ${?CLUSTER_SEED_HOST}
 
-}
+      seedPort = 2551
+      seedPort = ${?CLUSTER_SEED_PORT}
 
-baker {
-  actor {
-    provider = "cluster-sharded"
-  }
-
-  cluster {
-    nr-of-shards = 52
-    seed-nodes = [
-      "akka.tcp://"${service.actorSystemName}"@"${service.seedHost}":"${service.seedPort}]
-  }
-}
-
-akka {
-
-  actor {
-    provider = "cluster"
-  }
-
-  persistence {
-    # See https://doc.akka.io/docs/akka-persistence-cassandra/current/journal.html#configuration
-    journal.plugin = "cassandra-journal"
-    # See https://doc.akka.io/docs/akka-persistence-cassandra/current/snapshots.html#configuration
-    snapshot-store.plugin = "cassandra-snapshot-store"
-  }
-
-  remote {
-    log-remote-lifecycle-events = off
-    netty.tcp {
-      hostname = ${service.clusterHost}
-      port = ${service.clusterPort}
     }
-  }
 
-  cluster {
+    baker {
+      actor {
+        provider = "cluster-sharded"
+      }
 
-    seed-nodes = [
-      "akka.tcp://"${service.actorSystemName}"@"${service.seedHost}":"${service.seedPort}]
+      cluster {
+        nr-of-shards = 52
+        seed-nodes = [
+          "akka.tcp://"${service.actorSystemName}"@"${service.seedHost}":"${service.seedPort}]
+      }
+    }
 
-    # auto downing is NOT safe for production deployments.
-    # you may want to use it during development, read more about it in the akka docs.
-    auto-down-unreachable-after = 10s
-  }
-}
-```
+    akka {
+
+      actor {
+        provider = "cluster"
+      }
+
+      persistence {
+        # See https://doc.akka.io/docs/akka-persistence-cassandra/current/journal.html#configuration
+        journal.plugin = "cassandra-journal"
+        # See https://doc.akka.io/docs/akka-persistence-cassandra/current/snapshots.html#configuration
+        snapshot-store.plugin = "cassandra-snapshot-store"
+      }
+
+      remote {
+        log-remote-lifecycle-events = off
+        netty.tcp {
+          hostname = ${service.clusterHost}
+          port = ${service.clusterPort}
+        }
+      }
+
+      cluster {
+
+        seed-nodes = [
+          "akka.tcp://"${service.actorSystemName}"@"${service.seedHost}":"${service.seedPort}]
+
+        # auto downing is NOT safe for production deployments.
+        # you may want to use it during development, read more about it in the akka docs.
+        auto-down-unreachable-after = 10s
+      }
+    }
+    ```
