@@ -6,30 +6,33 @@ Baker is released to [maven central](https://search.maven.org/search?q=com.ing.b
 
 You can add following dependencies to your `maven` or `sbt` project to start using it:
 
-``` scala tab="Sbt"
-dependencies += "com.ing.baker" %% "baker-recipe-dsl" % "2.0.3"
-dependencies += "com.ing.baker" %% "baker-compiler" % "2.0.3"
-dependencies += "com.ing.baker" %% "baker-runtime" % "2.0.3"
-```
+=== "Sbt"
 
-``` maven tab="Maven"
-<dependency>
-   <groupId>com.ing.baker</groupId>
-   <artifactId>baker-recipe-dsl_2.12</artifactId>
-   <version>2.0.3</version>
-</dependency>
-<dependency>
-   <groupId>com.ing.baker</groupId>
-   <artifactId>baker-compiler_2.12</artifactId>
-   <version>2.0.3</version>
-</dependency>
-<dependency>
-   <groupId>com.ing.baker</groupId>
-   <artifactId>baker-runtime_2.12</artifactId>
-   <version>2.0.3</version>
-</dependency>
+    ```scala 
+    dependencies += "com.ing.baker" %% "baker-recipe-dsl" % "2.0.3"
+    dependencies += "com.ing.baker" %% "baker-compiler" % "2.0.3"
+    dependencies += "com.ing.baker" %% "baker-runtime" % "2.0.3"
+    ```
 
-```
+=== "Maven"
+
+    ```maven 
+    <dependency>
+       <groupId>com.ing.baker</groupId>
+       <artifactId>baker-recipe-dsl_2.12</artifactId>
+       <version>2.0.3</version>
+    </dependency>
+    <dependency>
+       <groupId>com.ing.baker</groupId>
+       <artifactId>baker-compiler_2.12</artifactId>
+       <version>2.0.3</version>
+    </dependency>
+    <dependency>
+       <groupId>com.ing.baker</groupId>
+       <artifactId>baker-runtime_2.12</artifactId>
+       <version>2.0.3</version>
+    </dependency>
+    ```
 
 This includes *ALL* baker modules to your project. If you only need partial functionality you can pick and choose the modules you need.
 

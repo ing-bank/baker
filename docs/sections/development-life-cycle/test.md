@@ -13,24 +13,28 @@ First, one important notice is that currently Baker does not check at compile ti
 Recipe makes any sense), but it does so when compiling it with the `RecipeCompiler.compileRecipe(recipe)` API. Errors are 
 thrown in the form of exceptions describing the issue. So a simple unit test that simply compiles your `Recipe` is essential.
 
-```scala tab="Scala"
-class WebshopRecipeSpec extends FlatSpec with Matchers {
+=== "Scala"
 
-  "The WebshopRecipe" should "compile the recipe without errors" in {
-    RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
-  }
-}
-```
+    ```scala 
+    class WebshopRecipeSpec extends FlatSpec with Matchers {
 
-```scala tab="Java"
-public class JWebshopRecipeTests {
-
-    @Test
-    public void shouldCompileTheRecipeWithoutIssues() {
-        RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+      "The WebshopRecipe" should "compile the recipe without errors" in {
+        RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
+      }
     }
-}
-```
+    ```
+
+=== "Java"
+
+    ```java 
+    public class JWebshopRecipeTests {
+
+        @Test
+        public void shouldCompileTheRecipeWithoutIssues() {
+            RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+        }
+    }
+    ```
 
 ## Testing Recipes for Correctness: Mocking Interaction Implementations
 
@@ -49,102 +53,106 @@ On the next example we will:
 _Note: Take into consideration the asynchronous nature of Baker, some times the easiest is to use `fireAndResolveWhenCompleted`
 that will resolve when a sensory event has completely finished affecting the state of the recipe instance._
 
-```scala tab="Scala"
+=== "Scala"
 
-/** Interface used to mock the ReserveItems interaction using the reflection API. */
-trait ReserveItems {
+    ```scala 
 
-  def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput]
-}
+    /** Interface used to mock the ReserveItems interaction using the reflection API. */
+    trait ReserveItems {
 
-/** Mock of the ReserveItems interaction. */
-class ReserveItemsMock extends ReserveItems {
-
-  override def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput] =
-    Future.successful(WebshopRecipeReflection.ItemsReserved(items))
-}
-
-"The Webshop Recipe" should "reserve items in happy conditions" in {
-
-  val system: ActorSystem = ActorSystem("baker-webshop-system")
-  val baker: Baker =  AkkaBaker.localDefaul(system)
-
-  val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
-  val recipeInstanceId: String = UUID.randomUUID().toString
-
-  val orderId: String = "order-id"
-  val items: List[String] = List("item1", "item2")
-
-  val orderPlaced = EventInstance
-    .unsafeFrom(WebshopRecipeReflection.OrderPlaced(orderId, items))
-  val paymentMade = EventInstance
-    .unsafeFrom(WebshopRecipeReflection.PaymentMade())
-
-  val reserveItemsInstance: InteractionInstance =
-    InteractionInstance.unsafeFrom(new ReserveItemsMock)
-
-  for {
-    _ <- baker.addInteractionInstace(reserveItemsInstance)
-    recipeId <- baker.addRecipe(compiled)
-    _ <- baker.bake(recipeId, recipeInstanceId)
-    _ <- baker.fireEventAndResolveWhenCompleted(
-      recipeInstanceId, orderPlaced)
-    _ <- baker.fireEventAndResolveWhenCompleted(
-      recipeInstanceId, paymentMade)
-    state <- baker.getRecipeInstanceState(recipeInstanceId)
-    provided = state
-      .ingredients
-      .find(_._1 == "reservedItems")
-      .map(_._2.as[List[String]])
-      .map(_.mkString(", "))
-      .getOrElse("No reserved items")
-  } yield provided shouldBe items.mkString(", ")
-}
-``` 
-
-```java tab="Java"
-static public class HappyFlowReserveItems implements JWebshopRecipe.ReserveItems {
-
-    @Override
-    public ReserveItemsOutcome apply(String id, List<String> items) {
-        return new ItemsReserved(items);
+      def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput]
     }
-}
 
-@Test
-public void shouldRunSimpleInstance() {
+    /** Mock of the ReserveItems interaction. */
+    class ReserveItemsMock extends ReserveItems {
 
-    ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-    Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
+      override def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput] =
+        Future.successful(WebshopRecipeReflection.ItemsReserved(items))
+    }
 
-    List<String> items = new ArrayList<>(2);
-    items.add("item1");
-    items.add("item2");
+    "The Webshop Recipe" should "reserve items in happy conditions" in {
 
-    EventInstance firstOrderPlaced =
-            EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
-    EventInstance paymentMade =
-            EventInstance.from(new JWebshopRecipe.PaymentMade());
+      val system: ActorSystem = ActorSystem("baker-webshop-system")
+      val baker: Baker =  AkkaBaker.localDefaul(system)
 
-    InteractionInstance reserveItemsInstance =
-            InteractionInstance.from(new HappyFlowReserveItems());
-    CompiledRecipe compiledRecipe =
-            RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+      val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
+      val recipeInstanceId: String = UUID.randomUUID().toString
 
-    String recipeInstanceId = "first-instance-id";
-    CompletableFuture<List<String>> result = baker.addInteractionInstace(reserveItemsInstance)
-            .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
-            .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
-            .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
-            .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))
-            .thenCompose(ignore -> baker.getRecipeInstanceState(recipeInstanceId))
-            .thenApply(x -> x.events().stream().map(EventMoment::getName).collect(Collectors.toList()));
+      val orderId: String = "order-id"
+      val items: List[String] = List("item1", "item2")
 
-    List<String> blockedResult = result.join();
+      val orderPlaced = EventInstance
+        .unsafeFrom(WebshopRecipeReflection.OrderPlaced(orderId, items))
+      val paymentMade = EventInstance
+        .unsafeFrom(WebshopRecipeReflection.PaymentMade())
 
-    assert(blockedResult.contains("OrderPlaced") && blockedResult.contains("PaymentMade") && blockedResult.contains("ItemsReserved"));
-}
-```
+      val reserveItemsInstance: InteractionInstance =
+        InteractionInstance.unsafeFrom(new ReserveItemsMock)
+
+      for {
+        _ <- baker.addInteractionInstace(reserveItemsInstance)
+        recipeId <- baker.addRecipe(compiled)
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(
+          recipeInstanceId, orderPlaced)
+        _ <- baker.fireEventAndResolveWhenCompleted(
+          recipeInstanceId, paymentMade)
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+        provided = state
+          .ingredients
+          .find(_._1 == "reservedItems")
+          .map(_._2.as[List[String]])
+          .map(_.mkString(", "))
+          .getOrElse("No reserved items")
+      } yield provided shouldBe items.mkString(", ")
+    }
+    ``` 
+
+=== "Java"
+
+    ```java 
+    static public class HappyFlowReserveItems implements JWebshopRecipe.ReserveItems {
+
+        @Override
+        public ReserveItemsOutcome apply(String id, List<String> items) {
+            return new ItemsReserved(items);
+        }
+    }
+
+    @Test
+    public void shouldRunSimpleInstance() {
+
+        ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
+        Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
+
+        List<String> items = new ArrayList<>(2);
+        items.add("item1");
+        items.add("item2");
+
+        EventInstance firstOrderPlaced =
+                EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
+        EventInstance paymentMade =
+                EventInstance.from(new JWebshopRecipe.PaymentMade());
+
+        InteractionInstance reserveItemsInstance =
+                InteractionInstance.from(new HappyFlowReserveItems());
+        CompiledRecipe compiledRecipe =
+                RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+
+        String recipeInstanceId = "first-instance-id";
+        CompletableFuture<List<String>> result = baker.addInteractionInstace(reserveItemsInstance)
+                .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
+                .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
+                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
+                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))
+                .thenCompose(ignore -> baker.getRecipeInstanceState(recipeInstanceId))
+                .thenApply(x -> x.events().stream().map(EventMoment::getName).collect(Collectors.toList()));
+
+        List<String> blockedResult = result.join();
+
+        assert(blockedResult.contains("OrderPlaced") && blockedResult.contains("PaymentMade") && blockedResult.contains("ItemsReserved"));
+    }
+    ```
 
 This test is replicating a full round through a `Recipe`, the only difference with your normal production code is that 
 `InteractionInstances` are adapted to fit the scenario you want to check, so the objective here is to test that the `Recipe`
@@ -160,107 +168,111 @@ on a test environment._
 Baker supports `InteractionInstances` that are [mockito](https://site.mockito.org/) mocks, this will give you the added 
 semantics of Mockito, like verifying that the interaction instance was called, or even called with the expected data.
 
-```scala tab="Scala" 
+=== "Scala"
 
-trait ReserveItems {
+    ```scala  
 
-  def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput]
-}
+    trait ReserveItems {
+
+      def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput]
+    }
 
 
-"The Webshop Recipe" should "reserve items in happy conditions (mockito)" in {
+    "The Webshop Recipe" should "reserve items in happy conditions (mockito)" in {
 
-  val system: ActorSystem = ActorSystem("baker-webshop-system")
-  val baker: Baker = AkkaBaker.localDefault(system)
+      val system: ActorSystem = ActorSystem("baker-webshop-system")
+      val baker: Baker = AkkaBaker.localDefault(system)
 
-  val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
-  val recipeInstanceId: String = UUID.randomUUID().toString
+      val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
+      val recipeInstanceId: String = UUID.randomUUID().toString
 
-  val orderId: String = "order-id"
-  val items: List[String] = List("item1", "item2")
+      val orderId: String = "order-id"
+      val items: List[String] = List("item1", "item2")
 
-  val orderPlaced = EventInstance
-    .unsafeFrom(WebshopRecipeReflection.OrderPlaced(orderId, items))
-  val paymentMade = EventInstance
-    .unsafeFrom(WebshopRecipeReflection.PaymentMade())
+      val orderPlaced = EventInstance
+        .unsafeFrom(WebshopRecipeReflection.OrderPlaced(orderId, items))
+      val paymentMade = EventInstance
+        .unsafeFrom(WebshopRecipeReflection.PaymentMade())
 
-  // The ReserveItems interaction being mocked by Mockito
-  val mockedReserveItems: ReserveItems = mock[ReserveItems]
-  val reserveItemsInstance: InteractionInstance =
-    InteractionInstance.unsafeFrom(mockedReserveItems)
+      // The ReserveItems interaction being mocked by Mockito
+      val mockedReserveItems: ReserveItems = mock[ReserveItems]
+      val reserveItemsInstance: InteractionInstance =
+        InteractionInstance.unsafeFrom(mockedReserveItems)
 
-  when(mockedReserveItems.apply(orderId, items))
-    .thenReturn(Future.successful(WebshopRecipeReflection.ItemsReserved(items)))
+      when(mockedReserveItems.apply(orderId, items))
+        .thenReturn(Future.successful(WebshopRecipeReflection.ItemsReserved(items)))
 
-  for {
-    _ <- baker.addInteractionInstace(reserveItemsInstance)
-    recipeId <- baker.addRecipe(compiled)
-    _ <- baker.bake(recipeId, recipeInstanceId)
-    _ <- baker.fireEventAndResolveWhenCompleted(
-      recipeInstanceId, orderPlaced)
-    _ <- baker.fireEventAndResolveWhenCompleted(
-      recipeInstanceId, paymentMade)
-    state <- baker.getRecipeInstanceState(recipeInstanceId)
-    provided = state
-      .ingredients
-      .find(_._1 == "reservedItems")
-      .map(_._2.as[List[String]])
-      .map(_.mkString(", "))
-      .getOrElse("No reserved items")
+      for {
+        _ <- baker.addInteractionInstace(reserveItemsInstance)
+        recipeId <- baker.addRecipe(compiled)
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(
+          recipeInstanceId, orderPlaced)
+        _ <- baker.fireEventAndResolveWhenCompleted(
+          recipeInstanceId, paymentMade)
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+        provided = state
+          .ingredients
+          .find(_._1 == "reservedItems")
+          .map(_._2.as[List[String]])
+          .map(_.mkString(", "))
+          .getOrElse("No reserved items")
 
-    // Verify that the mock was called with the expected data
-    _ = verify(mockedReserveItems).apply(orderId, items)
-  } yield provided shouldBe items.mkString(", ")
-}
-```
+        // Verify that the mock was called with the expected data
+        _ = verify(mockedReserveItems).apply(orderId, items)
+      } yield provided shouldBe items.mkString(", ")
+    }
+    ```
 
-```java tab="Java" 
-import static org.mockito.Mockito.*;
+=== "Java"
 
-@Test
-public void shouldRunSimpleInstanceMockitoSample() {
+    ```java  
+    import static org.mockito.Mockito.*;
 
-    ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-    Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
+    @Test
+    public void shouldRunSimpleInstanceMockitoSample() {
 
-    List<String> items = new ArrayList<>(2);
-    items.add("item1");
-    items.add("item2");
+        ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
+        Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
 
-    EventInstance firstOrderPlaced =
-            EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
-    EventInstance paymentMade =
-            EventInstance.from(new JWebshopRecipe.PaymentMade());
+        List<String> items = new ArrayList<>(2);
+        items.add("item1");
+        items.add("item2");
 
-    // The ReserveItems interaction being mocked by Mockito
-    JWebshopRecipe.ReserveItems reserveItemsMock =
-            mock(JWebshopRecipe.ReserveItems.class);
-    InteractionInstance reserveItemsInstance =
-            InteractionInstance.from(reserveItemsMock);
-    CompiledRecipe compiledRecipe =
-            RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+        EventInstance firstOrderPlaced =
+                EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
+        EventInstance paymentMade =
+                EventInstance.from(new JWebshopRecipe.PaymentMade());
 
-    // Add input expectations and their returned event instances
-    when(reserveItemsMock.apply("order-uuid", items)).thenReturn(
-            new JWebshopRecipe.ReserveItems.ItemsReserved(items));
+        // The ReserveItems interaction being mocked by Mockito
+        JWebshopRecipe.ReserveItems reserveItemsMock =
+                mock(JWebshopRecipe.ReserveItems.class);
+        InteractionInstance reserveItemsInstance =
+                InteractionInstance.from(reserveItemsMock);
+        CompiledRecipe compiledRecipe =
+                RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
-    String recipeInstanceId = "first-instance-id";
-    CompletableFuture<List<String>> result = baker.addInteractionInstace(reserveItemsInstance)
-            .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
-            .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
-            .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
-            .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))
-            .thenCompose(ignore -> baker.getRecipeInstanceState(recipeInstanceId))
-            .thenApply(x -> x.events().stream().map(EventMoment::getName).collect(Collectors.toList()));
+        // Add input expectations and their returned event instances
+        when(reserveItemsMock.apply("order-uuid", items)).thenReturn(
+                new JWebshopRecipe.ReserveItems.ItemsReserved(items));
 
-    List<String> blockedResult = result.join();
+        String recipeInstanceId = "first-instance-id";
+        CompletableFuture<List<String>> result = baker.addInteractionInstace(reserveItemsInstance)
+                .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
+                .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
+                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
+                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))
+                .thenCompose(ignore -> baker.getRecipeInstanceState(recipeInstanceId))
+                .thenApply(x -> x.events().stream().map(EventMoment::getName).collect(Collectors.toList()));
 
-    // Verify that the mock was called with the expected data
-    verify(reserveItemsMock).apply("order-uuid", items);
+        List<String> blockedResult = result.join();
 
-    assert(blockedResult.contains("OrderPlaced") && blockedResult.contains("PaymentMade") && blockedResult.contains("ItemsReserved"));
-}
-```
+        // Verify that the mock was called with the expected data
+        verify(reserveItemsMock).apply("order-uuid", items);
+
+        assert(blockedResult.contains("OrderPlaced") && blockedResult.contains("PaymentMade") && blockedResult.contains("ItemsReserved"));
+    }
+    ```
 
 ## Testing Individual Implementations
 

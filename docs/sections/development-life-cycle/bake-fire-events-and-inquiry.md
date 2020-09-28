@@ -18,59 +18,63 @@ with these constructs we highly recommend checking one of the many tutorials and
 otherwise for now you can do `.join` on any `CompletableFuture` or `Await.result(yourFuture, 1.second)` on any `Future`
 to block and do normal synchronous/blocking programming._
 
-```scala tab="Scala"
-import akka.actor.ActorSystem
-import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.akka.AkkaBaker
+=== "Scala"
 
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
+    ```scala 
+    import akka.actor.ActorSystem
+    import com.ing.baker.compiler.RecipeCompiler
+    import com.ing.baker.il.CompiledRecipe
+    import com.ing.baker.runtime.scaladsl.EventInstance
+    import com.ing.baker.runtime.akka.AkkaBaker
+
+    import scala.concurrent.{Await, Future}
+    import scala.concurrent.duration._
+    import scala.concurrent.ExecutionContext.Implicits.global
 
 
-implicit val actorSystem: ActorSystem =
-  ActorSystem("WebshopSystem")
+    implicit val actorSystem: ActorSystem =
+      ActorSystem("WebshopSystem")
 
-val baker: Baker = AkkaBaker.akkaLocalDefault(actorSystem)
+    val baker: Baker = AkkaBaker.akkaLocalDefault(actorSystem)
 
-val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
+    val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
 
-val program: Future[Unit] = for {
-  _ <- baker.addInteractionInstance(WebshopInstancesReflection.reserveItemsInstance)
-  recipeId <- baker.addRecipe(compiledRecipe)
-} yield ()
+    val program: Future[Unit] = for {
+      _ <- baker.addInteractionInstance(WebshopInstancesReflection.reserveItemsInstance)
+      recipeId <- baker.addRecipe(compiledRecipe)
+    } yield ()
 
-```
+    ```
 
-```java tab="Java"
-import akka.actor.ActorSystem;
-import com.ing.baker.compiler.RecipeCompiler;
-import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.akka.AkkaBaker;
-import com.ing.baker.runtime.javadsl.InteractionInstance;
+=== "Java"
 
-import java.util.concurrent.CompletableFuture;
+    ```java 
+    import akka.actor.ActorSystem;
+    import com.ing.baker.compiler.RecipeCompiler;
+    import com.ing.baker.il.CompiledRecipe;
+    import com.ing.baker.runtime.akka.AkkaBaker;
+    import com.ing.baker.runtime.javadsl.InteractionInstance;
 
-public class JMain {
+    import java.util.concurrent.CompletableFuture;
 
-    static public void main(String[] args) {
+    public class JMain {
 
-        ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-        Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
+        static public void main(String[] args) {
 
-        InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
-        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+            ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
+            Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
 
-        CompletableFuture<String> asyncRecipeId = baker.addInteractionInstance(reserveItemsInstance)
-            .thenCompose(ignore -> baker.addRecipe(compiledRecipe));
+            InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
+            CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
-        // Blocks, not recommended but useful for testing or trying things out
-        String recipeId = asyncRecipeId.join();
+            CompletableFuture<String> asyncRecipeId = baker.addInteractionInstance(reserveItemsInstance)
+                .thenCompose(ignore -> baker.addRecipe(compiledRecipe));
+
+            // Blocks, not recommended but useful for testing or trying things out
+            String recipeId = asyncRecipeId.join();
+        }
     }
-}
-```
+    ```
 
 ## Bake
 
@@ -88,62 +92,66 @@ cluster will ensure that there is 1 `RecipeInstance` running on 1 node, and if t
 restore the `RecipeInstance` in another available node, for this you need to configure an underlying distributed store;
 for more on this please refer to the [configuration section](../../development-life-cycle/configure/) and the [runtime section](../../reference/runtime/)._
 
-```scala tab="Scala"
-import akka.actor.ActorSystem
-import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.akka.AkkaBaker
+=== "Scala"
 
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
+    ```scala 
+    import akka.actor.ActorSystem
+    import com.ing.baker.compiler.RecipeCompiler
+    import com.ing.baker.il.CompiledRecipe
+    import com.ing.baker.runtime.scaladsl.EventInstance
+    import com.ing.baker.runtime.akka.AkkaBaker
+
+    import scala.concurrent.{Await, Future}
+    import scala.concurrent.duration._
+    import scala.concurrent.ExecutionContext.Implicits.global
 
 
-implicit val actorSystem: ActorSystem =
-  ActorSystem("WebshopSystem")
-val baker: Baker = AkkaBaker.localDefault(actorSystem)
+    implicit val actorSystem: ActorSystem =
+      ActorSystem("WebshopSystem")
+    val baker: Baker = AkkaBaker.localDefault(actorSystem)
 
-val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
+    val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
 
-val program: Future[Unit] = for {
-  _ <- baker.addInteractionInstance(WebshopInstancesReflection.reserveItemsInstance)
-  recipeId <- baker.addRecipe(compiledRecipe)
-  _ <- baker.bake(recipeId, "first-instance-id")
-} yield ()
+    val program: Future[Unit] = for {
+      _ <- baker.addInteractionInstance(WebshopInstancesReflection.reserveItemsInstance)
+      recipeId <- baker.addRecipe(compiledRecipe)
+      _ <- baker.bake(recipeId, "first-instance-id")
+    } yield ()
 
-```
+    ```
 
-```java tab="Java"
-import akka.actor.ActorSystem;
-import com.ing.baker.compiler.RecipeCompiler;
-import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.akka.AkkaBaker;
-import com.ing.baker.runtime.javadsl.InteractionInstance;
+=== "Java"
 
-import java.util.concurrent.CompletableFuture;
+    ```java 
+    import akka.actor.ActorSystem;
+    import com.ing.baker.compiler.RecipeCompiler;
+    import com.ing.baker.il.CompiledRecipe;
+    import com.ing.baker.runtime.akka.AkkaBaker;
+    import com.ing.baker.runtime.javadsl.InteractionInstance;
 
-// As a small quirk ok the Java API, all operations which are ment to not return something, will return a 
-// scala.runtime.BoxedUnit object. You should think of it like Java's Void or void and you can safely
-// ignore it except for your type signatures.
-import scala.runtime.BoxedUnit;
+    import java.util.concurrent.CompletableFuture;
 
-public class JMain {
+    // As a small quirk ok the Java API, all operations which are ment to not return something, will return a 
+    // scala.runtime.BoxedUnit object. You should think of it like Java's Void or void and you can safely
+    // ignore it except for your type signatures.
+    import scala.runtime.BoxedUnit;
 
-    static public void main(String[] args) {
+    public class JMain {
 
-        ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-        Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
+        static public void main(String[] args) {
 
-        InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
-        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+            ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
+            Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
 
-        CompletableFuture<BoxedUnit> asyncRecipeId = baker.addInteractionInstance(reserveItemsInstance)
-            .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
-            .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId));
+            InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
+            CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+
+            CompletableFuture<BoxedUnit> asyncRecipeId = baker.addInteractionInstance(reserveItemsInstance)
+                .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
+                .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId));
+        }
     }
-}
-```
+    ```
 
 ## Fire Events
 
@@ -173,80 +181,84 @@ of the `SensoryEvent`.
 a similar `Future[EventResult` to the one returned by `Baker.fireEventAndResolveWhenCompleted` except the data will be up
 to the moment the `onEventName` was fired.
 
-```scala tab="Scala"
-import akka.actor.ActorSystem
-import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.akka.AkkaBaker
+=== "Scala"
 
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
+    ```scala 
+    import akka.actor.ActorSystem
+    import com.ing.baker.compiler.RecipeCompiler
+    import com.ing.baker.il.CompiledRecipe
+    import com.ing.baker.runtime.scaladsl.EventInstance
+    import com.ing.baker.runtime.akka.AkkaBaker
+
+    import scala.concurrent.{Await, Future}
+    import scala.concurrent.duration._
+    import scala.concurrent.ExecutionContext.Implicits.global
 
 
-implicit val actorSystem: ActorSystem =
-  ActorSystem("WebshopSystem")
-val baker: Baker = AkkaBaker.localDefault(actorSystem)
+    implicit val actorSystem: ActorSystem =
+      ActorSystem("WebshopSystem")
+    val baker: Baker = AkkaBaker.localDefault(actorSystem)
 
-val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
+    val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
 
-val program: Future[Unit] = for {
-  _ <- baker.addInteractionInstance(WebshopInstancesReflection.reserveItemsInstance)
-  recipeId <- baker.addRecipe(compiledRecipe)
-  _ <- baker.bake(recipeId, "first-instance-id")
-  firstOrderPlaced: EventInstance =
-    EventInstance.unsafeFrom(WebshopRecipeReflection.OrderPlaced("order-uuid", List("item1", "item2")))
-  result <- baker.fireEventAndResolveWhenCompleted("first-instance-id", firstOrderPlaced)
-  _ = assert(result.events == Seq(
-    WebshopRecipe.Events.OrderPlaced.name,
-    WebshopRecipe.Events.ItemsReserved.name
-  )
-} yield ()
+    val program: Future[Unit] = for {
+      _ <- baker.addInteractionInstance(WebshopInstancesReflection.reserveItemsInstance)
+      recipeId <- baker.addRecipe(compiledRecipe)
+      _ <- baker.bake(recipeId, "first-instance-id")
+      firstOrderPlaced: EventInstance =
+        EventInstance.unsafeFrom(WebshopRecipeReflection.OrderPlaced("order-uuid", List("item1", "item2")))
+      result <- baker.fireEventAndResolveWhenCompleted("first-instance-id", firstOrderPlaced)
+      _ = assert(result.events == Seq(
+        WebshopRecipe.Events.OrderPlaced.name,
+        WebshopRecipe.Events.ItemsReserved.name
+      )
+    } yield ()
 
-```
+    ```
 
-```java tab="Java"
-import akka.actor.ActorSystem;
-import com.ing.baker.compiler.RecipeCompiler;
-import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.akka.AkkaBaker;
-import com.ing.baker.runtime.javadsl.EventInstance;
-import com.ing.baker.runtime.javadsl.EventResult;
-import com.ing.baker.runtime.javadsl.InteractionInstance;
+=== "Java"
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
+    ```java 
+    import akka.actor.ActorSystem;
+    import com.ing.baker.compiler.RecipeCompiler;
+    import com.ing.baker.il.CompiledRecipe;
+    import com.ing.baker.runtime.akka.AkkaBaker;
+    import com.ing.baker.runtime.javadsl.EventInstance;
+    import com.ing.baker.runtime.javadsl.EventResult;
+    import com.ing.baker.runtime.javadsl.InteractionInstance;
 
-public class JMain {
+    import java.util.ArrayList;
+    import java.util.List;
+    import java.util.concurrent.CompletableFuture;
 
-    static public void main(String[] args) {
+    public class JMain {
 
-        ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-        Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
+        static public void main(String[] args) {
 
-        List<String> items = new ArrayList<>(2);
-        items.add("item1");
-        items.add("item2");
-        EventInstance firstOrderPlaced =
-            EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
+            ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
+            Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
 
-        InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
-        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+            List<String> items = new ArrayList<>(2);
+            items.add("item1");
+            items.add("item2");
+            EventInstance firstOrderPlaced =
+                EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
 
-        String recipeInstanceId = "first-instance-id";
-        CompletableFuture<List<String>> result = baker.addInteractionInstance(reserveItemsInstance)
-            .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
-            .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
-            .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
-            .thenApply(EventResult::events);
+            InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
+            CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
-        List<String> blockedResult = result.join();
-        assert(blockedResult.contains("OrderPlaced") && blockedResult.contains("ReservedItems"));
+            String recipeInstanceId = "first-instance-id";
+            CompletableFuture<List<String>> result = baker.addInteractionInstance(reserveItemsInstance)
+                .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
+                .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
+                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
+                .thenApply(EventResult::events);
+
+            List<String> blockedResult = result.join();
+            assert(blockedResult.contains("OrderPlaced") && blockedResult.contains("ReservedItems"));
+        }
     }
-}
-```
+    ```
 
 ## Inquiry
 

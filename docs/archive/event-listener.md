@@ -27,30 +27,33 @@ For this purpose there is an [EventListener](https://github.com/ing-bank/baker/b
 
 You may implement this interface and register it to Baker.
 
-``` scala tab="Scala"
-val listener: EventListener = new EventListener {
-   override def processEvent(recipeInstanceId: String, event: RuntimeEvent) = ???
-}
+=== "Scala"
+ 
+    ```scala
+    val listener: EventListener = new EventListener {
+       override def processEvent(recipeInstanceId: String, event: RuntimeEvent) = ???
+    }
 
-val baker: Baker = ??? // initialize baker
+    val baker: Baker = ??? // initialize baker
 
-baker.registerEventListener(listener);
-```
+    baker.registerEventListener(listener);
+    ```
+    
+=== "Java"
 
-``` java tab="Java"
-EventListener listener = new EventListener() {
-   @Override
-   public void processEvent(String recipeInstanceId, RuntimeEvent event) {
-      //
-   }
-}
+    ```java 
+    EventListener listener = new EventListener() {
+       @Override
+       public void processEvent(String recipeInstanceId, RuntimeEvent event) {
+          //
+       }
+    }
 
-JBaker baker = null; // initialize baker
+    JBaker baker = null; // initialize baker
 
-baker.registerEventListener(listener);
+    baker.registerEventListener(listener);
 
-```
-
+    ```
 
 ## Internal events
 
@@ -82,32 +85,36 @@ In case you are interested in *ALL* events you can register to the general [Bake
 
 In the example below a listener is registered that is only interested in `EventReceived`:
 
-``` scala tab="Scala"
-import com.ing.baker.runtime.core.events._
+=== "Scala"
+ 
+    ```scala
+    import com.ing.baker.runtime.core.events._
 
-val baker: com.ing.baker.runtime.scaladsl.Baker = ??? // initialize baker
+    val baker: com.ing.baker.runtime.scaladsl.Baker = ??? // initialize baker
 
-baker.registerListenerPF {
+    baker.registerListenerPF {
 
-    case e: EventReceived => // ...
-}
-```
+        case e: EventReceived => // ...
+    }
+    ```
+    
+=== "Java"
 
-``` java tab="Java"
+    ```java 
 
-import com.ing.baker.runtime.core.events.*;
+    import com.ing.baker.runtime.core.events.*;
 
-class Subscriber {
+    class Subscriber {
 
-   @Subscribe
-   public void receiveEventReceived(EventReceived event) {
-      // ...
-   }
-}
+       @Subscribe
+       public void receiveEventReceived(EventReceived event) {
+          // ...
+       }
+    }
 
-com.ing.baker.runtime.javadsl.JBaker baker = null; // initialize baker
+    com.ing.baker.runtime.javadsl.JBaker baker = null; // initialize baker
 
-baker.registerEventListener(new Subscriber());
+    baker.registerEventListener(new Subscriber());
 
-```
+    ```
 
