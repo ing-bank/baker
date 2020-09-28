@@ -66,9 +66,7 @@ steps:
     env:
       FEEDPASSWORD: $(feedPassword) # secrets extracted explicitly, other vars - from the group
 
-  - script: |
-      sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} clean coverage test coverageReport
-      bash <(curl -s https://codecov.io/bash)
+  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package # clean coverage test coverageReport
     displayName: 'Building and testing main Baker'
 
   - task: Docker@2
@@ -83,10 +81,11 @@ steps:
       targetType: 'inline'
       script: |
         sbt bakery-controller-docker-generate/docker:stage bakery-baker-docker-generate/docker:stage
-        echo '##vso[task.setvariable variable=BAKER_VERSION]$(echo $(Build.SourcesDirectory)/get-version.sh)'
+        VERSION=$(./get-version.sh)
+        echo "##vso[task.setvariable variable=BAKER_VERSION]${VERSION}"
 
   - task: Docker@2
-    displayName: 'Build and push controller'
+    displayName: 'Build and push controller image'
     inputs:
       workingDirectory: $(Build.SourcesDirectory)/docker/bakery-controller-docker-generate/target/docker
       command: buildAndPush
@@ -95,16 +94,21 @@ steps:
       tags: latest,$(BAKER_VERSION)
 
   - task: Docker@2
-    displayName: 'Build and push baker'
+    displayName: 'Build and push baker image'
     inputs:
-      workingDirectory: $(Build.SourcesDirectory)/docker/bakery-controller-baker-generate/target/docker
+      workingDirectory: $(Build.SourcesDirectory)/docker/bakery-baker-docker-generate/target/docker
       command: buildAndPush
-      repository: ingbakery
-      dockerfile: $(Build.SourcesDirectory)/docker/bakery-controller-baker-generate/target/docker/stage/Dockerfile
+      repository: ingbakery/baker
+      dockerfile: $(Build.SourcesDirectory)/docker/bakery-baker-docker-generate/target/docker/stage/Dockerfile
       tags: latest,$(BAKER_VERSION)
 
+  - script: bash <(curl -s https://codecov.io/bash)
+    displayName: 'Updating code coverage report'
+
+  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project bakery-interaction-example-make-payment-and-ship-items; test; project bakery-interaction-example-reserve-items; test; project bakery-client-example; test; project bakery-kafka-listener-example; test"
+    displayName: 'Building and testing examples'
 
   - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
-    - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "clean; aetherDeploy; project bakery-interaction-example-make-payment-and-ship-items; aetherDeploy; project bakery-interaction-example-reserve-items; aetherDeploy; project bakery-client-example; aetherDeploy; project bakery-kafka-listener-example; aetherDeploy"
-      displayName: 'Building and publishing Baker with examples'
-      condition:  eq(variables['Build.SourceBranch'], 'refs/heads/master')
+      - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "clean; aetherDeploy; project bakery-interaction-example-make-payment-and-ship-items; aetherDeploy; project bakery-interaction-example-reserve-items; aetherDeploy; project bakery-client-example; aetherDeploy; project bakery-kafka-listener-example; aetherDeploy"
+        displayName: 'Building and publishing Baker with examples'
+        condition:  eq(variables['Build.SourceBranch'], 'refs/heads/master')
