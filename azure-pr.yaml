@@ -78,14 +78,16 @@ steps:
     displayName: 'Prepare docker build environment for controller'
     inputs:
       targetType: 'inline'
-      script: sbt bakery-controller-docker-generate/docker:stage
+      script: |
+        sbt bakery-controller-docker-generate/docker:stage
+        du . -h
 
   - task: Docker@2
     displayName: 'Build and push controller'
     inputs:
-      workingDirectory: docker/bakery-controller-docker-generate/target/docker
+      workingDirectory: $(Build.SourcesDirectory)/docker/bakery-controller-docker-generate/target/docker
       command: buildAndPush
-      dockerfile: docker/bakery-controller-docker-generate/target/docker/Dockerfile
+      dockerfile: $(Build.SourcesDirectory)/docker/bakery-controller-docker-generate/target/docker/stage/Dockerfile
 
 #  - script: bash <(curl -s https://codecov.io/bash)
 #    displayName: 'Updating code coverage report'
