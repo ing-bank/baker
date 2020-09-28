@@ -65,7 +65,7 @@ steps:
     env:
       FEEDPASSWORD: $(feedPassword) # secrets extracted explicitly, other vars - from the group
 
-  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} clean coverage test coverageReport
+  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package # clean coverage test coverageReport
     displayName: 'Building and testing main Baker'
 
   - task: Docker@2
@@ -85,7 +85,7 @@ steps:
     inputs:
       workingDirectory: docker/bakery-controller-docker-generate/target/docker
       command: buildAndPush
-      dockerfile: Dockerfile
+      dockerfile: docker/bakery-controller-docker-generate/target/docker/Dockerfile
 
 #  - script: bash <(curl -s https://codecov.io/bash)
 #    displayName: 'Updating code coverage report'
