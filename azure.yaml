@@ -90,7 +90,7 @@ steps:
     inputs:
       workingDirectory: $(Build.SourcesDirectory)/docker/bakery-controller-docker-generate/target/docker
       command: buildAndPush
-      repository: ingbakery
+      repository: ingbakery/controller
       dockerfile: $(Build.SourcesDirectory)/docker/bakery-controller-docker-generate/target/docker/stage/Dockerfile
       tags: latest,$(BAKER_VERSION)
 

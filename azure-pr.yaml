@@ -88,7 +88,7 @@ steps:
     inputs:
       workingDirectory: $(Build.SourcesDirectory)/docker/bakery-controller-docker-generate/target/docker
       command: buildAndPush
-      repository: INGBakeryAtDockerHub
+      repository: ingbakery/controller
       dockerfile: $(Build.SourcesDirectory)/docker/bakery-controller-docker-generate/target/docker/stage/Dockerfile
       tags: latest,$(BAKER_VERSION)
 
@@ -97,7 +97,7 @@ steps:
     inputs:
       workingDirectory: $(Build.SourcesDirectory)/docker/bakery-controller-baker-generate/target/docker
       command: buildAndPush
-      repository: INGBakeryAtDockerHub
+      repository: ingbakery/baker
       dockerfile: $(Build.SourcesDirectory)/docker/bakery-controller-baker-generate/target/docker/stage/Dockerfile
       tags: latest,$(BAKER_VERSION)
 
