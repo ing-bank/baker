@@ -95,10 +95,10 @@ steps:
   - task: Docker@2
     displayName: 'Build and push baker'
     inputs:
-      workingDirectory: $(Build.SourcesDirectory)/docker/bakery-controller-baker-generate/target/docker
+      workingDirectory: $(Build.SourcesDirectory)/docker/bakery-baker-docker-generate/target/docker
       command: buildAndPush
       repository: ingbakery/baker
-      dockerfile: $(Build.SourcesDirectory)/docker/bakery-controller-baker-generate/target/docker/stage/Dockerfile
+      dockerfile: $(Build.SourcesDirectory)/docker/bakery-baker-docker-generate/target/docker/stage/Dockerfile
       tags: latest,$(BAKER_VERSION)
 
 #  - script: bash <(curl -s https://codecov.io/bash)
