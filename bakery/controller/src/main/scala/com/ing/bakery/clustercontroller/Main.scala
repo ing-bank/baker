@@ -4,14 +4,12 @@ import java.net.InetSocketAddress
 import java.util.concurrent.Executors
 
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{ExitCode, IO, IOApp, Resource}
-import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, InteractionController, InteractionResource}
+import com.ing.bakery.clustercontroller.controllers.{BakerController, ComponentConfigController, InteractionController}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import kamon.Kamon
 import skuber.api.client.KubernetesClient
-import skuber.json.format.configMapFmt
 
 import scala.concurrent.ExecutionContext
 
@@ -42,13 +40,12 @@ object Main extends IOApp with LazyLogging {
     }
 
     (for {
+      configCache <- ComponentConfigController.run(k8s)
       _ <- BakeryControllerService.resource(InetSocketAddress.createUnresolved("0.0.0.0", 8080))
-      interactions = new InteractionController(connectionPool, interactionMutualTLS, interactionClientMutualTLS)
-      bakers = new BakerController(interactionClientMutualTLS)
-      _ <- if(useCrds) interactions.watch(k8s) else Resource.liftF(IO.unit)
-      _ <- interactions.fromConfigMaps(InteractionResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "interactions"))
-      _ <- if(useCrds) bakers.watch(k8s) else Resource.liftF(IO.unit)
-      _ <- bakers.fromConfigMaps(BakerResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "bakers"))
+      _ <- if(useCrds) InteractionController.run(k8s, connectionPool, interactionMutualTLS, interactionClientMutualTLS) else Resource.liftF(IO.unit)
+      _ <- InteractionController.runFromConfigMaps(k8s, connectionPool, interactionMutualTLS, interactionClientMutualTLS)
+      _ <- if(useCrds) BakerController.run(k8s, configCache, interactionClientMutualTLS) else Resource.liftF(IO.unit)
+      _ <- BakerController.runFromConfigMaps(k8s, configCache, interactionClientMutualTLS)
     } yield ()).use(_ => IO.never).as(ExitCode.Success)
   }
 }
