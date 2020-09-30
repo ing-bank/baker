@@ -2,7 +2,7 @@ package com.ing.bakery.client
 
 import java.net.InetSocketAddress
 
-import cats.effect.concurrent.MVar
+import cats.effect.concurrent.{MVar, MVar2}
 import cats.effect.{IO, Resource}
 import com.ing.bakery.common.{KeystoreConfig, TLSConfig}
 import com.ing.bakery.javadsl
@@ -53,7 +53,7 @@ class BakerClientSpec extends BakeryFunSpec {
    */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
 
-    def testServer(receivedHeaders: MVar[IO, List[Header]]): HttpApp[IO] = {
+    def testServer(receivedHeaders: MVar2[IO, List[Header]]): HttpApp[IO] = {
       implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
       Router("/api/bakery/instances" ->  HttpRoutes.of[IO] {
         case request@GET -> Root =>

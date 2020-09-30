@@ -3,8 +3,9 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.6.8"
+  val akkaVersion = "2.6.9"
   val akkaManagementVersion = "1.0.8"
+  val akkaHttpVersion = "10.1.12"
   val http4sVersion = "0.21.7"
   val circeVersion = "0.13.0"
   val kamonAkkaVersion = "2.1.6"
@@ -24,15 +25,16 @@ object Dependencies {
   val mockito = "org.mockito" % "mockito-all" % "1.10.19"
   val mockServer = "org.mock-server" % "mockserver-netty" % "5.11.1"
   val junitInterface = "com.novocode" % "junit-interface" % "0.11"
-  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.6.2"
+  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.7.0"
 
   val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
+
   val akkaStream = "com.typesafe.akka" %% "akka-stream" % akkaVersion
   val akkaProtobuf = "com.typesafe.akka" %% "akka-protobuf" % akkaVersion
   val akkaPersistence = "com.typesafe.akka" %% "akka-persistence" % akkaVersion
   val akkaDiscovery = "com.typesafe.akka" %% "akka-discovery" % akkaVersion
   val akkaPersistenceQuery = "com.typesafe.akka" %% "akka-persistence-query" % akkaVersion
-  val akkaPersistenceCassandra = "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.103"
+  val akkaPersistenceCassandra = "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.104"
   val akkaCluster = "com.typesafe.akka" %% "akka-cluster" % akkaVersion
   val akkaClusterSharding = "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion
   val akkaClusterTools = "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion
@@ -40,7 +42,7 @@ object Dependencies {
   val akkaTestKit = "com.typesafe.akka" %% "akka-testkit" % akkaVersion
   val akkaStreamTestKit = "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion
   val akkaMultiNodeTestkit = "com.typesafe.akka" %% "akka-multi-node-testkit" % akkaVersion
-
+  val akkaHttpSprayJson = "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion
   val akkaManagementHttp = "com.lightbend.akka.management" %% "akka-management-cluster-http" % akkaManagementVersion
   val akkaClusterBoostrap = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
   val akkaDiscoveryKube = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaManagementVersion
@@ -61,27 +63,8 @@ object Dependencies {
   val kamonAkka = "io.kamon" %% "kamon-akka" % kamonAkkaVersion
   val kamonPrometheus = "io.kamon" %% "kamon-prometheus" % kamonAkkaVersion
 
-  val play = ("com.typesafe.play" %% "play-json" % "2.9.0")
-    .excludeAll(
-      ExclusionRule("com.fasterxml.jackson.core", "jackson-databind"),
-      ExclusionRule("com.fasterxml.jackson.core", "jackson-core"),
-      ExclusionRule("com.fasterxml.jackson.core", "jackson-annotations"),
-      ExclusionRule("com.fasterxml.jackson.datatype", "jackson-datatype-jdk8"),
-      ExclusionRule("com.fasterxml.jackson.datatype", "jackson-datatype-jsr310")
-    )
-
-  val skuber = ("io.skuber" %% "skuber" % "2.5.0")
-    .excludeAll(
-      ExclusionRule("org.yaml", "snakeyaml"),
-      ExclusionRule("com.typesafe.play", "play-json"),
-      ExclusionRule("com.typesafe.akka", "akka-actor"),
-      ExclusionRule("com.typesafe.akka", "akka-persistence"),
-      ExclusionRule("com.typesafe.akka", "akka-persistence-query"),
-      ExclusionRule("com.typesafe.akka", "akka-stream"),
-      ExclusionRule("com.typesafe.akka", "akka-protobuf")
-    )
-
-  val jackson = "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.2"
+  val skuber = ("io.skuber" %% "skuber" % "2.6.0")
+  val play = "com.typesafe.play" %% "play-json" % "2.9.1"
 
   val http4s = "org.http4s" %% "http4s-core" % http4sVersion
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sVersion
@@ -93,8 +76,8 @@ object Dependencies {
   val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
   val circeGenericExtras = "io.circe" %% "circe-generic-extras" % circeVersion
 
-  val catsEffect = "org.typelevel" %% "cats-effect" % "2.1.4"
-  val catsCore = "org.typelevel" %% "cats-core" % "2.1.1"
+  val catsEffect = "org.typelevel" %% "cats-effect" % "2.2.0"
+  val catsCore = "org.typelevel" %% "cats-core" % "2.2.0"
   val console4Cats = "dev.profunktor" %% "console4cats" % "0.8.0"
 
   val jnrConstants = "com.github.jnr" % "jnr-constants" % "0.9.9"
