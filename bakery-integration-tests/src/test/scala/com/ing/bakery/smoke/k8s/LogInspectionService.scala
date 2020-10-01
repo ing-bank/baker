@@ -2,7 +2,7 @@ package com.ing.bakery.smoke.k8s
 
 import java.net.InetSocketAddress
 
-import cats.effect.concurrent.{MVar, Ref}
+import cats.effect.concurrent.{MVar, MVar2, Ref}
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
 import com.ing.bakery.smoke.printYellow
@@ -18,7 +18,7 @@ import scala.sys.process._
 
 object LogInspectionService {
 
-  class Inspector private(podsF: Ref[IO, Map[String, Ref[IO, List[String]]]], lock: MVar[IO, Unit]) {
+  class Inspector private(podsF: Ref[IO, Map[String, Ref[IO, List[String]]]], lock: MVar2[IO, Unit]) {
 
     def awaitLock: IO[Unit] =
       lock.take

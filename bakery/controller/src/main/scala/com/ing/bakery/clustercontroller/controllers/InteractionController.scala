@@ -128,8 +128,8 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
 
     val healthProbe = skuber.Probe(
       action = skuber.HTTPGetAction(
-        port = Left(9999),
-        path = "/health"
+        port = Left(8080),
+        path = "/api/bakery/health"
       ),
       initialDelaySeconds = 15,
       timeoutSeconds = 10
@@ -142,11 +142,6 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
       .exposePort(Container.Port(
         name = "prometheus",
         containerPort = 9095,
-        protocol = Protocol.TCP
-      ))
-      .exposePort(Container.Port(
-        name = "health",
-        containerPort = 9999,
         protocol = Protocol.TCP
       ))
       .withReadinessProbe(healthProbe.copy(failureThreshold = Some(30)))

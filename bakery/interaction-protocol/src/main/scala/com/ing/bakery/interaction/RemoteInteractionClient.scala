@@ -26,7 +26,7 @@ object RemoteInteractionClient {
       .map(new RemoteInteractionClient(_, hostname))
 }
 
-final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
+final class RemoteInteractionClient(val client: Client[IO], val hostname: Uri)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
 
   import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
 
