@@ -3,7 +3,7 @@ package com.ing.bakery.smoke
 import java.net.InetSocketAddress
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import com.ing.bakery.smoke.k8s.{DefinitionFile, LogInspectionService, Namespace, Pod}
+import com.ing.bakery.smoke.k8s.{DefinitionFile, Namespace, Pod}
 import org.http4s.Uri
 import org.http4s.client.blaze.BlazeClientBuilder
 
@@ -13,8 +13,7 @@ object BakeryEnvironment {
 
   case class Context(
     clientApp: ExampleAppClient,
-    namespace: Namespace,
-    inspector: LogInspectionService.Inspector
+    namespace: Namespace
   )
 
   case class Arguments(
@@ -63,17 +62,8 @@ object BakeryEnvironment {
     client <- BlazeClientBuilder[IO](connectionPool).resource
     exampleAppClient = new ExampleAppClient(client, args.clientAppHostname)
 
-    inspector <- LogInspectionService.resource(
-      testsName = "Bakery Controller",
-      hostname = InetSocketAddress.createUnresolved("0.0.0.0", 9090),
-      awaitLock = args.debugMode)
-    _ <- Resource.liftF(inspector.watchLogs("bakery-controller", None, namespace))
-    _ <- Resource.liftF(inspector.watchLogsWithPrefix("webshop-baker", None, namespace))
-    _ <- Resource.liftF(inspector.watchLogsWithPrefix("reserve-items", None, namespace))
-    _ <- Resource.liftF(inspector.watchLogsWithPrefix("client-app", Some("client-app"), namespace))
   } yield Context(
     clientApp = exampleAppClient,
-    namespace,
-    inspector
+    namespace
   )
 }

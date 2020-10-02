@@ -128,8 +128,8 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
 
     val healthProbe = skuber.Probe(
       action = skuber.HTTPGetAction(
-        port = Left(8080),
-        path = "/api/bakery/health"
+        port = Left(9999),
+        path = "/health"
       ),
       initialDelaySeconds = 15,
       timeoutSeconds = 10
@@ -147,7 +147,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
       .withReadinessProbe(healthProbe.copy(failureThreshold = Some(30)))
       .withLivenessProbe(healthProbe.copy(failureThreshold = Some(30)))
       .copy(env = interaction.spec.env)
-      .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
+      .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:MaxRAMPercentage=85.0")
       .maybeWithKeyStoreConfig("INTERACTION", interactionTLS)
       .withMaybeResources(interaction.spec.resources)
       .mount("config", "/bakery-config", readOnly = true)
@@ -170,6 +170,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
       .withPodSpec(podSpec)
       .addLabel(interactionNodeLabel)
       .addLabel(interactionNameLabel(interaction))
+      .addLabels(interaction.metadata.labels)
   }
 
   private def deployment(interaction: InteractionResource): Deployment = {
@@ -180,6 +181,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
     new Deployment(metadata = ObjectMeta(
       name = interaction.name,
       labels = Map(
+        "app" -> interaction.metadata.name,
         interactionNodeLabel,
         interactionNameLabel(interaction)) ++
         interaction.metadata.labels.filter(_._1 != "custom-resource-definition")
@@ -197,6 +199,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
     new skuber.ext.Deployment(metadata = ObjectMeta(
       name = interaction.name,
       labels = Map(
+        "app" -> interaction.metadata.name,
         interactionNodeLabel,
         interactionNameLabel(interaction)) ++
         interaction.metadata.labels.filter(_._1 != "custom-resource-definition")
@@ -211,6 +214,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
       .addLabel(interactionNodeLabel)
       .addLabel(interactionNameLabel(interaction))
       .addLabel("metrics" -> "collect")
+      .addLabels(interaction.metadata.labels)
       .withSelector(interactionNameLabel(interaction))
       .setPorts(List(
         Service.Port(

@@ -7,12 +7,6 @@ import com.ing.bakery.protocol.{InteractionExecution => I}
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
 import com.ing.baker.types.{CharArray, Int64, PrimitiveValue}
 import com.ing.bakery.testing.BakeryFunSpec
-import org.http4s.Method.GET
-import org.http4s.circe._
-import org.http4s.client.Client
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
-import org.http4s.{Uri, _}
 import org.scalatest.ConfigMap
 import org.scalatest.compatible.Assertion
 
@@ -50,7 +44,6 @@ class RemoteInteractionSpec extends BakeryFunSpec {
    * @return the resources each test can use
    */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
-
     val context = Context(
       withInteractionInstances = { interaction => runTest =>
         RemoteInteractionService.resource(interaction, InetSocketAddress.createUnresolved("localhost", 0), Some(serviceTLSConfig))
@@ -93,12 +86,6 @@ class RemoteInteractionSpec extends BakeryFunSpec {
       input = Seq(CharArray, Int64),
       run = input => Future.successful(Some(result(input.head.value.as[String] + "!", input(1).value.as[Int] + 1)))
     )
-
-    test("Health endpoint") { context =>
-      context.withInteractionInstances(List()) { client =>
-        client.client.status(GET(client.hostname / "api" / "bakery" / "health")).map(status => assert(status.code == 200))
-      }
-    }
 
     test("publishes its interface") { context =>
       context.withInteractionInstances(List(implementation0, implementation1)) { client =>

@@ -5,7 +5,7 @@ metadata:
   labels:
     custom-resource-definition: bakers
 data:
-  image: bakery-baker:local
+  image: baker:local
   kafkaBootstrapServers: kafka-event-sink:9092
   replicas: "3"
   apiLoggingEnabled: "true"

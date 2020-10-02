@@ -5,10 +5,11 @@ import java.net.InetSocketAddress
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.typesafe.config.ConfigFactory
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.ExecutionContext
 
-object RemoteInteractionLoader {
+object RemoteInteractionLoader extends LazyLogging {
 
   def apply(implementations: List[InteractionInstance]): Unit = {
     val config = ConfigFactory.load()
@@ -18,6 +19,7 @@ object RemoteInteractionLoader {
     val keystorePassword = config.getString("bakery-component.interaction.https-keystore-password")
     val keystoreType = config.getString("bakery-component.interaction.https-keystore-type")
 
+    val healthServiceAddress = InetSocketAddress.createUnresolved("0.0.0.0", 9999)
     val address = InetSocketAddress.createUnresolved("0.0.0.0", port)
     val tlsConfig =
       if(httpsEnabled) Some(BakeryHttp.TLSConfig(password = keystorePassword, keystorePath = keystorePath, keystoreType = keystoreType))
@@ -28,7 +30,13 @@ object RemoteInteractionLoader {
     implicit val timer: Timer[IO] = IO.timer(executionContext)
 
     RemoteInteractionService.resource(implementations, address, tlsConfig)
-      .use(_ => IO.never)
+      .use(_ => {
+        logger.info("Interactions started successfully, starting health service")
+        HealthService.resource(healthServiceAddress)
+          .use(_ => IO.never)
+          .unsafeRunAsyncAndForget()
+        IO.never
+      })
       .unsafeRunAsyncAndForget()
   }
 }
