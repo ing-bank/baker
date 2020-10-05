@@ -450,7 +450,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
    * @param implementation The implementation object
    */
   override def addInteractionInstance(implementation: InteractionInstance): Future[Unit] =
-    Future.successful(config.interactionManager.addImplementation(implementation))
+    config.interactionManager.addImplementation(implementation)
 
   /**
    * Adds a sequence of interaction implementation to baker.
@@ -458,7 +458,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
    * @param implementations The implementation object
    */
   override def addInteractionInstances(implementations: Seq[InteractionInstance]): Future[Unit] =
-    Future.successful(implementations.foreach(addInteractionInstance))
+    Future.sequence(implementations.map(addInteractionInstance)).map(_ => ())
 
   /**
    * Attempts to gracefully shutdown the baker system.
