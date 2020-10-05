@@ -19,21 +19,18 @@ import scala.concurrent.Future
 
 class ComponentConfigControllerSpec extends BakeryFunSpec with MockitoSugar with ArgumentMatchersSugar {
 
-  describe("Component Config Controller") {
-
-    test("forces update on deployments that are within the cache") { context =>
-      for {
-        _ <- context.configControllerCache.add("test-config", "test-deployment")
-        _ = doReturn(Future.successful(Deployment("test-deployment"))).when(context.k8s).patch(*, *, *)(*, *, *, *)
-        _ <- context.k8sComponentConfigControllerEventStream.fire(WatchEvent(EventType.MODIFIED, ConfigMap("test-config")))
-        _ <- eventually("patch was called on k8s client")(IO {
-          verify(context.k8s).patch(
-            name = same("test-deployment"),
-            patchData = argThat[DeploymentTemplateLabelsPatch]((patch: DeploymentTemplateLabelsPatch) => patch.labels.contains(ComponentConfigController.COMPONENT_FORCE_UPDATE_LABEL)),
-            namespace = same(None))(*, *, *, *)
-        })
-      } yield succeed
-    }
+  test("forces update on deployments that are within the cache") { context =>
+    for {
+      _ <- context.configControllerCache.add("test-config", "test-deployment")
+      _ = doReturn(Future.successful(Deployment("test-deployment"))).when(context.k8s).patch(*, *, *)(*, *, *, *)
+      _ <- context.k8sComponentConfigControllerEventStream.fire(WatchEvent(EventType.MODIFIED, ConfigMap("test-config")))
+      _ <- eventually("patch was called on k8s client")(IO {
+        verify(context.k8s).patch(
+          name = same("test-deployment"),
+          patchData = argThat[DeploymentTemplateLabelsPatch]((patch: DeploymentTemplateLabelsPatch) => patch.labels.contains(ComponentConfigController.COMPONENT_FORCE_UPDATE_LABEL)),
+          namespace = same(None))(*, *, *, *)
+      })
+    } yield succeed
   }
 
   case class Context(

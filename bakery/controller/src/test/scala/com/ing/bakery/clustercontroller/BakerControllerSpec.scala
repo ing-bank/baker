@@ -4,7 +4,7 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
-import com.ing.bakery.clustercontroller.controllers.ComponentConfigController.{ConfigMapDeploymentRelationCache, DeploymentTemplateLabelsPatch}
+import com.ing.bakery.clustercontroller.controllers.ComponentConfigController.ConfigMapDeploymentRelationCache
 import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, ComponentConfigController}
 import com.ing.bakery.helpers.K8sEventStream
 import com.ing.bakery.testing.BakeryFunSpec
@@ -12,67 +12,67 @@ import com.typesafe.config.ConfigFactory
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{ConfigMap => ScalaTestConfigMap}
-import skuber.{ConfigMap, ListResource, Service}
 import skuber.api.client.{EventType, KubernetesClient, WatchEvent}
 import skuber.api.patch.MetadataPatch
 import skuber.apps.v1.{Deployment, ReplicaSet, ReplicaSetList}
+import skuber.{ConfigMap, Service}
 
 import scala.concurrent.Future
 
 class BakerControllerSpec extends BakeryFunSpec with Matchers with MockitoSugar with ArgumentMatchersSugar {
 
-  val baker = BakeryControllerSpec.bakerResource.copy(spec =
-    BakeryControllerSpec.bakerResource.spec.copy(config = Some("test-config")))
+  test("creates a baker and adds deployment to the config relationship cache") { context =>
+    val baker: BakerResource = BakeryControllerSpec.bakerResource.copy(spec =
+      BakeryControllerSpec.bakerResource.spec.copy(config = Some("test-config")))
+    doReturn(Future.successful(ConfigMap(baker.name + "-manifest"))).when(context.k8s).create[ConfigMap](*)(*, *, *)
+    doReturn(Future.successful(Deployment(baker.name))).when(context.k8s).create[Deployment](*)(*, *, *)
+    doReturn(Future.successful(Service(baker.name))).when(context.k8s).create[Service](*)(*, *, *)
+    doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(
+      name = same("test-config"),
+      patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.exists(_.contains(ComponentConfigController.COMPONENT_CONFIG_WATCH_LABEL))),
+      namespace = same(None)
+    )(*, *, *, *)
+    for {
+      _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.ADDED, baker))
+      _ <- eventually("config relationship cache contains the deployment and config") {
+        context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set(baker.name)))
+      }
+    } yield succeed
+  }
 
-  describe("Baker Controller") {
+  test("updates a baker and adds deployment to the config relationship cache") { context =>
+    val baker: BakerResource = BakeryControllerSpec.bakerResource.copy(spec =
+      BakeryControllerSpec.bakerResource.spec.copy(config = Some("test-config")))
+    doReturn(Future.successful(ConfigMap(baker.name + "-manifest"))).when(context.k8s).update[ConfigMap](*)(*, *, *)
+    doReturn(Future.successful(Deployment(baker.name))).when(context.k8s).update[Deployment](*)(*, *, *)
+    doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(
+      name = same("test-config"),
+      patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.exists(_.contains(ComponentConfigController.COMPONENT_CONFIG_WATCH_LABEL))),
+      namespace = same(None)
+    )(*, *, *, *)
+    for {
+      _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.MODIFIED, baker))
+      _ <- eventually("config relationship cache contains the deployment and config") {
+        context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set(baker.name)))
+      }
+    } yield succeed
+  }
 
-    test("creates a baker and adds deployment to the config relationship cache") { context =>
-      for {
-        _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.ADDED, baker))
-        _ = doReturn(ConfigMap(baker.name + "-manifest")).when(context.k8s).create[ConfigMap](*)(*, *, *)
-        _ = doReturn(Future.successful(Deployment(baker.name))).when(context.k8s).create[Deployment](*)(*, *, *)
-        _ = doReturn(Future.successful(Service(baker.name))).when(context.k8s).create[Service](*)(*, *, *)
-        _ = doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(
-          name = same("test-config"),
-          patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.exists(_.contains(ComponentConfigController.COMPONENT_CONFIG_WATCH_LABEL))),
-          namespace = same(None)
-        )(*, *, *, *)
-        _ <- eventually("config relationship cache contains the deployment and config") {
-          context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set(baker.name)))
-        }
-      } yield succeed
-    }
-
-    test("updates a baker and adds deployment to the config relationship cache") { context =>
-      for {
-        _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.MODIFIED, baker))
-        _ = doReturn(ConfigMap(baker.name + "-manifest")).when(context.k8s).update[ConfigMap](*)(*, *, *)
-        _ = doReturn(Future.successful(Deployment(baker.name))).when(context.k8s).update[Deployment](*)(*, *, *)
-        _ = doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(
-          name = same("test-config"),
-          patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.exists(_.contains(ComponentConfigController.COMPONENT_CONFIG_WATCH_LABEL))),
-          namespace = same(None)
-        )(*, *, *, *)
-        _ <- eventually("config relationship cache contains the deployment and config") {
-          context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set(baker.name)))
-        }
-      } yield succeed
-    }
-
-    test("delete a baker and deletes deployment to the config relationship cache") { context =>
-      for {
-        _ <- context.configControllerCache.add(baker.name + "-manifest", baker.name)
-        _ <- context.configControllerCache.add("test-config", baker.name)
-        _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.DELETED, baker))
-        _ = doReturn(Future.unit).when(context.k8s).delete[ConfigMap](*, *)(*, *)
-        _ = doReturn(Future.unit).when(context.k8s).delete[Deployment](*, *)(*, *)
-        _ = doReturn(Future.unit).when(context.k8s).delete[Service](*, *)(*, *)
-        _ = doReturn(Future.successful(skuber.listResourceFromItems[ReplicaSet](List(ReplicaSet(baker.name))))).when(context.k8s).deleteAllSelected[ReplicaSetList](*)(*, *, *)
-        _ <- eventually("config relationship cache contains the deployment and config") {
-          context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set.empty))
-        }
-      } yield succeed
-    }
+  test("delete a baker and deletes deployment to the config relationship cache") { context =>
+    val baker: BakerResource = BakeryControllerSpec.bakerResource.copy(spec =
+      BakeryControllerSpec.bakerResource.spec.copy(config = Some("test-config")))
+    doReturn(Future.unit).when(context.k8s).delete[ConfigMap](*, *)(*, *)
+    doReturn(Future.unit).when(context.k8s).delete[Deployment](*, *)(*, *)
+    doReturn(Future.unit).when(context.k8s).delete[Service](*, *)(*, *)
+    doReturn(Future.successful(skuber.listResourceFromItems[ReplicaSet](List(ReplicaSet(baker.name))))).when(context.k8s).deleteAllSelected[ReplicaSetList](*)(*, *, *)
+    for {
+      _ <- context.configControllerCache.add(baker.name + "-manifest", baker.name)
+      _ <- context.configControllerCache.add("test-config", baker.name)
+      _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.DELETED, baker))
+      _ <- eventually("config relationship cache contains the deployment and config") {
+        context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set.empty))
+      }
+    } yield succeed
   }
 
   case class Context(
