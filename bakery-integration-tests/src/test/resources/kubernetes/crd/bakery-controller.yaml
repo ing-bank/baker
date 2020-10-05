@@ -25,8 +25,8 @@ metadata:
   name: bakery-controller
 spec:
   containers:
-    - name: bakery-controller
-      image: bakery-controller:local
+    - name: controller
+      image: controller:local
       env:
         - name: BAKERY_HTTPS_MUTUAL_AUTH
           value: "true"

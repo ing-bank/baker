@@ -7,7 +7,7 @@ def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = proje
 lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocker")({
   state =>
     val extracted = Project.extract(state)
-
+    "set version in ThisBuild := \"local\"" ::
     "bakery-baker-docker-generate/docker:publishLocal" ::
       "bakery-client-example/docker:publishLocal" ::
       "bakery-kafka-listener-example/docker:publishLocal" ::

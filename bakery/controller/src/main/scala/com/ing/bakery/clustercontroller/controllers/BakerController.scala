@@ -128,7 +128,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         .setEnvVar("STATE_CLUSTER_SELECTOR", bakerCrdName)
         .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
         .setEnvVar("API_LOGGING_ENABLED", bakerResource.spec.apiLoggingEnabled.toString)
-        .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
+        .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:MaxRAMPercentage=85.0")
         .maybeWithKeyStoreConfig("INTERACTION_CLIENT", interactionClientTLS)
         .withMaybeResources(bakerResource.spec.resources)
         .withMaybeKafkaSink(bakerResource.spec.kafkaBootstrapServers)
@@ -152,7 +152,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         .withMaybeResources(sidecarSpec.resources)
         .applyIfDefined(sidecarSpec.livenessProbe, (p: skuber.Probe, c) => c.withLivenessProbe(p))
         .applyIfDefined(sidecarSpec.readinessProbe, (p: skuber.Probe, c) => c.withReadinessProbe(p))
-        .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
+        .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:MaxRAMPercentage=85.0")
     }
 
     val podSpec = Pod.Spec(
@@ -177,6 +177,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
     Pod.Template.Spec
       .named(bakerCrdName)
       .withPodSpec(podSpec)
+      .addLabels(bakerResource.metadata.labels)
       .addLabel(bakeryBakerLabel)
       .addLabel(recipeNameLabel(bakerResource))
       .addLabel(akkaClusterLabel(bakerResource))
@@ -190,7 +191,11 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
 
     new Deployment(metadata = ObjectMeta(
       name = bakerCrdName,
-      labels = Map(bakeryBakerLabel, bakerLabelWithName) ++ bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition")))
+      labels = Map(
+        "app" -> bakerCrdName,
+        bakeryBakerLabel,
+        bakerLabelWithName)
+        ++ bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition")))
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(key = bakerLabelWithName._1, value = bakerLabelWithName._2)))
       .withReplicas(replicas)
       .withTemplate(podSpec(bakerResource))
@@ -204,7 +209,11 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
 
     new skuber.ext.Deployment(metadata = ObjectMeta(
       name = bakerCrdName,
-      labels = Map(bakeryBakerLabel, bakerLabelWithName) ++ bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition")
+      labels = Map(
+        "app" -> bakerCrdName,
+        bakeryBakerLabel,
+        bakerLabelWithName)
+        ++ bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition")
     ))
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(key = bakerLabelWithName._1, value = bakerLabelWithName._2)))
       .withReplicas(replicas)
@@ -216,6 +225,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
     Service(bakerCrdName)
       .addLabel(bakeryBakerLabel)
       .addLabel(recipeNameLabel(bakerResource))
+      .addLabels(bakerResource.metadata.labels)
       .addLabel("metrics" -> "collect")
       .withSelector(recipeNameLabel(bakerResource))
       .setPorts(List(
