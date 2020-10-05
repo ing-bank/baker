@@ -8,15 +8,22 @@ import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.bakery.clustercontroller.controllers.ComponentConfigController._
 import com.typesafe.scalalogging.LazyLogging
-import play.api.libs.json.{Json, Writes}
-import skuber.ConfigMap
+import play.api.libs.json.{Format, Json, Writes}
+import skuber.{ConfigMap, ObjectResource, ResourceDefinition}
 import skuber.api.client.KubernetesClient
 import skuber.api.patch.{MetadataPatch, StrategicMergePatch}
 import skuber.apps.v1.Deployment
 import skuber.json.format.metadataPatchWrite
 import skuber.json.format.configMapFmt
+import skuber.json.ext.format.depFormat
 
 object ComponentConfigController {
+
+  def resource(k8s: KubernetesClient)(implicit actorSystem: ActorSystem, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, ConfigMapDeploymentRelationCache] =
+    for {
+      cache <- Resource.liftF(ConfigMapDeploymentRelationCache.build)
+      _ <- new ComponentConfigController(cache).watch(k8s, existsLabel = Some(COMPONENT_CONFIG_WATCH_LABEL))
+    } yield cache
 
   val COMPONENT_CONFIG_WATCH_LABEL = "bakery-watch-config"
 
@@ -24,20 +31,11 @@ object ComponentConfigController {
 
   def componentForceUpdateLabel: (String, String) = COMPONENT_FORCE_UPDATE_LABEL -> UUID.randomUUID().toString.take(63)
 
-  def run(k8s: KubernetesClient)(implicit actorSystem: ActorSystem, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, ConfigMapDeploymentRelationCache] =
-    for {
-      cache <- Resource.liftF(ConfigMapDeploymentRelationCache.build)
-      _ <- new ComponentConfigController(cache).watch(k8s, existsLabel = Some(COMPONENT_CONFIG_WATCH_LABEL))
-    } yield cache
-
-  def addComponentConfigWatchLabel(k8s: KubernetesClient, configRef: Option[String])(implicit cs: ContextShift[IO]): IO[Unit] = {
-    configRef.fold(IO.unit) { configMapName =>
-      IO.fromFuture(IO(k8s.patch[MetadataPatch, ConfigMap](
-        configMapName,
-        MetadataPatch(labels = Some(Map(COMPONENT_CONFIG_WATCH_LABEL -> "")))
-      ))).void
-    }
-  }
+  def addComponentConfigWatchLabel(k8s: KubernetesClient, configRef: String)(implicit cs: ContextShift[IO]): IO[Unit] =
+    IO.fromFuture(IO(k8s.patch[MetadataPatch, ConfigMap](
+      configRef,
+      MetadataPatch(labels = Some(Map(COMPONENT_CONFIG_WATCH_LABEL -> "")))
+    ))).void
 
   final class ConfigMapDeploymentRelationCache(cache: Ref[IO, Map[String, Set[String]]]) {
 
@@ -101,13 +99,15 @@ final class ComponentConfigController(configCache: ConfigMapDeploymentRelationCa
     IO.unit
 
   private def forceUpdate(k8s: KubernetesClient, deploymentName: String): IO[Unit] = {
-    IO.fromFuture(IO {
-      k8s.patch[ComponentConfigController.DeploymentTemplateLabelsPatch, Deployment](
-        deploymentName,
-        DeploymentTemplateLabelsPatch(Map(ComponentConfigController.componentForceUpdateLabel)))
-    }).map { dep =>
-      logger.info(dep.toString)
-      dep
-    }.void
+    def patch[D <: ObjectResource](implicit format: Format[D], rd: ResourceDefinition[D]): IO[Unit] =
+      IO.fromFuture(IO {
+        k8s.patch[ComponentConfigController.DeploymentTemplateLabelsPatch, D](
+          deploymentName,
+          DeploymentTemplateLabelsPatch(Map(ComponentConfigController.componentForceUpdateLabel)))
+      }).void
+    attemptOpOrTryOlderVersion(
+      v1 = patch[Deployment],
+      older = patch[skuber.ext.Deployment]
+    )
   }
 }

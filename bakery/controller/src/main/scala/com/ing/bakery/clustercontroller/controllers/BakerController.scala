@@ -41,7 +41,7 @@ final class BakerController(configCache: ConfigMapDeploymentRelationCache, inter
         older = io(k8s.create[skuber.ext.Deployment](oldKubernetesDeployment(resource))).void), s"deployment '${dep.name}'")
       _ <- resource.spec.config.fold(IO.unit)(configCache.add(_, deploymentName = dep.name))
       wasAlreadyThere3 <- idem(io(k8s.create(svc)), s"service '${svc.name}'")
-      _ <- ComponentConfigController.addComponentConfigWatchLabel(k8s, resource.spec.config)
+      _ <- resource.spec.config.fold(IO.unit)(ComponentConfigController.addComponentConfigWatchLabel(k8s, _))
     } yield {
       if(wasAlreadyThere1 || wasAlreadyThere2 || wasAlreadyThere3)
         logger.debug(s"Created (idem) baker cluster named '${resource.name}'")
@@ -86,7 +86,7 @@ final class BakerController(configCache: ConfigMapDeploymentRelationCache, inter
         removeDeploymentFromCache *> configCache.add(configMapName = config, deploymentName = dep.name)
       }
       /* Same for the config map label */
-      _ <- ComponentConfigController.addComponentConfigWatchLabel(k8s, resource.spec.config)
+      _ <- resource.spec.config.fold(IO.unit)(ComponentConfigController.addComponentConfigWatchLabel(k8s, _))
       _ = logger.info(s"Upgraded baker cluster named '${resource.name}'")
     } yield ()
   }

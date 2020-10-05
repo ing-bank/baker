@@ -40,7 +40,7 @@ object Main extends IOApp with LazyLogging {
     }
 
     (for {
-      configCache <- ComponentConfigController.run(k8s)
+      configCache <- ComponentConfigController.resource(k8s)
       _ <- BakeryControllerService.resource(InetSocketAddress.createUnresolved("0.0.0.0", 8080))
       _ <- if(useCrds) InteractionController.run(k8s, connectionPool, interactionMutualTLS, interactionClientMutualTLS) else Resource.liftF(IO.unit)
       _ <- InteractionController.runFromConfigMaps(k8s, connectionPool, interactionMutualTLS, interactionClientMutualTLS)

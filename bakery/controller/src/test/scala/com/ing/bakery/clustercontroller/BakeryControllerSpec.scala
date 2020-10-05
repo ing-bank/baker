@@ -9,6 +9,7 @@ import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.ing.baker.types.CharArray
 import com.ing.bakery.clustercontroller.BakeryControllerSpec._
 import com.ing.bakery.clustercontroller.controllers.BakerResource.SidecarSpec
+import com.ing.bakery.clustercontroller.controllers.ComponentConfigController.ConfigMapDeploymentRelationCache
 import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, InteractionController, InteractionResource}
 import com.ing.bakery.mocks.WatchEvent.ResourcePath
 import com.ing.bakery.mocks.{KubeApiServer, RemoteInteraction}
@@ -517,7 +518,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
         implicit val sys = system
         skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))
       }
-
+      cache <- Resource.liftF(ConfigMapDeploymentRelationCache.build)
     } yield {
       implicit val as: ActorSystem = system
       import InteractionResource.interactionResourceFormat
@@ -527,13 +528,13 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
         Resource.liftF(kubeApiServer.noNewInteractionEvents).flatMap(_ => new InteractionController(executionContext).watch(k8s))
       val bakerController =
         Resource.liftF(kubeApiServer.noNewBakerEvents).flatMap(_ =>
-          new BakerController().watch(k8s))
+          new BakerController(cache).watch(k8s))
       val interactionControllerConfigMaps =
         Resource.liftF(kubeApiServer.noNewConfigMapEventsFor("interactions")).flatMap(_ =>
           new InteractionController(executionContext).fromConfigMaps(InteractionResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "interactions")))
       val bakerControllerConfigMaps =
         Resource.liftF(kubeApiServer.noNewConfigMapEventsFor("bakers")).flatMap(_ =>
-          new BakerController().fromConfigMaps(BakerResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "bakers")))
+          new BakerController(cache).fromConfigMaps(BakerResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "bakers")))
 
       Context(
         kubeApiServer,
