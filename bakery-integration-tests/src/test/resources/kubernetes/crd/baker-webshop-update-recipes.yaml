@@ -2,6 +2,8 @@ apiVersion: ing-bank.github.io/v1
 kind: Baker
 metadata:
   name: webshop-baker
+  labels:
+    scope: webshop
 spec:
   image: baker:local
   kafkaBootstrapServers: kafka-event-sink:9092
