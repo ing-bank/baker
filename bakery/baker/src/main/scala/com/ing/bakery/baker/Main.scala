@@ -82,6 +82,10 @@ object Main extends IOApp with LazyLogging {
       _ <- BakerService.resource(baker, hostname, serviceDiscovery, loggingEnabled)
     } yield ()
 
-    mainResource.use(_ => IO.never).as(ExitCode.Success)
+    mainResource.use(_ => {
+      logger.info("Baker initalisation complete, enabling the readiness")
+      BakerReadinessCheck.enable()
+      IO.never}
+    ).as(ExitCode.Success)
   }
 }
