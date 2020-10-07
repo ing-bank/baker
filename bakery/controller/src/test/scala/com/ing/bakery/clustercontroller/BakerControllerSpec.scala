@@ -4,8 +4,7 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
-import com.ing.bakery.clustercontroller.controllers.ComponentConfigController.ConfigMapDeploymentRelationCache
-import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, ComponentConfigController}
+import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, ForceRollingUpdateOnConfigMapUpdate}
 import com.ing.bakery.helpers.K8sEventStream
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
@@ -29,7 +28,7 @@ class BakerControllerSpec extends BakeryFunSpec with Matchers with MockitoSugar 
     doReturn(Future.successful(Service(baker.name))).when(context.k8s).create[Service](*)(*, *, *)
     doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(
       name = same("test-config"),
-      patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.exists(_.contains(ComponentConfigController.COMPONENT_CONFIG_WATCH_LABEL))),
+      patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.exists(_.contains(ForceRollingUpdateOnConfigMapUpdate.COMPONENT_CONFIG_WATCH_LABEL))),
       namespace = same(None)
     )(*, *, *, *)
     for {
@@ -47,7 +46,7 @@ class BakerControllerSpec extends BakeryFunSpec with Matchers with MockitoSugar 
     doReturn(Future.successful(Deployment(baker.name))).when(context.k8s).update[Deployment](*)(*, *, *)
     doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(
       name = same("test-config"),
-      patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.exists(_.contains(ComponentConfigController.COMPONENT_CONFIG_WATCH_LABEL))),
+      patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.exists(_.contains(ForceRollingUpdateOnConfigMapUpdate.COMPONENT_CONFIG_WATCH_LABEL))),
       namespace = same(None)
     )(*, *, *, *)
     for {
@@ -66,8 +65,8 @@ class BakerControllerSpec extends BakeryFunSpec with Matchers with MockitoSugar 
     doReturn(Future.unit).when(context.k8s).delete[Service](*, *)(*, *)
     doReturn(Future.successful(skuber.listResourceFromItems[ReplicaSet](List(ReplicaSet(baker.name))))).when(context.k8s).deleteAllSelected[ReplicaSetList](*)(*, *, *)
     for {
-      _ <- context.configControllerCache.add(baker.name + "-manifest", baker.name)
-      _ <- context.configControllerCache.add("test-config", baker.name)
+      _ <- context.configControllerCache.addRelationNoKubeOp(baker.name + "-manifest", baker.name)
+      _ <- context.configControllerCache.addRelationNoKubeOp("test-config", baker.name)
       _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.DELETED, baker))
       _ <- eventually("config relationship cache contains the deployment and config") {
         context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set.empty))
@@ -78,7 +77,7 @@ class BakerControllerSpec extends BakeryFunSpec with Matchers with MockitoSugar 
   case class Context(
     k8s: KubernetesClient,
     k8sBakerControllerEventStream: K8sEventStream[BakerResource],
-    configControllerCache: ConfigMapDeploymentRelationCache
+    configControllerCache: ForceRollingUpdateOnConfigMapUpdate
   )
 
   /** Represents the "sealed resources context" that each test can use. */
@@ -101,12 +100,12 @@ class BakerControllerSpec extends BakeryFunSpec with Matchers with MockitoSugar 
       system <- actorSystemResource
       context <- {
         implicit val s: ActorSystem = system
-        val k8s: KubernetesClient = mock[KubernetesClient]
+        implicit val k8s: KubernetesClient = mock[KubernetesClient]
         for {
           eventStream <- K8sEventStream.resource[BakerResource]
-          configControllerCache <- Resource.liftF(ComponentConfigController.ConfigMapDeploymentRelationCache.build)
+          configControllerCache <- Resource.liftF(ForceRollingUpdateOnConfigMapUpdate.build)
           _ = doAnswer(eventStream.source).when(k8s).watchAllContinuously(*, *)(*, *, *)
-          _ <- BakerController.run(k8s, configControllerCache, None)
+          _ <- BakerController.run(configControllerCache)
         } yield Context(k8s, eventStream, configControllerCache)
       }
     } yield context

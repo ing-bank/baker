@@ -19,35 +19,65 @@ import Utils.ConfigurableContainer
 import akka.actor.ActorSystem
 import com.ing.bakery.interaction.RemoteInteractionClient
 import com.ing.bakery.protocol.InteractionExecution
+import ControllerOperations._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 object InteractionController {
 
-  def run(k8s: KubernetesClient, connectionPool: ExecutionContext, interactionTLS: Option[MutualAuthKeystoreConfig] = None, interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit actorSystem: ActorSystem, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Unit] =
-    new InteractionController(connectionPool, interactionTLS, interactionClientTLS).watch(k8s)
+  def run(
+    configWatch: ForceRollingUpdateOnConfigMapUpdate, 
+    connectionPool: ExecutionContext, 
+    interactionTLS: Option[MutualAuthKeystoreConfig] = None, 
+    interactionClientTLS: Option[MutualAuthKeystoreConfig] = None
+  )(implicit 
+    actorSystem: ActorSystem, 
+    k8s: KubernetesClient, 
+    cs: ContextShift[IO], 
+    timer: Timer[IO]
+  ): Resource[IO, Unit] =
+    new InteractionController(configWatch, connectionPool, interactionTLS, interactionClientTLS).runController()
 
-  def runFromConfigMaps(k8s: KubernetesClient, connectionPool: ExecutionContext, interactionTLS: Option[MutualAuthKeystoreConfig] = None, interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit actorSystem: ActorSystem, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Unit] =
-    new InteractionController(connectionPool, interactionTLS, interactionClientTLS)
+  def runFromConfigMaps(
+    configWatch: ForceRollingUpdateOnConfigMapUpdate,
+    connectionPool: ExecutionContext,
+    interactionTLS: Option[MutualAuthKeystoreConfig] = None,
+    interactionClientTLS: Option[MutualAuthKeystoreConfig] = None
+  )(implicit 
+    actorSystem: ActorSystem,
+    k8s: KubernetesClient,
+    cs: ContextShift[IO],
+    timer: Timer[IO]
+  ): Resource[IO, Unit] =
+    new InteractionController(configWatch, connectionPool, interactionTLS, interactionClientTLS)
       .fromConfigMaps(InteractionResource.fromConfigMap)
-      .watch(k8s, label = Some("custom-resource-definition" -> "interactions"))
+      .runController(labelFilter = Some("custom-resource-definition" -> "interactions"))
 }
 
-final class InteractionController(connectionPool: ExecutionContext, interactionTLS: Option[MutualAuthKeystoreConfig] = None, interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[InteractionResource] with LazyLogging {
+final class InteractionController(
+  configWatch: ForceRollingUpdateOnConfigMapUpdate, 
+  connectionPool: ExecutionContext, 
+  interactionTLS: Option[MutualAuthKeystoreConfig] = None, 
+  interactionClientTLS: Option[MutualAuthKeystoreConfig] = None
+)(implicit 
+  cs: ContextShift[IO], 
+  timer: Timer[IO]
+) extends ControllerOperations[InteractionResource] with LazyLogging {
 
   implicit lazy val replicaSetListFormat: Format[ReplicaSetList] = ListResourceFormat[ReplicaSet]
   import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
 
   // TODO make these operations atomic, if one fails we need to rollback previous ones
-  def create(resource: InteractionResource, k8s: KubernetesClient): IO[Unit] = {
+  def create(resource: InteractionResource)(implicit k8s: KubernetesClient): IO[Unit] = {
     val dpl = deployment(resource)
     val svc = service(resource)
     for {
-      wasAlreadyThere1 <- idem(attemptOpOrTryOlderVersion(
-        v1 = io(k8s.create[Deployment](dpl)).void,
-        older = io(k8s.create[skuber.ext.Deployment](oldKubernetesDeployment(resource))).void), s"deployment '${dpl.name}'")
-      deployedService <- applyOrGet(io(k8s.create(svc)), io(k8s.get[Service](svc.name)), s"service '${svc.name}'")
+      wasAlreadyThere1 <- attemptOpOrTryOlderVersion(
+        v1 = idemCreate(dpl),
+        older = idemCreate(oldKubernetesDeployment(resource))
+      ).map(_.fold(identity, identity))
+      deployedService <- createOrFetch(svc)
       deployedPort = deployedService.spec
         .flatMap(_.ports.find(_.name == "http-api"))
         .map(_.port)
@@ -55,7 +85,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
       addressAndInterfaces <- extractInterfacesFromDeployedInteraction(resource.name, deployedPort, k8s)
       (address, interfaces) = addressAndInterfaces
       contract = creationContract(resource, address, interfaces)
-      wasAlreadyThere2 <- idem(io(k8s.create(contract)), s"creation contract config map '${contract.name}'")
+      wasAlreadyThere2 <- idemCreate(contract)
     } yield {
       if(wasAlreadyThere1 || wasAlreadyThere2)
         logger.debug(s"Deployed (idem) interactions from interaction set named '${resource.name}': ${interfaces.map(_.name).mkString(", ")}")
@@ -64,7 +94,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
     }
   }
 
-  def terminate(resource: InteractionResource, k8s: KubernetesClient): IO[Unit] = {
+  def terminate(resource: InteractionResource)(implicit k8s: KubernetesClient): IO[Unit] = {
     val (key, value) = interactionNameLabel(resource)
     for {
       _ <- io(k8s.delete[ConfigMap](intermediateInteractionManifestConfigMapName(resource)))
@@ -80,11 +110,11 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
     } yield ()
   }
 
-  def upgrade(resource: InteractionResource, k8s: KubernetesClient): IO[Unit] =
+  def upgrade(resource: InteractionResource)(implicit k8s: KubernetesClient): IO[Unit] =
     for {
       _ <- attemptOpOrTryOlderVersion(
-        v1 = io(k8s.update[Deployment](deployment(resource))).void,
-        older = io(k8s.update[skuber.ext.Deployment](oldKubernetesDeployment(resource))).void)
+        v1 = io(k8s.update[Deployment](deployment(resource))),
+        older = io(k8s.update[skuber.ext.Deployment](oldKubernetesDeployment(resource))))
     } yield ()
 
   private def extractInterfacesFromDeployedInteraction(serviceName: String, deployedPort: Int, k8s: KubernetesClient): IO[(Uri, List[InteractionExecution.Interaction])] = {

@@ -4,8 +4,8 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
-import com.ing.bakery.clustercontroller.controllers.ComponentConfigController
-import com.ing.bakery.clustercontroller.controllers.ComponentConfigController.{ConfigMapDeploymentRelationCache, DeploymentTemplateLabelsPatch}
+import com.ing.bakery.clustercontroller.controllers.ForceRollingUpdateOnConfigMapUpdate
+import com.ing.bakery.clustercontroller.controllers.ForceRollingUpdateOnConfigMapUpdate.{DeploymentTemplateLabelsPatch, COMPONENT_FORCE_UPDATE_LABEL, COMPONENT_CONFIG_WATCH_LABEL}
 import com.ing.bakery.helpers.K8sEventStream
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
@@ -21,13 +21,13 @@ class ComponentConfigControllerSpec extends BakeryFunSpec with MockitoSugar with
 
   test("forces update on deployments that are within the cache") { context =>
     for {
-      _ <- context.configControllerCache.add("test-config", "test-deployment")
+      _ <- context.configControllerCache.addRelationNoKubeOp("test-config", "test-deployment")
       _ = doReturn(Future.successful(Deployment("test-deployment"))).when(context.k8s).patch(*, *, *)(*, *, *, *)
       _ <- context.k8sComponentConfigControllerEventStream.fire(WatchEvent(EventType.MODIFIED, ConfigMap("test-config")))
       _ <- eventually("patch was called on k8s client")(IO {
         verify(context.k8s).patch(
           name = same("test-deployment"),
-          patchData = argThat[DeploymentTemplateLabelsPatch]((patch: DeploymentTemplateLabelsPatch) => patch.labels.contains(ComponentConfigController.COMPONENT_FORCE_UPDATE_LABEL)),
+          patchData = argThat[DeploymentTemplateLabelsPatch]((patch: DeploymentTemplateLabelsPatch) => patch.labels.contains(COMPONENT_FORCE_UPDATE_LABEL)),
           namespace = same(None))(*, *, *, *)
       })
     } yield succeed
@@ -36,7 +36,7 @@ class ComponentConfigControllerSpec extends BakeryFunSpec with MockitoSugar with
   case class Context(
     k8s: KubernetesClient,
     k8sComponentConfigControllerEventStream: K8sEventStream[ConfigMap],
-    configControllerCache: ConfigMapDeploymentRelationCache
+    configControllerCache: ForceRollingUpdateOnConfigMapUpdate
   )
 
   /** Represents the "sealed resources context" that each test can use. */
@@ -59,14 +59,15 @@ class ComponentConfigControllerSpec extends BakeryFunSpec with MockitoSugar with
       system <- actorSystemResource
       context <- {
         implicit val s: ActorSystem = system
-        val k8s: KubernetesClient = mock[KubernetesClient]
+        implicit val k8s: KubernetesClient = mock[KubernetesClient]
         for {
           eventStream <- K8sEventStream.resource[ConfigMap]
           isFilteringOnWatchLabel = (options: ListOptions) =>
             options.labelSelector
-              .exists(_.requirements.exists(_.key == ComponentConfigController.COMPONENT_CONFIG_WATCH_LABEL))
+              .exists(_.requirements.exists(_.key == COMPONENT_CONFIG_WATCH_LABEL))
           _ = doAnswer(eventStream.source).when(k8s).watchWithOptions(argThat[ListOptions](f = isFilteringOnWatchLabel), *)(*, *, *)
-          configControllerCache <- ComponentConfigController.resource(k8s)
+          configControllerCache <- Resource.liftF(ForceRollingUpdateOnConfigMapUpdate.build)
+          _ <- configControllerCache.runController
         } yield Context(k8s, eventStream, configControllerCache)
       }
     } yield context

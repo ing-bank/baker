@@ -9,7 +9,7 @@ import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.ing.baker.types.CharArray
 import com.ing.bakery.clustercontroller.BakeryControllerSpec._
 import com.ing.bakery.clustercontroller.controllers.BakerResource.SidecarSpec
-import com.ing.bakery.clustercontroller.controllers.ComponentConfigController.ConfigMapDeploymentRelationCache
+import com.ing.bakery.clustercontroller.controllers.ForceRollingUpdateOnConfigMapUpdate
 import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, InteractionController, InteractionResource}
 import com.ing.bakery.mocks.WatchEvent.ResourcePath
 import com.ing.bakery.mocks.{KubeApiServer, RemoteInteraction}
@@ -514,27 +514,25 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
         system.terminate().flatMap(_ => system.whenTerminated)
       }).void
       system <- Resource.make(makeActorSystem)(stopActorSystem)
-      k8s: KubernetesClient = {
-        implicit val sys = system
-        skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))
-      }
-      cache <- Resource.liftF(ConfigMapDeploymentRelationCache.build)
+      configWatch <- Resource.liftF(ForceRollingUpdateOnConfigMapUpdate.build)
     } yield {
       implicit val as: ActorSystem = system
+      implicit val k8s: KubernetesClient = skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))
       import InteractionResource.interactionResourceFormat
       import InteractionResource.resourceDefinitionInteractionResource
 
       val interactionController =
-        Resource.liftF(kubeApiServer.noNewInteractionEvents).flatMap(_ => new InteractionController(executionContext).watch(k8s))
+        Resource.liftF(kubeApiServer.noNewInteractionEvents).flatMap(_ => 
+        InteractionController.run(configWatch, executionContext))
       val bakerController =
         Resource.liftF(kubeApiServer.noNewBakerEvents).flatMap(_ =>
-          new BakerController(cache).watch(k8s))
+          BakerController.run(configWatch))
       val interactionControllerConfigMaps =
         Resource.liftF(kubeApiServer.noNewConfigMapEventsFor("interactions")).flatMap(_ =>
-          new InteractionController(executionContext).fromConfigMaps(InteractionResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "interactions")))
+          InteractionController.runFromConfigMaps(configWatch, executionContext))
       val bakerControllerConfigMaps =
         Resource.liftF(kubeApiServer.noNewConfigMapEventsFor("bakers")).flatMap(_ =>
-          new BakerController(cache).fromConfigMaps(BakerResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "bakers")))
+          BakerController.runFromConfigMaps(configWatch))
 
       Context(
         kubeApiServer,
