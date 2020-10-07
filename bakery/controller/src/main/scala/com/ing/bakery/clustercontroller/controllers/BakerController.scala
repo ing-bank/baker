@@ -1,6 +1,6 @@
 package com.ing.bakery.clustercontroller.controllers
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.bakery.clustercontroller.MutualAuthKeystoreConfig
 import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json.Format
@@ -10,10 +10,23 @@ import skuber.api.client.KubernetesClient
 import skuber.apps.v1.{Deployment, ReplicaSet, ReplicaSetList}
 import skuber.json.ext.format._
 import skuber.json.format._
-import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Resource, Service, Volume}
+import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
 import Utils.ConfigurableContainer
+import akka.actor.ActorSystem
+import ComponentConfigController.ConfigMapDeploymentRelationCache
 
-final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[BakerResource] with LazyLogging {
+object BakerController {
+
+  def run(k8s: KubernetesClient, configCache: ConfigMapDeploymentRelationCache, interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit actorSystem: ActorSystem, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Unit] =
+    new BakerController(configCache, interactionClientTLS).watch(k8s)
+
+  def runFromConfigMaps(k8s: KubernetesClient, configCache: ConfigMapDeploymentRelationCache , interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit actorSystem: ActorSystem, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Unit] =
+    new BakerController(configCache, interactionClientTLS)
+      .fromConfigMaps(BakerResource.fromConfigMap)
+      .watch(k8s, label = Some("custom-resource-definition" -> "bakers"))
+}
+
+final class BakerController(configCache: ConfigMapDeploymentRelationCache, interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[BakerResource] with LazyLogging {
 
   implicit lazy val replicaSetListFormat: Format[ReplicaSetList] = ListResourceFormat[ReplicaSet]
 
@@ -26,7 +39,9 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
       wasAlreadyThere2 <- idem(attemptOpOrTryOlderVersion(
         v1 = io(k8s.create[Deployment](dep)).void,
         older = io(k8s.create[skuber.ext.Deployment](oldKubernetesDeployment(resource))).void), s"deployment '${dep.name}'")
+      _ <- resource.spec.config.fold(IO.unit)(configCache.add(_, deploymentName = dep.name))
       wasAlreadyThere3 <- idem(io(k8s.create(svc)), s"service '${svc.name}'")
+      _ <- resource.spec.config.fold(IO.unit)(ComponentConfigController.addComponentConfigWatchLabel(k8s, _))
     } yield {
       if(wasAlreadyThere1 || wasAlreadyThere2 || wasAlreadyThere3)
         logger.debug(s"Created (idem) baker cluster named '${resource.name}'")
@@ -35,29 +50,46 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
     }
   }
 
-  def terminate(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
+  def terminate(resource: BakerResource, k8s: KubernetesClient): IO[Unit] = {
+    val cm = intermediateRecipesManifestConfigMapName(resource)
+    val dep = deployment(resource)
     for {
-      _ <- io(k8s.delete[ConfigMap](intermediateRecipesManifestConfigMapName(resource)))
+      _ <- io(k8s.delete[ConfigMap](cm))
+      _ <- configCache.remove(configMapName = cm, deploymentName = resource.name)
       (key, value) = recipeNameLabel(resource)
       _ <- io(k8s.delete[Service](service(resource).name))
       _ <- attemptOpOrTryOlderVersion(
-        v1 = io(k8s.delete[Deployment](deployment(resource).name)),
+        v1 = io(k8s.delete[Deployment](dep.name)),
         older = io(k8s.delete[skuber.ext.Deployment](oldKubernetesDeployment(resource).name)))
+      _ <- resource.spec.config.fold(IO.unit)(configCache.remove(_, deploymentName = dep.name))
       _ <- attemptOpOrTryOlderVersion(
         v1 = io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void,
         older = io(k8s.deleteAllSelected[skuber.ext.ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void)
       _ <- io(k8s.deleteAllSelected[PodList](LabelSelector(IsEqualRequirement(key, value))))
       _ = logger.info(s"Terminated baker cluster named '${resource.name}'")
     } yield ()
+  }
 
-  def upgrade(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
+  def upgrade(resource: BakerResource, k8s: KubernetesClient): IO[Unit] = {
+    val dep = deployment(resource)
+    val removeDeploymentFromCache: IO[Unit] = configCache.removeDeployment(resource.name)
     for {
       _ <- io(k8s.update[ConfigMap](intermediateRecipesManifestConfigMap(resource))).void
       _ <- attemptOpOrTryOlderVersion(
-        v1 = io(k8s.update[Deployment](deployment(resource))).void,
+        v1 = io(k8s.update[Deployment](dep)).void,
         older = io(k8s.update[skuber.ext.Deployment](oldKubernetesDeployment(resource))).void)
+      /* When updating a BakerResource at this point we don't know if the config was added, removed, or left
+       * untouched, that is why we ensure that if the config is not in the resource, then it is removed from cache,
+       * and if the config was updated the old deployment entry is removed and the new one added
+       */
+      _ <- resource.spec.config.fold(removeDeploymentFromCache) { config =>
+        removeDeploymentFromCache *> configCache.add(configMapName = config, deploymentName = dep.name)
+      }
+      /* Same for the config map label */
+      _ <- resource.spec.config.fold(IO.unit)(ComponentConfigController.addComponentConfigWatchLabel(k8s, _))
       _ = logger.info(s"Upgraded baker cluster named '${resource.name}'")
     } yield ()
+  }
 
   private def bakeryBakerLabel: (String, String) = "bakery-component" -> "baker"
 
@@ -181,6 +213,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
       .addLabel(bakeryBakerLabel)
       .addLabel(recipeNameLabel(bakerResource))
       .addLabel(akkaClusterLabel(bakerResource))
+      .addLabel(ComponentConfigController.componentForceUpdateLabel)
   }
 
   private def deployment(bakerResource: BakerResource): Deployment = {
@@ -255,7 +288,8 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         labels = Map(
           bakeryBakerLabel,
           recipeNameLabel(bakerResource),
-          recipeManifestLabel
+          recipeManifestLabel,
+          (ComponentConfigController.COMPONENT_CONFIG_WATCH_LABEL, "")
         )),
       data = bakerResource.recipes.get.map {
         case (serializedRecipe, compiledRecipe) => compiledRecipe.recipeId -> serializedRecipe

@@ -31,7 +31,6 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     "-unchecked",
     "-deprecation",
     "-feature",
-    "-Ywarn-dead-code",
     "-language:higherKinds",
     "-language:existentials",
     "-language:implicitConversions",
@@ -342,7 +341,12 @@ lazy val `bakery-controller` = project.in(file("bakery/controller"))
       scalaTest,
       mockServer,
       circe,
-      circeGeneric
+      circeGeneric,
+      mockitoScala,
+      mockitoScalaTest
+    ),
+    dependencyOverrides ++= Seq(
+      play
     )
   )
   .dependsOn(`baker-types`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`, `bakery-baker-client`, `bakery-interaction-protocol`)
