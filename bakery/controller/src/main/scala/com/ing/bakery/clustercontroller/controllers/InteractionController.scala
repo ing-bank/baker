@@ -127,8 +127,9 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
       metadata = ObjectMeta(name = name, labels = Map(
         interactionNodeLabel,
         interactionNameLabel(interaction),
-        interactionManifestLabel
-      )),
+        interactionManifestLabel) ++
+        interaction.metadata.labels.filter(_._1 != "custom-resource-definition")
+      ),
       data = Map("address" -> address.toString, "interfaces" -> interactionsData)
     )
   }
@@ -182,7 +183,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
       .withPodSpec(podSpec)
       .addLabel(interactionNodeLabel)
       .addLabel(interactionNameLabel(interaction))
-      .addLabels(interaction.metadata.labels)
+      .addLabels(interaction.metadata.labels.filter(_._1 != "custom-resource-definition"))
   }
 
   private def deployment(interaction: InteractionResource): Deployment = {
@@ -226,7 +227,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
       .addLabel(interactionNodeLabel)
       .addLabel(interactionNameLabel(interaction))
       .addLabel("metrics" -> "collect")
-      .addLabels(interaction.metadata.labels)
+      .addLabels(interaction.metadata.labels.filter(_._1 != "custom-resource-definition"))
       .withSelector(interactionNameLabel(interaction))
       .setPorts(List(
         Service.Port(

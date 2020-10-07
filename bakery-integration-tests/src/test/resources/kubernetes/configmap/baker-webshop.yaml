@@ -4,6 +4,7 @@ metadata:
   name: webshop-baker
   labels:
     custom-resource-definition: bakers
+    scope: webshop
 data:
   image: baker:local
   kafkaBootstrapServers: kafka-event-sink:9092

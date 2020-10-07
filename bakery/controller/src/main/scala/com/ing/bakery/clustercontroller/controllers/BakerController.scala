@@ -159,6 +159,7 @@ final class BakerController(configCache: ConfigMapDeploymentRelationCache, inter
         .applyIfDefined(serviceAccountSecret, (_: String, c) => c.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true))
         .setEnvVar("STATE_CLUSTER_SELECTOR", bakerCrdName)
         .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
+        .setEnvVar("BAKERY_SCOPE", bakerResource.metadata.labels.getOrElse("scope", "*"))
         .setEnvVar("API_LOGGING_ENABLED", bakerResource.spec.apiLoggingEnabled.toString)
         .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:MaxRAMPercentage=85.0")
         .maybeWithKeyStoreConfig("INTERACTION_CLIENT", interactionClientTLS)
@@ -209,7 +210,7 @@ final class BakerController(configCache: ConfigMapDeploymentRelationCache, inter
     Pod.Template.Spec
       .named(bakerCrdName)
       .withPodSpec(podSpec)
-      .addLabels(bakerResource.metadata.labels)
+      .addLabels(bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition"))
       .addLabel(bakeryBakerLabel)
       .addLabel(recipeNameLabel(bakerResource))
       .addLabel(akkaClusterLabel(bakerResource))
@@ -258,7 +259,7 @@ final class BakerController(configCache: ConfigMapDeploymentRelationCache, inter
     Service(bakerCrdName)
       .addLabel(bakeryBakerLabel)
       .addLabel(recipeNameLabel(bakerResource))
-      .addLabels(bakerResource.metadata.labels)
+      .addLabels(bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition"))
       .addLabel("metrics" -> "collect")
       .withSelector(recipeNameLabel(bakerResource))
       .setPorts(List(
@@ -290,7 +291,7 @@ final class BakerController(configCache: ConfigMapDeploymentRelationCache, inter
           recipeNameLabel(bakerResource),
           recipeManifestLabel,
           (ComponentConfigController.COMPONENT_CONFIG_WATCH_LABEL, "")
-        )),
+        ) ++ bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition")),
       data = bakerResource.recipes.get.map {
         case (serializedRecipe, compiledRecipe) => compiledRecipe.recipeId -> serializedRecipe
       }.toMap)

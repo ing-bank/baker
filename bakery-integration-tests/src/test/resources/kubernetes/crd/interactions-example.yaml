@@ -2,6 +2,8 @@ apiVersion: ing-bank.github.io/v1
 kind: Interaction
 metadata:
   name: reserve-items
+  labels:
+    scope: webshop
 spec:
   image: bakery-interaction-example-reserve-items:local
   env:
@@ -24,6 +26,8 @@ apiVersion: ing-bank.github.io/v1
 kind: Interaction
 metadata:
   name: make-payment-and-ship-items
+  labels:
+    scope: webshop
 spec:
   image: interaction-make-payment-and-ship-items:local
   env:
