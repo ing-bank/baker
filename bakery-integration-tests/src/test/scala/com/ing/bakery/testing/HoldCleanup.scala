@@ -12,6 +12,7 @@ import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 object HoldCleanup {
 
@@ -23,7 +24,7 @@ object HoldCleanup {
         .withHttpApp(new HoldCleanup(lock).build)
         .resource
       _ <- Resource.liftF(printYellow(s"To terminate the tests, please visit http://localhost:${hostname.getPort}/"))
-      _ <- Resource.liftF(lock.take)
+      _ <- Resource.liftF(lock.take *> IO.sleep(1.seconds))
     } yield ()
 }
 
