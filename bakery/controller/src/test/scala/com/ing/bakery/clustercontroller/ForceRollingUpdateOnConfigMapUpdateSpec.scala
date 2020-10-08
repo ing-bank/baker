@@ -5,7 +5,7 @@ import java.util.UUID
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import com.ing.bakery.clustercontroller.controllers.ForceRollingUpdateOnConfigMapUpdate
-import com.ing.bakery.clustercontroller.controllers.ForceRollingUpdateOnConfigMapUpdate.{DeploymentTemplateLabelsPatch, COMPONENT_FORCE_UPDATE_LABEL, COMPONENT_CONFIG_WATCH_LABEL}
+import com.ing.bakery.clustercontroller.controllers.ForceRollingUpdateOnConfigMapUpdate._
 import com.ing.bakery.helpers.K8sEventStream
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
@@ -13,15 +13,16 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.{ConfigMap => ScalaTestConfigMap}
 import skuber.{ConfigMap, LabelSelector, ListOptions}
 import skuber.api.client.{EventType, KubernetesClient, WatchEvent}
+import skuber.api.patch.MetadataPatch
 import skuber.apps.Deployment
 
 import scala.concurrent.Future
 
-class ComponentConfigControllerSpec extends BakeryFunSpec with MockitoSugar with ArgumentMatchersSugar {
+class ForceRollingUpdateOnConfigMapUpdateSpec extends BakeryFunSpec with MockitoSugar with ArgumentMatchersSugar {
 
-  test("forces update on deployments that are within the cache") { context =>
+  test("controller forces update on deployments that are within the cache") { context =>
     for {
-      _ <- context.configControllerCache.addRelationNoKubeOp("test-config", "test-deployment")
+      _ <- context.configWatch.addRelationNoKubeOp("test-config", "test-deployment")
       _ = doReturn(Future.successful(Deployment("test-deployment"))).when(context.k8s).patch(*, *, *)(*, *, *, *)
       _ <- context.k8sComponentConfigControllerEventStream.fire(WatchEvent(EventType.MODIFIED, ConfigMap("test-config")))
       _ <- eventually("patch was called on k8s client")(IO {
@@ -33,10 +34,43 @@ class ComponentConfigControllerSpec extends BakeryFunSpec with MockitoSugar with
     } yield succeed
   }
 
+  test("labels config maps when adding a relation between a config map and a deployment to the cache") { context =>
+    implicit val k8s: KubernetesClient = context.k8s
+    for {
+      _ <- IO(doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(*, *, *)(*, *, *, *))
+      _ <- context.configWatch.watchConfigOf("test-config", "test-deployment")
+      cacheDeployments <- context.configWatch.get("test-config")
+      _ = assert(cacheDeployments.contains("test-deployment"))
+      _ <- IO {
+        verify(context.k8s).patch(
+          name = same("test-config"),
+          patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.contains(Map(componentConfigWatchLabel))),
+          namespace = same(None))(*, *, *, *)
+      }
+    } yield succeed
+  }
+
+  test("un-labels config maps when removing all related deployments from the cache") { context =>
+    implicit val k8s: KubernetesClient = context.k8s
+    for {
+      _ <- IO(doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(*, *, *)(*, *, *, *))
+      _ <- context.configWatch.addRelationNoKubeOp("test-config", "test-deployment")
+      _ <- context.configWatch.stopWatchingConfigFor("test-deployment")
+      cacheDeployments <- context.configWatch.get("test-config")
+      _ = assert(cacheDeployments.isEmpty)
+      _ <- IO {
+        verify(context.k8s).patch(
+          name = same("test-config"),
+          patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.contains(Map("$patch" -> "delete", componentConfigWatchLabel))),
+          namespace = same(None))(*, *, *, *)
+      }
+    } yield succeed
+  }
+
   case class Context(
-    k8s: KubernetesClient,
-    k8sComponentConfigControllerEventStream: K8sEventStream[ConfigMap],
-    configControllerCache: ForceRollingUpdateOnConfigMapUpdate
+                      k8s: KubernetesClient,
+                      k8sComponentConfigControllerEventStream: K8sEventStream[ConfigMap],
+                      configWatch: ForceRollingUpdateOnConfigMapUpdate
   )
 
   /** Represents the "sealed resources context" that each test can use. */

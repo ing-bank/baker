@@ -48,8 +48,36 @@ final class ForceRollingUpdateOnConfigMapUpdate(cache: Ref[IO, Map[String, Set[S
   def get(configMapName: String): IO[Set[String]] =
     cache.get.map(_.getOrElse(configMapName, Set.empty))
 
+  def getRelatedConfigMaps(deploymentName: String): IO[List[String]] =
+    cache.get.map(_.filter(_._2.contains(deploymentName)).keys.toList)
+
   def watchConfigOf(configMapName: String, deploymentName: String)(implicit cs: ContextShift[IO], k8s: KubernetesClient): IO[Unit] =
     addComponentConfigWatchLabelTo(configMapName) *> addRelationNoKubeOp(configMapName, deploymentName)
+
+  def stopWatchingConfigOf(configMapName: String, deploymentName: String)(implicit cs: ContextShift[IO], k8s: KubernetesClient): IO[Unit] = {
+    for {
+      _ <- removeRelationNoKubeOp(configMapName, deploymentName)
+      leftDeployments <- get(configMapName)
+      _ <- if (leftDeployments.isEmpty) removeComponentConfigWatchLabelTo(configMapName) else IO.unit
+    } yield ()
+  }
+
+  def stopWatchingConfigFor(deploymentName: String)(implicit cs: ContextShift[IO], k8s: KubernetesClient): IO[Unit] =
+    for {
+      oldConfigMaps <- getRelatedConfigMaps(deploymentName)
+      _ <- oldConfigMaps.parTraverse(stopWatchingConfigOf(_, deploymentName))
+    } yield ()
+
+  def forceUpdate(deploymentName: String)(implicit cd: ContextShift[IO], k8s: KubernetesClient): IO[Unit] = {
+    def patch[D <: ObjectResource](implicit format: Format[D], rd: ResourceDefinition[D]): IO[D] =
+      io(k8s.patch[DeploymentTemplateLabelsPatch, D](
+        deploymentName,
+        DeploymentTemplateLabelsPatch(Map(ForceRollingUpdateOnConfigMapUpdate.componentForceUpdateLabel))))
+    attemptOpOrTryOlderVersion(
+      v1 = patch[Deployment],
+      older = patch[skuber.ext.Deployment]
+    ).void
+  }
 
   def addRelationNoKubeOp(configMapName: String, deploymentName: String): IO[Unit] =
     cache.update { entries =>
@@ -81,6 +109,15 @@ final class ForceRollingUpdateOnConfigMapUpdate(cache: Ref[IO, Map[String, Set[S
       MetadataPatch(labels = Some(Map(ForceRollingUpdateOnConfigMapUpdate.componentConfigWatchLabel)))
     ))).void
 
+  private def removeComponentConfigWatchLabelTo(configRef: String)(implicit cs: ContextShift[IO], k8s: KubernetesClient): IO[Unit] =
+    IO.fromFuture(IO(k8s.patch[MetadataPatch, ConfigMap](
+      configRef,
+      MetadataPatch(labels = Some(Map(
+        "$patch" -> "delete",
+        ForceRollingUpdateOnConfigMapUpdate.componentConfigWatchLabel
+      )))
+    ))).void
+
   private def controller(implicit actorSystem: ActorSystem, cs: ContextShift[IO], timer: Timer[IO]): ControllerOperations[ConfigMap] =
     new ControllerOperations[ConfigMap] {
       override def create(resource: ConfigMap)(implicit k8s: KubernetesClient): IO[Unit] = IO.unit
@@ -88,19 +125,8 @@ final class ForceRollingUpdateOnConfigMapUpdate(cache: Ref[IO, Map[String, Set[S
         for {
           deployments <- get(resource.name)
           _ = logger.info(s"CONFIGMAP UPGRADED ${resource.metadata.name}, related deployments: ${deployments.mkString(", ")}")
-          _ <- deployments.toList.traverse(forceUpdate(_)(k8s))
+          _ <- deployments.toList.traverse(forceUpdate(_)(cs, k8s))
         } yield ()
       override def terminate(resource: ConfigMap)(implicit k8s: KubernetesClient): IO[Unit] = IO.unit
-
-      private def forceUpdate(deploymentName: String)(implicit k8s: KubernetesClient): IO[Unit] = {
-        def patch[D <: ObjectResource](implicit format: Format[D], rd: ResourceDefinition[D]): IO[D] =
-          io(k8s.patch[DeploymentTemplateLabelsPatch, D](
-            deploymentName,
-            DeploymentTemplateLabelsPatch(Map(ForceRollingUpdateOnConfigMapUpdate.componentForceUpdateLabel))))
-        attemptOpOrTryOlderVersion(
-          v1 = patch[Deployment],
-          older = patch[skuber.ext.Deployment]
-        ).void
-      }
     }
 }

@@ -75,13 +75,13 @@ final class BakerController(
     val dep = deployment(resource)
     for {
       _ <- io(k8s.delete[ConfigMap](cm))
-      _ <- configWatch.removeRelationNoKubeOp(configMapName = cm, deploymentName = resource.name)
+      _ <- configWatch.stopWatchingConfigOf(configMapName = cm, deploymentName = dep.name)
       (key, value) = recipeNameLabel(resource)
       _ <- io(k8s.delete[Service](service(resource).name))
       _ <- attemptOpOrTryOlderVersion(
         v1 = io(k8s.delete[Deployment](dep.name)),
         older = io(k8s.delete[skuber.ext.Deployment](oldKubernetesDeployment(resource).name)))
-      _ <- resource.spec.config.fold(IO.unit)(configWatch.removeRelationNoKubeOp(_, deploymentName = dep.name))
+      _ <- resource.spec.config.fold(IO.unit)(configWatch.stopWatchingConfigOf(_, deploymentName = dep.name))
       _ <- attemptOpOrTryOlderVersion(
         v1 = io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void,
         older = io(k8s.deleteAllSelected[skuber.ext.ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void)
@@ -92,7 +92,6 @@ final class BakerController(
 
   def upgrade(resource: BakerResource)(implicit k8s: KubernetesClient): IO[Unit] = {
     val dep = deployment(resource)
-    val removeDeploymentFromCache: IO[Unit] = configWatch.removeDeploymentNoKubeOp(resource.name)
     for {
       _ <- io(k8s.update[ConfigMap](intermediateRecipesManifestConfigMap(resource))).void
       _ <- attemptOpOrTryOlderVersion(
@@ -102,8 +101,11 @@ final class BakerController(
        * untouched, that is why we ensure that if the config is not in the resource, then it is removed from cache,
        * and if the config was updated the old deployment entry is removed and the new one added
        */
-      _ <- resource.spec.config.fold(removeDeploymentFromCache) { config =>
-        removeDeploymentFromCache *> configWatch.watchConfigOf(configMapName = config, deploymentName = dep.name)
+      _ <- resource.spec.config match {
+        case None =>
+          configWatch.stopWatchingConfigFor(resource.name)
+        case Some(newConfig) =>
+          configWatch.stopWatchingConfigFor(resource.name) *> configWatch.watchConfigOf(newConfig, resource.name)
       }
       _ = logger.info(s"Upgraded baker cluster named '${resource.name}'")
     } yield ()

@@ -70,14 +70,13 @@ final class InteractionController(
 
   // TODO make these operations atomic, if one fails we need to rollback previous ones
   def create(resource: InteractionResource)(implicit k8s: KubernetesClient): IO[Unit] = {
-    val dpl = deployment(resource)
-    val svc = service(resource)
     for {
       wasAlreadyThere1 <- attemptOpOrTryOlderVersion(
-        v1 = idemCreate(dpl),
+        v1 = idemCreate(deployment(resource)),
         older = idemCreate(oldKubernetesDeployment(resource))
       ).map(_.fold(identity, identity))
-      deployedService <- createOrFetch(svc)
+      _ <- watchForConfigMaps(resource)
+      deployedService <- createOrFetch(service(resource))
       deployedPort = deployedService.spec
         .flatMap(_.ports.find(_.name == "http-api"))
         .map(_.port)
@@ -102,6 +101,7 @@ final class InteractionController(
       _ <- attemptOpOrTryOlderVersion(
         v1 = io(k8s.delete[Deployment](deployment(resource).name)),
         older = io(k8s.delete[skuber.ext.Deployment](oldKubernetesDeployment(resource).name)))
+      _ <- stopWatchingForConfigMaps(resource)
       _ <- attemptOpOrTryOlderVersion(
         v1 = io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void,
         older = io(k8s.deleteAllSelected[skuber.ext.ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void)
@@ -115,7 +115,30 @@ final class InteractionController(
       _ <- attemptOpOrTryOlderVersion(
         v1 = io(k8s.update[Deployment](deployment(resource))),
         older = io(k8s.update[skuber.ext.Deployment](oldKubernetesDeployment(resource))))
+      /* When updating an InteractionResource at this point we don't know if the config was added, removed, or left
+       * untouched, that is why we ensure that if the config is not in the resource, then it is removed from cache,
+       * and if the config was updated the old deployment entry is removed and the new one added
+       */
+      _ <- {
+        if (resource.spec.configMapMounts.isDefined)
+          configWatch.stopWatchingConfigFor(resource.name) *> watchForConfigMaps(resource)
+        else
+          configWatch.stopWatchingConfigFor(resource.name)
+      }
     } yield ()
+
+  private def forAllConfigMapMounts(resource: InteractionResource, f: String => IO[Unit]): IO[Unit] =
+    resource.spec.configMapMounts.fold(IO.unit)(configMaps =>
+      configMaps.parTraverse(f).runAsync {
+        case Left(e) => IO(logger.error("Failed at configuring a watch on interaction config mounts", e))
+        case Right(_) => IO.unit
+      }.toIO)
+
+  private def watchForConfigMaps(interaction: InteractionResource)(implicit k8s: KubernetesClient): IO[Unit] =
+    forAllConfigMapMounts(interaction, configWatch.watchConfigOf(_, interaction.name))
+
+  private def stopWatchingForConfigMaps(interaction: InteractionResource)(implicit k8s: KubernetesClient): IO[Unit] =
+    forAllConfigMapMounts(interaction, configWatch.stopWatchingConfigOf(_, interaction.name))
 
   private def extractInterfacesFromDeployedInteraction(serviceName: String, deployedPort: Int, k8s: KubernetesClient): IO[(Uri, List[InteractionExecution.Interaction])] = {
     val protocol = if(interactionClientTLS.isDefined) "https" else "http"
