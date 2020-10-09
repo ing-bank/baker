@@ -7,6 +7,7 @@ import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
 import com.ing.bakery.clustercontroller.controllers.ControllerOperations._
+import com.ing.bakery.clustercontroller.controllers.ForceRollingUpdateOnConfigMapUpdate.DeploymentTemplateLabelsPatch
 import play.api.libs.json.{Format, Json, Writes}
 import skuber.api.client.KubernetesClient
 import skuber.api.patch.{MetadataPatch, StrategicMergePatch}
@@ -14,36 +15,33 @@ import skuber.apps.v1.Deployment
 import skuber.json.ext.format.depFormat
 import skuber.json.format.{configMapFmt, metadataPatchWrite}
 import skuber.{ConfigMap, ObjectResource, ResourceDefinition}
-import ControllerOperations._
-import scala.concurrent.Future
-import com.ing.bakery.clustercontroller.controllers.ForceRollingUpdateOnConfigMapUpdate.DeploymentTemplateLabelsPatch
 
-object ForceRollingUpdateOnConfigMapUpdate {
-
-  val COMPONENT_CONFIG_WATCH_LABEL = "bakery-watch-config"
-
-  val COMPONENT_FORCE_UPDATE_LABEL = "bakery-force-update"
-
-  val componentConfigWatchLabel: (String, String) = COMPONENT_CONFIG_WATCH_LABEL -> ""
-
-  def componentForceUpdateLabel: (String, String) = COMPONENT_FORCE_UPDATE_LABEL -> UUID.randomUUID().toString.take(63)
-
-  def build: IO[ForceRollingUpdateOnConfigMapUpdate] =
-    Ref.of[IO, Map[String, Set[String]]](Map.empty).map(new ForceRollingUpdateOnConfigMapUpdate(_))
-
-  case class DeploymentTemplateLabelsPatch(labels: Map[String, String]) extends StrategicMergePatch
-
-  object DeploymentTemplateLabelsPatch {
-    implicit val deploymentTemplateLabelsPatchWrites: Writes[DeploymentTemplateLabelsPatch] =
-      Writes.apply(patch => Json.obj(
-        "spec" -> Json.obj(
-          "template" -> Json.obj(
-            "metadata" -> Json.obj(
-              "labels" -> Json.toJsObject(patch.labels))))))
-  }
-}
-
-final class ForceRollingUpdateOnConfigMapUpdate(cache: Ref[IO, Map[String, Set[String]]]) {
+/** Triggers a roll-update on Deployments when chosen ConfigMaps are updated.
+  *
+  * Kubernetes is able to refresh the mounted files of pods, but a lot of those files are commonly used on boot only,
+  * for example configuration files, and for some of those cases it is desired to roll-update the Deployment if the
+  * ConfigMaps that are mounted in the Pods get updated. This tool achieves just that, it keeps a cache of such
+  * relations between ConfigMaps and Deployments, and when adding a relation this tool will label the ConfigMap
+  * so that its Controller can watch for changes, the Controller then will trigger a roll-update on the
+  * Deployment if the ConfigMap is changed.
+  *
+  * For this functionality to work you must call `runController` to start a watch on the ConfigMaps that can trigger a
+  * roll-update.
+  *
+  * The relation are many to many, you can have one ConfigMap related to many Deployments, and one Deployment to many
+  * ConfigMaps.
+  *
+  * Use `watchConfigOf` to add a relation to be watched, then use `stopWatchingConfigOf` to remove a relation or
+  * `stopWatchingConfigFor` to remove all relations of a single Deployment.
+  *
+  * It is possible to directly manipulate the cache without doing Kubernetes operations, all of these methods are
+  * suffixed with `NoKubeOp` but it is suggested to use them for tests only.
+  *
+  * To build this functionality use the `build` method on the companion project.
+  *
+  * @param cache thread safe mutable map that keeps the relations between configmaps and deployments
+  */
+final class ForceRollingUpdateOnConfigMapUpdate private (cache: Ref[IO, Map[String, Set[String]]]) {
 
   def get(configMapName: String): IO[Set[String]] =
     cache.get.map(_.getOrElse(configMapName, Set.empty))
@@ -129,4 +127,29 @@ final class ForceRollingUpdateOnConfigMapUpdate(cache: Ref[IO, Map[String, Set[S
         } yield ()
       override def terminate(resource: ConfigMap)(implicit k8s: KubernetesClient): IO[Unit] = IO.unit
     }
+}
+
+object ForceRollingUpdateOnConfigMapUpdate {
+
+  val COMPONENT_CONFIG_WATCH_LABEL = "bakery-watch-config"
+
+  val COMPONENT_FORCE_UPDATE_LABEL = "bakery-force-update"
+
+  val componentConfigWatchLabel: (String, String) = COMPONENT_CONFIG_WATCH_LABEL -> ""
+
+  def componentForceUpdateLabel: (String, String) = COMPONENT_FORCE_UPDATE_LABEL -> UUID.randomUUID().toString.take(63)
+
+  def build: IO[ForceRollingUpdateOnConfigMapUpdate] =
+    Ref.of[IO, Map[String, Set[String]]](Map.empty).map(new ForceRollingUpdateOnConfigMapUpdate(_))
+
+  case class DeploymentTemplateLabelsPatch(labels: Map[String, String]) extends StrategicMergePatch
+
+  object DeploymentTemplateLabelsPatch {
+    implicit val deploymentTemplateLabelsPatchWrites: Writes[DeploymentTemplateLabelsPatch] =
+      Writes.apply(patch => Json.obj(
+        "spec" -> Json.obj(
+          "template" -> Json.obj(
+            "metadata" -> Json.obj(
+              "labels" -> Json.toJsObject(patch.labels))))))
+  }
 }

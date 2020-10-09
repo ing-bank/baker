@@ -70,42 +70,57 @@ final class InteractionController(
 
   // TODO make these operations atomic, if one fails we need to rollback previous ones
   def create(resource: InteractionResource)(implicit k8s: KubernetesClient): IO[Unit] = {
-    for {
-      wasAlreadyThere1 <- attemptOpOrTryOlderVersion(
+
+    val createDeployment: IO[Boolean] =
+      attemptOpOrTryOlderVersion(
         v1 = idemCreate(deployment(resource)),
         older = idemCreate(oldKubernetesDeployment(resource))
       ).map(_.fold(identity, identity))
-      _ <- watchForConfigMaps(resource)
-      deployedService <- createOrFetch(service(resource))
-      deployedPort = deployedService.spec
-        .flatMap(_.ports.find(_.name == "http-api"))
-        .map(_.port)
-        .getOrElse(8080)
-      addressAndInterfaces <- extractInterfacesFromDeployedInteraction(resource.name, deployedPort, k8s)
-      (address, interfaces) = addressAndInterfaces
-      contract = creationContract(resource, address, interfaces)
-      wasAlreadyThere2 <- idemCreate(contract)
-    } yield {
-      if(wasAlreadyThere1 || wasAlreadyThere2)
+
+    def logOutcome(deploymentAlreadyExisted: Boolean, manifestAlreadyExisted: Boolean, interfaces: List[InteractionExecution.Interaction]): IO[Unit] = IO {
+      if(deploymentAlreadyExisted || manifestAlreadyExisted)
         logger.debug(s"Deployed (idem) interactions from interaction set named '${resource.name}': ${interfaces.map(_.name).mkString(", ")}")
       else
         logger.info(s"Deployed interactions from interaction set named '${resource.name}': ${interfaces.map(_.name).mkString(", ")}")
     }
+
+    for {
+      deploymentAlreadyExisted <- createDeployment
+      _ <- watchForConfigChangesToTriggerRollUpdate(resource)
+      deployedService <- createOrFetch(service(resource))
+      addressAndInterfaces <- extractInterfacesFromDeployedInteraction(deployedService, k8s)
+      (address, interfaces) = addressAndInterfaces
+      manifestAlreadyExisted <- idemCreate(interactionManifest(resource, address, interfaces))
+      _ <- logOutcome(deploymentAlreadyExisted, manifestAlreadyExisted, interfaces)
+    } yield ()
   }
 
   def terminate(resource: InteractionResource)(implicit k8s: KubernetesClient): IO[Unit] = {
+
     val (key, value) = interactionNameLabel(resource)
+
+    val deleteDeployment: IO[Unit] =
+      attemptOpOrTryOlderVersion(
+        v1 = io(k8s.delete[Deployment](deployment(resource).name)),
+        older = io(k8s.delete[skuber.ext.Deployment](oldKubernetesDeployment(resource).name))
+      ).void
+
+    val deleteReplicaSetList: IO[Unit] =
+      attemptOpOrTryOlderVersion(
+        v1 = io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void,
+        older = io(k8s.deleteAllSelected[skuber.ext.ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void
+      ).void
+
+    val deletePodList: IO[Unit] =
+      io(k8s.deleteAllSelected[PodList](LabelSelector(IsEqualRequirement(key, value)))).void
+
     for {
       _ <- io(k8s.delete[ConfigMap](intermediateInteractionManifestConfigMapName(resource)))
       _ <- io(k8s.delete[Service](resource.name))
-      _ <- attemptOpOrTryOlderVersion(
-        v1 = io(k8s.delete[Deployment](deployment(resource).name)),
-        older = io(k8s.delete[skuber.ext.Deployment](oldKubernetesDeployment(resource).name)))
+      _ <- deleteDeployment
       _ <- stopWatchingForConfigMaps(resource)
-      _ <- attemptOpOrTryOlderVersion(
-        v1 = io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void,
-        older = io(k8s.deleteAllSelected[skuber.ext.ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void)
-      _ <- io(k8s.deleteAllSelected[PodList](LabelSelector(IsEqualRequirement(key, value))))
+      _ <- deleteReplicaSetList
+      _ <- deletePodList
       _ = logger.info(s"Terminated interaction set named '${resource.name}'")
     } yield ()
   }
@@ -121,7 +136,7 @@ final class InteractionController(
        */
       _ <- {
         if (resource.spec.configMapMounts.isDefined)
-          configWatch.stopWatchingConfigFor(resource.name) *> watchForConfigMaps(resource)
+          configWatch.stopWatchingConfigFor(resource.name) *> watchForConfigChangesToTriggerRollUpdate(resource)
         else
           configWatch.stopWatchingConfigFor(resource.name)
       }
@@ -134,15 +149,19 @@ final class InteractionController(
         case Right(_) => IO.unit
       }.toIO)
 
-  private def watchForConfigMaps(interaction: InteractionResource)(implicit k8s: KubernetesClient): IO[Unit] =
+  private def watchForConfigChangesToTriggerRollUpdate(interaction: InteractionResource)(implicit k8s: KubernetesClient): IO[Unit] =
     forAllConfigMapMounts(interaction, configWatch.watchConfigOf(_, interaction.name))
 
   private def stopWatchingForConfigMaps(interaction: InteractionResource)(implicit k8s: KubernetesClient): IO[Unit] =
     forAllConfigMapMounts(interaction, configWatch.stopWatchingConfigOf(_, interaction.name))
 
-  private def extractInterfacesFromDeployedInteraction(serviceName: String, deployedPort: Int, k8s: KubernetesClient): IO[(Uri, List[InteractionExecution.Interaction])] = {
+  private def extractInterfacesFromDeployedInteraction(deployedService: Service, k8s: KubernetesClient): IO[(Uri, List[InteractionExecution.Interaction])] = {
+    val deployedPort = deployedService.spec
+      .flatMap(_.ports.find(_.name == "http-api"))
+      .map(_.port)
+      .getOrElse(8080)
     val protocol = if(interactionClientTLS.isDefined) "https" else "http"
-    val address = Uri.unsafeFromString(s"$protocol://$serviceName:$deployedPort/")
+    val address = Uri.unsafeFromString(s"$protocol://${deployedService.name}:$deployedPort/")
     for {
       tlsConfig <- interactionClientTLS.traverse(_.loadKeystore(k8s))
       interfaces <- BlazeClientBuilder[IO](connectionPool, tlsConfig)
@@ -156,12 +175,16 @@ final class InteractionController(
     } yield (address, interfaces)
   }
 
+  /** Used to identify Kubernetes resources that belong to Interaction nodes. */
   private def interactionNodeLabel: (String, String) = "bakery-component" -> "interaction"
 
+  /** Used to identify Kubernetes resources that belong to this specific Interaction node. */
   private def interactionNameLabel(interaction: InteractionResource): (String, String) = "bakery-interaction-name" -> interaction.name
 
+  /** Name for the manifest that publishes the interaction interfaces of this Interaction node. */
   private def intermediateInteractionManifestConfigMapName(interaction: InteractionResource): String = interaction.name + "-manifest"
 
+  /** Used by the Baker nodes to discover the interfaces and locations of the interactions published by the Interaction nodes. */
   private def interactionManifestLabel: (String, String) = "bakery-manifest" -> "interactions"
 
   private def httpAPIPort: Container.Port = Container.Port(
@@ -173,7 +196,7 @@ final class InteractionController(
   import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
 
 
-  private def creationContract(interaction: InteractionResource, address: Uri, interactions: List[InteractionExecution.Interaction]): ConfigMap = {
+  private def interactionManifest(interaction: InteractionResource, address: Uri, interactions: List[InteractionExecution.Interaction]): ConfigMap = {
     val name = intermediateInteractionManifestConfigMapName(interaction)
     val interactionsData =  interactions.asJson.toString
     ConfigMap(
