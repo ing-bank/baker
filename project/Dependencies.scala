@@ -3,7 +3,7 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.6.9"
+  val akkaVersion = "2.6.10"
   val akkaManagementVersion = "1.0.8"
   val akkaHttpVersion = "10.1.12"
   val http4sVersion = "0.21.7"
