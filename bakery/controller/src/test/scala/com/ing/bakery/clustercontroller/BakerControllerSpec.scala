@@ -16,86 +16,182 @@ import skuber.{ConfigMap, Pod, PodList, Service}
 
 class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
 
-  test("creates a baker and adds deployment to the config relationship cache") { context =>
+  test("creates a baker") { context =>
+    val resource: BakerResource = BakeryControllerFixtures.bakerResource.copy()
     implicit val k8sMock: KubernetesClient = context.k8s
-    val baker: BakerResource = BakeryControllerSpec.bakerResource.copy(spec =
-      BakeryControllerSpec.bakerResource.spec.copy(config = Some("test-config")))
     for {
-      _ <- mockCreate(ConfigMap(baker.name + "-manifest"))
-      _ <- mockCreate(Deployment(baker.name))
-      _ <- mockPatchingOfConfigMapWatchLabel(baker.name + "-manifest")
+      _ <- mockCreate(ConfigMap("test-recipe-manifest"))
+      _ <- mockCreate(Deployment("test-recipe"))
+      _ <- mockPatchingOfConfigMapWatchLabel("test-recipe-manifest")
       _ <- mockPatchingOfConfigMapWatchLabel("test-config")
-      _ <- mockCreate(Service(baker.name))
-      _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.ADDED, baker))
+      _ <- mockCreate(Service("test-recipe"))
+      _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.ADDED, resource))
       _ <- eventually("config relationship cache contains the deployment and config") {
         for {
-          _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set(baker.name)))
-          _ <- verifyCreate[ConfigMap](_.name == baker.name + "-manifest")
-          _ <- verifyCreate[Deployment](_.name == baker.name)
-          _ <- verifyPatchingOfConfigMapWatchLabel(baker.name + "-manifest")
+          _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set("test-recipe")))
+          _ <- verifyCreate[ConfigMap](_.name == "test-recipe-manifest")
+          _ <- verifyCreate[Deployment](_.name == "test-recipe")
+          _ <- verifyPatchingOfConfigMapWatchLabel("test-recipe-manifest")
           _ <- verifyPatchingOfConfigMapWatchLabel("test-config")
-          _ <- verifyCreate[Service](_.name == baker.name)
+          _ <- verifyCreate[Service](_.name == "test-recipe")
         } yield ()
       }
     } yield succeed
   }
 
-  test("updates a baker and adds deployment to the config relationship cache") { context =>
+  test("updates a baker") { context =>
+    val baker: BakerResource = BakeryControllerFixtures.bakerResource.copy()
     implicit val k8sMock: KubernetesClient = context.k8s
-    val baker: BakerResource = BakeryControllerSpec.bakerResource.copy(spec =
-      BakeryControllerSpec.bakerResource.spec.copy(config = Some("test-config")))
     for {
-      _ <- mockUpdate(ConfigMap(baker.name + "-manifest"))
-      _ <- mockUpdate(Deployment(baker.name))
+      _ <- mockUpdate(ConfigMap("test-recipe-manifest"))
+      _ <- mockUpdate(Deployment("test-recipe"))
       _ <- mockPatchingOfConfigMapWatchLabel("test-config")
       _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.MODIFIED, baker))
       _ <- eventually("config relationship cache contains the deployment and config") {
         for {
-          _ <- verifyUpdate[ConfigMap](_.name == baker.name + "-manifest")
-          _ <- verifyUpdate[Deployment](_.name == baker.name)
+          _ <- verifyUpdate[ConfigMap](_.name == "test-recipe-manifest")
+          _ <- verifyUpdate[Deployment](_.name == "test-recipe")
           _ <- verifyPatchingOfConfigMapWatchLabel("test-config")
-          _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set(baker.name)))
+          _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set("test-recipe")))
         } yield ()
       }
     } yield succeed
   }
 
-  test("delete a baker and deletes deployment to the config relationship cache") { context =>
+  test("deletes a baker") { context =>
     implicit val k8sMock: KubernetesClient = context.k8s
-    val baker: BakerResource = BakeryControllerSpec.bakerResource.copy(spec =
-      BakeryControllerSpec.bakerResource.spec.copy(config = Some("test-config")))
+    val baker: BakerResource = BakeryControllerFixtures.bakerResource.copy()
     for {
-      _ <- context.configControllerCache.addRelationNoKubeOp(baker.name + "-manifest", baker.name)
-      _ <- mockPatchingOfRemovingConfigMapWatchLabel(baker.name + "-manifest")
-      _ <- mockDelete[ConfigMap](baker.name + "-manifest")
-      _ <- mockDelete[Service](baker.name)
-      _ <- context.configControllerCache.addRelationNoKubeOp("test-config", baker.name)
+      _ <- context.configControllerCache.addRelationNoKubeOp("test-recipe-manifest", "test-recipe")
+      _ <- mockPatchingOfRemovingConfigMapWatchLabel("test-recipe-manifest")
+      _ <- mockDelete[ConfigMap]("test-recipe-manifest")
+      _ <- mockDelete[Service]("test-recipe")
+      _ <- context.configControllerCache.addRelationNoKubeOp("test-config", "test-recipe")
       _ <- mockPatchingOfRemovingConfigMapWatchLabel("test-config")
-      _ <- mockDelete[Deployment](baker.name)
-      _ <- mockDeleteAll[ReplicaSetList, ReplicaSet](ReplicaSet.rsListDef, "bakery-baker-name", baker.name)
-      _ <- mockDeleteAll[PodList, Pod](Pod.poListDef, "bakery-baker-name", baker.name)
+      _ <- mockDelete[Deployment]("test-recipe")
+      _ <- mockDeleteAll[ReplicaSetList, ReplicaSet](ReplicaSet.rsListDef, "bakery-baker-name", "test-recipe")
+      _ <- mockDeleteAll[PodList, Pod](Pod.poListDef, "bakery-baker-name", "test-recipe")
 
-      _ <- context.configControllerCache.addRelationNoKubeOp(baker.name + "-manifest", baker.name)
-      _ <- context.configControllerCache.addRelationNoKubeOp("test-config", baker.name)
+      _ <- context.configControllerCache.addRelationNoKubeOp("test-recipe-manifest", "test-recipe")
+      _ <- context.configControllerCache.addRelationNoKubeOp("test-config", "test-recipe")
       _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.DELETED, baker))
       _ <- eventually("config relationship cache contains the deployment and config") {
         for {
-          _ <- verifyPatchingOfRemovingConfigMapWatchLabel(baker.name + "-manifest")
-          _ <- verifyDelete[ConfigMap](baker.name + "-manifest")
-          _ <- verifyDelete[Service](baker.name)
+          _ <- verifyPatchingOfRemovingConfigMapWatchLabel("test-recipe-manifest")
+          _ <- verifyDelete[ConfigMap]("test-recipe-manifest")
+          _ <- verifyDelete[Service]("test-recipe")
           _ <- verifyPatchingOfRemovingConfigMapWatchLabel("test-config")
-          _ <- verifyDelete[Deployment](baker.name)
-          _ <- verifyDeleteAll[ReplicaSetList](ReplicaSet.rsListDef, "bakery-baker-name", baker.name)
-          _ <- verifyDeleteAll[PodList](Pod.poListDef, "bakery-baker-name", baker.name)
+          _ <- verifyDelete[Deployment]("test-recipe")
+          _ <- verifyDeleteAll[ReplicaSetList](ReplicaSet.rsListDef, "bakery-baker-name", "test-recipe")
+          _ <- verifyDeleteAll[PodList](Pod.poListDef, "bakery-baker-name", "test-recipe")
           _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set.empty))
         } yield ()
       }
     } yield succeed
   }
 
+  test("creates a baker (ConfigMap)") { context =>
+    val resource: ConfigMap = BakeryControllerFixtures.bakerConfigMapResource.copy()
+    implicit val k8sMock: KubernetesClient = context.k8s
+    for {
+      _ <- mockCreate(ConfigMap("test-recipe-manifest"))
+      _ <- mockCreate(Deployment("test-recipe"))
+      _ <- mockPatchingOfConfigMapWatchLabel("test-recipe-manifest")
+      _ <- mockPatchingOfConfigMapWatchLabel("test-config")
+      _ <- mockCreate(Service("test-recipe"))
+      _ <- context.k8sBakerControllerEventStream_ConfigMap.fire(WatchEvent(EventType.ADDED, resource))
+      _ <- eventually("config relationship cache contains the deployment and config") {
+        for {
+          _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set("test-recipe")))
+          _ <- verifyCreate[ConfigMap](_.name == "test-recipe-manifest")
+          _ <- verifyCreate[Deployment](_.name == "test-recipe")
+          _ <- verifyPatchingOfConfigMapWatchLabel("test-recipe-manifest")
+          _ <- verifyPatchingOfConfigMapWatchLabel("test-config")
+          _ <- verifyCreate[Service](_.name == "test-recipe")
+        } yield ()
+      }
+    } yield succeed
+  }
+
+  test("creates a baker with sidecar (ConfigMap)") { context =>
+    val resource: ConfigMap = BakeryControllerFixtures.bakerConfigMapResourceSidecar.copy()
+    implicit val k8sMock: KubernetesClient = context.k8s
+    for {
+      _ <- mockCreate(ConfigMap("test-recipe-manifest"))
+      _ <- mockCreate(Deployment("test-recipe"))
+      _ <- mockPatchingOfConfigMapWatchLabel("test-recipe-manifest")
+      _ <- mockPatchingOfConfigMapWatchLabel("test-config")
+      _ <- mockCreate(Service("test-recipe"))
+      _ <- context.k8sBakerControllerEventStream_ConfigMap.fire(WatchEvent(EventType.ADDED, resource))
+      _ <- eventually("config relationship cache contains the deployment and config") {
+        for {
+          _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set("test-recipe")))
+          _ <- verifyCreate[ConfigMap](_.name == "test-recipe-manifest")
+          _ <- verifyCreate[Deployment](_.name == "test-recipe")
+          _ <- verifyPatchingOfConfigMapWatchLabel("test-recipe-manifest")
+          _ <- verifyPatchingOfConfigMapWatchLabel("test-config")
+          _ <- verifyCreate[Service](_.name == "test-recipe")
+        } yield ()
+      }
+    } yield succeed
+  }
+
+  test("updates a baker (ConfigMap)") { context =>
+    val resource: ConfigMap = BakeryControllerFixtures.bakerConfigMapResource.copy()
+    implicit val k8sMock: KubernetesClient = context.k8s
+    for {
+      _ <- mockUpdate(ConfigMap("test-recipe-manifest"))
+      _ <- mockUpdate(Deployment("test-recipe"))
+      _ <- mockPatchingOfConfigMapWatchLabel("test-config")
+      _ <- context.k8sBakerControllerEventStream_ConfigMap.fire(WatchEvent(EventType.MODIFIED, resource))
+      _ <- eventually("config relationship cache contains the deployment and config") {
+        for {
+          _ <- verifyUpdate[ConfigMap](_.name == "test-recipe-manifest")
+          _ <- verifyUpdate[Deployment](_.name == "test-recipe")
+          _ <- verifyPatchingOfConfigMapWatchLabel("test-config")
+          _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set("test-recipe")))
+        } yield ()
+      }
+    } yield succeed
+  }
+
+  test("deletes a baker (ConfigMap)") { context =>
+    val resource: ConfigMap = BakeryControllerFixtures.bakerConfigMapResource.copy()
+    implicit val k8sMock: KubernetesClient = context.k8s
+    for {
+      _ <- context.configControllerCache.addRelationNoKubeOp("test-recipe-manifest", "test-recipe")
+      _ <- mockPatchingOfRemovingConfigMapWatchLabel("test-recipe-manifest")
+      _ <- mockDelete[ConfigMap]("test-recipe-manifest")
+      _ <- mockDelete[Service]("test-recipe")
+      _ <- context.configControllerCache.addRelationNoKubeOp("test-config", "test-recipe")
+      _ <- mockPatchingOfRemovingConfigMapWatchLabel("test-config")
+      _ <- mockDelete[Deployment]("test-recipe")
+      _ <- mockDeleteAll[ReplicaSetList, ReplicaSet](ReplicaSet.rsListDef, "bakery-baker-name", "test-recipe")
+      _ <- mockDeleteAll[PodList, Pod](Pod.poListDef, "bakery-baker-name", "test-recipe")
+
+      _ <- context.configControllerCache.addRelationNoKubeOp("test-recipe-manifest", "test-recipe")
+      _ <- context.configControllerCache.addRelationNoKubeOp("test-config", "test-recipe")
+      _ <- context.k8sBakerControllerEventStream_ConfigMap.fire(WatchEvent(EventType.DELETED, resource))
+      _ <- eventually("config relationship cache contains the deployment and config") {
+        for {
+          _ <- verifyPatchingOfRemovingConfigMapWatchLabel("test-recipe-manifest")
+          _ <- verifyDelete[ConfigMap]("test-recipe-manifest")
+          _ <- verifyDelete[Service]("test-recipe")
+          _ <- verifyPatchingOfRemovingConfigMapWatchLabel("test-config")
+          _ <- verifyDelete[Deployment]("test-recipe")
+          _ <- verifyDeleteAll[ReplicaSetList](ReplicaSet.rsListDef, "bakery-baker-name", "test-recipe")
+          _ <- verifyDeleteAll[PodList](Pod.poListDef, "bakery-baker-name", "test-recipe")
+          _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set.empty))
+        } yield ()
+      }
+    } yield succeed
+  }
+
+
   case class Context(
     k8s: KubernetesClient,
     k8sBakerControllerEventStream: K8sEventStream[BakerResource],
+    k8sBakerControllerEventStream_ConfigMap: K8sEventStream[ConfigMap],
     configControllerCache: ForceRollingUpdateOnConfigMapUpdate
   )
 
@@ -122,10 +218,13 @@ class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
         implicit val k8s: KubernetesClient = mock[KubernetesClient]
         for {
           eventStream <- K8sEventStream.resource[BakerResource]
+          eventStream_ConfigMap <- K8sEventStream.resource[ConfigMap]
           configControllerCache <- Resource.liftF(ForceRollingUpdateOnConfigMapUpdate.build)
-          _ = doAnswer(eventStream.source).when(k8s).watchAllContinuously(*, *)(*, *, *)
+          _ = doAnswer(eventStream.source).when(k8s).watchAllContinuously(*, *)(*, same(BakerResource.resourceDefinitionRecipeResource), *)
+          _ = doAnswer(eventStream_ConfigMap.source).when(k8s).watchWithOptions(*, *)(*, same(ConfigMap.configMapDef), *)
           _ <- BakerController.run(configControllerCache)
-        } yield Context(k8s, eventStream, configControllerCache)
+          _ <- BakerController.runFromConfigMaps(configControllerCache)
+        } yield Context(k8s, eventStream, eventStream_ConfigMap, configControllerCache)
       }
     } yield context
 

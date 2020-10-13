@@ -4,7 +4,7 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
-import com.ing.bakery.clustercontroller.controllers.{ForceRollingUpdateOnConfigMapUpdate, InteractionController, InteractionResource}
+import com.ing.bakery.clustercontroller.controllers.{BakerResource, ForceRollingUpdateOnConfigMapUpdate, InteractionController, InteractionResource}
 import com.ing.bakery.helpers.K8sEventStream
 import com.ing.bakery.mocks.RemoteInteraction
 import com.ing.bakery.testing.BakeryFunSpec
@@ -18,16 +18,15 @@ import skuber.{ConfigMap, Pod, PodList, Service}
 
 class InteractionControllerSpec extends BakeryFunSpec with KubernetesMockito {
 
-  test("creates a interaction and adds deployment to the config relationship cache") { context =>
+  test("creates a interaction") { context =>
     implicit val k8sMock: KubernetesClient = context.k8s
-    val interaction: InteractionResource = BakeryControllerSpec.interactionResource.copy(spec =
-      BakeryControllerSpec.interactionResource.spec.copy(configMapMounts = Some(List("test-config"))))
+    val interaction: InteractionResource = BakeryControllerFixtures.interactionResource.copy()
     val mockedServicePort = List(Service.Port(name = "http-api", port = context.mockServerPort))
     for {
       _ <- mockCreate(Deployment(interaction.name))
       _ <- mockCreate(Service(interaction.name).copy(spec =
         Some(Service.Spec(ports = mockedServicePort))))
-      _ <- context.remoteInteraction.publishesItsInterface(BakeryControllerSpec.interaction)
+      _ <- context.remoteInteraction.publishesItsInterface(BakeryControllerFixtures.interaction)
       _ <- mockPatchingOfConfigMapWatchLabel("test-config")
       _ <- mockCreate(ConfigMap(interaction.name + "-manifest"))
       _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.ADDED, interaction))
@@ -38,16 +37,15 @@ class InteractionControllerSpec extends BakeryFunSpec with KubernetesMockito {
           _ <- verifyCreate[ConfigMap](_.name == interaction.name + "-manifest")
           _ <- verifyPatchingOfConfigMapWatchLabel("test-config")
           _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set(interaction.name)))
-          _ <- context.remoteInteraction.interfaceWasQueried(BakeryControllerSpec.interaction)
+          _ <- context.remoteInteraction.interfaceWasQueried(BakeryControllerFixtures.interaction)
         } yield ()
       }
     } yield succeed
   }
 
-  test("updates a interaction and adds deployment to the config relationship cache") { context =>
+  test("updates a interaction") { context =>
     implicit val k8sMock: KubernetesClient = context.k8s
-    val interaction: InteractionResource = BakeryControllerSpec.interactionResource.copy(spec =
-      BakeryControllerSpec.interactionResource.spec.copy(configMapMounts = Some(List("test-config"))))
+    val interaction: InteractionResource = BakeryControllerFixtures.interactionResource.copy()
     for {
       _ <- mockUpdate(Deployment(interaction.name))
       _ <- mockPatchingOfConfigMapWatchLabel("test-config")
@@ -62,10 +60,9 @@ class InteractionControllerSpec extends BakeryFunSpec with KubernetesMockito {
     } yield succeed
   }
 
-  test("delete a interaction and deletes deployment to the config relationship cache") { context =>
+  test("delete a interaction") { context =>
     implicit val k8sMock: KubernetesClient = context.k8s
-    val interaction: InteractionResource = BakeryControllerSpec.interactionResource.copy(spec =
-      BakeryControllerSpec.interactionResource.spec.copy(configMapMounts = Some(List("test-config"))))
+    val interaction: InteractionResource = BakeryControllerFixtures.interactionResource.copy()
     for {
       _ <- mockDelete[ConfigMap](interaction.name + "-manifest")
       _ <- mockDelete[Service](interaction.name)
@@ -89,9 +86,78 @@ class InteractionControllerSpec extends BakeryFunSpec with KubernetesMockito {
     } yield succeed
   }
 
+  test("creates a interaction (ConfigMap)") { context =>
+    implicit val k8sMock: KubernetesClient = context.k8s
+    val interaction: ConfigMap = BakeryControllerFixtures.interactionConfigMapResource.copy()
+    val mockedServicePort = List(Service.Port(name = "http-api", port = context.mockServerPort))
+    for {
+      _ <- mockCreate(Deployment(interaction.name))
+      _ <- mockCreate(Service(interaction.name).copy(spec =
+        Some(Service.Spec(ports = mockedServicePort))))
+      _ <- context.remoteInteraction.publishesItsInterface(BakeryControllerFixtures.interaction)
+      _ <- mockPatchingOfConfigMapWatchLabel("test-config")
+      _ <- mockCreate(ConfigMap(interaction.name + "-manifest"))
+      _ <- context.k8sBakerControllerEventStream_ConfigMap.fire(WatchEvent(EventType.ADDED, interaction))
+      _ <- eventually("config relationship cache contains the deployment and config") {
+        for {
+          _ <- verifyCreate[Deployment](_.name == interaction.name)
+          _ <- verifyCreate[Service](_.name == interaction.name)
+          _ <- verifyCreate[ConfigMap](_.name == interaction.name + "-manifest")
+          _ <- verifyPatchingOfConfigMapWatchLabel("test-config")
+          _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set(interaction.name)))
+          _ <- context.remoteInteraction.interfaceWasQueried(BakeryControllerFixtures.interaction)
+        } yield ()
+      }
+    } yield succeed
+  }
+
+  test("updates a interaction (ConfigMap)") { context =>
+    implicit val k8sMock: KubernetesClient = context.k8s
+    val interaction: ConfigMap = BakeryControllerFixtures.interactionConfigMapResource.copy()
+    for {
+      _ <- mockUpdate(Deployment(interaction.name))
+      _ <- mockPatchingOfConfigMapWatchLabel("test-config")
+      _ <- context.k8sBakerControllerEventStream_ConfigMap.fire(WatchEvent(EventType.MODIFIED, interaction))
+      _ <- eventually("config relationship cache contains the deployment and config") {
+        for {
+          _ <- verifyUpdate[Deployment](_.name == interaction.name)
+          _ <- verifyPatchingOfConfigMapWatchLabel("test-config")
+          _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set(interaction.name)))
+        } yield ()
+      }
+    } yield succeed
+  }
+
+  test("delete a interaction (ConfigMap)") { context =>
+    implicit val k8sMock: KubernetesClient = context.k8s
+    val interaction: ConfigMap = BakeryControllerFixtures.interactionConfigMapResource.copy()
+    for {
+      _ <- mockDelete[ConfigMap](interaction.name + "-manifest")
+      _ <- mockDelete[Service](interaction.name)
+      _ <- context.configControllerCache.addRelationNoKubeOp("test-config", interaction.name)
+      _ <- mockPatchingOfRemovingConfigMapWatchLabel("test-config")
+      _ <- mockDelete[Deployment](interaction.name)
+      _ <- mockDeleteAll[ReplicaSetList, ReplicaSet](ReplicaSet.rsListDef, "bakery-interaction-name", interaction.name)
+      _ <- mockDeleteAll[PodList, Pod](Pod.poListDef, "bakery-interaction-name", interaction.name)
+      _ <- context.k8sBakerControllerEventStream_ConfigMap.fire(WatchEvent(EventType.DELETED, interaction))
+      _ <- eventually("config relationship cache contains the deployment and config") {
+        for {
+          _ <- verifyDelete[ConfigMap](interaction.name + "-manifest")
+          _ <- verifyDelete[Service](interaction.name)
+          _ <- verifyPatchingOfRemovingConfigMapWatchLabel("test-config")
+          _ <- verifyDelete[Deployment](interaction.name)
+          _ <- verifyDeleteAll[ReplicaSetList](ReplicaSet.rsListDef, "bakery-interaction-name", interaction.name)
+          _ <- verifyDeleteAll[PodList](Pod.poListDef, "bakery-interaction-name", interaction.name)
+          _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set.empty))
+        } yield ()
+      }
+    } yield succeed
+  }
+
   case class Context(
                       k8s: KubernetesClient,
                       k8sBakerControllerEventStream: K8sEventStream[InteractionResource],
+                      k8sBakerControllerEventStream_ConfigMap: K8sEventStream[ConfigMap],
                       configControllerCache: ForceRollingUpdateOnConfigMapUpdate,
                       remoteInteraction: RemoteInteraction,
                       mockServerPort: Int
@@ -121,10 +187,13 @@ class InteractionControllerSpec extends BakeryFunSpec with KubernetesMockito {
         implicit val k8s: KubernetesClient = mock[KubernetesClient]
         for {
           eventStream <- K8sEventStream.resource[InteractionResource]
+          eventStream_ConfigMap <- K8sEventStream.resource[ConfigMap]
           configControllerCache <- Resource.liftF(ForceRollingUpdateOnConfigMapUpdate.build)
-          _ = doAnswer(eventStream.source).when(k8s).watchAllContinuously(*, *)(*, *, *)
+          _ = doAnswer(eventStream.source).when(k8s).watchAllContinuously(*, *)(*, same(InteractionResource.resourceDefinitionInteractionResource), *)
+          _ = doAnswer(eventStream_ConfigMap.source).when(k8s).watchWithOptions(*, *)(*, same(ConfigMap.configMapDef), *)
           _ <- InteractionController.run(configControllerCache, executionContext)
-        } yield Context(k8s, eventStream, configControllerCache, new RemoteInteraction(mockServer), mockServer.getLocalPort)
+          _ <- InteractionController.runFromConfigMaps(configControllerCache, executionContext)
+        } yield Context(k8s, eventStream, eventStream_ConfigMap, configControllerCache, new RemoteInteraction(mockServer), mockServer.getLocalPort)
       }
     } yield context
 
