@@ -8,63 +8,91 @@ import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResou
 import com.ing.bakery.helpers.K8sEventStream
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.{ConfigMap => ScalaTestConfigMap}
 import skuber.api.client.{EventType, KubernetesClient, WatchEvent}
 import skuber.api.patch.MetadataPatch
 import skuber.apps.v1.{Deployment, ReplicaSet, ReplicaSetList}
+import skuber.json.format.{configMapFmt, serviceFmt}
 import skuber.{ConfigMap, Service}
 
 import scala.concurrent.Future
 
-class BakerControllerSpec extends BakeryFunSpec with Matchers with MockitoSugar with ArgumentMatchersSugar {
+class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
 
   test("creates a baker and adds deployment to the config relationship cache") { context =>
+    implicit val k8sMock: KubernetesClient = context.k8s
     val baker: BakerResource = BakeryControllerSpec.bakerResource.copy(spec =
       BakeryControllerSpec.bakerResource.spec.copy(config = Some("test-config")))
-    doReturn(Future.successful(ConfigMap(baker.name + "-manifest"))).when(context.k8s).create[ConfigMap](*)(*, *, *)
-    doReturn(Future.successful(Deployment(baker.name))).when(context.k8s).create[Deployment](*)(*, *, *)
-    doReturn(Future.successful(Service(baker.name))).when(context.k8s).create[Service](*)(*, *, *)
-    doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(
-      name = same("test-config"),
-      patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.exists(_.contains(ForceRollingUpdateOnConfigMapUpdate.COMPONENT_CONFIG_WATCH_LABEL))),
-      namespace = same(None)
-    )(*, *, *, *)
     for {
+      _ <- mockCreate(ConfigMap(baker.name + "-manifest"))
+      _ <- mockCreate(Deployment(baker.name))
+      _ <- mockPatchingOfConfigMapWatchLabel(baker.name + "-manifest")
+      _ <- mockPatchingOfConfigMapWatchLabel("test-config")
+      _ <- mockCreate(Service(baker.name))
       _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.ADDED, baker))
       _ <- eventually("config relationship cache contains the deployment and config") {
-        context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set(baker.name)))
+        for {
+          _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set(baker.name)))
+          _ <- verifyCreate[ConfigMap](_.name == baker.name + "-manifest")
+          _ <- verifyCreate[Deployment](_.name == baker.name)
+          _ <- verifyPatchingOfConfigMapWatchLabel(baker.name + "-manifest")
+          _ <- verifyPatchingOfConfigMapWatchLabel("test-config")
+          _ <- verifyCreate[Service](_.name == baker.name)
+        } yield ()
       }
     } yield succeed
   }
 
   test("updates a baker and adds deployment to the config relationship cache") { context =>
+    implicit val k8sMock: KubernetesClient = context.k8s
     val baker: BakerResource = BakeryControllerSpec.bakerResource.copy(spec =
       BakeryControllerSpec.bakerResource.spec.copy(config = Some("test-config")))
-    doReturn(Future.successful(ConfigMap(baker.name + "-manifest"))).when(context.k8s).update[ConfigMap](*)(*, *, *)
-    doReturn(Future.successful(Deployment(baker.name))).when(context.k8s).update[Deployment](*)(*, *, *)
-    doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(
-      name = same("test-config"),
-      patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.exists(_.contains(ForceRollingUpdateOnConfigMapUpdate.COMPONENT_CONFIG_WATCH_LABEL))),
-      namespace = same(None)
-    )(*, *, *, *)
     for {
+      _ <- mockUpdate(ConfigMap(baker.name + "-manifest"))
+      _ <- mockUpdate(Deployment(baker.name))
+      _ <- mockPatchingOfConfigMapWatchLabel("test-config")
       _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.MODIFIED, baker))
       _ <- eventually("config relationship cache contains the deployment and config") {
-        context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set(baker.name)))
+        for {
+          _ <- verifyUpdate[ConfigMap](_.name == baker.name + "-manifest")
+          _ <- verifyUpdate[Deployment](_.name == baker.name)
+          _ <- verifyPatchingOfConfigMapWatchLabel("test-config")
+          _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set(baker.name)))
+        } yield ()
       }
     } yield succeed
   }
 
   test("delete a baker and deletes deployment to the config relationship cache") { context =>
+    implicit val k8sMock: KubernetesClient = context.k8s
     val baker: BakerResource = BakeryControllerSpec.bakerResource.copy(spec =
       BakeryControllerSpec.bakerResource.spec.copy(config = Some("test-config")))
+
     doReturn(Future.unit).when(context.k8s).delete[ConfigMap](*, *)(*, *)
     doReturn(Future.unit).when(context.k8s).delete[Deployment](*, *)(*, *)
     doReturn(Future.unit).when(context.k8s).delete[Service](*, *)(*, *)
     doReturn(Future.successful(skuber.listResourceFromItems[ReplicaSet](List(ReplicaSet(baker.name))))).when(context.k8s).deleteAllSelected[ReplicaSetList](*)(*, *, *)
+    doReturn(Future.successful(ConfigMap("RecipeOne-manifest"))).when(context.k8s).patch(
+      same("RecipeOne-manifest"),
+      argThat[MetadataPatch]((patch: MetadataPatch) =>
+        patch.labels.contains(Map(
+          "$patch" -> "delete",
+          ForceRollingUpdateOnConfigMapUpdate.COMPONENT_CONFIG_WATCH_LABEL -> ""
+        ))),
+      same(None)
+    )(*, *, *, *)
+    doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(
+      same("test-config"),
+      argThat[MetadataPatch]((patch: MetadataPatch) =>
+        patch.labels.contains(Map(
+          "$patch" -> "delete",
+          ForceRollingUpdateOnConfigMapUpdate.COMPONENT_CONFIG_WATCH_LABEL -> ""
+        ))),
+      same(None)
+    )(*, *, *, *)
     for {
+      _ <- mockPatchingOfRemovingConfigMapWatchLabel(baker.name + "-manifest")
+      _ <- mockPatchingOfRemovingConfigMapWatchLabel("test-config")
       _ <- context.configControllerCache.addRelationNoKubeOp(baker.name + "-manifest", baker.name)
       _ <- context.configControllerCache.addRelationNoKubeOp("test-config", baker.name)
       _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.DELETED, baker))

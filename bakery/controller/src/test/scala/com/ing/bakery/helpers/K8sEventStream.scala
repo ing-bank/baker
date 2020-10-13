@@ -28,10 +28,14 @@ class K8sEventStream[O <: ObjectResource](queue: SourceQueueWithComplete[WatchEv
 
   def fire(event: WatchEvent[O]): IO[Unit] = {
     IO.fromFuture(IO(queue.offer(event))).flatMap {
-      case QueueOfferResult.Enqueued => IO.unit
-      case QueueOfferResult.Dropped => IO.raiseError(new IllegalStateException("K8sEventStream dropped an offered event, try testing one event at a time."))
-      case QueueOfferResult.Failure(e) => IO.raiseError(new IllegalStateException("Failure on K8sEventStream event offer...", e))
-      case QueueOfferResult.QueueClosed => IO.raiseError(new IllegalStateException("K8sEventStream already closed but an event was still offered."))
+      case QueueOfferResult.Enqueued =>
+        IO.unit
+      case QueueOfferResult.Dropped =>
+        IO.raiseError(new IllegalStateException("K8sEventStream dropped an offered event, try testing one event at a time."))
+      case QueueOfferResult.Failure(e) =>
+        IO.raiseError(new IllegalStateException("Failure on K8sEventStream event offer...", e))
+      case QueueOfferResult.QueueClosed =>
+        IO.raiseError(new IllegalStateException("K8sEventStream already closed but an event was still offered."))
     }
   }
 }

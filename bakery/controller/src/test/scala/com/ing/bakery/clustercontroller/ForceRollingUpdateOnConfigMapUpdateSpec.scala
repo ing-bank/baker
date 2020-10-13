@@ -5,66 +5,45 @@ import java.util.UUID
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import com.ing.bakery.clustercontroller.controllers.ForceRollingUpdateOnConfigMapUpdate
-import com.ing.bakery.clustercontroller.controllers.ForceRollingUpdateOnConfigMapUpdate._
+import com.ing.bakery.clustercontroller.controllers.ForceRollingUpdateOnConfigMapUpdate.COMPONENT_CONFIG_WATCH_LABEL
 import com.ing.bakery.helpers.K8sEventStream
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.{ConfigMap => ScalaTestConfigMap}
-import skuber.{ConfigMap, LabelSelector, ListOptions}
 import skuber.api.client.{EventType, KubernetesClient, WatchEvent}
-import skuber.api.patch.MetadataPatch
-import skuber.apps.Deployment
+import skuber.{ConfigMap, ListOptions}
 
-import scala.concurrent.Future
-
-class ForceRollingUpdateOnConfigMapUpdateSpec extends BakeryFunSpec with MockitoSugar with ArgumentMatchersSugar {
+class ForceRollingUpdateOnConfigMapUpdateSpec extends BakeryFunSpec with KubernetesMockito {
 
   test("controller forces update on deployments that are within the cache") { context =>
+    implicit val k8s: KubernetesClient = context.k8s
     for {
       _ <- context.configWatch.addRelationNoKubeOp("test-config", "test-deployment")
-      _ = doReturn(Future.successful(Deployment("test-deployment"))).when(context.k8s).patch(*, *, *)(*, *, *, *)
+      _ <- mockPatchingOfForceRollUpdateLabel("test-deployment")
       _ <- context.k8sComponentConfigControllerEventStream.fire(WatchEvent(EventType.MODIFIED, ConfigMap("test-config")))
-      _ <- eventually("patch was called on k8s client")(IO {
-        verify(context.k8s).patch(
-          name = same("test-deployment"),
-          patchData = argThat[DeploymentTemplateLabelsPatch]((patch: DeploymentTemplateLabelsPatch) => patch.labels.contains(COMPONENT_FORCE_UPDATE_LABEL)),
-          namespace = same(None))(*, *, *, *)
-      })
+      _ <- eventually("patch was called on k8s client")(verifyPatchingOfForceRollUpdateLabel("test-deployment"))
     } yield succeed
   }
 
   test("labels config maps when adding a relation between a config map and a deployment to the cache") { context =>
     implicit val k8s: KubernetesClient = context.k8s
     for {
-      _ <- IO(doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(*, *, *)(*, *, *, *))
+      _ <- mockPatchingOfConfigMapWatchLabel("test-config")
       _ <- context.configWatch.watchConfigOf("test-config", "test-deployment")
       cacheDeployments <- context.configWatch.get("test-config")
-      _ = assert(cacheDeployments.contains("test-deployment"))
-      _ <- IO {
-        verify(context.k8s).patch(
-          name = same("test-config"),
-          patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.contains(Map(componentConfigWatchLabel))),
-          namespace = same(None))(*, *, *, *)
-      }
-    } yield succeed
+      _ <- verifyPatchingOfConfigMapWatchLabel("test-config")
+    } yield assert(cacheDeployments.contains("test-deployment"))
   }
 
   test("un-labels config maps when removing all related deployments from the cache") { context =>
     implicit val k8s: KubernetesClient = context.k8s
     for {
-      _ <- IO(doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(*, *, *)(*, *, *, *))
+      _ <- mockPatchingOfRemovingConfigMapWatchLabel("test-config")
       _ <- context.configWatch.addRelationNoKubeOp("test-config", "test-deployment")
       _ <- context.configWatch.stopWatchingConfigFor("test-deployment")
       cacheDeployments <- context.configWatch.get("test-config")
-      _ = assert(cacheDeployments.isEmpty)
-      _ <- IO {
-        verify(context.k8s).patch(
-          name = same("test-config"),
-          patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.contains(Map("$patch" -> "delete", componentConfigWatchLabel))),
-          namespace = same(None))(*, *, *, *)
-      }
-    } yield succeed
+      _ <- verifyPatchingOfRemovingConfigMapWatchLabel("test-config")
+    } yield assert(cacheDeployments.isEmpty)
   }
 
   case class Context(
