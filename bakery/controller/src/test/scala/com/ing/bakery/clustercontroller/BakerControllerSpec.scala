@@ -10,12 +10,9 @@ import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{ConfigMap => ScalaTestConfigMap}
 import skuber.api.client.{EventType, KubernetesClient, WatchEvent}
-import skuber.api.patch.MetadataPatch
 import skuber.apps.v1.{Deployment, ReplicaSet, ReplicaSetList}
 import skuber.json.format.{configMapFmt, serviceFmt}
-import skuber.{ConfigMap, Service}
-
-import scala.concurrent.Future
+import skuber.{ConfigMap, Pod, PodList, Service}
 
 class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
 
@@ -67,37 +64,31 @@ class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
     implicit val k8sMock: KubernetesClient = context.k8s
     val baker: BakerResource = BakeryControllerSpec.bakerResource.copy(spec =
       BakeryControllerSpec.bakerResource.spec.copy(config = Some("test-config")))
-
-    doReturn(Future.unit).when(context.k8s).delete[ConfigMap](*, *)(*, *)
-    doReturn(Future.unit).when(context.k8s).delete[Deployment](*, *)(*, *)
-    doReturn(Future.unit).when(context.k8s).delete[Service](*, *)(*, *)
-    doReturn(Future.successful(skuber.listResourceFromItems[ReplicaSet](List(ReplicaSet(baker.name))))).when(context.k8s).deleteAllSelected[ReplicaSetList](*)(*, *, *)
-    doReturn(Future.successful(ConfigMap("RecipeOne-manifest"))).when(context.k8s).patch(
-      same("RecipeOne-manifest"),
-      argThat[MetadataPatch]((patch: MetadataPatch) =>
-        patch.labels.contains(Map(
-          "$patch" -> "delete",
-          ForceRollingUpdateOnConfigMapUpdate.COMPONENT_CONFIG_WATCH_LABEL -> ""
-        ))),
-      same(None)
-    )(*, *, *, *)
-    doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(
-      same("test-config"),
-      argThat[MetadataPatch]((patch: MetadataPatch) =>
-        patch.labels.contains(Map(
-          "$patch" -> "delete",
-          ForceRollingUpdateOnConfigMapUpdate.COMPONENT_CONFIG_WATCH_LABEL -> ""
-        ))),
-      same(None)
-    )(*, *, *, *)
     for {
+      _ <- context.configControllerCache.addRelationNoKubeOp(baker.name + "-manifest", baker.name)
       _ <- mockPatchingOfRemovingConfigMapWatchLabel(baker.name + "-manifest")
+      _ <- mockDelete[ConfigMap](baker.name + "-manifest")
+      _ <- mockDelete[Service](baker.name)
+      _ <- context.configControllerCache.addRelationNoKubeOp("test-config", baker.name)
       _ <- mockPatchingOfRemovingConfigMapWatchLabel("test-config")
+      _ <- mockDelete[Deployment](baker.name)
+      _ <- mockDeleteAll[ReplicaSetList, ReplicaSet](ReplicaSet.rsListDef, "bakery-baker-name", baker.name)
+      _ <- mockDeleteAll[PodList, Pod](Pod.poListDef, "bakery-baker-name", baker.name)
+
       _ <- context.configControllerCache.addRelationNoKubeOp(baker.name + "-manifest", baker.name)
       _ <- context.configControllerCache.addRelationNoKubeOp("test-config", baker.name)
       _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.DELETED, baker))
       _ <- eventually("config relationship cache contains the deployment and config") {
-        context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set.empty))
+        for {
+          _ <- verifyPatchingOfRemovingConfigMapWatchLabel(baker.name + "-manifest")
+          _ <- verifyDelete[ConfigMap](baker.name + "-manifest")
+          _ <- verifyDelete[Service](baker.name)
+          _ <- verifyPatchingOfRemovingConfigMapWatchLabel("test-config")
+          _ <- verifyDelete[Deployment](baker.name)
+          _ <- verifyDeleteAll[ReplicaSetList](ReplicaSet.rsListDef, "bakery-baker-name", baker.name)
+          _ <- verifyDeleteAll[PodList](Pod.poListDef, "bakery-baker-name", baker.name)
+          _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set.empty))
+        } yield ()
       }
     } yield succeed
   }

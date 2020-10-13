@@ -80,11 +80,8 @@ final class BakerController(
     for {
       manifestAlreadyExisted <- createManifest
       deploymentAlreadyExisted <- createDeployment
-      _ = println(Console.YELLOW + "1" + Console.RESET)
       _ <- watchForManifestChangesToTriggerRollUpdate
-      _ = println(Console.YELLOW + "2" + Console.RESET)
       _ <- watchForConfigChangesToTriggerRollUpdate
-      _ = println(Console.YELLOW + "3" + Console.RESET)
       serviceAlreadyExisted <- createService
       _ <- logOutcome(manifestAlreadyExisted, deploymentAlreadyExisted, serviceAlreadyExisted)
     } yield ()

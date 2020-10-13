@@ -9,107 +9,85 @@ import com.ing.bakery.helpers.K8sEventStream
 import com.ing.bakery.mocks.RemoteInteraction
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.mockserver.integration.ClientAndServer
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.{ConfigMap => ScalaTestConfigMap}
 import skuber.api.client.{EventType, KubernetesClient, WatchEvent}
-import skuber.api.patch.MetadataPatch
-import skuber.apps.v1.Deployment
-import skuber.{ConfigMap, Service}
+import skuber.apps.v1.{Deployment, ReplicaSet, ReplicaSetList}
+import skuber.json.format._
+import skuber.{ConfigMap, Pod, PodList, Service}
 
-import scala.concurrent.Future
-
-class InteractionControllerSpec extends BakeryFunSpec with Matchers with MockitoSugar with ArgumentMatchersSugar {
+class InteractionControllerSpec extends BakeryFunSpec with KubernetesMockito {
 
   test("creates a interaction and adds deployment to the config relationship cache") { context =>
+    implicit val k8sMock: KubernetesClient = context.k8s
     val interaction: InteractionResource = BakeryControllerSpec.interactionResource.copy(spec =
       BakeryControllerSpec.interactionResource.spec.copy(configMapMounts = Some(List("test-config"))))
     val mockedServicePort = List(Service.Port(name = "http-api", port = context.mockServerPort))
-    doReturn(Future.successful(Deployment(interaction.name))).when(context.k8s).create[Deployment](
-      argThat((deployment: Deployment) => deployment.name == interaction.name))(*, *, *)
-    doReturn(Future.successful(Service(interaction.name).copy(spec =
-      Some(Service.Spec(ports = mockedServicePort))))).when(context.k8s).create[Service](
-        argThat((service: Service) => service.name == interaction.name))(*, *, *)
-    doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(
-      name = same("test-config"),
-      patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.exists(_.contains(ForceRollingUpdateOnConfigMapUpdate.COMPONENT_CONFIG_WATCH_LABEL))),
-      namespace = same(None)
-    )(*, *, *, *)
-    doReturn(Future.successful(ConfigMap(interaction.name + "-manifest"))).when(context.k8s).create[ConfigMap](
-      argThat[ConfigMap]((map: ConfigMap) => map.name == interaction.name + "-manifest"))(*, *, *)
     for {
+      _ <- mockCreate(Deployment(interaction.name))
+      _ <- mockCreate(Service(interaction.name).copy(spec =
+        Some(Service.Spec(ports = mockedServicePort))))
       _ <- context.remoteInteraction.publishesItsInterface(BakeryControllerSpec.interaction)
+      _ <- mockPatchingOfConfigMapWatchLabel("test-config")
+      _ <- mockCreate(ConfigMap(interaction.name + "-manifest"))
       _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.ADDED, interaction))
       _ <- eventually("config relationship cache contains the deployment and config") {
         for {
+          _ <- verifyCreate[Deployment](_.name == interaction.name)
+          _ <- verifyCreate[Service](_.name == interaction.name)
+          _ <- verifyCreate[ConfigMap](_.name == interaction.name + "-manifest")
+          _ <- verifyPatchingOfConfigMapWatchLabel("test-config")
           _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set(interaction.name)))
           _ <- context.remoteInteraction.interfaceWasQueried(BakeryControllerSpec.interaction)
-          _ = verify(context.k8s).create(argThat[ConfigMap]((map: ConfigMap) => map.name == interaction.name + "-manifest"))(*, *, *)
-          _ = verify(context.k8s).patch(
-            name = same("test-config"),
-            patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.exists(_.contains(ForceRollingUpdateOnConfigMapUpdate.COMPONENT_CONFIG_WATCH_LABEL))),
-            namespace = same(None))(*, *, *, *)
         } yield ()
       }
     } yield succeed
   }
 
   test("updates a interaction and adds deployment to the config relationship cache") { context =>
+    implicit val k8sMock: KubernetesClient = context.k8s
     val interaction: InteractionResource = BakeryControllerSpec.interactionResource.copy(spec =
       BakeryControllerSpec.interactionResource.spec.copy(configMapMounts = Some(List("test-config"))))
-    doReturn(Future.successful(Deployment(interaction.name))).when(context.k8s).update[Deployment](*)(*, *, *)
-    doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(
-      name = same("test-config"),
-      patchData = argThat[MetadataPatch]((patch: MetadataPatch) =>
-        patch.labels.contains(Map(
-          "$patch" -> "delete",
-          ForceRollingUpdateOnConfigMapUpdate.COMPONENT_CONFIG_WATCH_LABEL -> ""
-        ))),
-      namespace = same(None)
-    )(*, *, *, *)
-    doReturn(Future.successful(ConfigMap("test-config"))).when(context.k8s).patch(
-      name = same("test-config"),
-      patchData = argThat[MetadataPatch]((patch: MetadataPatch) => patch.labels.exists(_.contains(ForceRollingUpdateOnConfigMapUpdate.COMPONENT_CONFIG_WATCH_LABEL))),
-      namespace = same(None)
-    )(*, *, *, *)
     for {
+      _ <- mockUpdate(Deployment(interaction.name))
+      _ <- mockPatchingOfConfigMapWatchLabel("test-config")
       _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.MODIFIED, interaction))
       _ <- eventually("config relationship cache contains the deployment and config") {
         for {
+          _ <- verifyUpdate[Deployment](_.name == interaction.name)
+          _ <- verifyPatchingOfConfigMapWatchLabel("test-config")
           _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set(interaction.name)))
         } yield ()
       }
     } yield succeed
   }
 
-  /*
   test("delete a interaction and deletes deployment to the config relationship cache") { context =>
+    implicit val k8sMock: KubernetesClient = context.k8s
     val interaction: InteractionResource = BakeryControllerSpec.interactionResource.copy(spec =
       BakeryControllerSpec.interactionResource.spec.copy(configMapMounts = Some(List("test-config"))))
-    doReturn(Future.unit).when(context.k8s).delete[ConfigMap](*, *)(*, *)
-    doReturn(Future.unit).when(context.k8s).delete[Deployment](*, *)(*, *)
-    doReturn(Future.unit).when(context.k8s).delete[Service](*, *)(*, *)
-    doReturn(Future.successful(skuber.listResourceFromItems[ReplicaSet](List(ReplicaSet(interaction.name))))).when(context.k8s).deleteAllSelected[ReplicaSetList](*)(*, *, *)
-    doReturn(Future.successful(ConfigMap("RecipeOne-manifest"))).when(context.k8s).patch(
-      name = same("RecipeOne-manifest"),
-      patchData = argThat[MetadataPatch]((patch: MetadataPatch) =>
-        patch.labels.contains(Map(
-          "$patch" -> "delete",
-          ForceRollingUpdateOnConfigMapUpdate.COMPONENT_CONFIG_WATCH_LABEL -> ""
-        ))),
-      namespace = same(None)
-    )(*, *, *, *)
     for {
-      _ <- context.configControllerCache.addRelationNoKubeOp(interaction.name + "-manifest", interaction.name)
+      _ <- mockDelete[ConfigMap](interaction.name + "-manifest")
+      _ <- mockDelete[Service](interaction.name)
       _ <- context.configControllerCache.addRelationNoKubeOp("test-config", interaction.name)
+      _ <- mockPatchingOfRemovingConfigMapWatchLabel("test-config")
+      _ <- mockDelete[Deployment](interaction.name)
+      _ <- mockDeleteAll[ReplicaSetList, ReplicaSet](ReplicaSet.rsListDef, "bakery-interaction-name", interaction.name)
+      _ <- mockDeleteAll[PodList, Pod](Pod.poListDef, "bakery-interaction-name", interaction.name)
       _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.DELETED, interaction))
       _ <- eventually("config relationship cache contains the deployment and config") {
-        context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set.empty))
+        for {
+          _ <- verifyDelete[ConfigMap](interaction.name + "-manifest")
+          _ <- verifyDelete[Service](interaction.name)
+          _ <- verifyPatchingOfRemovingConfigMapWatchLabel("test-config")
+          _ <- verifyDelete[Deployment](interaction.name)
+          _ <- verifyDeleteAll[ReplicaSetList](ReplicaSet.rsListDef, "bakery-interaction-name", interaction.name)
+          _ <- verifyDeleteAll[PodList](Pod.poListDef, "bakery-interaction-name", interaction.name)
+          _ <- context.configControllerCache.get("test-config").map(deployments => assert(deployments == Set.empty))
+        } yield ()
       }
     } yield succeed
   }
-   */
 
   case class Context(
                       k8s: KubernetesClient,

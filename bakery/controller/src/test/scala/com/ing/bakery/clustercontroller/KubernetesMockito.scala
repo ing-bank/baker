@@ -1,14 +1,14 @@
 package com.ing.bakery.clustercontroller
 
 import cats.effect.IO
-import com.ing.bakery.clustercontroller.controllers.ForceRollingUpdateOnConfigMapUpdate
 import com.ing.bakery.clustercontroller.controllers.ForceRollingUpdateOnConfigMapUpdate.{COMPONENT_FORCE_UPDATE_LABEL, DeploymentTemplateLabelsPatch, componentConfigWatchLabel}
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import play.api.libs.json.Format
-import skuber.{ConfigMap, ObjectResource, ResourceDefinition}
+import skuber.LabelSelector.IsEqualRequirement
+import skuber.{ConfigMap, LabelSelector, ListResource, ObjectResource, ResourceDefinition}
 import skuber.api.client.KubernetesClient
 import skuber.api.patch.MetadataPatch
-import skuber.apps.v1.Deployment
+import skuber.apps.v1.{Deployment, ReplicaSetList}
 import skuber.json.format.{configMapFmt, metadataPatchWrite}
 
 import scala.concurrent.Future
@@ -29,6 +29,26 @@ trait KubernetesMockito extends MockitoSugar with ArgumentMatchersSugar {
 
   def verifyUpdate[O <: ObjectResource](f: O => Boolean)(implicit k8sMock: KubernetesClient, fmt: Format[O], rd: ResourceDefinition[O]): IO[Unit] = IO {
     verify(k8sMock).update[O](argThat[O]((o: O) => f(o)))(same(fmt), same(rd), *)
+  }
+
+  def mockDelete[O <: ObjectResource](name: String)(implicit k8sMock: KubernetesClient, rd: ResourceDefinition[O]): IO[Unit] = IO {
+    doReturn(Future.unit).when(k8sMock).delete[O](argThat((n: String) => n == name), *)(same(rd), *)
+  }
+
+  def verifyDelete[O <: ObjectResource](name: String)(implicit k8sMock: KubernetesClient, rd: ResourceDefinition[O]): IO[Unit] = IO {
+    verify(k8sMock).delete[O](argThat((n: String) => n == name), *)(same(rd), *)
+  }
+
+  def mockDeleteAll[L <: ListResource[_], K <: ObjectResource](rdList: ResourceDefinition[L], labelKey: String, labelValue: String)(implicit k8sMock: KubernetesClient, rd: ResourceDefinition[K]): IO[Unit] = IO {
+    doReturn(Future.successful(skuber.listResourceFromItems[K](List.empty))).when(k8sMock).deleteAllSelected[L](
+      argThat((selector: LabelSelector) => selector.requirements.contains(IsEqualRequirement(labelKey, labelValue)))
+    )(*, same(rdList), *)
+  }
+
+  def verifyDeleteAll[L <: ListResource[_]](rdList: ResourceDefinition[L], labelKey: String, labelValue: String)(implicit k8sMock: KubernetesClient): IO[Unit] = IO {
+    verify(k8sMock).deleteAllSelected[L](
+      argThat((selector: LabelSelector) => selector.requirements.contains(IsEqualRequirement(labelKey, labelValue)))
+    )(*, same(rdList), *)
   }
 
   def mockPatchingOfConfigMapWatchLabel(configMapName: String)(implicit k8sMock: KubernetesClient): IO[Unit] = IO {
