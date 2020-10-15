@@ -11,7 +11,6 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.{ConfigMap => ScalaTestConfigMap}
 import skuber.api.client.{EventType, KubernetesClient, WatchEvent}
 import skuber.apps.v1.{Deployment, ReplicaSet, ReplicaSetList}
-import skuber.json.format.{configMapFmt, serviceFmt}
 import skuber.{ConfigMap, Pod, PodList, Service}
 
 class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
@@ -25,6 +24,7 @@ class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
       _ <- mockPatchingOfConfigMapWatchLabel("test-recipe-manifest")
       _ <- mockPatchingOfConfigMapWatchLabel("test-config")
       _ <- mockCreate(Service("test-recipe"))
+      _ = validateMockitoUsage()
       _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.ADDED, resource))
       _ <- eventually("config relationship cache contains the deployment and config") {
         for {
@@ -46,6 +46,7 @@ class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
       _ <- mockUpdate(ConfigMap("test-recipe-manifest"))
       _ <- mockUpdate(Deployment("test-recipe"))
       _ <- mockPatchingOfConfigMapWatchLabel("test-config")
+      _ = validateMockitoUsage()
       _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.MODIFIED, baker))
       _ <- eventually("config relationship cache contains the deployment and config") {
         for {
@@ -74,6 +75,7 @@ class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
 
       _ <- context.configControllerCache.addRelationNoKubeOp("test-recipe-manifest", "test-recipe")
       _ <- context.configControllerCache.addRelationNoKubeOp("test-config", "test-recipe")
+      _ = validateMockitoUsage()
       _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.DELETED, baker))
       _ <- eventually("config relationship cache contains the deployment and config") {
         for {
@@ -99,6 +101,7 @@ class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
       _ <- mockPatchingOfConfigMapWatchLabel("test-recipe-manifest")
       _ <- mockPatchingOfConfigMapWatchLabel("test-config")
       _ <- mockCreate(Service("test-recipe"))
+      _ = validateMockitoUsage()
       _ <- context.k8sBakerControllerEventStream_ConfigMap.fire(WatchEvent(EventType.ADDED, resource))
       _ <- eventually("config relationship cache contains the deployment and config") {
         for {
@@ -122,6 +125,7 @@ class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
       _ <- mockPatchingOfConfigMapWatchLabel("test-recipe-manifest")
       _ <- mockPatchingOfConfigMapWatchLabel("test-config")
       _ <- mockCreate(Service("test-recipe"))
+      _ = validateMockitoUsage()
       _ <- context.k8sBakerControllerEventStream_ConfigMap.fire(WatchEvent(EventType.ADDED, resource))
       _ <- eventually("config relationship cache contains the deployment and config") {
         for {
@@ -143,6 +147,7 @@ class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
       _ <- mockUpdate(ConfigMap("test-recipe-manifest"))
       _ <- mockUpdate(Deployment("test-recipe"))
       _ <- mockPatchingOfConfigMapWatchLabel("test-config")
+      _ = validateMockitoUsage()
       _ <- context.k8sBakerControllerEventStream_ConfigMap.fire(WatchEvent(EventType.MODIFIED, resource))
       _ <- eventually("config relationship cache contains the deployment and config") {
         for {
@@ -171,6 +176,7 @@ class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
 
       _ <- context.configControllerCache.addRelationNoKubeOp("test-recipe-manifest", "test-recipe")
       _ <- context.configControllerCache.addRelationNoKubeOp("test-config", "test-recipe")
+      _ = validateMockitoUsage()
       _ <- context.k8sBakerControllerEventStream_ConfigMap.fire(WatchEvent(EventType.DELETED, resource))
       _ <- eventually("config relationship cache contains the deployment and config") {
         for {
@@ -220,8 +226,8 @@ class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
           eventStream <- K8sEventStream.resource[BakerResource]
           eventStream_ConfigMap <- K8sEventStream.resource[ConfigMap]
           configControllerCache <- Resource.liftF(ForceRollingUpdateOnConfigMapUpdate.build)
-          _ = doAnswer(eventStream.source).when(k8s).watchAllContinuously(*, *)(*, same(BakerResource.resourceDefinitionRecipeResource), *)
-          _ = doAnswer(eventStream_ConfigMap.source).when(k8s).watchWithOptions(*, *)(*, same(ConfigMap.configMapDef), *)
+          _ <- Resource.liftF(mockWatch(eventStream))
+          _ <- Resource.liftF(mockWatchForConfigMaps(eventStream_ConfigMap))
           _ <- BakerController.run(configControllerCache)
           _ <- BakerController.runFromConfigMaps(configControllerCache)
         } yield Context(k8s, eventStream, eventStream_ConfigMap, configControllerCache)
