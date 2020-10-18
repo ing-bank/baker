@@ -27,7 +27,7 @@ object BakerClient {
 
     val future = BlazeClientBuilder[IO](connectionPool, Option.apply(tlsConfig.orElse(null)).map(_.loadSSLContext))
       .resource
-      .map(client => new scaladsl.BakerClient(client, Uri.unsafeFromString(hostname), filters.asScala.map(javaFun => req => javaFun.apply(req))))
+      .map(client => new scaladsl.BakerClient(client, List(Uri.unsafeFromString(hostname)), filters.asScala.map(javaFun => req => javaFun.apply(req))))
       .allocated
       .map{
         case (client, _) => new JavaBaker(client)
