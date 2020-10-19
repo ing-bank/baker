@@ -39,7 +39,7 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
     }
   }
 
-  def watch(k8s: KubernetesClient, label: Option[(String, String)] = None)(
+  def watch(k8s: KubernetesClient, label: Option[(String, String)] = None, existsLabel: Option[String] = None)(
     implicit
     contextShift: ContextShift[IO],
     timer: Timer[IO],
@@ -63,15 +63,21 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
       }
     }
 
-    //TODO chose a more reasonable number for the bufSize
-    def sourceWithLabel(keyValue: (String, String)): Source[K8SWatchEvent[O], NotUsed] = {
-      val watchFilter: ListOptions = {
+    def sourceWithLabel(keyValue: (String, String)): Source[K8SWatchEvent[O], NotUsed] =
+      sourceWithOptions({
         val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement(keyValue._1, keyValue._2))
         ListOptions(labelSelector = Some(labelSelector)/*, timeoutSeconds = Some(45)*/) // Note, we decided to go for long connections against renewing every 45 seconds due an issue with OpenShift 3.11 not being able to respond to calls with resourceVersion as supposed to be
-      }
-      k8s.watchWithOptions(watchFilter, bufsize = Int.MaxValue)
+      })
+
+    def sourceWithExistsLabel(key: String): Source[K8SWatchEvent[O], NotUsed] =
+      sourceWithOptions({
+        val labelSelector = LabelSelector(LabelSelector.ExistsRequirement(key))
+        ListOptions(labelSelector = Some(labelSelector)/*, timeoutSeconds = Some(45)*/) // Note, we decided to go for long connections against renewing every 45 seconds due an issue with OpenShift 3.11 not being able to respond to calls with resourceVersion as supposed to be
+      })
+
+    def sourceWithOptions(listOptions: ListOptions): Source[K8SWatchEvent[O], NotUsed] =
+      k8s.watchWithOptions(listOptions, bufsize = Int.MaxValue)
         .mapMaterializedValue(_ => NotUsed)
-    }
 
     //TODO chose a more reasonable number for the bufSize
     def sourceWithoutLabel: Source[K8SWatchEvent[O], NotUsed] =
@@ -85,10 +91,14 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
         randomFactor = 0.2, // adds 20% "noise" to vary the intervals slightly
         maxRestarts = -1 // not limit the amount of restarts
       ) { () =>
-        label.fold(sourceWithoutLabel)(sourceWithLabel).mapError { case e =>
-          logger.error(s"Error on the '${rd.spec.names.plural}' watch stream: " + e.getMessage, e)
-          e
-        }
+        label
+          .map(sourceWithLabel)
+          .orElse(existsLabel.map(sourceWithExistsLabel))
+          .getOrElse(sourceWithoutLabel)
+          .mapError { case e =>
+            logger.error(s"Error on the '${rd.spec.names.plural}' watch stream: " + e.getMessage, e)
+            e
+          }
       }.viaMat(KillSwitches.single)(Keep.right)
 
     val sink: Sink[K8SWatchEvent[O], Future[Done]] =

@@ -1,7 +1,7 @@
 package com.ing.bakery.clustercontroller.controllers
 
 import cats.implicits._
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.bakery.clustercontroller.MutualAuthKeystoreConfig
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
@@ -16,11 +16,23 @@ import skuber.json.ext.format._
 import skuber.json.format._
 import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
 import Utils.ConfigurableContainer
+import akka.actor.ActorSystem
 import com.ing.bakery.interaction.RemoteInteractionClient
 import com.ing.bakery.protocol.InteractionExecution
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+
+object InteractionController {
+
+  def run(k8s: KubernetesClient, connectionPool: ExecutionContext, interactionTLS: Option[MutualAuthKeystoreConfig] = None, interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit actorSystem: ActorSystem, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Unit] =
+    new InteractionController(connectionPool, interactionTLS, interactionClientTLS).watch(k8s)
+
+  def runFromConfigMaps(k8s: KubernetesClient, connectionPool: ExecutionContext, interactionTLS: Option[MutualAuthKeystoreConfig] = None, interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit actorSystem: ActorSystem, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Unit] =
+    new InteractionController(connectionPool, interactionTLS, interactionClientTLS)
+      .fromConfigMaps(InteractionResource.fromConfigMap)
+      .watch(k8s, label = Some("custom-resource-definition" -> "interactions"))
+}
 
 final class InteractionController(connectionPool: ExecutionContext, interactionTLS: Option[MutualAuthKeystoreConfig] = None, interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[InteractionResource] with LazyLogging {
 
@@ -115,8 +127,9 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
       metadata = ObjectMeta(name = name, labels = Map(
         interactionNodeLabel,
         interactionNameLabel(interaction),
-        interactionManifestLabel
-      )),
+        interactionManifestLabel) ++
+        interaction.metadata.labels.filter(_._1 != "custom-resource-definition")
+      ),
       data = Map("address" -> address.toString, "interfaces" -> interactionsData)
     )
   }
@@ -144,15 +157,10 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
         containerPort = 9095,
         protocol = Protocol.TCP
       ))
-      .exposePort(Container.Port(
-        name = "health",
-        containerPort = 9999,
-        protocol = Protocol.TCP
-      ))
       .withReadinessProbe(healthProbe.copy(failureThreshold = Some(30)))
       .withLivenessProbe(healthProbe.copy(failureThreshold = Some(30)))
       .copy(env = interaction.spec.env)
-      .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
+      .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:MaxRAMPercentage=85.0")
       .maybeWithKeyStoreConfig("INTERACTION", interactionTLS)
       .withMaybeResources(interaction.spec.resources)
       .mount("config", "/bakery-config", readOnly = true)
@@ -175,6 +183,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
       .withPodSpec(podSpec)
       .addLabel(interactionNodeLabel)
       .addLabel(interactionNameLabel(interaction))
+      .addLabels(interaction.metadata.labels.filter(_._1 != "custom-resource-definition"))
   }
 
   private def deployment(interaction: InteractionResource): Deployment = {
@@ -185,6 +194,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
     new Deployment(metadata = ObjectMeta(
       name = interaction.name,
       labels = Map(
+        "app" -> interaction.metadata.name,
         interactionNodeLabel,
         interactionNameLabel(interaction)) ++
         interaction.metadata.labels.filter(_._1 != "custom-resource-definition")
@@ -202,6 +212,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
     new skuber.ext.Deployment(metadata = ObjectMeta(
       name = interaction.name,
       labels = Map(
+        "app" -> interaction.metadata.name,
         interactionNodeLabel,
         interactionNameLabel(interaction)) ++
         interaction.metadata.labels.filter(_._1 != "custom-resource-definition")
@@ -216,6 +227,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
       .addLabel(interactionNodeLabel)
       .addLabel(interactionNameLabel(interaction))
       .addLabel("metrics" -> "collect")
+      .addLabels(interaction.metadata.labels.filter(_._1 != "custom-resource-definition"))
       .withSelector(interactionNameLabel(interaction))
       .setPorts(List(
         Service.Port(

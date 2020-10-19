@@ -4,6 +4,7 @@ metadata:
   name: reserve-items
   labels:
     custom-resource-definition: interactions
+    scope: webshop
 data:
   image: bakery-interaction-example-reserve-items:local
   replicas: "2"
@@ -14,6 +15,7 @@ metadata:
   name: make-payment-and-ship-items
   labels:
     custom-resource-definition: interactions
+    scope: webshop
 data:
   image: interaction-make-payment-and-ship-items:local
   env.0.name: ONE

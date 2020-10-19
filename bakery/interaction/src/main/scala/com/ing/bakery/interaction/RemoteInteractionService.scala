@@ -52,8 +52,6 @@ final class RemoteInteractionService(interactions: List[InteractionInstance])(im
 
   def api: HttpRoutes[IO] = Router("/api/bakery" -> HttpRoutes.of[IO] {
 
-    case GET -> Root / "health" => Ok("Ok")
-
     case GET -> Root / "interactions" => Ok(Interactions)
 
     case req@POST -> Root /  "interactions" / id / "execute" =>

@@ -25,8 +25,8 @@ import scala.concurrent.duration._
 
 object ServiceDiscovery extends LazyLogging {
 
-  def empty(httpClient: Client[IO]): IO[ServiceDiscovery] =
-    Ref.of[IO, Map[String, InteractionInstance]](Map.empty).map(new ServiceDiscovery(_, httpClient))
+  def empty(httpClient: Client[IO], scope: String): IO[ServiceDiscovery] =
+    Ref.of[IO, Map[String, InteractionInstance]](Map.empty).map(new ServiceDiscovery(_, httpClient, scope))
 
   /** Creates resource of a ServiceDiscovery module, when acquired a stream of kubernetes services starts and feeds the
     * ServiceDiscovery module to give corresponding InteractionInstances
@@ -39,11 +39,17 @@ object ServiceDiscovery extends LazyLogging {
     * @param timer to be used by the streams
     * @return
     */
-  def resource(interactionHttpClient: Client[IO], k8s: KubernetesClient)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, ServiceDiscovery] = {
+  def resource(interactionHttpClient: Client[IO], k8s: KubernetesClient, scope: String)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, ServiceDiscovery] = {
 
     def watchSource(serviceDiscovery: ServiceDiscovery): Source[K8SWatchEvent[ConfigMap], UniqueKillSwitch] = {
       val watchFilter: ListOptions = {
-        val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement("bakery-manifest", "interactions"))
+        val labelSelector = LabelSelector(
+          List(
+            Some(LabelSelector.IsEqualRequirement("bakery-manifest", "interactions")),
+            if (serviceDiscovery.scope == "*") None
+            else Some(LabelSelector.InRequirement("scope", serviceDiscovery.scope.split(",").toList))
+          ).flatten: _*
+        )
         ListOptions(labelSelector = Some(labelSelector)/*, timeoutSeconds = Some(45)*/) // Note, we decided to go for long connections against renewing every 45 seconds due an issue with OpenShift 3.11 not being able to respond to calls with resourceVersion as supposed to be
       }
 
@@ -73,7 +79,7 @@ object ServiceDiscovery extends LazyLogging {
 
     val createServiceDiscovery: IO[(ServiceDiscovery, UniqueKillSwitch)] =
       for {
-        serviceDiscovery <- ServiceDiscovery.empty(interactionHttpClient)
+        serviceDiscovery <- ServiceDiscovery.empty(interactionHttpClient, scope)
         killSwitch <- IO { watchSource(serviceDiscovery).toMat(updateSink(serviceDiscovery))(Keep.left).run() }
       } yield (serviceDiscovery, killSwitch)
 
@@ -83,7 +89,8 @@ object ServiceDiscovery extends LazyLogging {
 
 final class ServiceDiscovery private(
   cacheInteractions: Ref[IO, Map[String, InteractionInstance]],
-  interactionHttpClient: Client[IO]
+  interactionHttpClient: Client[IO],
+  val scope: String
 ) extends LazyLogging {
 
   def get: IO[List[InteractionInstance]] =

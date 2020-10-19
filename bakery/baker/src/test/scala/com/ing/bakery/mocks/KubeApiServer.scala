@@ -17,14 +17,14 @@ import skuber.{ConfigMap, ObjectMeta}
 
 class KubeApiServer(mock: ClientAndServer, interaction: InteractionInstance) {
 
-  def deployInteraction: IO[Unit] =
-    respondWithEvents(eventOfInteractionManifest(mock.getLocalPort, WatchEvent.Added)) *> noNewInteractions
+  def deployInteraction(scope: String = "webshop"): IO[Unit] =
+    respondWithEvents(scope, eventOfInteractionManifest(mock.getLocalPort, WatchEvent.Added, scope)) *> noNewInteractions(scope)
 
-  def deleteInteraction: IO[Unit] =
-    respondWithEvents(eventOfInteractionManifest(mock.getLocalPort, WatchEvent.Deleted)) *> noNewInteractions
+  def deleteInteraction(scope: String = "webshop"): IO[Unit] =
+    respondWithEvents(scope, eventOfInteractionManifest(mock.getLocalPort, WatchEvent.Deleted, scope)) *> noNewInteractions(scope)
 
-  def noNewInteractions: IO[Unit] = IO {
-    mock.when(watchMatch).respond(
+  def noNewInteractions(scope: String = "webshop"): IO[Unit] = IO {
+    mock.when(watchMatch(scope)).respond(
       response()
         .withStatusCode(200)
         .withBody("", MediaType.APPLICATION_JSON)
@@ -32,10 +32,9 @@ class KubeApiServer(mock: ClientAndServer, interaction: InteractionInstance) {
     )
   }
 
-  private val interactionManifestLabel: (String, String) = "bakery-manifest" -> "interactions"
   import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
 
-  private def eventOfInteractionManifest(port: Int, tpe: WatchEventType): WatchEvent = {
+  private def eventOfInteractionManifest(port: Int, tpe: WatchEventType, scope: String): WatchEvent = {
     val creationContractName: String = "test-interaction-manifest"
     val interfaces = List(I.Interaction(interaction.shaBase64, interaction.name, interaction.input.toList))
     new WatchEvent {
@@ -44,7 +43,7 @@ class KubeApiServer(mock: ClientAndServer, interaction: InteractionInstance) {
         val name = creationContractName
         val interactionsData = interfaces.asJson.toString
         ConfigMap(
-          metadata = ObjectMeta(name = name, labels = Map(interactionManifestLabel)),
+          metadata = ObjectMeta(name = name, labels = Map("bakery-manifest" -> "interactions", "scope" -> scope)),
           data = Map("address" -> s"http://localhost:$port/", "interfaces" -> interactionsData)
         )
       }
@@ -53,9 +52,9 @@ class KubeApiServer(mock: ClientAndServer, interaction: InteractionInstance) {
     }
   }
 
-  private def respondWithEvents(events: WatchEvent*): IO[Unit] = IO {
+  private def respondWithEvents(scope: String, events: WatchEvent*): IO[Unit] = IO {
     mock.when(
-      watchMatch,
+      watchMatch(scope),
       Times.exactly(1),
       TimeToLive.unlimited(),
       10
@@ -66,10 +65,11 @@ class KubeApiServer(mock: ClientAndServer, interaction: InteractionInstance) {
     )
   }
 
-  private def watchMatch: HttpRequest =
+  private def watchMatch(scope: String): HttpRequest =
     request()
       .withMethod("GET")
       .withPath("/api/v1/namespaces/default/configmaps")
       .withQueryStringParameter("watch", "true")
-      .withQueryStringParameter("labelSelector", interactionManifestLabel._1 + "=" + interactionManifestLabel._2)
+      .withQueryStringParameter("labelSelector", "bakery-manifest=interactions,scope in (" + scope + ")",
+      )
 }
