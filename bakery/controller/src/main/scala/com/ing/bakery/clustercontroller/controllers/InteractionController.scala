@@ -181,7 +181,7 @@ final class InteractionController(
         versionCheck match {
           case Some(vcheck) =>
             client.interfaceWithVersion.map { result =>
-              assert(result.version == vcheck)
+              assert(result.version == vcheck || result.version == "skip-check")
               assert(result.interactions.nonEmpty)
               result.interactions
             }

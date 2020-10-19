@@ -41,11 +41,19 @@ final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit 
       `X-Bakery-Intent`(Intent.`Remote-Interaction`, hostname)
     ))
 
-  def interfaceWithVersion: IO[InteractionExecution.InteractionsWithVersion] =
-    client.expect[InteractionExecution.InteractionsWithVersion]( GET(
-      hostname / "api" / "bakery" / "interactions-with-version",
-      `X-Bakery-Intent`(Intent.`Remote-Interaction`, hostname)
-    ))
+  def interfaceWithVersion: IO[InteractionExecution.InteractionsWithVersion] = {
+    for {
+      request <- GET(
+        hostname / "api" / "bakery" / "interactions-with-version",
+        `X-Bakery-Intent`(Intent.`Remote-Interaction`, hostname))
+      status <- client.status(request)
+      response <- {
+        // Backwards compatibility for Bakery 3.1 interaction nodes that DO NOT publish the "interactions-with-version" endpoint
+        if (status.code == 404) interface.map(InteractionExecution.InteractionsWithVersion("skip-check", _))
+        else client.expect[InteractionExecution.InteractionsWithVersion](request)
+      }
+    } yield response
+  }
 
   def runInteraction(interactionId: String, input: Seq[IngredientInstance]): IO[Option[EventInstance]] = {
     val request = POST(

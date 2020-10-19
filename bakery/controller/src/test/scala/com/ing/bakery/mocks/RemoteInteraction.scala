@@ -7,6 +7,7 @@ import org.mockserver.integration.ClientAndServer
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import io.circe.syntax._
+import org.mockserver.matchers.Times
 
 class RemoteInteraction(mock: ClientAndServer) {
   import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
@@ -44,7 +45,20 @@ class RemoteInteraction(mock: ClientAndServer) {
     )
   }
 
-  def interfaceWasQueried(interaction: InteractionInstance): IO[Unit] = IO {
+  def noInterfaceWithVersionAvailable: IO[Unit] = IO {
+    mock.when(
+      request()
+        .withMethod("GET")
+        .withPath("/api/bakery/interactions-with-version")
+        .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost"),
+      Times.exactly(1)
+    ).respond(
+      response()
+        .withStatusCode(404)
+    )
+  }
+
+  def interfaceWasQueried: IO[Unit] = IO {
     mock.verify(
       request()
         .withMethod("GET")

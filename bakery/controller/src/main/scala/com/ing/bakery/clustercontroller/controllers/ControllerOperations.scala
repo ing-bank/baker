@@ -1,19 +1,18 @@
 package com.ing.bakery.clustercontroller.controllers
 
-import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source}
 import akka.stream.{KillSwitches, Materializer, UniqueKillSwitch}
+import akka.{Done, NotUsed}
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.bakery.clustercontroller.controllers.Utils.FromConfigMapValidation
 import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json.Format
-import skuber.api.client.{EventType, KubernetesClient}
-import skuber.{ConfigMap, K8SException, K8SWatchEvent, LabelSelector, ListOptions, ObjectResource, ResourceDefinition, TypeMeta}
+import skuber.api.client.{EventType, KubernetesClient, LoggingContext}
+import skuber.{ConfigMap, K8SException, K8SWatchEvent, LabelSelector, ListOptions, ObjectResource, ResourceDefinition}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import skuber.api.client.LoggingContext
 
 object ControllerOperations extends LazyLogging {
 
