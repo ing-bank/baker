@@ -26,11 +26,37 @@ class RemoteInteraction(mock: ClientAndServer) {
     )
   }
 
+  def publishesItsInterfaceWithVersion(version: String, interaction: InteractionInstance): IO[Unit] = IO {
+    mock.when(
+      request()
+        .withMethod("GET")
+        .withPath("/api/bakery/interactions-with-version")
+        .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost")
+    ).respond(
+      response()
+        .withStatusCode(200)
+        .withBody(
+          I.InteractionsWithVersion(
+            version,
+            List(I.Interaction(interaction.shaBase64, interaction.name, interaction.input.toList))
+          ).asJson.toString
+        )
+    )
+  }
+
   def interfaceWasQueried(interaction: InteractionInstance): IO[Unit] = IO {
     mock.verify(
       request()
         .withMethod("GET")
         .withPath("/api/bakery/interactions")
+        .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost"))
+  }
+
+  def interfaceWithVersionWasQueried: IO[Unit] = IO {
+    mock.verify(
+      request()
+        .withMethod("GET")
+        .withPath("/api/bakery/interactions-with-version")
         .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost"))
   }
 }
