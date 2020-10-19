@@ -1,7 +1,5 @@
 package com.ing.bakery.smoke
 
-import java.net.InetSocketAddress
-
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.bakery.smoke.k8s.{DefinitionFile, Namespace, Pod}
 import org.http4s.Uri
@@ -17,8 +15,7 @@ object BakeryEnvironment {
   )
 
   case class Arguments(
-    clientAppHostname: Uri,
-    debugMode: Boolean
+    clientAppHostname: Uri
   )
 
   def configMapNamespace(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Namespace] =
@@ -61,7 +58,6 @@ object BakeryEnvironment {
     namespace <- namespaceSetup
     client <- BlazeClientBuilder[IO](connectionPool).resource
     exampleAppClient = new ExampleAppClient(client, args.clientAppHostname)
-
   } yield Context(
     clientApp = exampleAppClient,
     namespace

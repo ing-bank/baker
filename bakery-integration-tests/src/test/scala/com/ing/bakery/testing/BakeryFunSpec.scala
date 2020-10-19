@@ -1,5 +1,7 @@
 package com.ing.bakery.testing
 
+import java.net.InetSocketAddress
+
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.bakery.smoke.printGreen
 import org.scalactic.source
@@ -44,8 +46,28 @@ abstract class BakeryFunSpec extends FixtureAsyncFunSpecLike {
 
   /** Runs a single test with a clean sealed context. */
   def test(specText: String, testTags: Tag*)(runTest: TestContext => IO[Assertion])(implicit pos: source.Position): Unit =
-    it(specText, testTags: _*)(args =>
-      contextBuilder(args).use(runTest).unsafeToFuture())
+    it(specText, testTags: _*) { testParams =>
+      val (args, debugMode) = testParams
+      if(debugMode)
+        (for {
+          context <- contextBuilder(args)
+          holdResult <- Resource.liftF(runTest(context).attempt)
+          _ = println("Preliminary tests results:")
+          _ = holdResult match {
+            case Left(e) =>
+              print(Console.RED)
+              println(e.getMessage)
+              e.printStackTrace()
+              print(Console.RESET)
+            case Right(r) =>
+              println(Console.GREEN + r + Console.RESET)
+          }
+          _ <- HoldCleanup.resource(InetSocketAddress.createUnresolved("0.0.0.0", 9191))
+          result <- Resource.liftF(IO.fromEither(holdResult))
+        } yield result).use(IO.pure).unsafeToFuture()
+      else
+        contextBuilder(args).use(runTest).unsafeToFuture()
+    }
 
   /** Tries every second f until it succeeds or until 20 attempts have been made. */
   def eventually[A](f: IO[A]): IO[A] =
@@ -68,8 +90,14 @@ abstract class BakeryFunSpec extends FixtureAsyncFunSpecLike {
     inner(split, time / split)
   }
 
-  override type FixtureParam = TestArguments
+  override type FixtureParam = (TestArguments, Boolean)
 
   override def withFixture(test: OneArgAsyncTest): FutureOutcome =
-    test.apply(argumentsBuilder(test.configMap))
+    test.apply {
+      val debugMode = test.configMap.getOrElse("debug", "false") match {
+        case "yes" | "true" | "t" | "y" => true
+        case _ => false
+      }
+      (argumentsBuilder(test.configMap), debugMode)
+    }
 }

@@ -13,94 +13,172 @@ import skuber.json.format._
 import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
 import Utils.ConfigurableContainer
 import akka.actor.ActorSystem
-import ComponentConfigController.ConfigMapDeploymentRelationCache
+import ControllerOperations._
 
 object BakerController {
 
-  def run(k8s: KubernetesClient, configCache: ConfigMapDeploymentRelationCache, interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit actorSystem: ActorSystem, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Unit] =
-    new BakerController(configCache, interactionClientTLS).watch(k8s)
+  def run(
+    configWatch: ForceRollingUpdateOnConfigMapUpdate, 
+    interactionClientTLS: Option[MutualAuthKeystoreConfig] = None
+  )(implicit actorSystem: ActorSystem, 
+    cs: ContextShift[IO], 
+    timer: Timer[IO], 
+    k8s: KubernetesClient
+  ): Resource[IO, Unit] =
+    new BakerController(configWatch, interactionClientTLS).runController()
 
-  def runFromConfigMaps(k8s: KubernetesClient, configCache: ConfigMapDeploymentRelationCache , interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit actorSystem: ActorSystem, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Unit] =
-    new BakerController(configCache, interactionClientTLS)
+  def runFromConfigMaps(
+    configWatch: ForceRollingUpdateOnConfigMapUpdate, 
+    interactionClientTLS: Option[MutualAuthKeystoreConfig] = None
+  )(implicit actorSystem: ActorSystem, 
+    cs: ContextShift[IO], 
+    timer: Timer[IO], 
+    k8s: KubernetesClient
+  ): Resource[IO, Unit] =
+    new BakerController(configWatch, interactionClientTLS)
       .fromConfigMaps(BakerResource.fromConfigMap)
-      .watch(k8s, label = Some("custom-resource-definition" -> "bakers"))
+      .runController(labelFilter = Some("custom-resource-definition" -> "bakers"))
 }
 
-final class BakerController(configCache: ConfigMapDeploymentRelationCache, interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[BakerResource] with LazyLogging {
+final class BakerController(
+  configWatch: ForceRollingUpdateOnConfigMapUpdate, 
+  interactionClientTLS: Option[MutualAuthKeystoreConfig] = None
+)(implicit 
+  cs: ContextShift[IO], 
+  timer: Timer[IO]
+) extends ControllerOperations[BakerResource] with LazyLogging {
 
   implicit lazy val replicaSetListFormat: Format[ReplicaSetList] = ListResourceFormat[ReplicaSet]
 
-  def create(resource: BakerResource, k8s: KubernetesClient): IO[Unit] = {
-    val cm = intermediateRecipesManifestConfigMap(resource)
-    val dep = deployment(resource)
-    val svc = service(resource)
-    for {
-      wasAlreadyThere1 <- idem(io(k8s.create[ConfigMap](cm)), s"recipes config map '${cm.name}'")
-      wasAlreadyThere2 <- idem(attemptOpOrTryOlderVersion(
-        v1 = io(k8s.create[Deployment](dep)).void,
-        older = io(k8s.create[skuber.ext.Deployment](oldKubernetesDeployment(resource))).void), s"deployment '${dep.name}'")
-      _ <- resource.spec.config.fold(IO.unit)(configCache.add(_, deploymentName = dep.name))
-      wasAlreadyThere3 <- idem(io(k8s.create(svc)), s"service '${svc.name}'")
-      _ <- resource.spec.config.fold(IO.unit)(ComponentConfigController.addComponentConfigWatchLabel(k8s, _))
-    } yield {
-      if(wasAlreadyThere1 || wasAlreadyThere2 || wasAlreadyThere3)
+  def create(resource: BakerResource)(implicit k8s: KubernetesClient): IO[Unit] = {
+
+    val createManifest: IO[Boolean] =
+      idemCreate(intermediateRecipesManifestConfigMap(resource))
+
+    val watchForManifestChangesToTriggerRollUpdate: IO[Unit] =
+      configWatch.watchConfigOf(intermediateRecipesManifestConfigMapName(resource), deploymentName = resource.name)
+
+    val createDeployment: IO[Boolean] =
+      attemptOpOrTryOlderVersion(
+        v1 = idemCreate(deployment(resource)),
+        older = idemCreate(oldKubernetesDeployment(resource))
+      ).map(_.fold(identity, identity))
+
+    val watchForConfigChangesToTriggerRollUpdate: IO[Unit] =
+      resource.spec.config.fold(IO.unit)(configWatch.watchConfigOf(_, deploymentName = resource.name))
+
+    val createService: IO[Boolean] =
+      idemCreate(service(resource))
+
+    def logOutcome(manifestAlreadyExisted: Boolean, deploymentAlreadyExisted: Boolean, serviceAlreadyExisted: Boolean): IO[Unit] = IO {
+      if (manifestAlreadyExisted || deploymentAlreadyExisted || serviceAlreadyExisted)
         logger.debug(s"Created (idem) baker cluster named '${resource.name}'")
       else
         logger.info(s"Created baker cluster named '${resource.name}'")
     }
+
+    for {
+      manifestAlreadyExisted <- createManifest
+      deploymentAlreadyExisted <- createDeployment
+      _ <- watchForManifestChangesToTriggerRollUpdate
+      _ <- watchForConfigChangesToTriggerRollUpdate
+      serviceAlreadyExisted <- createService
+      _ <- logOutcome(manifestAlreadyExisted, deploymentAlreadyExisted, serviceAlreadyExisted)
+    } yield ()
   }
 
-  def terminate(resource: BakerResource, k8s: KubernetesClient): IO[Unit] = {
-    val cm = intermediateRecipesManifestConfigMapName(resource)
-    val dep = deployment(resource)
+  def terminate(resource: BakerResource)(implicit k8s: KubernetesClient): IO[Unit] = {
+
+    val manifestName: String =
+      intermediateRecipesManifestConfigMapName(resource)
+
+    val stopWatchingForManifestUpdates: IO[Unit] =
+      configWatch.stopWatchingConfigOf(configMapName = manifestName, deploymentName = resource.name)
+
+    val deleteManifest: IO[Unit] =
+      io(k8s.delete[ConfigMap](manifestName))
+
+    val deleteService: IO[Unit] =
+      io(k8s.delete[Service](service(resource).name))
+
+    val stopWatchingForDeploymentConfiguration =
+      resource.spec.config.fold(IO.unit)(configWatch.stopWatchingConfigOf(_, deploymentName = resource.name))
+
+    val deleteDeployment: IO[Unit] =
+      attemptOpOrTryOlderVersion(
+        v1 = io(k8s.delete[Deployment](resource.name)),
+        older = io(k8s.delete[skuber.ext.Deployment](oldKubernetesDeployment(resource).name))
+      ).void
+
+    def deleteReplicaSet(labelKey: String, labelValue: String): IO[Unit] =
+      attemptOpOrTryOlderVersion(
+        v1 = io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(labelKey, labelValue)))).void,
+        older = io(k8s.deleteAllSelected[skuber.ext.ReplicaSetList](LabelSelector(IsEqualRequirement(labelKey, labelValue)))).void
+      ).void
+
+    def deletePods(labelKey: String, labelValue: String): IO[Unit] =
+      io(k8s.deleteAllSelected[PodList](LabelSelector(IsEqualRequirement(labelKey, labelValue)))).void
+
     for {
-      _ <- io(k8s.delete[ConfigMap](cm))
-      _ <- configCache.remove(configMapName = cm, deploymentName = resource.name)
-      (key, value) = recipeNameLabel(resource)
-      _ <- io(k8s.delete[Service](service(resource).name))
-      _ <- attemptOpOrTryOlderVersion(
-        v1 = io(k8s.delete[Deployment](dep.name)),
-        older = io(k8s.delete[skuber.ext.Deployment](oldKubernetesDeployment(resource).name)))
-      _ <- resource.spec.config.fold(IO.unit)(configCache.remove(_, deploymentName = dep.name))
-      _ <- attemptOpOrTryOlderVersion(
-        v1 = io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void,
-        older = io(k8s.deleteAllSelected[skuber.ext.ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void)
-      _ <- io(k8s.deleteAllSelected[PodList](LabelSelector(IsEqualRequirement(key, value))))
+      _ <- stopWatchingForManifestUpdates
+      _ <- deleteManifest
+      (labelKey, labelValue) = recipeNameLabel(resource)
+      _ <- deleteService
+      _ <- stopWatchingForDeploymentConfiguration
+      _ <- deleteDeployment
+      _ <- deleteReplicaSet(labelKey, labelValue)
+      _ <- deletePods(labelKey, labelValue)
       _ = logger.info(s"Terminated baker cluster named '${resource.name}'")
     } yield ()
   }
 
-  def upgrade(resource: BakerResource, k8s: KubernetesClient): IO[Unit] = {
-    val dep = deployment(resource)
-    val removeDeploymentFromCache: IO[Unit] = configCache.removeDeployment(resource.name)
+  def upgrade(resource: BakerResource)(implicit k8s: KubernetesClient): IO[Unit] = {
+
+    val updateManifest: IO[Unit] =
+      io(k8s.update[ConfigMap](intermediateRecipesManifestConfigMap(resource))).void
+
+    val updateDeployment: IO[Unit] =
+      attemptOpOrTryOlderVersion(
+        v1 = io(k8s.update[Deployment](deployment(resource))).void,
+        older = io(k8s.update[skuber.ext.Deployment](oldKubernetesDeployment(resource))).void
+      ).void
+
+    val updateConfigWatch: IO[Unit] =
+      resource.spec.config match {
+        case None =>
+          configWatch.stopWatchingConfigFor(resource.name)
+        case Some(newConfig) =>
+          configWatch.stopWatchingConfigFor(resource.name) *> configWatch.watchConfigOf(newConfig, resource.name)
+      }
+
     for {
-      _ <- io(k8s.update[ConfigMap](intermediateRecipesManifestConfigMap(resource))).void
-      _ <- attemptOpOrTryOlderVersion(
-        v1 = io(k8s.update[Deployment](dep)).void,
-        older = io(k8s.update[skuber.ext.Deployment](oldKubernetesDeployment(resource))).void)
+      _ <- updateManifest
+      _ <- updateDeployment
       /* When updating a BakerResource at this point we don't know if the config was added, removed, or left
        * untouched, that is why we ensure that if the config is not in the resource, then it is removed from cache,
        * and if the config was updated the old deployment entry is removed and the new one added
        */
-      _ <- resource.spec.config.fold(removeDeploymentFromCache) { config =>
-        removeDeploymentFromCache *> configCache.add(configMapName = config, deploymentName = dep.name)
-      }
-      /* Same for the config map label */
-      _ <- resource.spec.config.fold(IO.unit)(ComponentConfigController.addComponentConfigWatchLabel(k8s, _))
+      _ <- updateConfigWatch
       _ = logger.info(s"Upgraded baker cluster named '${resource.name}'")
     } yield ()
   }
 
+  /** Used to identify Kubernetes resources that belong to Baker nodes. */
   private def bakeryBakerLabel: (String, String) = "bakery-component" -> "baker"
 
+  /** Used to identify Kubernetes resources that belong to this specific Baker node. */
   private def recipeNameLabel(resource: BakerResource): (String, String) = "bakery-baker-name" -> resource.name
 
+  /** Used for the Akka Cluster Kubernetes service discovery to form an Akka Cluster. */
   private def akkaClusterLabel(resource: BakerResource): (String, String) = "akka-cluster" -> resource.name
 
+  /** Name of the ConfigMap that contains the node recipes to be mounted in the Baker node Pods. */
   private def intermediateRecipesManifestConfigMapName(resource: BakerResource): String = resource.name + "-manifest"
 
+  /** Used to identify the ConfigMaps that are Baker manifests. */
   private def recipeManifestLabel: (String, String) = "bakery-manifest" -> "recipes"
 
+  /** Default port to be used for the Baker node http server. */
   private def bakeryBakerServicePort: Int = 8081
 
   private def podSpec(bakerResource: BakerResource): Pod.Template.Spec = {
@@ -214,7 +292,7 @@ final class BakerController(configCache: ConfigMapDeploymentRelationCache, inter
       .addLabel(bakeryBakerLabel)
       .addLabel(recipeNameLabel(bakerResource))
       .addLabel(akkaClusterLabel(bakerResource))
-      .addLabel(ComponentConfigController.componentForceUpdateLabel)
+      .addLabel(ForceRollingUpdateOnConfigMapUpdate.componentForceUpdateLabel)
   }
 
   private def deployment(bakerResource: BakerResource): Deployment = {
@@ -290,7 +368,7 @@ final class BakerController(configCache: ConfigMapDeploymentRelationCache, inter
           bakeryBakerLabel,
           recipeNameLabel(bakerResource),
           recipeManifestLabel,
-          (ComponentConfigController.COMPONENT_CONFIG_WATCH_LABEL, "")
+          ForceRollingUpdateOnConfigMapUpdate.componentConfigWatchLabel
         ) ++ bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition")),
       data = bakerResource.recipes.get.map {
         case (serializedRecipe, compiledRecipe) => compiledRecipe.recipeId -> serializedRecipe
