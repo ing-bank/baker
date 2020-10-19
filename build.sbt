@@ -7,7 +7,7 @@ def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = proje
 lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocker")({
   state =>
     val extracted = Project.extract(state)
-
+    "set version in ThisBuild := \"local\"" ::
     "bakery-baker-docker-generate/docker:publishLocal" ::
       "bakery-client-example/docker:publishLocal" ::
       "bakery-kafka-listener-example/docker:publishLocal" ::
@@ -31,7 +31,6 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     "-unchecked",
     "-deprecation",
     "-feature",
-    "-Ywarn-dead-code",
     "-language:higherKinds",
     "-language:existentials",
     "-language:implicitConversions",
@@ -323,6 +322,9 @@ lazy val `bakery-controller` = project.in(file("bakery/controller"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "bakery-controller",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
     libraryDependencies ++= Seq(
       slf4jApi,
       akkaSlf4j,
@@ -342,7 +344,12 @@ lazy val `bakery-controller` = project.in(file("bakery/controller"))
       scalaTest,
       mockServer,
       circe,
-      circeGeneric
+      circeGeneric,
+      mockitoScala,
+      mockitoScalaTest
+    ),
+    dependencyOverrides ++= Seq(
+      play
     )
   )
   .dependsOn(`baker-types`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`, `bakery-baker-client`, `bakery-interaction-protocol`)

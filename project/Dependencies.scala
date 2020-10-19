@@ -5,10 +5,10 @@ object Dependencies {
 
   val akkaVersion = "2.6.9"
   val akkaManagementVersion = "1.0.8"
-  val akkaHttpVersion = "10.1.12"
-  val http4sVersion = "0.21.7"
+  val akkaHttpVersion = "10.2.1"
+  val http4sVersion = "0.21.8"
   val circeVersion = "0.13.0"
-  val kamonAkkaVersion = "2.1.6"
+  val kamonAkkaVersion = "2.1.8"
 
   val jvmV = "1.8"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
@@ -23,6 +23,8 @@ object Dependencies {
   val scalaJava8Compat = "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
   val scalaTest = "org.scalatest" %% "scalatest" % "3.2.2"
   val mockito = "org.mockito" % "mockito-all" % "1.10.19"
+  val mockitoScala = "org.mockito" %% "mockito-scala" % "1.16.0"
+  val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % "1.16.0"
   val mockServer = "org.mock-server" % "mockserver-netty" % "5.11.1"
   val junitInterface = "com.novocode" % "junit-interface" % "0.11"
   val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.7.0"
