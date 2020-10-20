@@ -13,9 +13,8 @@ import retry.{RetryDetails, retryingOnAllErrors}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.reflect.ClassTag
 
-object FailoverUtils extends LazyLogging{
+object FailoverUtils extends LazyLogging {
 
   /**
     * retry the HttpCall on different hosts
@@ -25,26 +24,26 @@ object FailoverUtils extends LazyLogging{
     * @param ec   ExecutionContext
     * @return
     */
-  def calWithFailOver(fos: FailoverState,
-                                   client: Client[IO],
-                                   func: Uri => IO[Request[IO]],
-                                   filters: Seq[Request[IO] => Request[IO]],
-                                   handleHttpErrors: Response[IO] => IO[Throwable])
-                                  (implicit ec: ExecutionContext, decoder: Decoder[BakerResult]): IO[BakerResult] = {
-
+  def callWithFailOver(fos: FailoverState,
+                       client: Client[IO],
+                       func: Uri => IO[Request[IO]],
+                       filters: Seq[Request[IO] => Request[IO]],
+                       handleHttpErrors: Response[IO] => IO[Throwable])
+                      (implicit ec: ExecutionContext, decoder: Decoder[BakerResult]): IO[BakerResult] = {
     implicit val timer: Timer[IO] = IO.timer(ec)
 
-    val call = client
-      .expectOr(func(fos.host).map({ request: Request[IO] =>
-        filters.foldLeft(request)((acc, filter) => filter(acc))
-      }))(handleHttpErrors)(jsonOf[IO, BakerResult])
+    def call(uri: Uri): IO[BakerResult] =
+      client
+        .expectOr(func(uri).map({ request: Request[IO] =>
+          filters.foldLeft(request)((acc, filter) => filter(acc))
+        }))(handleHttpErrors)(jsonOf[IO, BakerResult])
 
     retryingOnAllErrors(
       policy = limitRetries[IO](fos.size * 2) |+| exponentialBackoff[IO](5.milliseconds),
-      onError = (error: Throwable, _: RetryDetails) => IO {
-        logger.warn(s"Failed to call host ${fos.host}", error)
+      onError = (_: Throwable, retryDetails: RetryDetails) => IO {
+        logger.warn(s"Failed to call host ${fos.host}, retry #${retryDetails.retriesSoFar}")
         fos.failed()
         ()
-      })(call)
+      })(call(fos.host))
   }
 }
