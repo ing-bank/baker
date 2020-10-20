@@ -99,19 +99,18 @@ class BakerClientSpec extends BakeryFunSpec {
 
     test("scaladsl - balances") { context =>
       val uri1 = Uri.unsafeFromString(s"https://localhost:${context.serverAddress.getPort}/")
-      val uri2 = Uri.unsafeFromString(s"https://www.google.com/")
-      val testHeader = Header("X-Test", "Foo")
-      val filter: Request[IO] => Request[IO] = _.putHeaders(testHeader)
+      val uri2 = Uri.unsafeFromString(s"https://invaliddomainname:445")
+      val uri3 = uri1 / "nowWorking"
+
       BakerClient.resourceBalanced(
-        hosts = List(uri1 / "nowWorking", uri2, uri1),
+        hosts = List(uri3, uri2, uri1),
         pool = executionContext,
-        filters = List(filter),
+        filters = List.empty,
         tlsConfig = Some(clientTLSConfig))
         .use { client =>
           for {
-            _ <- IO.fromFuture(IO(client.getAllRecipeInstancesMetadata))
-            headers <- context.receivedHeaders
-          } yield assert(headers.contains(testHeader))
+            response <- IO.fromFuture(IO(client.getAllRecipeInstancesMetadata))
+          } yield assert(response.isEmpty)
         }
     }
 

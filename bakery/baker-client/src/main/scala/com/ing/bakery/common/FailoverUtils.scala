@@ -30,21 +30,18 @@ object FailoverUtils extends LazyLogging {
                       filters: Seq[Request[IO] => Request[IO]],
                       handleHttpErrors: Response[IO] => IO[Throwable])
                      (implicit ec: ExecutionContext, decoder: Decoder[BakerResult]): IO[BakerResult] = {
-
     implicit val timer: Timer[IO] = IO.timer(ec)
 
-    val call: Uri => IO[BakerResult] = {
-      uri =>
-        client
-          .expectOr(func(uri).map({ request: Request[IO] =>
-            filters.foldLeft(request)((acc, filter) => filter(acc))
-          }))(handleHttpErrors)(jsonOf[IO, BakerResult])
-    }
+    def call(uri: Uri): IO[BakerResult] =
+      client
+        .expectOr(func(uri).map({ request: Request[IO] =>
+          filters.foldLeft(request)((acc, filter) => filter(acc))
+        }))(handleHttpErrors)(jsonOf[IO, BakerResult])
 
     retryingOnAllErrors(
       policy = limitRetries[IO](fos.size * 2) |+| exponentialBackoff[IO](5.milliseconds),
-      onError = (error: Throwable, _: RetryDetails) => IO {
-        logger.warn(s"Failed to call host ${fos.host}", error)
+      onError = (error: Throwable, retryDetails: RetryDetails) => IO {
+        logger.warn(s"Failed to call host ${fos.host}, retry #${retryDetails.retriesSoFar}", error)
         fos.failed()
         ()
       })(call(fos.host))
