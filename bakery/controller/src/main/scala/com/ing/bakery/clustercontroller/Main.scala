@@ -5,7 +5,7 @@ import java.util.concurrent.Executors
 
 import akka.actor.ActorSystem
 import cats.effect.{ExitCode, IO, IOApp, Resource}
-import com.ing.bakery.clustercontroller.controllers.{BakerController, ComponentConfigController, InteractionController}
+import com.ing.bakery.clustercontroller.controllers.{BakerController, InteractionController, ForceRollingUpdateOnConfigMapUpdate}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import kamon.Kamon
@@ -23,7 +23,7 @@ object Main extends IOApp with LazyLogging {
 
     implicit val system: ActorSystem =
       ActorSystem("bakery-baker-system")
-    val k8s: KubernetesClient =
+    implicit val k8s: KubernetesClient =
       skuber.k8sInit
     implicit val connectionPool =
       ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
@@ -40,12 +40,13 @@ object Main extends IOApp with LazyLogging {
     }
 
     (for {
-      configCache <- ComponentConfigController.resource(k8s)
+      configWatch <- Resource.liftF(ForceRollingUpdateOnConfigMapUpdate.build)
+      _ <- configWatch.runController
       _ <- BakeryControllerService.resource(InetSocketAddress.createUnresolved("0.0.0.0", 8080))
-      _ <- if(useCrds) InteractionController.run(k8s, connectionPool, interactionMutualTLS, interactionClientMutualTLS) else Resource.liftF(IO.unit)
-      _ <- InteractionController.runFromConfigMaps(k8s, connectionPool, interactionMutualTLS, interactionClientMutualTLS)
-      _ <- if(useCrds) BakerController.run(k8s, configCache, interactionClientMutualTLS) else Resource.liftF(IO.unit)
-      _ <- BakerController.runFromConfigMaps(k8s, configCache, interactionClientMutualTLS)
+      _ <- if(useCrds) InteractionController.run(configWatch, connectionPool, interactionMutualTLS, interactionClientMutualTLS) else Resource.liftF(IO.unit)
+      _ <- InteractionController.runFromConfigMaps(configWatch, connectionPool, interactionMutualTLS, interactionClientMutualTLS)
+      _ <- if(useCrds) BakerController.run(configWatch, interactionClientMutualTLS) else Resource.liftF(IO.unit)
+      _ <- BakerController.runFromConfigMaps(configWatch, interactionClientMutualTLS)
     } yield ()).use(_ => IO.never).as(ExitCode.Success)
   }
 }
