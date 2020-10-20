@@ -24,12 +24,12 @@ object FailoverUtils extends LazyLogging {
     * @param ec   ExecutionContext
     * @return
     */
-  def calWithFailOver(fos: FailoverState,
-                      client: Client[IO],
-                      func: Uri => IO[Request[IO]],
-                      filters: Seq[Request[IO] => Request[IO]],
-                      handleHttpErrors: Response[IO] => IO[Throwable])
-                     (implicit ec: ExecutionContext, decoder: Decoder[BakerResult]): IO[BakerResult] = {
+  def callWithFailOver(fos: FailoverState,
+                       client: Client[IO],
+                       func: Uri => IO[Request[IO]],
+                       filters: Seq[Request[IO] => Request[IO]],
+                       handleHttpErrors: Response[IO] => IO[Throwable])
+                      (implicit ec: ExecutionContext, decoder: Decoder[BakerResult]): IO[BakerResult] = {
     implicit val timer: Timer[IO] = IO.timer(ec)
 
     def call(uri: Uri): IO[BakerResult] =

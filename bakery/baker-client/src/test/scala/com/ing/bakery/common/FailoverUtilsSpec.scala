@@ -73,6 +73,6 @@ class FailoverUtilsSpec extends AnyFunSpec with MockitoSugar {
     when(client.expectOr(any[IO[Request[IO]]])(any[Response[IO] => IO[Throwable]])(any[EntityDecoder[IO, BakerResult]]))
       .thenReturn(IO(mock[BakerResult]))
 
-    calWithFailOver(fos, client, func, Seq.empty, _ => IO.raiseError(new RuntimeException))( ec, bakerResultDecoder).unsafeRunSync()
+    callWithFailOver(fos, client, func, Seq.empty, _ => IO.raiseError(new RuntimeException))( ec, bakerResultDecoder).unsafeRunSync()
   }
 }
