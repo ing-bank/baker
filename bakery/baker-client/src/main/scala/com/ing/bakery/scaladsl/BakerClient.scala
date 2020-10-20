@@ -8,7 +8,7 @@ import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, E
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.types.Value
-import com.ing.bakery.common.TLSConfig
+import com.ing.bakery.common.{FailoverState, FailoverUtils, TLSConfig}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import org.http4s.Method.{POST, _}
@@ -19,6 +19,7 @@ import org.http4s.client.blaze._
 import org.http4s.client.dsl.io._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
 
 object BakerClient {
@@ -26,22 +27,41 @@ object BakerClient {
   /** use method `use` of the Resource, the client will be acquired and shut down automatically each time
     * the resulting `IO` is run, each time using the common connection pool.
     */
-  def resource(hostname: Uri, pool: ExecutionContext, filters: Seq[Request[IO] => Request[IO]] = Seq.empty, tlsConfig: Option[TLSConfig] = None)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
-    implicit val ev0 = pool
+  def resourceBalanced(hosts: List[Uri],
+                       pool: ExecutionContext,
+                       filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
+                       tlsConfig: Option[TLSConfig] = None)
+                      (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
+    implicit val ex: ExecutionContext = pool
+
     BlazeClientBuilder[IO](pool, tlsConfig.map(_.loadSSLContext))
       .resource
       .map(client => {
-        new BakerClient(client, hostname, filters)
+        new BakerClient(client, hosts, filters)
       })
   }
+
+  def resource(host: Uri,
+               pool: ExecutionContext,
+               filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
+               tlsConfig: Option[TLSConfig] = None)
+              (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] =
+    resourceBalanced(List(host), pool, filters, tlsConfig)(cs, timer)
+
+
+  def apply(client: Client[IO], host: Uri, filters: Seq[Request[IO] => Request[IO]])
+           (implicit ec: ExecutionContext): BakerClient =
+    new BakerClient(client, List(host), filters)(ec)
 }
 
 final case class ResponseError(status: Int, msg: String)
   extends RuntimeException(status.toString + msg) with NoStackTrace
 
-final class BakerClient(client: Client[IO], hostname: Uri, filters: Seq[Request[IO] => Request[IO]] = Seq.empty)(implicit ec: ExecutionContext) extends ScalaBaker with LazyLogging {
-
-  val Root: Uri = hostname / "api" / "bakery"
+final class BakerClient(
+                         client: Client[IO],
+                         hosts: List[Uri],
+                         filters: Seq[Request[IO] => Request[IO]] = Seq.empty)
+                       (implicit ec: ExecutionContext) extends ScalaBaker with LazyLogging {
 
   implicit val eventInstanceResultEntityEncoder: EntityEncoder[IO, EventInstance] = jsonEncoderOf[IO, EventInstance]
 
@@ -56,39 +76,43 @@ final class BakerClient(client: Client[IO], hostname: Uri, filters: Seq[Request[
     }
   }
 
+  private def root(rootUri: Uri): Uri = rootUri / "api" / "bakery"
+
   private def handleHttpErrors(errorResponse: Response[IO]): IO[Throwable] =
     errorResponse.bodyText.compile.foldMonoid.map(body => ResponseError(errorResponse.status.code, body))
 
-  private def callRemoteBaker[A](request: IO[Request[IO]])(implicit decoder: Decoder[A]): Future[A] = {
-    client.expectOr(request.map({ request: Request[IO] =>
-      filters.foldLeft(request)((acc, filter) => filter(acc))
-    }))(handleHttpErrors)(jsonOf[IO, BakerResult]).map(r => {
-      parse(r)(decoder)
-    }).unsafeToFuture() flatMap {
-      case Left(bakerException: BakerException) =>
-        logger.warn(s"Baker call resulted in Baker exception: ${bakerException.message}")
-        Future.failed(bakerException)
-      case Left(t) =>
-        logger.error(s"Request $request sent to remote Baker caused unexpected error", t)
-        Future.failed(t)
-      case Right(t) => Future.successful(t)
-    }
+  private def callRemoteBaker[A](request: Uri => IO[Request[IO]])
+                                           (implicit decoder: Decoder[A]): Future[A] = {
+    val fos = new FailoverState(hosts)
+
+    FailoverUtils.calWithFailOver(fos, client, request, filters, handleHttpErrors)
+      .map(r => { parse(r)(decoder)})
+      .unsafeToFuture()
+      .flatMap {
+        case Left(bakerException: BakerException) =>
+          logger.warn(s"Baker call resulted in Baker exception: ${bakerException.message}")
+          Future.failed(bakerException)
+        case Left(t) =>
+          logger.error(s"Request $request sent to remote Baker caused unexpected error", t)
+          Future.failed(t)
+        case Right(t) => Future.successful(t)
+      }
   }
 
   /**
-   * Returns the recipe information for the given RecipeId
-   *
-   * @param recipeId
-   * @return
-   */
-  override def getRecipe(recipeId: String): Future[RecipeInformation] = callRemoteBaker[RecipeInformation](GET(Root / "app" / "recipes" / recipeId))
+    * Returns the recipe information for the given RecipeId
+    *
+    * @param recipeId
+    * @return
+    */
+  override def getRecipe(recipeId: String): Future[RecipeInformation] = callRemoteBaker[RecipeInformation](uri => GET(root(uri) / "app" / "recipes" / recipeId))
 
   /**
     * Returns all recipes added to this baker instance.
     *
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
-  override def getAllRecipes: Future[Map[String, RecipeInformation]] = callRemoteBaker[Map[String, RecipeInformation]](GET(Root / "app" / "recipes"))
+  override def getAllRecipes: Future[Map[String, RecipeInformation]] = callRemoteBaker[Map[String, RecipeInformation]](uri => GET(root(uri) / "app" / "recipes"))
 
   /**
     * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
@@ -98,26 +122,26 @@ final class BakerClient(client: Client[IO], hostname: Uri, filters: Seq[Request[
     * @return
     */
   override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] =
-    callRemoteBaker[Unit](POST(Root / "instances" / recipeInstanceId / "bake"  / recipeId)).map { _ =>
+    callRemoteBaker[Unit](uri => GET(root(uri) / "instances" / recipeInstanceId / "bake" / recipeId)).map { _ =>
       logger.info(s"Baked recipe instance '$recipeInstanceId' from recipe '$recipeId'")
     }
 
   /**
-   * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
-   *
-   * Possible failures:
-   * `NoSuchProcessException` -> When no process exists for the given id
-   * `ProcessDeletedException` -> If the process is already deleted
-   *
-   * @param recipeInstanceId The process identifier
-   * @param event            The event object
-   * @param correlationId    Id used to ensure the process instance handles unique events
-   */
+    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
+    *
+    * Possible failures:
+    * `NoSuchProcessException` -> When no process exists for the given id
+    * `ProcessDeletedException` -> If the process is already deleted
+    *
+    * @param recipeInstanceId The process identifier
+    * @param event            The event object
+    * @param correlationId    Id used to ensure the process instance handles unique events
+    */
   override def fireEventAndResolveWhenCompleted(recipeInstanceId: String,
                                                 event: EventInstance,
                                                 correlationId: Option[String]): Future[SensoryEventResult] =
     callRemoteBaker[SensoryEventResult](
-      POST(event, (Root / "instances" / recipeInstanceId / "fire-and-resolve-when-completed")
+      uri => POST(event, (root(uri) / "instances" / recipeInstanceId / "fire-and-resolve-when-completed")
         .withOptionQueryParam("correlationId", correlationId))).map { result =>
       logger.info(s"For recipe instance '$recipeInstanceId', fired and completed event '${event.name}', resulting status ${result.sensoryEventStatus}")
       logger.debug(s"Resulting ingredients ${result.ingredients.map { case (ingredient, value) => s"$ingredient=$value" }.mkString(", ")}")
@@ -139,7 +163,7 @@ final class BakerClient(client: Client[IO], hostname: Uri, filters: Seq[Request[
                                                event: EventInstance,
                                                correlationId: Option[String]): Future[SensoryEventStatus] =
     callRemoteBaker[SensoryEventStatus](
-      POST(event, (Root / "instances" / recipeInstanceId / "fire-and-resolve-when-received")
+      uri => POST(event, (root(uri) / "instances" / recipeInstanceId / "fire-and-resolve-when-received")
         .withOptionQueryParam("correlationId", correlationId))).map { result =>
       logger.info(s"For recipe instance '$recipeInstanceId', fired and received event '${event.name}', resulting status $result")
       result
@@ -162,7 +186,7 @@ final class BakerClient(client: Client[IO], hostname: Uri, filters: Seq[Request[
                                           onEvent: String,
                                           correlationId: Option[String]): Future[SensoryEventResult] =
     callRemoteBaker[SensoryEventResult](
-      POST(event, (Root / "instances" / recipeInstanceId / "fire-and-resolve-on-event" / onEvent)
+      uri => POST(event, (root(uri) / "instances" / recipeInstanceId / "fire-and-resolve-on-event" / onEvent)
         .withOptionQueryParam("correlationId", correlationId))).map { result =>
       logger.info(s"For recipe instance '$recipeInstanceId', fired event '${event.name}', and resolved on event '$onEvent', resulting status ${result.sensoryEventStatus}")
       logger.debug(s"Resulting ingredients ${result.ingredients.map { case (ingredient, value) => s"$ingredient=$value" }.mkString(", ")}")
@@ -196,8 +220,8 @@ final class BakerClient(client: Client[IO], hostname: Uri, filters: Seq[Request[
     * @return An index of all processes
     */
   override def getAllRecipeInstancesMetadata: Future[Set[RecipeInstanceMetadata]] =
-    callRemoteBaker[Set[RecipeInstanceMetadata]](GET(Root / "instances"))
-  
+    callRemoteBaker[Set[RecipeInstanceMetadata]](uri => GET(root(uri) / "instances"))
+
   /**
     * Returns the process state.
     *
@@ -205,7 +229,7 @@ final class BakerClient(client: Client[IO], hostname: Uri, filters: Seq[Request[
     * @return The process state.
     */
   override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] =
-    callRemoteBaker[RecipeInstanceState](GET(Root / "instances" / recipeInstanceId))
+    callRemoteBaker[RecipeInstanceState](uri => GET(root(uri) / "instances" / recipeInstanceId))
 
   /**
     * Returns all provided ingredients for a given RecipeInstance id.
@@ -214,7 +238,7 @@ final class BakerClient(client: Client[IO], hostname: Uri, filters: Seq[Request[
     * @return The provided ingredients.
     */
   override def getIngredients(recipeInstanceId: String): Future[Map[String, Value]] =
-    callRemoteBaker[Map[String, Value]](GET(Root / "instances" / recipeInstanceId / "ingredients"))
+    callRemoteBaker[Map[String, Value]](uri => GET(root(uri) / "instances" / recipeInstanceId / "ingredients"))
 
   /**
     * Returns all fired events for a given RecipeInstance id.
@@ -223,7 +247,7 @@ final class BakerClient(client: Client[IO], hostname: Uri, filters: Seq[Request[
     * @return The events
     */
   override def getEvents(recipeInstanceId: String): Future[Seq[EventMoment]] =
-    callRemoteBaker[List[EventMoment]](GET(Root / "instances" / recipeInstanceId / "events"))
+    callRemoteBaker[List[EventMoment]](uri => GET(root(uri) / "instances" / recipeInstanceId / "events"))
 
   /**
     * Returns all names of fired events for a given RecipeInstance id.
@@ -241,7 +265,7 @@ final class BakerClient(client: Client[IO], hostname: Uri, filters: Seq[Request[
     * @return A visual (.dot) representation of the process state.
     */
   override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle): Future[String] =
-    callRemoteBaker[String](GET(Root / "instances" / recipeInstanceId / "visual"))
+    callRemoteBaker[String](uri => GET(root(uri) / "instances" / recipeInstanceId / "visual"))
 
   /**
     * Registers a listener to all runtime events for recipes with the given name run in this baker instance.
@@ -298,7 +322,7 @@ final class BakerClient(client: Client[IO], hostname: Uri, filters: Seq[Request[
     * @return
     */
   override def retryInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
-    callRemoteBaker[Unit](POST(Root / "instances" / recipeInstanceId / "interaction" / interactionName / "retry"))
+    callRemoteBaker[Unit](uri => POST(root(uri) / "instances" / recipeInstanceId / "interaction" / interactionName / "retry"))
 
   /**
     * Resolves a blocked interaction by specifying it's output.
@@ -308,7 +332,7 @@ final class BakerClient(client: Client[IO], hostname: Uri, filters: Seq[Request[
     * @return
     */
   override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): Future[Unit] =
-    callRemoteBaker[Unit](POST(event, Root / "instances" / recipeInstanceId / "interaction" / interactionName / "resolve"))
+    callRemoteBaker[Unit](uri => POST(event, root(uri) / "instances" / recipeInstanceId / "interaction" / interactionName / "resolve"))
 
   /**
     * Stops the retrying of an interaction.
@@ -316,6 +340,5 @@ final class BakerClient(client: Client[IO], hostname: Uri, filters: Seq[Request[
     * @return
     */
   override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
-    callRemoteBaker[Unit](POST(Root / "instances" / recipeInstanceId / "interaction" / interactionName / "stop-retrying"))
-
+    callRemoteBaker[Unit](uri => POST(root(uri) / "instances" / recipeInstanceId / "interaction" / interactionName / "stop-retrying"))
 }
