@@ -85,7 +85,7 @@ final class BakerClient(
                                            (implicit decoder: Decoder[A]): Future[A] = {
     val fos = new FailoverState(hosts)
 
-    FailoverUtils.calWithFailOver(fos, client, request, filters, handleHttpErrors)
+    FailoverUtils.callWithFailOver(fos, client, request, filters, handleHttpErrors)
       .map(r => { parse(r)(decoder)})
       .unsafeToFuture()
       .flatMap {
