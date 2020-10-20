@@ -325,6 +325,9 @@ lazy val `bakery-controller` = project.in(file("bakery/controller"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "bakery-controller",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
     libraryDependencies ++= Seq(
       slf4jApi,
       akkaSlf4j,
