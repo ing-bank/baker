@@ -13,9 +13,8 @@ import retry.{RetryDetails, retryingOnAllErrors}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.reflect.ClassTag
 
-object FailoverUtils extends LazyLogging{
+object FailoverUtils extends LazyLogging {
 
   /**
     * retry the HttpCall on different hosts
@@ -26,18 +25,21 @@ object FailoverUtils extends LazyLogging{
     * @return
     */
   def calWithFailOver(fos: FailoverState,
-                                   client: Client[IO],
-                                   func: Uri => IO[Request[IO]],
-                                   filters: Seq[Request[IO] => Request[IO]],
-                                   handleHttpErrors: Response[IO] => IO[Throwable])
-                                  (implicit ec: ExecutionContext, decoder: Decoder[BakerResult]): IO[BakerResult] = {
+                      client: Client[IO],
+                      func: Uri => IO[Request[IO]],
+                      filters: Seq[Request[IO] => Request[IO]],
+                      handleHttpErrors: Response[IO] => IO[Throwable])
+                     (implicit ec: ExecutionContext, decoder: Decoder[BakerResult]): IO[BakerResult] = {
 
     implicit val timer: Timer[IO] = IO.timer(ec)
 
-    val call = client
-      .expectOr(func(fos.host).map({ request: Request[IO] =>
-        filters.foldLeft(request)((acc, filter) => filter(acc))
-      }))(handleHttpErrors)(jsonOf[IO, BakerResult])
+    val call: Uri => IO[BakerResult] = {
+      uri =>
+        client
+          .expectOr(func(uri).map({ request: Request[IO] =>
+            filters.foldLeft(request)((acc, filter) => filter(acc))
+          }))(handleHttpErrors)(jsonOf[IO, BakerResult])
+    }
 
     retryingOnAllErrors(
       policy = limitRetries[IO](fos.size * 2) |+| exponentialBackoff[IO](5.milliseconds),
@@ -45,6 +47,6 @@ object FailoverUtils extends LazyLogging{
         logger.warn(s"Failed to call host ${fos.host}", error)
         fos.failed()
         ()
-      })(call)
+      })(call(fos.host))
   }
 }

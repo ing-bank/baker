@@ -42,14 +42,14 @@ class BakerClientSpec extends BakeryFunSpec {
   type TestArguments = Unit
 
   /** Creates a `Resource` which allocates and liberates the expensive resources each test can use.
-   * For example web servers, network connection, database mocks.
-   *
-   * The objective of this function is to provide "sealed resources context" to each test, that means context
-   * that other tests simply cannot touch.
-   *
-   * @param testArguments arguments built by the `argumentsBuilder` function.
-   * @return the resources each test can use
-   */
+    * For example web servers, network connection, database mocks.
+    *
+    * The objective of this function is to provide "sealed resources context" to each test, that means context
+    * that other tests simply cannot touch.
+    *
+    * @param testArguments arguments built by the `argumentsBuilder` function.
+    * @return the resources each test can use
+    */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
 
     def testServer(receivedHeaders: MVar2[IO, List[Header]]): HttpApp[IO] = {
@@ -77,10 +77,10 @@ class BakerClientSpec extends BakeryFunSpec {
   }
 
   /** Refines the `ConfigMap` populated with the -Dkey=value arguments coming from the "sbt testOnly" command.
-   *
-   * @param config map populated with the -Dkey=value arguments.
-   * @return the data structure used by the `contextBuilder` function.
-   */
+    *
+    * @param config map populated with the -Dkey=value arguments.
+    * @return the data structure used by the `contextBuilder` function.
+    */
   def argumentsBuilder(config: ConfigMap): TestArguments = ()
 
   describe("The baker client") {
@@ -95,6 +95,24 @@ class BakerClientSpec extends BakeryFunSpec {
           headers <- context.receivedHeaders
         } yield assert(headers.contains(testHeader))
       }
+    }
+
+    test("scaladsl - balances") { context =>
+      val uri1 = Uri.unsafeFromString(s"https://localhost:${context.serverAddress.getPort}/")
+      val uri2 = Uri.unsafeFromString(s"https://www.google.com/")
+      val testHeader = Header("X-Test", "Foo")
+      val filter: Request[IO] => Request[IO] = _.putHeaders(testHeader)
+      BakerClient.resourceBalanced(
+        hosts = List(uri1 / "nowWorking", uri2, uri1),
+        pool = executionContext,
+        filters = List(filter),
+        tlsConfig = Some(clientTLSConfig))
+        .use { client =>
+          for {
+            _ <- IO.fromFuture(IO(client.getAllRecipeInstancesMetadata))
+            headers <- context.receivedHeaders
+          } yield assert(headers.contains(testHeader))
+        }
     }
 
     test("javadsl - connects with mutual tls and adds headers to requests") { context =>
