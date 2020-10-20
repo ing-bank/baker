@@ -221,10 +221,13 @@ lazy val `bakery-baker-client` = project.in(file("bakery/baker-client"))
       http4sClient,
       http4sCirce,
       scalaLogging,
+      catsRetry,
       http4sServer % "test",
       slf4jApi % "test",
       logback % "test",
-      scalaTest % "test"
+      scalaTest % "test",
+      mockitoScala % "test",
+      mockitoScalaTest % "test"
     )
   )
   .dependsOn(`baker-interface`)
