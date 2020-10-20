@@ -15,7 +15,7 @@ import skuber.{ConfigMap, Pod, PodList, Service}
 
 class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
 
-  test("creates a baker") { context =>
+  test("creates a baker (CRD)") { context =>
     val resource: BakerResource = BakeryControllerFixtures.bakerResource.copy()
     implicit val k8sMock: KubernetesClient = context.k8s
     for {
@@ -39,7 +39,7 @@ class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
     } yield succeed
   }
 
-  test("updates a baker") { context =>
+  test("updates a baker (CRD)") { context =>
     val baker: BakerResource = BakeryControllerFixtures.bakerResource.copy()
     implicit val k8sMock: KubernetesClient = context.k8s
     for {
@@ -59,7 +59,7 @@ class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
     } yield succeed
   }
 
-  test("deletes a baker") { context =>
+  test("deletes a baker (CRD)") { context =>
     implicit val k8sMock: KubernetesClient = context.k8s
     val baker: BakerResource = BakeryControllerFixtures.bakerResource.copy()
     for {

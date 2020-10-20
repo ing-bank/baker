@@ -125,15 +125,27 @@ final class InteractionController(
     } yield ()
   }
 
-  def upgrade(resource: InteractionResource)(implicit k8s: KubernetesClient): IO[Unit] =
-    for {
-      _ <- attemptOpOrTryOlderVersion(
+  def upgrade(resource: InteractionResource)(implicit k8s: KubernetesClient): IO[Unit] = {
+
+    def updateDeployment: IO[Unit] =
+      attemptOpOrTryOlderVersion(
         v1 = io(k8s.update[Deployment](deployment(resource))),
-        older = io(k8s.update[skuber.ext.Deployment](oldKubernetesDeployment(resource))))
+        older = io(k8s.update[skuber.ext.Deployment](oldKubernetesDeployment(resource)))).void
+
+    def updateManifest(addressAndInterfaces: (Uri, List[InteractionExecution.Interaction])): IO[Unit] = {
+      val (address, interfaces) = addressAndInterfaces
+      io(k8s.update[ConfigMap](interactionManifest(resource, address, interfaces))).void
+    }
+
+    for {
+      _ <- updateDeployment
       /* When updating an InteractionResource at this point we don't know if the config was added, removed, or left
        * untouched, that is why we ensure that if the config is not in the resource, then it is removed from cache,
        * and if the config was updated the old deployment entry is removed and the new one added
        */
+      deployedService <- createOrFetch(service(resource))
+      addressAndInterfaces <- extractInterfacesFromDeployedInteraction(deployedService, k8s, versionCheck = Some(resource.spec.image))
+      _ <- updateManifest(addressAndInterfaces)
       _ <- {
         if (resource.spec.configMapMounts.isDefined)
           configWatch.stopWatchingConfigFor(resource.name) *> watchForConfigChangesToTriggerRollUpdate(resource)
@@ -141,6 +153,7 @@ final class InteractionController(
           configWatch.stopWatchingConfigFor(resource.name)
       }
     } yield ()
+  }
 
   private def forAllConfigMapMounts(resource: InteractionResource, f: String => IO[Unit]): IO[Unit] =
     resource.spec.configMapMounts.fold(IO.unit)(configMaps =>
@@ -155,22 +168,34 @@ final class InteractionController(
   private def stopWatchingForConfigMaps(interaction: InteractionResource)(implicit k8s: KubernetesClient): IO[Unit] =
     forAllConfigMapMounts(interaction, configWatch.stopWatchingConfigOf(_, interaction.name))
 
-  private def extractInterfacesFromDeployedInteraction(deployedService: Service, k8s: KubernetesClient): IO[(Uri, List[InteractionExecution.Interaction])] = {
+  private def extractInterfacesFromDeployedInteraction(deployedService: Service, k8s: KubernetesClient, versionCheck: Option[String] = None): IO[(Uri, List[InteractionExecution.Interaction])] = {
     val deployedPort = deployedService.spec
       .flatMap(_.ports.find(_.name == "http-api"))
       .map(_.port)
       .getOrElse(8080)
     val protocol = if(interactionClientTLS.isDefined) "https" else "http"
     val address = Uri.unsafeFromString(s"$protocol://${deployedService.name}:$deployedPort/")
+
+    def interfacesPoll(client: RemoteInteractionClient): IO[List[InteractionExecution.Interaction]] =
+      Utils.within(10.minutes, split = 300) { // Check every 2 seconds for interfaces for 10 minutes
+        versionCheck match {
+          case Some(vcheck) =>
+            client.interfaceWithVersion.map { result =>
+              assert(result.version == vcheck || result.version == "skip-check")
+              assert(result.interactions.nonEmpty)
+              result.interactions
+            }
+          case None =>
+            client.interface.map { interfaces => assert(interfaces.nonEmpty); interfaces }
+        }
+      }
+
     for {
       tlsConfig <- interactionClientTLS.traverse(_.loadKeystore(k8s))
       interfaces <- BlazeClientBuilder[IO](connectionPool, tlsConfig)
         .withCheckEndpointAuthentication(false)
         .resource.use { client =>
-          val interactionClient = new RemoteInteractionClient(client, address)
-          Utils.within(10.minutes, split = 300) { // Check every 2 seconds for interfaces
-            interactionClient.interface.map { interfaces => assert(interfaces.nonEmpty); interfaces }
-          }
+          interfacesPoll(new RemoteInteractionClient(client, address))
         }
     } yield (address, interfaces)
   }
@@ -237,6 +262,7 @@ final class InteractionController(
       .withLivenessProbe(healthProbe.copy(failureThreshold = Some(30)))
       .copy(env = interaction.spec.env)
       .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:MaxRAMPercentage=85.0")
+      .setEnvVar("BAKERY_INTERACTION_VERSION", interaction.spec.image)
       .maybeWithKeyStoreConfig("INTERACTION", interactionTLS)
       .withMaybeResources(interaction.spec.resources)
       .mount("config", "/bakery-config", readOnly = true)
