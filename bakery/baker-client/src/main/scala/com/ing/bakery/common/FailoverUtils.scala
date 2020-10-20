@@ -40,8 +40,8 @@ object FailoverUtils extends LazyLogging {
 
     retryingOnAllErrors(
       policy = limitRetries[IO](fos.size * 2) |+| exponentialBackoff[IO](5.milliseconds),
-      onError = (error: Throwable, retryDetails: RetryDetails) => IO {
-        logger.warn(s"Failed to call host ${fos.host}, retry #${retryDetails.retriesSoFar}", error)
+      onError = (_: Throwable, retryDetails: RetryDetails) => IO {
+        logger.warn(s"Failed to call host ${fos.host}, retry #${retryDetails.retriesSoFar}")
         fos.failed()
         ()
       })(call(fos.host))
