@@ -104,7 +104,7 @@ class BakerClientSpec extends BakeryFunSpec {
 
       BakerClient.resourceBalanced(
         hosts = List(uri3, uri2, uri1),
-        pool = executionContext,
+        executionContext = executionContext,
         filters = List.empty,
         tlsConfig = Some(clientTLSConfig))
         .use { client =>
