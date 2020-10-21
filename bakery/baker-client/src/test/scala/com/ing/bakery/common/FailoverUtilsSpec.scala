@@ -1,18 +1,16 @@
 package com.ing.bakery.common
 
 import cats.effect.IO
-import com.ing.baker.runtime.scaladsl.{BakerResult, EventInstance}
-import com.ing.baker.runtime.serialization.JsonEncoders._
+import com.ing.baker.runtime.scaladsl.BakerResult
 import org.http4s.Method.GET
-import org.http4s.circe.jsonEncoderOf
+import org.http4s._
 import org.http4s.client.Client
 import org.http4s.client.dsl.io._
-import org.http4s._
 import org.mockito.scalatest.MockitoSugar
 import org.scalatest.funspec.AnyFunSpec
 
 import scala.concurrent.ExecutionContextExecutor
-import scala.reflect.ClassTag
+import scala.concurrent.duration._
 
 
 class FailoverUtilsSpec extends AnyFunSpec with MockitoSugar {
@@ -65,6 +63,13 @@ class FailoverUtilsSpec extends AnyFunSpec with MockitoSugar {
 
       testMethod(fos, func)
     }
+
+    it("implements initial configuration for retry") {
+      val config = FailoverUtils.loadConfig
+
+      assert(config.initialDelay == 5.milliseconds)
+      assert(config.retryTimes == 2)
+    }
   }
 
   private def testMethod(fos: FailoverState, func: Uri => IO[Request[IO]]): BakerResult = {
@@ -73,6 +78,6 @@ class FailoverUtilsSpec extends AnyFunSpec with MockitoSugar {
     when(client.expectOr(any[IO[Request[IO]]])(any[Response[IO] => IO[Throwable]])(any[EntityDecoder[IO, BakerResult]]))
       .thenReturn(IO(mock[BakerResult]))
 
-    callWithFailOver(fos, client, func, Seq.empty, _ => IO.raiseError(new RuntimeException))( ec, bakerResultDecoder).unsafeRunSync()
+    callWithFailOver(fos, client, func, Seq.empty, _ => IO.raiseError(new RuntimeException))(ec, bakerResultDecoder).unsafeRunSync()
   }
 }
