@@ -43,10 +43,16 @@ package object api extends MultiSetOps with MarkingOps {
     def getById(id: Long, name: String = "element"): T = findById(id).getOrElse { throw new IllegalStateException(s"No $name found with id: $id") }
   }
 
+  def marshalMarking[P](marking: Marking[P])(implicit ident: Identifiable[P]): Marking[Id] =
+    marking.map { case (k, v) => ident(k) -> v }
+
   implicit class MarkingMarshall[P : Identifiable](marking: Marking[P]) {
 
     def marshall: Marking[Id] = translateKeys(marking, (p: P) => implicitly[Identifiable[P]].apply(p))
   }
+
+  def unmarshallMarking[P](places: Iterable[P], marking: Marking[Id])(implicit ident: Identifiable[P]): Marking[P] =
+    marking.map { case (k, v) => places.getById(k, "place in petrinet") -> v }
 
   implicit class MarkingUnMarshall(marking: Marking[Id]) {
 

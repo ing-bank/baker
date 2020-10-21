@@ -87,7 +87,7 @@ object RecipeInstanceManager {
   }
 }
 
-abstract class RecipeInstanceManager[F[_]](implicit eff: ConcurrentEffect[F]) {
+abstract class RecipeInstanceManager[F[_]] {
 
   def bake(recipeId: String, recipeInstanceId: String): F[RecipeInstanceManager.BakeOutcome]
 
