@@ -37,7 +37,7 @@ object BakerClient {
     * @return IO Resource for BakerClient
     */
 
-  def resourceBalanced(hosts: List[Uri],
+  def resourceBalanced(hosts: IndexedSeq[Uri],
                        executionContext: ExecutionContext,
                        filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
                        tlsConfig: Option[TLSConfig] = None)
@@ -68,12 +68,12 @@ object BakerClient {
                filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
                tlsConfig: Option[TLSConfig] = None)
               (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] =
-    resourceBalanced(List(host), executionContext, filters, tlsConfig)(cs, timer)
+    resourceBalanced(IndexedSeq(host), executionContext, filters, tlsConfig)(cs, timer)
 
 
   def apply(client: Client[IO], host: Uri, filters: Seq[Request[IO] => Request[IO]])
            (implicit ec: ExecutionContext): BakerClient =
-    new BakerClient(client, List(host), filters)(ec)
+    new BakerClient(client, IndexedSeq(host), filters)(ec)
 }
 
 final case class ResponseError(status: Int, msg: String)
@@ -81,7 +81,7 @@ final case class ResponseError(status: Int, msg: String)
 
 final class BakerClient(
                          client: Client[IO],
-                         hosts: List[Uri],
+                         hosts: IndexedSeq[Uri],
                          filters: Seq[Request[IO] => Request[IO]] = Seq.empty)
                        (implicit ec: ExecutionContext) extends ScalaBaker with LazyLogging {
 
