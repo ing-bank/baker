@@ -1,23 +1,24 @@
 package com.ing.baker.runtime.model
 
+import cats.Functor
 import cats.implicits._
 import cats.effect.{ConcurrentEffect, ContextShift, IO}
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
 
-abstract class InteractionInstanceManager[F[_]](implicit eff: ConcurrentEffect[F], contextShift: ContextShift[IO]) {
+trait InteractionInstanceManager[F[_]] {
 
   def add(interaction: InteractionInstance): F[Unit]
 
   def get(interaction: InteractionTransition): F[Option[InteractionInstance]]
 
-  def contains(interaction: InteractionTransition): F[Boolean] =
+  def contains(interaction: InteractionTransition)(implicit effect: Functor[F]): F[Boolean] =
     get(interaction).map(_.isDefined)
 
-  def execute(interaction: InteractionTransition, input: Seq[IngredientInstance]): F[Option[EventInstance]] = {
+  def execute(interaction: InteractionTransition, input: Seq[IngredientInstance])(implicit effect: ConcurrentEffect[F], contextShift: ContextShift[IO]): F[Option[EventInstance]] = {
     get(interaction).flatMap {
-      case Some(implementation) => eff.liftIO(IO.fromFuture(IO(implementation.run(input))))
-      case None => eff.raiseError(new IllegalStateException(s"No implementation available for interaction ${interaction.interactionName}"))
+      case Some(implementation) => effect.liftIO(IO.fromFuture(IO(implementation.run(input))))
+      case None => effect.raiseError(new IllegalStateException(s"No implementation available for interaction ${interaction.interactionName}"))
     }
   }
 

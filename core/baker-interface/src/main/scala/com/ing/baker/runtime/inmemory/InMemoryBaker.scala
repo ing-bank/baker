@@ -1,26 +1,14 @@
-package com.ing.baker.runtime.model
+package com.ing.baker.runtime.inmemory
 
-import cats.effect.{ConcurrentEffect, Timer}
 import cats.implicits._
+import cats.effect.IO
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
+import com.ing.baker.runtime.model.{BakerComponents, RecipeInstanceManager}
 import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerF, EventInstance, EventMoment, EventResolutions, InteractionInstance, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
 import com.ing.baker.types.Value
 
-object Baker {
-
-  def build[F[_]](interactionInstanceManager: InteractionInstanceManager[F],
-                  recipeInstanceManager: RecipeInstanceManager[F],
-                  recipeManager: RecipeManager[F],
-                  eventStream: EventStream[F])
-                 (implicit effect: ConcurrentEffect[F], timer: Timer[F]): Baker[F] = {
-    implicit val components: BakerComponents[F] =
-      BakerComponents(interactionInstanceManager, recipeInstanceManager, recipeManager, eventStream)
-    new Baker()
-  }
-}
-
-final class Baker[F[_]](implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) extends BakerF[F] {
+final class InMemoryBaker(implicit components: BakerComponents[IO]) extends BakerF[IO] {
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -30,7 +18,7 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
-  override def addRecipe(compiledRecipe: CompiledRecipe): F[String] =
+  override def addRecipe(compiledRecipe: CompiledRecipe): IO[String] =
     components.recipeManager.addRecipe(compiledRecipe)
 
   /**
@@ -39,13 +27,13 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param recipeId
     * @return
     */
-  override def getRecipe(recipeId: String): F[RecipeInformation] =
+  override def getRecipe(recipeId: String): IO[RecipeInformation] =
     components.recipeManager.getRecipe(recipeId).flatMap {
       case Some((compiledRecipe, timestamp)) =>
         getImplementationErrors(compiledRecipe).map(
           RecipeInformation(compiledRecipe, timestamp, _))
       case None =>
-        effect.raiseError(BakerException.NoSuchRecipeException(recipeId))
+        IO.raiseError(BakerException.NoSuchRecipeException(recipeId))
     }
 
   /**
@@ -53,7 +41,7 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     *
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
-  override def getAllRecipes: F[Map[String, RecipeInformation]] =
+  override def getAllRecipes: IO[Map[String, RecipeInformation]] =
     components.recipeManager.getAllRecipes.flatMap(_.toList
       .traverse { case (recipeId, (compiledRecipe, timestamp)) =>
         getImplementationErrors(compiledRecipe)
@@ -62,7 +50,7 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
       .map(_.toMap)
     )
 
-  private def getImplementationErrors(compiledRecipe: CompiledRecipe): F[Set[String]] = {
+  private def getImplementationErrors(compiledRecipe: CompiledRecipe): IO[Set[String]] = {
     //TODO optimize so that we do not have to much traffic if its a remote InteractionManager
     compiledRecipe.interactionTransitions.toList
       .traverse(x => components
@@ -81,17 +69,17 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param recipeInstanceId The identifier for the newly baked process
     * @return
     */
-  override def bake(recipeId: String, recipeInstanceId: String): F[Unit] =
+  override def bake(recipeId: String, recipeInstanceId: String): IO[Unit] =
     for {
       recipeInfo <- getRecipe(recipeId)
       outcome <- components.recipeInstanceManager.bake(recipeInstanceId, recipeInfo.compiledRecipe)
       _ <- outcome match {
         case RecipeInstanceManager.BakeOutcome.Baked =>
-          effect.unit
+          IO.unit
         case RecipeInstanceManager.BakeOutcome.RecipeInstanceDeleted =>
-          effect.raiseError(BakerException.ProcessDeletedException(recipeInstanceId))
+          IO.raiseError(BakerException.ProcessDeletedException(recipeInstanceId))
         case RecipeInstanceManager.BakeOutcome.RecipeInstanceAlreadyExists =>
-          effect.raiseError(BakerException.ProcessAlreadyExistsException(recipeInstanceId))
+          IO.raiseError(BakerException.ProcessAlreadyExistsException(recipeInstanceId))
       }
     } yield ()
 
@@ -106,7 +94,7 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param event            The event object
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventStatus] = ???
+  override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): IO[SensoryEventStatus] = ???
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -119,7 +107,7 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param event            The event object
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventResult] = ???
+  override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): IO[SensoryEventResult] = ???
 
   /**
     * Notifies Baker that an event has happened and waits until an specific event has executed.
@@ -133,7 +121,7 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param onEvent          The name of the event to wait for
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): F[SensoryEventResult] = ???
+  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): IO[SensoryEventResult] = ???
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -159,7 +147,7 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     *
     * @return An index of all processes
     */
-  override def getAllRecipeInstancesMetadata: F[Set[RecipeInstanceMetadata]] = ???
+  override def getAllRecipeInstancesMetadata: IO[Set[RecipeInstanceMetadata]] = ???
 
   /**
     * Returns the process state.
@@ -167,7 +155,7 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param recipeInstanceId The process identifier
     * @return The process state.
     */
-  override def getRecipeInstanceState(recipeInstanceId: String): F[RecipeInstanceState] = ???
+  override def getRecipeInstanceState(recipeInstanceId: String): IO[RecipeInstanceState] = ???
 
   /**
     * Returns all provided ingredients for a given RecipeInstance id.
@@ -175,7 +163,7 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param recipeInstanceId The process id.
     * @return The provided ingredients.
     */
-  override def getIngredients(recipeInstanceId: String): F[Map[String, Value]] = ???
+  override def getIngredients(recipeInstanceId: String): IO[Map[String, Value]] = ???
 
   /**
     * Returns all fired events for a given RecipeInstance id.
@@ -183,7 +171,7 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param recipeInstanceId The process id.
     * @return The events
     */
-  override def getEvents(recipeInstanceId: String): F[Seq[EventMoment]] = ???
+  override def getEvents(recipeInstanceId: String): IO[Seq[EventMoment]] = ???
 
   /**
     * Returns all names of fired events for a given RecipeInstance id.
@@ -191,7 +179,7 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param recipeInstanceId The process id.
     * @return The event names
     */
-  override def getEventNames(recipeInstanceId: String): F[Seq[String]] = ???
+  override def getEventNames(recipeInstanceId: String): IO[Seq[String]] = ???
 
   /**
     * Returns the visual state (.dot) for a given process.
@@ -199,21 +187,21 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param recipeInstanceId The process identifier.
     * @return A visual (.dot) representation of the process state.
     */
-  override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle): F[String] = ???
+  override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle): IO[String] = ???
 
   /**
     * Registers a listener to all runtime events for recipes with the given name run in this baker instance.
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): F[Unit] = ???
+  override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): IO[Unit] = ???
 
   /**
     * Registers a listener to all runtime events for all recipes that run in this Baker instance.
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): F[Unit] = ???
+  override def registerEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): IO[Unit] = ???
 
   /**
     * Registers a listener function that listens to all BakerEvents
@@ -223,33 +211,33 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param listenerFunction
     * @return
     */
-  override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): F[Unit] = ???
+  override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): IO[Unit] = ???
 
   /**
     * Adds an interaction implementation to baker.
     *
     * @param implementation The implementation object
     */
-  override def addInteractionInstance(implementation: InteractionInstance): F[Unit] = ???
+  override def addInteractionInstance(implementation: InteractionInstance): IO[Unit] = ???
 
   /**
     * Adds a sequence of interaction implementation to baker.
     *
     * @param implementations The implementation object
     */
-  override def addInteractionInstances(implementations: Seq[InteractionInstance]): F[Unit] = ???
+  override def addInteractionInstances(implementations: Seq[InteractionInstance]): IO[Unit] = ???
 
   /**
     * Attempts to gracefully shutdown the baker system.
     */
-  override def gracefulShutdown(): F[Unit] = ???
+  override def gracefulShutdown(): IO[Unit] = ???
 
   /**
     * Retries a blocked interaction.
     *
     * @return
     */
-  override def retryInteraction(recipeInstanceId: String, interactionName: String): F[Unit] = ???
+  override def retryInteraction(recipeInstanceId: String, interactionName: String): IO[Unit] = ???
 
   /**
     * Resolves a blocked interaction by specifying it's output.
@@ -258,12 +246,12 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     *
     * @return
     */
-  override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): F[Unit] = ???
+  override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): IO[Unit] = ???
 
   /**
     * Stops the retrying of an interaction.
     *
     * @return
     */
-  override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): F[Unit] = ???
+  override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): IO[Unit] = ???
 }

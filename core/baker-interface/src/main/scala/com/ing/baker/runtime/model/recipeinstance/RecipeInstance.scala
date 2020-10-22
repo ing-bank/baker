@@ -20,7 +20,8 @@ case class RecipeInstance(
                            receivedCorrelationIds: Set[String],
                          ) extends RecipeInstanceUtils { self =>
 
-  /** Validates an attempt to fire an event, and if valid it suspends the effect of such action (), and updates the state of the RecipeInstance to reflect the action.
+  /** Validates an attempt to fire an event, and if valid it suspends the effect of such action.
+    * As well returns an updated version of the RecipeInstance.
     *
     * Note that the execution effect is still suspended and should be run on due time to move the recipe instance state
     * forward with the resulting TransitionExecutionOutcome.
@@ -31,8 +32,8 @@ case class RecipeInstance(
     * @param components
     * @param effect
     * @param clock
-    * @return The returning type is either a validation rejection with its explanation, or an updated state of the recipe instance
-    *         with the encapsulated effect of firing the event (the possible execution of an interaction).
+    * @return The returning type is either a validation rejection with its explanation, or an updated state of the recipe
+    *         instance with the encapsulated effect of firing the event.
     */
   def fire[F[_]](interactionId: Long, input: EventInstance, correlationId: Option[String] = None)(implicit components: BakerComponents[F], effect: Sync[F], clock: Clock[F]): Either[(FireSensoryEventRejection, String), (RecipeInstance, F[TransitionExecutionOutcome])] = {
     for {
@@ -63,7 +64,7 @@ object RecipeInstance {
 
   class FatalInteractionException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
 
-  def empty[F[_]](recipe: CompiledRecipe, recipeInstanceId: String): RecipeInstance =
+  def empty(recipe: CompiledRecipe, recipeInstanceId: String): RecipeInstance =
     RecipeInstance(
       recipe = recipe,
       marking = recipe.initialMarking,
