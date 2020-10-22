@@ -15,7 +15,7 @@ case class RecipeInstance(
                            sequenceNumber: Long,
                            marking: Marking[Place],
                            ingredients: Map[String, Value],
-                           events: List[(Int, EventInstance)],
+                           events: List[(EventInstance, Long)],
                            executions: Map[Long, TransitionExecution],
                            receivedCorrelationIds: Set[String],
                          ) extends RecipeInstanceUtils { self =>

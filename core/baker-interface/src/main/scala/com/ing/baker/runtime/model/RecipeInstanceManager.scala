@@ -1,8 +1,12 @@
 package com.ing.baker.runtime.model
 
+import cats.Monad
+import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.RejectReason
-import com.ing.baker.runtime.model.RecipeInstanceManager.BakeOutcome
+import com.ing.baker.runtime.model.RecipeInstanceManager.{BakeOutcome, GetRecipeInstanceStateOutcome, RecipeInstanceStatus}
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
+import com.ing.baker.runtime.scaladsl.{EventMoment, RecipeInstanceState}
 
 object RecipeInstanceManager {
 
@@ -15,6 +19,26 @@ object RecipeInstanceManager {
     case object RecipeInstanceDeleted extends BakeOutcome
 
     case object RecipeInstanceAlreadyExists extends BakeOutcome
+  }
+
+  sealed trait RecipeInstanceStatus
+
+  object RecipeInstanceStatus {
+
+    case class Active(recipeInstance: RecipeInstance, createdOn: Long) extends RecipeInstanceStatus
+
+    case class Deleted(createdOn: Long, deletedOn: Long) extends RecipeInstanceStatus
+  }
+
+  sealed trait GetRecipeInstanceStateOutcome
+
+  object GetRecipeInstanceStateOutcome {
+
+    case class Success(state: RecipeInstanceState) extends GetRecipeInstanceStateOutcome
+
+    case object RecipeInstanceDeleted extends GetRecipeInstanceStateOutcome
+
+    case object NoSuchRecipeInstance extends GetRecipeInstanceStateOutcome
   }
 
   sealed trait FireSensoryEventRejection {
@@ -88,5 +112,32 @@ object RecipeInstanceManager {
 
 trait RecipeInstanceManager[F[_]] {
 
-  def bake(recipeInstanceId: String, recipe: CompiledRecipe): F[BakeOutcome]
+  def bake(recipeInstanceId: String, recipe: CompiledRecipe)(implicit effect: Monad[F]): F[BakeOutcome] =
+    getRecipeInstance(recipeInstanceId).flatMap {
+      case Some(_: RecipeInstanceStatus.Active) =>
+        effect.pure(BakeOutcome.RecipeInstanceAlreadyExists)
+      case Some(_: RecipeInstanceStatus.Deleted) =>
+        effect.pure(BakeOutcome.RecipeInstanceDeleted)
+      case None =>
+        addNewRecipeInstance(recipeInstanceId, recipe).as(BakeOutcome.Baked)
+    }
+
+  def getRecipeInstanceState(recipeInstanceId: String)(implicit effect: Monad[F]): F[GetRecipeInstanceStateOutcome] =
+    getRecipeInstance(recipeInstanceId).flatMap {
+      case Some(RecipeInstanceStatus.Active(recipeInstance, _)) =>
+        effect.pure(GetRecipeInstanceStateOutcome.Success(RecipeInstanceState(
+          recipeInstanceId,
+          recipeInstance.ingredients,
+          recipeInstance.events.map { case (event, occurredOn) => EventMoment(event.name, occurredOn) }
+        )))
+      case Some(_: RecipeInstanceStatus.Deleted) =>
+        effect.pure(GetRecipeInstanceStateOutcome.RecipeInstanceDeleted)
+      case None =>
+        effect.pure(GetRecipeInstanceStateOutcome.NoSuchRecipeInstance)
+    }
+
+  def getRecipeInstance(recipeInstanceId: String): F[Option[RecipeInstanceStatus]]
+
+  def addNewRecipeInstance(recipeInstanceId: String, recipe: CompiledRecipe): F[Unit]
+
 }

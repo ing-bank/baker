@@ -167,7 +167,15 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param recipeInstanceId The process identifier
     * @return The process state.
     */
-  override def getRecipeInstanceState(recipeInstanceId: String): F[RecipeInstanceState] = ???
+  override def getRecipeInstanceState(recipeInstanceId: String): F[RecipeInstanceState] =
+    components.recipeInstanceManager.getRecipeInstanceState(recipeInstanceId).flatMap {
+      case RecipeInstanceManager.GetRecipeInstanceStateOutcome.Success(state) =>
+        effect.pure(state)
+      case RecipeInstanceManager.GetRecipeInstanceStateOutcome.NoSuchRecipeInstance =>
+        effect.raiseError(BakerException.NoSuchProcessException(recipeInstanceId))
+      case RecipeInstanceManager.GetRecipeInstanceStateOutcome.RecipeInstanceDeleted =>
+        effect.raiseError(BakerException.ProcessDeletedException(recipeInstanceId))
+    }
 
   /**
     * Returns all provided ingredients for a given RecipeInstance id.
@@ -175,7 +183,8 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param recipeInstanceId The process id.
     * @return The provided ingredients.
     */
-  override def getIngredients(recipeInstanceId: String): F[Map[String, Value]] = ???
+  override def getIngredients(recipeInstanceId: String): F[Map[String, Value]] =
+    getRecipeInstanceState(recipeInstanceId).map(_.ingredients)
 
   /**
     * Returns all fired events for a given RecipeInstance id.
@@ -183,7 +192,8 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param recipeInstanceId The process id.
     * @return The events
     */
-  override def getEvents(recipeInstanceId: String): F[Seq[EventMoment]] = ???
+  override def getEvents(recipeInstanceId: String): F[Seq[EventMoment]] =
+    getRecipeInstanceState(recipeInstanceId).map(_.events)
 
   /**
     * Returns all names of fired events for a given RecipeInstance id.
@@ -191,7 +201,8 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param recipeInstanceId The process id.
     * @return The event names
     */
-  override def getEventNames(recipeInstanceId: String): F[Seq[String]] = ???
+  override def getEventNames(recipeInstanceId: String): F[Seq[String]] =
+    getRecipeInstanceState(recipeInstanceId).map(_.eventNames)
 
   /**
     * Returns the visual state (.dot) for a given process.
