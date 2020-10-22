@@ -23,7 +23,7 @@ object BakerClient {
   def build(hostname: String,
             filters: JList[Filter],
             tlsConfig: Optional[TLSConfig]): CompletableFuture[JavaBaker] = {
-    build(List(hostname), filters, tlsConfig)
+      build(Collections.singletonList(hostname), filters, tlsConfig)
   }
 
   def build(hostname: String, filters: JList[Filter]): CompletableFuture[JavaBaker] = {
@@ -65,7 +65,7 @@ object BakerClient {
       .map { client =>
         new scaladsl.BakerClient(
           client = client,
-          hosts = hosts.asScala.map(Uri.unsafeFromString),
+          hosts = hosts.asScala.map(Uri.unsafeFromString).toIndexedSeq,
           filters = filters.asScala.map(_.asScala))
       }
       .allocated
