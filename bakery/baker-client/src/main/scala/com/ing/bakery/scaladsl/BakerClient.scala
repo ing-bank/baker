@@ -11,7 +11,7 @@ import com.ing.baker.types.Value
 import com.ing.bakery.common.{FailoverState, FailoverUtils, TLSConfig}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
-import org.http4s.Method.{POST, _}
+import org.http4s.Method._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
@@ -19,39 +19,61 @@ import org.http4s.client.blaze._
 import org.http4s.client.dsl.io._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
 
 object BakerClient {
 
-  /** use method `use` of the Resource, the client will be acquired and shut down automatically each time
+  /** Use method `use` of the Resource, the client will be acquired and shut down automatically each time
     * the resulting `IO` is run, each time using the common connection pool.
+    *
+    * This method supports fail over to next host, available in list to support multi datacenters.
+    * @param hosts Lists of hosts (multiple is supported for several DC)
+    * @param executionContext Execution Context
+    * @param filters Http Filters to be applied to the invocation pipeline
+    * @param tlsConfig TLSConfig
+    * @param cs Cat's implicits
+    * @param timer Cat's implicits
+    *
+    * @return IO Resource for BakerClient
     */
-  def resourceBalanced(hosts: List[Uri],
-                       pool: ExecutionContext,
+
+  def resourceBalanced(hosts: IndexedSeq[Uri],
+                       executionContext: ExecutionContext,
                        filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
                        tlsConfig: Option[TLSConfig] = None)
                       (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
-    implicit val ex: ExecutionContext = pool
+    implicit val ex: ExecutionContext = executionContext
 
-    BlazeClientBuilder[IO](pool, tlsConfig.map(_.loadSSLContext))
+    BlazeClientBuilder[IO](executionContext, tlsConfig.map(_.loadSSLContext))
       .resource
       .map(client => {
         new BakerClient(client, hosts, filters)
       })
   }
 
+  /**
+    * Creates client to remote Baker cluster
+    *
+    * @param host Baker host
+    * @param executionContext Execution Context
+    * @param filters Http Filters to be applied to the invocation pipeline
+    * @param tlsConfig TLSConfig
+    * @param cs Cat's implicits
+    * @param timer Cat's implicits
+    *
+    * @return IO Resource for BakerClient
+    */
   def resource(host: Uri,
-               pool: ExecutionContext,
+               executionContext: ExecutionContext,
                filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
                tlsConfig: Option[TLSConfig] = None)
               (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] =
-    resourceBalanced(List(host), pool, filters, tlsConfig)(cs, timer)
+    resourceBalanced(IndexedSeq(host), executionContext, filters, tlsConfig)(cs, timer)
 
 
   def apply(client: Client[IO], host: Uri, filters: Seq[Request[IO] => Request[IO]])
            (implicit ec: ExecutionContext): BakerClient =
-    new BakerClient(client, List(host), filters)(ec)
+    new BakerClient(client, IndexedSeq(host), filters)(ec)
 }
 
 final case class ResponseError(status: Int, msg: String)
@@ -59,7 +81,7 @@ final case class ResponseError(status: Int, msg: String)
 
 final class BakerClient(
                          client: Client[IO],
-                         hosts: List[Uri],
+                         hosts: IndexedSeq[Uri],
                          filters: Seq[Request[IO] => Request[IO]] = Seq.empty)
                        (implicit ec: ExecutionContext) extends ScalaBaker with LazyLogging {
 

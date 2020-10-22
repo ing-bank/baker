@@ -17,7 +17,7 @@ class FailoverStateSpec extends AnyFunSpec {
 
     it("should support single element list") {
 
-      val fos = new FailoverState(List(uriA))
+      val fos = new FailoverState(IndexedSeq(uriA))
 
       assert(fos.host == uriA)
 
@@ -32,7 +32,7 @@ class FailoverStateSpec extends AnyFunSpec {
 
     it("should fail without elements") {
 
-      val fos = new FailoverState(List.empty)
+      val fos = new FailoverState(IndexedSeq.empty)
 
       assertThrows[IndexOutOfBoundsException](fos.host)
 
@@ -42,7 +42,7 @@ class FailoverStateSpec extends AnyFunSpec {
     }
 
     it("should support multiply elements") {
-      val fos = new FailoverState(List(uriA, uriB))
+      val fos = new FailoverState(IndexedSeq(uriA, uriB))
 
       assert(fos.host == uriA)
 

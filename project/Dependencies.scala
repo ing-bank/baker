@@ -81,7 +81,7 @@ object Dependencies {
   val catsEffect = "org.typelevel" %% "cats-effect" % "2.2.0"
   val catsCore = "org.typelevel" %% "cats-core" % "2.2.0"
   val console4Cats = "dev.profunktor" %% "console4cats" % "0.8.0"
-  val catsRetry = "com.github.cb372" %% "cats-retry" % "1.1.1"
+  val catsRetry = "com.github.cb372" %% "cats-retry" % "2.0.0"
 
   val jnrConstants = "com.github.jnr" % "jnr-constants" % "0.9.9"
 
@@ -101,7 +101,7 @@ object Dependencies {
   val typeSafeConfig = "com.typesafe" % "config" % "1.4.0"
 
   val objenisis = "org.objenesis" % "objenesis" % "3.1"
-  val jodaTime = "joda-time" % "joda-time" % "2.10.6"
+  val jodaTime = "joda-time" % "joda-time" % "2.10.7"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.30"
   val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val logstash =  "net.logstash.logback" % "logstash-logback-encoder" % "6.4"
