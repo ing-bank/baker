@@ -27,7 +27,7 @@ class FailoverUtilsSpec extends AnyFunSpec with MockitoSugar {
     val uriB = Uri(path = "baker-b-host")
 
     it("Balances 2 hosts") {
-      val fos = new FailoverState(List(uriA, uriB))
+      val fos = new FailoverState(IndexedSeq(uriA, uriB))
       var index: Int = 0
 
       val func: Uri => IO[Request[IO]] = (uri) => {
@@ -46,7 +46,7 @@ class FailoverUtilsSpec extends AnyFunSpec with MockitoSugar {
     }
 
     it("Supports 1 host") {
-      val fos = new FailoverState(List(uriA))
+      val fos = new FailoverState(IndexedSeq(uriA))
       var index: Int = 0
 
       val func: Uri => IO[Request[IO]] = (uri) => {

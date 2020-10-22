@@ -103,7 +103,7 @@ class BakerClientSpec extends BakeryFunSpec {
       val uri3 = uri1 / "nowWorking"
 
       BakerClient.resourceBalanced(
-        hosts = List(uri3, uri2, uri1),
+        hosts = IndexedSeq(uri3, uri2, uri1),
         executionContext = executionContext,
         filters = List.empty,
         tlsConfig = Some(clientTLSConfig))
