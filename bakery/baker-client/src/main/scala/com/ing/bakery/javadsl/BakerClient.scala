@@ -1,9 +1,8 @@
 package com.ing.bakery.javadsl
 
-import java.util
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors.newCachedThreadPool
-import java.util.{Optional, List => JList}
+import java.util.{Collections, Optional, List => JList}
 
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.runtime.javadsl.{Baker => JavaBaker}
@@ -32,11 +31,11 @@ object BakerClient {
   }
 
   def build(hostname: String, tlsConfig: Optional[TLSConfig]): CompletableFuture[JavaBaker] = {
-    build(hostname, util.Collections.emptyList[Filter](), tlsConfig)
+    build(hostname, Collections.emptyList[Filter](), tlsConfig)
   }
 
   def build(hostname: String): CompletableFuture[JavaBaker] = {
-    build(hostname, util.Collections.emptyList[Filter](), Optional.empty[TLSConfig]())
+    build(hostname, Collections.emptyList[Filter](), Optional.empty[TLSConfig]())
   }
 
   //TODO add resource cleanup possibility.
@@ -48,7 +47,7 @@ object BakerClient {
     * @param tlsConfig TLS context for connection
     * @return JavaBaker
     */
-  def build(hosts: List[String],
+  def build(hosts: JList[String],
             filters: JList[Filter],
             tlsConfig: Optional[TLSConfig]): CompletableFuture[JavaBaker] = {
 
@@ -66,7 +65,7 @@ object BakerClient {
       .map { client =>
         new scaladsl.BakerClient(
           client = client,
-          hosts = hosts.map(Uri.unsafeFromString),
+          hosts = hosts.asScala.map(Uri.unsafeFromString),
           filters = filters.asScala.map(_.asScala))
       }
       .allocated
