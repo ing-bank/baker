@@ -4,7 +4,7 @@ import sbt._
 object Dependencies {
 
   val akkaVersion = "2.6.9"
-  val akkaManagementVersion = "1.0.8"
+  val akkaManagementVersion = "1.0.9"
   val akkaHttpVersion = "10.2.1"
   val http4sVersion = "0.21.8"
   val circeVersion = "0.13.0"
