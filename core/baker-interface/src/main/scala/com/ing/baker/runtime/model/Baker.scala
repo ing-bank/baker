@@ -1,10 +1,10 @@
 package com.ing.baker.runtime.model
 
-import cats.effect.{ConcurrentEffect, Timer}
+import cats.effect.{ConcurrentEffect, Sync, Timer}
 import cats.implicits._
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerF, EventInstance, EventMoment, EventResolutions, InteractionInstance, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
+import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.Value
 
 object Baker {
@@ -13,14 +13,14 @@ object Baker {
                   recipeInstanceManager: RecipeInstanceManager[F],
                   recipeManager: RecipeManager[F],
                   eventStream: EventStream[F])
-                 (implicit effect: ConcurrentEffect[F], timer: Timer[F]): Baker[F] = {
+                 (implicit effect: Sync[F], timer: Timer[F]): Baker[F] = {
     implicit val components: BakerComponents[F] =
       BakerComponents(interactionInstanceManager, recipeInstanceManager, recipeManager, eventStream)
     new Baker()
   }
 }
 
-final class Baker[F[_]](implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) extends BakerF[F] {
+final class Baker[F[_]](implicit components: BakerComponents[F], effect: Sync[F], timer: Timer[F]) extends BakerF[F] {
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -147,7 +147,7 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     * @param event            The event object
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): EventResolutions = ???
+  override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): EventResolutionsF[F] = ???
 
   /**
     * Returns an index of all running processes.
@@ -241,14 +241,14 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Concurr
     *
     * @param implementation The implementation object
     */
-  override def addInteractionInstance(implementation: InteractionInstance): F[Unit] = ???
+  override def addInteractionInstance(implementation: InteractionInstanceF[F]): F[Unit] = ???
 
   /**
     * Adds a sequence of interaction implementation to baker.
     *
     * @param implementations The implementation object
     */
-  override def addInteractionInstances(implementations: Seq[InteractionInstance]): F[Unit] = ???
+  override def addInteractionInstances(implementations: Seq[InteractionInstanceF[F]]): F[Unit] = ???
 
   /**
     * Attempts to gracefully shutdown the baker system.

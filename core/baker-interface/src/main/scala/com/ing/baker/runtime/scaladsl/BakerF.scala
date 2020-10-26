@@ -12,13 +12,13 @@ trait BakerF[F[_]] extends common.Baker[F] with ScalaApi {
 
   override type SensoryEventResultType = SensoryEventResult
 
-  override type EventResolutionsType = EventResolutions
+  override type EventResolutionsType = EventResolutionsF[F]
 
   override type EventInstanceType = EventInstance
 
   override type RecipeInstanceStateType = RecipeInstanceState
 
-  override type InteractionInstanceType = InteractionInstance
+  override type InteractionInstanceType = InteractionInstanceF[F]
 
   override type BakerEventType = BakerEvent
 

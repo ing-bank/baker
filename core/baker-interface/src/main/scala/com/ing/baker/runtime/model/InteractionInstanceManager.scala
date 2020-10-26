@@ -1,28 +1,27 @@
 package com.ing.baker.runtime.model
 
-import cats.Functor
 import cats.implicits._
-import cats.effect.{ConcurrentEffect, ContextShift, IO}
+import cats.{Functor, MonadError}
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
+import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceF}
 
 trait InteractionInstanceManager[F[_]] {
 
-  def add(interaction: InteractionInstance): F[Unit]
+  def add(interaction: InteractionInstanceF[F]): F[Unit]
 
-  def get(interaction: InteractionTransition): F[Option[InteractionInstance]]
+  def get(interaction: InteractionTransition): F[Option[InteractionInstanceF[F]]]
 
   def contains(interaction: InteractionTransition)(implicit effect: Functor[F]): F[Boolean] =
     get(interaction).map(_.isDefined)
 
-  def execute(interaction: InteractionTransition, input: Seq[IngredientInstance])(implicit effect: ConcurrentEffect[F], contextShift: ContextShift[IO]): F[Option[EventInstance]] = {
+  def execute(interaction: InteractionTransition, input: Seq[IngredientInstance])(implicit effect: MonadError[F, Throwable]): F[Option[EventInstance]] = {
     get(interaction).flatMap {
-      case Some(implementation) => effect.liftIO(IO.fromFuture(IO(implementation.run(input))))
+      case Some(implementation) => implementation.execute(input)
       case None => effect.raiseError(new IllegalStateException(s"No implementation available for interaction ${interaction.interactionName}"))
     }
   }
 
-  protected def isCompatible(interaction: InteractionTransition, implementation: InteractionInstance): Boolean = {
+  protected def isCompatible(interaction: InteractionTransition, implementation: InteractionInstanceF[F]): Boolean = {
     val interactionNameMatches =
       interaction.originalInteractionName == implementation.name
     val inputSizeMatches =

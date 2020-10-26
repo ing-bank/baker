@@ -3,6 +3,7 @@ package com.ing.baker.runtime.model.recipeinstance
 import java.io.{PrintWriter, StringWriter}
 import java.lang.reflect.InvocationTargetException
 
+import cats.MonadError
 import cats.effect.{Clock, Sync}
 import cats.implicits._
 import com.ing.baker.il

@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.model.recipeinstance
 
-import cats.effect.{Clock, Sync}
+import cats.effect.{Clock, ConcurrentEffect}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.api.Marking
@@ -35,7 +35,7 @@ case class RecipeInstance(
     * @return The returning type is either a validation rejection with its explanation, or an updated state of the recipe
     *         instance with the encapsulated effect of firing the event.
     */
-  def fire[F[_]](interactionId: Long, input: EventInstance, correlationId: Option[String] = None)(implicit components: BakerComponents[F], effect: Sync[F], clock: Clock[F]): Either[(FireSensoryEventRejection, String), (RecipeInstance, F[TransitionExecutionOutcome])] = {
+  def fire[F[_]](interactionId: Long, input: EventInstance, correlationId: Option[String] = None)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], clock: Clock[F]): Either[(FireSensoryEventRejection, String), (RecipeInstance, F[TransitionExecutionOutcome])] = {
     for {
       firing <- validateInputAndCreateExecution(interactionId, input, correlationId)
       updatedInstance = addExecution(firing)
@@ -53,7 +53,7 @@ case class RecipeInstance(
     * @tparam F
     * @return
     */
-  def step[F[_]](implicit components: BakerComponents[F], effect: Sync[F], clock: Clock[F]): (RecipeInstance, Seq[F[TransitionExecutionOutcome]]) = {
+  def step[F[_]](implicit components: BakerComponents[F], effect: ConcurrentEffect[F], clock: Clock[F]): (RecipeInstance, Seq[F[TransitionExecutionOutcome]]) = {
     val enabledExecutions = allEnabledExecutions
     addExecution(enabledExecutions: _*) -> enabledExecutions.map(_.run)
   }
