@@ -1,26 +1,14 @@
 package com.ing.baker.runtime.model
 
-import cats.effect.{ConcurrentEffect, Sync, Timer}
+import cats.effect.{Sync, Timer}
 import cats.implicits._
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
+import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.Value
 
-object Baker {
-
-  def build[F[_]](interactionInstanceManager: InteractionInstanceManager[F],
-                  recipeInstanceManager: RecipeInstanceManager[F],
-                  recipeManager: RecipeManager[F],
-                  eventStream: EventStream[F])
-                 (implicit effect: Sync[F], timer: Timer[F]): Baker[F] = {
-    implicit val components: BakerComponents[F] =
-      BakerComponents(interactionInstanceManager, recipeInstanceManager, recipeManager, eventStream)
-    new Baker()
-  }
-}
-
-final class Baker[F[_]](implicit components: BakerComponents[F], effect: Sync[F], timer: Timer[F]) extends BakerF[F] {
+abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Sync[F], timer: Timer[F]) extends BakerF[F] {
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -106,7 +94,10 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Sync[F]
     * @param event            The event object
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventStatus] = ???
+  override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventStatus] =
+    components.recipeInstanceManager
+      .fireEventAndResolveWhenReceived(recipeInstanceId, event, correlationId)
+      .flatMap(mapRejectionsToStatus)
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -119,7 +110,10 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Sync[F]
     * @param event            The event object
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventResult] = ???
+  override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventResult] =
+    components.recipeInstanceManager
+      .fireEventAndResolveWhenCompleted(recipeInstanceId, event, correlationId)
+      .flatMap(mapRejectionsToResult)
 
   /**
     * Notifies Baker that an event has happened and waits until an specific event has executed.
@@ -133,7 +127,10 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Sync[F]
     * @param onEvent          The name of the event to wait for
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): F[SensoryEventResult] = ???
+  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): F[SensoryEventResult] =
+    components.recipeInstanceManager
+      .fireEventAndResolveOnEvent(recipeInstanceId, event, onEvent, correlationId)
+      .flatMap(mapRejectionsToResult)
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -147,7 +144,52 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Sync[F]
     * @param event            The event object
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): EventResolutionsF[F] = ???
+  override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): EventResolutionsF[F] =
+    components.recipeInstanceManager
+      .fireEvent(recipeInstanceId, event, correlationId) match { case (onReceive, onComplete) =>
+        new EventResolutionsF[F] {
+          override def resolveWhenReceived: F[SensoryEventStatus] =
+            onReceive.flatMap(mapRejectionsToStatus)
+          override def resolveWhenCompleted: F[SensoryEventResult] =
+            onComplete.flatMap(mapRejectionsToResult)
+        }
+      }
+
+  private def mapRejectionsToStatus(outcome: Either[FireSensoryEventRejection, SensoryEventStatus]): F[SensoryEventStatus] =
+    outcome match {
+      case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
+        effect.raiseError(BakerException.IllegalEventException(message))
+      case Left(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0)) =>
+        effect.raiseError(BakerException.NoSuchProcessException(recipeInstanceId0))
+      case Left(_: FireSensoryEventRejection.FiringLimitMet) =>
+        effect.pure(SensoryEventStatus.FiringLimitMet)
+      case Left(_: FireSensoryEventRejection.AlreadyReceived) =>
+        effect.pure(SensoryEventStatus.AlreadyReceived)
+      case Left(_: FireSensoryEventRejection.ReceivePeriodExpired) =>
+        effect.pure(SensoryEventStatus.ReceivePeriodExpired)
+      case Left(_: FireSensoryEventRejection.RecipeInstanceDeleted) =>
+        effect.pure(SensoryEventStatus.RecipeInstanceDeleted)
+      case Right(status) =>
+        effect.pure(status)
+    }
+
+  private def mapRejectionsToResult(outcome: Either[FireSensoryEventRejection, SensoryEventResult]): F[SensoryEventResult] =
+    outcome match {
+      case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
+        effect.raiseError(BakerException.IllegalEventException(message))
+      case Left(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0)) =>
+        effect.raiseError(BakerException.NoSuchProcessException(recipeInstanceId0))
+      case Left(_: FireSensoryEventRejection.FiringLimitMet) =>
+        effect.pure(SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
+      case Left(_: FireSensoryEventRejection.AlreadyReceived) =>
+        effect.pure(SensoryEventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
+      case Left(_: FireSensoryEventRejection.ReceivePeriodExpired) =>
+        effect.pure(SensoryEventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
+      case Left(_: FireSensoryEventRejection.RecipeInstanceDeleted) =>
+        effect.pure(SensoryEventResult(SensoryEventStatus.RecipeInstanceDeleted, Seq.empty, Map.empty))
+      case Right(result) =>
+        effect.pure(result)
+    }
 
   /**
     * Returns an index of all running processes.
@@ -159,7 +201,8 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Sync[F]
     *
     * @return An index of all processes
     */
-  override def getAllRecipeInstancesMetadata: F[Set[RecipeInstanceMetadata]] = ???
+  override def getAllRecipeInstancesMetadata: F[Set[RecipeInstanceMetadata]] =
+    components.recipeInstanceManager.getAllRecipeInstancesMetadata
 
   /**
     * Returns the process state.
@@ -234,26 +277,24 @@ final class Baker[F[_]](implicit components: BakerComponents[F], effect: Sync[F]
     * @param listenerFunction
     * @return
     */
-  override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): F[Unit] = ???
+  override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): F[Unit] =
+    components.eventStream.subscribe(listenerFunction)
 
   /**
     * Adds an interaction implementation to baker.
     *
     * @param implementation The implementation object
     */
-  override def addInteractionInstance(implementation: InteractionInstanceF[F]): F[Unit] = ???
+  override def addInteractionInstance(implementation: InteractionInstanceF[F]): F[Unit] =
+    components.interactionInstanceManager.add(implementation)
 
   /**
     * Adds a sequence of interaction implementation to baker.
     *
     * @param implementations The implementation object
     */
-  override def addInteractionInstances(implementations: Seq[InteractionInstanceF[F]]): F[Unit] = ???
-
-  /**
-    * Attempts to gracefully shutdown the baker system.
-    */
-  override def gracefulShutdown(): F[Unit] = ???
+  override def addInteractionInstances(implementations: Seq[InteractionInstanceF[F]]): F[Unit] =
+    implementations.toList.traverse(components.interactionInstanceManager.add).void
 
   /**
     * Retries a blocked interaction.

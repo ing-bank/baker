@@ -1,12 +1,19 @@
 package com.ing.baker.runtime.model.recipeinstance
 
-import cats.effect.{Clock, Sync}
+import cats.Monad
+import cats.implicits._
+import cats.data.EitherT
+import cats.effect.Clock
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.il.petrinet.{Place, Transition}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.{FireTransitionValidation, Reason}
 import com.ing.baker.runtime.scaladsl.EventInstance
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.{Logger, LoggerFactory}
+
+import scala.concurrent.duration.FiniteDuration
 
 /** Utility functions of the RecipeInstance to help validate the input events (to create firings)
   * and to extract information about the petri net (like checking for blocked transitions or enabled parameters)
@@ -18,24 +25,21 @@ private[recipeinstance] trait RecipeInstanceUtils extends LazyLogging { self: Re
 
   /** Firing Validation ********************************************************************************************* */
 
-  type Reason = String
-
-  type FireTransitionValidation[+A] =
-    Either[(FireSensoryEventRejection, Reason), A]
-
   protected def validateInputAndCreateExecution[F[_]](
-    transitionId: Long,
     input: EventInstance,
     correlationId: Option[String]
   )(implicit
-    effect: Sync[F],
+    effect: Monad[F],
     clock: Clock[F]
-  ): FireTransitionValidation[TransitionExecution] = {
-    val transition = petriNetTransition(transitionId)
+  ): FireTransitionValidation[F, TransitionExecution] = {
     for {
-      _ <- validateReceivedCorrelationId(correlationId)
-      _ <- validateIsBlocked(transition)
-      params <- validateConsumableTokens(transition)
+      transitionAndDescriptor <- validateEventIsInRecipe[F](input)
+      (transition, descriptor) = transitionAndDescriptor
+      _ <- validateEventIsSound[F](descriptor, input)
+      _ <- validateWithinReceivePeriod[F]
+      _ <- validateReceivedCorrelationId[F](correlationId)
+      _ <- validateIsBlocked[F](transition)
+      params <- validateConsumableTokens[F](transition)
     } yield TransitionExecution(
       recipeInstanceId = recipeInstanceId,
       recipe = recipe,
@@ -47,35 +51,68 @@ private[recipeinstance] trait RecipeInstanceUtils extends LazyLogging { self: Re
     )
   }
 
-  /*
-  def activeFirings: List[TransitionFiring[F]] =
-    firings.values.filter(_.isActive).toList
-   */
+  private def reject[F[_], A](rejection: FireSensoryEventRejection, explanation: String)(implicit effect: Monad[F]): FireTransitionValidation[F, A] =
+    EitherT(effect.pure(Left[(FireSensoryEventRejection, Reason), A](rejection -> explanation)))
 
-  private def reject[A](rejection: FireSensoryEventRejection, explanation: String): FireTransitionValidation[A] =
-    Left(rejection -> explanation)
+  private def accept[F[_], A](a: A)(implicit effect: Monad[F]): FireTransitionValidation[F, A] =
+    EitherT(effect.pure(Right(a)))
 
-  private def accept[A](a: A): FireTransitionValidation[A] =
-    Right(a)
-
-  private def continue: FireTransitionValidation[Unit] =
+  private def continue[F[_]](implicit effect: Monad[F]): FireTransitionValidation[F, Unit] =
     accept(())
 
-  private def validateReceivedCorrelationId(correlationId: Option[String]): FireTransitionValidation[Unit] =
+  private def validateEventIsInRecipe[F[_]](event: EventInstance)(implicit effect: Monad[F]): FireTransitionValidation[F, (Transition, EventDescriptor)] = {
+    val transition0 = recipe.petriNet.transitions.find(_.label == event.name)
+    val sensoryEvent0 = recipe.sensoryEvents.find(_.name == event.name)
+    (transition0, sensoryEvent0) match {
+      case (Some(transition), Some(sensoryEvent)) =>
+        accept(transition -> sensoryEvent)
+      case _ =>
+        val msg = s"No event with name '${event.name}' found in recipe '${recipe.name}'"
+        reject(FireSensoryEventRejection.InvalidEvent(
+          recipeInstanceId, msg), msg)
+    }
+  }
+
+  private def validateEventIsSound[F[_]](descriptor: EventDescriptor, event: EventInstance)(implicit effect: Monad[F]): FireTransitionValidation[F, Unit] = {
+    val eventValidationErrors = event.validate(descriptor)
+    if (eventValidationErrors.nonEmpty) {
+      val msg = s"Invalid event: " + eventValidationErrors.mkString(",")
+      reject(FireSensoryEventRejection.InvalidEvent(
+        recipeInstanceId, msg), msg)
+    } else continue[F]
+  }
+
+  private def validateWithinReceivePeriod[F[_]](implicit effect: Monad[F], clock: Clock[F]): FireTransitionValidation[F, Unit] = {
+    def outOfReceivePeriod(current: Long, period: FiniteDuration): Boolean =
+      current - createdOn > period.toMillis
+    for {
+      currentTime <- EitherT.liftF(clock.realTime(scala.concurrent.duration.MILLISECONDS))
+      _ <- recipe.eventReceivePeriod match {
+        case Some(receivePeriod) if outOfReceivePeriod(currentTime, receivePeriod) =>
+          reject[F, Unit](FireSensoryEventRejection.ReceivePeriodExpired(recipeInstanceId), "Receive period expired")
+        case _ => continue[F]
+      }
+    } yield ()
+  }
+
+  private def validateReceivedCorrelationId[F[_]](correlationId: Option[String])(implicit effect: Monad[F]): FireTransitionValidation[F, Unit] =
     correlationId match {
       case Some(correlationId) if receivedCorrelationIds.contains(correlationId) || executions.values.exists(_.correlationId.contains(correlationId)) =>
-        reject(FireSensoryEventRejection.AlreadyReceived(recipeInstanceId, correlationId), s"The correlation id $correlationId was previously received by another fire transition command")
-      case _ => continue
+        reject(FireSensoryEventRejection.AlreadyReceived(recipeInstanceId, correlationId),
+          s"The correlation id $correlationId was previously received by another fire transition command")
+      case _ => continue[F]
     }
 
-  private def validateIsBlocked(transition: Transition): FireTransitionValidation[Unit] =
-    if (isBlocked(transition)) reject(FireSensoryEventRejection.FiringLimitMet(recipeInstanceId), "Transition is blocked by a previous failure")
-    else continue
+  private def validateIsBlocked[F[_]](transition: Transition)(implicit effect: Monad[F]): FireTransitionValidation[F, Unit] =
+    if (isBlocked(transition)) reject(FireSensoryEventRejection.FiringLimitMet(recipeInstanceId),
+      "Transition is blocked by a previous failure")
+    else continue[F]
 
-  private def validateConsumableTokens(transition: Transition): FireTransitionValidation[Iterable[Marking[Place]]] =
+  private def validateConsumableTokens[F[_]](transition: Transition)(implicit effect: Monad[F]): FireTransitionValidation[F, Iterable[Marking[Place]]] =
     enabledParameters(availableMarking).get(transition) match {
       case None ⇒
-        reject(FireSensoryEventRejection.FiringLimitMet(recipeInstanceId), s"Not enough consumable tokens. This might have been caused because the event has already been fired up to the firing limit but the recipe requires more instances of the event, use withSensoryEventNoFiringLimit or increase the amount of firing limit on the recipe if such behaviour is desired")
+        reject(FireSensoryEventRejection.FiringLimitMet(recipeInstanceId),
+          s"Not enough consumable tokens. This might have been caused because the event has already been fired up to the firing limit but the recipe requires more instances of the event, use withSensoryEventNoFiringLimit or increase the amount of firing limit on the recipe if such behaviour is desired")
       case Some(params) ⇒
         accept(params)
     }

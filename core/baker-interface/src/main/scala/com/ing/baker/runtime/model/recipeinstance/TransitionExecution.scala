@@ -61,7 +61,7 @@ private[recipeinstance] case class TransitionExecution(
       case _ => false
     }
 
-  def run[F[_]](implicit components: BakerComponents[F], effect: Sync[F], clock: Clock[F]): F[TransitionExecutionOutcome] = {
+  def execute[F[_]](implicit components: BakerComponents[F], effect: Sync[F], clock: Clock[F]): F[TransitionExecutionOutcome] = {
     clock.realTime(scala.concurrent.duration.MILLISECONDS).flatMap { startTime =>
       //TODO log.firingTransition(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
       val execution: F[TransitionExecutionOutcome] =
