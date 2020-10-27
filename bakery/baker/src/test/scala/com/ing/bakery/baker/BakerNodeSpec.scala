@@ -274,6 +274,10 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
       }
     }
 
+    test("fails") { context =>
+      fail("fail!")
+    }
+
     test("Baker.resolveInteraction") { context =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val resolutionEvent = EventInstance.unsafeFrom(
