@@ -33,55 +33,77 @@ object Main extends IOApp with LazyLogging {
     val httpServerPort = config.getInt("bakery-component.http-api-port")
     val recipeDirectory = config.getString("bakery-component.recipe-directory")
 
-    val interactionClientHttpsEnabled = config.getBoolean("bakery-component.interaction-client.https-enabled")
-    lazy val interactionClientKeystorePath = config.getString("bakery-component.interaction-client.https-keystore-path")
-    lazy val interactionClientKeystorePassword = config.getString("bakery-component.interaction-client.https-keystore-password")
-    lazy val interactionClientKeystoreType = config.getString("bakery-component.interaction-client.https-keystore-type")
-    lazy val scope = config.getString("bakery-component.interaction-client.scope")
+    implicit val system: ActorSystem = ActorSystem("baker", config)
+    val hostname: InetSocketAddress = InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort)
 
+    val useRemoteInteractions = config.getBoolean("bakery-component.remote-interactions-enabled")
+
+    val eventSinkSettings = config.getConfig("baker.kafka-event-sink").as[KafkaEventSinkSettings]
     val loggingEnabled = config.getBoolean("bakery-component.api-logging-enabled")
     logger.info(s"Logging of API: ${loggingEnabled}  - MUST NEVER BE SET TO 'true' IN PRODUCTION")
 
-    val eventSinkSettings = config.getConfig("baker.kafka-event-sink").as[KafkaEventSinkSettings]
+    val mainResource =
+      if (useRemoteInteractions) {
+        implicit val connectionPool: ExecutionContext = ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
 
-    // Core dependencies
-    implicit val system: ActorSystem =
-      ActorSystem("bakery-baker-system", config)
-    implicit val connectionPool: ExecutionContext =
-      ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
-    val hostname: InetSocketAddress =
-      InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort)
-    val k8s: KubernetesClient = skuber.k8sInit
+        val interactionClientHttpsEnabled = config.getBoolean("bakery-component.interaction-client.https-enabled")
+        lazy val interactionClientKeystorePath = config.getString("bakery-component.interaction-client.https-keystore-path")
+        lazy val interactionClientKeystorePassword = config.getString("bakery-component.interaction-client.https-keystore-password")
+        lazy val interactionClientKeystoreType = config.getString("bakery-component.interaction-client.https-keystore-type")
+        lazy val scope = config.getString("bakery-component.interaction-client.scope")
 
-    val tlsConfig: Option[SSLContext] =
-      if(interactionClientHttpsEnabled)
-        Some(BakeryHttp.loadSSLContext(BakeryHttp.TLSConfig(
-          password = interactionClientKeystorePassword,
-          keystorePath = interactionClientKeystorePath,
-          keystoreType = interactionClientKeystoreType
-        )))
-      else None
+        val k8s: KubernetesClient = skuber.k8sInit
 
-    val mainResource = for {
-      interactionHttpClient <- BlazeClientBuilder[IO](connectionPool, tlsConfig).withCheckEndpointAuthentication(false).resource
-      serviceDiscovery <- ServiceDiscovery.resource(interactionHttpClient, k8s, scope)
-      eventSink <- KafkaEventSink.resource(eventSinkSettings)
-      baker = AkkaBaker
-        .withConfig(AkkaBakerConfig(
-          interactionManager = serviceDiscovery.buildInteractionManager,
-          bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
-          timeouts = AkkaBakerConfig.Timeouts.from(config),
-          bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config),
-        )(system))
-      _ <- Resource.liftF(eventSink.attach(baker))
-      _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(recipeDirectory, baker))
-      _ <- Resource.liftF(IO.async[Unit] { callback =>
-        Cluster(system).registerOnMemberUp {
-          callback(Right(()))
-        }
-      })
-      _ <- BakerService.resource(baker, hostname, serviceDiscovery, loggingEnabled)
-    } yield ()
+        val tlsConfig: Option[SSLContext] =
+          if (interactionClientHttpsEnabled)
+            Some(BakeryHttp.loadSSLContext(BakeryHttp.TLSConfig(
+              password = interactionClientKeystorePassword,
+              keystorePath = interactionClientKeystorePath,
+              keystoreType = interactionClientKeystoreType
+            )))
+          else None
+
+        for {
+          interactionHttpClient <- BlazeClientBuilder[IO](connectionPool, tlsConfig).withCheckEndpointAuthentication(false).resource
+          serviceDiscovery <- RemoteInteractions.resource(interactionHttpClient, k8s, scope)
+          eventSink <- KafkaEventSink.resource(eventSinkSettings)
+          baker = AkkaBaker
+            .withConfig(AkkaBakerConfig(
+              interactions = serviceDiscovery.buildInteractionManager,
+              bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
+              timeouts = AkkaBakerConfig.Timeouts.from(config),
+              bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config),
+            )(system))
+          _ <- Resource.liftF(eventSink.attach(baker))
+          _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(recipeDirectory, baker))
+          _ <- Resource.liftF(IO.async[Unit] { callback =>
+            Cluster(system).registerOnMemberUp {
+              callback(Right(()))
+            }
+          })
+          _ <- BakerService.resource(baker, hostname, serviceDiscovery, loggingEnabled)
+        } yield ()
+
+      } else {
+        for {
+          eventSink <- KafkaEventSink.resource(eventSinkSettings)
+          baker = AkkaBaker
+            .withConfig(AkkaBakerConfig(
+              interactions = initialiseBundledInteractions,
+              bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
+              timeouts = AkkaBakerConfig.Timeouts.from(config),
+              bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config),
+            )(system))
+          _ <- Resource.liftF(eventSink.attach(baker))
+          _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(recipeDirectory, baker))
+          _ <- Resource.liftF(IO.async[Unit] { callback =>
+            Cluster(system).registerOnMemberUp {
+              callback(Right(()))
+            }
+          })
+          _ <- BakerService.resource(baker, hostname, serviceDiscovery, loggingEnabled)
+        } yield ()
+      }
 
     mainResource.use(_ => {
       logger.info("Baker initalisation complete, enabling the readiness")

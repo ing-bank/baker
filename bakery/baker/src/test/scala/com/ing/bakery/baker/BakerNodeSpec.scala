@@ -324,11 +324,11 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
   }
 
   case class Context(
-    client: Baker,
-    serviceDiscovery: ServiceDiscovery,
-    remoteInteraction: RemoteInteraction,
-    eventListener: EventListener,
-    kubeApiServer: KubeApiServer
+                      client: Baker,
+                      serviceDiscovery: RemoteInteractions,
+                      remoteInteraction: RemoteInteraction,
+                      eventListener: EventListener,
+                      kubeApiServer: KubeApiServer
   )
 
   /** Represents the "sealed resources context" that each test can use. */
@@ -388,12 +388,12 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
       httpClient <- BlazeClientBuilder[IO](executionContext).resource
       serviceDiscovery <- {
         implicit val sys = system
-        ServiceDiscovery.resource(httpClient, k8s, "webshop")
+        RemoteInteractions.resource(httpClient, k8s, "webshop")
       }
       eventListener = new EventListener()
       baker = AkkaBaker
         .withConfig(AkkaBakerConfig.localDefault(system).copy(
-          interactionManager = serviceDiscovery.buildInteractionManager,
+          interactions = serviceDiscovery.buildInteractionManager,
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings(
             allowAddingRecipeWithoutRequiringInstances = true))(system))
 

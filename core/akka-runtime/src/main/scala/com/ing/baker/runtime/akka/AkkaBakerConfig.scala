@@ -16,7 +16,7 @@ import scala.concurrent.duration._
 
 case class AkkaBakerConfig(
                             bakerActorProvider: BakerActorProvider,
-                            interactionManager: InteractionManager,
+                            interactions: InteractionManager,
                             timeouts: AkkaBakerConfig.Timeouts,
                             bakerValidationSettings: BakerValidationSettings
                           )(implicit val system: ActorSystem)
@@ -75,7 +75,7 @@ object AkkaBakerConfig extends LazyLogging {
       timeouts = Timeouts.default,
       bakerValidationSettings = BakerValidationSettings.default,
       bakerActorProvider = localProvider,
-      interactionManager = new InteractionManagerLocal(),
+      interactions = new InteractionManagerLocal(),
     )(actorSystem)
   }
 
@@ -94,7 +94,7 @@ object AkkaBakerConfig extends LazyLogging {
       timeouts = Timeouts.default,
       bakerValidationSettings = BakerValidationSettings.default,
       bakerActorProvider = clusterProvider,
-      interactionManager = new InteractionManagerLocal(),
+      interactions = new InteractionManagerLocal(),
     )(actorSystem)
   }
 
@@ -105,7 +105,7 @@ object AkkaBakerConfig extends LazyLogging {
       timeouts = Timeouts.from(config),
       bakerValidationSettings = BakerValidationSettings.from(config),
       bakerActorProvider = bakerProviderFrom(config),
-      interactionManager = interactionManagerFrom(config)
+      interactions = interactionManagerFrom(config)
     )(actorSystem)
   }
 
