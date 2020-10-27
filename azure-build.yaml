@@ -32,12 +32,6 @@ steps:
         bash $(sourceScan.secureFilePath)
       failOnStderr: true
 
-  - task: JavaToolInstaller@0
-    inputs:
-      versionSpec: '11'
-      jdkArchitectureOption: 'x64'
-      jdkSourceOption: 'PreInstalled'
-
   - task: CacheBeta@1
     displayName: Package resolver cache
     inputs:
@@ -55,6 +49,12 @@ steps:
     inputs:
       targetType: 'inline'
       script: bash ./set-version.sh
+
+  - task: JavaToolInstaller@0
+    inputs:
+      versionSpec: '11'
+      jdkArchitectureOption: 'x64'
+      jdkSourceOption: 'PreInstalled'
 
   - task: Bash@3
     displayName: 'Building and testing main Baker'
