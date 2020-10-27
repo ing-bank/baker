@@ -63,7 +63,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     config.bakerActorProvider.createRecipeManagerActor()
 
   val processIndexActor: ActorRef =
-    config.bakerActorProvider.createProcessIndexActor(config.interactions, recipeManager)
+    config.bakerActorProvider.createProcessIndexActor(config.interactionManager, recipeManager)
 
   /**
    * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -100,7 +100,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   private def getImplementationErrors(compiledRecipe: CompiledRecipe): Future[Set[String]] = {
     //TODO optimize so that we do not have to much traffic if its a remote InteractionManager
     compiledRecipe.interactionTransitions.toList
-      .traverse(x => config.interactions.hasImplementation(x).map(has => (has, x.originalInteractionName)))
+      .traverse(x => config.interactionManager.hasImplementation(x).map(has => (has, x.originalInteractionName)))
       .map(_
         .filterNot(_._1)
         .map(x => s"No implementation provided for interaction: ${x._2}")
@@ -450,7 +450,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
    * @param implementation The implementation object
    */
   override def addInteractionInstance(implementation: InteractionInstance): Future[Unit] =
-    config.interactions.addImplementation(implementation)
+    config.interactionManager.addImplementation(implementation)
 
   /**
    * Adds a sequence of interaction implementation to baker.

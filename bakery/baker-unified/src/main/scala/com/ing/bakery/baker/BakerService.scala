@@ -4,6 +4,7 @@ import java.net.InetSocketAddress
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
+import com.ing.baker.runtime.akka.internal.InteractionManager
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EventInstance}
 import io.circe._
@@ -22,11 +23,10 @@ import org.http4s.server.middleware.Logger
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 object BakerService  {
 
-  def resource(baker: Baker, hostname: InetSocketAddress, serviceDiscovery: ServiceDiscovery, loggingEnabled: Boolean)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+  def resource(baker: Baker, hostname: InetSocketAddress, apiUrlPrefix: String, interactions: InteractionManager, loggingEnabled: Boolean)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
     val apiLoggingAction: Option[String => IO[Unit]] = if (loggingEnabled) {
       val apiLogger = LoggerFactory.getLogger("API")
       Some(s => IO(apiLogger.info(s)))
@@ -39,14 +39,13 @@ object BakerService  {
             logHeaders = loggingEnabled,
             logBody = loggingEnabled,
             logAction = apiLoggingAction)
-          (new BakerService(baker, serviceDiscovery).build)
+          (new BakerService(apiUrlPrefix, baker, interactions).build)
         ).resource
     } yield binding
   }
 }
 
-final class BakerService private(baker: Baker, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
-
+final class BakerService private(apiUrlPrefix: String, baker: Baker, interactionManager: InteractionManager)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
   object CorrelationId extends OptionalQueryParamDecoderMatcher[String]("correlationId")
 
   private class RegExpValidator(regexp: String) {
@@ -59,7 +58,7 @@ final class BakerService private(baker: Baker, serviceDiscovery: ServiceDiscover
   implicit val eventInstanceDecoder: EntityDecoder[IO, EventInstance] = jsonOf[IO, EventInstance]
   implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
 
-  def build: HttpApp[IO] = Router("/api/bakery" -> (app <+> instance)) orNotFound
+  def build: HttpApp[IO] = Router(apiUrlPrefix -> (app <+> instance)) orNotFound
 
   private def callBaker[A](f : => Future[A])(implicit encoder: Encoder[A]): IO[Response[IO]] = {
     IO.fromFuture(IO(f)).attempt.flatMap {
@@ -77,7 +76,7 @@ final class BakerService private(baker: Baker, serviceDiscovery: ServiceDiscover
         case GET -> Root / "health" => Ok()
 
         case GET -> Root / "interactions" => for {
-          interactions <- serviceDiscovery.get
+          interactions <- IO.fromFuture(IO(interactionManager.listAllImplementations))
           resp <- Ok(interactions.map(_.name).asJson)
         } yield  resp
 

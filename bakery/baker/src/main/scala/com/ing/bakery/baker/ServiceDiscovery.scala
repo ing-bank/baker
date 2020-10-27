@@ -23,10 +23,10 @@ import skuber.json.format._
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-object RemoteInteractions extends LazyLogging {
+object ServiceDiscovery extends LazyLogging {
 
-  def empty(httpClient: Client[IO], scope: String): IO[RemoteInteractions] =
-    Ref.of[IO, Map[String, InteractionInstance]](Map.empty).map(new RemoteInteractions(_, httpClient, scope))
+  def empty(httpClient: Client[IO], scope: String): IO[ServiceDiscovery] =
+    Ref.of[IO, Map[String, InteractionInstance]](Map.empty).map(new ServiceDiscovery(_, httpClient, scope))
 
   /** Creates resource of a ServiceDiscovery module, when acquired a stream of kubernetes services starts and feeds the
     * ServiceDiscovery module to give corresponding InteractionInstances
@@ -39,9 +39,9 @@ object RemoteInteractions extends LazyLogging {
     * @param timer to be used by the streams
     * @return
     */
-  def resource(interactionHttpClient: Client[IO], k8s: KubernetesClient, scope: String)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, RemoteInteractions] = {
+  def resource(interactionHttpClient: Client[IO], k8s: KubernetesClient, scope: String)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, ServiceDiscovery] = {
 
-    def watchSource(serviceDiscovery: RemoteInteractions): Source[K8SWatchEvent[ConfigMap], UniqueKillSwitch] = {
+    def watchSource(serviceDiscovery: ServiceDiscovery): Source[K8SWatchEvent[ConfigMap], UniqueKillSwitch] = {
       val watchFilter: ListOptions = {
         val labelSelector = LabelSelector(
           List(
@@ -69,7 +69,7 @@ object RemoteInteractions extends LazyLogging {
       }.viaMat(KillSwitches.single)(Keep.right)
     }
 
-    def updateSink(serviceDiscovery: RemoteInteractions): Sink[K8SWatchEvent[ConfigMap], Future[Done]] = {
+    def updateSink(serviceDiscovery: ServiceDiscovery): Sink[K8SWatchEvent[ConfigMap], Future[Done]] = {
       Sink.foreach[K8SWatchEvent[ConfigMap]] { event =>
           serviceDiscovery.update(event).recover { case e =>
             logger.error("Failure when updating the services in the ConfigMap Discovery component", e)
@@ -77,9 +77,9 @@ object RemoteInteractions extends LazyLogging {
       }
     }
 
-    val createServiceDiscovery: IO[(RemoteInteractions, UniqueKillSwitch)] =
+    val createServiceDiscovery: IO[(ServiceDiscovery, UniqueKillSwitch)] =
       for {
-        serviceDiscovery <- RemoteInteractions.empty(interactionHttpClient, scope)
+        serviceDiscovery <- ServiceDiscovery.empty(interactionHttpClient, scope)
         killSwitch <- IO { watchSource(serviceDiscovery).toMat(updateSink(serviceDiscovery))(Keep.left).run() }
       } yield (serviceDiscovery, killSwitch)
 
@@ -87,17 +87,11 @@ object RemoteInteractions extends LazyLogging {
   }
 }
 
-trait Interactions {
-  def get: IO[List[InteractionInstance]]
-}
-
-final class BundledInteractions private()
-
-final class RemoteInteractions private(
+final class ServiceDiscovery private(
   cacheInteractions: Ref[IO, Map[String, InteractionInstance]],
   interactionHttpClient: Client[IO],
   val scope: String
-) extends Interactions with LazyLogging {
+) extends LazyLogging {
 
   def get: IO[List[InteractionInstance]] =
     cacheInteractions.get.map(_.values.toList)
@@ -116,6 +110,10 @@ final class RemoteInteractions private(
 
   def buildInteractionManager: InteractionManager =
     new InteractionManager {
+
+      override def listAllImplementations: Future[List[InteractionInstance]] =
+        cacheInteractions.get.map(_.values.toList).unsafeToFuture()
+
       override def addImplementation(interaction: InteractionInstance): Future[Unit] =
         Future.failed(new IllegalStateException("Adding implementation instances is not supported on a Bakery cluster."))
       override def getImplementation(interaction: InteractionTransition): Future[Option[InteractionInstance]] =

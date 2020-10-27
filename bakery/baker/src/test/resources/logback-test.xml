@@ -22,6 +22,6 @@
 
     <logger level="OFF" name="org.mockserver.log.MockServerEventLog"/>
 
-    <logger level="OFF" name="com.ing.bakery.baker.RemoteInteractions"/>
+    <logger level="OFF" name="com.ing.bakery.baker.ServiceDiscovery"/>
 
 </configuration>

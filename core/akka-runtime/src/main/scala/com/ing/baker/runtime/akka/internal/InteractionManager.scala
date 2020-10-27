@@ -9,6 +9,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * It knows all available implementations and gives the correct implementation for an Interaction
   */
 trait InteractionManager {
+  def listAllImplementations: Future[List[InteractionInstance]]
 
   /** Adds an interaction instance to the manager.
     *

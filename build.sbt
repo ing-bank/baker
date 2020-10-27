@@ -230,6 +230,50 @@ lazy val `bakery-baker-client` = project.in(file("bakery/baker-client"))
   )
   .dependsOn(`baker-interface`)
 
+lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
+  .settings(commonSettings ++ Publish.settings)
+  .settings(
+    moduleName := "bakery-baker",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    libraryDependencies ++= Seq(
+      slf4jApi,
+      akkaPersistenceCassandra,
+      akkaHttpSprayJson,
+      akkaManagementHttp,
+      akkaClusterBoostrap,
+      akkaDiscovery,
+      akkaDiscoveryKube,
+      skuber,
+      play,
+      http4s,
+      http4sDsl,
+      http4sCirce,
+      http4sServer,
+      springCore,
+      springContext,
+      scalaKafkaClient,
+      kamon,
+      kamonAkka,
+      kamonPrometheus
+    ) ++ testDeps(
+      slf4jApi,
+      logback,
+      scalaTest,
+      mockServer,
+      circe,
+      circeGeneric,
+      akkaInmemoryJournal
+    )
+  )
+  .dependsOn(
+    `baker-akka-runtime`,
+    `bakery-baker-client`,
+    `bakery-interaction-protocol`,
+    `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`
+  )
+
 lazy val `bakery-baker` = project.in(file("bakery/baker"))
   .settings(commonSettings ++ Publish.settings)
   .settings(
