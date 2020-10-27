@@ -59,14 +59,14 @@ class BakeryConfigMapSmokeTests extends BakerySmokeTests with Matchers {
 
         _ = recipeEvents
           .map(parse)
-          .map(_.toOption.get.asObject.get.apply("name").get.asString.get) shouldBe ExpectedRecipeEvents
+          .map(_.toOption.get.asObject.get.apply("name").get.asString.get).sorted shouldBe ExpectedRecipeEvents.sorted
 
         bakerEvents <- Pod.execOnNamed("kafka-event-sink",
           context.namespace, Some("kafkacat"))(s"kafkacat -b localhost:9092 -C -t baker-events -o 0 -c ${ExpectedBakerEvents.size}")
 
         _ = bakerEvents
           .map(parse)
-          .map(_.toOption.get.asObject.get.keys.head) shouldBe ExpectedBakerEvents
+          .map(_.toOption.get.asObject.get.keys.head).sorted shouldBe ExpectedBakerEvents.sorted
 
         _ <- printGreen(s"Event streams contain all required events")
       } yield succeed
