@@ -57,14 +57,21 @@ steps:
       targetType: 'inline'
       script: bash ./set-version.sh
 
-  - script: |
-      sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package clean coverage test coverageReport
-      bash <(curl -s https://codecov.io/bash)
+  - task: Bash@3
     displayName: 'Building and testing main Baker'
+    inputs:
+      targetType: 'inline'
+      script: |
+        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package clean coverage test coverageReport && bash <(curl -s https://codecov.io/bash)
+      failOnStderr: false
 
-  - script: |
-      sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project bakery-interaction-example-make-payment-and-ship-items; test; project bakery-interaction-example-reserve-items; test; project bakery-client-example; test; project bakery-kafka-listener-example; test"
+  - task: Bash@3
     displayName: 'Building and testing examples'
+    inputs:
+      targetType: 'inline'
+      script: |
+        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project bakery-interaction-example-make-payment-and-ship-items; test; project bakery-interaction-example-reserve-items; test; project bakery-client-example; test; project bakery-kafka-listener-example; test"
+      failOnStderr: false
 
   - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
     - task: Bash@3
