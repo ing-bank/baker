@@ -16,13 +16,6 @@ variables:
     value: $(Pipeline.Workspace)/.ivy2
 
 steps:
-  - task: Bash@3
-    displayName: Scan sources
-    inputs:
-      targetType: 'inline'
-      script: |
-        echo $(Build.Repository.Name)
-      failOnStderr: true
 
   - task: DownloadSecureFile@1
     displayName: Get source scan script
@@ -38,6 +31,12 @@ steps:
       script: |
         bash $(sourceScan.secureFilePath)
       failOnStderr: true
+
+  - task: JavaToolInstaller@0
+    inputs:
+      versionSpec: '11'
+      jdkArchitectureOption: 'x64'
+      jdkSourceOption: 'PreInstalled'
 
   - task: CacheBeta@1
     displayName: Package resolver cache
