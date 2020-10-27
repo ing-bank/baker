@@ -62,6 +62,9 @@ steps:
       workingDirectory: $(Build.SourcesDirectory)
       targetType: 'inline'
       script: |
+        pwd
+        ls -la .
+        find . -name build.sbt
         sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} coverage test coverageReport && bash <(curl -s https://codecov.io/bash)
       failOnStderr: false
 
