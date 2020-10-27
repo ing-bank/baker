@@ -39,32 +39,37 @@ object Main extends IOApp with LazyLogging {
 
     val eventSinkSettings = config.getConfig("baker.kafka-event-sink").as[KafkaEventSinkSettings]
     val eventSinkResource = KafkaEventSink.resource(eventSinkSettings)
-    val component = config.getConfig("bakery-component")
+    val bakery = config.getConfig("bakery")
 
-    val httpServerPort = component.getInt("http-api-port")
-    val apiUrlPrefix = component.getString("api-url-prefix")
-    val recipeDirectory = component.getString("recipe-directory")
-    val configurationClassString = component.getString("interaction-configuration-class")
+    val httpServerPort = bakery.getInt("http-api-port")
+    val apiUrlPrefix = bakery.getString("api-url-prefix")
+    val recipeDirectory = bakery.getString("recipe-directory")
+    val configurationClasses = bakery.getStringList("interaction-configuration-classes")
 
     implicit val system: ActorSystem = ActorSystem("baker", config)
     implicit val executionContext: ExecutionContext = system.dispatcher
 
     val hostname: InetSocketAddress = InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort)
 
-    val loggingEnabled = component.getBoolean("api-logging-enabled")
+    val loggingEnabled = bakery.getBoolean("api-logging-enabled")
     logger.info(s"Logging of API: ${loggingEnabled}  - MUST NEVER BE SET TO 'true' IN PRODUCTION")
 
+
     val interactions = {
-      val configClass = Class.forName(configurationClassString)
-      logger.info("Initalising interactions from: " + configClass)
-      val ctx = new AnnotationConfigApplicationContext();
-      ctx.register(configClass)
-      ctx.refresh()
-      val interactionsAsJavaMap: java.util.Map[String, Interaction] =
-        ctx.getBeansOfType(classOf[com.ing.baker.recipe.javadsl.Interaction])
-      val interactions = interactionsAsJavaMap.asScala.values.map(InteractionInstance.unsafeFrom).toList
-      logger.info(s"Configured interactions: ${interactions.map(_.name).mkString(",")}")
-      interactions
+      if (configurationClasses.size() == 0) {
+        logger.warn("No interactions configured, ")
+      }
+      (configurationClasses.asScala map { configurationClass =>
+        val configClass = Class.forName(configurationClass)
+        val ctx = new AnnotationConfigApplicationContext();
+        ctx.register(configClass)
+        ctx.refresh()
+        val interactionsAsJavaMap: java.util.Map[String, Interaction] =
+          ctx.getBeansOfType(classOf[com.ing.baker.recipe.javadsl.Interaction])
+        val interactions = interactionsAsJavaMap.asScala.values.map(InteractionInstance.unsafeFrom).toList
+        logger.info(s"$configurationClass: ${interactions.map(_.name).mkString(",")}")
+        interactions
+      } toList).flatten
     }
 
     val interactionManager = new InteractionManagerLocal(interactions)
