@@ -78,6 +78,7 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
           version in ThisBuild := moduleID.map(_.revision).getOrElse((version in ThisBuild).value),
           javaOptions in Universal += arguments.interactions.mkString(","),
           livenessProbe in kube := NoProbe,
+          dockerBaseImage := "adoptopenjdk/openjdk11",
           sourceGenerators in Compile += Def.task {
             val mainClassName =
               (mainClass in Compile).value.getOrElse(throw new MessageOnlyException("mainClass in Compile is required"))

@@ -22,11 +22,9 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
 
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
-  scalaVersion := "2.12.11",
-  crossScalaVersions := Seq("2.12.11"),
+  scalaVersion := "2.12.12",
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
-  javacOptions := Seq("-source", jvmV, "-target", jvmV),
   scalacOptions := Seq(
     "-unchecked",
     "-deprecation",
@@ -36,7 +34,6 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     "-language:implicitConversions",
     "-language:postfixOps",
     "-encoding", "utf8",
-    s"-target:jvm-$jvmV",
     "-Xfatal-warnings"
   ),
   coverageExcludedPackages := "<empty>;.*javadsl.*;.*scaladsl.*;.*common.*;.*protobuf.*;.*Main.*",
@@ -48,6 +45,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   resolvers += Resolver.bintrayRepo("cakesolutions", "maven"),
   maintainer in Docker := "The Bakery Team",
   dockerRepository in Docker := sys.env.get("BAKERY_DOCKER_REPO"),
+  dockerBaseImage := "adoptopenjdk/openjdk11",
   version in Docker := "local" // used by smoke tests for locally built images
 )
 
