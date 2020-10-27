@@ -62,9 +62,8 @@ steps:
     inputs:
       targetType: 'inline'
       script: |
-        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package clean coverage test coverageReport
-        bash <(curl -s https://codecov.io/bash)
-      failOnStderr: true
+        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package clean coverage test coverageReport && bash <(curl -s https://codecov.io/bash)
+      failOnStderr: false
 
   - task: Bash@3
     displayName: 'Building and testing examples'
@@ -72,7 +71,7 @@ steps:
       targetType: 'inline'
       script: |
         sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project bakery-interaction-example-make-payment-and-ship-items; test; project bakery-interaction-example-reserve-items; test; project bakery-client-example; test; project bakery-kafka-listener-example; test"
-      failOnStderr: true
+      failOnStderr: false
 
   - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
     - task: Bash@3
