@@ -233,7 +233,7 @@ lazy val `bakery-baker-client` = project.in(file("bakery/baker-client"))
 lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
   .settings(commonSettings ++ Publish.settings)
   .settings(
-    moduleName := "bakery-baker",
+    moduleName := "baker-unified",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
