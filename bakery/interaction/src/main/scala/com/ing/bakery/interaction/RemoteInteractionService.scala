@@ -5,6 +5,8 @@ import java.net.InetSocketAddress
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.bakery.protocol.{InteractionExecution => I}
 import com.ing.baker.runtime.scaladsl.{IngredientInstance, InteractionInstance}
+import io.circe.Json
+import io.circe.syntax._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._
@@ -47,14 +49,21 @@ final class RemoteInteractionService(interactions: List[InteractionInstance])(im
   def build: HttpApp[IO] =
     api.orNotFound
 
-  private val Interactions = interactions.map(interaction =>
-    I.Interaction(interaction.shaBase64, interaction.name, interaction.input.toList))
+  private val Interactions: List[I.Interaction] =
+    interactions.map(interaction =>
+      I.Interaction(interaction.shaBase64, interaction.name, interaction.input.toList))
 
   def api: HttpRoutes[IO] = Router("/api/bakery" -> HttpRoutes.of[IO] {
 
-    case GET -> Root / "health" => Ok("Ok")
-
     case GET -> Root / "interactions" => Ok(Interactions)
+
+    case GET -> Root / "interactions-with-version" =>
+      // Environment variable injected by the Bakery Controller from the Interaction Resource Definition file
+      val version: String = sys.env.getOrElse("BAKERY_INTERACTION_VERSION", "unknown")
+      Ok(Json.obj(
+        "version" -> Json.fromString(version),
+        "interactions" -> Json.fromValues(Interactions.map(_.asJson))
+      ))
 
     case req@POST -> Root /  "interactions" / id / "execute" =>
       for {

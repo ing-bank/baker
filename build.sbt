@@ -1,5 +1,5 @@
 import Dependencies._
-import sbt.Keys._
+import Keys._
 import sbt.file
 
 def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = project % "test->test;test->compile"
@@ -7,7 +7,7 @@ def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = proje
 lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocker")({
   state =>
     val extracted = Project.extract(state)
-
+    "set version in ThisBuild := \"local\"" ::
     "bakery-baker-docker-generate/docker:publishLocal" ::
       "bakery-client-example/docker:publishLocal" ::
       "bakery-kafka-listener-example/docker:publishLocal" ::
@@ -29,7 +29,6 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     "-unchecked",
     "-deprecation",
     "-feature",
-    "-Ywarn-dead-code",
     "-language:higherKinds",
     "-language:existentials",
     "-language:implicitConversions",
@@ -220,10 +219,13 @@ lazy val `bakery-baker-client` = project.in(file("bakery/baker-client"))
       http4sClient,
       http4sCirce,
       scalaLogging,
+      catsRetry,
       http4sServer % "test",
       slf4jApi % "test",
       logback % "test",
-      scalaTest % "test"
+      scalaTest % "test",
+      mockitoScala % "test",
+      mockitoScalaTest % "test"
     )
   )
   .dependsOn(`baker-interface`)
@@ -238,13 +240,13 @@ lazy val `bakery-baker` = project.in(file("bakery/baker"))
     libraryDependencies ++= Seq(
       slf4jApi,
       akkaPersistenceCassandra,
+      akkaHttpSprayJson,
       akkaManagementHttp,
       akkaClusterBoostrap,
       akkaDiscovery,
       akkaDiscoveryKube,
       skuber,
       play,
-      jackson,
       http4s,
       http4sDsl,
       http4sCirce,
@@ -261,9 +263,6 @@ lazy val `bakery-baker` = project.in(file("bakery/baker"))
       circe,
       circeGeneric,
       akkaInmemoryJournal
-    ),
-    dependencyOverrides ++= Seq(
-      play
     )
   )
   .dependsOn(
@@ -324,13 +323,15 @@ lazy val `bakery-controller` = project.in(file("bakery/controller"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "bakery-controller",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
     libraryDependencies ++= Seq(
       slf4jApi,
       akkaSlf4j,
       scalaLogging,
       skuber,
       play,
-      jackson,
       http4s,
       http4sDsl,
       http4sServer,
@@ -344,7 +345,9 @@ lazy val `bakery-controller` = project.in(file("bakery/controller"))
       scalaTest,
       mockServer,
       circe,
-      circeGeneric
+      circeGeneric,
+      mockitoScala,
+      mockitoScalaTest
     ),
     dependencyOverrides ++= Seq(
       play
@@ -355,28 +358,42 @@ lazy val `bakery-controller` = project.in(file("bakery/controller"))
 lazy val `bakery-controller-docker-generate` = project.in(file("docker/bakery-controller-docker-generate"))
   .settings(commonSettings, noPublishSettings)
   .enablePlugins(JavaAppPackaging, DockerPlugin)
-  .settings(
-    packageSummary in Docker := "The bakery controller",
-    packageName in Docker := "bakery-controller",
-    mainClass in Compile := Some("com.ing.bakery.clustercontroller.Main"),
-    libraryDependencies ++= Seq(
-      logback
-    )
-  )
   .dependsOn(`bakery-controller`)
+  .settings(
+    mainClass in Compile := Some("com.ing.bakery.clustercontroller.Main"),
+    dockerRepository := Some("ingbakery"),
+    dockerExposedPorts ++= Seq(8080),
+    maintainer in Docker := "Bakery OSS",
+    packageSummary in Docker := "Prometheus operator implementation for Bakery workloads",
+    packageName in Docker := "controller",
+    dockerBaseImage := "openjdk:8",
+    libraryDependencies ++= Seq(
+      logback,
+      logstash
+    ),
+    dockerUpdateLatest := true, // todo only for master branch
+    version in Docker := Keys.version.value
+  )
 
 lazy val `bakery-baker-docker-generate` = project.in(file("docker/bakery-baker-docker-generate"))
   .settings(commonSettings, noPublishSettings)
   .enablePlugins(JavaAppPackaging, DockerPlugin)
-  .settings(
-    packageSummary in Docker := "The bakery state node",
-    packageName in Docker := "bakery-baker",
-    mainClass in Compile := Some("com.ing.bakery.baker.Main"),
-    libraryDependencies ++= Seq(
-      logback
-    )
-  )
   .dependsOn(`bakery-baker`)
+  .settings(
+    mainClass in Compile := Some("com.ing.bakery.baker.Main"),
+    dockerRepository := Some("ingbakery"),
+    dockerExposedPorts ++= Seq(8080),
+    maintainer in Docker := "Bakery OSS",
+    packageSummary in Docker := "Baker state node, running Akka Cluster and keeping recipe states",
+    packageName in Docker := "baker",
+    dockerBaseImage := "openjdk:8",
+    libraryDependencies ++= Seq(
+      logback,
+      logstash
+    ),
+    dockerUpdateLatest := true, // todo only for master branch
+    version in Docker := Keys.version.value
+  )
 
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
@@ -563,3 +580,4 @@ lazy val `sbt-bakery-docker-generate` = project.in(file("docker/sbt-bakery-docke
   .enablePlugins(SbtPlugin)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .dependsOn(`bakery-interaction`, `bakery-interaction-spring`)
+

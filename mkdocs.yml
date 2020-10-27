@@ -12,6 +12,7 @@ extra_css:
 markdown_extensions:
   - codehilite
   - pymdownx.superfences
+  - pymdownx.tabbed
   - admonition
 
 nav:

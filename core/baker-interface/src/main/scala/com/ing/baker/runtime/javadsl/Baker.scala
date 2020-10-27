@@ -16,7 +16,7 @@ import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
 
-class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker[CompletableFuture] with JavaApi {
+class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker[CompletableFuture] with JavaApi with AutoCloseable {
 
   override type SensoryEventResultType = SensoryEventResult
 
@@ -37,6 +37,11 @@ class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker
   override type EventMomentType = EventMoment
 
   override type RecipeMetadataType = RecipeEventMetadata
+
+
+  override def close(): Unit = {
+    baker.gracefulShutdown()
+  }
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.

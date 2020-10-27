@@ -38,59 +38,65 @@ It is now up to the user to handle waiting for the completion of this future.
 This can either be by blocking directly or by 'correctly' programming with these Futures.
 We REALLY advise to invest in programming in a non blocking fashion!
 
-```scala tab="Scala"
-//Blocking
-val futureStatus: Future[SensoryEventStatus] = baker.fireEventAndResolveWhenReceived(orderId, event)
-val status: SensoryEventStatus = Await.result(futureStatus, 10 seconds)
+=== "Scala"
 
-//Non Blocking
-val futureStatus: Future[SensoryEventStatus] = baker.fireEventAndResolveWhenReceived(orderId, event)
-futureStatus.map(sensoryEventStatus => {
-     //Code to handle status
-})
-```
+    ```scala 
+    //Blocking
+    val futureStatus: Future[SensoryEventStatus] = baker.fireEventAndResolveWhenReceived(orderId, event)
+    val status: SensoryEventStatus = Await.result(futureStatus, 10 seconds)
 
-```java tab="Java"
-//Blocking
-CompletableFuture<SensoryEventStatus> futureStatus =
-                baker.fireEventAndResolveWhenReceived(uuid.toString(), EventInstance.from(new ExampleEvent()));
-SensoryEventStatus sensoryEventStatus = futureStatus.get();
+    //Non Blocking
+    val futureStatus: Future[SensoryEventStatus] = baker.fireEventAndResolveWhenReceived(orderId, event)
+    futureStatus.map(sensoryEventStatus => {
+         //Code to handle status
+    })
+    ```
+
+=== "Java"
+
+    ```java 
+    //Blocking
+    CompletableFuture<SensoryEventStatus> futureStatus =
+                    baker.fireEventAndResolveWhenReceived(uuid.toString(), EventInstance.from(new ExampleEvent()));
+    SensoryEventStatus sensoryEventStatus = futureStatus.get();
 
 
-//Non blocking
-CompletableFuture<SensoryEventStatus> futureStatus =
-                baker.fireEventAndResolveWhenReceived(uuid.toString(), eventInstance));
+    //Non blocking
+    CompletableFuture<SensoryEventStatus> futureStatus =
+                    baker.fireEventAndResolveWhenReceived(uuid.toString(), eventInstance));
 
-futureStatus.thenApply(sensoryEventStatus -> {
-      //Code to handle status
-});
-```
+    futureStatus.thenApply(sensoryEventStatus -> {
+          //Code to handle status
+    });
+    ```
 
 Any Exceptions that used to be thrown by Baker are now encapsulated in the Future/CompletableFuture.
 For the CompletableFuture the original exception is wrapped in the ExecutionException.
 This is how CompletableFuture work and there is no way around it.
 
-```java tab="Java"
-//Blocking
-try {
-    baker.fireEventAndResolveWhenCompleted(processId, EventInstance.from(new ExampleEventClass())).get();
-} catch (ExecutionException e) {
-    if(e.getCause() instanceof BakerException.NoSuchProcessException) {
-        //Code to handle NoSuchProcessException
+=== "Java"
+
+    ```java 
+    //Blocking
+    try {
+        baker.fireEventAndResolveWhenCompleted(processId, EventInstance.from(new ExampleEventClass())).get();
+    } catch (ExecutionException e) {
+        if(e.getCause() instanceof BakerException.NoSuchProcessException) {
+            //Code to handle NoSuchProcessException
+        }
+        //Code to handle other Exceptions
     }
-    //Code to handle other Exceptions
-}
 
 
-//Non blocking
-baker.fireEventAndResolveWhenCompleted(processId, EventInstance.from(new ExampleEventClass()))
-        .exceptionally(exception -> {
-            if(exception.getCause() instanceof BakerException.NoSuchProcessException) {
-                //Decide on what to return on NoSuchProcessException
-            }
-            //Decide on what to return on other Exceptions
-        });
-```
+    //Non blocking
+    baker.fireEventAndResolveWhenCompleted(processId, EventInstance.from(new ExampleEventClass()))
+            .exceptionally(exception -> {
+                if(exception.getCause() instanceof BakerException.NoSuchProcessException) {
+                    //Decide on what to return on NoSuchProcessException
+                }
+                //Decide on what to return on other Exceptions
+            });
+    ```
 
 
 
@@ -99,22 +105,26 @@ A Baker instance is now created not with a constructor but via a static method.
 
 For Java the JBaker is gone and you now create a Baker under the javadsl package.
 
-```scala tab="Scala"
-import com.ing.baker.runtime.scaladsl.*;
-......
-val actorSystem: ActorSystem = ActorSystem("WebshopSystem")
-val config: Config = ConfigFactory.load()
-val baker = Baker.akka(config, actorSystem);
+=== "Scala"
 
-```
+    ```scala 
+    import com.ing.baker.runtime.scaladsl.*;
+    ......
+    val actorSystem: ActorSystem = ActorSystem("WebshopSystem")
+    val config: Config = ConfigFactory.load()
+    val baker = Baker.akka(config, actorSystem);
 
-```java tab="Java"
-import com.ing.baker.runtime.javadsl.*;
-......
-ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-Config config = ConfigFactory.load();
-Baker baker = Baker.akka(config, actorSystem);
-```
+    ```
+
+=== "Java"
+
+    ```java 
+    import com.ing.baker.runtime.javadsl.*;
+    ......
+    ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
+    Config config = ConfigFactory.load();
+    Baker baker = Baker.akka(config, actorSystem);
+    ```
 
 See the [runtime reference](../../reference/runtime) for more details
 
@@ -122,17 +132,21 @@ See the [runtime reference](../../reference/runtime) for more details
 ### Adding Interactions into Baker
 When adding InteractionInstances formerly known as InteractionImplementations to Baker you now need to give a real InteractionInstance object.
 
-```scala tab="Scala"
-val reserveItemsInstance: InteractionInstance =
-    InteractionInstance.unsafeFrom(new ReserveItemsInstance)
-baker.addInteractionInstance(reserveItemsInstance)
-```
+=== "Scala"
 
-```java tab="Java"
-InteractionInstance reserveItemsInstance =
-    InteractionInstance.from(new ReserveItemsInstance());
-baker.addInteractionInstance(reserveItemsInstance)
-```
+    ```scala 
+    val reserveItemsInstance: InteractionInstance =
+        InteractionInstance.unsafeFrom(new ReserveItemsInstance)
+    baker.addInteractionInstance(reserveItemsInstance)
+    ```
+
+=== "Java"
+
+    ```java 
+    InteractionInstance reserveItemsInstance =
+        InteractionInstance.from(new ReserveItemsInstance());
+    baker.addInteractionInstance(reserveItemsInstance)
+    ```
 
 ### Firing events
 The processEvent has been completely rewritten and is now named FireEvent.

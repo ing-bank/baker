@@ -22,6 +22,7 @@ import org.http4s.server.middleware.Logger
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 object BakerService  {
 
@@ -47,6 +48,13 @@ object BakerService  {
 final class BakerService private(baker: Baker, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
 
   object CorrelationId extends OptionalQueryParamDecoderMatcher[String]("correlationId")
+
+  private class RegExpValidator(regexp: String) {
+    def unapply(str: String): Option[String] = if (str.matches(regexp)) Some(str) else None
+  }
+  private object RecipeId extends RegExpValidator("[A-Za-z0-9]+")
+  private object RecipeInstanceId extends RegExpValidator("[A-Za-z0-9-]+")
+  private object InteractionName extends RegExpValidator("[A-Za-z0-9_]+")
 
   implicit val eventInstanceDecoder: EntityDecoder[IO, EventInstance] = jsonOf[IO, EventInstance]
   implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
@@ -75,52 +83,52 @@ final class BakerService private(baker: Baker, serviceDiscovery: ServiceDiscover
 
         case GET -> Root / "recipes" => callBaker(baker.getAllRecipes)
 
-        case GET -> Root / "recipes" / recipeId => callBaker(baker.getRecipe(recipeId))
+        case GET -> Root / "recipes" / RecipeId(recipeId) => callBaker(baker.getRecipe(recipeId))
     } )
 
   private def instance: HttpRoutes[IO]  = Router("/instances" ->  HttpRoutes.of[IO] {
 
       case GET -> Root => callBaker(baker.getAllRecipeInstancesMetadata)
 
-      case GET -> Root / recipeInstanceId  => callBaker(baker.getRecipeInstanceState(recipeInstanceId))
+      case GET -> Root / RecipeInstanceId(recipeInstanceId)  => callBaker(baker.getRecipeInstanceState(recipeInstanceId))
 
-      case GET -> Root / recipeInstanceId / "events" => callBaker(baker.getEvents(recipeInstanceId))
+      case GET -> Root / RecipeInstanceId(recipeInstanceId) / "events" => callBaker(baker.getEvents(recipeInstanceId))
 
-      case GET -> Root / recipeInstanceId / "ingredients" => callBaker(baker.getIngredients(recipeInstanceId))
+      case GET -> Root / RecipeInstanceId(recipeInstanceId) / "ingredients" => callBaker(baker.getIngredients(recipeInstanceId))
 
-      case GET -> Root / recipeInstanceId / "visual" => callBaker(baker.getVisualState(recipeInstanceId))
+      case GET -> Root / RecipeInstanceId(recipeInstanceId) / "visual" => callBaker(baker.getVisualState(recipeInstanceId))
 
-      case POST -> Root / recipeInstanceId / "bake"  / recipeId => callBaker(baker.bake(recipeId, recipeInstanceId))
+      case POST -> Root / RecipeInstanceId(recipeInstanceId) / "bake"  / RecipeId(recipeId) => callBaker(baker.bake(recipeId, recipeInstanceId))
 
-      case req@POST -> Root / recipeInstanceId / "fire-and-resolve-when-received" :? CorrelationId(maybeCorrelationId)  =>
+      case req@POST -> Root / RecipeInstanceId(recipeInstanceId) / "fire-and-resolve-when-received" :? CorrelationId(maybeCorrelationId)  =>
         for {
           event <- req.as[EventInstance]
           result <- callBaker(baker.fireEventAndResolveWhenReceived(recipeInstanceId, event, maybeCorrelationId))
         } yield result
 
-      case req@POST -> Root / recipeInstanceId / "fire-and-resolve-when-completed" :? CorrelationId(maybeCorrelationId)  =>
+      case req@POST -> Root / RecipeInstanceId(recipeInstanceId) / "fire-and-resolve-when-completed" :? CorrelationId(maybeCorrelationId)  =>
         for {
           event <- req.as[EventInstance]
           result <- callBaker(baker.fireEventAndResolveWhenCompleted(recipeInstanceId, event, maybeCorrelationId))
         } yield result
 
-      case  req@POST -> Root / recipeInstanceId / "fire-and-resolve-on-event" / onEvent :? CorrelationId(maybeCorrelationId) =>
+      case  req@POST -> Root / RecipeInstanceId(recipeInstanceId) / "fire-and-resolve-on-event" / onEvent :? CorrelationId(maybeCorrelationId) =>
         for {
           event <- req.as[EventInstance]
           result <- callBaker(baker.fireEventAndResolveOnEvent(recipeInstanceId, event, onEvent, maybeCorrelationId))
         } yield result
 
-      case POST -> Root / recipeInstanceId / "interaction" / interactionName / "retry" =>
+      case POST -> Root / RecipeInstanceId(recipeInstanceId) / "interaction" / InteractionName(interactionName) / "retry" =>
         for {
           result <- callBaker(baker.retryInteraction(recipeInstanceId, interactionName))
         } yield result
 
-      case POST -> Root / recipeInstanceId / "interaction" / interactionName / "stop-retrying" =>
+      case POST -> Root / RecipeInstanceId(recipeInstanceId) / "interaction" / InteractionName(interactionName) / "stop-retrying" =>
         for {
           result <- callBaker(baker.stopRetryingInteraction(recipeInstanceId, interactionName))
         } yield result
 
-      case req@POST -> Root / recipeInstanceId / "interaction" / interactionName / "resolve" =>
+      case req@POST -> Root / RecipeInstanceId(recipeInstanceId) / "interaction" / InteractionName(interactionName) / "resolve" =>
         for {
           event <- req.as[EventInstance]
           result <- callBaker(baker.resolveInteraction(recipeInstanceId, interactionName, event))

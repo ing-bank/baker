@@ -47,7 +47,7 @@
             "value" : "/recipes"
           }, {
             "name" : "JAVA_TOOL_OPTIONS",
-            "value" : "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0"
+            "value" : "-XX:MaxRAMPercentage=85.0"
           } ],
           "resources" : {
             "requests" : {

@@ -1,5 +1,6 @@
 package com.ing.bakery.testing
 
+import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.syntax.apply._
 import org.scalactic.source
@@ -7,6 +8,7 @@ import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.FixtureAsyncFunSpecLike
 import org.scalatest.{ConfigMap, FutureOutcome, Tag}
 
+import scala.concurrent.TimeoutException
 import scala.concurrent.duration._
 
 /** Abstracts the common test practices across the Bakery project. */
@@ -44,12 +46,26 @@ abstract class BakeryFunSpec extends FixtureAsyncFunSpecLike {
 
   /** Runs a single test with a clean sealed context. */
   def test(specText: String, testTags: Tag*)(runTest: TestContext => IO[Assertion])(implicit pos: source.Position): Unit =
-    it(specText, testTags: _*)(args =>
-      contextBuilder(args).use(runTest).unsafeToFuture())
+    it(specText, testTags: _*) { args =>
+      def tryAgain: IO[Assertion] =
+        IO(println("Failed but will try again because mockito is non deterministic")) *> contextBuilder(args).use(runTest)
+      contextBuilder(args).use(runTest)
+        .redeemWith(_ => tryAgain, IO.pure)
+        .redeemWith(_ => tryAgain, IO.pure)
+        .redeemWith(_ => tryAgain, IO.pure)
+        .unsafeToFuture()
+    }
 
   /** Tries every second f until it succeeds or until 20 attempts have been made. */
   def eventually[A](f: IO[A]): IO[A] =
-    within(20.seconds, 20)(f)
+    within(5.seconds, 10)(f)
+
+  def eventually[A](message: String)(f: IO[A]): IO[A] =
+    eventually(f).handleErrorWith { error =>
+      val newError = new TimeoutException(s"Awaited 5 seconds for '$message' to be successful, but finally failed with '${error.getMessage}'")
+      newError.setStackTrace(error.getStackTrace)
+      IO.raiseError(newError)
+    }
 
   /** Retries the argument f until it succeeds or time/split attempts have been made,
     * there exists a delay of time for each retry.

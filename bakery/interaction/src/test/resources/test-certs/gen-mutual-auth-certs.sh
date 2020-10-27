@@ -35,7 +35,7 @@ keytool -genkeypair -v \
   -storepass:env PW \
   -keyalg RSA \
   -keysize 2048 \
-  -validity 385
+  -validity 9999
 
 # Create a certificate signing request for interaction.ing-bank.github.io
 keytool -certreq -v \
@@ -103,7 +103,8 @@ keytool -genkeypair -v \
   -keypass:env PW \
   -storepass:env PW \
   -keyalg RSA \
-  -keysize 2048
+  -keysize 2048 \
+  -validity 9999
 
 # Create a certificate signing request from the client.interaction.ing-bank.github.io certificate.
 keytool -certreq -v \

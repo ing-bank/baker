@@ -1,7 +1,8 @@
 package com.ing.bakery.baker
 
-import java.io.File
+import java.io.{ByteArrayInputStream, File}
 import java.nio.file.Files
+import java.util.zip.{GZIPInputStream, ZipException}
 
 import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
@@ -11,6 +12,8 @@ import com.ing.baker.runtime.common.BakerException.NoSuchRecipeException
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.runtime.serialization.ProtoMap
 import org.apache.commons.codec.binary.Base64
+
+import scala.util.Try
 
 object RecipeLoader {
 
@@ -33,6 +36,17 @@ object RecipeLoader {
 
   def loadRecipes(path: String): IO[List[CompiledRecipe]] = {
 
+    def extract(str: String): Try[Array[Byte]] = {
+      val decodedBytes = Base64.decodeBase64(str)
+      Try {
+        val inputStream = new GZIPInputStream(new ByteArrayInputStream(decodedBytes))
+        Stream.continually(inputStream.read()).takeWhile(_ != -1).map(_.toByte).toArray
+      } recover {
+        case _: ZipException =>
+          decodedBytes
+      }
+    }
+
     def recipeFiles(path: String): IO[List[File]] = IO {
       val d = new File(path)
       if (d.exists && d.isDirectory) {
@@ -46,9 +60,9 @@ object RecipeLoader {
       files <- recipeFiles(path)
       recipes <- files.traverse { file =>
         for {
-          bytes <- IO(Files.readAllBytes(file.toPath))
-          decode64 = Base64.decodeBase64(new String(bytes))
-          protoRecipe <- IO.fromTry(protobuf.CompiledRecipe.validate(decode64))
+          string <- IO(new String(Files.readAllBytes(file.toPath)))
+          payload <- IO.fromTry(extract(string))
+          protoRecipe <- IO.fromTry(protobuf.CompiledRecipe.validate(payload))
           recipe <- IO.fromTry(ProtoMap.ctxFromProto(protoRecipe))
         } yield recipe
       }

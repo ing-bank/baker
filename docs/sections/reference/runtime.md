@@ -7,30 +7,34 @@ Baker provider several constructors to build a runtime to run your Recipes on. T
 
 _Note: We recommend reviewing also Akka configuration._
 
-```scala tab="Scala"
-import akka.actor.ActorSystem
-import com.ing.baker.runtime.scaladsl.Baker
-import com.typesafe.config.{Config, ConfigFactory}
+=== "Scala"
+
+    ```scala 
+    import akka.actor.ActorSystem
+    import com.ing.baker.runtime.scaladsl.Baker
+    import com.typesafe.config.{Config, ConfigFactory}
 
 
-val actorSystem: ActorSystem = ActorSystem("WebshopSystem")
-val config: Config = ConfigFactory.load()
+    val actorSystem: ActorSystem = ActorSystem("WebshopSystem")
+    val config: Config = ConfigFactory.load()
 
-val baker: Baker = Baker.akka(config, actorSystem)
-```
+    val baker: Baker = Baker.akka(config, actorSystem)
+    ```
+    
+=== "Java"
 
-```java tab="Java"
-import akka.actor.ActorSystem;
-import com.ing.baker.runtime.javadsl.Baker;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
+    ```java 
+    import akka.actor.ActorSystem;
+    import com.ing.baker.runtime.javadsl.Baker;
+    import com.typesafe.config.Config;
+    import com.typesafe.config.ConfigFactory;
 
 
-ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-Config config = ConfigFactory.load();
+    ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
+    Config config = ConfigFactory.load();
 
-Baker baker = Baker.akka(config, actorSystem);
-```
+    Baker baker = Baker.akka(config, actorSystem);
+    ```
 
 This last code snippet will build a Baker runtime and load all configuration from your default `application.conf` located 
 in the resources directory. You can see more about configuration on [this section](../development-life-cycle/configure.md).
@@ -38,17 +42,21 @@ in the resources directory. You can see more about configuration on [this sectio
 Alternatively there is a constructor that will provide the default configuration for a local mode Baker, this 
 is recommended for tests.
 
-```scala tab="Scala"
+=== "Scala"
 
-val baker: Baker = AkkaBaker.localDefault(actorSystem)
+    ```scala 
 
-```
+    val baker: Baker = AkkaBaker.localDefault(actorSystem)
 
-```java tab="Java"
+    ```
 
-Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
+=== "Java"
 
-```
+    ```java 
+
+    Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
+
+    ```
 
 ### Advantages of the Cluster Mode
 
@@ -75,88 +83,92 @@ The interface MUST declare a public method called `apply`, and the types must ma
 Notice that his function might throw an exception if the instance is not correctly done (this is why in Scala the API is
 named "unsafe").
 
-```scala tab="Scala"
-import com.ing.baker.runtime.scaladsl.InteractionInstance
+=== "Scala"
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+    ```scala 
+    import com.ing.baker.runtime.scaladsl.InteractionInstance
 
-sealed trait ReserveItemsOutput
-case class OrderHadUnavailableItems(unavailableItems: List[String]) extends ReserveItemsOutput
-case class ItemsReserved(reservedItems: List[String]) extends ReserveItemsOutput
+    import scala.concurrent.Future
+    import scala.concurrent.ExecutionContext.Implicits.global
 
-trait ReserveItems {
+    sealed trait ReserveItemsOutput
+    case class OrderHadUnavailableItems(unavailableItems: List[String]) extends ReserveItemsOutput
+    case class ItemsReserved(reservedItems: List[String]) extends ReserveItemsOutput
 
-  def apply(orderId: String, items: List[String]): Future[ReserveItemsOutput]
-}
+    trait ReserveItems {
 
-class ReserveItemsInstance extends ReserveItems {
-
-  override def apply(orderId: String, items: List[String]): Future[ReserveItemsOutput] = {
-
-    // Http call to the Warehouse service
-    val response: Future[Either[List[String], List[String]]] =
-    // This is mocked for the sake of the example
-      Future.successful(Right(items))
-
-    // Build an event instance that Baker understands
-    response.map {
-      case Left(unavailableItems) =>
-        OrderHadUnavailableItems(unavailableItems)
-      case Right(reservedItems) =>
-        ItemsReserved(reservedItems)
+      def apply(orderId: String, items: List[String]): Future[ReserveItemsOutput]
     }
-  }
-}
 
-val reserveItemsInstance: InteractionInstance =
-  InteractionInstance.unsafeFrom(new ReserveItemsInstance)
-```
+    class ReserveItemsInstance extends ReserveItems {
 
-``` java tab="Java"
-import com.ing.baker.runtime.javadsl.InteractionInstance;
-import com.ing.baker.runtime.javadsl.Interaction;
+      override def apply(orderId: String, items: List[String]): Future[ReserveItemsOutput] = {
 
-/** Java interface used for the Recipe */
-public interface ReserveItems extends Interaction {
+        // Http call to the Warehouse service
+        val response: Future[Either[List[String], List[String]]] =
+        // This is mocked for the sake of the example
+          Future.successful(Right(items))
 
-    interface ReserveItemsOutcome {}
+        // Build an event instance that Baker understands
+        response.map {
+          case Left(unavailableItems) =>
+            OrderHadUnavailableItems(unavailableItems)
+          case Right(reservedItems) =>
+            ItemsReserved(reservedItems)
+        }
+      }
+    }
 
-    class OrderHadUnavailableItems implements ReserveItemsOutcome {
+    val reserveItemsInstance: InteractionInstance =
+      InteractionInstance.unsafeFrom(new ReserveItemsInstance)
+    ```
+    
+=== "Java"
 
-        public final List<String> unavailableItems;
+    ```java
+    import com.ing.baker.runtime.javadsl.InteractionInstance;
+    import com.ing.baker.runtime.javadsl.Interaction;
 
-        public OrderHadUnavailableItems(List<String> unavailableItems) {
-            this.unavailableItems = unavailableItems;
+    /** Java interface used for the Recipe */
+    public interface ReserveItems extends Interaction {
+
+        interface ReserveItemsOutcome {}
+
+        class OrderHadUnavailableItems implements ReserveItemsOutcome {
+
+            public final List<String> unavailableItems;
+
+            public OrderHadUnavailableItems(List<String> unavailableItems) {
+                this.unavailableItems = unavailableItems;
+            }
+        }
+
+        class ItemsReserved implements ReserveItemsOutcome {
+
+            public final List<String> reservedItems;
+
+            public ItemsReserved(List<String> reservedItems) {
+                this.reservedItems = reservedItems;
+            }
+        }
+
+        @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
+        ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") List<String> items);
+    }
+
+    /** Implementation of the interface used for creating an InteractionInstance */
+    public class ReserveItems implements JWebshopRecipe.ReserveItems {
+
+        // The body of this method is going to be executed by the Baker runtime when the ingredients are available.
+        @Override
+        public ReserveItemsOutcome apply(String id, List<String> items) {
+            return new ReserveItems.ItemsReserved(items);
         }
     }
-
-    class ItemsReserved implements ReserveItemsOutcome {
-
-        public final List<String> reservedItems;
-
-        public ItemsReserved(List<String> reservedItems) {
-            this.reservedItems = reservedItems;
-        }
-    }
-
-    @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
-    ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") List<String> items);
-}
-
-/** Implementation of the interface used for creating an InteractionInstance */
-public class ReserveItems implements JWebshopRecipe.ReserveItems {
-
-    // The body of this method is going to be executed by the Baker runtime when the ingredients are available.
-    @Override
-    public ReserveItemsOutcome apply(String id, List<String> items) {
-        return new ReserveItems.ItemsReserved(items);
-    }
-}
-        
-/** Create an InteractionInstance from an instance of the ReserveItems implementation */        
-InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
-```
+            
+    /** Create an InteractionInstance from an instance of the ReserveItems implementation */        
+    InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
+    ```
 
 ## baker.addInteractionInstance(interactionInstance)
 
@@ -168,25 +180,29 @@ _Note: in Java the api returns a `CompletableFuture<BoxedUnit>`, this is because
 Scala's `Unit` get translated to `BoxedUnit`, but you should you ignore it and consider it as good as Java's `void`,
 except it comes in a `CompletableFuture` that will help you handle async programming._
 
-```scala tab="Scala"
+=== "Scala"
 
-val baker: Baker = AkkaBaker.localDefault(actorSystem)
+    ```scala
 
-val reserveItemsInstance: InteractionInstance = InteractionInstance.unsafeFrom(new ReserveItems())
+    val baker: Baker = AkkaBaker.localDefault(actorSystem)
 
-val result: Future[Unit] = baker.addInteractionInstance(reserveItemsInstance)
+    val reserveItemsInstance: InteractionInstance = InteractionInstance.unsafeFrom(new ReserveItems())
 
-```
+    val result: Future[Unit] = baker.addInteractionInstance(reserveItemsInstance)
 
-```java tab="Java"
+    ```
 
-Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
+=== "Java"
 
-InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
+    ```java 
 
-CompletableFuture<BoxedUnit> = baker.addInteractionInstance(reserveItemsInstance);
+    Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
 
-```
+    InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
+
+    CompletableFuture<BoxedUnit> = baker.addInteractionInstance(reserveItemsInstance);
+
+    ```
 
 ## RecipeCompiler.compile(recipe)
 
@@ -195,19 +211,23 @@ to understand, store and run your process. These can be used to create a new `Re
 runtime that contains both a `CompiledRecipe` and the required `InteractionInstances`, or they can as well be converted
 into a [visualziation](visualization.md).
 
-```scala tab="Scala"
-import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.CompiledRecipe
+=== "Scala"
 
-val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-```
+    ```scala
+    import com.ing.baker.compiler.RecipeCompiler
+    import com.ing.baker.il.CompiledRecipe
 
-```java tab="Java"
-import com.ing.baker.compiler.RecipeCompiler;
-import com.ing.baker.il.CompiledRecipe;
+    val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+    ```
 
-CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
-```
+=== "Java"
+
+    ```java
+    import com.ing.baker.compiler.RecipeCompiler;
+    import com.ing.baker.il.CompiledRecipe;
+
+    CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
+    ```
 
 ## baker.addRecipe(compiledRecipe)
 
@@ -217,32 +237,40 @@ API will do so and return an id that you can use to reference the added recipe l
 _Note: Before doing this, baker requires you to add all related `InteractionInstances` to the runtime, this is because baker 
 does validation to ensure that every recipe is runnable from the previously added `InteractionInstances`._
 
-```scala tab="Scala"
-val recipeId Future[String] = baker.addRecipe(compiledRecipe)
-```
+=== "Java"
 
-```java tab="Java"
-CompletableFuture<String> recipeId = baker.addRecipe(compiledRecipe);
-```
+    ```scala
+    val recipeId Future[String] = baker.addRecipe(compiledRecipe)
+    ```
+
+=== "Java"
+
+    ```java
+    CompletableFuture<String> recipeId = baker.addRecipe(compiledRecipe);
+    ```
 
 ## baker.getAllRecipes()
 
 The baker at runtime can give you a map of all the currently available recipes that has been previously added to Baker.
 
-```scala tab="Scala"
-import com.ing.baker.runtime.scaladsl.RecipeInformation
-import scala.concurrent.Future
+=== "Scala"
 
-val allRecipes: Future[Map[String, RecipeInformation]] = baker.getAllRecipes
-```
+    ```scala
+    import com.ing.baker.runtime.scaladsl.RecipeInformation
+    import scala.concurrent.Future
 
-```java tab="Java"
-import com.ing.baker.runtime.javadsl.RecipeInformation;
-import java.util.concurrent.CompletableFuture;
-import java.util.Map;
+    val allRecipes: Future[Map[String, RecipeInformation]] = baker.getAllRecipes
+    ```
+    
+=== "Java"
 
-CompletableFuture<Map<String, RecipeInformation>> allRecipe = baker.getAllRecipes();
-```
+    ```java 
+    import com.ing.baker.runtime.javadsl.RecipeInformation;
+    import java.util.concurrent.CompletableFuture;
+    import java.util.Map;
+
+    CompletableFuture<Map<String, RecipeInformation>> allRecipe = baker.getAllRecipes();
+    ```
 
 ## baker.bake(recipeId, recipeInstanceId)
 
@@ -257,21 +285,25 @@ _Note: in Java the api returns a `CompletableFuture<BoxedUnit>`, this is because
 Scala's `Unit` get translated to `BoxedUnit`, but you should you ignore it and consider it as good as Java's `void`,
 except it comes in a `CompletableFuture` that will help you handle async programming._
 
-```scala tab="Scala"
-val program: Future[Unit] = for {
-  _ <- baker.addInteractionInstance(interactionInstances)
-  recipeId <- baker.addRecipe(compiledRecipe)
-  recipeInstanceId = "my-id"
-  _ <- baker.bake(recipeId, recipeInstanceId)
-} yield ()
-```
+=== "Scala"
 
-```java tab="Java"
-String recipeInstanceId = "my-id";
-CompletableFuture<BoxedUnit> result = baker.addInteractionInstace(reserveItemsInstance)
-    .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
-    .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId));
-```
+    ```scala
+    val program: Future[Unit] = for {
+      _ <- baker.addInteractionInstance(interactionInstances)
+      recipeId <- baker.addRecipe(compiledRecipe)
+      recipeInstanceId = "my-id"
+      _ <- baker.bake(recipeId, recipeInstanceId)
+    } yield ()
+    ```
+
+=== "Java"
+
+    ```java
+    String recipeInstanceId = "my-id";
+    CompletableFuture<BoxedUnit> result = baker.addInteractionInstace(reserveItemsInstance)
+        .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
+        .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId));
+    ```
 
 ## EventInstance.from(object)
 
@@ -285,32 +317,36 @@ translated to `IngredientInstances` with corresponding names and baker types.
 Notice that this function might throw an exception if the event is not correctly done (this is why in Scala the API is
 named "unsafe").
 
-```scala tab="Scala"
-import com.ing.baker.runtime.scaladsl.EventInstance
+=== "Scala"
 
-case class OrderPlaced(orderId: String, items: List[String])
+    ```scala 
+    import com.ing.baker.runtime.scaladsl.EventInstance
 
-val firstOrderPlaced: EventInstance = 
-    EventInstance.unsafeFrom(OrderPlaced("order-id", List("item1", "item2")))
-```
+    case class OrderPlaced(orderId: String, items: List[String])
 
-```java tab="Java"
-import com.ing.baker.runtime.javadsl.EventInstance;
+    val firstOrderPlaced: EventInstance = 
+        EventInstance.unsafeFrom(OrderPlaced("order-id", List("item1", "item2")))
+    ```
 
-class OrderPlaced {
+=== "Java"
 
-    String orderId;
-    List<String> items;
-    
-    public OrderPlaced(String orderId, List<String> items) {
-        this.orderId = orderId;
-        this.items = items;
+    ```java 
+    import com.ing.baker.runtime.javadsl.EventInstance;
+
+    class OrderPlaced {
+
+        String orderId;
+        List<String> items;
+        
+        public OrderPlaced(String orderId, List<String> items) {
+            this.orderId = orderId;
+            this.items = items;
+        }
     }
-}
 
-EventInstance firstOrderPlaced =
-    EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
-```
+    EventInstance firstOrderPlaced =
+        EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
+    ```
 
 ## baker.fireEvent(recipeInstanceId, eventInstance)
 
@@ -346,31 +382,35 @@ event delivery: when sending the same event correlation id multiple times, only 
 
 This can be applied to the `OrderPlaced` event for example.
 
-``` scala tab="Scala"
-val correlationOrderId = "a unique order id"
+=== "Scala"
 
-for {
-    statusA <- baker.processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId)
-    _ = assert(statusA == Received)
-    statusB <- baker.processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId)
-    _ = assert(statusB == AlreadyReceived)
-} yield ()
-```
+    ```scala
+    val correlationOrderId = "a unique order id"
 
-``` java tab="Java"
-String correlationOrderId = "a unique order id";
+    for {
+        statusA <- baker.processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId)
+        _ = assert(statusA == Received)
+        statusB <- baker.processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId)
+        _ = assert(statusB == AlreadyReceived)
+    } yield ()
+    ```
 
-SensoryEventStatus statusA = baker
-    .processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId);
-    .join();
-assert(statusA == Received);
+=== "Java"
 
-SensoryEventStatus statusB = baker
-    .processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId);
-    .join();
-assert(statusB == AlreadyReceived);
+    ```java 
+    String correlationOrderId = "a unique order id";
 
-```
+    SensoryEventStatus statusA = baker
+        .processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId);
+        .join();
+    assert(statusA == Received);
+
+    SensoryEventStatus statusB = baker
+        .processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId);
+        .join();
+    assert(statusB == AlreadyReceived);
+
+    ```
 
 ### SensoryEventStatus
 
@@ -388,17 +428,21 @@ assert(statusB == AlreadyReceived);
 `baker.getInteractionInstanceState(recipeInstanceId)` will return an `InteractionInstanceState` object which 
 contains all the event names with timestamps that have executed, and the current available provided ingredient data.
 
-```scala tab="Scala"
-import com.ing.baker.runtime.scaladsl.RecipeInstanceState
-  
-val state: Future[RecipeInstanceState] = baker.getRecipeInstanceState(recipeInstanceId)
-```
+=== "Scala"
 
-```java tab="Java"
-import com.ing.baker.runtime.javadsl.RecipeInstanceState;
-  
-CompletableFuture<RecipeInstanceState> state = baker.getRecipeInstanceState(recipeInstanceId);
-```
+    ```scala 
+    import com.ing.baker.runtime.scaladsl.RecipeInstanceState
+      
+    val state: Future[RecipeInstanceState] = baker.getRecipeInstanceState(recipeInstanceId)
+    ```
+    
+=== "Java"
+
+    ```java 
+    import com.ing.baker.runtime.javadsl.RecipeInstanceState;
+      
+    CompletableFuture<RecipeInstanceState> state = baker.getRecipeInstanceState(recipeInstanceId);
+    ```
 
 ## baker.getAllInteractionInstancesMetadata()
     
@@ -417,13 +461,17 @@ API. This will return a GraphViz string like the [visualization api]() that you 
 Here is a visualization of the state of another webshop example, one can clearly see that the process is flowing correctly
 without failures and that it is still waiting for the payment sensory event to be fired.
 
-```scala tab="Scala"
-val state: Future[String] = baker.getVisualState(recipeInstanceId)
-```
+=== "Scala"
 
-```java tab="Java"
-CompletableFuture<String> state = baker.getVisualState(recipeInstanceId);
-```
+    ```scala 
+    val state: Future[String] = baker.getVisualState(recipeInstanceId)
+    ```
+
+=== "Java"
+
+    ```java 
+    CompletableFuture<String> state = baker.getVisualState(recipeInstanceId);
+    ```
 
 ![](../../images/webshop-state-1.svg)
 
@@ -440,18 +488,22 @@ Because of these constraints you should not use an event listener for critical f
 - metrics
 - unit tests
 
-```scala tab="Scala"
-baker.registerEventListener((recipeInstanceId: String, event: EventInstance) => {
-  println(s"Recipe instance : $recipeInstanceId processed event ${event.name}")
-})
-```
+=== "Scala"
 
-```java tab="Java"
-BiConsumer<String, EventInstance> handler = (String recipeInstanceId, EventInstance event) ->
-    System.out.println("Recipe Instance " + recipeInstanceId + " processed event " + event.name());
-    
-baker.registerEventListener(handler);
-```
+    ```scala 
+    baker.registerEventListener((recipeInstanceId: String, event: EventInstance) => {
+      println(s"Recipe instance : $recipeInstanceId processed event ${event.name}")
+    })
+    ```
+
+=== "Java"
+
+    ```java 
+    BiConsumer<String, EventInstance> handler = (String recipeInstanceId, EventInstance event) ->
+        System.out.println("Recipe Instance " + recipeInstanceId + " processed event " + event.name());
+        
+    baker.registerEventListener(handler);
+    ```
 
 ## baker.registerBakerEventListener(listenerFunction)
 
@@ -467,27 +519,31 @@ Because of these constraints you should not use an event listener for critical f
 - metrics
 - unit tests
 
-```scala tab="Scala"
-import com.ing.baker.runtime.scaladsl._
+=== "Scala"
 
-baker.registerBakerEventListener((event: BakerEvent) => {
-  event match {
-    case e: EventReceived => println(e)
-    case e: EventRejected => println(e)
-    case e: InteractionFailed => println(e)
-    case e: InteractionStarted => println(e)
-    case e: InteractionCompleted => println(e)
-    case e: ProcessCreated => println(e)
-    case e: RecipeAdded => println(e)
-  }
-})
-```
+    ```scala
+    import com.ing.baker.runtime.scaladsl._
 
-```java tab="Java"
-import com.ing.baker.runtime.javadsl.BakerEvent;
+    baker.registerBakerEventListener((event: BakerEvent) => {
+      event match {
+        case e: EventReceived => println(e)
+        case e: EventRejected => println(e)
+        case e: InteractionFailed => println(e)
+        case e: InteractionStarted => println(e)
+        case e: InteractionCompleted => println(e)
+        case e: ProcessCreated => println(e)
+        case e: RecipeAdded => println(e)
+      }
+    })
+    ```
+    
+=== "Java"
 
-baker.registerBakerEventListener((BakerEvent event) -> System.out.println(event));
-```
+    ```java 
+    import com.ing.baker.runtime.javadsl.BakerEvent;
+
+    baker.registerBakerEventListener((BakerEvent event) -> System.out.println(event));
+    ```
 
 ## baker.retryInteraction(recipeInstanceId, interactionName)
 
@@ -500,15 +556,19 @@ to check this you will need to request the state of the `RecipeInstance` again.
 _Note: this behaviour can be automatically preconfigured by using the `RetryWithIncrementalBackoff` `FailureStrategy`
 on the `Interaction` of the `Recipe`_
 
-``` scala tab="Scala"
-val program: Future[Unit] = 
-    baker.retryInteraction(recipeInstanceId, "ReserveItems")
-```
+=== "Scala"
 
-``` java tab="Java"
-CompletableFuture<BoxedUnit> program = 
-    baker.retryInteraction(recipeInstanceId, "ReserveItems");
-```
+    ``` scala 
+    val program: Future[Unit] = 
+        baker.retryInteraction(recipeInstanceId, "ReserveItems")
+    ```
+    
+=== "Java"
+
+    ``` java 
+    CompletableFuture<BoxedUnit> program = 
+        baker.retryInteraction(recipeInstanceId, "ReserveItems");
+    ```
 
 ## baker.resolveInteraction(recipeInstanceId, interactionName, event)
 
@@ -520,27 +580,35 @@ the one that would have had been computed by the `InteractionInstance`.
 _Note: this behaviour can be automatically preconfigured by using the `FireEventAfterFailure(eventName)` `FailureStrategy`
 on the `Interaction` of the `Recipe`_
 
-``` scala tab="Scala"
-val program: Future[Unit] = 
-    baker.resolveInteraction(recipeInstanceId, "ReserveItems", ItemsReserved(List("item1")))
-```
+=== "Scala"
 
-``` java tab="Java"
-CompletableFuture<BoxedUnit> program = 
-    baker.resolveInteraction(recipeInstanceId, "ReserveItems", new ItemsReserved(List("item1")));
-```
+    ```scala 
+    val program: Future[Unit] = 
+        baker.resolveInteraction(recipeInstanceId, "ReserveItems", ItemsReserved(List("item1")))
+    ```
+    
+=== "Java"
+
+    ```java 
+    CompletableFuture<BoxedUnit> program = 
+        baker.resolveInteraction(recipeInstanceId, "ReserveItems", new ItemsReserved(List("item1")));
+    ```
 
 ## baker.stopRetryingInteraction(recipeInstanceId, interactionName)
 
 If an `Interaction` is configured with a `RetryWithIncrementalBackoff` `FailureStrategy` then it will not stop retrying 
 until you call this API or a successful outcome happens from the `InteractionInstance`.
 
-``` scala tab="Scala"
-val program: Future[Unit] = 
-    baker.stopRetryingInteraction(recipeInstanceId, "ReserveItems")
-```
+=== "Scala"
 
-``` java tab="Java"
-CompletableFuture<BoxedUnit> program = 
-    baker.stopRetryingInteraction(recipeInstanceId, "ReserveItems");
-```
+    ```scala 
+    val program: Future[Unit] = 
+        baker.stopRetryingInteraction(recipeInstanceId, "ReserveItems")
+    ```
+
+=== "Java"
+
+    ```java
+    CompletableFuture<BoxedUnit> program = 
+        baker.stopRetryingInteraction(recipeInstanceId, "ReserveItems");
+    ```
