@@ -25,13 +25,13 @@ object FailoverUtils extends LazyLogging {
     * retry the HttpCall on different hosts
     *
     * @param fos  Hosts storage with state (knows the last failed)
-    * @param func Function that returns
+    * @param request Function that returns request from host
     * @param ec   ExecutionContext
     * @return
     */
   def callWithFailOver(fos: FailoverState,
                        client: Client[IO],
-                       func: Uri => IO[Request[IO]],
+                       request: Uri => IO[Request[IO]],
                        filters: Seq[Request[IO] => Request[IO]],
                        handleHttpErrors: Response[IO] => IO[Throwable])
                       (implicit ec: ExecutionContext, decoder: Decoder[BakerResult]): IO[BakerResult] = {
@@ -39,18 +39,18 @@ object FailoverUtils extends LazyLogging {
 
     def call(uri: Uri): IO[BakerResult] =
       client
-        .expectOr(func(uri).map({ request: Request[IO] =>
+        .expectOr(request(uri).map({ request: Request[IO] =>
           filters.foldLeft(request)((acc, filter) => filter(acc))
         }))(handleHttpErrors)(jsonOf[IO, BakerResult])
 
     retryingOnAllErrors(
       policy = limitRetries[IO](fos.size * config.retryTimes) |+| exponentialBackoff[IO](config.initialDelay),
       onError = (ex: Throwable, retryDetails: RetryDetails) => IO {
-        val message = s"Failed to call host ${fos.host}, retry #${retryDetails.retriesSoFar}"
-        if (retryDetails.givingUp) logger.warn(message, ex) else logger.warn(message)
+        val message = s"Failed to call ${fos.uri}, retry #${retryDetails.retriesSoFar}, error: ${ex.getMessage}"
+        if (retryDetails.givingUp) logger.error(message) else logger.warn(message)
         fos.failed()
         ()
-      })(call(fos.host))
+      })(call(fos.uri))
   }
 
   private[common] def loadConfig: Config = {
