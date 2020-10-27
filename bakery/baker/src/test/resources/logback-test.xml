@@ -14,6 +14,12 @@
 
     <logger level="OFF" name="org.http4s"/>
 
+    <logger level="OFF" name="API"/>
+
+    <logger level="OFF" name="com.ing.bakery.common.FailoverUtils$"/>
+
+    <logger level="OFF" name="com.ing.bakery.scaladsl.BakerClient"/>
+
     <logger level="OFF" name="org.mockserver.log.MockServerEventLog"/>
 
     <logger level="OFF" name="com.ing.bakery.baker.ServiceDiscovery"/>

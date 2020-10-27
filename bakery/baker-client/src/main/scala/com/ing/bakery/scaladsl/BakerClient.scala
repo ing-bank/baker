@@ -144,7 +144,7 @@ final class BakerClient(
     * @return
     */
   override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] =
-    callRemoteBaker[Unit](uri => GET(root(uri) / "instances" / recipeInstanceId / "bake" / recipeId)).map { _ =>
+    callRemoteBaker[Unit](uri => POST(root(uri) / "instances" / recipeInstanceId / "bake" / recipeId)).map { _ =>
       logger.info(s"Baked recipe instance '$recipeInstanceId' from recipe '$recipeId'")
     }
 
