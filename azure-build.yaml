@@ -59,11 +59,13 @@ steps:
   - task: Bash@3
     displayName: 'Building and testing main Baker'
     inputs:
+      workingDirectory: $(Build.SourcesDirectory)
       targetType: 'inline'
       script: |
-        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package clean coverage test coverageReport && bash <(curl -s https://codecov.io/bash)
+        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} coverage test coverageReport && bash <(curl -s https://codecov.io/bash)
       failOnStderr: false
 
+# uncomment before merge!
 #  - task: Bash@3
 #    displayName: 'Building and testing examples'
 #    inputs:
@@ -83,6 +85,7 @@ steps:
 
   - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "clean; aetherDeploy"
     displayName: 'Building and publishing Baker with examples'
+  ## remove to here
 
   - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
     - task: Bash@3
