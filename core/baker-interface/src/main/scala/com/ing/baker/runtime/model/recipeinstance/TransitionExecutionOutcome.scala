@@ -4,13 +4,13 @@ import com.ing.baker.petrinet.api.{Id, Marking}
 import com.ing.baker.runtime.scaladsl.EventInstance
 
 sealed trait TransitionExecutionOutcome {
-  val transitionFiringId: Long
+  val transitionExecutionId: Long
   val transitionId: Long
 }
 
 object TransitionExecutionOutcome {
 
-  case class Completed(transitionFiringId: Long,
+  case class Completed(transitionExecutionId: Long,
                        transitionId: Long,
                        correlationId: Option[String],
                        timeStarted: Long,
@@ -20,7 +20,7 @@ object TransitionExecutionOutcome {
                        output: Option[EventInstance]
                       ) extends TransitionExecutionOutcome
 
-  case class Failed(transitionFiringId: Long,
+  case class Failed(transitionExecutionId: Long,
                     transitionId: Long,
                     correlationId: Option[String],
                     timeStarted: Long,

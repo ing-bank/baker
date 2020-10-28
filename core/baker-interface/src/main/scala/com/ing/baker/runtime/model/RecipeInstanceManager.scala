@@ -5,14 +5,12 @@ import cats.{Functor, Monad}
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.{RejectReason, SensoryEventStatus}
-import com.ing.baker.runtime.model.RecipeInstanceManager.{BakeOutcome, FireOutcome, FireSensoryEventRejection, GetRecipeInstanceStateOutcome, RecipeInstanceStatus}
+import com.ing.baker.runtime.model.RecipeInstanceManager.{BakeOutcome, FireSensoryEventRejection, GetRecipeInstanceStateOutcome, RecipeInstanceStatus}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
-import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FireTransitionValidation
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FireOutcome
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, EventResolutionsF, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
 
 object RecipeInstanceManager {
-
-  type FireOutcome[F[_], A] = EitherT[F, FireSensoryEventRejection, A]
 
   sealed trait BakeOutcome
 
@@ -154,7 +152,7 @@ trait RecipeInstanceManager[F[_]] {
 
   def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F]): (FireOutcome[F, SensoryEventStatus], FireOutcome[F, SensoryEventResult])
 
-  protected def getRecipeInstanceWithRejection(recipeInstanceId: String)(implicit effect: Functor[F]): FireOutcome[F, RecipeInstance] =
+  protected def getRecipeInstanceWithPossibleRejection(recipeInstanceId: String)(implicit effect: Functor[F]): FireOutcome[F, RecipeInstance] =
     EitherT(get(recipeInstanceId).map {
       case None =>
         Left(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId))

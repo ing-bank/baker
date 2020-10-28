@@ -61,7 +61,14 @@ private[recipeinstance] case class TransitionExecution(
       case _ => false
     }
 
+  def failureCount: Int =
+    state match {
+      case e: TransitionExecution.State.Failed ⇒ e.failureCount
+      case _ => 0
+    }
+
   def execute[F[_]](implicit components: BakerComponents[F], effect: Sync[F], clock: Clock[F]): F[TransitionExecutionOutcome] = {
+    // TODO maybe put log.transitionFired from the Process Instance here
     clock.realTime(scala.concurrent.duration.MILLISECONDS).flatMap { startTime =>
       //TODO log.firingTransition(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
       val execution: F[TransitionExecutionOutcome] =
@@ -180,12 +187,6 @@ private[recipeinstance] case class TransitionExecution(
       val value: Any = interactionOutput.map(_.name).orNull
       place -> MultiSet.copyOff(Seq(value))
     }.toMarking
-
-  private def failureCount: Int =
-    state match {
-      case e: TransitionExecution.State.Failed ⇒ e.failureCount
-      case _ => 0
-    }
 
   private def exceptionStackTrace(e: Throwable): String = {
     val sw = new StringWriter()

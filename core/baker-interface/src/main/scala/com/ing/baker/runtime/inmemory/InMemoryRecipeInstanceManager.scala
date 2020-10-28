@@ -1,14 +1,14 @@
 package com.ing.baker.runtime.inmemory
 
 import cats.data.EitherT
-import cats.effect.{IO, Timer}
 import cats.effect.concurrent.Ref
+import cats.effect.{IO, Timer}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.model.{BakerComponents, RecipeInstanceManager}
-import com.ing.baker.runtime.model.RecipeInstanceManager.{FireOutcome, FireSensoryEventRejection, RecipeInstanceStatus}
+import com.ing.baker.runtime.model.RecipeInstanceManager.RecipeInstanceStatus
 import com.ing.baker.runtime.model.recipeinstance.{RecipeInstance, TransitionExecutionOutcome}
-import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FireTransitionValidation
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FireOutcome
+import com.ing.baker.runtime.model.{BakerComponents, RecipeInstanceManager}
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceMetadata, SensoryEventResult}
 
 import scala.concurrent.duration
@@ -46,6 +46,9 @@ final class InMemoryRecipeInstanceManager(store: Ref[IO, InMemoryRecipeInstanceM
       }
     } yield ()
 
+  def setStateFromFireOutcome(recipeInstanceId: String, recipeInstance: RecipeInstance): FireOutcome[IO, Unit] =
+    EitherT.liftF(set(recipeInstanceId, recipeInstance))
+
   override def getAllRecipeInstancesMetadata: IO[Set[RecipeInstanceMetadata]] =
     store.get.map(_.map {
       case (recipeInstanceId, RecipeInstanceStatus.Active(recipeInstance)) =>
@@ -56,19 +59,19 @@ final class InMemoryRecipeInstanceManager(store: Ref[IO, InMemoryRecipeInstanceM
 
   override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[IO]): FireOutcome[IO, SensoryEventStatus] = {
     for {
-      recipeInstance <- getRecipeInstanceWithRejection(recipeInstanceId)
-      newStateAndEffect <- recipeInstance.fire[IO](event, correlationId).leftFlatMap {
-        case (rejection, reason) =>
-          // TODO log this before, at the recipe instance
-          // TODO log reason
-          EitherT.pure(rejection)
-      }
-      (updatedRecipeInstance: RecipeInstance, fireEventEffect: IO[TransitionExecutionOutcome]) = newStateAndEffect
-      _ <- EitherT.liftF(set(recipeInstanceId, updatedRecipeInstance))
+      recipeInstance <- getRecipeInstanceWithPossibleRejection(recipeInstanceId)
+      newStateAndEffect <- recipeInstance.fire(event, correlationId)
+      (updatedRecipeInstance, fireEventEffect) = newStateAndEffect
+      _ <- setStateFromFireOutcome(recipeInstanceId, updatedRecipeInstance)
       _ <- EitherT.liftF(fireEventEffect.runAsync {
         case Left(e) =>
+          // TODO log: Unexpected exception when firing an event, it is impossible to have exceptions at this point
+          IO(e.printStackTrace())
+        case Right(outcome: TransitionExecutionOutcome.Completed) =>
+          // TODO normally here an implementation might do something about it, like doing event sourcing
           ???
-        case Right(outcome) =>
+        case Right(outcome: TransitionExecutionOutcome.Failed) =>
+          // TODO handle failed interaction, equivalent to TransitionFailedEvent on the process instance actor
           ???
       }.toIO)
     } yield SensoryEventStatus.Received

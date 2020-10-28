@@ -97,7 +97,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Sync
   override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventStatus] =
     components.recipeInstanceManager
       .fireEventAndResolveWhenReceived(recipeInstanceId, event, correlationId)
-      .flatMap(mapRejectionsToStatus)
+      .value.flatMap(mapRejectionsToStatus)
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -113,7 +113,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Sync
   override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventResult] =
     components.recipeInstanceManager
       .fireEventAndResolveWhenCompleted(recipeInstanceId, event, correlationId)
-      .flatMap(mapRejectionsToResult)
+      .value.flatMap(mapRejectionsToResult)
 
   /**
     * Notifies Baker that an event has happened and waits until an specific event has executed.
@@ -130,7 +130,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Sync
   override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): F[SensoryEventResult] =
     components.recipeInstanceManager
       .fireEventAndResolveOnEvent(recipeInstanceId, event, onEvent, correlationId)
-      .flatMap(mapRejectionsToResult)
+      .value.flatMap(mapRejectionsToResult)
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -149,9 +149,9 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Sync
       .fireEvent(recipeInstanceId, event, correlationId) match { case (onReceive, onComplete) =>
         new EventResolutionsF[F] {
           override def resolveWhenReceived: F[SensoryEventStatus] =
-            onReceive.flatMap(mapRejectionsToStatus)
+            onReceive.value.flatMap(mapRejectionsToStatus)
           override def resolveWhenCompleted: F[SensoryEventResult] =
-            onComplete.flatMap(mapRejectionsToResult)
+            onComplete.value.flatMap(mapRejectionsToResult)
         }
       }
 
