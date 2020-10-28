@@ -50,7 +50,11 @@ object RecipeLoader {
     def recipeFiles(path: String): IO[List[File]] = IO {
       val d = new File(path)
       if (d.exists && d.isDirectory) {
-        d.listFiles.filter(_.isFile).toList
+        d
+          .listFiles
+          .filter(_.isFile)
+          .filter(_.getName.endsWith(".recipe"))
+          .toList
       } else {
         List.empty[File]
       }

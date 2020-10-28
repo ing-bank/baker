@@ -35,7 +35,8 @@ object Main extends IOApp with LazyLogging {
   override def run(args: List[String]): IO[ExitCode] = {
     Kamon.init()
 
-    val config = ConfigFactory.load(ConfigFactory.parseFile(new File("/bakery-config/application.conf")))
+    val configPath = sys.env.getOrElse("CONFIG_DIRECTORY", "/opt/docker/conf")
+    val config = ConfigFactory.load(ConfigFactory.parseFile(new File(s"$configPath/bakery-application.conf")))
 
     val eventSinkSettings = config.getConfig("baker.kafka-event-sink").as[KafkaEventSinkSettings]
     val eventSinkResource = KafkaEventSink.resource(eventSinkSettings)
@@ -43,7 +44,6 @@ object Main extends IOApp with LazyLogging {
 
     val httpServerPort = bakery.getInt("http-api-port")
     val apiUrlPrefix = bakery.getString("api-url-prefix")
-    val recipeDirectory = bakery.getString("recipe-directory")
     val configurationClasses = bakery.getStringList("interaction-configuration-classes")
 
     implicit val system: ActorSystem = ActorSystem("baker", config)
@@ -85,7 +85,7 @@ object Main extends IOApp with LazyLogging {
             bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config),
           )(system))
         _ <- Resource.liftF(eventSink.attach(baker))
-        _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(recipeDirectory, baker))
+        _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(configPath, baker))
         _ <- Resource.liftF(IO.async[Unit] { callback =>
           Cluster(system).registerOnMemberUp {
             callback(Right(()))
