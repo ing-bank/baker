@@ -245,8 +245,6 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
       akkaClusterBoostrap,
       akkaDiscovery,
       akkaDiscoveryKube,
-      skuber,
-      play,
       http4s,
       http4sDsl,
       http4sCirce,

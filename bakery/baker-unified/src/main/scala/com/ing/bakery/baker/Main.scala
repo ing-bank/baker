@@ -2,33 +2,24 @@ package com.ing.bakery.baker
 
 import java.io.File
 import java.net.InetSocketAddress
-import java.util.concurrent.Executors
 
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
-import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{ExitCode, IO, IOApp, Resource}
-import com.ing.baker.il.petrinet.InteractionTransition
+import com.ing.baker.recipe.javadsl.Interaction
 import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
-import com.ing.baker.runtime.akka.internal.{InteractionManager, InteractionManagerLocal}
+import com.ing.baker.runtime.akka.internal.InteractionManagerLocal
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.scaladsl.InteractionInstance
-import com.ing.bakery.interaction.BakeryHttp
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import javax.net.ssl.SSLContext
 import kamon.Kamon
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import org.http4s.client.blaze.BlazeClientBuilder
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
-import skuber.api.client.KubernetesClient
-
-import scala.concurrent.{ExecutionContext, Future}
-import com.ing.baker.recipe.javadsl.Interaction
-import com.ing.baker.runtime.scaladsl.InteractionInstance
 
 import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionContext
 
 object Main extends IOApp with LazyLogging {
 

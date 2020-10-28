@@ -2,6 +2,7 @@ package com.ing.bakery.baker
 
 import java.io.{ByteArrayInputStream, File}
 import java.nio.file.Files
+import java.util.Base64
 import java.util.zip.{GZIPInputStream, ZipException}
 
 import cats.effect.{ContextShift, IO, Timer}
@@ -11,7 +12,6 @@ import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.common.BakerException.NoSuchRecipeException
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.runtime.serialization.ProtoMap
-import org.apache.commons.codec.binary.Base64
 
 import scala.util.Try
 
@@ -37,7 +37,7 @@ object RecipeLoader {
   def loadRecipes(path: String): IO[List[CompiledRecipe]] = {
 
     def extract(str: String): Try[Array[Byte]] = {
-      val decodedBytes = Base64.decodeBase64(str)
+      val decodedBytes = Base64.getDecoder.decode(str)
       Try {
         val inputStream = new GZIPInputStream(new ByteArrayInputStream(decodedBytes))
         Stream.continually(inputStream.read()).takeWhile(_ != -1).map(_.toByte).toArray
