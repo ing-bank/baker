@@ -27,7 +27,7 @@ object Main extends IOApp with LazyLogging {
     Kamon.init()
 
     val configPath = sys.env.getOrElse("CONFIG_DIRECTORY", "/opt/docker/conf")
-    val config = ConfigFactory.load(ConfigFactory.parseFile(new File(s"$configPath/bakery-application.conf")))
+    val config = ConfigFactory.load(ConfigFactory.parseFile(new File(s"$configPath/application.conf")))
 
     val eventSinkSettings = config.getConfig("baker.kafka-event-sink").as[KafkaEventSinkSettings]
     val eventSinkResource = KafkaEventSink.resource(eventSinkSettings)
