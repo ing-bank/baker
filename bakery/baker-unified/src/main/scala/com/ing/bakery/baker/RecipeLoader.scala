@@ -5,7 +5,7 @@ import java.nio.file.Files
 import java.util.Base64
 import java.util.zip.{GZIPInputStream, ZipException}
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.{ContextShift, IO}
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.protobuf
@@ -20,7 +20,8 @@ object RecipeLoader extends LazyLogging {
   def loadRecipesIntoBaker(path: String, baker: Baker)(implicit cs: ContextShift[IO]): IO[Unit] =
     for {
       recipes <- RecipeLoader.loadRecipes(path)
-      _ <- if (recipes.isEmpty) IO(logger.error(s"No recipes found in the recipe directory ($path), probably misconfiguration?")) else IO.unit
+      _ <- IO{ if (recipes.isEmpty) logger.error(s"No recipes found in the recipe directory ($path), probably misconfiguration?")
+          else logger.info(s"Recipes loaded: ${recipes.map(_.name)}") }
       _ <- recipes.traverse { recipe =>
         IO.fromFuture(IO(baker.addRecipe(recipe)))
       }
