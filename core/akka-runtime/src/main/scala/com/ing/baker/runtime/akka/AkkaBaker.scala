@@ -75,12 +75,14 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
    */
   override def addRecipe(compiledRecipe: CompiledRecipe): Future[String] = {
 
-    if(config.bakerValidationSettings.allowAddingRecipeWithoutRequiringInstances)
+    if(config.bakerValidationSettings.allowAddingRecipeWithoutRequiringInstances) {
+      logger.info(s"Adding recipe ${compiledRecipe.name}")
       recipeManager.ask(RecipeManagerProtocol.AddRecipe(compiledRecipe))(config.timeouts.defaultAddRecipeTimeout) map {
-        case RecipeManagerProtocol.AddRecipeResponse(recipeId) => recipeId
+        case RecipeManagerProtocol.AddRecipeResponse(recipeId) =>
+          logger.info(s"Recipe ${compiledRecipe.name} has been added as $recipeId")
+          recipeId
       }
-
-    else {
+    } else {
       // check if every interaction has an implementation
       getImplementationErrors(compiledRecipe).flatMap { implementationErrors =>
         if (implementationErrors.nonEmpty)
@@ -89,10 +91,15 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
         else if (compiledRecipe.validationErrors.nonEmpty)
           Future.failed(RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
 
-        else
+        else {
+          logger.info(s"Adding recipe ${compiledRecipe.name}")
+
           recipeManager.ask(RecipeManagerProtocol.AddRecipe(compiledRecipe))(config.timeouts.defaultAddRecipeTimeout) map {
-            case RecipeManagerProtocol.AddRecipeResponse(recipeId) => recipeId
+            case RecipeManagerProtocol.AddRecipeResponse(recipeId) =>
+              logger.info(s"Recipe ${compiledRecipe.name} has been added as $recipeId")
+              recipeId
           }
+        }
       }
     }
   }

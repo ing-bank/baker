@@ -4,6 +4,7 @@ import java.io.File
 import java.net.InetSocketAddress
 
 import akka.actor.ActorSystem
+import akka.actor.TypedActor.context
 import akka.cluster.Cluster
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.baker.recipe.javadsl.Interaction
@@ -14,6 +15,7 @@ import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import kamon.Kamon
+import kamon.instrumentation.executor.ExecutorInstrumentation
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.http4s.server.Server
@@ -76,9 +78,9 @@ object Main extends IOApp with LazyLogging {
 
     val mainResource: Resource[IO, Server[IO]] =
       for {
-        _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(configPath, baker))
         eventSink <- KafkaEventSink.resource(eventSinkSettings)
         _ <- Resource.liftF(eventSink.attach(baker))
+        _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(configPath, baker))
         _ <- Resource.liftF(IO.async[Unit] { callback =>
           Cluster(system).registerOnMemberUp {
             logger.info("Akka cluster is now up")
