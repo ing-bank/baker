@@ -6,13 +6,10 @@ import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
 import com.ing.baker.runtime.model.recipeinstance.{RecipeInstance, TransitionExecution}
 import com.ing.baker.runtime.scaladsl.EventInstance
-import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.duration.FiniteDuration
 
 trait RecipeInstanceEventValidation { recipeInstance: RecipeInstance with RecipeInstanceComplexProperties =>
-
-  val log: Logger = LoggerFactory.getLogger("com.ing.baker.runtime.model.recipeinstance.RecipeInstance")
 
   type Reason = String
 

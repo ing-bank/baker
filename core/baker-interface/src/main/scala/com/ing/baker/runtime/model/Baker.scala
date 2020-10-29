@@ -155,6 +155,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Sync
         }
       }
 
+  // TODO Move this mapping to the logic of the recipeInstanceManager
   private def mapRejectionsToStatus(outcome: Either[FireSensoryEventRejection, SensoryEventStatus]): F[SensoryEventStatus] =
     outcome match {
       case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
@@ -173,6 +174,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Sync
         effect.pure(status)
     }
 
+  // TODO Move this mapping to the logic of the recipeInstanceManager
   private def mapRejectionsToResult(outcome: Either[FireSensoryEventRejection, SensoryEventResult]): F[SensoryEventResult] =
     outcome match {
       case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
