@@ -2,7 +2,7 @@ package com.ing.bakery.clustercontroller.controllers
 
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source}
-import akka.stream.{KillSwitches, Materializer, UniqueKillSwitch}
+import akka.stream.{KillSwitches, Materializer, RestartSettings, UniqueKillSwitch}
 import akka.{Done, NotUsed}
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.bakery.clustercontroller.controllers.Utils.FromConfigMapValidation
@@ -131,12 +131,11 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
         .mapMaterializedValue(_ => NotUsed)
 
     def sourceWithRetry: Source[K8SWatchEvent[O], UniqueKillSwitch] =
-      RestartSource.withBackoff(
+      RestartSource.withBackoff(RestartSettings(
         minBackoff = 3.seconds,
         maxBackoff = 30.seconds,
         randomFactor = 0.2, // adds 20% "noise" to vary the intervals slightly
-        maxRestarts = -1 // not limit the amount of restarts
-      ) { () =>
+      )) { () =>
         labelFilter
           .map(sourceWithLabel)
           .orElse(existsLabelFilter.map(sourceWithExistsLabel))

@@ -84,6 +84,7 @@ final case class ResponseError(status: Int, msg: String)
 final class BakerClient(
                          client: Client[IO],
                          hosts: IndexedSeq[Uri],
+                         apiUrlPrefix: String,
                          filters: Seq[Request[IO] => Request[IO]] = Seq.empty)
                        (implicit ec: ExecutionContext) extends ScalaBaker with LazyLogging {
 
