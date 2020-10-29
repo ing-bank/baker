@@ -45,10 +45,9 @@ object Main extends IOApp with LazyLogging {
     val loggingEnabled = bakery.getBoolean("api-logging-enabled")
     logger.info(s"Logging of API: ${loggingEnabled}  - MUST NEVER BE SET TO 'true' IN PRODUCTION")
 
-
     val interactions = {
       if (configurationClasses.size() == 0) {
-        logger.warn("No interactions configured, ")
+        logger.warn("No interactions configured, probably interaction-configuration-classes config parameter is empty")
       }
       (configurationClasses.asScala map { configurationClass =>
         val configClass = Class.forName(configurationClass)
@@ -58,7 +57,7 @@ object Main extends IOApp with LazyLogging {
         val interactionsAsJavaMap: java.util.Map[String, Interaction] =
           ctx.getBeansOfType(classOf[com.ing.baker.recipe.javadsl.Interaction])
         val interactions = interactionsAsJavaMap.asScala.values.map(InteractionInstance.unsafeFrom).toList
-        logger.info(s"$configurationClass: ${interactions.map(_.name).mkString(",")}")
+        logger.info(s"Loaded ${interactions.size} interactions from $configurationClass: ${interactions.map(_.name).sortBy(_).mkString(",")}")
         interactions
       } toList).flatten
     }
