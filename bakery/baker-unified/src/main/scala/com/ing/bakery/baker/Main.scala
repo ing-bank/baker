@@ -16,6 +16,7 @@ import com.typesafe.scalalogging.LazyLogging
 import kamon.Kamon
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import org.http4s.server.Server
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 
 import scala.collection.JavaConverters._
@@ -57,35 +58,43 @@ object Main extends IOApp with LazyLogging {
         val interactionsAsJavaMap: java.util.Map[String, Interaction] =
           ctx.getBeansOfType(classOf[com.ing.baker.recipe.javadsl.Interaction])
         val interactions = interactionsAsJavaMap.asScala.values.map(InteractionInstance.unsafeFrom).toList
-        logger.info(s"Loaded ${interactions.size} interactions from $configurationClass: ${interactions.map(_.name).sortBy(_).mkString(",")}")
+        logger.info(s"Loaded ${interactions.size} interactions from $configurationClass: ${interactions.sortBy(_.name).map(_.name).mkString(",")}")
         interactions
       } toList).flatten
     }
 
     val interactionManager = new InteractionManagerLocal(interactions)
 
-    val mainResource: Resource[IO, Unit] =
+    val bakerConfig = AkkaBakerConfig(
+      interactionManager = interactionManager,
+      bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
+      timeouts = AkkaBakerConfig.Timeouts.from(config),
+      bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)
+    )(system)
+
+    logger.info("Starting Akka Baker...")
+    val baker = AkkaBaker.withConfig(bakerConfig)
+    logger.info("Starting recipe loader...")
+    RecipeLoader.loadRecipesIntoBaker(configPath, baker)
+
+    logger.info("Initialising Bakery...")
+    val mainResource: Resource[IO, Server[IO]] =
       for {
         eventSink <- eventSinkResource
-        baker = AkkaBaker
-          .withConfig(AkkaBakerConfig(
-            interactionManager = interactionManager,
-            bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
-            timeouts = AkkaBakerConfig.Timeouts.from(config),
-            bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config),
-          )(system))
         _ <- Resource.liftF(eventSink.attach(baker))
-        _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(configPath, baker))
         _ <- Resource.liftF(IO.async[Unit] { callback =>
+          logger.info("Registering cluster-up callback")
           Cluster(system).registerOnMemberUp {
+            logger.info("Akka cluster is up")
             callback(Right(()))
           }
         })
-        _ <- BakerService.resource(baker, hostname, apiUrlPrefix, interactionManager, loggingEnabled)
-      } yield ()
+        bakerService <- BakerService.resource(baker, hostname, apiUrlPrefix, interactionManager, loggingEnabled)
+      } yield bakerService
 
-    mainResource.use(_ => {
-      logger.info("Baker initalisation complete, enabling the readiness")
+    logger.info("Starting Bakery...")
+    mainResource.use(bakery => {
+      logger.info(s"Bakery started at ${bakery.address}/${bakery.baseUri}, enabling the readiness in Akka management")
       BakerReadinessCheck.enable()
       IO.never
     }
