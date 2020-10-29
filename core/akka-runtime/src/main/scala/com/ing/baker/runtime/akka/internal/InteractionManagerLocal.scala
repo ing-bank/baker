@@ -21,6 +21,8 @@ class InteractionManagerLocal(private var interactionImplementations: Seq[Intera
   private val implementationCache: ConcurrentHashMap[InteractionTransition, InteractionInstance] =
     new ConcurrentHashMap[InteractionTransition, InteractionInstance]
 
+  interactionImplementations.foreach(addImplementation)
+
   override def listAllImplementations: Future[List[InteractionInstance]] =
     Future.successful(asScalaIterator(implementationCache.values().iterator()).toList)
 

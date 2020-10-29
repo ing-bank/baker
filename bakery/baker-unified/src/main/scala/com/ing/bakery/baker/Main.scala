@@ -30,21 +30,19 @@ object Main extends IOApp with LazyLogging {
     val configPath = sys.env.getOrElse("CONFIG_DIRECTORY", "/opt/docker/conf")
     val config = ConfigFactory.load(ConfigFactory.parseFile(new File(s"$configPath/application.conf")))
 
-    val eventSinkSettings = config.getConfig("baker.kafka-event-sink").as[KafkaEventSinkSettings]
-    val eventSinkResource = KafkaEventSink.resource(eventSinkSettings)
     val bakery = config.getConfig("bakery")
-
-    val httpServerPort = bakery.getInt("http-api-port")
-    val apiUrlPrefix = bakery.getString("api-url-prefix")
-    val configurationClasses = bakery.getStringList("interaction-configuration-classes")
 
     implicit val system: ActorSystem = ActorSystem("baker", config)
     implicit val executionContext: ExecutionContext = system.dispatcher
 
-    val hostname: InetSocketAddress = InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort)
-
+    val httpServerPort = bakery.getInt("api-port")
+    val apiUrlPrefix = bakery.getString("api-url-prefix")
     val loggingEnabled = bakery.getBoolean("api-logging-enabled")
     logger.info(s"Logging of API: ${loggingEnabled}  - MUST NEVER BE SET TO 'true' IN PRODUCTION")
+
+    val configurationClasses = bakery.getStringList("interaction-configuration-classes")
+
+    val eventSinkSettings = config.getConfig("baker.kafka-event-sink").as[KafkaEventSinkSettings]
 
     val interactions = {
       if (configurationClasses.size() == 0) {
@@ -74,25 +72,24 @@ object Main extends IOApp with LazyLogging {
 
     logger.info("Starting Akka Baker...")
     val baker = AkkaBaker.withConfig(bakerConfig)
-    logger.info("Starting recipe loader...")
-    RecipeLoader.loadRecipesIntoBaker(configPath, baker)
 
-    logger.info("Initialising Bakery...")
+
     val mainResource: Resource[IO, Server[IO]] =
       for {
-        eventSink <- eventSinkResource
+        _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(configPath, baker))
+        eventSink <- KafkaEventSink.resource(eventSinkSettings)
         _ <- Resource.liftF(eventSink.attach(baker))
         _ <- Resource.liftF(IO.async[Unit] { callback =>
-          logger.info("Registering cluster-up callback")
           Cluster(system).registerOnMemberUp {
-            logger.info("Akka cluster is up")
+            logger.info("Akka cluster is now up")
             callback(Right(()))
           }
         })
-        bakerService <- BakerService.resource(baker, hostname, apiUrlPrefix, interactionManager, loggingEnabled)
+        bakerService <- BakerService.resource(baker,
+          InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort),
+          apiUrlPrefix, interactionManager, loggingEnabled)
       } yield bakerService
 
-    logger.info("Starting Bakery...")
     mainResource.use(bakery => {
       logger.info(s"Bakery started at ${bakery.address}/${bakery.baseUri}, enabling the readiness in Akka management")
       BakerReadinessCheck.enable()
