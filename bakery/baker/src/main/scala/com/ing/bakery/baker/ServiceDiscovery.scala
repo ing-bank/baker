@@ -2,7 +2,7 @@ package com.ing.bakery.baker
 
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source}
-import akka.stream.{KillSwitches, Materializer, UniqueKillSwitch}
+import akka.stream.{KillSwitches, Materializer, RestartSettings, UniqueKillSwitch}
 import akka.{Done, NotUsed}
 import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Timer}
@@ -55,13 +55,11 @@ object ServiceDiscovery extends LazyLogging {
 
       def source: Source[K8SWatchEvent[ConfigMap], NotUsed] =
         k8s.watchWithOptions[ConfigMap](watchFilter, bufsize = Int.MaxValue).mapMaterializedValue(_ => NotUsed)
-
-      RestartSource.withBackoff(
+      RestartSource.withBackoff(RestartSettings(
         minBackoff = 3.seconds,
         maxBackoff = 30.seconds,
         randomFactor = 0.2, // adds 20% "noise" to vary the intervals slightly
-        maxRestarts = -1 // not limit the amount of restarts
-      ) { () =>
+      )) { () =>
         source.mapError { case e =>
           logger.error("Error on the service discovery watch stream: " + e.getMessage, e)
           e

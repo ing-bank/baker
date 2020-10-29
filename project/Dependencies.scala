@@ -3,14 +3,13 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.6.9"
-  val akkaManagementVersion = "1.0.8"
+  val akkaVersion = "2.6.10"
+  val akkaManagementVersion = "1.0.9"
   val akkaHttpVersion = "10.2.1"
   val http4sVersion = "0.21.8"
   val circeVersion = "0.13.0"
   val kamonAkkaVersion = "2.1.8"
 
-  val jvmV = "1.8"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
@@ -36,7 +35,7 @@ object Dependencies {
   val akkaPersistence = "com.typesafe.akka" %% "akka-persistence" % akkaVersion
   val akkaDiscovery = "com.typesafe.akka" %% "akka-discovery" % akkaVersion
   val akkaPersistenceQuery = "com.typesafe.akka" %% "akka-persistence-query" % akkaVersion
-  val akkaPersistenceCassandra = "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.104"
+  val akkaPersistenceCassandra = "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.105"
   val akkaCluster = "com.typesafe.akka" %% "akka-cluster" % akkaVersion
   val akkaClusterSharding = "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion
   val akkaClusterTools = "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion
@@ -98,10 +97,10 @@ object Dependencies {
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
 
-  val typeSafeConfig = "com.typesafe" % "config" % "1.4.0"
+  val typeSafeConfig = "com.typesafe" % "config" % "1.4.1"
 
   val objenisis = "org.objenesis" % "objenesis" % "3.1"
-  val jodaTime = "joda-time" % "joda-time" % "2.10.7"
+  val jodaTime = "joda-time" % "joda-time" % "2.10.8"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.30"
   val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val logstash =  "net.logstash.logback" % "logstash-logback-encoder" % "6.4"
@@ -111,8 +110,8 @@ object Dependencies {
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 
 
-  val springContext = "org.springframework" % "spring-context" % "5.2.9.RELEASE"
-  val springCore = "org.springframework" % "spring-core" % "5.2.9.RELEASE"
+  val springContext = "org.springframework" % "spring-context" % "5.2.10.RELEASE"
+  val springCore = "org.springframework" % "spring-core" % "5.2.10.RELEASE"
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) = modules.map(m => m % scope)
 
