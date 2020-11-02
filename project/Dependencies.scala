@@ -58,7 +58,7 @@ object Dependencies {
 
   val scalaGraph = "org.scala-graph" %% "graph-core" % "1.13.1"
   val scalaGraphDot = "org.scala-graph" %% "graph-dot" % "1.13.0"
-  val graphvizJava = "guru.nidi" % "graphviz-java" % "0.17.0"
+  val graphvizJava = "guru.nidi" % "graphviz-java" % "0.17.1"
 
   val kamon = "io.kamon" %% "kamon-bundle" % kamonAkkaVersion
   val kamonAkka = "io.kamon" %% "kamon-akka" % kamonAkkaVersion
@@ -104,7 +104,7 @@ object Dependencies {
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.30"
   val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val logstash =  "net.logstash.logback" % "logstash-logback-encoder" % "6.4"
-  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.14.3"
+  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.0"
   val scalaCheckPlus = "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2"
   val scalaCheckPlusMockito = "org.scalatestplus" %% "scalatestplus-mockito" % "1.0.0-M2"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
