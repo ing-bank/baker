@@ -17,14 +17,13 @@ object InMemoryRecipeManager {
 
 final class InMemoryRecipeManager(store: Ref[IO, InMemoryRecipeManager.Store])(implicit timer: Timer[IO]) extends RecipeManager[IO] {
 
-  override def addRecipe(compiledRecipe: CompiledRecipe): IO[String] = {
+  override def addRecipe(compiledRecipe: CompiledRecipe): IO[String] =
     findCompiledRecipeId(compiledRecipe).flatMap {
       case Some(recipeId) =>
         IO.pure(recipeId)
       case None =>
         hardAddRecipe(compiledRecipe)
     }
-  }
 
   override def getRecipe(recipeId: String): IO[Option[(CompiledRecipe, Long)]] =
     store.get.map(_.get(recipeId))

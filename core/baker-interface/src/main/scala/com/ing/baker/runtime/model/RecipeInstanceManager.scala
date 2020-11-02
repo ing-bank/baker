@@ -1,14 +1,14 @@
 package com.ing.baker.runtime.model
 
 import cats.data.EitherT
-import cats.{Functor, Monad}
+import cats.effect.{Clock, ConcurrentEffect}
 import cats.implicits._
+import cats.{Functor, Monad}
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.common.{RejectReason, SensoryEventStatus}
+import com.ing.baker.runtime.common.RejectReason
 import com.ing.baker.runtime.model.RecipeInstanceManager.{BakeOutcome, FireSensoryEventRejection, GetRecipeInstanceStateOutcome, RecipeInstanceStatus}
-import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
-import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FireOutcome
-import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, EventResolutionsF, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
+import com.ing.baker.runtime.model.recipeinstance.{EventsLobby, RecipeInstance}
+import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceMetadata, RecipeInstanceState}
 
 object RecipeInstanceManager {
 
@@ -114,6 +114,14 @@ object RecipeInstanceManager {
 
 trait RecipeInstanceManager[F[_]] {
 
+  def add(recipeInstanceId: String, recipe: CompiledRecipe): F[Unit]
+
+  def get(recipeInstanceId: String): F[Option[RecipeInstanceStatus]]
+
+  def update(recipeInstanceId: String, updateFunction: RecipeInstance => RecipeInstance): F[RecipeInstance]
+
+  def getAllRecipeInstancesMetadata: F[Set[RecipeInstanceMetadata]]
+
   def bake(recipeInstanceId: String, recipe: CompiledRecipe)(implicit effect: Monad[F]): F[BakeOutcome] =
     get(recipeInstanceId).flatMap {
       case Some(_: RecipeInstanceStatus.Active) =>
@@ -125,34 +133,27 @@ trait RecipeInstanceManager[F[_]] {
     }
 
   def getRecipeInstanceState(recipeInstanceId: String)(implicit effect: Monad[F]): F[GetRecipeInstanceStateOutcome] =
-    get(recipeInstanceId).flatMap {
+    get(recipeInstanceId).map {
       case Some(RecipeInstanceStatus.Active(recipeInstance)) =>
-        effect.pure(GetRecipeInstanceStateOutcome.Success(RecipeInstanceState(
+        GetRecipeInstanceStateOutcome.Success(RecipeInstanceState(
           recipeInstanceId,
           recipeInstance.ingredients,
-          recipeInstance.events.map { case (event, occurredOn) => EventMoment(event.name, occurredOn) }
-        )))
+          recipeInstance.events
+        ))
       case Some(_: RecipeInstanceStatus.Deleted) =>
-        effect.pure(GetRecipeInstanceStateOutcome.RecipeInstanceDeleted)
+        GetRecipeInstanceStateOutcome.RecipeInstanceDeleted
       case None =>
-        effect.pure(GetRecipeInstanceStateOutcome.NoSuchRecipeInstance)
+        GetRecipeInstanceStateOutcome.NoSuchRecipeInstance
     }
 
-  def add(recipeInstanceId: String, recipe: CompiledRecipe): F[Unit]
+  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], clock: Clock[F]): EitherT[F, FireSensoryEventRejection, EventsLobby[F]] =
+    for {
+      recipeInstance <- getRecipeInstanceWithPossibleRejection(recipeInstanceId)
+      lobby <- EitherT.liftF(EventsLobby.build[F])
+      _ <- recipeInstance.fire[F](event, correlationId)(lobby, update)
+    } yield lobby
 
-  def get(recipeInstanceId: String): F[Option[RecipeInstanceStatus]]
-
-  def getAllRecipeInstancesMetadata: F[Set[RecipeInstanceMetadata]]
-
-  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F]): FireOutcome[F, SensoryEventStatus]
-
-  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F]): FireOutcome[F, SensoryEventResult]
-
-  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String])(implicit components: BakerComponents[F]): FireOutcome[F, SensoryEventResult]
-
-  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F]): (FireOutcome[F, SensoryEventStatus], FireOutcome[F, SensoryEventResult])
-
-  protected def getRecipeInstanceWithPossibleRejection(recipeInstanceId: String)(implicit effect: Functor[F]): FireOutcome[F, RecipeInstance] =
+  private def getRecipeInstanceWithPossibleRejection(recipeInstanceId: String)(implicit effect: Functor[F]): EitherT[F, FireSensoryEventRejection, RecipeInstance] =
     EitherT(get(recipeInstanceId).map {
       case None =>
         Left(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId))

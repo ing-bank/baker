@@ -25,7 +25,7 @@ trait RecipeInstanceStateMutations { recipeInstance: RecipeInstance with RecipeI
         transitionExecutionToFailedState(failedOutcome)
     }
 
-  private def transitionExecutionToFailedState(failedOutcome: TransitionExecutionOutcome.Failed): RecipeInstance = {
+  def transitionExecutionToFailedState(failedOutcome: TransitionExecutionOutcome.Failed): RecipeInstance = {
     val transition = recipeInstance.transitionById(failedOutcome.transitionId)
     val consumed: Marking[Place] = unmarshallMarking(recipeInstance.petriNet.places, failedOutcome.consume)
     lazy val newExecutionState =
@@ -44,10 +44,10 @@ trait RecipeInstanceStateMutations { recipeInstance: RecipeInstance with RecipeI
     addExecution(updatedExecution)
   }
 
-  private def removeExecution(outcome: TransitionExecutionOutcome.Completed): RecipeInstance =
+  def removeExecution(outcome: TransitionExecutionOutcome.Completed): RecipeInstance =
     recipeInstance.copy(executions = recipeInstance.executions - outcome.transitionExecutionId)
 
-  private def aggregateOutputEvent(outcome: TransitionExecutionOutcome.Completed): RecipeInstance = {
+  def aggregateOutputEvent(outcome: TransitionExecutionOutcome.Completed): RecipeInstance = {
       outcome.output match {
         case None =>recipeInstance
         case Some(outputEvent) =>
@@ -57,15 +57,15 @@ trait RecipeInstanceStateMutations { recipeInstance: RecipeInstance with RecipeI
       }
   }
 
-  private def increaseSequenceNumber: RecipeInstance =
+  def increaseSequenceNumber: RecipeInstance =
     recipeInstance.copy(sequenceNumber = recipeInstance.sequenceNumber + 1)
 
-  private def aggregatePetriNetChanges(outcome: TransitionExecutionOutcome.Completed): RecipeInstance = {
+  def aggregatePetriNetChanges(outcome: TransitionExecutionOutcome.Completed): RecipeInstance = {
     val consumed: Marking[Place] = unmarshallMarking(recipeInstance.petriNet.places, outcome.consumed)
     val produced: Marking[Place] = unmarshallMarking(recipeInstance.petriNet.places, outcome.produced)
     recipeInstance.copy(marking = (recipeInstance.marking |-| consumed) |+| produced)
   }
 
-  private def addReceivedCorrelationId(outcome: TransitionExecutionOutcome.Completed): RecipeInstance =
+  def addReceivedCorrelationId(outcome: TransitionExecutionOutcome.Completed): RecipeInstance =
     recipeInstance.copy(receivedCorrelationIds = recipeInstance.receivedCorrelationIds ++ outcome.correlationId)
 }

@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.inmemory
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
 import com.ing.baker.runtime.model.{Baker, BakerComponents}
 
 object InMemoryBaker {
@@ -16,7 +16,7 @@ object InMemoryBaker {
   }
 }
 
-final class InMemoryBaker(implicit components: BakerComponents[IO], timer: Timer[IO]) extends Baker[IO] {
+final class InMemoryBaker(implicit components: BakerComponents[IO], effect: ConcurrentEffect[IO], timer: Timer[IO]) extends Baker[IO] {
 
   /**
     * Attempts to gracefully shutdown the baker system.
