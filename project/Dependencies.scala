@@ -5,6 +5,7 @@ object Dependencies {
 
   val akkaVersion = "2.6.10"
   val akkaManagementVersion = "1.0.9"
+  val akkaPersistenceCassandraVersion = "1.0.3"
   val akkaHttpVersion = "10.2.1"
   val http4sVersion = "0.21.8"
   val circeVersion = "0.13.0"
@@ -35,7 +36,7 @@ object Dependencies {
   val akkaPersistence = "com.typesafe.akka" %% "akka-persistence" % akkaVersion
   val akkaDiscovery = "com.typesafe.akka" %% "akka-discovery" % akkaVersion
   val akkaPersistenceQuery = "com.typesafe.akka" %% "akka-persistence-query" % akkaVersion
-  val akkaPersistenceCassandra = "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.105"
+  val akkaPersistenceCassandra = "com.typesafe.akka" %% "akka-persistence-cassandra" % akkaPersistenceCassandraVersion
   val akkaCluster = "com.typesafe.akka" %% "akka-cluster" % akkaVersion
   val akkaClusterSharding = "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion
   val akkaClusterTools = "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion
