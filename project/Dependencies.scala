@@ -5,6 +5,7 @@ object Dependencies {
 
   val akkaVersion = "2.6.10"
   val akkaManagementVersion = "1.0.9"
+  val akkaPersistenceCassandraVersion = "1.0.3"
   val akkaHttpVersion = "10.2.1"
   val http4sVersion = "0.21.8"
   val circeVersion = "0.13.0"
@@ -35,7 +36,7 @@ object Dependencies {
   val akkaPersistence = "com.typesafe.akka" %% "akka-persistence" % akkaVersion
   val akkaDiscovery = "com.typesafe.akka" %% "akka-discovery" % akkaVersion
   val akkaPersistenceQuery = "com.typesafe.akka" %% "akka-persistence-query" % akkaVersion
-  val akkaPersistenceCassandra = "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.105"
+  val akkaPersistenceCassandra = "com.typesafe.akka" %% "akka-persistence-cassandra" % akkaPersistenceCassandraVersion
   val akkaCluster = "com.typesafe.akka" %% "akka-cluster" % akkaVersion
   val akkaClusterSharding = "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion
   val akkaClusterTools = "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion
@@ -58,7 +59,7 @@ object Dependencies {
 
   val scalaGraph = "org.scala-graph" %% "graph-core" % "1.13.1"
   val scalaGraphDot = "org.scala-graph" %% "graph-dot" % "1.13.0"
-  val graphvizJava = "guru.nidi" % "graphviz-java" % "0.17.0"
+  val graphvizJava = "guru.nidi" % "graphviz-java" % "0.17.1"
 
   val kamon = "io.kamon" %% "kamon-bundle" % kamonAkkaVersion
   val kamonAkka = "io.kamon" %% "kamon-akka" % kamonAkkaVersion
@@ -104,14 +105,14 @@ object Dependencies {
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.30"
   val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val logstash =  "net.logstash.logback" % "logstash-logback-encoder" % "6.4"
-  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.14.3"
+  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.0"
   val scalaCheckPlus = "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2"
   val scalaCheckPlusMockito = "org.scalatestplus" %% "scalatestplus-mockito" % "1.0.0-M2"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 
 
-  val springContext = "org.springframework" % "spring-context" % "5.2.9.RELEASE"
-  val springCore = "org.springframework" % "spring-core" % "5.2.9.RELEASE"
+  val springContext = "org.springframework" % "spring-context" % "5.2.10.RELEASE"
+  val springCore = "org.springframework" % "spring-core" % "5.2.10.RELEASE"
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) = modules.map(m => m % scope)
 
