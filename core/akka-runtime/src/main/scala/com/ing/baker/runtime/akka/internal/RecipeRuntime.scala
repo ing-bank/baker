@@ -95,8 +95,8 @@ object RecipeRuntime {
     val recipeInstanceId: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(state.recipeInstanceId.toString)
     val processId: (String, Value) = il.processIdName -> PrimitiveValue(state.recipeInstanceId.toString)
 
-    // a map of all ingredients, the order is important, the predefined parameters and recipeInstanceId have precedence over the state ingredients.
-    val allIngredients: Map[String, Value] = state.ingredients ++ interaction.predefinedParameters + recipeInstanceId + processId
+    // a map of all ingredients
+    val allIngredients: Map[String, Value] = interaction.predefinedParameters ++ state.ingredients + recipeInstanceId + processId
 
     // arranges the ingredients in the expected order
     interaction.requiredIngredients.map {
