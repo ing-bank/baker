@@ -112,10 +112,18 @@ lazy val `baker-interface` = project.in(file("core/baker-interface"))
       catsEffect,
       scalaJava8Compat
     ) ++ providedDeps(findbugs) ++ testDeps(
-      scalaTest
+      scalaTest,
+      scalaCheckPlusMockito,
+      mockito,
+      slf4jApi,
+      logback
     )
   )
-  .dependsOn(`baker-intermediate-language`)
+  .dependsOn(
+    `baker-intermediate-language`,
+    testScope(`baker-recipe-dsl`),
+    testScope(`baker-recipe-compiler`),
+    testScope(`baker-types`))
 
 lazy val `baker-akka-runtime` = project.in(file("core/akka-runtime"))
   .settings(defaultModuleSettings)

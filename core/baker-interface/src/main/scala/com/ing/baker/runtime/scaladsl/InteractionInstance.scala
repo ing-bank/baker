@@ -15,7 +15,7 @@ case class InteractionInstance(
                                 input: Seq[Type],
                                 run: Seq[IngredientInstance] => Future[Option[EventInstance]],
                                 output: Option[Map[String, Map[String, Type]]] = None
-                              ) extends InteractionInstanceF[Future](name, input, run, output) {
+                              ) extends InteractionInstanceF[Future] {
 
   def asJava: javadsl.InteractionInstance =
     asJava(new (Future ~> CompletableFuture) {
@@ -34,6 +34,6 @@ object InteractionInstance {
   }
 
   def unsafeFrom(implementation: AnyRef)(implicit ec: ExecutionContext): InteractionInstance = {
-    fromF(InteractionInstanceF.unsafeFrom[Future](implementation)(InteractionInstance.apply))
+    fromF(InteractionInstanceF.unsafeFrom[Future](implementation))
   }
 }

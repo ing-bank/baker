@@ -18,12 +18,9 @@ import scala.concurrent.Future
 import scala.reflect.ClassTag
 import scala.util.Try
 
-abstract class InteractionInstanceF[F[_]](
-                                name: String,
-                                input: Seq[Type],
-                                run: Seq[IngredientInstance] => F[Option[EventInstance]],
-                                output: Option[Map[String, Map[String, Type]]] = None
-                              ) extends common.InteractionInstance[F] with ScalaApi { self =>
+abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] with ScalaApi { self =>
+
+  val run: Seq[IngredientInstance] => F[Option[EventInstance]]
 
   override type Event = EventInstance
 
@@ -71,11 +68,19 @@ object InteractionInstanceF {
     Seq[IngredientInstance] => F[Option[EventInstance]],
     Option[Map[String, Map[String, Type]]]) => InteractionInstanceF[F]
 
-  def unsafeFromList[F[_]](implementations: List[AnyRef], constructor: Constructor[F])(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): List[InteractionInstanceF[F]] = {
-    implementations.map(unsafeFrom[F](_)(constructor))
+  def build[F[_]](_name: String, _input: Seq[Type], _run: Seq[IngredientInstance] => F[Option[EventInstance]], _output: Option[Map[String, Map[String, Type]]] = None): InteractionInstanceF[F] =
+    new InteractionInstanceF[F] {
+      override val name: String = _name
+      override val input: Seq[Type] = _input
+      override val run: Seq[IngredientInstance] => F[Option[EventInstance]] = _run
+      override val output: Option[Map[String, Map[String, Type]]] = _output
+    }
+
+  def unsafeFromList[F[_]](implementations: List[AnyRef])(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): List[InteractionInstanceF[F]] = {
+    implementations.map(unsafeFrom[F](_))
   }
 
-  def unsafeFrom[F[_]](implementation: AnyRef)(constructor: Constructor[F])(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): InteractionInstanceF[F] = {
+  def unsafeFrom[F[_]](implementation: AnyRef)(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): InteractionInstanceF[F] = {
     val method: Method = {
       val unmockedClass = common.unmock(implementation.getClass)
       unmockedClass.getMethods.count(_.getName == "apply") match {
@@ -129,6 +134,6 @@ object InteractionInstanceF {
           effect.pure(None)
       }
     }
-    constructor(name, input, run, None)
+    build[F](name, input, run, None)
   }
 }

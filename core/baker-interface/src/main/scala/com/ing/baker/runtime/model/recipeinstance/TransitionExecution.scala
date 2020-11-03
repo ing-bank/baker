@@ -130,7 +130,7 @@ private[recipeinstance] case class TransitionExecution(
     val recipeInstanceIdIngredient: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(recipeInstanceId)
     val processIdIngredient: (String, Value) = il.processIdName -> PrimitiveValue(recipeInstanceId)
     // a map of all ingredients
-    val allIngredients: Map[String, Value] = interaction.predefinedParameters ++ ingredients + recipeInstanceIdIngredient + processIdIngredient
+    val allIngredients: Map[String, Value] = ingredients ++ interaction.predefinedParameters + recipeInstanceIdIngredient + processIdIngredient
     // arranges the ingredients in the expected order
     interaction.requiredIngredients.map {
       case IngredientDescriptor(name, _) =>
