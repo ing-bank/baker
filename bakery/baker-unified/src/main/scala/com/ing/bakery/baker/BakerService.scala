@@ -40,7 +40,7 @@ object BakerService {
           logBody = loggingEnabled,
           logAction = apiLoggingAction)
         (Router(apiUrlPrefix ->
-          KamonSupport(routes(baker, interactions), hostname.getAddress.getHostAddress, hostname.getPort)) orNotFound)
+          KamonSupport(routes(baker, interactions), "/0.0.0.0", hostname.getPort)) orNotFound)
       ).resource
   }
 
