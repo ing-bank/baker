@@ -221,10 +221,13 @@ lazy val `bakery-baker-client` = project.in(file("bakery/baker-client"))
       http4sClient,
       http4sCirce,
       scalaLogging,
+      catsRetry,
       http4sServer % "test",
       slf4jApi % "test",
       logback % "test",
-      scalaTest % "test"
+      scalaTest % "test",
+      mockitoScala % "test",
+      mockitoScalaTest % "test"
     )
   )
   .dependsOn(`baker-interface`)
@@ -322,6 +325,9 @@ lazy val `bakery-controller` = project.in(file("bakery/controller"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "bakery-controller",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
     libraryDependencies ++= Seq(
       slf4jApi,
       akkaSlf4j,

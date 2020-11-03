@@ -50,6 +50,9 @@ class WebShopService(webshop: WebShop, managementClient: StateNodeManagementClie
   })
 
   def management: HttpRoutes[IO] = Router("/management" -> HttpRoutes.of[IO] {
+    case GET -> Root / "recipes" =>
+      managementClient.knownRecipes.flatMap(recipes => Ok(recipes))
+
     case GET -> Root / "interaction" =>
       managementClient.knownInteractionNames.flatMap(interactions => Ok(interactions.mkString(",")))
 

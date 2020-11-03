@@ -23,3 +23,11 @@ native/
 site/
 /.sbtopts
 /.*sbtopts
+
+.bloop/
+*/.bloop/
+.vscode/
+.metals/
+*/**/metals.sbt
+
+.bsp/
