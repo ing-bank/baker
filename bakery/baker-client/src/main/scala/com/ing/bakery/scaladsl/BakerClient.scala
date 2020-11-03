@@ -28,6 +28,7 @@ object BakerClient {
     *
     * This method supports fail over to next host, available in list to support multi datacenters.
     * @param hosts Lists of hosts (multiple is supported for several DC)
+    * @param apiUrlPrefix Prefix of Baker API URL, from the root of the host
     * @param executionContext Execution Context
     * @param filters Http Filters to be applied to the invocation pipeline
     * @param tlsConfig TLSConfig
@@ -56,6 +57,7 @@ object BakerClient {
     * Creates client to remote Baker cluster
     *
     * @param host Baker host
+    * @param apiUrlPrefix Prefix of Baker API URL, from the root of the host
     * @param executionContext Execution Context
     * @param filters Http Filters to be applied to the invocation pipeline
     * @param tlsConfig TLSConfig
