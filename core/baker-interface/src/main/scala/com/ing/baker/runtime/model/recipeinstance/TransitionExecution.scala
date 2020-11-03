@@ -4,7 +4,7 @@ import java.io.{PrintWriter, StringWriter}
 import java.lang.reflect.InvocationTargetException
 
 import cats.MonadError
-import cats.effect.{Clock, Sync}
+import cats.effect.{Async, Sync, Timer}
 import cats.implicits._
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -20,6 +20,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.MDC
 
 import scala.util.Random
+import scala.concurrent.duration.MILLISECONDS
 
 object TransitionExecution {
 
@@ -67,15 +68,15 @@ private[recipeinstance] case class TransitionExecution(
       case _ => 0
     }
 
-  def execute[F[_]](implicit components: BakerComponents[F], effect: Sync[F], clock: Clock[F]): F[TransitionExecutionOutcome] = {
+  def execute[F[_]](implicit components: BakerComponents[F], effect: Async[F], timer: Timer[F]): F[TransitionExecutionOutcome] = {
     // TODO maybe put log.transitionFired from the Process Instance here
-    clock.realTime(scala.concurrent.duration.MILLISECONDS).flatMap { startTime =>
+    timer.clock.realTime(MILLISECONDS).flatMap { startTime =>
       //TODO log.firingTransition(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
       val execution: F[TransitionExecutionOutcome] =
         for {
           producedMarkingAndOutput <- enableTransition
           (producedMarking, output) = producedMarkingAndOutput
-          endTime <- clock.realTime(scala.concurrent.duration.MILLISECONDS)
+          endTime <- timer.clock.realTime(MILLISECONDS)
         } yield TransitionExecutionOutcome.Completed( id, transition.getId, correlationId, startTime, endTime, marshalMarking(consume), producedMarking.marshall, output )
       // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
       execution.handleError { e ⇒
@@ -89,7 +90,7 @@ private[recipeinstance] case class TransitionExecution(
     }
   }
 
-  private def enableTransition[F[_]](implicit components: BakerComponents[F], effect: Sync[F], clock: Clock[F]): F[(Marking[Place], Option[EventInstance])] = {
+  private def enableTransition[F[_]](implicit components: BakerComponents[F], effect: Async[F], timer: Timer[F]): F[(Marking[Place], Option[EventInstance])] = {
     transition match {
       case interactionTransition: InteractionTransition => executeInteractionInstance(interactionTransition, recipe.petriNet.outMarking(interactionTransition))
       case eventTransition: EventTransition => effect.pure(recipe.petriNet.outMarking(eventTransition).toMarking, input)
@@ -97,18 +98,18 @@ private[recipeinstance] case class TransitionExecution(
     }
   }
 
-  private def executeInteractionInstance[F[_]](interaction: InteractionTransition, outAdjacent: MultiSet[Place])(implicit components: BakerComponents[F], effect: Sync[F], clock: Clock[F]): F[(Marking[Place], Option[EventInstance])] = {
+  private def executeInteractionInstance[F[_]](interaction: InteractionTransition, outAdjacent: MultiSet[Place])(implicit components: BakerComponents[F], effect: Async[F], timer: Timer[F]): F[(Marking[Place], Option[EventInstance])] = {
     MDC.put("RecipeInstanceId", recipeInstanceId)
     MDC.put("recipeName", recipe.name)
 
     val execution =
       for {
-        timeStarted <- clock.realTime(scala.concurrent.duration.MILLISECONDS)
+        timeStarted <- timer.clock.realTime(MILLISECONDS)
         _ <- components.eventStream.publish(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, recipeInstanceId, interaction.interactionName))
         interactionOutput <- components.interactionInstanceManager.execute(interaction, interactionInput(interaction))
         _ <- validateInteractionOutput(interaction, interactionOutput)
         transformedOutput = transformOutputWithTheInteractionTransitionOutputTransformers(interaction, interactionOutput)
-        timeCompleted <- clock.realTime(scala.concurrent.duration.MILLISECONDS)
+        timeCompleted <- timer.clock.realTime(MILLISECONDS)
         _ <- components.eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipe.name, recipe.recipeId, recipeInstanceId, interaction.interactionName, transformedOutput))
         outputMarking = createOutputMarkingForPetriNet(outAdjacent, transformedOutput)
       } yield (outputMarking, transformedOutput)
@@ -138,7 +139,7 @@ private[recipeinstance] case class TransitionExecution(
     }
   }
 
-  private def validateInteractionOutput[F[_]](interaction: InteractionTransition, interactionOutput: Option[EventInstance])(implicit effect: Sync[F], clock: Clock[F]): F[Unit] = {
+  private def validateInteractionOutput[F[_]](interaction: InteractionTransition, interactionOutput: Option[EventInstance])(implicit effect: Async[F], timer: Timer[F]): F[Unit] = {
     def fail(message: String): F[Unit] = effect.raiseError(new FatalInteractionException(message))
     def continue: F[Unit] = effect.unit
     interactionOutput match {

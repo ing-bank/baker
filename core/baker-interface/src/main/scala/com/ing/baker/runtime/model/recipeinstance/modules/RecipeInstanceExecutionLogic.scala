@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.model.recipeinstance.modules
 
 import cats.data.EitherT
-import cats.effect.{Clock, ConcurrentEffect, IO, Sync}
+import cats.effect.{Timer, ConcurrentEffect, IO, Sync}
 import cats.implicits._
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
@@ -28,9 +28,9 @@ object RecipeInstanceExecutionLogic extends LazyLogging {
                  correlationId: Option[String],
                  eventsLobby: EventsLobby[F],
                  updateInstance: RecipeInstance.UpdateHandler[F]
-                )(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], clock: Clock[F]): EitherT[F, FireSensoryEventRejection, RecipeInstance.FireEventExecution[F]] =
+                )(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, RecipeInstance.FireEventExecution[F]] =
     EitherT(for {
-      currentTime <- clock.realTime(MILLISECONDS)
+      currentTime <- timer.clock.realTime(MILLISECONDS)
       firingEffect <- logRejectionReasonIfAny {
         recipeInstance.validateExecution(input, correlationId, currentTime)
           .map { firing =>
@@ -48,7 +48,7 @@ object RecipeInstanceExecutionLogic extends LazyLogging {
     *
     * @param components
     * @param effect
-    * @param clock
+    * @param timer
     * @tparam F
     * @return
     */
@@ -56,7 +56,7 @@ object RecipeInstanceExecutionLogic extends LazyLogging {
                  recipeInstanceId: String,
                  eventsLobby: EventsLobby[F],
                  updateInstance: RecipeInstance.UpdateHandler[F]
-                )(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], clock: Clock[F]): F[Unit] = {
+                )(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] = {
     effect.runAsync(execution.execute) {
 
       case Right(outcome: TransitionExecutionOutcome.Completed) =>
@@ -76,7 +76,7 @@ object RecipeInstanceExecutionLogic extends LazyLogging {
                                            recipeInstanceId: String,
                                            eventsLobby: EventsLobby[F],
                                            updateInstance: RecipeInstance.UpdateHandler[F]
-                                          )(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], clock: Clock[F]): F[Unit] =
+                                          )(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] =
     for {
       recipeInstance <- updateInstance(recipeInstanceId, _.recordExecutionOutcome(outcome))
       _ <- originalInput.fold(effect.unit)(originalEvent => eventsLobby.resolveWith(originalEvent.name, recipeInstance))

@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.model
 
 import cats.data.EitherT
-import cats.effect.{Clock, ConcurrentEffect}
+import cats.effect.{Timer, ConcurrentEffect}
 import cats.implicits._
 import cats.{Functor, Monad}
 import com.ing.baker.il.CompiledRecipe
@@ -146,11 +146,12 @@ trait RecipeInstanceManager[F[_]] {
         GetRecipeInstanceStateOutcome.NoSuchRecipeInstance
     }
 
-  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], clock: Clock[F]): EitherT[F, FireSensoryEventRejection, EventsLobby[F]] =
+  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, EventsLobby[F]] =
     for {
       recipeInstance <- getRecipeInstanceWithPossibleRejection(recipeInstanceId)
       lobby <- EitherT.liftF(EventsLobby.build[F])
-      _ <- recipeInstance.fire[F](event, correlationId)(lobby, update)
+      runEffect <- recipeInstance.fire[F](event, correlationId)(lobby, update)
+      _ <- EitherT.liftF(runEffect)
     } yield lobby
 
   private def getRecipeInstanceWithPossibleRejection(recipeInstanceId: String)(implicit effect: Functor[F]): EitherT[F, FireSensoryEventRejection, RecipeInstance] =

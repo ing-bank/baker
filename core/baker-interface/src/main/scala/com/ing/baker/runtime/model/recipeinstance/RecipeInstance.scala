@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.model.recipeinstance
 
 import cats.data.EitherT
-import cats.effect.{Clock, ConcurrentEffect, IO}
+import cats.effect.{Timer, ConcurrentEffect, IO}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.api.Marking
@@ -37,7 +37,7 @@ case class RecipeInstance(
     *         Note that the operation is wrapped within an effect because 2 reasons, first, the validation checks for
     *         current time, and second, if there is a rejection a message is logged, both are suspended into F.
     */
-  def fire[F[_]](input: EventInstance, correlationId: Option[String])(eventsLobby: EventsLobby[F], updateInstance: RecipeInstance.UpdateHandler[F])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], clock: Clock[F]): EitherT[F, FireSensoryEventRejection, RecipeInstance.FireEventExecution[F]] =
+  def fire[F[_]](input: EventInstance, correlationId: Option[String])(eventsLobby: EventsLobby[F], updateInstance: RecipeInstance.UpdateHandler[F])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, RecipeInstance.FireEventExecution[F]] =
     RecipeInstanceExecutionLogic.fire(input, recipeInstance = this, correlationId, eventsLobby, updateInstance)
 }
 
