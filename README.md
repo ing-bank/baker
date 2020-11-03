@@ -19,8 +19,8 @@ An introductory presentation of Baker: [Baker talk @ Amsterdam.Scala meetup](htt
 
 A talk about Baker at the Scale By the Bay 2017 conference: [Declare, verify and execute microservices-based process flows](https://www.youtube.com/watch?v=0bWQwUmeXHU).
 
-An example web-shop recipe you can find at the [examples sub-project](https://github.com/ing-bank/baker/tree/master/examples/src/main/scala/webshop/webservice).
-Java developers new to Baker can use this [workshop](https://github.com/nikolakasev/workshop-baker) to get familiar with the library by following and getting the unit tests green.
+For an example web-shop recipe in Scala, see the [examples sub-project](examples/baker-example/src/main/scala/webshop/webservice).
+Java developers new to Baker can use this [workshop](https://github.com/nikolakasev/workshop-baker) to get familiar with the library by reading the workshop assignment PDF document and making the unit tests green.
 
 WebShop Recipe:
 ```scala
@@ -74,20 +74,20 @@ Applying Baker will only be successful if you make sure that:
 To get started with SBT, simply add the following to your build.sbt file:
 
 ```
-libraryDependencies += "com.ing.baker" %% "baker-recipe-dsl" % "3.0.1"
-libraryDependencies += "com.ing.baker" %% "baker-runtime" % "3.0.1"
-libraryDependencies += "com.ing.baker" %% "baker-compiler" % "3.0.1"
+libraryDependencies += "com.ing.baker" %% "baker-recipe-dsl" % "3.0.3"
+libraryDependencies += "com.ing.baker" %% "baker-runtime" % "3.0.3"
+libraryDependencies += "com.ing.baker" %% "baker-compiler" % "3.0.3"
 ```
 
-From 1.3.x to 2.0.x we cross compile to both scala 2.11 and 2.12. 
+From 1.3.x to 2.0.x we cross compile to both Scala 2.11 and 2.12. 
 
-Earlier releases are only available for 2.11.
+Earlier releases are only available for Scala 2.11.
 
-From 3.0.x we support only 2.12.
+From 3.0.x we support only Scala 2.12.
 
 # How to contribute?
 
-Execute the following commands in your terminal to get started with the development of Baker.
+Execute the following commands in your terminal to get started with the development of Baker:
 
 ```
 $ git clone https://github.com/ing-bank/baker.git
@@ -142,7 +142,7 @@ open graph.dot.svg
 
 You are all set to visualize your recipes now!
 
-You can also use custom fonts, for more info see <http://www.graphviz.org/doc/fontfaq.txt>.
+To use custom fonts, see <http://www.graphviz.org/doc/fontfaq.txt>.
 
 # References
 1. DOT Graph Description Language (https://en.wikipedia.org/wiki/DOT_(graph_description_language)) - explains more about the format Baker uses to produce a graphical representation of the recipe;
