@@ -254,7 +254,11 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
       scalaKafkaClient,
       kamon,
       kamonAkka,
-      kamonPrometheus
+      kamonPrometheus,
+      kamonHttp4s,
+      kamonSystemMetrics,
+      kamonZipkin,
+      kamonJaeger
     ) ++ testDeps(
       slf4jApi,
       logback,
