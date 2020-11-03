@@ -33,7 +33,7 @@ object Main extends IOApp {
       ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
 
     val mainResource = for {
-      baker <- BakerClient.resource(Uri.unsafeFromString(bakeryHostname), connectionPool)
+      baker <- BakerClient.resource(Uri.unsafeFromString(bakeryHostname), "/api/bakery", connectionPool)
       management <- StateNodeManagementClient.resource(Uri.unsafeFromString(bakeryHostname), connectionPool)
       _ <- BlazeServerBuilder[IO](connectionPool)
         .bindHttp(httpPort, "0.0.0.0")

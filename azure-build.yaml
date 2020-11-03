@@ -14,6 +14,8 @@ variables:
     value: $(HOME)/.cache
   - name: IVY_HOME
     value: $(Pipeline.Workspace)/.ivy2
+  - name: CACHE_RUN_ID
+    value: "201009"
 
 steps:
   - task: Bash@3
@@ -42,13 +44,13 @@ steps:
   - task: CacheBeta@1
     displayName: Package resolver cache
     inputs:
-      key: 'cache'
+      key: cache_$(CACHE_RUN_ID)
       path: '$(CACHE)'
 
   - task: CacheBeta@1
     displayName: Ivy resolver cache
     inputs:
-      key: 'ivy_home'
+      key: ivy_home_$(CACHE_RUN_ID)
       path: '$(IVY_HOME)'
 
   - task: Bash@3

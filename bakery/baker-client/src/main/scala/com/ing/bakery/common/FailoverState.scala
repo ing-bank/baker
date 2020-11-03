@@ -15,5 +15,5 @@ sealed class FailoverState(hosts: IndexedSeq[Uri]) {
 
   def failed(): Int = currentPosition.getAndUpdate((operand: Int) => if (operand + 1 < size) operand + 1 else 0)
 
-  def host: Uri = hosts(currentPosition.get())
+  def uri: Uri = hosts(currentPosition.get())
 }

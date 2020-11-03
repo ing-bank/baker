@@ -21,33 +21,35 @@ object BakerClient {
   type Filter = java.util.function.Function[Request[IO], Request[IO]]
 
   def build(hostname: String,
+            apiUrlString: String,
             filters: JList[Filter],
             tlsConfig: Optional[TLSConfig]): CompletableFuture[JavaBaker] = {
-      build(Collections.singletonList(hostname), filters, tlsConfig)
+    build(Collections.singletonList(hostname), apiUrlString, filters, tlsConfig)
   }
 
-  def build(hostname: String, filters: JList[Filter]): CompletableFuture[JavaBaker] = {
-    build(hostname, filters, Optional.empty[TLSConfig]())
+  def build(hostname: String, apiUrlString: String, filters: JList[Filter]): CompletableFuture[JavaBaker] = {
+    build(hostname, apiUrlString, filters, Optional.empty[TLSConfig]())
   }
 
-  def build(hostname: String, tlsConfig: Optional[TLSConfig]): CompletableFuture[JavaBaker] = {
-    build(hostname, Collections.emptyList[Filter](), tlsConfig)
+  def build(hostname: String, apiUrlString: String, tlsConfig: Optional[TLSConfig]): CompletableFuture[JavaBaker] = {
+    build(hostname, apiUrlString, Collections.emptyList[Filter](), tlsConfig)
   }
 
-  def build(hostname: String): CompletableFuture[JavaBaker] = {
-    build(hostname, Collections.emptyList[Filter](), Optional.empty[TLSConfig]())
+  def build(hostname: String, apiUrlString: String): CompletableFuture[JavaBaker] = {
+    build(hostname, apiUrlString, Collections.emptyList[Filter](), Optional.empty[TLSConfig]())
   }
 
   //TODO add resource cleanup possibility.
   /**
-    * Return async result with JavaBaker instance, using hosts, filters and tlsConfig
-    *
-    * @param hosts     List of hosts for baker cluster (more than 1 hosts is supported for multi-dc option)
-    * @param filters   Http filters
-    * @param tlsConfig TLS context for connection
-    * @return JavaBaker
-    */
+   * Return async result with JavaBaker instance, using hosts, filters and tlsConfig
+   *
+   * @param hosts     List of hosts for baker cluster (more than 1 hosts is supported for multi-dc option)
+   * @param filters   Http filters
+   * @param tlsConfig TLS context for connection
+   * @return JavaBaker
+   */
   def build(hosts: JList[String],
+            apiUrlPrefix: String,
             filters: JList[Filter],
             tlsConfig: Optional[TLSConfig]): CompletableFuture[JavaBaker] = {
 
@@ -66,6 +68,7 @@ object BakerClient {
         new scaladsl.BakerClient(
           client = client,
           hosts = hosts.asScala.map(Uri.unsafeFromString).toIndexedSeq,
+          apiUrlPrefix = apiUrlPrefix,
           filters = filters.asScala.map(_.asScala))
       }
       .allocated

@@ -401,7 +401,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
       _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, baker))
 
       server <- BakerService.resource(baker, InetSocketAddress.createUnresolved("127.0.0.1", 0), serviceDiscovery, loggingEnabled = true)
-      client <- BakerClient.resource(server.baseUri, executionContext)
+      client <- BakerClient.resource(server.baseUri, "/api/bakery", executionContext)
 
     } yield Context(
       client,
