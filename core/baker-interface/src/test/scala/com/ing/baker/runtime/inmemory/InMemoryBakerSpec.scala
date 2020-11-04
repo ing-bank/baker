@@ -6,7 +6,9 @@ import com.ing.baker.runtime.model.BakerModelSpec
 class InMemoryBakerSpec extends BakerModelSpec[IO] {
 
   /** This will execute the predefined baker tests from BakerModelSpec */
-  runTests()
+  runEnquireTests()
+  runSetupTests()
+  runExecutionSemanticsTests()
 
   override def contextBuilder(testArguments: Unit): Resource[IO, Context] =
     for {

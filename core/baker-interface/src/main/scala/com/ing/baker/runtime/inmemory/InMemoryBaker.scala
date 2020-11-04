@@ -1,11 +1,11 @@
 package com.ing.baker.runtime.inmemory
 
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
-import com.ing.baker.runtime.model.{Baker, BakerComponents, TimeoutsConfig}
+import com.ing.baker.runtime.model.{Baker, BakerComponents, BakerConfig}
 
 object InMemoryBaker {
 
-  def build(timeouts: TimeoutsConfig = TimeoutsConfig())(implicit timer: Timer[IO], cs: ContextShift[IO]): IO[Baker[IO]] = for {
+  def build(timeouts: BakerConfig = BakerConfig())(implicit timer: Timer[IO], cs: ContextShift[IO]): IO[Baker[IO]] = for {
     interactionInstanceManager <- InMemoryInteractionInstanceManager.build
     recipeInstanceManager <- InMemoryRecipeInstanceManager.build
     recipeManager <- InMemoryRecipeManager.build
@@ -17,7 +17,7 @@ object InMemoryBaker {
   }
 }
 
-final class InMemoryBaker(val timeouts: TimeoutsConfig)(implicit components: BakerComponents[IO], effect: ConcurrentEffect[IO], timer: Timer[IO]) extends Baker[IO] {
+final class InMemoryBaker(val config: BakerConfig)(implicit components: BakerComponents[IO], effect: ConcurrentEffect[IO], timer: Timer[IO]) extends Baker[IO] {
 
   /**
     * Attempts to gracefully shutdown the baker system.

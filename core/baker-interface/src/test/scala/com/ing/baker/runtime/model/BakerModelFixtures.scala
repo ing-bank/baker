@@ -2,10 +2,10 @@ package com.ing.baker.runtime.model
 
 import cats.Applicative
 import cats.effect.Sync
-import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance, InteractionInstanceF}
+import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceF}
 import com.ing.baker.types.{Converters, Value}
 import org.mockito.Matchers.anyString
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{reset, when}
 import org.scalatestplus.mockito.MockitoSugar
 
 import scala.reflect.ClassTag
@@ -91,4 +91,12 @@ trait BakerModelFixtures[F[_]] extends TestRecipe[F] with MockitoSugar {
     when(testSieveInteractionMock.apply(anyString(), anyString())).thenReturn(SieveInteractionSuccessful(sievedIngredientValue))
   }
 
+  protected def resetMocks(): Unit =
+    reset(testInteractionOneMock,
+      testInteractionTwoMock,
+      testInteractionThreeMock,
+      testInteractionFourMock,
+      testInteractionFiveMock,
+      testInteractionSixMock,
+      testNonMatchingReturnTypeInteractionMock)
 }

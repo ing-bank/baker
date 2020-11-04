@@ -2,18 +2,39 @@ package com.ing.baker.runtime.model
 
 import java.util.Optional
 
+import cats.Applicative
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl._
 
 import scala.concurrent.duration._
 
-//By adding the javadsl Ingredient tag the object will be serialized by Kryo
-class ComplexObjectIngredient(value: String)
-
-case class CaseClassIngredient(a: Int, b: String)
 
 trait TestRecipe[F[_]] {
+
+  case class SomeNotDefinedEvent(name: String)
+
+  class ComplexObjectIngredient(val value: String)
+
+  case class CaseClassIngredient(a: Int, b: String)
+
+  class InteractionOneSimple() {
+    def apply(recipeInstanceId: String, initialIngredient: String): String = ""
+  }
+
+  class InteractionOneFieldName() {
+    val name: String = "InteractionOne"
+    def apply(recipeInstanceId: String, initialIngredient: String): String = ""
+  }
+
+  class InteractionOneInterfaceImplementation(implicit effect: Applicative[F]) extends InteractionOne {
+    override def apply(recipeInstanceId: String, initialIngredient: String): F[InteractionOneSuccessful] = effect.pure(InteractionOneSuccessful(""))
+  }
+
+  class InteractionOneWrongApply() {
+    val name: String = "InteractionOne"
+    def apply(recipeInstanceId: String): String = ""
+  }
 
   //inputIngredients = Seq as used in the recipe
   val initialIngredientOld: Ingredient[String] = Ingredient[String]("initialIngredientOld")

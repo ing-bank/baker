@@ -6,6 +6,7 @@ import cats.implicits._
 import cats.effect.implicits._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
+import com.ing.baker.runtime.common.BakerException.{ImplementationsException, RecipeValidationException}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
 import com.ing.baker.runtime.model.recipeinstance.{EventsLobby, RecipeInstance}
@@ -15,7 +16,7 @@ import com.typesafe.scalalogging.LazyLogging
 
 abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) extends BakerF[F] with LazyLogging {
 
-  val timeouts: TimeoutsConfig
+  val config: BakerConfig
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -26,7 +27,22 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     * @return A recipeId
     */
   override def addRecipe(compiledRecipe: CompiledRecipe): F[String] =
-    components.recipeManager.addRecipe(compiledRecipe).timeout(timeouts.addRecipeTimeout)
+    for {
+      implementationErrors <- {
+        if (config.allowAddingRecipeWithoutRequiringInstances)
+          effect.pure(List.empty)
+        else
+          getImplementationErrors(compiledRecipe)
+      }
+      recipeId <- {
+        if (implementationErrors.nonEmpty)
+          effect.raiseError(ImplementationsException(implementationErrors.mkString(", ")))
+        else if (compiledRecipe.validationErrors.nonEmpty)
+          effect.raiseError(RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
+        else
+          components.recipeManager.addRecipe(compiledRecipe).timeout(config.addRecipeTimeout)
+      }
+    } yield recipeId
 
   /**
     * Returns the recipe information for the given RecipeId
@@ -41,7 +57,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
           RecipeInformation(compiledRecipe, timestamp, _))
       case None =>
         effect.raiseError(BakerException.NoSuchRecipeException(recipeId))
-    }.timeout(timeouts.inquireTimeout)
+    }.timeout(config.inquireTimeout)
 
   /**
     * Returns all recipes added to this baker instance.
@@ -55,7 +71,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
           .map(errors => recipeId -> RecipeInformation(compiledRecipe, timestamp, errors))
       }
       .map(_.toMap)
-    ).timeout(timeouts.inquireTimeout)
+    ).timeout(config.inquireTimeout)
 
   private def getImplementationErrors(compiledRecipe: CompiledRecipe): F[Set[String]] = {
     //TODO optimize so that we do not have to much traffic if its a remote InteractionManager
@@ -88,7 +104,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
         case RecipeInstanceManager.BakeOutcome.RecipeInstanceAlreadyExists =>
           effect.raiseError(BakerException.ProcessAlreadyExistsException(recipeInstanceId))
       }
-    } yield ()).timeout(timeouts.bakeTimeout)
+    } yield ()).timeout(config.bakeTimeout)
 
   /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
@@ -105,7 +121,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     components.recipeInstanceManager
       .fireEvent(recipeInstanceId, event, correlationId)
       .value.flatMap(mapRejectionsToStatus)
-      .timeout(timeouts.processEventTimeout)
+      .timeout(config.processEventTimeout)
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -122,7 +138,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     components.recipeInstanceManager
       .fireEvent(recipeInstanceId, event, correlationId)
       .value.flatMap(mapRejectionsToResult(event.name))
-      .timeout(timeouts.processEventTimeout)
+      .timeout(config.processEventTimeout)
 
   /**
     * Notifies Baker that an event has happened and waits until an specific event has executed.
@@ -140,7 +156,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     components.recipeInstanceManager
       .fireEvent(recipeInstanceId, event, correlationId)
       .value.flatMap(mapRejectionsToResult(onEvent))
-      .timeout(timeouts.processEventTimeout)
+      .timeout(config.processEventTimeout)
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -164,15 +180,16 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     new EventResolutionsF[F] {
       override def resolveWhenReceived: F[SensoryEventStatus] =
         fireDeferred.get.flatMap(mapRejectionsToStatus)
-          .timeout(timeouts.processEventTimeout)
+          .timeout(config.processEventTimeout)
 
       override def resolveWhenCompleted: F[SensoryEventResult] =
         fireDeferred.get.flatMap(mapRejectionsToResult(event.name))
-          .timeout(timeouts.processEventTimeout)
+          .timeout(config.processEventTimeout)
     }
   }
 
-  private def mapRejectionsToStatus(outcome: Either[FireSensoryEventRejection, EventsLobby[F]]): F[SensoryEventStatus] =
+  private def mapRejectionsToStatus(outcome: Either[FireSensoryEventRejection, EventsLobby[F]]): F[SensoryEventStatus] = {
+    println(Console.MAGENTA_B + outcome + Console.RESET)
     outcome match {
       case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
         effect.raiseError(BakerException.IllegalEventException(message))
@@ -189,8 +206,10 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
       case Right(_) =>
         effect.pure(SensoryEventStatus.Received)
     }
+  }
 
-  private def mapRejectionsToResult(eventToAwaitFor: String)(outcome: Either[FireSensoryEventRejection, EventsLobby[F]]): F[SensoryEventResult] =
+  private def mapRejectionsToResult(eventToAwaitFor: String)(outcome: Either[FireSensoryEventRejection, EventsLobby[F]]): F[SensoryEventResult] = {
+    println(Console.MAGENTA_B + outcome + Console.RESET)
     outcome match {
       case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
         effect.raiseError(BakerException.IllegalEventException(message))
@@ -207,6 +226,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
       case Right(lobby) =>
         lobby.awaitForEvent(eventToAwaitFor)
     }
+  }
 
   /**
     * Returns an index of all running processes.
@@ -220,7 +240,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     */
   override def getAllRecipeInstancesMetadata: F[Set[RecipeInstanceMetadata]] =
     components.recipeInstanceManager.getAllRecipeInstancesMetadata
-      .timeout(timeouts.inquireTimeout)
+      .timeout(config.inquireTimeout)
 
   /**
     * Returns the process state.
@@ -236,7 +256,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
         effect.raiseError(BakerException.NoSuchProcessException(recipeInstanceId))
       case RecipeInstanceManager.GetRecipeInstanceStateOutcome.RecipeInstanceDeleted =>
         effect.raiseError(BakerException.ProcessDeletedException(recipeInstanceId))
-    }.timeout(timeouts.inquireTimeout)
+    }.timeout(config.inquireTimeout)
 
   /**
     * Returns all provided ingredients for a given RecipeInstance id.
@@ -310,7 +330,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     */
   override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): F[Unit] =
     components.eventStream.subscribe(listenerFunction)
-      .timeout(timeouts.inquireTimeout)
+      .timeout(config.inquireTimeout)
 
   /**
     * Adds an interaction implementation to baker.
@@ -319,7 +339,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     */
   override def addInteractionInstance(implementation: InteractionInstanceF[F]): F[Unit] =
     components.interactionInstanceManager.add(implementation)
-      .timeout(timeouts.addRecipeTimeout)
+      .timeout(config.addRecipeTimeout)
 
   /**
     * Adds a sequence of interaction implementation to baker.
@@ -328,7 +348,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     */
   override def addInteractionInstances(implementations: Seq[InteractionInstanceF[F]]): F[Unit] =
     implementations.toList.traverse(components.interactionInstanceManager.add).void
-      .timeout(timeouts.addRecipeTimeout)
+      .timeout(config.addRecipeTimeout)
 
   /**
     * Retries a blocked interaction.
