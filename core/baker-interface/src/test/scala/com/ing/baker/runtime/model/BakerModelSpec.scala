@@ -236,19 +236,13 @@ abstract class BakerModelSpec[F[_]]
         (baker, _) = bakerAndRecipeId
         event = EventInstance.unsafeFrom(InitialEvent("initialIngredient"))
         response = baker.fireEvent(UUID.randomUUID().toString, event)
-        _ <- response.resolveWhenReceived.attempt.map { x =>
-          println(Console.MAGENTA + x + Console.RESET)
-          x match {
-            case Left(_: NoSuchProcessException) => succeed
-            case _ => fail("Should have thrown a NoSuchProcessException error")
-          }
+        _ <- response.resolveWhenReceived.attempt.map {
+          case Left(_: NoSuchProcessException) => succeed
+          case _ => fail("Should have thrown a NoSuchProcessException error")
         }
-        _ <- response.resolveWhenCompleted.attempt.map { x =>
-          println(Console.MAGENTA + x + Console.RESET)
-          x match {
-            case Left(_: NoSuchProcessException) => succeed
-            case _ => fail("Should have thrown a NoSuchProcessException error")
-          }
+        _ <- response.resolveWhenCompleted.attempt.map {
+          case Left(_: NoSuchProcessException) => succeed
+          case _ => fail("Should have thrown a NoSuchProcessException error")
         }
       } yield succeed
     }

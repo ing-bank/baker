@@ -176,7 +176,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     effect.runAsync(runProgram.value) {
       case Right(outcome) => effect.toIO(fireDeferred.complete(outcome))
       case Left(e) => RecipeInstance.logImpossibleException(logger, e)
-    }
+    }.unsafeRunSync()
     new EventResolutionsF[F] {
       override def resolveWhenReceived: F[SensoryEventStatus] =
         fireDeferred.get.flatMap(mapRejectionsToStatus)
@@ -188,8 +188,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     }
   }
 
-  private def mapRejectionsToStatus(outcome: Either[FireSensoryEventRejection, EventsLobby[F]]): F[SensoryEventStatus] = {
-    println(Console.MAGENTA_B + outcome + Console.RESET)
+  private def mapRejectionsToStatus(outcome: Either[FireSensoryEventRejection, EventsLobby[F]]): F[SensoryEventStatus] =
     outcome match {
       case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
         effect.raiseError(BakerException.IllegalEventException(message))
@@ -206,10 +205,8 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
       case Right(_) =>
         effect.pure(SensoryEventStatus.Received)
     }
-  }
 
-  private def mapRejectionsToResult(eventToAwaitFor: String)(outcome: Either[FireSensoryEventRejection, EventsLobby[F]]): F[SensoryEventResult] = {
-    println(Console.MAGENTA_B + outcome + Console.RESET)
+  private def mapRejectionsToResult(eventToAwaitFor: String)(outcome: Either[FireSensoryEventRejection, EventsLobby[F]]): F[SensoryEventResult] =
     outcome match {
       case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
         effect.raiseError(BakerException.IllegalEventException(message))
@@ -226,7 +223,6 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
       case Right(lobby) =>
         lobby.awaitForEvent(eventToAwaitFor)
     }
-  }
 
   /**
     * Returns an index of all running processes.
