@@ -60,7 +60,7 @@ object RecipeInstanceExecutionLogic extends LazyLogging {
     effect.runAsync(execution.execute) {
 
       case Right(outcome: TransitionExecutionOutcome.Completed) =>
-        effect.toIO(handleCompletedOutcome(execution.input, outcome, recipeInstanceId, eventsLobby, updateInstance))
+        effect.toIO(handleCompletedOutcome(outcome, recipeInstanceId, eventsLobby, updateInstance))
 
       case Right(outcome: TransitionExecutionOutcome.Failed) =>
         // TODO handle failed interaction, equivalent to TransitionFailedEvent on the process instance actor
@@ -71,18 +71,18 @@ object RecipeInstanceExecutionLogic extends LazyLogging {
     }.to[F]
   }
 
-  private def handleCompletedOutcome[F[_]](originalInput: Option[EventInstance],
-                                           outcome: TransitionExecutionOutcome.Completed,
+  private def handleCompletedOutcome[F[_]](outcome: TransitionExecutionOutcome.Completed,
                                            recipeInstanceId: String,
                                            eventsLobby: EventsLobby[F],
                                            updateInstance: RecipeInstance.UpdateHandler[F]
                                           )(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] =
     for {
       recipeInstance <- updateInstance(recipeInstanceId, _.recordExecutionOutcome(outcome))
-      _ <- originalInput.fold(effect.unit)(originalEvent => eventsLobby.resolveWith(originalEvent.name, recipeInstance))
+      _ <- outcome.output.fold(effect.unit)(output => eventsLobby.resolveWith(output.name, recipeInstance))
       enabledExecutions = recipeInstance.allEnabledExecutions
       _ <- updateInstance(recipeInstanceId, _.addExecution(enabledExecutions: _*))
       _ <- enabledExecutions.toList.traverse(step[F](_, recipeInstanceId, eventsLobby, updateInstance))
+      _ <- if (enabledExecutions.isEmpty) eventsLobby.reportComplete(recipeInstance) else effect.unit
     } yield ()
 
   /** Helper function to log and remove the textual rejection reason of the `fire` operation. It basically exchanges the

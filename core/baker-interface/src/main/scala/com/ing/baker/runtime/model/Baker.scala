@@ -120,7 +120,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
   override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventStatus] =
     components.recipeInstanceManager
       .fireEvent(recipeInstanceId, event, correlationId)
-      .value.flatMap(mapRejectionsToStatus)
+      .value.flatMap(mapRejectionsToStatus(event.name))
       .timeout(config.processEventTimeout)
 
   /**
@@ -137,7 +137,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
   override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventResult] =
     components.recipeInstanceManager
       .fireEvent(recipeInstanceId, event, correlationId)
-      .value.flatMap(mapRejectionsToResult(event.name))
+      .value.flatMap(mapRejectionsToResult(_.awaitForCompleted))
       .timeout(config.processEventTimeout)
 
   /**
@@ -155,7 +155,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
   override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): F[SensoryEventResult] =
     components.recipeInstanceManager
       .fireEvent(recipeInstanceId, event, correlationId)
-      .value.flatMap(mapRejectionsToResult(onEvent))
+      .value.flatMap(mapRejectionsToResult(_.awaitForEvent(onEvent)))
       .timeout(config.processEventTimeout)
 
   /**
@@ -179,16 +179,16 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     }.unsafeRunSync()
     new EventResolutionsF[F] {
       override def resolveWhenReceived: F[SensoryEventStatus] =
-        fireDeferred.get.flatMap(mapRejectionsToStatus)
+        fireDeferred.get.flatMap(mapRejectionsToStatus(event.name))
           .timeout(config.processEventTimeout)
 
       override def resolveWhenCompleted: F[SensoryEventResult] =
-        fireDeferred.get.flatMap(mapRejectionsToResult(event.name))
+        fireDeferred.get.flatMap(mapRejectionsToResult(_.awaitForCompleted))
           .timeout(config.processEventTimeout)
     }
   }
 
-  private def mapRejectionsToStatus(outcome: Either[FireSensoryEventRejection, EventsLobby[F]]): F[SensoryEventStatus] =
+  private def mapRejectionsToStatus(eventToAwaitFor: String)(outcome: Either[FireSensoryEventRejection, EventsLobby[F]]): F[SensoryEventStatus] =
     outcome match {
       case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
         effect.raiseError(BakerException.IllegalEventException(message))
@@ -202,11 +202,11 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
         effect.pure(SensoryEventStatus.ReceivePeriodExpired)
       case Left(_: FireSensoryEventRejection.RecipeInstanceDeleted) =>
         effect.pure(SensoryEventStatus.RecipeInstanceDeleted)
-      case Right(_) =>
-        effect.pure(SensoryEventStatus.Received)
+      case Right(lobby) =>
+        lobby.awaitForEvent(eventToAwaitFor).as(SensoryEventStatus.Received)
     }
 
-  private def mapRejectionsToResult(eventToAwaitFor: String)(outcome: Either[FireSensoryEventRejection, EventsLobby[F]]): F[SensoryEventResult] =
+  private def mapRejectionsToResult(handler: EventsLobby[F] => F[SensoryEventResult])(outcome: Either[FireSensoryEventRejection, EventsLobby[F]]): F[SensoryEventResult] =
     outcome match {
       case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
         effect.raiseError(BakerException.IllegalEventException(message))
@@ -221,7 +221,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
       case Left(_: FireSensoryEventRejection.RecipeInstanceDeleted) =>
         effect.pure(SensoryEventResult(SensoryEventStatus.RecipeInstanceDeleted, Seq.empty, Map.empty))
       case Right(lobby) =>
-        lobby.awaitForEvent(eventToAwaitFor)
+        handler(lobby)
     }
 
   /**

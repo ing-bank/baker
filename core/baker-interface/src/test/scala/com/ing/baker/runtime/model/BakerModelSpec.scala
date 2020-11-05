@@ -5,7 +5,7 @@ import java.util.UUID
 import cats.effect.{ConcurrentEffect, IO, Resource, Sync}
 import cats.implicits._
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.recipe.scaladsl.Recipe
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, ProcessAlreadyExistsException}
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceF}
 import com.ing.bakery.utils.BakeryFunSpec
@@ -14,8 +14,10 @@ import org.mockito.Mockito.{verify, when}
 import org.scalatest.{BeforeAndAfter, ConfigMap}
 import org.scalatest.matchers.should.Matchers
 import com.ing.baker.runtime.model.ScalaDSLRuntime._
+import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
 
 import scala.reflect.ClassTag
+import concurrent.duration._
 
 abstract class BakerModelSpec[F[_]]
   extends BakeryFunSpec[F]
@@ -283,142 +285,95 @@ abstract class BakerModelSpec[F[_]]
             "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
     }
 
+    test("Correctly notify on event") { context =>
+
+      val sensoryEvent = Event(
+        name = "sensory-event",
+        providedIngredients = Seq(Ingredient[Int]("ingredient-0")),
+        maxFiringLimit = None
+      )
+      val interaction1 = Interaction(
+        name = "Interaction1",
+        inputIngredients = Seq(Ingredient[Int]("ingredient-0")),
+        output = Seq(Event(
+          name = "interaction-1-happened",
+          providedIngredients = Seq(Ingredient[String]("ingredient-1")),
+          maxFiringLimit = None
+        ))
+      )
+      val interaction2 = Interaction(
+        name = "Interaction2",
+        inputIngredients = Seq(Ingredient[String]("ingredient-1")),
+        output = Seq(Event(
+          name = "interaction-2-happened",
+          providedIngredients = Seq(Ingredient[String]("ingredient-2")),
+          maxFiringLimit = None
+        ))
+      )
+      val interaction3 = Interaction(
+        name = "Interaction3",
+        inputIngredients = Seq(Ingredient[String]("ingredient-2")),
+        output = Seq(Event(
+          name = "interaction-3-happened",
+          providedIngredients = Seq(Ingredient[String]("final")),
+          maxFiringLimit = None
+        ))
+      )
+
+      val recipe =
+        Recipe("IngredientProvidedRecipe")
+          .withInteractions(interaction1, interaction2, interaction3)
+          .withSensoryEvent(sensoryEvent)
+
+      val interactionInstances = Seq(
+        InteractionInstanceF.build[F](
+          _name = "Interaction1",
+          _input = Seq(Int32),
+          _output = None,
+          _run = _ => effect.pure(Some(EventInstance("interaction-1-happened", Map("ingredient-1" -> PrimitiveValue("data1")))))
+        ),
+        InteractionInstanceF.build[F](
+          _name = "Interaction2",
+          _input = Seq(CharArray),
+          _output = None,
+          _run = _ => effect.pure(Some(EventInstance("interaction-2-happened", Map("ingredient-2" -> PrimitiveValue("data2")))))
+        ),
+        InteractionInstanceF.build[F](
+          _name = "Interaction3",
+          _input = Seq(CharArray),
+          _output = None,
+          _run = _ => effect.pure(Some(EventInstance("interaction-3-happened", Map("final" -> PrimitiveValue("data3")))))
+        )
+      )
+
+      for {
+        bakerAndRecipeId<- context.setupBakerWithRecipe(recipe, interactionInstances)
+        (baker, recipeId) = bakerAndRecipeId
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        completed <- baker.fireEventAndResolveOnEvent(
+          recipeInstanceId,
+          EventInstance("sensory-event", Map("ingredient-0" -> PrimitiveValue(42))),
+          onEvent = "interaction-2-happened")
+        _ = completed.eventNames shouldBe
+          Seq("sensory-event", "interaction-1-happened", "interaction-2-happened")
+        _ = completed.ingredients shouldBe
+          Map("ingredient-0" -> PrimitiveValue(42),
+            "ingredient-1" -> PrimitiveValue("data1"),
+            "ingredient-2" -> PrimitiveValue("data2"))
+        _ <- timer.sleep(100.millis).to[F]
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+        _ = state.ingredients shouldBe
+          Map("ingredient-0" -> PrimitiveValue(42),
+            "ingredient-1" -> PrimitiveValue("data1"),
+            "ingredient-2" -> PrimitiveValue("data2"),
+            "final" -> PrimitiveValue("data3"))
+      } yield succeed
+    }
+
     /*
     {
 
-      test("execute an interaction when its ingredient is provided in cluster") { context =>
-        val recipe =
-          Recipe("IngredientProvidedRecipeCluster")
-            .withInteraction(interactionOne)
-            .withSensoryEvent(initialEvent)
-
-
-        val config: Config = ConfigFactory.parseString(
-          """
-            |include "baker.conf"
-            |
-            |akka {
-            |  actor {
-            |    provider = "cluster"
-            |  }
-            |  remote {
-            |    log-remote-lifecycle-events = off
-            |    netty.tcp {
-            |      hostname = "127.0.0.1"
-            |      port = 2555
-            |    }
-            |  }
-            |
-            |  cluster {
-            |    seed-nodes = ["akka.tcp://remoteTest@127.0.0.1:2555"]
-            |    auto-down-unreachable-after = 10s
-            |  }
-            |}
-        """.stripMargin).withFallback(ConfigFactory.load())
-
-        val baker = AkkaBaker(config, ActorSystem.apply("remoteTest", config))
-
-        for {
-          _ <- baker.addInteractionInstances(mockImplementations)
-          recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
-          _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
-          recipeInstanceId = UUID.randomUUID().toString
-          _ <- baker.bake(recipeId, recipeInstanceId)
-          _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue))))
-          _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, "initialIngredient")
-          state <- baker.getRecipeInstanceState(recipeInstanceId)
-        } yield
-          state.ingredients shouldBe
-            ingredientMap(
-              "initialIngredient" -> initialIngredientValue,
-              "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
-      }
-
-      test("Correctly notify on event") { context =>
-
-        val sensoryEvent = Event(
-          name = "sensory-event",
-          providedIngredients = Seq(Ingredient[Int]("ingredient-0")),
-          maxFiringLimit = None
-        )
-        val interaction1 = Interaction(
-          name = "Interaction1",
-          inputIngredients = Seq(Ingredient[Int]("ingredient-0")),
-          output = Seq(Event(
-            name = "interaction-1-happened",
-            providedIngredients = Seq(Ingredient[String]("ingredient-1")),
-            maxFiringLimit = None
-          ))
-        )
-        val interaction2 = Interaction(
-          name = "Interaction2",
-          inputIngredients = Seq(Ingredient[String]("ingredient-1")),
-          output = Seq(Event(
-            name = "interaction-2-happened",
-            providedIngredients = Seq(Ingredient[String]("ingredient-2")),
-            maxFiringLimit = None
-          ))
-        )
-        val interaction3 = Interaction(
-          name = "Interaction3",
-          inputIngredients = Seq(Ingredient[String]("ingredient-2")),
-          output = Seq(Event(
-            name = "interaction-3-happened",
-            providedIngredients = Seq(Ingredient[String]("final")),
-            maxFiringLimit = None
-          ))
-        )
-
-        val recipe =
-          Recipe("IngredientProvidedRecipe")
-            .withInteractions(interaction1, interaction2, interaction3)
-            .withSensoryEvent(sensoryEvent)
-
-        val interactionInstances = Seq(
-          InteractionInstance(
-            name = "Interaction1",
-            input = Seq(Int32),
-            output = None,
-            run = _ => Future.successful(Some(EventInstance("interaction-1-happened", Map("ingredient-1" -> PrimitiveValue("data1")))))
-          ),
-          InteractionInstance(
-            name = "Interaction2",
-            input = Seq(CharArray),
-            output = None,
-            run = _ => Future.successful(Some(EventInstance("interaction-2-happened", Map("ingredient-2" -> PrimitiveValue("data2")))))
-          ),
-          InteractionInstance(
-            name = "Interaction3",
-            input = Seq(CharArray),
-            output = None,
-            run = _ => Future.successful(Some(EventInstance("interaction-3-happened", Map("final" -> PrimitiveValue("data3")))))
-          )
-        )
-
-        for {
-          bakerAndRecipeId<- context.setupBakerWithRecipe(recipe, interactionInstances)
-          (baker, recipeId) = bakerAndRecipeId
-          recipeInstanceId = UUID.randomUUID().toString
-          _ <- baker.bake(recipeId, recipeInstanceId)
-          completed <- baker.fireEventAndResolveOnEvent(
-            recipeInstanceId,
-            EventInstance("sensory-event", Map("ingredient-0" -> PrimitiveValue(42))),
-            onEvent = "interaction-2-happened")
-          _ = completed.eventNames shouldBe
-            Seq("sensory-event", "interaction-1-happened", "interaction-2-happened")
-          _ = completed.ingredients shouldBe
-            Map("ingredient-0" -> PrimitiveValue(42),
-              "ingredient-1" -> PrimitiveValue("data1"),
-              "ingredient-2" -> PrimitiveValue("data2"))
-          _ <- Future(Thread.sleep(100))
-          state <- baker.getRecipeInstanceState(recipeInstanceId)
-          _ = state.ingredients shouldBe
-            Map("ingredient-0" -> PrimitiveValue(42),
-              "ingredient-1" -> PrimitiveValue("data1"),
-              "ingredient-2" -> PrimitiveValue("data2"),
-              "final" -> PrimitiveValue("data3"))
-        } yield succeed
-      }
 
       test("fire an event twice if two interactions fire it") { context =>
         val recipe =
