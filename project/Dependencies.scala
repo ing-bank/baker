@@ -65,11 +65,7 @@ object Dependencies {
   val kamonAkka = "io.kamon" %% "kamon-akka" % kamonAkkaVersion
   val kamonPrometheus = "io.kamon" %% "kamon-prometheus" % kamonAkkaVersion
   val kamonSystemMetrics =  "io.kamon" %% "kamon-system-metrics" % kamonAkkaVersion
-  val kamonHttp4s = "io.kamon" %% "kamon-http4s" % "2.0.3"
-  val kamonLogback = "io.kamon" %% "kamon-logback" % kamonAkkaVersion
-  val kamonCassandra = "io.kamon" %% "kamon-cassandra" % kamonAkkaVersion
-//  val kamonZipkin = "io.kamon" %% "kamon-zipkin" % kamonAkkaVersion
-//  val kamonJaeger = "io.kamon" %% "kamon-jaeger" % kamonAkkaVersion
+  val prometheus = "io.prometheus" % "simpleclient" % "0.9.0"
 
   val skuber = ("io.skuber" %% "skuber" % "2.6.0")
   val play = "com.typesafe.play" %% "play-json" % "2.9.1"
@@ -79,6 +75,7 @@ object Dependencies {
   val http4sServer = "org.http4s" %% "http4s-blaze-server" % http4sVersion
   val http4sClient = "org.http4s" %% "http4s-blaze-client" % http4sVersion
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sVersion
+  val http4sPrometheus =  "org.http4s" %% "http4s-prometheus-metrics" % http4sVersion
   val circe = "io.circe" %% "circe-core" % circeVersion
   val circeParser = "io.circe" %% "circe-parser" % circeVersion
   val circeGeneric = "io.circe" %% "circe-generic" % circeVersion

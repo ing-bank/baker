@@ -1,10 +1,9 @@
 package com.ing.bakery.baker
 
-import java.io.File
+import java.io.{CharArrayWriter, File}
 import java.net.InetSocketAddress
 
 import akka.actor.ActorSystem
-import akka.actor.TypedActor.context
 import akka.cluster.Cluster
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.baker.recipe.javadsl.Interaction
@@ -14,8 +13,9 @@ import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import kamon.Kamon
-import kamon.instrumentation.executor.ExecutorInstrumentation
+import io.prometheus.client.{Collector, CollectorRegistry}
+import io.prometheus.client.exporter.common.TextFormat
+import io.prometheus.client.hotspot._
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.http4s.server.Server
@@ -24,10 +24,10 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
 
+
 object Main extends IOApp with LazyLogging {
 
   override def run(args: List[String]): IO[ExitCode] = {
-    Kamon.init()
 
     val configPath = sys.env.getOrElse("CONFIG_DIRECTORY", "/opt/docker/conf")
     val config = ConfigFactory.load(ConfigFactory.parseFile(new File(s"$configPath/application.conf")))
@@ -38,6 +38,7 @@ object Main extends IOApp with LazyLogging {
     implicit val executionContext: ExecutionContext = system.dispatcher
 
     val httpServerPort = bakery.getInt("api-port")
+    val metricsPort = bakery.getInt("metrics-port")
     val apiUrlPrefix = bakery.getString("api-url-prefix")
     val loggingEnabled = bakery.getBoolean("api-logging-enabled")
     logger.info(s"Logging of API: ${loggingEnabled}  - MUST NEVER BE SET TO 'true' IN PRODUCTION")
@@ -75,8 +76,7 @@ object Main extends IOApp with LazyLogging {
     logger.info("Starting Akka Baker...")
     val baker = AkkaBaker.withConfig(bakerConfig)
 
-
-    val mainResource: Resource[IO, Server[IO]] =
+    val mainResource: Resource[IO, (Server[IO], Server[IO])] =
       for {
         eventSink <- KafkaEventSink.resource(eventSinkSettings)
         _ <- Resource.liftF(eventSink.attach(baker))
@@ -87,13 +87,16 @@ object Main extends IOApp with LazyLogging {
             callback(Right(()))
           }
         })
+        metricsService <- MetricService.resource(
+          InetSocketAddress.createUnresolved("0.0.0.0", metricsPort)
+        )
         bakerService <- BakerService.resource(baker,
           InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort),
           apiUrlPrefix, interactionManager, loggingEnabled)
-      } yield bakerService
+      } yield (bakerService, metricsService)
 
-    mainResource.use(bakery => {
-      logger.info(s"Bakery started at ${bakery.address}/${bakery.baseUri}, enabling the readiness in Akka management")
+    mainResource.use( servers => {
+      logger.info(s"Bakery started at ${servers._1.address}/${servers._1.baseUri}, enabling the readiness in Akka management")
       BakerReadinessCheck.enable()
       IO.never
     }

@@ -7,6 +7,8 @@ import cats.implicits._
 import com.ing.baker.runtime.akka.internal.InteractionManager
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EventInstance}
+import com.ing.baker.runtime.serialization.JsonEncoders._
+import com.typesafe.scalalogging.LazyLogging
 import io.circe._
 import io.circe.generic.auto._
 import io.circe.syntax._
@@ -15,12 +17,10 @@ import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
-import org.http4s.server.{Router, Server}
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.runtime.serialization.JsonDecoders._
-import com.typesafe.scalalogging.LazyLogging
-import kamon.http4s.middleware.server.KamonSupport
 import org.http4s.server.middleware.Logger
+import org.http4s.server.{Router, Server}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -39,8 +39,7 @@ object BakerService {
           logHeaders = loggingEnabled,
           logBody = loggingEnabled,
           logAction = apiLoggingAction)
-        (Router(apiUrlPrefix ->
-          KamonSupport(routes(baker, interactions), "/0.0.0.0", hostname.getPort)) orNotFound)
+        (Router(apiUrlPrefix -> routes(baker, interactions)) orNotFound)
       ).resource
   }
 

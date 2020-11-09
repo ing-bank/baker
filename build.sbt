@@ -219,7 +219,6 @@ lazy val `bakery-baker-client` = project.in(file("bakery/baker-client"))
       http4sClient,
       http4sCirce,
       kamon,
-      kamonHttp4s,
       scalaLogging,
       catsRetry,
       http4sServer % "test",
@@ -251,18 +250,15 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
       http4sDsl,
       http4sCirce,
       http4sServer,
+      http4sPrometheus,
       springCore,
       springContext,
       scalaKafkaClient,
       kamon,
       kamonAkka,
       kamonPrometheus,
-      kamonHttp4s,
-      kamonCassandra,
       kamonSystemMetrics,
-      kamonLogback
-//      kamonZipkin,
-//      kamonJaeger
+      prometheus
     ) ++ testDeps(
       slf4jApi,
       logback,

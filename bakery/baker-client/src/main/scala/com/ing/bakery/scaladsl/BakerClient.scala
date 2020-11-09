@@ -17,7 +17,6 @@ import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.client.blaze._
 import org.http4s.client.dsl.io._
-import kamon.http4s.middleware.client.KamonSupport
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
@@ -50,7 +49,7 @@ object BakerClient {
     BlazeClientBuilder[IO](executionContext, tlsConfig.map(_.loadSSLContext))
       .resource
       .map(client => {
-        new BakerClient(KamonSupport(client), hosts, apiUrlPrefix, filters)
+        new BakerClient(client, hosts, apiUrlPrefix, filters)
       })
   }
 
