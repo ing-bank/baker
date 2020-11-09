@@ -63,6 +63,7 @@ object RecipeInstanceExecutionLogic extends LazyLogging {
         effect.toIO(handleCompletedOutcome(outcome, recipeInstanceId, eventsLobby, updateInstance))
 
       case Right(outcome: TransitionExecutionOutcome.Failed) =>
+        println(Console.RED + outcome + Console.RESET)
         // TODO handle failed interaction, equivalent to TransitionFailedEvent on the process instance actor
         ???
 
@@ -80,9 +81,9 @@ object RecipeInstanceExecutionLogic extends LazyLogging {
       recipeInstance <- updateInstance(recipeInstanceId, _.recordExecutionOutcome(outcome))
       _ <- outcome.output.fold(effect.unit)(output => eventsLobby.resolveWith(output.name, recipeInstance))
       enabledExecutions = recipeInstance.allEnabledExecutions
-      _ <- updateInstance(recipeInstanceId, _.addExecution(enabledExecutions: _*))
+      updatedRecipeInstance <- updateInstance(recipeInstanceId, _.addExecution(enabledExecutions: _*))
       _ <- enabledExecutions.toList.traverse(step[F](_, recipeInstanceId, eventsLobby, updateInstance))
-      _ <- if (enabledExecutions.isEmpty) eventsLobby.reportComplete(recipeInstance) else effect.unit
+      _ <- if (updatedRecipeInstance.executions.isEmpty) eventsLobby.reportComplete(recipeInstance) else effect.unit
     } yield ()
 
   /** Helper function to log and remove the textual rejection reason of the `fire` operation. It basically exchanges the
