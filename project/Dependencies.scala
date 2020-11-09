@@ -66,6 +66,7 @@ object Dependencies {
   val kamonPrometheus = "io.kamon" %% "kamon-prometheus" % kamonAkkaVersion
   val kamonSystemMetrics =  "io.kamon" %% "kamon-system-metrics" % kamonAkkaVersion
   val prometheus = "io.prometheus" % "simpleclient" % "0.9.0"
+  val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.14.0"
 
   val skuber = ("io.skuber" %% "skuber" % "2.6.0")
   val play = "com.typesafe.play" %% "play-json" % "2.9.1"

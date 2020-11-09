@@ -4,25 +4,21 @@ import java.io.CharArrayWriter
 import java.net.InetSocketAddress
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
+import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.exporter.common.TextFormat
 import io.prometheus.client.hotspot._
-import io.prometheus.client.{Collector, CollectorRegistry}
+import io.prometheus.jmx.JmxCollector
 import kamon.KamonBridge
-import kamon.prometheus.PrometheusReporter
-import org.http4s.HttpRoutes
 import org.http4s.dsl.io._
-import org.http4s._
-import org.http4s.dsl._
-import org.http4s.headers.`Content-Type`
 import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
-import org.http4s.server.{Router, Server}
 import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.server.{Router, Server}
+import org.http4s.{HttpRoutes, _}
 
 import scala.concurrent.ExecutionContext
+import scala.io.Source
 
 object MetricService {
-
-  def addCollector(collector: Collector): Unit = prometheusRegistry.register(collector)
 
   def init: IO[Unit] = IO {
     standardCollectors.foreach(prometheusRegistry.register)
@@ -61,8 +57,7 @@ object MetricService {
     new ThreadExports,
     new ClassLoadingExports,
     new VersionInfoExports,
-    // add custom jmx exports, if needed
-    // new JmxCollector(Source.fromResource("jmx-collector.yaml"))
+    new JmxCollector(Source.fromResource("prometheus-jmx-collector.yaml").mkString)
   )
 
   def exportMetrics: String = {
