@@ -20,6 +20,7 @@ case class RecipeInstance(
                            ingredients: Map[String, Value],
                            events: List[EventMoment],
                            executions: Map[Long, TransitionExecution],
+                           runningExecutions: Map[Long, TransitionExecution],
                            receivedCorrelationIds: Set[String],
                            createdOn: Long
                          )
@@ -67,6 +68,7 @@ object RecipeInstance {
       ingredients = Map.empty,
       events = List.empty,
       executions = Map.empty,
+      runningExecutions = Map.empty,
       receivedCorrelationIds = Set.empty,
       createdOn = createdOn
     )

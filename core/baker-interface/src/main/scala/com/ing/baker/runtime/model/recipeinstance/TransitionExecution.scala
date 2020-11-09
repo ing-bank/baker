@@ -211,7 +211,7 @@ private[recipeinstance] case class TransitionExecution(
             case ExceptionStrategyOutcome.RetryWithDelay(delay) => RetryWithDelay(delay)
             case ExceptionStrategyOutcome.Continue(eventName) =>
               val runtimeEvent = EventInstance(eventName, Map.empty)
-              Continue(createOutputMarkingForPetriNet(outMarking, Some(runtimeEvent)), runtimeEvent)
+              Continue(createOutputMarkingForPetriNet(outMarking, Some(runtimeEvent)), Some(runtimeEvent))
           }
         case _ => BlockTransition
       }

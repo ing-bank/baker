@@ -2,13 +2,23 @@ package com.ing.baker.runtime.model.recipeinstance.modules
 
 import com.ing.baker.il.petrinet.Place
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.model.recipeinstance.{RecipeInstance, TransitionExecution, TransitionExecutionOutcome}
+import com.ing.baker.runtime.model.recipeinstance.{FailureStrategy, RecipeInstance, TransitionExecution, TransitionExecutionOutcome}
 import com.ing.baker.runtime.scaladsl.EventMoment
 
 trait RecipeInstanceStateMutations { recipeInstance: RecipeInstance with RecipeInstanceComplexProperties =>
 
   def addExecution(execution: TransitionExecution*): RecipeInstance =
     recipeInstance.copy(executions = recipeInstance.executions ++ execution.map(e => e.id -> e).toMap)
+      .addRunningExecution(execution: _*)
+    
+  def removeExecution(outcome: TransitionExecutionOutcome.Completed): RecipeInstance =
+    recipeInstance.copy(executions = recipeInstance.executions - outcome.transitionExecutionId)
+
+  def addRunningExecution(execution: TransitionExecution*): RecipeInstance =
+    recipeInstance.copy(runningExecutions = recipeInstance.executions ++ execution.map(e => e.id -> e).toMap)
+
+  def removeRunningExecution(transitionExecutionId: Long): RecipeInstance =
+    recipeInstance.copy(executions = recipeInstance.executions - transitionExecutionId)
 
   def recordExecutionOutcome(outcome: TransitionExecutionOutcome): RecipeInstance =
     outcome match {
@@ -19,10 +29,11 @@ trait RecipeInstanceStateMutations { recipeInstance: RecipeInstance with RecipeI
           .increaseSequenceNumber
           .aggregatePetriNetChanges(completedOutcome)
           .addReceivedCorrelationId(completedOutcome)
-          .removeExecution(completedOutcome)
+          .removeRunningExecution(completedOutcome.transitionExecutionId)
 
       case failedOutcome: TransitionExecutionOutcome.Failed =>
         transitionExecutionToFailedState(failedOutcome)
+          .removeRunningFailureIfNotRetryWithDelay(failedOutcome)
     }
 
   def transitionExecutionToFailedState(failedOutcome: TransitionExecutionOutcome.Failed): RecipeInstance = {
@@ -44,8 +55,11 @@ trait RecipeInstanceStateMutations { recipeInstance: RecipeInstance with RecipeI
     addExecution(updatedExecution)
   }
 
-  def removeExecution(outcome: TransitionExecutionOutcome.Completed): RecipeInstance =
-    recipeInstance.copy(executions = recipeInstance.executions - outcome.transitionExecutionId)
+  def removeRunningFailureIfNotRetryWithDelay(outcome: TransitionExecutionOutcome.Failed): RecipeInstance =
+    outcome.exceptionStrategy match {
+      case FailureStrategy.RetryWithDelay(_) => this
+      case _ => removeRunningExecution(outcome.transitionExecutionId)
+    }
 
   def aggregateOutputEvent(outcome: TransitionExecutionOutcome.Completed): RecipeInstance = {
       outcome.output match {

@@ -1,27 +1,17 @@
 package com.ing.baker.runtime.model
 
-import java.util.concurrent.TimeUnit
-import java.util.{Optional, UUID}
+import java.util.UUID
 
 import cats.effect.{ConcurrentEffect, IO, Resource, Sync}
 import cats.implicits._
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.recipe.common.InteractionFailureStrategy._
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
-import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, ProcessAlreadyExistsException, ProcessDeletedException}
-import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceF, RecipeEventMetadata}
+import com.ing.baker.recipe.scaladsl.Recipe
+import com.ing.baker.runtime.scaladsl.InteractionInstanceF
 import com.ing.bakery.utils.BakeryFunSpec
-import org.mockito.Matchers.{eq => mockitoEq, _}
-import org.mockito.Mockito._
-import org.scalatest.{BeforeAndAfter, ConfigMap}
 import org.scalatest.matchers.should.Matchers
-import com.ing.baker.runtime.model.ScalaDSLRuntime._
-import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
-import org.mockito.invocation.InvocationOnMock
+import org.scalatest.{BeforeAndAfter, ConfigMap}
 
 import scala.reflect.ClassTag
-import concurrent.duration._
 
 abstract class BakerModelSpec[F[_]]
   extends BakeryFunSpec[F]

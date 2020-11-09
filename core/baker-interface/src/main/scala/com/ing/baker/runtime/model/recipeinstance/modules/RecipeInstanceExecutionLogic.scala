@@ -1,12 +1,14 @@
 package com.ing.baker.runtime.model.recipeinstance.modules
 
 import cats.data.EitherT
-import cats.effect.{Timer, ConcurrentEffect, IO, Sync}
+import cats.effect.{ConcurrentEffect, IO, Sync, Timer}
 import cats.implicits._
+import com.ing.baker.il.petrinet.Place
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
-import com.ing.baker.runtime.model.recipeinstance.{EventsLobby, RecipeInstance, TransitionExecution, TransitionExecutionOutcome}
+import com.ing.baker.runtime.model.recipeinstance.{EventsLobby, FailureStrategy, RecipeInstance, TransitionExecution, TransitionExecutionOutcome}
 import com.ing.baker.runtime.scaladsl.EventInstance
+import com.ing.baker.petrinet.api._
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -63,9 +65,17 @@ object RecipeInstanceExecutionLogic extends LazyLogging {
         effect.toIO(handleCompletedOutcome(outcome, recipeInstanceId, eventsLobby, updateInstance))
 
       case Right(outcome: TransitionExecutionOutcome.Failed) =>
-        println(Console.RED + outcome + Console.RESET)
-        // TODO handle failed interaction, equivalent to TransitionFailedEvent on the process instance actor
-        ???
+        outcome.exceptionStrategy match {
+
+          case FailureStrategy.Continue(marking, output) =>
+            effect.toIO(handleFailureWithContinue(outcome, recipeInstanceId, eventsLobby, updateInstance)(marking, output))
+
+          case FailureStrategy.BlockTransition =>
+            effect.toIO(handleFailureWithBlockTransition(outcome, recipeInstanceId, eventsLobby, updateInstance))
+
+          case FailureStrategy.RetryWithDelay(delay) =>
+            ???
+        }
 
       case Left(e) =>
         RecipeInstance.logImpossibleException(logger, e)
@@ -83,8 +93,37 @@ object RecipeInstanceExecutionLogic extends LazyLogging {
       enabledExecutions = recipeInstance.allEnabledExecutions
       updatedRecipeInstance <- updateInstance(recipeInstanceId, _.addExecution(enabledExecutions: _*))
       _ <- enabledExecutions.toList.traverse(step[F](_, recipeInstanceId, eventsLobby, updateInstance))
-      _ <- if (updatedRecipeInstance.executions.isEmpty) eventsLobby.reportComplete(recipeInstance) else effect.unit
+      _ <- if (updatedRecipeInstance.runningExecutions.isEmpty) eventsLobby.reportComplete(recipeInstance) else effect.unit
     } yield ()
+
+  private def handleFailureWithContinue[F[_]](outcome: TransitionExecutionOutcome.Failed,
+                                              recipeInstanceId: String,
+                                              eventsLobby: EventsLobby[F],
+                                              updateInstance: RecipeInstance.UpdateHandler[F]
+                                             )(marking: Marking[Place], output: Option[EventInstance])
+                                             (implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] = {
+    val transitionCompleted = TransitionExecutionOutcome.Completed(
+      transitionExecutionId = outcome.transitionExecutionId,
+      transitionId = outcome.transitionId,
+      correlationId = outcome.correlationId,
+      timeStarted = outcome.timeStarted,
+      timeCompleted = outcome.timeFailed,
+      consumed = outcome.consume,
+      produced = marshalMarking(marking),
+      output = output)
+    handleCompletedOutcome(transitionCompleted, recipeInstanceId, eventsLobby, updateInstance)
+  }
+
+  private def handleFailureWithBlockTransition[F[_]](outcome: TransitionExecutionOutcome.Failed,
+                                                     recipeInstanceId: String,
+                                                     eventsLobby: EventsLobby[F],
+                                                     updateInstance: RecipeInstance.UpdateHandler[F]
+                                                    )(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] = {
+    for {
+      recipeInstance <- updateInstance(recipeInstanceId, _.recordExecutionOutcome(outcome))
+      _ <- if (recipeInstance.runningExecutions.isEmpty) eventsLobby.reportComplete(recipeInstance) else effect.unit
+    } yield ()
+  }
 
   /** Helper function to log and remove the textual rejection reason of the `fire` operation. It basically exchanges the
     * String inside the returning `Either` for an external effect `F`.
