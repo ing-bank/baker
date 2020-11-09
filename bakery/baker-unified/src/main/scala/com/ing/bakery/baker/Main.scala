@@ -1,6 +1,6 @@
 package com.ing.bakery.baker
 
-import java.io.{CharArrayWriter, File}
+import java.io.File
 import java.net.InetSocketAddress
 
 import akka.actor.ActorSystem
@@ -13,9 +13,6 @@ import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import io.prometheus.client.{Collector, CollectorRegistry}
-import io.prometheus.client.exporter.common.TextFormat
-import io.prometheus.client.hotspot._
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.http4s.server.Server

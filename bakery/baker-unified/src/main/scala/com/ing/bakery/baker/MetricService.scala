@@ -7,9 +7,13 @@ import cats.effect.{ContextShift, IO, Resource, Timer}
 import io.prometheus.client.exporter.common.TextFormat
 import io.prometheus.client.hotspot._
 import io.prometheus.client.{Collector, CollectorRegistry}
-import kamon.Kamon
+import kamon.KamonBridge
+import kamon.prometheus.PrometheusReporter
 import org.http4s.HttpRoutes
 import org.http4s.dsl.io._
+import org.http4s._
+import org.http4s.dsl._
+import org.http4s.headers.`Content-Type`
 import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
 import org.http4s.server.{Router, Server}
 import org.http4s.server.blaze.BlazeServerBuilder
@@ -20,23 +24,35 @@ object MetricService {
 
   def addCollector(collector: Collector): Unit = prometheusRegistry.register(collector)
 
-  def resource(socketAddress: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+  def init: IO[Unit] = IO {
     standardCollectors.foreach(prometheusRegistry.register)
-    Kamon.init()
+    KamonBridge.init()
+  }
 
-    BlazeServerBuilder[IO](ec)
-      .bindSocketAddress(socketAddress)
-      .withHttpApp(
-        Router("/app" ->
-          HttpRoutes.of[IO] {
-            case GET -> Root => Ok(exportMetrics)
-          }
-        ) orNotFound).resource
+  def resource(socketAddress: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+    val encoder = EntityEncoder.stringEncoder
+
+    for {
+      _ <- Resource.liftF(init)
+      server <- BlazeServerBuilder[IO](ec)
+        .bindSocketAddress(socketAddress)
+        .withHttpApp(
+          Router("/" ->
+            HttpRoutes.of[IO] {
+              case GET -> Root =>
+                IO {
+                  Response(
+                    status = Ok,
+                    body = encoder.toEntity(exportMetrics).body,
+                    headers = Headers.of(Header("Content-Type", TextFormat.CONTENT_TYPE_004))
+                  )
+                }
+            }
+          ) orNotFound).resource
+    } yield server
   }
 
   private lazy val prometheusRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
-
-  private lazy val kamonPrometheusReporter = kamon.prometheus.PrometheusReporter.create()
 
   private lazy val standardCollectors = Seq(
     new StandardExports,
@@ -49,10 +65,10 @@ object MetricService {
     // new JmxCollector(Source.fromResource("jmx-collector.yaml"))
   )
 
-  def exportMetrics: IO[String] = IO {
+  def exportMetrics: String = {
     val writer = new CharArrayWriter(16 * 1024)
     TextFormat.write004(writer, prometheusRegistry.metricFamilySamples)
-    writer.toString + "\n" + kamonPrometheusReporter.scrapeData()
+    writer.toString + "\n" + KamonBridge.prometheusFormatter.scrapeData()
   }
 
 }
