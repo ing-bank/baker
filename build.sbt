@@ -258,6 +258,7 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
       kamonAkka,
       kamonPrometheus,
       kamonHttp4s,
+      kamonCassandra,
       kamonSystemMetrics,
       kamonLogback
 //      kamonZipkin,

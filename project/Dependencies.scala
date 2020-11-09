@@ -67,6 +67,7 @@ object Dependencies {
   val kamonSystemMetrics =  "io.kamon" %% "kamon-system-metrics" % kamonAkkaVersion
   val kamonHttp4s = "io.kamon" %% "kamon-http4s" % "2.0.3"
   val kamonLogback = "io.kamon" %% "kamon-logback" % kamonAkkaVersion
+  val kamonCassandra = "io.kamon" %% "kamon-cassanrda" % kamonAkkaVersion
 //  val kamonZipkin = "io.kamon" %% "kamon-zipkin" % kamonAkkaVersion
 //  val kamonJaeger = "io.kamon" %% "kamon-jaeger" % kamonAkkaVersion
 
