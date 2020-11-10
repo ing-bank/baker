@@ -7,6 +7,9 @@ import com.ing.baker.runtime.model.recipeinstance.{RecipeInstance, TransitionExe
 
 trait RecipeInstanceComplexProperties { recipeInstance: RecipeInstance =>
 
+  def activeExecutions: Iterable[TransitionExecution] =
+    recipeInstance.executions.values.filter(_.isActive)
+
   def sensoryEventByName(name: String): Option[EventDescriptor] =
     recipeInstance.recipe.sensoryEvents.find(_.name == name)
 

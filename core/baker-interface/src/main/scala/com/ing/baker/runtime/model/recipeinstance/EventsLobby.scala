@@ -5,50 +5,93 @@ import cats.effect.Concurrent
 import cats.effect.concurrent.{Deferred, Ref}
 import cats.implicits._
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.SensoryEventResult
+import com.ing.baker.runtime.model.recipeinstance.EventsLobby.{KnownOutcomeEvents, KnownRunningExecutions, Lobby}
+import com.ing.baker.runtime.scaladsl.{EventInstance, SensoryEventResult}
 
-final class EventsLobby[F[_]](lobby: Ref[F, Map[String, Deferred[F, SensoryEventResult]]], completed: Deferred[F, RecipeInstance]) {
+/** Keeps track of all the transition execution outcomes cascading from a single sensory event.
+  * Enables the original sender to await for an specific intermediary event or to await for all the related events
+  * to fire.
+  * Used by running recipe instances as a gateway to report results of firing sensory events to the consumers.
+  *
+  * @param lobby is a mapping between event names and event result promises that can be awaited for
+  * @param knownRunningExecutions memory of the transitions that are currently running and should be awaited for before
+  *                               completion.
+  * @param knownOutcomeEvents memory of the outcome events from the transitions that have already finished.
+  * @param completedPromise promise that can be awaited for of the final result after all the related outcome events
+  *                         have been received
+  * @tparam F
+  */
+final class EventsLobby[F[_]](
+    lobby: Lobby[F],
+    knownRunningExecutions: KnownRunningExecutions[F],
+    knownOutcomeEvents: KnownOutcomeEvents[F],
+    completedPromise: Deferred[F, SensoryEventResult]
+  ) {
 
   def awaitForEvent(eventName: String)(implicit effect: Concurrent[F]): F[SensoryEventResult] =
     getOrCreateWaitingSpot(eventName).flatMap(_.get)
 
   def awaitForCompleted(implicit effect: Functor[F]): F[SensoryEventResult] =
-    completed.get.map(recipeInstanceToEventResult)
+    completedPromise.get
 
-  def resolveWith(eventName: String, recipeInstance: RecipeInstance)(implicit effect: Concurrent[F]): F[Unit] =
-    resolveEvent(eventName, recipeInstanceToEventResult(recipeInstance))
+  def reportTransitionStarted(transitionExecutionId: Long): F[Unit] =
+    knownRunningExecutions.update(_ + transitionExecutionId)
 
-  def reportComplete(recipeInstance: RecipeInstance): F[Unit] =
-    completed.complete(recipeInstance)
+  def reportTransitionFinished(transitionExecutionId: Long, output: Option[EventInstance])(implicit effect: Concurrent[F]): F[Unit] = {
 
-  private def resolveEvent(eventName: String, sensoryEventResult: SensoryEventResult)(implicit effect: Concurrent[F]): F[Unit] =
-    getOrCreateWaitingSpot(eventName).flatMap(_.complete(sensoryEventResult))
+    def resolveEvent(eventName: String): F[Unit] =
+      for {
+        result <- buildSensoryEventResultFromKnownEvents
+        waitingSpot <- getOrCreateWaitingSpot(eventName)
+        _ <- waitingSpot.complete(result)
+      } yield ()
 
-  private def getOrCreateWaitingSpot(eventName: String)(implicit effect: Concurrent[F]): F[Deferred[F, SensoryEventResult]] =
+    def reportComplete: F[Unit] =
+      buildSensoryEventResultFromKnownEvents.flatMap(completedPromise.complete)
+
+    def buildSensoryEventResultFromKnownEvents: F[SensoryEventResult] =
+      knownOutcomeEvents.get.map { knownEvents =>
+        SensoryEventResult(
+          SensoryEventStatus.Completed,
+          knownEvents.map(_.name),
+          knownEvents.flatMap(_.providedIngredients).toMap)
+      }
+
+    for {
+      runningExecutionsLeft <- knownRunningExecutions.updateAndGet(_ - transitionExecutionId).map(_.size)
+      _ <- output.fold(effect.unit)(event =>
+        knownOutcomeEvents.update(_ :+ event) *> resolveEvent(event.name))
+      _ <- if (runningExecutionsLeft == 0) reportComplete else effect.unit
+    } yield ()
+  }
+
+  private def getOrCreateWaitingSpot(eventName: String)(implicit effect: Concurrent[F]): F[Deferred[F, SensoryEventResult]] = {
+
+    def createWaitingSpot: F[Deferred[F, SensoryEventResult]] =
+      Deferred[F, SensoryEventResult].flatMap(newSpot =>
+        lobby.update(_ + (eventName -> newSpot)).as(newSpot))
+
     for {
       spots <- lobby.get
-      spot <- spots.get(eventName)
-        .fold(createWaitingSpot(eventName))(effect.pure)
+      spot <- spots.get(eventName).fold(createWaitingSpot)(effect.pure)
     } yield spot
-
-  private def createWaitingSpot(eventName: String)(implicit effect: Concurrent[F]): F[Deferred[F, SensoryEventResult]] =
-    Deferred[F, SensoryEventResult].flatMap(newSpot =>
-      lobby.update(_ + (eventName -> newSpot)).as(newSpot))
-
-  private def recipeInstanceToEventResult(recipeInstance: RecipeInstance): SensoryEventResult =
-    SensoryEventResult(
-      sensoryEventStatus = SensoryEventStatus.Completed,
-      eventNames = recipeInstance.events.map(_.name),
-      ingredients = recipeInstance.ingredients
-    )
+  }
 }
 
 object EventsLobby {
 
+  type Lobby[F[_]] = Ref[F, Map[String, Deferred[F, SensoryEventResult]]]
+
+  type KnownRunningExecutions[F[_]] = Ref[F, Set[Long]]
+
+  type KnownOutcomeEvents[F[_]] = Ref[F, Seq[EventInstance]]
+
   def build[F[_]](implicit effect: Concurrent[F]): F[EventsLobby[F]] = {
     for {
       lobby <- Ref.of[F, Map[String, Deferred[F, SensoryEventResult]]](Map.empty)
-      completeFuture <- Deferred[F, RecipeInstance]
-    } yield new EventsLobby(lobby, completeFuture)
+      knownRunningExecutions <- Ref.of[F, Set[Long]](Set.empty)
+      knownOutcomeEvents <- Ref.of[F, Seq[EventInstance]](Seq.empty)
+      completePromise <- Deferred[F, SensoryEventResult]
+    } yield new EventsLobby(lobby, knownRunningExecutions, knownOutcomeEvents, completePromise)
   }
 }

@@ -1,14 +1,11 @@
 package com.ing.baker.runtime.model.recipeinstance
 
-import cats.data.EitherT
-import cats.effect.{Timer, ConcurrentEffect, IO}
+import cats.effect.IO
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.api.Marking
-import com.ing.baker.runtime.model.BakerComponents
-import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
 import com.ing.baker.runtime.model.recipeinstance.modules._
-import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment}
+import com.ing.baker.runtime.scaladsl.EventMoment
 import com.ing.baker.types.Value
 import com.typesafe.scalalogging.{LazyLogging, Logger}
 
@@ -20,33 +17,16 @@ case class RecipeInstance(
                            ingredients: Map[String, Value],
                            events: List[EventMoment],
                            executions: Map[Long, TransitionExecution],
-                           runningExecutions: Map[Long, TransitionExecution],
                            receivedCorrelationIds: Set[String],
                            createdOn: Long
                          )
   extends RecipeInstanceComplexProperties
     with RecipeInstanceEventValidation
     with RecipeInstanceStateMutations
-    with LazyLogging {
-
-  /** Base case of the recipe instance execution semantics.
-    * Validates an attempt to fire an event, and if valid it returns the effect of such action.
-    * The returning effect will resolve right after the event has been recorded and is considered received, but
-    * asynchronously it cascades the instance execution semantics.
-    *
-    * @return The returning type is either a validation rejection or the encapsulated effect of firing the event.
-    *         Note that the operation is wrapped within an effect because 2 reasons, first, the validation checks for
-    *         current time, and second, if there is a rejection a message is logged, both are suspended into F.
-    */
-  def fire[F[_]](input: EventInstance, correlationId: Option[String])(eventsLobby: EventsLobby[F], updateInstance: RecipeInstance.UpdateHandler[F])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, RecipeInstance.FireEventExecution[F]] =
-    RecipeInstanceExecutionLogic.fire(input, recipeInstance = this, correlationId, eventsLobby, updateInstance)
-}
+    with RecipeInstanceExecutionLogic
+    with LazyLogging
 
 object RecipeInstance {
-
-  type UpdateHandler[F[_]] = (String, RecipeInstance => RecipeInstance) => F[RecipeInstance]
-
-  type FireEventExecution[F[_]] = F[Unit]
 
   class FatalInteractionException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
 
@@ -68,7 +48,6 @@ object RecipeInstance {
       ingredients = Map.empty,
       events = List.empty,
       executions = Map.empty,
-      runningExecutions = Map.empty,
       receivedCorrelationIds = Set.empty,
       createdOn = createdOn
     )

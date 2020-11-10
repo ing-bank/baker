@@ -149,9 +149,7 @@ trait RecipeInstanceManager[F[_]] {
   def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, EventsLobby[F]] =
     for {
       recipeInstance <- getRecipeInstanceWithPossibleRejection(recipeInstanceId)
-      lobby <- EitherT.liftF(EventsLobby.build[F])
-      runEffect <- recipeInstance.fire[F](event, correlationId)(lobby, update)
-      _ <- EitherT.liftF(runEffect)
+      lobby <- recipeInstance.fire(event, correlationId)
     } yield lobby
 
   private def getRecipeInstanceWithPossibleRejection(recipeInstanceId: String)(implicit effect: Functor[F]): EitherT[F, FireSensoryEventRejection, RecipeInstance] =
