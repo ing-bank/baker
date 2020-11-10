@@ -111,8 +111,8 @@ object Dependencies {
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 
 
-  val springContext = "org.springframework" % "spring-context" % "5.2.10.RELEASE"
-  val springCore = "org.springframework" % "spring-core" % "5.2.10.RELEASE"
+  val springContext = "org.springframework" % "spring-context" % "5.2.11.RELEASE"
+  val springCore = "org.springframework" % "spring-core" % "5.2.11.RELEASE"
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) = modules.map(m => m % scope)
 
