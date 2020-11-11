@@ -244,6 +244,7 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
       akkaHttpSprayJson,
       akkaManagementHttp,
       akkaClusterBoostrap,
+      akkaClusterMetrics,
       akkaDiscovery,
       akkaDiscoveryKube,
       http4s,
@@ -257,7 +258,11 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
       kamon,
       kamonAkka,
       kamonPrometheus,
+      kamonSigar,
       kamonSystemMetrics,
+      cassandraDriverCore,
+      cassandraDriverQueryBuilder,
+      cassandraDriverMetrics,
       prometheus,
       prometheusJmx
     ) ++ testDeps(
@@ -267,7 +272,9 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
       mockServer,
       circe,
       circeGeneric,
-      akkaInmemoryJournal
+      akkaInmemoryJournal,
+      cassandraUnit
+
     )
   )
   .dependsOn(

@@ -40,6 +40,7 @@ object Dependencies {
   val akkaCluster = "com.typesafe.akka" %% "akka-cluster" % akkaVersion
   val akkaClusterSharding = "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion
   val akkaClusterTools = "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion
+  val akkaClusterMetrics = "com.typesafe.akka" %% "akka-cluster-metrics" % akkaVersion
   val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
   val akkaTestKit = "com.typesafe.akka" %% "akka-testkit" % akkaVersion
   val akkaStreamTestKit = "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion
@@ -64,11 +65,18 @@ object Dependencies {
   val kamon = "io.kamon" %% "kamon-bundle" % kamonAkkaVersion
   val kamonAkka = "io.kamon" %% "kamon-akka" % kamonAkkaVersion
   val kamonPrometheus = "io.kamon" %% "kamon-prometheus" % kamonAkkaVersion
-  val kamonSystemMetrics =  "io.kamon" %% "kamon-system-metrics" % kamonAkkaVersion
+  val kamonSystemMetrics = "io.kamon" %% "kamon-system-metrics" % kamonAkkaVersion
+  val kamonSigar = "io.kamon" % "sigar-loader" % "1.6.5-rev003"
+
   val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.9.0"
   val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.14.0"
 
-  val skuber = ("io.skuber" %% "skuber" % "2.6.0")
+  val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
+  val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.9.0"
+  val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.9.0"
+  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.0.5"
+
+  val skuber = "io.skuber" %% "skuber" % "2.6.0"
   val play = "com.typesafe.play" %% "play-json" % "2.9.1"
 
   val http4s = "org.http4s" %% "http4s-core" % http4sVersion

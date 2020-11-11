@@ -3,6 +3,7 @@ package com.ing.bakery.baker
 import java.io.File
 import java.net.InetSocketAddress
 
+import akka.cluster.metrics.{MetricsCollector, NodeMetrics}
 import cats.effect.{ContextShift, IO, Timer}
 import com.typesafe.config.ConfigFactory
 import kamon.Kamon

@@ -9,43 +9,45 @@ import akka.cluster.Cluster
 import akka.cluster.metrics.SigarMetricsCollector
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.baker.recipe.javadsl.Interaction
+import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
 import com.ing.baker.runtime.akka.internal.InteractionManagerLocal
-import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.scaladsl.InteractionInstance
+import com.ing.bakery.baker.Main.logger
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import io.prometheus.client.Collector
 import kamon.Kamon
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.http4s.server.Server
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 
-import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.seqAsJavaList
 import scala.concurrent.ExecutionContext
+import scala.collection.JavaConverters._
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import org.cassandraunit.utils.EmbeddedCassandraServerHelper.startEmbeddedCassandra
 
-
-object Main extends IOApp with LazyLogging {
+object MainMetrics extends IOApp with LazyLogging {
+  import org.hyperic.sigar.Sigar
+  import kamon.sigar.SigarProvisioner
+  SigarProvisioner.provision()
+  val sigar = new Sigar()
+  Kamon.init()
+  val cassandra = startEmbeddedCassandra("cassandra-server.yaml")
 
   override def run(args: List[String]): IO[ExitCode] = {
 
-    import org.hyperic.sigar.Sigar
-    import kamon.sigar.SigarProvisioner
-    SigarProvisioner.provision()
-    val sigar = new Sigar()
-    Kamon.init()
 
-    val configPath = sys.env.getOrElse("CONFIG_DIRECTORY", "/opt/docker/conf")
-    val config = ConfigFactory.load(ConfigFactory.parseFile(new File(s"$configPath/application.conf")))
+    val config = ConfigFactory.load()
 
     val bakery = config.getConfig("bakery")
 
-    implicit val system: ActorSystem = ActorSystem("baker", config)
+    implicit val system: ActorSystem = ActorSystem("test", config)
     implicit val executionContext: ExecutionContext = system.dispatcher
 
     val defaultDecayFactor = 2.0 / (1 + 10)
-    val akkaMetricsCollector  = new SigarMetricsCollector(
+    val akkaMetricsCollector = new SigarMetricsCollector(
       system.asInstanceOf[ExtendedActorSystem].provider.rootPath.address,
       defaultDecayFactor, sigar)
     MetricService.register(new Collector() {
@@ -96,11 +98,8 @@ object Main extends IOApp with LazyLogging {
     logger.info("Starting Akka Baker...")
     val baker = AkkaBaker.withConfig(bakerConfig)
 
-    val mainResource: Resource[IO, (Server[IO], Server[IO])] =
+    val mainResource: Resource[IO, Server[IO]] =
       for {
-        eventSink <- KafkaEventSink.resource(eventSinkSettings)
-        _ <- Resource.liftF(eventSink.attach(baker))
-        _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(configPath, baker))
         _ <- Resource.liftF(IO.async[Unit] { callback =>
           Cluster(system).registerOnMemberUp {
             logger.info("Akka cluster is now up")
@@ -110,16 +109,14 @@ object Main extends IOApp with LazyLogging {
         metricsService <- MetricService.resource(
           InetSocketAddress.createUnresolved("0.0.0.0", metricsPort)
         )
-        bakerService <- BakerService.resource(baker,
-          InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort),
-          apiUrlPrefix, interactionManager, loggingEnabled)
-      } yield (bakerService, metricsService)
+      } yield metricsService
 
-    mainResource.use( servers => {
-      logger.info(s"Bakery started at ${servers._1.address}/${servers._1.baseUri}, enabling the readiness in Akka management")
+    mainResource.use(metricService => {
+      logger.info(s"Bakery started at ${metricService.address}/${metricService.baseUri}, enabling the readiness in Akka management")
       BakerReadinessCheck.enable()
       IO.never
     }
     ).as(ExitCode.Success)
   }
+
 }

@@ -2,10 +2,12 @@ package com.ing.bakery.baker
 
 import java.io.CharArrayWriter
 import java.net.InetSocketAddress
+import java.util
 
+import akka.cluster.metrics.MetricsCollector
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.typesafe.scalalogging.LazyLogging
-import io.prometheus.client.CollectorRegistry
+import io.prometheus.client.{Collector, CollectorRegistry}
 import io.prometheus.client.exporter.common.TextFormat
 import io.prometheus.client.hotspot._
 import io.prometheus.jmx.JmxCollector
@@ -31,12 +33,26 @@ object MetricService extends LazyLogging {
   try {
     prometheusRegistry.register(new JmxCollector(Source.fromResource("prometheus-jmx-collector.yaml").mkString))
   } catch {
-    case _: Exception =>
-      logger.info("No prometheus-jmx-collector.yaml found in classpath, JMX export is not enabled")
+    case e: Exception =>
+      logger.info(s"No prometheus-jmx-collector.yaml found in classpath, JMX export is not enabled: ${e.getMessage}")
   }
+
+  def register(collector: Collector): Unit = prometheusRegistry.register(collector)
 
   def resource(socketAddress: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
     val encoder = EntityEncoder.stringEncoder
+
+    def fromPrometheus: String = {
+      val writer = new CharArrayWriter(16 * 1024)
+      TextFormat.write004(writer, prometheusRegistry.metricFamilySamples)
+      writer.toString
+    }
+
+    def fromKamon: String = kamonPrometheusReporter.scrapeData()
+
+    def exportMetrics: String =
+      s"\n########### PROMETHEUS ###\n$fromPrometheus" +
+      s"\n########### KAMON ###\n$fromKamon"
 
     for {
       server <- BlazeServerBuilder[IO](ec)
@@ -57,10 +73,5 @@ object MetricService extends LazyLogging {
     } yield server
   }
 
-  def exportMetrics: String = {
-    val writer = new CharArrayWriter(16 * 1024)
-    TextFormat.write004(writer, prometheusRegistry.metricFamilySamples)
-    "\n########### PROMETHEUS ###\n" + writer.toString + "\n########### KAMON ###\n" + kamonPrometheusReporter.scrapeData()
-  }
 
 }
