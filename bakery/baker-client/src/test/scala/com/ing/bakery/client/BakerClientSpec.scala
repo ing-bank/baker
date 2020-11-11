@@ -42,14 +42,14 @@ class BakerClientSpec extends BakeryFunSpec {
   type TestArguments = Unit
 
   /** Creates a `Resource` which allocates and liberates the expensive resources each test can use.
-   * For example web servers, network connection, database mocks.
-   *
-   * The objective of this function is to provide "sealed resources context" to each test, that means context
-   * that other tests simply cannot touch.
-   *
-   * @param testArguments arguments built by the `argumentsBuilder` function.
-   * @return the resources each test can use
-   */
+    * For example web servers, network connection, database mocks.
+    *
+    * The objective of this function is to provide "sealed resources context" to each test, that means context
+    * that other tests simply cannot touch.
+    *
+    * @param testArguments arguments built by the `argumentsBuilder` function.
+    * @return the resources each test can use
+    */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
 
     def testServer(receivedHeaders: MVar2[IO, List[Header]]): HttpApp[IO] = {
@@ -77,19 +77,19 @@ class BakerClientSpec extends BakeryFunSpec {
   }
 
   /** Refines the `ConfigMap` populated with the -Dkey=value arguments coming from the "sbt testOnly" command.
-   *
-   * @param config map populated with the -Dkey=value arguments.
-   * @return the data structure used by the `contextBuilder` function.
-   */
+    *
+    * @param config map populated with the -Dkey=value arguments.
+    * @return the data structure used by the `contextBuilder` function.
+    */
   def argumentsBuilder(config: ConfigMap): TestArguments = ()
 
   describe("The baker client") {
 
     test("scaladsl - connects with mutual tls and adds headers to requests") { context =>
-      val uri = Uri.unsafeFromString(s"https://localhost:${context.serverAddress.getPort}/")
+      val host = Uri.unsafeFromString(s"https://localhost:${context.serverAddress.getPort}/")
       val testHeader = Header("X-Test", "Foo")
       val filter: Request[IO] => Request[IO] = _.putHeaders(testHeader)
-      BakerClient.resource(uri, executionContext, List(filter), Some(clientTLSConfig)).use { client =>
+      BakerClient.resource(host, "/api/bakery", executionContext, List(filter), Some(clientTLSConfig)).use { client =>
         for {
           _ <- IO.fromFuture(IO(client.getAllRecipeInstancesMetadata))
           headers <- context.receivedHeaders
@@ -97,12 +97,30 @@ class BakerClientSpec extends BakeryFunSpec {
       }
     }
 
+    test("scaladsl - balances") { context =>
+      val uri1 = Uri.unsafeFromString(s"https://localhost:${context.serverAddress.getPort}/")
+      val uri2 = Uri.unsafeFromString(s"https://invaliddomainname:445")
+      val uri3 = uri1 / "nowWorking"
+
+      BakerClient.resourceBalanced(
+        hosts = IndexedSeq(uri3, uri2, uri1),
+        "/api/bakery",
+        executionContext = executionContext,
+        filters = List.empty,
+        tlsConfig = Some(clientTLSConfig))
+        .use { client =>
+          for {
+            response <- IO.fromFuture(IO(client.getAllRecipeInstancesMetadata))
+          } yield assert(response.isEmpty)
+        }
+    }
+
     test("javadsl - connects with mutual tls and adds headers to requests") { context =>
-      val uri = s"https://localhost:${context.serverAddress.getPort}/"
+      val host = s"https://localhost:${context.serverAddress.getPort}/"
       val testHeader = Header("X-Test", "Foo")
       val filter: java.util.function.Function[Request[IO], Request[IO]] = _.putHeaders(testHeader)
       for {
-        client <- IO.fromFuture(IO(FutureConverters.toScala(javadsl.BakerClient.build(uri, List(filter).asJava, java.util.Optional.of(clientTLSConfig)))))
+        client <- IO.fromFuture(IO(FutureConverters.toScala(javadsl.BakerClient.build(host, "/api/bakery", List(filter).asJava, java.util.Optional.of(clientTLSConfig)))))
         _ <- IO.fromFuture(IO(FutureConverters.toScala(client.getAllRecipeInstancesMetadata)))
         headers <- context.receivedHeaders
       } yield assert(headers.contains(testHeader))

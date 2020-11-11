@@ -22,18 +22,23 @@ object StateNodeManagementClient {
 
 final class StateNodeManagementClient(client: Client[IO], hostname: Uri)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
 
+  def knownRecipes: IO[String] = {
+    val request = GET(hostname / "api" / "bakery" / "app" / "recipes")
+    client.expect[String](request)//.map { _.split(",").toList }
+  }
+
   def knownInteractionNames: IO[List[String]] = {
-    val request = GET(hostname / "management" / "interaction")
+    val request = GET(hostname / "api" / "bakery" / "app" / "interactions")
     client.expect[String](request).map { _.split(",").toList }
   }
 
   def getEvents(recipeInstanceId: String): IO[List[String]] = {
-    val request = GET(hostname / "recipe-instance" / recipeInstanceId / "events")
+    val request = GET(hostname / "api" / "bakery" / "instances" / recipeInstanceId / "events")
     client.expect[String](request).map(_.split(",").toList)
   }
 
   def getIngredients(recipeInstanceId: String): IO[List[String]] = {
-    val request = GET(hostname / "recipe-instance" / recipeInstanceId / "ingredients")
+    val request = GET(hostname / "api" / "bakery" / "instances" / recipeInstanceId / "ingredients")
     client.expect[String](request).map(_.split(",").toList)
   }
 }

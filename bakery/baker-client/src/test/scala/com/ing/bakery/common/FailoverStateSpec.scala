@@ -17,49 +17,49 @@ class FailoverStateSpec extends AnyFunSpec {
 
     it("should support single element list") {
 
-      val fos = new FailoverState(List(uriA))
+      val fos = new FailoverState(IndexedSeq(uriA))
 
-      assert(fos.host == uriA)
+      assert(fos.uri == uriA)
 
       fos.failed()
 
-      assert(fos.host == uriA)
+      assert(fos.uri == uriA)
 
       (1 to 10).foreach(_ => fos.failed())
-      assert(fos.host == uriA)
+      assert(fos.uri == uriA)
     }
 
 
     it("should fail without elements") {
 
-      val fos = new FailoverState(List.empty)
+      val fos = new FailoverState(IndexedSeq.empty)
 
-      assertThrows[IndexOutOfBoundsException](fos.host)
+      assertThrows[IndexOutOfBoundsException](fos.uri)
 
       fos.failed()
 
-      assertThrows[IndexOutOfBoundsException](fos.host)
+      assertThrows[IndexOutOfBoundsException](fos.uri)
     }
 
     it("should support multiply elements") {
-      val fos = new FailoverState(List(uriA, uriB))
+      val fos = new FailoverState(IndexedSeq(uriA, uriB))
 
-      assert(fos.host == uriA)
-
-      fos.failed()
-
-      assert(fos.host == uriB)
+      assert(fos.uri == uriA)
 
       fos.failed()
 
-      assert(fos.host == uriA)
+      assert(fos.uri == uriB)
+
+      fos.failed()
+
+      assert(fos.uri == uriA)
 
       implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
       val result = Future.sequence(
         (1 to 1000).map(_ => Future {
           fos.failed()
-          val currentHost = fos.host // Because of concurrency checking host at any random time
+          val currentHost = fos.uri // Because of concurrency checking host at any random time
           assert(currentHost == uriA || currentHost == uriB)
         }))
 

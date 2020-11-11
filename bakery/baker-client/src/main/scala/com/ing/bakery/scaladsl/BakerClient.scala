@@ -11,7 +11,7 @@ import com.ing.baker.types.Value
 import com.ing.bakery.common.{FailoverState, FailoverUtils, TLSConfig}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
-import org.http4s.Method.{POST, _}
+import org.http4s.Method._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
@@ -19,39 +19,65 @@ import org.http4s.client.blaze._
 import org.http4s.client.dsl.io._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.ClassTag
 import scala.util.control.NoStackTrace
 
 object BakerClient {
 
-  /** use method `use` of the Resource, the client will be acquired and shut down automatically each time
+  /** Use method `use` of the Resource, the client will be acquired and shut down automatically each time
     * the resulting `IO` is run, each time using the common connection pool.
+    *
+    * This method supports fail over to next host, available in list to support multi datacenters.
+    * @param hosts Lists of hosts (multiple is supported for several DC)
+    * @param apiUrlPrefix Prefix of Baker API URL, from the root of the host
+    * @param executionContext Execution Context
+    * @param filters Http Filters to be applied to the invocation pipeline
+    * @param tlsConfig TLSConfig
+    * @param cs Cat's implicits
+    * @param timer Cat's implicits
+    *
+    * @return IO Resource for BakerClient
     */
-  def resourceBalanced(hosts: List[Uri],
-                       pool: ExecutionContext,
+
+  def resourceBalanced(hosts: IndexedSeq[Uri],
+                       apiUrlPrefix: String,
+                       executionContext: ExecutionContext,
                        filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
                        tlsConfig: Option[TLSConfig] = None)
                       (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
-    implicit val ex: ExecutionContext = pool
+    implicit val ex: ExecutionContext = executionContext
 
-    BlazeClientBuilder[IO](pool, tlsConfig.map(_.loadSSLContext))
+    BlazeClientBuilder[IO](executionContext, tlsConfig.map(_.loadSSLContext))
       .resource
       .map(client => {
-        new BakerClient(client, hosts, filters)
+        new BakerClient(client, hosts, apiUrlPrefix, filters)
       })
   }
 
+  /**
+    * Creates client to remote Baker cluster
+    *
+    * @param host Baker host
+    * @param apiUrlPrefix Prefix of Baker API URL, from the root of the host
+    * @param executionContext Execution Context
+    * @param filters Http Filters to be applied to the invocation pipeline
+    * @param tlsConfig TLSConfig
+    * @param cs Cat's implicits
+    * @param timer Cat's implicits
+    *
+    * @return IO Resource for BakerClient
+    */
   def resource(host: Uri,
-               pool: ExecutionContext,
+               apiUrlPrefix: String,
+               executionContext: ExecutionContext,
                filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
                tlsConfig: Option[TLSConfig] = None)
               (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] =
-    resourceBalanced(List(host), pool, filters, tlsConfig)(cs, timer)
+    resourceBalanced(IndexedSeq(host), apiUrlPrefix, executionContext, filters, tlsConfig)(cs, timer)
 
 
-  def apply(client: Client[IO], host: Uri, filters: Seq[Request[IO] => Request[IO]])
+  def apply(client: Client[IO], host: Uri, apiUrlPrefix: String, filters: Seq[Request[IO] => Request[IO]])
            (implicit ec: ExecutionContext): BakerClient =
-    new BakerClient(client, List(host), filters)(ec)
+    new BakerClient(client, IndexedSeq(host), apiUrlPrefix, filters)(ec)
 }
 
 final case class ResponseError(status: Int, msg: String)
@@ -59,7 +85,8 @@ final case class ResponseError(status: Int, msg: String)
 
 final class BakerClient(
                          client: Client[IO],
-                         hosts: List[Uri],
+                         hosts: IndexedSeq[Uri],
+                         apiUrlPrefix: String,
                          filters: Seq[Request[IO] => Request[IO]] = Seq.empty)
                        (implicit ec: ExecutionContext) extends ScalaBaker with LazyLogging {
 
@@ -76,7 +103,15 @@ final class BakerClient(
     }
   }
 
-  private def root(rootUri: Uri): Uri = rootUri / "api" / "bakery"
+  private def root(host: Uri): Uri = {
+    val hostString = host.renderString
+    val prefix = if (hostString.endsWith("/")) hostString.dropRight(1) else hostString
+    val suffix = if (apiUrlPrefix.startsWith("/")) apiUrlPrefix.substring(1) else apiUrlPrefix
+    val uriString = s"$prefix/$suffix"
+    Uri.fromString(uriString).getOrElse(
+      throw new IllegalArgumentException(s"API URI '$uriString' is not a valid URI")
+    )
+  }
 
   private def handleHttpErrors(errorResponse: Response[IO]): IO[Throwable] =
     errorResponse.bodyText.compile.foldMonoid.map(body => ResponseError(errorResponse.status.code, body))
@@ -85,7 +120,7 @@ final class BakerClient(
                                            (implicit decoder: Decoder[A]): Future[A] = {
     val fos = new FailoverState(hosts)
 
-    FailoverUtils.calWithFailOver(fos, client, request, filters, handleHttpErrors)
+    FailoverUtils.callWithFailOver(fos, client, request, filters, handleHttpErrors)
       .map(r => { parse(r)(decoder)})
       .unsafeToFuture()
       .flatMap {
@@ -122,7 +157,7 @@ final class BakerClient(
     * @return
     */
   override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] =
-    callRemoteBaker[Unit](uri => GET(root(uri) / "instances" / recipeInstanceId / "bake" / recipeId)).map { _ =>
+    callRemoteBaker[Unit](host => POST(root(host) / "instances" / recipeInstanceId / "bake" / recipeId)).map { _ =>
       logger.info(s"Baked recipe instance '$recipeInstanceId' from recipe '$recipeId'")
     }
 
@@ -141,7 +176,7 @@ final class BakerClient(
                                                 event: EventInstance,
                                                 correlationId: Option[String]): Future[SensoryEventResult] =
     callRemoteBaker[SensoryEventResult](
-      uri => POST(event, (root(uri) / "instances" / recipeInstanceId / "fire-and-resolve-when-completed")
+      host => POST(event, (root(host) / "instances" / recipeInstanceId / "fire-and-resolve-when-completed")
         .withOptionQueryParam("correlationId", correlationId))).map { result =>
       logger.info(s"For recipe instance '$recipeInstanceId', fired and completed event '${event.name}', resulting status ${result.sensoryEventStatus}")
       logger.debug(s"Resulting ingredients ${result.ingredients.map { case (ingredient, value) => s"$ingredient=$value" }.mkString(", ")}")
@@ -163,7 +198,7 @@ final class BakerClient(
                                                event: EventInstance,
                                                correlationId: Option[String]): Future[SensoryEventStatus] =
     callRemoteBaker[SensoryEventStatus](
-      uri => POST(event, (root(uri) / "instances" / recipeInstanceId / "fire-and-resolve-when-received")
+      host => POST(event, (root(host) / "instances" / recipeInstanceId / "fire-and-resolve-when-received")
         .withOptionQueryParam("correlationId", correlationId))).map { result =>
       logger.info(s"For recipe instance '$recipeInstanceId', fired and received event '${event.name}', resulting status $result")
       result
@@ -186,7 +221,7 @@ final class BakerClient(
                                           onEvent: String,
                                           correlationId: Option[String]): Future[SensoryEventResult] =
     callRemoteBaker[SensoryEventResult](
-      uri => POST(event, (root(uri) / "instances" / recipeInstanceId / "fire-and-resolve-on-event" / onEvent)
+      host => POST(event, (root(host) / "instances" / recipeInstanceId / "fire-and-resolve-on-event" / onEvent)
         .withOptionQueryParam("correlationId", correlationId))).map { result =>
       logger.info(s"For recipe instance '$recipeInstanceId', fired event '${event.name}', and resolved on event '$onEvent', resulting status ${result.sensoryEventStatus}")
       logger.debug(s"Resulting ingredients ${result.ingredients.map { case (ingredient, value) => s"$ingredient=$value" }.mkString(", ")}")
@@ -220,7 +255,7 @@ final class BakerClient(
     * @return An index of all processes
     */
   override def getAllRecipeInstancesMetadata: Future[Set[RecipeInstanceMetadata]] =
-    callRemoteBaker[Set[RecipeInstanceMetadata]](uri => GET(root(uri) / "instances"))
+    callRemoteBaker[Set[RecipeInstanceMetadata]](host => GET(root(host) / "instances"))
 
   /**
     * Returns the process state.
@@ -229,7 +264,7 @@ final class BakerClient(
     * @return The process state.
     */
   override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] =
-    callRemoteBaker[RecipeInstanceState](uri => GET(root(uri) / "instances" / recipeInstanceId))
+    callRemoteBaker[RecipeInstanceState](host => GET(root(host) / "instances" / recipeInstanceId))
 
   /**
     * Returns all provided ingredients for a given RecipeInstance id.
@@ -238,7 +273,7 @@ final class BakerClient(
     * @return The provided ingredients.
     */
   override def getIngredients(recipeInstanceId: String): Future[Map[String, Value]] =
-    callRemoteBaker[Map[String, Value]](uri => GET(root(uri) / "instances" / recipeInstanceId / "ingredients"))
+    callRemoteBaker[Map[String, Value]](host => GET(root(host) / "instances" / recipeInstanceId / "ingredients"))
 
   /**
     * Returns all fired events for a given RecipeInstance id.
@@ -247,7 +282,7 @@ final class BakerClient(
     * @return The events
     */
   override def getEvents(recipeInstanceId: String): Future[Seq[EventMoment]] =
-    callRemoteBaker[List[EventMoment]](uri => GET(root(uri) / "instances" / recipeInstanceId / "events"))
+    callRemoteBaker[List[EventMoment]](host => GET(root(host) / "instances" / recipeInstanceId / "events"))
 
   /**
     * Returns all names of fired events for a given RecipeInstance id.
@@ -265,7 +300,7 @@ final class BakerClient(
     * @return A visual (.dot) representation of the process state.
     */
   override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle): Future[String] =
-    callRemoteBaker[String](uri => GET(root(uri) / "instances" / recipeInstanceId / "visual"))
+    callRemoteBaker[String](host => GET(root(host) / "instances" / recipeInstanceId / "visual"))
 
   /**
     * Registers a listener to all runtime events for recipes with the given name run in this baker instance.
@@ -322,7 +357,7 @@ final class BakerClient(
     * @return
     */
   override def retryInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
-    callRemoteBaker[Unit](uri => POST(root(uri) / "instances" / recipeInstanceId / "interaction" / interactionName / "retry"))
+    callRemoteBaker[Unit](host => POST(root(host) / "instances" / recipeInstanceId / "interaction" / interactionName / "retry"))
 
   /**
     * Resolves a blocked interaction by specifying it's output.
@@ -332,7 +367,7 @@ final class BakerClient(
     * @return
     */
   override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): Future[Unit] =
-    callRemoteBaker[Unit](uri => POST(event, root(uri) / "instances" / recipeInstanceId / "interaction" / interactionName / "resolve"))
+    callRemoteBaker[Unit](host => POST(event, root(host) / "instances" / recipeInstanceId / "interaction" / interactionName / "resolve"))
 
   /**
     * Stops the retrying of an interaction.
@@ -340,5 +375,5 @@ final class BakerClient(
     * @return
     */
   override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
-    callRemoteBaker[Unit](uri => POST(root(uri) / "instances" / recipeInstanceId / "interaction" / interactionName / "stop-retrying"))
+    callRemoteBaker[Unit](host => POST(root(host) / "instances" / recipeInstanceId / "interaction" / interactionName / "stop-retrying"))
 }

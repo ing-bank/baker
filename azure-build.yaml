@@ -14,6 +14,8 @@ variables:
     value: $(HOME)/.cache
   - name: IVY_HOME
     value: $(Pipeline.Workspace)/.ivy2
+  - name: CACHE_RUN_ID
+    value: "201009"
 
 steps:
   - task: Bash@3
@@ -42,13 +44,13 @@ steps:
   - task: CacheBeta@1
     displayName: Package resolver cache
     inputs:
-      key: 'cache'
+      key: cache_$(CACHE_RUN_ID)
       path: '$(CACHE)'
 
   - task: CacheBeta@1
     displayName: Ivy resolver cache
     inputs:
-      key: 'ivy_home'
+      key: ivy_home_$(CACHE_RUN_ID)
       path: '$(IVY_HOME)'
 
   - task: Bash@3
@@ -57,14 +59,21 @@ steps:
       targetType: 'inline'
       script: bash ./set-version.sh
 
-  - script: |
-      sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package clean coverage test coverageReport
-      bash <(curl -s https://codecov.io/bash)
+  - task: Bash@3
     displayName: 'Building and testing main Baker'
+    inputs:
+      targetType: 'inline'
+      script: |
+        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package clean coverage test coverageReport && bash <(curl -s https://codecov.io/bash)
+      failOnStderr: false
 
-  - script: |
-      sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project bakery-interaction-example-make-payment-and-ship-items; test; project bakery-interaction-example-reserve-items; test; project bakery-client-example; test; project bakery-kafka-listener-example; test"
+  - task: Bash@3
     displayName: 'Building and testing examples'
+    inputs:
+      targetType: 'inline'
+      script: |
+        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project bakery-interaction-example-make-payment-and-ship-items; test; project bakery-interaction-example-reserve-items; test; project bakery-client-example; test; project bakery-kafka-listener-example; test"
+      failOnStderr: false
 
   - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
     - task: Bash@3

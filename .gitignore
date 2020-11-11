@@ -29,3 +29,5 @@ site/
 .vscode/
 .metals/
 */**/metals.sbt
+
+.bsp/
