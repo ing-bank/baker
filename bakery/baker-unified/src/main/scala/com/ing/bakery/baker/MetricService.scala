@@ -4,6 +4,7 @@ import java.io.CharArrayWriter
 import java.net.InetSocketAddress
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
+import com.typesafe.scalalogging.LazyLogging
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.exporter.common.TextFormat
 import io.prometheus.client.hotspot._
@@ -19,27 +20,24 @@ import org.http4s.{HttpRoutes, _}
 import scala.concurrent.ExecutionContext
 import scala.io.Source
 
-object MetricService {
+object MetricService extends LazyLogging {
 
   val kamonPrometheusReporter = new PrometheusReporter()
   Kamon.registerModule("PrometheusFormatter", kamonPrometheusReporter)
 
   private val prometheusRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
+  DefaultExports.register(prometheusRegistry)
 
-  private val standardCollectors = Seq(
-    new StandardExports,
-    new MemoryPoolsExports(),
-    new GarbageCollectorExports,
-    new ThreadExports,
-    new ClassLoadingExports,
-    new VersionInfoExports,
-    new JmxCollector(Source.fromResource("prometheus-jmx-collector.yaml").mkString)
-  )
+  try {
+    prometheusRegistry.register(new JmxCollector(Source.fromResource("prometheus-jmx-collector.yaml").mkString))
+  } catch {
+    case _: Exception =>
+      logger.info("No prometheus-jmx-collector.yaml found in classpath, JMX export is not enabled")
+  }
 
   def resource(socketAddress: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
     val encoder = EntityEncoder.stringEncoder
 
-    standardCollectors.foreach(prometheusRegistry.register)
     for {
       server <- BlazeServerBuilder[IO](ec)
         .bindSocketAddress(socketAddress)
@@ -62,7 +60,7 @@ object MetricService {
   def exportMetrics: String = {
     val writer = new CharArrayWriter(16 * 1024)
     TextFormat.write004(writer, prometheusRegistry.metricFamilySamples)
-    writer.toString + "\n" + kamonPrometheusReporter.scrapeData()
+    "\n########### PROMETHEUS ###\n" + writer.toString + "\n########### KAMON ###\n" + kamonPrometheusReporter.scrapeData()
   }
 
 }
