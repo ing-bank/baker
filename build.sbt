@@ -258,8 +258,6 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
       kamon,
       kamonAkka,
       kamonPrometheus,
-      kamonSigar,
-      kamonSystemMetrics,
       cassandraDriverCore,
       cassandraDriverQueryBuilder,
       cassandraDriverMetrics,

@@ -4,6 +4,9 @@ import java.io.CharArrayWriter
 import java.net.InetSocketAddress
 import java.util
 
+import akka.actor.{Actor, ActorLogging, Props}
+import akka.cluster.Cluster
+import akka.cluster.ClusterEvent.{ClusterDomainEvent, InitialStateAsEvents, MemberDowned, MemberRemoved, MemberUp, MemberWeaklyUp, UnreachableMember}
 import akka.cluster.metrics.MetricsCollector
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.typesafe.scalalogging.LazyLogging
@@ -27,24 +30,24 @@ object MetricService extends LazyLogging {
   val kamonPrometheusReporter = new PrometheusReporter()
   Kamon.registerModule("PrometheusFormatter", kamonPrometheusReporter)
 
-  private val prometheusRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
-  DefaultExports.register(prometheusRegistry)
+  val registry: CollectorRegistry = CollectorRegistry.defaultRegistry
+  DefaultExports.register(registry)
 
   try {
-    prometheusRegistry.register(new JmxCollector(Source.fromResource("prometheus-jmx-collector.yaml").mkString))
+    registry.register(new JmxCollector(Source.fromResource("prometheus-jmx-collector.yaml").mkString))
   } catch {
     case e: Exception =>
       logger.info(s"No prometheus-jmx-collector.yaml found in classpath, JMX export is not enabled: ${e.getMessage}")
   }
 
-  def register(collector: Collector): Unit = prometheusRegistry.register(collector)
+  def register(collector: Collector): Unit = registry.register(collector)
 
   def resource(socketAddress: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
     val encoder = EntityEncoder.stringEncoder
 
     def fromPrometheus: String = {
       val writer = new CharArrayWriter(16 * 1024)
-      TextFormat.write004(writer, prometheusRegistry.metricFamilySamples)
+      TextFormat.write004(writer, registry.metricFamilySamples)
       writer.toString
     }
 
@@ -73,5 +76,5 @@ object MetricService extends LazyLogging {
     } yield server
   }
 
-
 }
+

@@ -54,6 +54,6 @@ rules:
     labels:
       type: "max"
 
-  - pattern: akka<type=Cluster><>(\S+)
+  - pattern: akka<type=Cluster.*><>(\S+)
     type: UNTYPED
     name: akka_$1

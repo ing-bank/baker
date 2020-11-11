@@ -65,8 +65,6 @@ object Dependencies {
   val kamon = "io.kamon" %% "kamon-bundle" % kamonAkkaVersion
   val kamonAkka = "io.kamon" %% "kamon-akka" % kamonAkkaVersion
   val kamonPrometheus = "io.kamon" %% "kamon-prometheus" % kamonAkkaVersion
-  val kamonSystemMetrics = "io.kamon" %% "kamon-system-metrics" % kamonAkkaVersion
-  val kamonSigar = "io.kamon" % "sigar-loader" % "1.6.5-rev003"
 
   val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.9.0"
   val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.14.0"

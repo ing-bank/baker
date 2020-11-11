@@ -3,11 +3,9 @@ package com.ing.bakery.baker
 
 import java.io.CharArrayWriter
 import java.net.InetSocketAddress
-import java.util
 import java.util.UUID
 
-import akka.actor.{ActorLogging, ActorSystem, ExtendedActorSystem, NoSerializationVerificationNeeded, PoisonPill, Props}
-import akka.cluster.metrics.SigarMetricsCollector
+import akka.actor.{ActorLogging, ActorSystem, NoSerializationVerificationNeeded, Props}
 import akka.pattern.ask
 import akka.persistence.PersistentActor
 import akka.util.Timeout
@@ -16,10 +14,7 @@ import com.datastax.oss.driver.api.querybuilder.QueryBuilder._
 import com.datastax.oss.driver.api.querybuilder.term.Term
 import com.typesafe.scalalogging.LazyLogging
 import io.prometheus.client.exporter.common.TextFormat
-import io.prometheus.client.{Collector, CollectorRegistry}
-import kamon.sigar.SigarProvisioner
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper._
-import org.hyperic.sigar.Sigar
 import org.scalatest.concurrent.Eventually
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -32,14 +27,17 @@ import scala.concurrent.{Await, ExecutionContext}
 
 class AkkaCassandraJmxMetricsSpec extends AnyFreeSpec with LazyLogging with Eventually {
 
-  SigarProvisioner.provision()
-  val sigar = new Sigar()
-
   import TestActors._
   implicit override val patienceConfig: PatienceConfig =
     PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(5, Millis)))
 
-  val cassandra = startEmbeddedCassandra("cassandra-server.yaml")
+  val cassandra = {
+    try {
+      startEmbeddedCassandra("cassandra-server.yaml")
+    } catch {
+      case e: Exception =>
+    }
+  }
   implicit val ec: ExecutionContext = ExecutionContext.global
   private val system: ActorSystem = ActorSystem("test")
   private val persistenceInitActor = system.actorOf(Props(classOf[AwaitPersistenceInit]), s"persistenceInit-${UUID.randomUUID().toString}")
@@ -84,22 +82,7 @@ class AkkaCassandraJmxMetricsSpec extends AnyFreeSpec with LazyLogging with Even
       for (i <- 1 to 100000) {
         pingActor
       }
-      val prometheusRegistry = CollectorRegistry.defaultRegistry
-      val defaultDecayFactor = 2.0 / (1 + 10)
-      val akkaMetricsCollector  = new SigarMetricsCollector(
-        system.asInstanceOf[ExtendedActorSystem].provider.rootPath.address,
-        defaultDecayFactor, sigar)
-
-      MetricService.register(new Collector() {
-        override def collect(): util.List[Collector.MetricFamilySamples] =
-          seqAsJavaList(akkaMetricsCollector.metrics() map { m =>
-            val name = s"akka_${m.name}"
-            new Collector.MetricFamilySamples(name, Collector.Type.GAUGE, s"Akka value $name",
-              List(new Collector.MetricFamilySamples.Sample(name,
-                List.empty.asJava, List.empty.asJava, m.value.doubleValue())).asJava)
-          } toList)
-      })
-
+      val prometheusRegistry = MetricService.registry
 
       val writer = new CharArrayWriter(16 * 1024)
       TextFormat.write004(writer, prometheusRegistry.metricFamilySamples)
@@ -135,7 +118,6 @@ object TestActors {
     // intentionally left empty
     def receiveCommand: Receive = {
       case Ping =>
-        log.info("Received persistence init")
         sender() ! Pong
     }
   }

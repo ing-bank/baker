@@ -20,7 +20,7 @@ class MetricServiceSpec extends AnyFunSuite with Matchers {
 
     val configPath = sys.env.getOrElse("CONFIG_DIRECTORY", "/opt/docker/conf")
     val config = ConfigFactory.load(ConfigFactory.parseFile(new File(s"$configPath/application.conf")))
-    val bakery = config.getConfig("bakery")
+    val bakery = config.getConfig("baker")
     implicit val executionContext: ExecutionContext = ExecutionContext.global
     implicit val cs: ContextShift[IO] = IO.contextShift(executionContext)
     implicit val timer: Timer[IO] = IO.timer(executionContext)

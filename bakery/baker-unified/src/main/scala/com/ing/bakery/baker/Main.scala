@@ -2,11 +2,9 @@ package com.ing.bakery.baker
 
 import java.io.File
 import java.net.InetSocketAddress
-import java.util
 
-import akka.actor.{ActorSystem, ExtendedActorSystem}
+import akka.actor.{ActorSystem, Props}
 import akka.cluster.Cluster
-import akka.cluster.metrics.SigarMetricsCollector
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.baker.recipe.javadsl.Interaction
 import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
@@ -15,7 +13,6 @@ import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import io.prometheus.client.Collector
 import kamon.Kamon
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -30,32 +27,17 @@ object Main extends IOApp with LazyLogging {
 
   override def run(args: List[String]): IO[ExitCode] = {
 
-    import org.hyperic.sigar.Sigar
-    import kamon.sigar.SigarProvisioner
-    SigarProvisioner.provision()
-    val sigar = new Sigar()
     Kamon.init()
 
     val configPath = sys.env.getOrElse("CONFIG_DIRECTORY", "/opt/docker/conf")
     val config = ConfigFactory.load(ConfigFactory.parseFile(new File(s"$configPath/application.conf")))
 
-    val bakery = config.getConfig("bakery")
+    val bakery = config.getConfig("baker")
 
     implicit val system: ActorSystem = ActorSystem("baker", config)
     implicit val executionContext: ExecutionContext = system.dispatcher
 
-    val defaultDecayFactor = 2.0 / (1 + 10)
-    val akkaMetricsCollector  = new SigarMetricsCollector(
-      system.asInstanceOf[ExtendedActorSystem].provider.rootPath.address,
-      defaultDecayFactor, sigar)
-    MetricService.register(new Collector() {
-      override def collect(): util.List[Collector.MetricFamilySamples] =
-        seqAsJavaList(akkaMetricsCollector.metrics() map { m =>
-          new Collector.MetricFamilySamples(m.name, Collector.Type.GAUGE, s"Akka value ${m.name}",
-            List(new Collector.MetricFamilySamples.Sample(m.name,
-              List.empty.asJava, List.empty.asJava, m.value.doubleValue())).asJava)
-        } toList)
-    })
+    system.actorOf(Props[ClusterListener], name = "ClusterListener")
 
     val httpServerPort = bakery.getInt("api-port")
     val metricsPort = bakery.getInt("metrics-port")
