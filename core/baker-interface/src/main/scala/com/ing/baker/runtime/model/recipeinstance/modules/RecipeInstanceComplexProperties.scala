@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.model.recipeinstance.modules
 
 import com.ing.baker.il.EventDescriptor
-import com.ing.baker.il.petrinet.{Place, RecipePetriNet, Transition}
+import com.ing.baker.il.petrinet.{InteractionTransition, Place, RecipePetriNet, Transition}
 import com.ing.baker.petrinet.api.{Marking, MultiSet, _}
 import com.ing.baker.runtime.model.recipeinstance.{RecipeInstance, TransitionExecution}
 
@@ -9,6 +9,15 @@ trait RecipeInstanceComplexProperties { recipeInstance: RecipeInstance =>
 
   def activeExecutions: Iterable[TransitionExecution] =
     recipeInstance.executions.values.filter(_.isActive)
+
+  def getInteractionExecution(interactionName: String): Option[(InteractionTransition, TransitionExecution)] =
+    for {
+      transition <- recipeInstance.recipe.interactionTransitions.find(_.interactionName == interactionName)
+      transitionExecution <- recipeInstance.executions.collectFirst {
+        case (_, execution) if execution.transition.id == transition.id =>
+          execution
+      }
+    } yield (transition, transitionExecution)
 
   def sensoryEventByName(name: String): Option[EventDescriptor] =
     recipeInstance.recipe.sensoryEvents.find(_.name == name)
@@ -67,7 +76,7 @@ trait RecipeInstanceComplexProperties { recipeInstance: RecipeInstance =>
 
   def isBlocked(transition: Transition): Boolean =
     recipeInstance.executions.values
-      .exists(t => t.transition.id == transition.id && t.isFailed)
+      .exists(t => t.transition.id == transition.id && t.hasFailed)
 
   def enabledParameters(ofMarking: Marking[Place]): Map[Transition, Iterable[Marking[Place]]] =
       enabledTransitions(ofMarking)

@@ -1,11 +1,11 @@
 package com.ing.baker.runtime.model
 
 import cats.data.EitherT
-import cats.effect.{Timer, ConcurrentEffect}
+import cats.effect.{ConcurrentEffect, Sync, Timer}
 import cats.implicits._
 import cats.{Functor, Monad}
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.common.RejectReason
+import com.ing.baker.runtime.common.{BakerException, RejectReason}
 import com.ing.baker.runtime.model.RecipeInstanceManager.{BakeOutcome, FireSensoryEventRejection, GetRecipeInstanceStateOutcome, RecipeInstanceStatus}
 import com.ing.baker.runtime.model.recipeinstance.{EventsLobby, RecipeInstance}
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceMetadata, RecipeInstanceState}
@@ -14,6 +14,7 @@ object RecipeInstanceManager {
 
   sealed trait BakeOutcome
 
+  // TODO Remove this and fail immediately in the manager operations with BakerExceptions
   object BakeOutcome {
 
     case object Baked extends BakeOutcome
@@ -25,6 +26,7 @@ object RecipeInstanceManager {
 
   sealed trait RecipeInstanceStatus
 
+  // TODO Remove this and fail immediately in the manager operations with BakerExceptions
   object RecipeInstanceStatus {
 
     case class Active(recipeInstance: RecipeInstance) extends RecipeInstanceStatus
@@ -34,6 +36,7 @@ object RecipeInstanceManager {
 
   sealed trait GetRecipeInstanceStateOutcome
 
+  // TODO Remove this and fail immediately in the manager operations with BakerExceptions
   object GetRecipeInstanceStateOutcome {
 
     case class Success(state: RecipeInstanceState) extends GetRecipeInstanceStateOutcome
@@ -122,6 +125,14 @@ trait RecipeInstanceManager[F[_]] {
 
   def getAllRecipeInstancesMetadata: F[Set[RecipeInstanceMetadata]]
 
+  def getExistent(recipeInstanceId: String)(implicit effect: Sync[F]): F[RecipeInstance] =
+    get(recipeInstanceId).flatMap {
+      case Some(RecipeInstanceStatus.Active(recipeInstance)) => effect.pure(recipeInstance)
+      case Some(_: RecipeInstanceStatus.Deleted) => effect.raiseError(BakerException.ProcessDeletedException(recipeInstanceId))
+      case None => effect.raiseError(BakerException.NoSuchProcessException(recipeInstanceId))
+    }
+
+  // TODO have to fail directly, see if getExistent matches the exeptions on the Baker level
   def bake(recipeInstanceId: String, recipe: CompiledRecipe)(implicit effect: Monad[F]): F[BakeOutcome] =
     get(recipeInstanceId).flatMap {
       case Some(_: RecipeInstanceStatus.Active) =>
@@ -132,6 +143,7 @@ trait RecipeInstanceManager[F[_]] {
         add(recipeInstanceId, recipe).as(BakeOutcome.Baked)
     }
 
+  // TODO same as last one
   def getRecipeInstanceState(recipeInstanceId: String)(implicit effect: Monad[F]): F[GetRecipeInstanceStateOutcome] =
     get(recipeInstanceId).map {
       case Some(RecipeInstanceStatus.Active(recipeInstance)) =>
@@ -151,6 +163,15 @@ trait RecipeInstanceManager[F[_]] {
       recipeInstance <- getRecipeInstanceWithPossibleRejection(recipeInstanceId)
       lobby <- recipeInstance.fire(event, correlationId)
     } yield lobby
+
+  def stopRetryingInteraction(recipeInstanceId: String, interactionName: String)(implicit effect: ConcurrentEffect[F]): F[Unit] =
+    ???
+
+  def retryBlockedInteraction(recipeInstanceId: String, interactionName: String)(implicit effect: ConcurrentEffect[F]): F[Unit] =
+    ???
+
+  def resolveBlockedInteraction(recipeInstanceId: String, interactionName: String, eventInstance: EventInstance)(implicit effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] =
+    ???
 
   private def getRecipeInstanceWithPossibleRejection(recipeInstanceId: String)(implicit effect: Functor[F]): EitherT[F, FireSensoryEventRejection, RecipeInstance] =
     EitherT(get(recipeInstanceId).map {

@@ -51,16 +51,48 @@ private[recipeinstance] case class TransitionExecution(
 
   def isActive: Boolean =
     state match {
-      case TransitionExecution.State.Failed(_, _, _, FailureStrategy.RetryWithDelay(_)) ⇒ true
-      case TransitionExecution.State.Active ⇒ true
-      case _ ⇒ false
+      case TransitionExecution.State.Failed(_, _, _, FailureStrategy.RetryWithDelay(_)) ⇒
+        true
+      case TransitionExecution.State.Active ⇒
+        true
+      case _ ⇒
+        false
     }
 
-  def isFailed: Boolean =
+  def hasFailed: Boolean =
     state match {
-      case _: TransitionExecution.State.Failed => true
-      case _ => false
+      case _: TransitionExecution.State.Failed =>
+        true
+      case _ =>
+        false
     }
+
+  def isRetrying: Boolean =
+    state match {
+      case TransitionExecution.State.Failed(_, _, _, FailureStrategy.RetryWithDelay(_)) =>
+        true
+      case _ =>
+        false
+    }
+
+  def isBlocked: Boolean =
+    state match {
+      case TransitionExecution.State.Failed(_, _, _, FailureStrategy.BlockTransition) =>
+        true
+      case _ =>
+        false
+    }
+
+  def getFailure[F[_]](implicit effect: Sync[F]): F[TransitionExecution.State.Failed] =
+    state match {
+      case failure: TransitionExecution.State.Failed =>
+        effect.pure(failure)
+      case _ =>
+        effect.raiseError(new IllegalStateException("This INTERNAL method should be called only after making sure this is a failed execution"))
+    }
+
+  def getFailureReason[F[_]](implicit effect: Sync[F]): F[String] =
+    getFailure.map(_.failureReason)
 
   def failureCount: Int =
     state match {
@@ -89,6 +121,57 @@ private[recipeinstance] case class TransitionExecution(
       }
     }
   }
+
+  def validateInteractionOutput[F[_]](interaction: InteractionTransition, interactionOutput: Option[EventInstance])(implicit effect: Async[F], timer: Timer[F]): F[Unit] = {
+    def fail(message: String): F[Unit] = effect.raiseError(new FatalInteractionException(message))
+    def continue: F[Unit] = effect.unit
+    interactionOutput match {
+      case None =>
+        if (interaction.eventsToFire.nonEmpty)
+          fail(s"Interaction '${interaction.interactionName}' did not provide any output, expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
+        else
+          continue
+      case Some(event) =>
+        val nullIngredientNames = event.providedIngredients.collect { case (name, null) => name }
+        // null values for ingredients are NOT allowed
+        if (nullIngredientNames.nonEmpty)
+          fail(s"Interaction '${interaction.interactionName}' returned null for the following ingredients: ${nullIngredientNames.mkString(",")}")
+        else
+        // the event name must match an event name from the interaction output
+          interaction.originalEvents.find(_.name == event.name) match {
+            case None =>
+              fail(s"Interaction '${interaction.interactionName}' returned unknown event '${event.name}, expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
+            case Some(eventType) =>
+              val errors = event.validate(eventType)
+              if (errors.nonEmpty)
+                fail(s"Event '${event.name}' does not match the expected type: ${errors.mkString}")
+              else
+                continue
+          }
+    }
+  }
+
+  def createOutputMarkingForPetriNet(outAdjacent: MultiSet[Place], interactionOutput: Option[EventInstance]): Marking[Place] =
+    outAdjacent.keys.map { place =>
+      // use the event name as a token value, otherwise null
+      val value: Any = interactionOutput.map(_.name).orNull
+      place -> MultiSet.copyOff(Seq(value))
+    }.toMarking
+
+  def transformOutputWithTheInteractionTransitionOutputTransformers(interaction: InteractionTransition, interactionOutput: Option[EventInstance]): Option[EventInstance] = {
+    def eventOutputTransformer(eventInstance: EventInstance): Option[(String, EventOutputTransformer)] =
+      interaction.eventOutputTransformers.find { case (eventName, _) => eventInstance.name.equals(eventName) }
+    interactionOutput.map { eventInstance =>
+      eventOutputTransformer(eventInstance) match {
+        case Some((_, eventOutputTransformer)) =>
+          EventInstance(
+            eventOutputTransformer.newEventName,
+            eventInstance.providedIngredients.map { case (name, value) => eventOutputTransformer.ingredientRenames.getOrElse(name, name) -> value })
+        case None => eventInstance
+      }
+    }
+  }
+
 
   private def enableTransition[F[_]](implicit components: BakerComponents[F], effect: Async[F], timer: Timer[F]): F[(Marking[Place], Option[EventInstance])] = {
     transition match {
@@ -138,56 +221,6 @@ private[recipeinstance] case class TransitionExecution(
         IngredientInstance(name, allIngredients.getOrElse(name, throw new FatalInteractionException(s"Missing parameter '$name'")))
     }
   }
-
-  private def validateInteractionOutput[F[_]](interaction: InteractionTransition, interactionOutput: Option[EventInstance])(implicit effect: Async[F], timer: Timer[F]): F[Unit] = {
-    def fail(message: String): F[Unit] = effect.raiseError(new FatalInteractionException(message))
-    def continue: F[Unit] = effect.unit
-    interactionOutput match {
-      case None =>
-        if (interaction.eventsToFire.nonEmpty)
-          fail(s"Interaction '${interaction.interactionName}' did not provide any output, expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
-        else
-          continue
-      case Some(event) =>
-        val nullIngredientNames = event.providedIngredients.collect { case (name, null) => name }
-        // null values for ingredients are NOT allowed
-        if (nullIngredientNames.nonEmpty)
-          fail(s"Interaction '${interaction.interactionName}' returned null for the following ingredients: ${nullIngredientNames.mkString(",")}")
-        else
-        // the event name must match an event name from the interaction output
-          interaction.originalEvents.find(_.name == event.name) match {
-            case None =>
-              fail(s"Interaction '${interaction.interactionName}' returned unknown event '${event.name}, expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
-            case Some(eventType) =>
-              val errors = event.validate(eventType)
-              if (errors.nonEmpty)
-                fail(s"Event '${event.name}' does not match the expected type: ${errors.mkString}")
-              else
-                continue
-          }
-    }
-  }
-
-  private def transformOutputWithTheInteractionTransitionOutputTransformers(interaction: InteractionTransition, interactionOutput: Option[EventInstance]): Option[EventInstance] = {
-    def eventOutputTransformer(eventInstance: EventInstance): Option[(String, EventOutputTransformer)] =
-      interaction.eventOutputTransformers.find { case (eventName, _) => eventInstance.name.equals(eventName) }
-    interactionOutput.map { eventInstance =>
-      eventOutputTransformer(eventInstance) match {
-        case Some((_, eventOutputTransformer)) =>
-          EventInstance(
-            eventOutputTransformer.newEventName,
-            eventInstance.providedIngredients.map { case (name, value) => eventOutputTransformer.ingredientRenames.getOrElse(name, name) -> value })
-        case None => eventInstance
-      }
-    }
-  }
-
-  private def createOutputMarkingForPetriNet(outAdjacent: MultiSet[Place], interactionOutput: Option[EventInstance]): Marking[Place] =
-    outAdjacent.keys.map { place =>
-      // use the event name as a token value, otherwise null
-      val value: Any = interactionOutput.map(_.name).orNull
-      place -> MultiSet.copyOff(Seq(value))
-    }.toMarking
 
   private def exceptionStackTrace(e: Throwable): String = {
     val sw = new StringWriter()

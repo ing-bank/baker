@@ -6,6 +6,8 @@ import org.joda.time.format.PeriodFormatter
 
 import scala.concurrent.duration.FiniteDuration
 
+// TODO maybe make this anothe RecipeInstance module?
+
 object RecipeInstanceLogger {
 
   import org.joda.time.format.PeriodFormatterBuilder

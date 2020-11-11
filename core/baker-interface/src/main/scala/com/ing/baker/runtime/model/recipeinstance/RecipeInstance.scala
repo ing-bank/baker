@@ -23,7 +23,7 @@ case class RecipeInstance(
   extends RecipeInstanceComplexProperties
     with RecipeInstanceEventValidation
     with RecipeInstanceStateMutations
-    with RecipeInstanceExecutionLogic
+    with RecipeInstanceRuntimeSemantics
     with LazyLogging
 
 object RecipeInstance {
