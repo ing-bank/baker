@@ -1,22 +1,22 @@
-package com.ing.baker.runtime.model.recipeinstance.modules
+package com.ing.baker.runtime.model.recipeinstance
 
 import com.ing.baker.il.EventDescriptor
 import com.ing.baker.il.petrinet.{Place, Transition}
 import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
-import com.ing.baker.runtime.model.recipeinstance.{RecipeInstance, TransitionExecution}
+import com.ing.baker.runtime.model.recipeinstance.execution.TransitionExecution
 import com.ing.baker.runtime.scaladsl.EventInstance
 
 import scala.concurrent.duration.FiniteDuration
 
-trait RecipeInstanceEventValidation { recipeInstance: RecipeInstance with RecipeInstanceComplexProperties =>
+trait RecipeInstanceEventValidation { recipeInstance: RecipeInstanceState =>
 
   type Reason = String
 
   type EventValidation[A] =
     Either[(FireSensoryEventRejection, Reason), A]
 
-  def validateExecution(input: EventInstance, correlationId: Option[String], currentTime: Long): EventValidation[TransitionExecution] = {
+  def validateExecution[F[_]](input: EventInstance, correlationId: Option[String], currentTime: Long): EventValidation[TransitionExecution] = {
     for {
       transitionAndDescriptor <- eventIsInRecipe(input)
       (transition, descriptor) = transitionAndDescriptor
@@ -72,7 +72,7 @@ trait RecipeInstanceEventValidation { recipeInstance: RecipeInstance with Recipe
     def outOfReceivePeriod(createdOn: Long, period: FiniteDuration): Boolean =
       currentTime - createdOn > period.toMillis
     recipeInstance.recipe.eventReceivePeriod match {
-      case Some(receivePeriod) if outOfReceivePeriod(recipeInstance.createdOn, receivePeriod) =>
+      case Some(receivePeriod) if outOfReceivePeriod(createdOn, receivePeriod) =>
         reject(FireSensoryEventRejection.ReceivePeriodExpired(recipeInstance.recipeInstanceId), "Receive period expired")
       case _ =>
         continue
@@ -80,11 +80,11 @@ trait RecipeInstanceEventValidation { recipeInstance: RecipeInstance with Recipe
   }
 
   private def notReceivedCorrelationId(correlationId: Option[String]): EventValidation[Unit] = {
-    def alreadyReceived(recipeInstance: RecipeInstance, correlation: String): Boolean =
+    def alreadyReceived(correlation: String): Boolean =
       recipeInstance.receivedCorrelationIds.contains(correlation) ||
         recipeInstance.executions.values.exists(_.correlationId.contains(correlation))
     correlationId match {
-      case Some(correlationId) if alreadyReceived(recipeInstance, correlationId) =>
+      case Some(correlationId) if alreadyReceived(correlationId) =>
         reject(FireSensoryEventRejection.AlreadyReceived(recipeInstance.recipeInstanceId, correlationId),
         s"The correlation id $correlationId was previously received by another fire transition command")
       case _ =>

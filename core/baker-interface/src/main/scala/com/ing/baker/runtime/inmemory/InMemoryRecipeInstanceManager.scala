@@ -1,5 +1,6 @@
 package com.ing.baker.runtime.inmemory
 
+import cats.implicits._
 import cats.effect.concurrent.Ref
 import cats.effect.{IO, Timer}
 import com.ing.baker.il.CompiledRecipe
@@ -8,11 +9,9 @@ import com.ing.baker.runtime.model.RecipeInstanceManager.RecipeInstanceStatus
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
 import com.ing.baker.runtime.scaladsl.RecipeInstanceMetadata
 
-import scala.concurrent.duration
-
 object InMemoryRecipeInstanceManager {
 
-  type Store = Map[String, RecipeInstanceStatus]
+  type Store = Map[String, RecipeInstanceStatus[IO]]
 
   def build(implicit timer: Timer[IO]): IO[InMemoryRecipeInstanceManager] =
     Ref.of[IO, Store](Map.empty).map(new InMemoryRecipeInstanceManager(_))
@@ -20,17 +19,16 @@ object InMemoryRecipeInstanceManager {
 
 final class InMemoryRecipeInstanceManager(store: Ref[IO, InMemoryRecipeInstanceManager.Store])(implicit timer: Timer[IO]) extends RecipeInstanceManager[IO] {
 
-  override def get(recipeInstanceId: String): IO[Option[RecipeInstanceStatus]] =
+  override def get(recipeInstanceId: String): IO[Option[RecipeInstanceStatus[IO]]] =
     store.get.map(_.get(recipeInstanceId))
 
   override def add(recipeInstanceId: String, recipe: CompiledRecipe): IO[Unit] =
     for {
-      timestamp <- timer.clock.realTime(duration.MILLISECONDS)
-      newRecipeInstance = RecipeInstance.empty(recipe, recipeInstanceId, timestamp)
+      newRecipeInstance <- RecipeInstance.empty[IO](recipe, recipeInstanceId)
       _ <- store.update(_ + (recipeInstanceId -> RecipeInstanceStatus.Active(newRecipeInstance)))
     } yield ()
 
-  override def update(recipeInstanceId: String, updateFunction: RecipeInstance => RecipeInstance): IO[RecipeInstance] =
+  override def update(recipeInstanceId: String, updateFunction: RecipeInstance[IO] => RecipeInstance[IO]): IO[RecipeInstance[IO]] =
     for {
       storeMap <- store.updateAndGet { storeMap =>
         storeMap.get(recipeInstanceId) match {
@@ -52,10 +50,10 @@ final class InMemoryRecipeInstanceManager(store: Ref[IO, InMemoryRecipeInstanceM
     } yield recipeInstance
 
   override def getAllRecipeInstancesMetadata: IO[Set[RecipeInstanceMetadata]] =
-    store.get.map(_.map {
+    store.get.flatMap(_.toList.traverse {
       case (recipeInstanceId, RecipeInstanceStatus.Active(recipeInstance)) =>
-        RecipeInstanceMetadata(recipeInstance.recipe.recipeId, recipeInstanceId, recipeInstance.createdOn)
+        recipeInstance.state.get.map(currentState => RecipeInstanceMetadata(currentState.recipe.recipeId, recipeInstanceId, currentState.createdOn))
       case (recipeInstanceId, RecipeInstanceStatus.Deleted(recipeId, createdOn, _)) =>
-        RecipeInstanceMetadata(recipeId, recipeInstanceId, createdOn)
-    }.toSet)
+        IO.pure(RecipeInstanceMetadata(recipeId, recipeInstanceId, createdOn))
+    }).map(_.toSet)
 }

@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.model
 
 import cats.effect.concurrent.Deferred
-import cats.effect.{ConcurrentEffect, Timer}
+import cats.effect.{ConcurrentEffect, IO, Timer}
 import cats.implicits._
 import cats.effect.implicits._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -9,7 +9,8 @@ import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.BakerException.{ImplementationsException, RecipeValidationException}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
-import com.ing.baker.runtime.model.recipeinstance.{EventsLobby, RecipeInstance}
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
+import com.ing.baker.runtime.model.recipeinstance.execution.EventsLobby
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.Value
 import com.typesafe.scalalogging.LazyLogging
@@ -175,7 +176,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     val runProgram = components.recipeInstanceManager.fireEvent(recipeInstanceId, event, correlationId)
     effect.runAsync(runProgram.value) {
       case Right(outcome) => effect.toIO(fireDeferred.complete(outcome))
-      case Left(e) => RecipeInstance.logImpossibleException(logger, e)
+      case Left(e) => IO(logger.error("This exception should have never happened, no possible errors expected on async call", e))
     }.unsafeRunSync()
     new EventResolutionsF[F] {
       override def resolveWhenReceived: F[SensoryEventStatus] =
