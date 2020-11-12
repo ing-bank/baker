@@ -4,12 +4,13 @@ import akka.actor.{Actor, ActorLogging}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
 
-class ClusterListener extends Actor with ActorLogging {
+class ClusterEventWatch extends Actor with ActorLogging {
 
   private val cluster = Cluster(context.system)
 
   override def preStart(): Unit = {
     cluster.subscribe(self, initialStateMode = InitialStateAsEvents, classOf[ClusterDomainEvent])
+    log.info("Starting cluster event watch")
   }
 
   override def postStop(): Unit = cluster.unsubscribe(self)

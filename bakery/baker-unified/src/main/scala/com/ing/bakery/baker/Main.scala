@@ -31,23 +31,22 @@ object Main extends IOApp with LazyLogging {
 
     val configPath = sys.env.getOrElse("CONFIG_DIRECTORY", "/opt/docker/conf")
     val config = ConfigFactory.load(ConfigFactory.parseFile(new File(s"$configPath/application.conf")))
-
-    val bakery = config.getConfig("baker")
+    val bakerConfig = config.getConfig("baker")
 
     implicit val system: ActorSystem = ActorSystem("baker", config)
     implicit val executionContext: ExecutionContext = system.dispatcher
 
-    system.actorOf(Props[ClusterListener], name = "ClusterListener")
+    system.actorOf(Props[ClusterEventWatch], name = "ClusterEventWatch")
 
-    val httpServerPort = bakery.getInt("api-port")
-    val metricsPort = bakery.getInt("metrics-port")
-    val apiUrlPrefix = bakery.getString("api-url-prefix")
-    val loggingEnabled = bakery.getBoolean("api-logging-enabled")
+    val httpServerPort = bakerConfig.getInt("api-port")
+    val metricsPort = bakerConfig.getInt("metrics-port")
+    val apiUrlPrefix = bakerConfig.getString("api-url-prefix")
+    val loggingEnabled = bakerConfig.getBoolean("api-logging-enabled")
     logger.info(s"Logging of API: $loggingEnabled  - MUST NEVER BE SET TO 'true' IN PRODUCTION")
 
-    val configurationClasses = bakery.getStringList("interaction-configuration-classes")
+    val configurationClasses = bakerConfig.getStringList("interaction-configuration-classes")
 
-    val eventSinkSettings = config.getConfig("baker.kafka-event-sink").as[KafkaEventSinkSettings]
+    val eventSinkSettings = bakerConfig.getConfig("kafka-event-sink").as[KafkaEventSinkSettings]
 
     val interactions = {
       if (configurationClasses.size() == 0) {
@@ -68,15 +67,13 @@ object Main extends IOApp with LazyLogging {
 
     val interactionManager = new InteractionManagerLocal(interactions)
 
-    val bakerConfig = AkkaBakerConfig(
+    logger.info("Starting Akka Baker...")
+    val baker = AkkaBaker.withConfig(AkkaBakerConfig(
       interactionManager = interactionManager,
       bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
       timeouts = AkkaBakerConfig.Timeouts.from(config),
       bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)
-    )(system)
-
-    logger.info("Starting Akka Baker...")
-    val baker = AkkaBaker.withConfig(bakerConfig)
+    )(system))
 
     val mainResource: Resource[IO, (Server[IO], Server[IO])] =
       for {

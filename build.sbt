@@ -240,6 +240,7 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
     ),
     libraryDependencies ++= Seq(
       slf4jApi,
+      logback,
       akkaPersistenceCassandra,
       akkaHttpSprayJson,
       akkaManagementHttp,
