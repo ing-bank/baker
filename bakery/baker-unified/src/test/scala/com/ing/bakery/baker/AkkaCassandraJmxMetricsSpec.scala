@@ -39,7 +39,7 @@ class AkkaCassandraJmxMetricsSpec extends AnyFreeSpec with LazyLogging with Even
     }
   }
   implicit val ec: ExecutionContext = ExecutionContext.global
-  private val system: ActorSystem = ActorSystem("test")
+  private val system: ActorSystem = ActorSystem("baker")
   private val persistenceInitActor = system.actorOf(Props(classOf[AwaitPersistenceInit]), s"persistenceInit-${UUID.randomUUID().toString}")
 
   def createSession = {
