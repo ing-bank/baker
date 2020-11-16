@@ -352,7 +352,9 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     *
     * @return
     */
-  override def retryInteraction(recipeInstanceId: String, interactionName: String): F[Unit] = ???
+  override def retryInteraction(recipeInstanceId: String, interactionName: String): F[Unit] =
+    components.recipeInstanceManager.retryBlockedInteraction(recipeInstanceId, interactionName)
+      .timeout(config.processEventTimeout)
 
   /**
     * Resolves a blocked interaction by specifying it's output.
@@ -361,12 +363,16 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     *
     * @return
     */
-  override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): F[Unit] = ???
+  override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): F[Unit] =
+    components.recipeInstanceManager.resolveBlockedInteraction(recipeInstanceId, interactionName, event)
+      .timeout(config.processEventTimeout)
 
   /**
     * Stops the retrying of an interaction.
     *
     * @return
     */
-  override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): F[Unit] = ???
+  override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): F[Unit] =
+    components.recipeInstanceManager.stopRetryingInteraction(recipeInstanceId, interactionName)
+      .timeout(config.processEventTimeout)
 }

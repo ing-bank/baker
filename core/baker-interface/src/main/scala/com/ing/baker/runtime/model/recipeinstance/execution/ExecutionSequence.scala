@@ -3,7 +3,7 @@ package com.ing.baker.runtime.model.recipeinstance.execution
 import cats.implicits._
 import cats.effect.concurrent.Ref
 import cats.effect.{CancelToken, ConcurrentEffect, IO, Timer}
-import com.ing.baker.il.petrinet.Place
+import com.ing.baker.il.petrinet.{InteractionTransition, Place}
 import com.ing.baker.petrinet.api.{Marking, marshalMarking}
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.recipeinstance.execution.ExecutionSequence.ScheduledRetries
@@ -28,15 +28,15 @@ import scala.concurrent.duration._
   * @tparam F
   * @return
   */
-case class ExecutionSequence[F[_]] private[recipeinstance](id: Long = TransitionExecution.generateId,
-                                                    recipeInstance: RecipeInstance[F],
-                                                    scheduledRetries: ScheduledRetries[F],
-                                                    eventsLobby: EventsLobby[F]
-                                                   )(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) {
+case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = TransitionExecution.generateId,
+                                                           recipeInstance: RecipeInstance[F],
+                                                           scheduledRetries: ScheduledRetries[F],
+                                                           eventsLobby: EventsLobby[F]
+                                                          )(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) {
 
   def step(transitionExecution: TransitionExecution): F[Unit] =
     for {
-      _ <- recipeInstance.state.update(_.addExecution(transitionExecution))
+      _ <- recipeInstance.state.update(_.addExecution(transitionExecution.setOwner(sequenceId)))
       _ <- eventsLobby.reportTransitionStarted(transitionExecution.id)
       _ <- effect.runAsync(transitionExecution.execute)(asyncOutcomeCallback).to[F]
     } yield ()
@@ -88,9 +88,16 @@ case class ExecutionSequence[F[_]] private[recipeinstance](id: Long = Transition
     }
   }
 
-  private def cancelScheduledExecution(transitionExecutionId: Long): F[Unit] =
-    scheduledRetries.get.flatMap { cancelTokenOf =>
-      effect.runAsync(cancelTokenOf(transitionExecutionId)) {
+  def cancelScheduledExecution(transitionExecutionId: Long): F[Unit] =
+    for {
+      cancelTokenOf <- scheduledRetries.get
+      cancelToken <- cancelTokenOf.get(transitionExecutionId) match {
+        case Some(token) =>
+          effect.pure(token)
+        case None =>
+          effect.raiseError[CancelToken[F]](new IllegalArgumentException("No transition execution with id $transitionExecutionId in this execution sequence"))
+      }
+      _ <- effect.runAsync(cancelToken) {
         case Right(_) =>
           // TODO
           //IO.delay(recipeInstance.logger.info(s"Transition execution with id $transitionExecutionId cancelled"))
@@ -100,69 +107,54 @@ case class ExecutionSequence[F[_]] private[recipeinstance](id: Long = Transition
           //IO.delay(recipeInstance.logger.error("Cancellation of transition execution failed", e))
           IO.unit
       }.to[F]
-    }
+    } yield ()
 
   // TODO all of these must be found by the recipe instance manager for execution, for such we must save these contexts into the manager besides the recipe instance
-  def stopRetryingInteraction(interactionName: String): F[Unit] =
-    for {
-      currentState <- recipeInstance.state.get
-      _ <- currentState.getInteractionExecution(interactionName) match {
-        case Some((interaction, execution)) if execution.isRetrying =>
-          for {
-            _ <- cancelScheduledExecution(execution.id)
-            // TODO all of this can be done inside the execution and should be refactored together with it
-            timestamp <- timer.clock.realTime(MILLISECONDS)
-            failureReason <- execution.getFailureReason
-            outcome = TransitionExecution.Outcome.Failed(
-              execution.id, execution.transition.id, execution.correlationId, timestamp, timestamp, marshalMarking(execution.consume), execution.input, failureReason, FailureStrategy.BlockTransition)
-            // TODO ^
-            _ <- handleFailureOutcome(outcome)
-          } yield ()
-        case None => effect.raiseError(new IllegalArgumentException("Interaction is not retrying"))
-      }
-    } yield ()
+  def stopRetryingInteraction(execution: TransitionExecution): F[Unit] =
+    if (execution.isRetrying)
+      for {
+        _ <- cancelScheduledExecution(execution.id)
+        // TODO all of this can be done inside the execution and should be refactored together with it
+        timestamp <- timer.clock.realTime(MILLISECONDS)
+        failureReason <- execution.getFailureReason
+        outcome = TransitionExecution.Outcome.Failed(
+          execution.id, execution.transition.id, execution.correlationId, timestamp, timestamp, marshalMarking(execution.consume), execution.input, failureReason, FailureStrategy.BlockTransition)
+        // TODO ^
+        _ <- handleFailureOutcome(outcome)
+      } yield ()
+    else effect.raiseError(new IllegalArgumentException("Interaction is not retrying"))
 
-  def retryBlockedInteraction(interactionName: String): F[Unit] =
-    for {
-      currentState <- recipeInstance.state.get
-      _ <- currentState.getInteractionExecution(interactionName) match {
-        case Some((interaction, execution)) if execution.isBlocked =>
-          for {
-            // TODO all of this can be done inside the execution and should be refactored together with it
-            timestamp <- timer.clock.realTime(MILLISECONDS)
-            failureReason <- execution.getFailureReason
-            outcome = TransitionExecution.Outcome.Failed(
-              execution.id, execution.transition.id, execution.correlationId, timestamp, timestamp, marshalMarking(execution.consume), execution.input, failureReason, FailureStrategy.RetryWithDelay(0))
-            // TODO ^
-            _ <- handleFailureOutcome(outcome)
-          } yield ()
-        case None => effect.raiseError(new IllegalArgumentException("Interaction is not blocked"))
-      }
-    } yield ()
+  def retryBlockedInteraction(execution: TransitionExecution): F[Unit] =
+    if (execution.isBlocked)
+      for {
+        // TODO all of this can be done inside the execution and should be refactored together with it
+        timestamp <- timer.clock.realTime(MILLISECONDS)
+        failureReason <- execution.getFailureReason
+        outcome = TransitionExecution.Outcome.Failed(
+          execution.id, execution.transition.id, execution.correlationId, timestamp, timestamp, marshalMarking(execution.consume), execution.input, failureReason, FailureStrategy.RetryWithDelay(0))
+        // TODO ^
+        _ <- handleFailureOutcome(outcome)
+      } yield ()
+    else effect.raiseError(new IllegalArgumentException("Interaction is not blocked"))
 
-  def resolveBlockedInteraction(interactionName: String, eventInstance: EventInstance): F[Unit] =
-    for {
-      currentState <- recipeInstance.state.get
-      _ <- currentState.getInteractionExecution(interactionName) match {
-        case Some((interaction, execution)) if execution.isBlocked =>
-          for {
-            _ <- execution.validateInteractionOutput[F](interaction, Some(eventInstance))
-            // TODO this is awaiting the Transition Execution refactor
-            petriNet = execution.recipe.petriNet
-            producedMarking: Marking[Place] = execution.createOutputMarkingForPetriNet(petriNet.outMarking(interaction), Some(eventInstance))
-            transformedEvent: Option[EventInstance] = execution.transformOutputWithTheInteractionTransitionOutputTransformers(interaction, Some(eventInstance))
-            // TODO all of this can be done inside the execution and should be refactored together with it
-            timestamp <- timer.clock.realTime(MILLISECONDS)
-            failureReason <- execution.getFailureReason
-            outcome = TransitionExecution.Outcome.Failed(
-              execution.id, execution.transition.id, execution.correlationId, timestamp, timestamp, marshalMarking(execution.consume), execution.input, failureReason, FailureStrategy.Continue(producedMarking, transformedEvent))
-            // TODO ^
-            _ <- handleFailureOutcome(outcome)
-          } yield ()
-        case None => effect.raiseError(new IllegalArgumentException("Interaction is not blocked"))
-      }
-    } yield ()
-
+  def resolveBlockedInteraction(interaction: InteractionTransition, execution: TransitionExecution, eventInstance: EventInstance): F[Unit] =
+    if (execution.isBlocked)
+      for {
+        _ <- execution.validateInteractionOutput[F](interaction, Some(eventInstance))
+        // TODO this is awaiting the Transition Execution refactor
+        petriNet = execution.recipe.petriNet
+        producedMarking: Marking[Place] = execution.createOutputMarkingForPetriNet(petriNet.outMarking(interaction), Some(eventInstance))
+        transformedEvent: Option[EventInstance] = execution.transformOutputWithTheInteractionTransitionOutputTransformers(interaction, Some(eventInstance))
+        // TODO all of this can be done inside the execution and should be refactored together with it
+        timestamp <- timer.clock.realTime(MILLISECONDS)
+        failureReason <- execution.getFailureReason
+        outcome = TransitionExecution.Outcome.Failed(
+          execution.id, execution.transition.id, execution.correlationId, timestamp, timestamp, marshalMarking(execution.consume), execution.input, failureReason, FailureStrategy.Continue(producedMarking, transformedEvent))
+        // TODO ^
+        _ <- handleFailureOutcome(outcome)
+      } yield ()
+    else
+      effect.raiseError(new IllegalArgumentException("Interaction is not blocked"))
 }
 
 object ExecutionSequence {
@@ -188,7 +180,7 @@ object ExecutionSequence {
         recipeInstance = recipeInstance,
         scheduledRetries = scheduledRetries,
         eventsLobby = eventsLobby)
-      _ <- recipeInstance.runningSequences.update(_ + (executionSequence.id -> executionSequence))
+      _ <- recipeInstance.runningSequences.update(_ + (executionSequence.sequenceId -> executionSequence))
       _ <- executionSequence.step(initialExecution)
     } yield executionSequence
 

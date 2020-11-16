@@ -168,14 +168,24 @@ trait RecipeInstanceManager[F[_]] {
     } yield eventsLobby
 
   def stopRetryingInteraction(recipeInstanceId: String, interactionName: String)(implicit effect: ConcurrentEffect[F]): F[Unit] =
-    ???
+    for {
+      recipeInstance <- getExistent(recipeInstanceId)
+      _ <- recipeInstance.stopRetryingInteraction(interactionName)
+    } yield ()
 
   def retryBlockedInteraction(recipeInstanceId: String, interactionName: String)(implicit effect: ConcurrentEffect[F]): F[Unit] =
-    ???
+    for {
+      recipeInstance <- getExistent(recipeInstanceId)
+      _ <- recipeInstance.retryBlockedInteraction(interactionName)
+    } yield ()
 
   def resolveBlockedInteraction(recipeInstanceId: String, interactionName: String, eventInstance: EventInstance)(implicit effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] =
-    ???
+    for {
+      recipeInstance <- getExistent(recipeInstanceId)
+      _ <- recipeInstance.resolveBlockedInteraction(interactionName, eventInstance)
+    } yield ()
 
+  // TODO same as last 2
   private def getRecipeInstanceWithPossibleRejection(recipeInstanceId: String)(implicit effect: Functor[F]): EitherT[F, FireSensoryEventRejection, RecipeInstance[F]] =
     EitherT(get(recipeInstanceId).map {
       case None =>

@@ -6,6 +6,7 @@ import cats.effect.concurrent.Ref
 import cats.effect.{ConcurrentEffect, IO, Sync, Timer}
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
 import com.ing.baker.runtime.model.recipeinstance.execution.{EventsLobby, ExecutionSequence, TransitionExecution}
@@ -35,17 +36,59 @@ case class RecipeInstance[F[_]](
       initialExecution <- logRejectionReasonIfAny(
         currentState.validateExecution(input, correlationId, currentTime))
       startedExecutionSequence <- ok ( ExecutionSequence.base[F](recipeInstance = this, initialExecution) )
-      _ <- ok ( addRunningExecutionSequence(startedExecutionSequence) )
+      _ <- ok ( addRunningSequence(startedExecutionSequence) )
     } yield startedExecutionSequence.eventsLobby
 
-  private def addRunningExecutionSequence(sequence: ExecutionSequence[F]): F[Unit] =
-    runningSequences.update(_ + (sequence.id -> sequence))
+  def stopRetryingInteraction(interactionName: String)(implicit effect: Sync[F]): F[Unit] =
+    executeOnRunningSequenceOf(interactionName)((_, execution, sequence) =>
+      sequence.stopRetryingInteraction(execution))
 
-  private[recipeinstance] def removeRunningExecutionSequence(sequenceId: Long): F[Unit] =
+  def retryBlockedInteraction(interactionName: String)(implicit effect: Sync[F]): F[Unit] =
+    executeOnRunningSequenceOf(interactionName)((_, execution, sequence) =>
+      sequence.retryBlockedInteraction(execution))
+
+  def resolveBlockedInteraction(interactionName: String, eventInstance: EventInstance)(implicit effect: Sync[F]): F[Unit] =
+    executeOnRunningSequenceOf(interactionName)((transition, execution, sequence) =>
+      sequence.resolveBlockedInteraction(transition, execution, eventInstance))
+
+  private[recipeinstance] def addRunningSequence(sequence: ExecutionSequence[F]): F[Unit] =
+    runningSequences.update(_ + (sequence.sequenceId -> sequence))
+
+  private[recipeinstance] def removeRunningSequence(sequenceId: Long): F[Unit] =
     runningSequences.update(_ - sequenceId)
+
+  private[recipeinstance] def executeOnRunningSequenceOf(interactionName: String)(f: (InteractionTransition, TransitionExecution, ExecutionSequence[F]) => F[Unit])(implicit effect: Sync[F]): F[Unit] =
+    for {
+      transitionAndExecution <- getExecution(interactionName)
+      (transition, execution) = transitionAndExecution
+      sequence <- getSequence(execution.executionSequenceId)
+      _ <- f(transition, execution, sequence)
+    } yield ()
 
   private def ok[A](fa: F[A])(implicit effect: Functor[F]): EitherT[F, FireSensoryEventRejection, A] =
     EitherT[F, FireSensoryEventRejection, A](fa.map(Right(_)))
+
+  private def getExecution(interactionName: String)(implicit effect: Sync[F]): F[(InteractionTransition, TransitionExecution)] =
+    for {
+      currentState <- state.get
+      transitionAndExecution <- currentState.getInteractionExecution(interactionName) match {
+        case None =>
+          effect.raiseError(new IllegalArgumentException(s"No interaction with name $interactionName within instance state with id $recipeInstanceId"))
+        case Some(transitionAndExecution) =>
+          effect.pure(transitionAndExecution)
+      }
+    } yield transitionAndExecution
+
+  private def getSequence(executionSequenceId: Long)(implicit effect: Sync[F]): F[ExecutionSequence[F]] =
+    for {
+      currentRunningSequences <- runningSequences.get
+      sequence <- currentRunningSequences.get(executionSequenceId) match {
+        case None =>
+          effect.raiseError(new IllegalStateException(s"Transition execution has wrong owner sequence id $executionSequenceId"))
+        case Some(sequence) =>
+          effect.pure(sequence)
+      }
+    } yield sequence
 
   /** Helper function to log and remove the textual rejection reason of the `fire` operation. It basically exchanges the
     * String inside the returning `Either` for an external effect `F`.
