@@ -12,6 +12,35 @@ import com.ing.baker.runtime.scaladsl.EventInstance
 
 import scala.concurrent.duration._
 
+object ExecutionSequence {
+
+  /** Base case of the recipe instance execution semantics.
+    *
+    * @param recipeInstance.recipeInstanceId
+    * @param transitionExecution
+    * @param logger
+    * @param components
+    * @param effect
+    * @param timer
+    * @tparam F
+    * @return
+    */
+  def base[F[_]](recipeInstance: RecipeInstance[F], initialExecution: TransitionExecution)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[ExecutionSequence[F]] =
+    for {
+      eventsLobby <- EventsLobby.build[F]
+      scheduledRetries <- Ref.of[F, Map[Long, CancelToken[F]]](Map.empty)
+      executionSequence = new ExecutionSequence[F](
+        recipeInstance = recipeInstance,
+        scheduledRetries = scheduledRetries,
+        eventsLobby = eventsLobby)
+      _ <- recipeInstance.runningSequences.update(_ + (executionSequence.sequenceId -> executionSequence))
+      _ <- recipeInstance.state.update(_.addExecution(initialExecution.setOwner(executionSequence.sequenceId)))
+      _ <- executionSequence.step(initialExecution)
+    } yield executionSequence
+
+  type ScheduledRetries[F[_]] = Ref[F, Map[Long, CancelToken[F]]]
+}
+
 /** TODO rewrite this within the context of 1 event
   * Inductive step of the recipe instance execution semantics.
   * Attempts to progress the execution of the recipe instance from the outcome of a previous execution.
@@ -35,11 +64,7 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
                                                           )(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) {
 
   def step(transitionExecution: TransitionExecution): F[Unit] =
-    for {
-      _ <- recipeInstance.state.update(_.addExecution(transitionExecution.setOwner(sequenceId)))
-      _ <- eventsLobby.reportTransitionStarted(transitionExecution.id)
-      _ <- effect.runAsync(transitionExecution.execute)(asyncOutcomeCallback).to[F]
-    } yield ()
+    effect.runAsync(transitionExecution.execute)(asyncOutcomeCallback).to[F]
 
   private def asyncOutcomeCallback(asyncOutcome: Either[Throwable, TransitionExecution.Outcome]): IO[Unit] =
     effect.toIO(asyncOutcome match {
@@ -53,13 +78,12 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
 
   private def handleCompletedOutcome(outcome: TransitionExecution.Outcome.Completed): F[Unit] =
     for {
-      currentState <- recipeInstance.state.updateAndGet(_.recordExecutionOutcome(outcome))
-      _ <- eventsLobby.reportTransitionFinished(outcome.transitionExecutionId, outcome.output)
-      enabledExecutions = currentState.allEnabledExecutions
+      enabledExecutions <- recipeInstance.state.modify(_.recordCompletedExecutionOutcome(outcome))
+      _ <- eventsLobby.reportTransitionFinished(outcome, enabledExecutions, outcome.output)
       _ <- enabledExecutions.toList.traverse(step)
     } yield ()
 
-  private def handleFailureOutcome(outcome: TransitionExecution.Outcome.Failed): F[Unit] = {
+  private def handleFailureOutcome(outcome: TransitionExecution.Outcome.Failed): F[Unit] =
     outcome.exceptionStrategy match {
       case FailureStrategy.Continue(marking, output) =>
         handleCompletedOutcome(TransitionExecution.Outcome.Completed(
@@ -74,19 +98,21 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
 
       case FailureStrategy.BlockTransition =>
         for {
-          _ <- recipeInstance.state.update(_.recordExecutionOutcome(outcome))
-          _ <- eventsLobby.reportTransitionFinished(outcome.transitionExecutionId, output = None)
+          _ <- recipeInstance.state.update(_.transitionExecutionToFailedState(outcome))
+          _ = println(Console.RED_B +
+            s""" Transition failed: ${outcome.failureReason}
+              |""".stripMargin + Console.RESET)
+          _ <- eventsLobby.reportTransitionFinished(outcome)
         } yield ()
 
       case FailureStrategy.RetryWithDelay(delay) =>
         for {
-          currentState <- recipeInstance.state.updateAndGet(_.recordExecutionOutcome(outcome))
+          currentState <- recipeInstance.state.updateAndGet(_.transitionExecutionToFailedState(outcome))
           retry = timer.sleep(delay.milliseconds) *> currentState.executions(outcome.transitionExecutionId).execute
           cancelToken <- effect.runCancelable(retry)(asyncOutcomeCallback).to[F]
           _ <- scheduledRetries.update(_ + (outcome.transitionExecutionId -> cancelToken))
         } yield ()
     }
-  }
 
   def cancelScheduledExecution(transitionExecutionId: Long): F[Unit] =
     for {
@@ -155,33 +181,4 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
       } yield ()
     else
       effect.raiseError(new IllegalArgumentException("Interaction is not blocked"))
-}
-
-object ExecutionSequence {
-
-  type ScheduledRetries[F[_]] = Ref[F, Map[Long, CancelToken[F]]]
-
-  /** Base case of the recipe instance execution semantics.
-    *
-    * @param recipeInstance.recipeInstanceId
-    * @param transitionExecution
-    * @param logger
-    * @param components
-    * @param effect
-    * @param timer
-    * @tparam F
-    * @return
-    */
-  def base[F[_]](recipeInstance: RecipeInstance[F], initialExecution: TransitionExecution)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[ExecutionSequence[F]] =
-    for {
-      eventsLobby <- EventsLobby.build[F]
-      scheduledRetries <- Ref.of[F, Map[Long, CancelToken[F]]](Map.empty)
-      executionSequence = new ExecutionSequence[F](
-        recipeInstance = recipeInstance,
-        scheduledRetries = scheduledRetries,
-        eventsLobby = eventsLobby)
-      _ <- recipeInstance.runningSequences.update(_ + (executionSequence.sequenceId -> executionSequence))
-      _ <- executionSequence.step(initialExecution)
-    } yield executionSequence
-
 }

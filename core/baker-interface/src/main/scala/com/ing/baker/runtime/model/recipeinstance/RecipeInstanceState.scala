@@ -122,7 +122,7 @@ case class RecipeInstanceState(
   }
 
   /** Finds all enabled transitions that can be fired automatically. */
-  def allEnabledExecutions: Seq[TransitionExecution] = {
+  def allEnabledExecutions: Set[TransitionExecution] = {
     val enabled  = enabledParameters(availableMarkings)
     val canFire = enabled.filter { case (transition, _) ⇒
       !isBlocked(transition) && canBeFiredAutomatically(transition)
@@ -138,25 +138,21 @@ case class RecipeInstanceState(
           ingredients = ingredients,
           correlationId = None
         )
-    }.toSeq
+    }.toSet
   }
 
-  def recordExecutionOutcome(outcome: TransitionExecution.Outcome): RecipeInstanceState =
-    outcome match {
+  def recordCompletedExecutionOutcome(completedOutcome: TransitionExecution.Outcome.Completed): (RecipeInstanceState, Set[TransitionExecution]) = {
+    val aggregated = aggregateOutputEvent(completedOutcome)
+      .increaseSequenceNumber
+      .aggregatePetriNetChanges(completedOutcome)
+      .addReceivedCorrelationId(completedOutcome)
+      .removeExecution(completedOutcome)
+    val enabledExecutions = aggregated.allEnabledExecutions
+    (aggregated.addExecution(enabledExecutions.toSeq: _*), enabledExecutions)
+  }
 
-      case completedOutcome: TransitionExecution.Outcome.Completed =>
-        aggregateOutputEvent(completedOutcome)
-          .increaseSequenceNumber
-          .aggregatePetriNetChanges(completedOutcome)
-          .addReceivedCorrelationId(completedOutcome)
-          .removeExecution(completedOutcome)
-
-      case failedOutcome: TransitionExecution.Outcome.Failed =>
-        transitionExecutionToFailedState(failedOutcome)
-    }
-
-  def addExecution(execution: TransitionExecution): RecipeInstanceState =
-    copy(executions = executions + (execution.id -> execution))
+  def addExecution(execution: TransitionExecution*): RecipeInstanceState =
+    copy(executions = executions ++ execution.map(ex => ex.id -> ex))
 
   def removeExecution(outcome: TransitionExecution.Outcome.Completed): RecipeInstanceState =
     copy(executions = executions - outcome.transitionExecutionId)

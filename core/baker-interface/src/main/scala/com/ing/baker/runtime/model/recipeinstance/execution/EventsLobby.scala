@@ -36,10 +36,7 @@ final class EventsLobby[F[_]] private[recipeinstance](
   def awaitForCompleted(implicit effect: Functor[F]): F[SensoryEventResult] =
     completedPromise.get
 
-  def reportTransitionStarted(transitionExecutionId: Long): F[Unit] =
-    knownRunningExecutions.update(_ + transitionExecutionId)
-
-  def reportTransitionFinished(transitionExecutionId: Long, output: Option[EventInstance])(implicit effect: Concurrent[F]): F[Unit] = {
+  def reportTransitionFinished(outcome: TransitionExecution.Outcome, enabledTransitions: Set[TransitionExecution] = Set.empty, output: Option[EventInstance] = None)(implicit effect: Concurrent[F]): F[Unit] = {
 
     def resolveEvent(eventName: String): F[Unit] =
       for {
@@ -60,7 +57,9 @@ final class EventsLobby[F[_]] private[recipeinstance](
       }
 
     for {
-      runningExecutionsLeft <- knownRunningExecutions.updateAndGet(_ - transitionExecutionId).map(_.size)
+      runningExecutions <- knownRunningExecutions.updateAndGet(
+        running => (running ++ enabledTransitions.map(_.id)) - outcome.transitionExecutionId)
+      runningExecutionsLeft = runningExecutions.size
       _ <- output.fold(effect.unit)(event =>
         knownOutcomeEvents.update(_ :+ event) *> resolveEvent(event.name))
       _ <- if (runningExecutionsLeft == 0) reportComplete else effect.unit
