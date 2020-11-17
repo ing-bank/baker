@@ -394,30 +394,9 @@ trait BakerModelSpecFailureTests[F[_]] { self: BakerModelSpec[F] =>
       } yield completed.sensoryEventStatus shouldBe SensoryEventStatus.Completed
     }
 
-    test("be able to visualize events that have been fired") { context =>
-      //This test only checks if the graphviz is different, not that the outcome is correct
-      for {
-        bakerAndRecipeId <- context.setupBakerWithRecipe("CheckEventRecipe")
-        (baker, recipeId) = bakerAndRecipeId
-        recipeInstanceId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, recipeInstanceId)
-        noEventsGraph = baker.getVisualState(recipeInstanceId)
-        //System.out.println(noEventsGraph)
-        //Handle first event
-        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient")))
-        firstEventGraph <- baker.getVisualState(recipeInstanceId)
-        //System.out.println(firstEventGraph)
-        _ = noEventsGraph should not be firstEventGraph
-        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(SecondEvent()))
-        secondEventGraph <- baker.getVisualState(recipeInstanceId)
-        //System.out.println(secondEventGraph)
-        _ = firstEventGraph should not be secondEventGraph
-      } yield succeed
-    }
-
     test("properly handle a retention period") { context =>
 
-      val retentionPeriod = 2 seconds
+      val retentionPeriod = 1 seconds
 
       val recipe: Recipe =
         Recipe("RetentionPeriodRecipe")
@@ -432,9 +411,7 @@ trait BakerModelSpecFailureTests[F[_]] { self: BakerModelSpec[F] =>
         _ <- baker.bake(recipeId, recipeInstanceId)
         //Should not fail
         _ <- baker.getRecipeInstanceState(recipeInstanceId)
-        _ <- effect.delay {
-          Thread.sleep(retentionPeriod.toMillis + 1000)
-        }
+        _ <- timer.sleep((retentionPeriod.toMillis + 100).millis).to[F]
         //Should fail
         _ <- baker.getRecipeInstanceState(recipeInstanceId).attempt.map {
           case Left(_: ProcessDeletedException) => succeed

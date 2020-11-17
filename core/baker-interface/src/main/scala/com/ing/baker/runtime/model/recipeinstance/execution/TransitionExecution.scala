@@ -91,6 +91,9 @@ private[recipeinstance] case class TransitionExecution(
         false
     }
 
+  def isInactive: Boolean =
+    !isActive
+
   def hasFailed: Boolean =
     state match {
       case _: TransitionExecution.State.Failed =>

@@ -8,6 +8,9 @@ import com.ing.baker.runtime.model.RecipeInstanceManager
 import com.ing.baker.runtime.model.RecipeInstanceManager.RecipeInstanceStatus
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
 import com.ing.baker.runtime.scaladsl.RecipeInstanceMetadata
+import com.ing.baker.runtime.serialization.Encryption
+
+import scala.concurrent.duration._
 
 object InMemoryRecipeInstanceManager {
 
@@ -24,7 +27,8 @@ final class InMemoryRecipeInstanceManager(store: Ref[IO, InMemoryRecipeInstanceM
 
   override def add(recipeInstanceId: String, recipe: CompiledRecipe): IO[Unit] =
     for {
-      newRecipeInstance <- RecipeInstance.empty[IO](recipe, recipeInstanceId)
+      // TODO move what is generic back to the RecipeInstanceManager trait and parametrize the recipe settings
+      newRecipeInstance <- RecipeInstance.empty[IO](recipe, recipeInstanceId, RecipeInstance.Settings(Some(5.seconds), Encryption.NoEncryption, Seq.empty))
       _ <- store.update(_ + (recipeInstanceId -> RecipeInstanceStatus.Active(newRecipeInstance)))
     } yield ()
 
@@ -48,6 +52,20 @@ final class InMemoryRecipeInstanceManager(store: Ref[IO, InMemoryRecipeInstanceM
             |""".stripMargin))
       }
     } yield recipeInstance
+
+  override def idleStop(recipeInstanceId: String): IO[Unit] =
+    for {
+      current <- get(recipeInstanceId)
+      timestamp <- timer.clock.realTime(MILLISECONDS)
+      _ <- store.update { store =>
+        current match {
+          case Some(RecipeInstanceStatus.Active(recipeInstance)) =>
+            store + (recipeInstanceId -> RecipeInstanceStatus.Deleted(recipeInstance.recipe.recipeId, recipeInstance.createdOn, timestamp))
+          case _ =>
+            store
+        }
+      }
+    } yield ()
 
   override def getAllRecipeInstancesMetadata: IO[Set[RecipeInstanceMetadata]] =
     store.get.flatMap(_.toList.traverse {

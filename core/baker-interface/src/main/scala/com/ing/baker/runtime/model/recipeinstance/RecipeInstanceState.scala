@@ -24,6 +24,9 @@ case class RecipeInstanceState(
   def activeExecutions: Iterable[TransitionExecution] =
     executions.values.filter(_.isActive)
 
+  def isInactive: Boolean =
+    executions.values.forall(_.isInactive)
+
   def getInteractionExecution(interactionName: String): Option[(InteractionTransition, TransitionExecution)] =
     for {
       transition <- recipe.interactionTransitions.find(_.interactionName == interactionName)

@@ -1,8 +1,11 @@
 package com.ing.baker.runtime.model
 
+import java.util.UUID
+
 import cats.effect.ConcurrentEffect
 import cats.implicits._
 import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.runtime.scaladsl.EventInstance
 
 import scala.reflect.ClassTag
 
@@ -49,6 +52,27 @@ trait BakerModelSpecEnquireTests[F[_]] { self: BakerModelSpec[F] =>
           .foreach(r => assert(r.compiledRecipe.recipeId == recipeId && r.errors.isEmpty))
         _ = recipeInformations.get(recipeId2)
           .foreach(r => assert(r.compiledRecipe.recipeId == recipeId2 && r.errors.isEmpty))
+      } yield succeed
+    }
+
+    test("be able to visualize events that have been fired") { context =>
+      //This test only checks if the graphviz is different, not that the outcome is correct
+      for {
+        bakerAndRecipeId <- context.setupBakerWithRecipe("CheckEventRecipe")
+        (baker, recipeId) = bakerAndRecipeId
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        noEventsGraph <- baker.getVisualState(recipeInstanceId)
+        //System.out.println(noEventsGraph)
+        //Handle first event
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient")))
+        firstEventGraph <- baker.getVisualState(recipeInstanceId)
+        //System.out.println(firstEventGraph)
+        _ = noEventsGraph should not be firstEventGraph
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(SecondEvent()))
+        secondEventGraph <- baker.getVisualState(recipeInstanceId)
+        //System.out.println(secondEventGraph)
+        _ = firstEventGraph should not be secondEventGraph
       } yield succeed
     }
   }

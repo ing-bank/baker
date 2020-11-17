@@ -124,6 +124,8 @@ trait RecipeInstanceManager[F[_]] {
 
   def update(recipeInstanceId: String, updateFunction: RecipeInstance[F] => RecipeInstance[F]): F[RecipeInstance[F]]
 
+  def idleStop(recipeInstanceId: String): F[Unit]
+
   def getAllRecipeInstancesMetadata: F[Set[RecipeInstanceMetadata]]
 
   def getExistent(recipeInstanceId: String)(implicit effect: Sync[F]): F[RecipeInstance[F]] =

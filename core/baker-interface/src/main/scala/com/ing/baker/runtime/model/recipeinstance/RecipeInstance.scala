@@ -11,12 +11,16 @@ import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
 import com.ing.baker.runtime.model.recipeinstance.execution.{EventsLobby, ExecutionSequence, TransitionExecution}
 import com.ing.baker.runtime.scaladsl.EventInstance
+import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.duration._
 
 case class RecipeInstance[F[_]](
                                  recipeInstanceId: String,
+                                 recipe: CompiledRecipe,
+                                 createdOn: Long,
+                                 settings: RecipeInstance.Settings,
                                  state: Ref[F, RecipeInstanceState],
                                  runningSequences: Ref[F, Map[Long, ExecutionSequence[F]]],
                                ) extends LazyLogging {
@@ -120,12 +124,16 @@ case class RecipeInstance[F[_]](
 
 object RecipeInstance {
 
-  def empty[F[_]](recipe: CompiledRecipe, recipeInstanceId: String)(implicit effect: Sync[F], timer: Timer[F]): F[RecipeInstance[F]] =
+  case class Settings(idleTTL: Option[FiniteDuration],
+                      encryption: Encryption,
+                      ingredientsFilter: Seq[String])
+
+  def empty[F[_]](recipe: CompiledRecipe, recipeInstanceId: String, settings: Settings)(implicit effect: Sync[F], timer: Timer[F]): F[RecipeInstance[F]] =
     for {
       timestamp <- timer.clock.realTime(MILLISECONDS)
       state <- Ref.of[F, RecipeInstanceState](RecipeInstanceState.empty(recipeInstanceId, recipe, timestamp))
       runningSequences <- Ref.of[F, Map[Long, ExecutionSequence[F]]](Map.empty)
-    } yield RecipeInstance(recipeInstanceId, state, runningSequences)
+    } yield RecipeInstance(recipeInstanceId, recipe, timestamp, settings, state, runningSequences)
 
   class FatalInteractionException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
 }

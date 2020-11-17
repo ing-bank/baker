@@ -7,7 +7,7 @@ import com.ing.baker.il.petrinet.{InteractionTransition, Place}
 import com.ing.baker.petrinet.api.{Marking, marshalMarking}
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.recipeinstance.execution.ExecutionSequence.ScheduledRetries
-import com.ing.baker.runtime.model.recipeinstance.{FailureStrategy, RecipeInstance}
+import com.ing.baker.runtime.model.recipeinstance.{FailureStrategy, RecipeInstance, RecipeInstanceState}
 import com.ing.baker.runtime.scaladsl.EventInstance
 
 import scala.concurrent.duration._
@@ -81,6 +81,7 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
       enabledExecutions <- recipeInstance.state.modify(_.recordCompletedExecutionOutcome(outcome))
       _ <- eventsLobby.reportTransitionFinished(outcome, enabledExecutions, outcome.output)
       _ <- enabledExecutions.toList.traverse(step)
+      _ <- scheduleIdleStop
     } yield ()
 
   private def handleFailureOutcome(outcome: TransitionExecution.Outcome.Failed): F[Unit] =
@@ -133,6 +134,27 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
           //IO.delay(recipeInstance.logger.error("Cancellation of transition execution failed", e))
           IO.unit
       }.to[F]
+    } yield ()
+
+  def scheduleIdleStop: F[Unit] =
+    for {
+      currentState <- recipeInstance.state.get
+      _ <- recipeInstance.settings.idleTTL match {
+        case Some(idleTTL) if currentState.isInactive =>
+          timer.sleep(idleTTL) *> confirmIdleStop(currentState.sequenceNumber)
+        case None =>
+          effect.unit
+      }
+    } yield ()
+
+  def confirmIdleStop(sequenceNumber: Long): F[Unit] =
+    for {
+      currentState <- recipeInstance.state.get
+      _ <-
+        if (currentState.isInactive && currentState.sequenceNumber == sequenceNumber)
+          components.recipeInstanceManager.idleStop(recipeInstance.recipeInstanceId)
+        else
+          effect.unit
     } yield ()
 
   // TODO all of these must be found by the recipe instance manager for execution, for such we must save these contexts into the manager besides the recipe instance
