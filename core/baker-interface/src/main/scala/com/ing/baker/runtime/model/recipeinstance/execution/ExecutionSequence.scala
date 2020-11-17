@@ -100,7 +100,8 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
       case FailureStrategy.BlockTransition =>
         for {
           _ <- recipeInstance.state.update(_.transitionExecutionToFailedState(outcome))
-          _ = println(Console.RED_B +
+          // TODO CLEAN
+          _ = (Console.RED_B +
             s""" Transition failed: ${outcome.failureReason}
               |""".stripMargin + Console.RESET)
           _ <- eventsLobby.reportTransitionFinished(outcome)
@@ -142,7 +143,7 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
       _ <- recipeInstance.settings.idleTTL match {
         case Some(idleTTL) if currentState.isInactive =>
           timer.sleep(idleTTL) *> confirmIdleStop(currentState.sequenceNumber)
-        case None =>
+        case _ =>
           effect.unit
       }
     } yield ()

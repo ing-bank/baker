@@ -344,9 +344,11 @@ trait BakerModelSpecFailureTests[F[_]] { self: BakerModelSpec[F] =>
         (baker, recipeId) = bakerAndRecipeId
         recipeInstanceId = UUID.randomUUID().toString
 
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        _ = when(testInteractionThreeMock.apply(anyString(), anyString())).thenReturn(InteractionThreeSuccessful(interactionThreeIngredientValue))
+
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
-
         _ = verify(testInteractionOneMock, times(1)).apply(recipeInstanceId.toString, initialIngredientValue)
         _ = verify(testInteractionThreeMock, times(1)).apply(interactionOneIngredientValue, interactionOneIngredientValue)
       } yield succeed
@@ -392,32 +394,6 @@ trait BakerModelSpecFailureTests[F[_]] { self: BakerModelSpec[F] =>
         _ <- baker.bake(recipeId, recipeInstanceId)
         completed <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("")))
       } yield completed.sensoryEventStatus shouldBe SensoryEventStatus.Completed
-    }
-
-    test("properly handle a retention period") { context =>
-
-      val retentionPeriod = 1 seconds
-
-      val recipe: Recipe =
-        Recipe("RetentionPeriodRecipe")
-          .withSensoryEvents(initialEvent)
-          .withInteractions(interactionOne)
-          .withRetentionPeriod(retentionPeriod)
-
-      for {
-        bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, mockImplementations)
-        (baker, recipeId) = bakerAndRecipeId
-        recipeInstanceId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, recipeInstanceId)
-        //Should not fail
-        _ <- baker.getRecipeInstanceState(recipeInstanceId)
-        _ <- timer.sleep((retentionPeriod.toMillis + 100).millis).to[F]
-        //Should fail
-        _ <- baker.getRecipeInstanceState(recipeInstanceId).attempt.map {
-          case Left(_: ProcessDeletedException) => succeed
-          case _ => fail("baker.getRecipeInstanceState(recipeInstanceId) should have failed")
-        }
-      } yield succeed
     }
 
     test("block interaction and log error message when a null ingredient is provided by an event provided by an interaction") { context =>

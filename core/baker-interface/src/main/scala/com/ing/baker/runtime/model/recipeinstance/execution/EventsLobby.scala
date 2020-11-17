@@ -62,6 +62,13 @@ final class EventsLobby[F[_]] private[recipeinstance](
       runningExecutionsLeft = runningExecutions.size
       _ <- output.fold(effect.unit)(event =>
         knownOutcomeEvents.update(_ :+ event) *> resolveEvent(event.name))
+      // TODO make it a debug log
+      _ = (Console.MAGENTA + "\n" +
+        s"""Finished: transitionId = ${outcome.transitionId} | executionId = ${outcome.transitionExecutionId}
+           |Output: $output
+           |Enabled: ${enabledTransitions.map(t => "\n\t" + t.transition.label + " | transitionId = " + t.transition.id + " | executionId = " + t.id)}
+           |Left: $runningExecutions
+           |""".stripMargin + Console.RESET)
       _ <- if (runningExecutionsLeft == 0) reportComplete else effect.unit
     } yield ()
   }
