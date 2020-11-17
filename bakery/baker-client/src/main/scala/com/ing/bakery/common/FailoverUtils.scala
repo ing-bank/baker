@@ -47,7 +47,7 @@ object FailoverUtils extends LazyLogging {
       policy = limitRetries[IO](fos.size * config.retryTimes) |+| exponentialBackoff[IO](config.initialDelay),
       onError = (ex: Throwable, retryDetails: RetryDetails) => IO {
         val message = s"Failed to call ${fos.uri}, retry #${retryDetails.retriesSoFar}, error: ${ex.getMessage}"
-        if (retryDetails.givingUp) logger.error(message) else logger.warn(message)
+        if (retryDetails.givingUp) logger.error(message) else logger.debug(message)
         fos.failed()
         ()
       })(call(fos.uri))
