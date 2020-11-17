@@ -18,6 +18,13 @@ variables:
     value: "201009"
 
 steps:
+  - task: Bash@3
+    displayName: Scan sources
+    inputs:
+      targetType: 'inline'
+      script: |
+        echo $(Build.Repository.Name)
+      failOnStderr: true
 
   - task: DownloadSecureFile@1
     displayName: Get source scan script
@@ -67,27 +74,13 @@ steps:
         sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} coverage test coverageReport && bash <(curl -s https://codecov.io/bash)
       failOnStderr: false
 
-# uncomment before merge!
-#  - task: Bash@3
-#    displayName: 'Building and testing examples'
-#    inputs:
-#      targetType: 'inline'
-#      script: |
-#        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project bakery-interaction-example-make-payment-and-ship-items; test; project bakery-interaction-example-reserve-items; test; project bakery-client-example; test; project bakery-kafka-listener-example; test"
-#      failOnStderr: false
-
-  # publish from PR for test, don't merge this!!
   - task: Bash@3
-    displayName: 'Prepare publishing credentials'
+    displayName: 'Building and testing examples'
     inputs:
       targetType: 'inline'
-      script: printf "realm=pkgs.dev.azure.com\nhost=pkgs.dev.azure.com\nuser=${FEEDUSER}\npassword=${FEEDPASSWORD}\n" > ~/.credentials
-    env:
-      FEEDPASSWORD: $(feedPassword) # secrets extracted explicitly, other vars - from the group
-
-  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "clean; aetherDeploy"
-    displayName: 'Building and publishing Baker with examples'
-  ## remove to here
+      script: |
+        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project bakery-interaction-example-make-payment-and-ship-items; test; project bakery-interaction-example-reserve-items; test; project bakery-client-example; test; project bakery-kafka-listener-example; test"
+      failOnStderr: false
 
   - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
     - task: Bash@3
