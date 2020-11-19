@@ -4,7 +4,7 @@ import cats.data.{EitherT, OptionT}
 import cats.effect.{ConcurrentEffect, Sync, Timer}
 import cats.implicits._
 import cats.{Functor, Monad}
-import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common.{BakerException, RejectReason}
 import com.ing.baker.runtime.model.RecipeInstanceManager.{BakeOutcome, FireSensoryEventRejection, GetRecipeInstanceStateOutcome, RecipeInstanceStatus}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
@@ -168,6 +168,17 @@ trait RecipeInstanceManager[F[_]] {
       recipeInstance <- getRecipeInstanceWithPossibleRejection(recipeInstanceId)
       eventsLobby <- recipeInstance.fire(event, correlationId)
     } yield eventsLobby
+
+  def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle = RecipeVisualStyle.default)(implicit effect: Sync[F]): F[String] =
+    for {
+      recipeInstance <- getExistent(recipeInstanceId)
+      currentState <- recipeInstance.state.get
+    } yield RecipeVisualizer.visualizeRecipe(
+      recipeInstance.recipe,
+      style,
+      eventNames = currentState.events.map(_.name).toSet,
+      ingredientNames = currentState.ingredients.keySet
+    )
 
   def stopRetryingInteraction(recipeInstanceId: String, interactionName: String)(implicit effect: ConcurrentEffect[F]): F[Unit] =
     for {

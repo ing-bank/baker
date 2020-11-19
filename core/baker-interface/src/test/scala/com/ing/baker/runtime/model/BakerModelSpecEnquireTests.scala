@@ -5,8 +5,12 @@ import java.util.UUID
 import cats.effect.ConcurrentEffect
 import cats.implicits._
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.runtime.scaladsl.EventInstance
+import com.ing.baker.recipe.scaladsl.Recipe
+import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceF}
+import org.mockito.Matchers.{eq => mockitoEq, _}
+import org.mockito.Mockito._
 
+import scala.concurrent.duration._
 import scala.reflect.ClassTag
 
 trait BakerModelSpecEnquireTests[F[_]] { self: BakerModelSpec[F] =>
@@ -63,8 +67,6 @@ trait BakerModelSpecEnquireTests[F[_]] { self: BakerModelSpec[F] =>
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         noEventsGraph <- baker.getVisualState(recipeInstanceId)
-        //System.out.println(noEventsGraph)
-        //Handle first event
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient")))
         firstEventGraph <- baker.getVisualState(recipeInstanceId)
         //System.out.println(firstEventGraph)
@@ -75,5 +77,32 @@ trait BakerModelSpecEnquireTests[F[_]] { self: BakerModelSpec[F] =>
         _ = firstEventGraph should not be secondEventGraph
       } yield succeed
     }
+/*
+    test("testy test") { context =>
+      val recipe = Recipe("TestyTestRecipe")
+        .withInteractions(
+          interactionFour
+            .withRequiredEvents(secondEvent),
+        )
+        .withSensoryEvents(
+          eventFromInteractionTwo,
+          secondEvent)
+      for {
+        bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, Seq(InteractionInstanceF.unsafeFrom[F](testInteractionFourMock)))
+        (baker, recipeId) = bakerAndRecipeId
+        recipeInstanceId = UUID.randomUUID().toString
+        _ = when(testInteractionFourMock.apply()).thenReturn(InteractionFourSuccessful("success-ingredient"))
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(EventFromInteractionTwo("my-ingredient-value")))
+        vis <- baker.getVisualState(recipeInstanceId)
+        compiled = RecipeCompiler.compileRecipe(recipe)
+        visPetri = compiled.getPetriNetVisualization
+        _ = println()
+        _ = println(vis)
+        _ = println()
+        _ <- timer.sleep(1.seconds).to[F]
+      } yield succeed
+    }
+*/
   }
 }

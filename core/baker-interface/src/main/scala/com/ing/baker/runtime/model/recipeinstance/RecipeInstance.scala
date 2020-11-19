@@ -9,6 +9,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
+import com.ing.baker.runtime.model.recipeinstance.execution.ExecutionSequence.OrphanTransitionExecution
 import com.ing.baker.runtime.model.recipeinstance.execution.{EventsLobby, ExecutionSequence, TransitionExecution}
 import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.runtime.serialization.Encryption
@@ -37,9 +38,9 @@ case class RecipeInstance[F[_]](
     for {
       currentTime <- ok ( timer.clock.realTime(MILLISECONDS) )
       currentState <- ok ( state.get )
-      initialExecution <- logRejectionReasonIfAny(
+      orphanInitialExecution <- logRejectionReasonIfAny(
         currentState.validateExecution(input, correlationId, currentTime))
-      startedExecutionSequence <- ok ( ExecutionSequence.base[F](recipeInstance = this, initialExecution) )
+      startedExecutionSequence <- ok ( ExecutionSequence.base[F](recipeInstance = this, orphanInitialExecution) )
       _ <- ok ( addRunningSequence(startedExecutionSequence) )
     } yield startedExecutionSequence.eventsLobby
 
@@ -101,7 +102,7 @@ case class RecipeInstance[F[_]](
     * @param effect
     * @return
     */
-  private def logRejectionReasonIfAny(validation: Either[(FireSensoryEventRejection, String), TransitionExecution])(implicit effect: Sync[F]): EitherT[F, FireSensoryEventRejection, TransitionExecution] = {
+  private def logRejectionReasonIfAny(validation: Either[(FireSensoryEventRejection, String), OrphanTransitionExecution])(implicit effect: Sync[F]): EitherT[F, FireSensoryEventRejection, OrphanTransitionExecution] = {
     // TODO relate this to the recipe instance logger
     EitherT(validation match {
       case Left((rejection, reason)) =>

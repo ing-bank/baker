@@ -7,12 +7,15 @@ import com.ing.baker.il.petrinet.{InteractionTransition, Place}
 import com.ing.baker.petrinet.api.{Marking, marshalMarking}
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.recipeinstance.execution.ExecutionSequence.ScheduledRetries
-import com.ing.baker.runtime.model.recipeinstance.{FailureStrategy, RecipeInstance, RecipeInstanceState}
+import com.ing.baker.runtime.model.recipeinstance.{FailureStrategy, RecipeInstance}
 import com.ing.baker.runtime.scaladsl.EventInstance
 
 import scala.concurrent.duration._
 
 object ExecutionSequence {
+
+  type OrphanTransitionExecution =
+    Long => TransitionExecution
 
   /** Base case of the recipe instance execution semantics.
     *
@@ -25,7 +28,7 @@ object ExecutionSequence {
     * @tparam F
     * @return
     */
-  def base[F[_]](recipeInstance: RecipeInstance[F], initialExecution: TransitionExecution)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[ExecutionSequence[F]] =
+  def base[F[_]](recipeInstance: RecipeInstance[F], orphanInitialExecution: OrphanTransitionExecution)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[ExecutionSequence[F]] =
     for {
       eventsLobby <- EventsLobby.build[F]
       scheduledRetries <- Ref.of[F, Map[Long, CancelToken[F]]](Map.empty)
@@ -33,8 +36,9 @@ object ExecutionSequence {
         recipeInstance = recipeInstance,
         scheduledRetries = scheduledRetries,
         eventsLobby = eventsLobby)
+      initialExecution = orphanInitialExecution(executionSequence.sequenceId)
       _ <- recipeInstance.runningSequences.update(_ + (executionSequence.sequenceId -> executionSequence))
-      _ <- recipeInstance.state.update(_.addExecution(initialExecution.setOwner(executionSequence.sequenceId)))
+      _ <- recipeInstance.state.update(_.addExecution(initialExecution))
       _ <- executionSequence.step(initialExecution)
     } yield executionSequence
 
@@ -84,10 +88,17 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
       _ <- scheduleIdleStop
     } yield ()
 
-  private def handleFailureOutcome(outcome: TransitionExecution.Outcome.Failed): F[Unit] =
+  private def handleFailureOutcome(outcome: TransitionExecution.Outcome.Failed): F[Unit] = {
+    // TODO CLEAN
+    (Console.RED_B +
+      s""" Failed: transitionId = ${outcome.transitionId} | executionId = ${outcome.transitionExecutionId}
+         | Strategy: ${outcome.exceptionStrategy}
+         | Reason: ${outcome.failureReason}
+         |""".stripMargin + Console.RESET)
     outcome.exceptionStrategy match {
       case FailureStrategy.Continue(marking, output) =>
         handleCompletedOutcome(TransitionExecution.Outcome.Completed(
+          executionSequenceId = outcome.executionSequenceId,
           transitionExecutionId = outcome.transitionExecutionId,
           transitionId = outcome.transitionId,
           correlationId = outcome.correlationId,
@@ -100,10 +111,6 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
       case FailureStrategy.BlockTransition =>
         for {
           _ <- recipeInstance.state.update(_.transitionExecutionToFailedState(outcome))
-          // TODO CLEAN
-          _ = (Console.RED_B +
-            s""" Transition failed: ${outcome.failureReason}
-              |""".stripMargin + Console.RESET)
           _ <- eventsLobby.reportTransitionFinished(outcome)
         } yield ()
 
@@ -115,6 +122,7 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
           _ <- scheduledRetries.update(_ + (outcome.transitionExecutionId -> cancelToken))
         } yield ()
     }
+  }
 
   def cancelScheduledExecution(transitionExecutionId: Long): F[Unit] =
     for {
@@ -167,7 +175,16 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
         timestamp <- timer.clock.realTime(MILLISECONDS)
         failureReason <- execution.getFailureReason
         outcome = TransitionExecution.Outcome.Failed(
-          execution.id, execution.transition.id, execution.correlationId, timestamp, timestamp, marshalMarking(execution.consume), execution.input, failureReason, FailureStrategy.BlockTransition)
+          executionSequenceId = execution.executionSequenceId,
+          transitionExecutionId = execution.id,
+          transitionId = execution.transition.id,
+          execution.correlationId,
+          timestamp,
+          timestamp,
+          marshalMarking(execution.consume),
+          execution.input,
+          failureReason,
+          FailureStrategy.BlockTransition)
         // TODO ^
         _ <- handleFailureOutcome(outcome)
       } yield ()
@@ -180,7 +197,16 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
         timestamp <- timer.clock.realTime(MILLISECONDS)
         failureReason <- execution.getFailureReason
         outcome = TransitionExecution.Outcome.Failed(
-          execution.id, execution.transition.id, execution.correlationId, timestamp, timestamp, marshalMarking(execution.consume), execution.input, failureReason, FailureStrategy.RetryWithDelay(0))
+          executionSequenceId = execution.executionSequenceId,
+          transitionExecutionId = execution.id,
+          transitionId = execution.transition.id,
+          execution.correlationId,
+          timestamp,
+          timestamp,
+          marshalMarking(execution.consume),
+          execution.input,
+          failureReason,
+          FailureStrategy.RetryWithDelay(0))
         // TODO ^
         _ <- handleFailureOutcome(outcome)
       } yield ()
@@ -198,7 +224,17 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
         timestamp <- timer.clock.realTime(MILLISECONDS)
         failureReason <- execution.getFailureReason
         outcome = TransitionExecution.Outcome.Failed(
-          execution.id, execution.transition.id, execution.correlationId, timestamp, timestamp, marshalMarking(execution.consume), execution.input, failureReason, FailureStrategy.Continue(producedMarking, transformedEvent))
+          executionSequenceId = execution.executionSequenceId,
+          transitionExecutionId = execution.id,
+          transitionId = execution.transition.id,
+          execution.correlationId,
+          timestamp,
+          timestamp,
+          marshalMarking(execution.consume),
+          execution.input,
+          failureReason,
+          FailureStrategy.Continue(producedMarking, transformedEvent)
+        )
         // TODO ^
         _ <- handleFailureOutcome(outcome)
       } yield ()

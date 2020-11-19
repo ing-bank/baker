@@ -288,7 +288,9 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     * @param recipeInstanceId The process identifier.
     * @return A visual (.dot) representation of the process state.
     */
-  override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle): F[String] = ???
+  override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): F[String] =
+    components.recipeInstanceManager.getVisualState(recipeInstanceId, style)
+      .timeout(config.inquireTimeout)
 
   private def doRegisterEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit, processFilter: String => Boolean): F[Unit] =
     registerBakerEventListener {

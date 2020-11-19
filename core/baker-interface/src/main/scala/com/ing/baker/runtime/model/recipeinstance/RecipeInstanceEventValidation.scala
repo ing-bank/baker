@@ -4,6 +4,7 @@ import com.ing.baker.il.EventDescriptor
 import com.ing.baker.il.petrinet.{Place, Transition}
 import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
+import com.ing.baker.runtime.model.recipeinstance.execution.ExecutionSequence.OrphanTransitionExecution
 import com.ing.baker.runtime.model.recipeinstance.execution.TransitionExecution
 import com.ing.baker.runtime.scaladsl.EventInstance
 
@@ -16,7 +17,7 @@ trait RecipeInstanceEventValidation { recipeInstance: RecipeInstanceState =>
   type EventValidation[A] =
     Either[(FireSensoryEventRejection, Reason), A]
 
-  def validateExecution[F[_]](input: EventInstance, correlationId: Option[String], currentTime: Long): EventValidation[TransitionExecution] = {
+  def validateExecution[F[_]](input: EventInstance, correlationId: Option[String], currentTime: Long): EventValidation[OrphanTransitionExecution] = {
     for {
       transitionAndDescriptor <- eventIsInRecipe(input)
       (transition, descriptor) = transitionAndDescriptor
@@ -26,8 +27,9 @@ trait RecipeInstanceEventValidation { recipeInstance: RecipeInstanceState =>
       _ <- transitionNotBlocked(transition)
       params <- consumableTokensAreAvailable(transition)
       execution =
-        TransitionExecution(
+        (parentExecutionSequenceId: Long) => TransitionExecution(
           recipeInstanceId = recipeInstance.recipeInstanceId,
+          executionSequenceId = parentExecutionSequenceId,
           recipe = recipeInstance.recipe,
           transition = transition,
           consume = params.head,

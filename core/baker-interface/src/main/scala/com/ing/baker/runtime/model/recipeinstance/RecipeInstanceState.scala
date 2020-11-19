@@ -9,6 +9,8 @@ import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.api._
 import com.ing.baker.types.Value
 
+import scala.collection.immutable
+
 case class RecipeInstanceState(
                                 recipeInstanceId: String,
                                 recipe: CompiledRecipe,
@@ -53,14 +55,40 @@ case class RecipeInstanceState(
   def availableMarkings: Marking[Place] =
     allMarking |-| reservedMarkings
 
+  def consumableTokens(p: Place, transition: Transition, ofMarking: Marking[Place]): MultiSet[Any] = {
+    //ofMarking.getOrElse(p, MultiSet.empty)
+
+    val edge = petriNet.findPTEdge(p, transition).map(_.asInstanceOf[Edge]).get
+
+    ofMarking.get(p) match {
+      case None ⇒ MultiSet.empty
+      case Some(tokens) ⇒ tokens.filter { case (e, _) ⇒ edge.isAllowed(e) }
+    }
+  }
+
   def consumableMarkings(t: Transition, ofMarking: Marking[Place]): Iterable[Marking[Place]] = {
+    /*
+    // TODO this is not the most efficient, should break early when consumable tokens < edge weight
 
-    def consumableTokens(p: Place, ofMarking: Marking[Place]): MultiSet[Any] =
-      ofMarking.getOrElse(p, MultiSet.empty)
+    val consumable: immutable.Iterable[(Place, Int, MultiSet[Any])] = petriNet.inMarking(t).map {
+      case (place, count) ⇒ (place, count, ofMarking.getOrElse(place, MultiSet.empty))
+    }
 
+    // check if any any places have an insufficient number of tokens
+    if (consumable.exists {case (_, count, tokens) ⇒ tokens.multisetSize < count})
+      Seq.empty
+    else {
+      val consume = consumable.map {
+        case (place, count, tokens) ⇒ place -> MultiSet.copyOff[Any](tokens.allElements.take(count))
+      }.toMarking
+
+      // TODO lazily compute all permutations instead of only providing the first result
+      Seq(consume)
+    }
+    */
     // TODO this is not the most efficient, should break early when consumable tokens < edge weight
     val consumable = recipe.petriNet.inMarking(t).map {
-      case (place, count) ⇒ (place, count, consumableTokens(place, ofMarking))
+      case (place, count) ⇒ (place, count, consumableTokens(place, t, ofMarking))
     }
     // check if any any places have an insufficient number of tokens
     if (consumable.exists { case (_, count, tokens) ⇒ tokens.multisetSize < count })
@@ -103,16 +131,20 @@ case class RecipeInstanceState(
     * By default, cold transitions (without in adjacent places) are not fired automatically.
     */
   def canBeFiredAutomatically(transition: Transition): Boolean =
-    petriNet.incomingPlaces(transition).nonEmpty
+    transition match {
+      case EventTransition(_, true, _) => false
+      case _ => true
+    }
 
+  /*
   /** Finds the first transition that is enabled and can be fired automatically. */
-  def firstEnabledExecution: Option[TransitionExecution] = {
+  def firstEnabledExecution: (RecipeInstanceState, Option[TransitionExecution]) = {
     val enabled = enabledParameters(availableMarkings)
     val canFire = enabled.find { case (transition, _) ⇒
       !isBlocked(transition) && canBeFiredAutomatically(transition)
     }
     canFire.map { case (transition, markings) ⇒
-      TransitionExecution(
+      val execution = TransitionExecution(
         recipeInstanceId = recipeInstanceId,
         recipe = recipe,
         transition = transition,
@@ -121,18 +153,31 @@ case class RecipeInstanceState(
         ingredients = ingredients,
         correlationId = None
       )
-    }
+      (addExecution(execution), Some(execution))
+    }.getOrElse(this, None)
   }
 
+  def allEnabledExecutions2: (RecipeInstanceState, Set[TransitionExecution]) = {
+    firstEnabledExecution match {
+      case (newInstance, None) =>
+        (newInstance, Set.empty)
+      case (newInstance, Some(execution)) =>
+        val (finalInstance, accExecutions) = newInstance.allEnabledExecutions
+        (finalInstance, accExecutions + execution)
+    }
+  }
+   */
+
   /** Finds all enabled transitions that can be fired automatically. */
-  def allEnabledExecutions: Set[TransitionExecution] = {
+  def allEnabledExecutions(parentExecutionSequenceId: Long): (RecipeInstanceState, Set[TransitionExecution]) = {
     val enabled  = enabledParameters(availableMarkings)
     val canFire = enabled.filter { case (transition, _) ⇒
       !isBlocked(transition) && canBeFiredAutomatically(transition)
     }
-    canFire.map {
+    val executions = canFire.map {
       case (transition, markings) =>
         TransitionExecution(
+          executionSequenceId = parentExecutionSequenceId,
           recipeInstanceId = recipeInstanceId,
           recipe = recipe,
           transition = transition,
@@ -141,17 +186,17 @@ case class RecipeInstanceState(
           ingredients = ingredients,
           correlationId = None
         )
-    }.toSet
+    }.toSeq
+    addExecution(executions: _*) -> executions.toSet
   }
 
   def recordCompletedExecutionOutcome(completedOutcome: TransitionExecution.Outcome.Completed): (RecipeInstanceState, Set[TransitionExecution]) = {
-    val aggregated = aggregateOutputEvent(completedOutcome)
+    aggregateOutputEvent(completedOutcome)
       .increaseSequenceNumber
       .aggregatePetriNetChanges(completedOutcome)
       .addReceivedCorrelationId(completedOutcome)
       .removeExecution(completedOutcome)
-    val enabledExecutions = aggregated.allEnabledExecutions
-    (aggregated.addExecution(enabledExecutions.toSeq: _*), enabledExecutions)
+      .allEnabledExecutions(completedOutcome.executionSequenceId)
   }
 
   def addExecution(execution: TransitionExecution*): RecipeInstanceState =
@@ -188,6 +233,7 @@ case class RecipeInstanceState(
     lazy val newExecutionState =
       TransitionExecution(
         id = failedOutcome.transitionExecutionId,
+        executionSequenceId = failedOutcome.executionSequenceId,
         recipeInstanceId = recipeInstanceId,
         recipe = recipe,
         transition = transition,

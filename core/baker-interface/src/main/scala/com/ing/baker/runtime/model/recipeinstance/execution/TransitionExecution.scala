@@ -39,7 +39,8 @@ object TransitionExecution {
 
   object Outcome {
 
-    case class Completed(transitionExecutionId: Long,
+    case class Completed(executionSequenceId: Long,
+                         transitionExecutionId: Long,
                          transitionId: Long,
                          correlationId: Option[String],
                          timeStarted: Long,
@@ -49,7 +50,8 @@ object TransitionExecution {
                          output: Option[EventInstance]
                         ) extends Outcome
 
-    case class Failed(transitionExecutionId: Long,
+    case class Failed(executionSequenceId: Long,
+                      transitionExecutionId: Long,
                       transitionId: Long,
                       correlationId: Option[String],
                       timeStarted: Long,
@@ -67,7 +69,7 @@ object TransitionExecution {
   */
 private[recipeinstance] case class TransitionExecution(
   id: Long = TransitionExecution.generateId,
-  executionSequenceId: Long = -1,
+  executionSequenceId: Long,
   recipeInstanceId: String,
   recipe: CompiledRecipe,
   transition: Transition,
@@ -77,9 +79,6 @@ private[recipeinstance] case class TransitionExecution(
   correlationId: Option[String],
   state: TransitionExecution.State = TransitionExecution.State.Active
 ) extends LazyLogging {
-
-  def setOwner(owner: Long): TransitionExecution =
-    copy(executionSequenceId = owner)
 
   def isActive: Boolean =
     state match {
@@ -144,15 +143,15 @@ private[recipeinstance] case class TransitionExecution(
           producedMarkingAndOutput <- enableTransition
           (producedMarking, output) = producedMarkingAndOutput
           endTime <- timer.clock.realTime(MILLISECONDS)
-        } yield TransitionExecution.Outcome.Completed( id, transition.getId, correlationId, startTime, endTime, marshalMarking(consume), producedMarking.marshall, output )
+        } yield TransitionExecution.Outcome.Completed(executionSequenceId, id, transition.getId, correlationId, startTime, endTime, marshalMarking(consume), producedMarking.marshall, output )
       // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
       execution.handleError { e ⇒
         val failureStrategy = handleInteractionInstanceException(e, failureCount + 1, startTime, recipe.petriNet.outMarking(transition))
-        TransitionExecution.Outcome.Failed(id, transition.getId, correlationId, startTime, System.currentTimeMillis(), marshalMarking(consume), input, exceptionStackTrace(e), failureStrategy)
+        TransitionExecution.Outcome.Failed(executionSequenceId, id, transition.getId, correlationId, startTime, System.currentTimeMillis(), marshalMarking(consume), input, exceptionStackTrace(e), failureStrategy)
         // If an exception was thrown while computing the failure strategy we block the interaction from firing
       }.handleError { e =>
         logger.error(s"Exception while handling transition failure", e)
-        TransitionExecution.Outcome.Failed(id, transition.getId, correlationId, startTime, System.currentTimeMillis(), marshalMarking(consume), input, exceptionStackTrace(e), FailureStrategy.BlockTransition)
+        TransitionExecution.Outcome.Failed(executionSequenceId, id, transition.getId, correlationId, startTime, System.currentTimeMillis(), marshalMarking(consume), input, exceptionStackTrace(e), FailureStrategy.BlockTransition)
       }
     }
   }
