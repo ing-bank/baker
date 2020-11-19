@@ -22,11 +22,12 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
 
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
-  scalaVersion := "2.12.11",
-  crossScalaVersions := Seq("2.12.11"),
+  scalaVersion := "2.12.12",
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
+  javacOptions := Seq("-source", "1.8", "-target", "1.8"),
   scalacOptions := Seq(
+    s"-target:jvm-1.8",
     "-unchecked",
     "-deprecation",
     "-feature",
@@ -46,6 +47,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   resolvers += Resolver.bintrayRepo("cakesolutions", "maven"),
   maintainer in Docker := "The Bakery Team",
   dockerRepository in Docker := sys.env.get("BAKERY_DOCKER_REPO"),
+  dockerBaseImage := "adoptopenjdk/openjdk11",
   version in Docker := "local" // used by smoke tests for locally built images
 )
 
@@ -218,6 +220,7 @@ lazy val `bakery-baker-client` = project.in(file("bakery/baker-client"))
       http4sDsl,
       http4sClient,
       http4sCirce,
+      kamon,
       scalaLogging,
       catsRetry,
       http4sServer % "test",
@@ -229,6 +232,58 @@ lazy val `bakery-baker-client` = project.in(file("bakery/baker-client"))
     )
   )
   .dependsOn(`baker-interface`)
+
+lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
+  .settings(commonSettings ++ Publish.settings)
+  .settings(
+    moduleName := "baker-unified",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    libraryDependencies ++= Seq(
+      slf4jApi,
+      logback,
+      akkaPersistenceCassandra,
+      akkaHttpSprayJson,
+      akkaManagementHttp,
+      akkaClusterBoostrap,
+      akkaClusterMetrics,
+      akkaDiscovery,
+      akkaDiscoveryKube,
+      http4s,
+      http4sDsl,
+      http4sCirce,
+      http4sServer,
+      http4sPrometheus,
+      springCore,
+      springContext,
+      scalaKafkaClient,
+      kamon,
+      kamonAkka,
+      kamonPrometheus,
+      cassandraDriverCore,
+      cassandraDriverQueryBuilder,
+      cassandraDriverMetrics,
+      prometheus,
+      prometheusJmx
+    ) ++ testDeps(
+      slf4jApi,
+      logback,
+      scalaTest,
+      mockServer,
+      circe,
+      circeGeneric,
+      akkaInmemoryJournal,
+      cassandraUnit
+
+    )
+  )
+  .dependsOn(
+    `baker-akka-runtime`,
+    `bakery-baker-client`,
+    `bakery-interaction-protocol`,
+    `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`
+  )
 
 lazy val `bakery-baker` = project.in(file("bakery/baker"))
   .settings(commonSettings ++ Publish.settings)
@@ -366,7 +421,7 @@ lazy val `bakery-controller-docker-generate` = project.in(file("docker/bakery-co
     maintainer in Docker := "Bakery OSS",
     packageSummary in Docker := "Prometheus operator implementation for Bakery workloads",
     packageName in Docker := "controller",
-    dockerBaseImage := "openjdk:8",
+    dockerBaseImage := "adoptopenjdk/openjdk11",
     libraryDependencies ++= Seq(
       logback,
       logstash
@@ -386,7 +441,7 @@ lazy val `bakery-baker-docker-generate` = project.in(file("docker/bakery-baker-d
     maintainer in Docker := "Bakery OSS",
     packageSummary in Docker := "Baker state node, running Akka Cluster and keeping recipe states",
     packageName in Docker := "baker",
-    dockerBaseImage := "openjdk:8",
+    dockerBaseImage := "adoptopenjdk/openjdk11",
     libraryDependencies ++= Seq(
       logback,
       logstash
@@ -398,7 +453,7 @@ lazy val `bakery-baker-docker-generate` = project.in(file("docker/bakery-baker-d
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .aggregate(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
-    `bakery-baker-client`, `bakery-baker`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
+    `bakery-baker-client`, `bakery-baker`, `baker-unified`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
     `sbt-bakery-docker-generate`,
     `baker-interface`, `bakery-controller`)
 

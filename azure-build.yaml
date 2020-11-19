@@ -59,12 +59,19 @@ steps:
       targetType: 'inline'
       script: bash ./set-version.sh
 
+  - task: JavaToolInstaller@0
+    inputs:
+      versionSpec: '11'
+      jdkArchitectureOption: 'x64'
+      jdkSourceOption: 'PreInstalled'
+      cleanDestinationDirectory: false
+
   - task: Bash@3
     displayName: 'Building and testing main Baker'
     inputs:
       targetType: 'inline'
       script: |
-        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package clean coverage test coverageReport && bash <(curl -s https://codecov.io/bash)
+        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} coverage test coverageReport && bash <(curl -s https://codecov.io/bash)
       failOnStderr: false
 
   - task: Bash@3
