@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import akka.actor.ActorSystem
 import akka.stream.alpakka.cassandra.{CqlSessionProvider, DefaultSessionProvider, DriverConfigLoaderFromConfig}
+import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.jmx.JmxReporter
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.metadata.{Node, NodeStateListener}
@@ -46,9 +47,18 @@ class InstrumentedCassandraSessionProvider(system: ActorSystem,
     system.classicSystem.settings.config.getConfig(config.getString("session-provider-config"))
   )
 
-  private val jmxExporterInitialised = new AtomicBoolean(false)
-
   private val instanceId = UUID.randomUUID()
+
+  private val metricRegistry = {
+    val registry = new MetricRegistry()
+    JmxReporter
+      .forRegistry(registry)
+      .inDomain("com.datastax.oss.driver")
+      .build
+      .start()
+    logger.info("JMX exporter started")
+    registry
+  }
 
   override def connect()(implicit ec: ExecutionContext): Future[CqlSession] = {
 
@@ -66,45 +76,18 @@ class InstrumentedCassandraSessionProvider(system: ActorSystem,
       override def close(): Unit = logger.info(s"Listener closed")
     }
 
-    def createConnection: Future[CqlSession] = {
-      val driverConfig = CqlSessionProvider.driverConfig(system, config)
-      val driverConfigLoader = DriverConfigLoaderFromConfig.fromConfig(driverConfig)
-      logger.info("Creating new Cassandra connection")
-      toScala(
-        CqlSession.builder()
-          .withConfigLoader(driverConfigLoader)
-          .withAuthCredentials(settings.username, settings.password)
-          .addContactPoints(settings.contactPoints.map(InetSocketAddress.createUnresolved(_, settings.port)).asJavaCollection)
-          .withLocalDatacenter(settings.localDatacenter)
-          .withClientId(instanceId)
-          .withNodeStateListener(nodeStateListener)
-          .buildAsync())
-
-    }
-
-    def instrumentConnection(connection: CqlSession): Future[Unit] = Future {
-      jmxExporterInitialised.compareAndExchange(false, {
-        lazy val maybeMetrics = connection.getMetrics
-
-        if (maybeMetrics.isPresent) {
-          val metrics = maybeMetrics.get()
-          JmxReporter
-            .forRegistry(metrics.getRegistry)
-            .inDomain("com.datastax.oss.driver")
-            .build
-            .start()
-          logger.info("Started JMX exporter")
-        }
-        true
-      })
-    }
-
-    for {
-      connection <- createConnection
-      _ <- instrumentConnection(connection)
-    } yield {
-      connection
-    }
+    val driverConfig = CqlSessionProvider.driverConfig(system, config)
+    val driverConfigLoader = DriverConfigLoaderFromConfig.fromConfig(driverConfig)
+    logger.info("Creating new Cassandra connection")
+    toScala(
+      CqlSession.builder()
+        .withConfigLoader(driverConfigLoader)
+        .withAuthCredentials(settings.username, settings.password)
+        .addContactPoints(settings.contactPoints.map(InetSocketAddress.createUnresolved(_, settings.port)).asJavaCollection)
+        .withLocalDatacenter(settings.localDatacenter)
+        .withClientId(instanceId)
+        .withNodeStateListener(nodeStateListener)
+        .buildAsync())
   }
 }
 

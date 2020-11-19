@@ -25,7 +25,9 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   scalaVersion := "2.12.12",
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
+  javacOptions := Seq("-source", "1.8", "-target", "1.8"),
   scalacOptions := Seq(
+    s"-target:jvm-1.8",
     "-unchecked",
     "-deprecation",
     "-feature",
