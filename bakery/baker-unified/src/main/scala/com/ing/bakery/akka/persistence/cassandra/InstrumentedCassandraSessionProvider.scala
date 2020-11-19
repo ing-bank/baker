@@ -2,7 +2,6 @@ package com.ing.bakery.akka.persistence.cassandra
 
 import java.net.InetSocketAddress
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicBoolean
 
 import akka.actor.ActorSystem
 import akka.stream.alpakka.cassandra.{CqlSessionProvider, DefaultSessionProvider, DriverConfigLoaderFromConfig}
@@ -81,6 +80,7 @@ class InstrumentedCassandraSessionProvider(system: ActorSystem,
     logger.info("Creating new Cassandra connection")
     toScala(
       CqlSession.builder()
+        .withMetricRegistry(metricRegistry)
         .withConfigLoader(driverConfigLoader)
         .withAuthCredentials(settings.username, settings.password)
         .addContactPoints(settings.contactPoints.map(InetSocketAddress.createUnresolved(_, settings.port)).asJavaCollection)
