@@ -3,7 +3,7 @@ package com.ing.baker.runtime.model.recipeinstance.execution
 import java.io.{PrintWriter, StringWriter}
 import java.lang.reflect.InvocationTargetException
 
-import cats.effect.{Async, Sync, Timer}
+import cats.effect.{Async, Effect, Sync, Timer}
 import cats.implicits._
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -14,7 +14,7 @@ import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.recipeinstance.FailureStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.model.recipeinstance.FailureStrategy
-import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionCompleted, InteractionStarted}
+import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionCompleted, InteractionFailed, InteractionStarted}
 import com.ing.baker.types.{PrimitiveValue, Value}
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.MDC
@@ -145,9 +145,10 @@ private[recipeinstance] case class TransitionExecution(
           endTime <- timer.clock.realTime(MILLISECONDS)
         } yield TransitionExecution.Outcome.Completed(executionSequenceId, id, transition.getId, correlationId, startTime, endTime, marshalMarking(consume), producedMarking.marshall, output )
       // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
-      execution.handleError { e ⇒
-        val failureStrategy = handleInteractionInstanceException(e, failureCount + 1, startTime, recipe.petriNet.outMarking(transition))
-        TransitionExecution.Outcome.Failed(executionSequenceId, id, transition.getId, correlationId, startTime, System.currentTimeMillis(), marshalMarking(consume), input, exceptionStackTrace(e), failureStrategy)
+      execution.handleErrorWith { e ⇒
+        handleInteractionInstanceException(e, failureCount + 1, startTime, recipe.petriNet.outMarking(transition)).map { failureStrategy =>
+          TransitionExecution.Outcome.Failed(executionSequenceId, id, transition.getId, correlationId, startTime, System.currentTimeMillis(), marshalMarking(consume), input, exceptionStackTrace(e), failureStrategy)
+        }
         // If an exception was thrown while computing the failure strategy we block the interaction from firing
       }.handleError { e =>
         logger.error(s"Exception while handling transition failure", e)
@@ -262,25 +263,41 @@ private[recipeinstance] case class TransitionExecution(
     sw.toString
   }
 
-  private def handleInteractionInstanceException(throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]): FailureStrategy = {
+  private def handleInteractionInstanceException[F[_]](throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place])(implicit components: BakerComponents[F], effect: Sync[F], timer: Timer[F]): F[FailureStrategy] = {
     if (throwable.isInstanceOf[Error])
-      BlockTransition
-    else
-      transition match {
-        case interaction: InteractionTransition =>
-          // compute the interaction failure strategy outcome
-          val failureStrategyOutcome = interaction.failureStrategy.apply(failureCount)
-          val currentTime = System.currentTimeMillis()
-          //TODO eventStream.publish(InteractionFailed(currentTime, currentTime - startTime, recipe.name, recipe.recipeId, processState.recipeInstanceId, transition.label, failureCount, throwable, failureStrategyOutcome))
-          // translates the recipe failure strategy to a petri net failure strategy
-          failureStrategyOutcome match {
-            case ExceptionStrategyOutcome.BlockTransition => BlockTransition
-            case ExceptionStrategyOutcome.RetryWithDelay(delay) => RetryWithDelay(delay)
-            case ExceptionStrategyOutcome.Continue(eventName) =>
-              val runtimeEvent = EventInstance(eventName, Map.empty)
-              Continue(createOutputMarkingForPetriNet(outMarking, Some(runtimeEvent)), Some(runtimeEvent))
+      effect.pure(BlockTransition)
+    else {
+      for {
+        currentTime <- timer.clock.realTime(MILLISECONDS)
+        strategy <- {
+          transition match {
+            case interaction: InteractionTransition =>
+              // compute the interaction failure strategy outcome
+              val failureStrategyOutcome = interaction.failureStrategy.apply(failureCount)
+              components.eventStream.publish(InteractionFailed(
+                currentTime,
+                currentTime - startTime,
+                recipe.name,
+                recipe.recipeId,
+                recipeInstanceId,
+                transition.label,
+                failureCount,
+                throwable,
+                failureStrategyOutcome)) *>
+                // translates the recipe failure strategy to a petri net failure strategy
+                effect.pure(failureStrategyOutcome match {
+                  case ExceptionStrategyOutcome.BlockTransition => BlockTransition
+                  case ExceptionStrategyOutcome.RetryWithDelay(delay) => RetryWithDelay(delay)
+                  case ExceptionStrategyOutcome.Continue(eventName) =>
+                    val runtimeEvent = EventInstance(eventName, Map.empty)
+                    Continue(createOutputMarkingForPetriNet(outMarking, Some(runtimeEvent)), Some(runtimeEvent))
+                })
+            case _ =>
+              effect.pure(BlockTransition)
+
           }
-        case _ => BlockTransition
-      }
+        }
+      } yield strategy
+    }
   }
 }

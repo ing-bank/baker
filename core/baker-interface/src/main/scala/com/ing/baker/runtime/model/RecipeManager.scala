@@ -4,7 +4,7 @@ import com.ing.baker.il.CompiledRecipe
 
 trait RecipeManager[F[_]] {
 
-  def addRecipe(compiledRecipe: CompiledRecipe): F[String]
+  def addRecipe(compiledRecipe: CompiledRecipe)(implicit components: BakerComponents[F]): F[String]
 
   def getRecipe(recipeId: String): F[Option[(CompiledRecipe, Long)]]
 

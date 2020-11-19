@@ -4,7 +4,7 @@ import cats.implicits._
 import cats.effect.concurrent.Ref
 import cats.effect.{IO, Timer}
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.model.RecipeInstanceManager
+import com.ing.baker.runtime.model.{BakerComponents, RecipeInstanceManager}
 import com.ing.baker.runtime.model.RecipeInstanceManager.RecipeInstanceStatus
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
 import com.ing.baker.runtime.scaladsl.RecipeInstanceMetadata
@@ -25,7 +25,7 @@ final class InMemoryRecipeInstanceManager(store: Ref[IO, InMemoryRecipeInstanceM
   override def get(recipeInstanceId: String): IO[Option[RecipeInstanceStatus[IO]]] =
     store.get.map(_.get(recipeInstanceId))
 
-  override def add(recipeInstanceId: String, recipe: CompiledRecipe): IO[Unit] =
+  override def add(recipeInstanceId: String, recipe: CompiledRecipe)(implicit components: BakerComponents[IO]): IO[Unit] =
     for {
       // TODO move what is generic back to the RecipeInstanceManager trait and parametrize the recipe settings
       newRecipeInstance <- RecipeInstance.empty[IO](recipe, recipeInstanceId, RecipeInstance.Settings(Some(5.seconds), Encryption.NoEncryption, Seq.empty))

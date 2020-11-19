@@ -11,7 +11,7 @@ import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
 import com.ing.baker.runtime.model.recipeinstance.execution.ExecutionSequence.OrphanTransitionExecution
 import com.ing.baker.runtime.model.recipeinstance.execution.{EventsLobby, ExecutionSequence, TransitionExecution}
-import com.ing.baker.runtime.scaladsl.EventInstance
+import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, RecipeInstanceCreated}
 import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.scalalogging.LazyLogging
 
@@ -34,14 +34,14 @@ case class RecipeInstance[F[_]](
     *         Note that the operation is wrapped within an effect because 2 reasons, first, the validation checks for
     *         current time, and second, if there is a rejection a message is logged, both are suspended into F.
     */
-  def fire(input: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, EventsLobby[F]] =
+  def fire(currentTime: Long, input: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, EventsLobby[F]] =
     for {
-      currentTime <- ok ( timer.clock.realTime(MILLISECONDS) )
       currentState <- ok ( state.get )
       orphanInitialExecution <- logRejectionReasonIfAny(
         currentState.validateExecution(input, correlationId, currentTime))
       startedExecutionSequence <- ok ( ExecutionSequence.base[F](recipeInstance = this, orphanInitialExecution) )
       _ <- ok ( addRunningSequence(startedExecutionSequence) )
+      _ <- ok ( components.eventStream.publish(EventReceived(currentTime, recipe.name, recipe.recipeId, recipeInstanceId, correlationId, input)) )
     } yield startedExecutionSequence.eventsLobby
 
   def stopRetryingInteraction(interactionName: String)(implicit effect: Sync[F]): F[Unit] =
@@ -129,11 +129,12 @@ object RecipeInstance {
                       encryption: Encryption,
                       ingredientsFilter: Seq[String])
 
-  def empty[F[_]](recipe: CompiledRecipe, recipeInstanceId: String, settings: Settings)(implicit effect: Sync[F], timer: Timer[F]): F[RecipeInstance[F]] =
+  def empty[F[_]](recipe: CompiledRecipe, recipeInstanceId: String, settings: Settings)(implicit components: BakerComponents[F], effect: Sync[F], timer: Timer[F]): F[RecipeInstance[F]] =
     for {
       timestamp <- timer.clock.realTime(MILLISECONDS)
       state <- Ref.of[F, RecipeInstanceState](RecipeInstanceState.empty(recipeInstanceId, recipe, timestamp))
       runningSequences <- Ref.of[F, Map[Long, ExecutionSequence[F]]](Map.empty)
+      _ <- components.eventStream.publish(RecipeInstanceCreated(timestamp, recipe.recipeId, recipe.name, recipeInstanceId))
     } yield RecipeInstance(recipeInstanceId, recipe, timestamp, settings, state, runningSequences)
 
   class FatalInteractionException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)

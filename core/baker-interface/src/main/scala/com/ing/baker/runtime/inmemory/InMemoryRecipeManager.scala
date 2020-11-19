@@ -3,7 +3,8 @@ package com.ing.baker.runtime.inmemory
 import cats.effect.{IO, Timer}
 import cats.effect.concurrent.Ref
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.model.RecipeManager
+import com.ing.baker.runtime.model.{BakerComponents, RecipeManager}
+import com.ing.baker.runtime.scaladsl.RecipeAdded
 
 import scala.concurrent.duration
 
@@ -17,7 +18,7 @@ object InMemoryRecipeManager {
 
 final class InMemoryRecipeManager(store: Ref[IO, InMemoryRecipeManager.Store])(implicit timer: Timer[IO]) extends RecipeManager[IO] {
 
-  override def addRecipe(compiledRecipe: CompiledRecipe): IO[String] =
+  override def addRecipe(compiledRecipe: CompiledRecipe)(implicit components: BakerComponents[IO]): IO[String] =
     findCompiledRecipeId(compiledRecipe).flatMap {
       case Some(recipeId) =>
         IO.pure(recipeId)
@@ -31,12 +32,13 @@ final class InMemoryRecipeManager(store: Ref[IO, InMemoryRecipeManager.Store])(i
   override def getAllRecipes: IO[Map[String, (CompiledRecipe, Long)]] =
     store.get
 
-  private def hardAddRecipe(compiledRecipe: CompiledRecipe): IO[String] =
+  private def hardAddRecipe(compiledRecipe: CompiledRecipe)(implicit components: BakerComponents[IO]): IO[String] =
     for {
       timestamp <- timer.clock.realTime(duration.MILLISECONDS)
       recipeId <- store
         .update(_ + (compiledRecipe.recipeId -> (compiledRecipe, timestamp)))
         .as(compiledRecipe.recipeId)
+      _ <- components.eventStream.publish(RecipeAdded(compiledRecipe.name, recipeId, timestamp, compiledRecipe))
     } yield recipeId
 
   private def findCompiledRecipeId(compiledRecipe: CompiledRecipe): IO[Option[String]] =

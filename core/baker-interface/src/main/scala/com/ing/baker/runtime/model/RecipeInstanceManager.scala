@@ -9,7 +9,9 @@ import com.ing.baker.runtime.common.{BakerException, RejectReason}
 import com.ing.baker.runtime.model.RecipeInstanceManager.{BakeOutcome, FireSensoryEventRejection, GetRecipeInstanceStateOutcome, RecipeInstanceStatus}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
 import com.ing.baker.runtime.model.recipeinstance.execution.EventsLobby
-import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceMetadata, RecipeInstanceState}
+import com.ing.baker.runtime.scaladsl.{EventInstance, EventRejected, RecipeInstanceMetadata, RecipeInstanceState}
+
+import scala.concurrent.duration.MILLISECONDS
 
 object RecipeInstanceManager {
 
@@ -118,7 +120,7 @@ object RecipeInstanceManager {
 
 trait RecipeInstanceManager[F[_]] {
 
-  def add(recipeInstanceId: String, recipe: CompiledRecipe): F[Unit]
+  def add(recipeInstanceId: String, recipe: CompiledRecipe)(implicit components: BakerComponents[F]): F[Unit]
 
   def get(recipeInstanceId: String): F[Option[RecipeInstanceStatus[F]]]
 
@@ -136,7 +138,7 @@ trait RecipeInstanceManager[F[_]] {
     }
 
   // TODO have to fail directly, see if getExistent matches the exeptions on the Baker level
-  def bake(recipeInstanceId: String, recipe: CompiledRecipe)(implicit effect: Monad[F]): F[BakeOutcome] =
+  def bake(recipeInstanceId: String, recipe: CompiledRecipe)(implicit components: BakerComponents[F], effect: Monad[F]): F[BakeOutcome] =
     get(recipeInstanceId).flatMap {
       case Some(RecipeInstanceStatus.Active(_)) =>
         effect.pure(BakeOutcome.RecipeInstanceAlreadyExists)
@@ -163,11 +165,16 @@ trait RecipeInstanceManager[F[_]] {
         effect.pure(GetRecipeInstanceStateOutcome.NoSuchRecipeInstance)
     }
 
-  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, EventsLobby[F]] =
+  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, EventsLobby[F]] = {
     for {
-      recipeInstance <- getRecipeInstanceWithPossibleRejection(recipeInstanceId)
-      eventsLobby <- recipeInstance.fire(event, correlationId)
+      currentTime <- EitherT.liftF( timer.clock.realTime(MILLISECONDS) )
+      eventsLobby <-
+        getRecipeInstanceWithPossibleRejection(recipeInstanceId)
+          .flatMap(_.fire(currentTime, event, correlationId))
+          .leftSemiflatMap(rejection => components.eventStream.publish(EventRejected(currentTime, recipeInstanceId, correlationId, event, rejection.asReason))
+            .as(rejection))
     } yield eventsLobby
+  }
 
   def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle = RecipeVisualStyle.default)(implicit effect: Sync[F]): F[String] =
     for {
