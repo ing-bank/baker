@@ -151,7 +151,9 @@ trait BakerModelSpecFailureTests[F[_]] { self: BakerModelSpec[F] =>
           maximumRetries = 1,
           fireRetryExhaustedEvent = Some(None))))
 
+
       for {
+        _ <- setupMockResponse
         bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, mockImplementations)
         (baker, recipeId) = bakerAndRecipeId
         recipeInstanceId = UUID.randomUUID().toString

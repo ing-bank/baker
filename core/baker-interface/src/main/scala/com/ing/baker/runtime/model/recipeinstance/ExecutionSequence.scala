@@ -44,7 +44,7 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
                                                           )(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) {
 
   def base(transitionExecution: TransitionExecution): Stream[F, EventInstance] =
-    step(transitionExecution).collect{ case Some(output) => output }
+    step(transitionExecution).collect { case Some(output) => output }
 
   def step(transitionExecution: TransitionExecution): Stream[F, Option[EventInstance]] = {
     Stream.eval(transitionExecution.execute.flatMap(handleExecutionOutcome)).flatMap {

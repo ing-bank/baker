@@ -324,7 +324,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
       } yield succeed
     }
 
-    test("return a list of events that where caused by a sensory event") { context =>
+    test("return a list of events that were caused by a sensory event") { context =>
       for {
         bakerAndRecipeId<- context.setupBakerWithRecipe("SensoryEventDeltaRecipe")
         (baker, recipeId) = bakerAndRecipeId

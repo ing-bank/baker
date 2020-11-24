@@ -120,7 +120,8 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
   override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventStatus] =
     components.recipeInstanceManager
       .fireEvent(recipeInstanceId, event, correlationId)
-      .value.flatMap(mapToStatus)
+      .value
+      .flatMap(foldToStatus(_.compile.drain))
       .timeout(config.processEventTimeout)
 
   /**
@@ -134,11 +135,15 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     * @param event            The event object
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventResult] =
+  override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventResult] = {
+    def awaitForCompletion(stream: Stream[F, EventInstance]): F[SensoryEventResult] =
+      stream.through(aggregateResult).compile.lastOrError
     components.recipeInstanceManager
       .fireEvent(recipeInstanceId, event, correlationId)
-      .value.flatMap(mapToResult(awaitForCompletion))
+      .value
+      .flatMap(foldToResult(awaitForCompletion))
       .timeout(config.processEventTimeout)
+  }
 
   /**
     * Notifies Baker that an event has happened and waits until an specific event has executed.
@@ -152,11 +157,21 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     * @param onEvent          The name of the event to wait for
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): F[SensoryEventResult] =
+  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): F[SensoryEventResult] = {
+    def awaitForEvent(stream: Stream[F, EventInstance]): F[SensoryEventResult] =
+      Deferred[F, SensoryEventResult].flatMap { eventDeferred =>
+        stream.through(aggregateResult).evalTap(intermediateResult =>
+          if(intermediateResult.eventNames.contains(onEvent))
+            effect.attempt(eventDeferred.complete(intermediateResult)).void
+          else effect.unit
+        ).compile.drain *> eventDeferred.get
+      }
     components.recipeInstanceManager
       .fireEvent(recipeInstanceId, event, correlationId)
-      .value.flatMap(mapToResult(awaitForEvent(onEvent)))
+      .value
+      .flatMap(foldToResult(awaitForEvent))
       .timeout(config.processEventTimeout)
+  }
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -176,22 +191,29 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
   def fire(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[EventResolutionsF[F]] = {
     components.recipeInstanceManager
       .fireEvent(recipeInstanceId, event, correlationId)
-      .value.map { outcome =>
-        val streams: Either[FireSensoryEventRejection, Vector[Stream[F, EventInstance]]] =
-          outcome.map(_.broadcast.take(2).compile.toVector.toIO.unsafeRunSync())
-        new EventResolutionsF[F] {
-          override def resolveWhenReceived: F[SensoryEventStatus] = {
-            mapToStatus(streams.map(_(0)))
-              .timeout(config.processEventTimeout)
+      .value.flatMap { outcome =>
+        for {
+          received <- Deferred[F, Unit]
+          completed <- Deferred[F, SensoryEventResult]
+          _ <- outcome match {
+            case Left(_) =>
+              effect.unit
+            case Right(stream) =>
+              stream
+                .through(aggregateResult)
+                .last.evalTap(r => completed.complete(r.get))
+                .compile.drain *> received.complete(())
           }
-          override def resolveWhenCompleted: F[SensoryEventResult] =
-            mapToResult(awaitForCompletion)(streams.map(_(1)))
-              .timeout(config.processEventTimeout)
+        } yield {
+          new EventResolutionsF[F] {
+            override def resolveWhenReceived: F[SensoryEventStatus] =
+              foldToStatus((_: Unit) => received.get)(outcome.map(_ => ()))
+            override def resolveWhenCompleted: F[SensoryEventResult] =
+              foldToResult((_: Unit) => completed.get)(outcome.map(_ => ()))
+          }
         }
-      }
+    }
   }
-
-  private type AwaitFor = Stream[F, EventInstance] => F[SensoryEventResult]
 
   private def aggregateResult: Pipe[F, EventInstance, SensoryEventResult] = {
     val zero = SensoryEventResult(SensoryEventStatus.Completed, Seq.empty, Map.empty)
@@ -202,20 +224,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     )
   }
 
-  private def awaitForCompletion: AwaitFor =
-    _.through(aggregateResult).compile.lastOrError
-
-  private def awaitForEvent(eventName: String): AwaitFor = stream =>
-    for {
-      eventDeferred <- Deferred[F, SensoryEventResult]
-      _ <- stream.through(aggregateResult).evalTap(intermediateResult =>
-        if(intermediateResult.eventNames.contains(eventName)) eventDeferred.complete(intermediateResult)
-        else effect.unit
-      ).compile.drain
-      result <- eventDeferred.get
-    } yield result
-
-  private def mapToStatus(outcome: Either[FireSensoryEventRejection, Stream[F, EventInstance]]): F[SensoryEventStatus] =
+  private def foldToStatus[A](f: A => F[Unit])(outcome: Either[FireSensoryEventRejection, A]): F[SensoryEventStatus] =
     outcome match {
       case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
         effect.raiseError(BakerException.IllegalEventException(message))
@@ -229,11 +238,11 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
         effect.pure(SensoryEventStatus.ReceivePeriodExpired)
       case Left(_: FireSensoryEventRejection.RecipeInstanceDeleted) =>
         effect.pure(SensoryEventStatus.RecipeInstanceDeleted)
-      case Right(stream) =>
-        stream.compile.drain.as(SensoryEventStatus.Received)
+      case Right(a) =>
+        f(a).as(SensoryEventStatus.Received)
     }
 
-  private def mapToResult(handler: AwaitFor)(outcome: Either[FireSensoryEventRejection, Stream[F, EventInstance]]): F[SensoryEventResult] =
+  private def foldToResult[A](f: A => F[SensoryEventResult])(outcome: Either[FireSensoryEventRejection, A]): F[SensoryEventResult] =
     outcome match {
       case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
         effect.raiseError(BakerException.IllegalEventException(message))
@@ -247,8 +256,8 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
         effect.pure(SensoryEventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
       case Left(_: FireSensoryEventRejection.RecipeInstanceDeleted) =>
         effect.pure(SensoryEventResult(SensoryEventStatus.RecipeInstanceDeleted, Seq.empty, Map.empty))
-      case Right(stream) =>
-        handler(stream)
+      case Right(a) =>
+        f(a)
     }
 
   /**
