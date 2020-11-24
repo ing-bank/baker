@@ -9,7 +9,7 @@ object Dependencies {
   val akkaHttpVersion = "10.2.1"
   val http4sVersion = "0.21.8"
   val circeVersion = "0.13.0"
-  val kamonAkkaVersion = "2.1.8"
+  val kamonAkkaVersion = "2.1.9"
 
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
 
