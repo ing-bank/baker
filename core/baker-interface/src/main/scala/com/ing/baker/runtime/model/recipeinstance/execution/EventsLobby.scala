@@ -63,7 +63,7 @@ final class EventsLobby[F[_]] private[recipeinstance](
       _ <- output.fold(effect.unit)(event =>
         knownOutcomeEvents.update(_ :+ event) *> resolveEvent(event.name))
       // TODO make it a debug log
-      _ = (Console.MAGENTA + "\n" +
+      _ = println(Console.MAGENTA + "\n" +
         s"""Finished: transitionId = ${outcome.transitionId} | executionId = ${outcome.transitionExecutionId}
            |Output: $output
            |Enabled: ${enabledTransitions.map(t => "\n\t" + t.transition.label + " | transitionId = " + t.transition.id + " | executionId = " + t.id)}

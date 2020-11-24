@@ -135,8 +135,8 @@ private[recipeinstance] case class TransitionExecution(
     }
 
   def execute[F[_]](implicit components: BakerComponents[F], effect: Async[F], timer: Timer[F]): F[TransitionExecution.Outcome] = {
-    // TODO maybe put log.transitionFired from the Process Instance here
     timer.clock.realTime(MILLISECONDS).flatMap { startTime =>
+      // TODO maybe put log.transitionFired from the Process Instance here
       //TODO log.firingTransition(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
       val execution: F[TransitionExecution.Outcome] =
         for {

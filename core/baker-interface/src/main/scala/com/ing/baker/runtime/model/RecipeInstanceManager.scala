@@ -4,11 +4,12 @@ import cats.data.{EitherT, OptionT}
 import cats.effect.{ConcurrentEffect, Sync, Timer}
 import cats.implicits._
 import cats.{Functor, Monad}
+import fs2.Stream
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common.{BakerException, RejectReason}
 import com.ing.baker.runtime.model.RecipeInstanceManager.{BakeOutcome, FireSensoryEventRejection, GetRecipeInstanceStateOutcome, RecipeInstanceStatus}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
-import com.ing.baker.runtime.model.recipeinstance.execution.EventsLobby
+import com.ing.baker.runtime.model.recipeinstance.execution.{EventsLobby, TransitionExecution}
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventRejected, RecipeInstanceMetadata, RecipeInstanceState}
 
 import scala.concurrent.duration.MILLISECONDS
@@ -165,15 +166,13 @@ trait RecipeInstanceManager[F[_]] {
         effect.pure(GetRecipeInstanceStateOutcome.NoSuchRecipeInstance)
     }
 
-  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, EventsLobby[F]] = {
-    for {
-      currentTime <- EitherT.liftF( timer.clock.realTime(MILLISECONDS) )
-      eventsLobby <-
-        getRecipeInstanceWithPossibleRejection(recipeInstanceId)
-          .flatMap(_.fire(currentTime, event, correlationId))
-          .leftSemiflatMap(rejection => components.eventStream.publish(EventRejected(currentTime, recipeInstanceId, correlationId, event, rejection.asReason))
-            .as(rejection))
-    } yield eventsLobby
+  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, Stream[F, EventInstance]] = {
+    EitherT.liftF( timer.clock.realTime(MILLISECONDS) ).flatMap { currentTime =>
+      getRecipeInstanceWithPossibleRejection(recipeInstanceId)
+        .flatMap(_.fire(currentTime, event, correlationId))
+        .leftSemiflatMap(rejection => components.eventStream.publish(EventRejected(
+          currentTime, recipeInstanceId, correlationId, event, rejection.asReason)).as(rejection))
+    }
   }
 
   def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle = RecipeVisualStyle.default)(implicit effect: Sync[F]): F[String] =

@@ -54,18 +54,7 @@ final class InMemoryRecipeInstanceManager(store: Ref[IO, InMemoryRecipeInstanceM
     } yield recipeInstance
 
   override def idleStop(recipeInstanceId: String): IO[Unit] =
-    for {
-      current <- get(recipeInstanceId)
-      timestamp <- timer.clock.realTime(MILLISECONDS)
-      _ <- store.update { store =>
-        current match {
-          case Some(RecipeInstanceStatus.Active(recipeInstance)) =>
-            store + (recipeInstanceId -> RecipeInstanceStatus.Deleted(recipeInstance.recipe.recipeId, recipeInstance.createdOn, timestamp))
-          case _ =>
-            store
-        }
-      }
-    } yield ()
+    IO.unit
 
   override def getAllRecipeInstancesMetadata: IO[Set[RecipeInstanceMetadata]] =
     store.get.flatMap(_.toList.traverse {

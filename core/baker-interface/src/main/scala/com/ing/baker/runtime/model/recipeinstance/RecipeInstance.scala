@@ -1,19 +1,19 @@
 package com.ing.baker.runtime.model.recipeinstance
 
-import cats.Functor
 import cats.data.EitherT
 import cats.effect.concurrent.Ref
-import cats.effect.{ConcurrentEffect, IO, Sync, Timer}
+import cats.effect.{ConcurrentEffect, Sync, Timer}
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
-import com.ing.baker.runtime.model.recipeinstance.execution.ExecutionSequence.OrphanTransitionExecution
-import com.ing.baker.runtime.model.recipeinstance.execution.{EventsLobby, ExecutionSequence, TransitionExecution}
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstanceEventValidation.OrphanTransitionExecution
+import com.ing.baker.runtime.model.recipeinstance.execution.{ExecutionSequence, TransitionExecution}
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, RecipeInstanceCreated}
 import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.scalalogging.LazyLogging
+import fs2.Stream
 
 import scala.concurrent.duration._
 
@@ -34,15 +34,21 @@ case class RecipeInstance[F[_]](
     *         Note that the operation is wrapped within an effect because 2 reasons, first, the validation checks for
     *         current time, and second, if there is a rejection a message is logged, both are suspended into F.
     */
-  def fire(currentTime: Long, input: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, EventsLobby[F]] =
+  def fire(currentTime: Long, input: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, Stream[F, EventInstance]] = {
     for {
-      currentState <- ok ( state.get )
-      orphanInitialExecution <- logRejectionReasonIfAny(
-        currentState.validateExecution(input, correlationId, currentTime))
-      startedExecutionSequence <- ok ( ExecutionSequence.base[F](recipeInstance = this, orphanInitialExecution) )
-      _ <- ok ( addRunningSequence(startedExecutionSequence) )
-      _ <- ok ( components.eventStream.publish(EventReceived(currentTime, recipe.name, recipe.recipeId, recipeInstanceId, correlationId, input)) )
-    } yield startedExecutionSequence.eventsLobby
+      currentState <- EitherT.liftF(state.get)
+      orphanInitialExecution <- logRejectionReasonIfAny(currentState.validateExecution(input, correlationId, currentTime))
+    } yield Stream.force(for {
+      startedExecutionSequence <- ExecutionSequence.build[F](recipeInstance = this)
+      initialExecution = orphanInitialExecution(startedExecutionSequence.sequenceId)
+      _ <- state.update(_.addExecution(initialExecution))
+      _ <- runningSequences.update(_ + (startedExecutionSequence.sequenceId -> startedExecutionSequence))
+      _ <- components.eventStream.publish(EventReceived(
+        currentTime, recipe.name, recipe.recipeId, recipeInstanceId, correlationId, input))
+    } yield startedExecutionSequence
+      .base(initialExecution)
+      .onFinalize(runningSequences.update(_ - startedExecutionSequence.sequenceId)))
+  }
 
   def stopRetryingInteraction(interactionName: String)(implicit effect: Sync[F]): F[Unit] =
     executeOnRunningSequenceOf(interactionName)((_, execution, sequence) =>
@@ -56,12 +62,6 @@ case class RecipeInstance[F[_]](
     executeOnRunningSequenceOf(interactionName)((transition, execution, sequence) =>
       sequence.resolveBlockedInteraction(transition, execution, eventInstance))
 
-  private[recipeinstance] def addRunningSequence(sequence: ExecutionSequence[F]): F[Unit] =
-    runningSequences.update(_ + (sequence.sequenceId -> sequence))
-
-  private[recipeinstance] def removeRunningSequence(sequenceId: Long): F[Unit] =
-    runningSequences.update(_ - sequenceId)
-
   private[recipeinstance] def executeOnRunningSequenceOf(interactionName: String)(f: (InteractionTransition, TransitionExecution, ExecutionSequence[F]) => F[Unit])(implicit effect: Sync[F]): F[Unit] =
     for {
       transitionAndExecution <- getExecution(interactionName)
@@ -69,9 +69,6 @@ case class RecipeInstance[F[_]](
       sequence <- getSequence(execution.executionSequenceId)
       _ <- f(transition, execution, sequence)
     } yield ()
-
-  private def ok[A](fa: F[A])(implicit effect: Functor[F]): EitherT[F, FireSensoryEventRejection, A] =
-    EitherT[F, FireSensoryEventRejection, A](fa.map(Right(_)))
 
   private def getExecution(interactionName: String)(implicit effect: Sync[F]): F[(InteractionTransition, TransitionExecution)] =
     for {
@@ -111,15 +108,6 @@ case class RecipeInstance[F[_]](
       case Right(transitionExecution) =>
         effect.pure(Right(transitionExecution))
     })
-  }
-
-  private[recipeinstance] def logImpossibleException(cause: Throwable): IO[Unit] = {
-    val message = """Imminent bug, unexpected exception when firing an event, it should be impossible to have exceptions at this point.
-                    |The execution.execute should wrap any exception from interaction instances and report them as failed outcomes.
-                    |The process of firing an event is free of exceptions besides the previously mentioned, this is used to properly
-                    |implement the cats effect ConcurrentEffect.runAsync method.
-                    |""".stripMargin
-    IO.delay(logger.error(message, new IllegalStateException(message, cause)))
   }
 }
 

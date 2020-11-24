@@ -5,6 +5,7 @@ import java.util.{Optional, UUID}
 import cats.effect.ConcurrentEffect
 import cats.implicits._
 import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.il.RecipeVisualStyle
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.scaladsl.EventInstance
 import org.mockito.Matchers._
@@ -12,6 +13,7 @@ import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 
 import scala.reflect.ClassTag
+import scala.concurrent.duration._
 
 trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
 
@@ -196,22 +198,25 @@ trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
         (baker, recipeId) = bakerAndRecipeId
         // Two answers that take 0.6 seconds each!
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenAnswer((_: InvocationOnMock) => {
-          effect.delay {
-            Thread.sleep(600)
-            InteractionOneSuccessful(interactionOneIngredientValue)
-          }
+          effect.delay(println("started 1111111111")) *>
+          timer.sleep(600.millis).to[F]
+            .map(_ => println("done 111111111"))
+            .as(InteractionOneSuccessful(interactionOneIngredientValue))
         })
         _ = when(testInteractionTwoMock.apply(anyString()))
           .thenAnswer((_: InvocationOnMock) => {
-            Thread.sleep(600)
-            EventFromInteractionTwo(interactionTwoIngredientValue)
+              println("started 222222222")
+              timer.sleep(600.millis).unsafeRunSync()
+              println("done 2222222")
+              EventFromInteractionTwo(interactionTwoIngredientValue)
           })
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
-        start = System.currentTimeMillis()
+        start <- timer.clock.realTime(MILLISECONDS).to[F]
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
-        finish = System.currentTimeMillis()
+        finish <- timer.clock.realTime(MILLISECONDS).to[F]
         executingTimeInMilliseconds = finish - start
+        _ = println(Console.YELLOW + executingTimeInMilliseconds + Console.RESET)
       } yield
         assert(
           executingTimeInMilliseconds < 1000,

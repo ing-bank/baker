@@ -4,18 +4,24 @@ import com.ing.baker.il.EventDescriptor
 import com.ing.baker.il.petrinet.{Place, Transition}
 import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
-import com.ing.baker.runtime.model.recipeinstance.execution.ExecutionSequence.OrphanTransitionExecution
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstanceEventValidation.{EventValidation, OrphanTransitionExecution}
 import com.ing.baker.runtime.model.recipeinstance.execution.TransitionExecution
 import com.ing.baker.runtime.scaladsl.EventInstance
 
 import scala.concurrent.duration.FiniteDuration
 
-trait RecipeInstanceEventValidation { recipeInstance: RecipeInstanceState =>
+object RecipeInstanceEventValidation {
 
   type Reason = String
 
   type EventValidation[A] =
     Either[(FireSensoryEventRejection, Reason), A]
+
+  type OrphanTransitionExecution =
+    Long => TransitionExecution
+}
+
+trait RecipeInstanceEventValidation { recipeInstance: RecipeInstanceState =>
 
   def validateExecution[F[_]](input: EventInstance, correlationId: Option[String], currentTime: Long): EventValidation[OrphanTransitionExecution] = {
     for {

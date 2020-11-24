@@ -14,11 +14,11 @@ class InMemoryBakerSpec extends BakerModelSpec[IO] {
     for {
       _ <- Resource.liftF(IO.unit)
     } yield Context(InMemoryBaker.build(BakerConfig(
-      bakeTimeout = 1.seconds,
-      processEventTimeout = 1.seconds,
-      inquireTimeout = 1.seconds,
-      shutdownTimeout = 1.seconds,
-      addRecipeTimeout = 1.seconds
+      bakeTimeout = 10.seconds,
+      processEventTimeout = 10.seconds,
+      inquireTimeout = 10.seconds,
+      shutdownTimeout = 10.seconds,
+      addRecipeTimeout = 10.seconds
     )))
 
 }

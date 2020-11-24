@@ -108,6 +108,8 @@ lazy val `baker-interface` = project.in(file("core/baker-interface"))
       circeGeneric,
       circeGenericExtras,
       catsEffect,
+      fs2Core,
+      fs2Io,
       scalaJava8Compat
     ) ++ providedDeps(findbugs) ++ testDeps(
       scalaTest,

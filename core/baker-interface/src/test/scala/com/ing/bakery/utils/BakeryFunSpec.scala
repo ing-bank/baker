@@ -13,10 +13,10 @@ import scala.concurrent.duration._
 abstract class BakeryFunSpec[F[_]] extends FixtureAsyncFunSpecLike {
 
   implicit val contextShift: ContextShift[IO] =
-    IO.contextShift(executionContext)
+    IO.contextShift(concurrent.ExecutionContext.global)
 
   implicit val timer: Timer[IO] =
-    IO.timer(executionContext)
+    IO.timer(concurrent.ExecutionContext.global)
 
   /** Represents the "sealed resources context" that each test can use. */
   type TestContext
