@@ -9,7 +9,6 @@ import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common.{BakerException, RejectReason}
 import com.ing.baker.runtime.model.RecipeInstanceManager.{BakeOutcome, FireSensoryEventRejection, GetRecipeInstanceStateOutcome, RecipeInstanceStatus}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
-import com.ing.baker.runtime.model.recipeinstance.execution.{EventsLobby, TransitionExecution}
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventRejected, RecipeInstanceMetadata, RecipeInstanceState}
 
 import scala.concurrent.duration.MILLISECONDS

@@ -3,7 +3,6 @@ package com.ing.baker.runtime.model.recipeinstance
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.il.petrinet.Place
 import com.ing.baker.petrinet.api.{Marking, MultiSet}
-import com.ing.baker.runtime.model.recipeinstance.execution.TransitionExecution
 import com.ing.baker.runtime.scaladsl.EventMoment
 import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.api._

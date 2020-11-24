@@ -1,9 +1,9 @@
-package com.ing.baker.runtime.model.recipeinstance.execution
+package com.ing.baker.runtime.model.recipeinstance
 
 import java.io.{PrintWriter, StringWriter}
 import java.lang.reflect.InvocationTargetException
 
-import cats.effect.{Async, Effect, Sync, Timer}
+import cats.effect.{Async, Sync, Timer}
 import cats.implicits._
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -13,8 +13,7 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.recipeinstance.FailureStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
-import com.ing.baker.runtime.model.recipeinstance.FailureStrategy
-import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionCompleted, InteractionFailed, InteractionStarted}
+import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.{PrimitiveValue, Value}
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.MDC

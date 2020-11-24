@@ -1,8 +1,7 @@
 package com.ing.baker.runtime.model
 
-import cats.data.EitherT
 import cats.effect.concurrent.Deferred
-import cats.effect.{ConcurrentEffect, IO, Timer}
+import cats.effect.{ConcurrentEffect, Timer}
 import cats.implicits._
 import cats.effect.implicits._
 import fs2.{Pipe, Stream}
@@ -11,8 +10,6 @@ import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.BakerException.{ImplementationsException, RecipeValidationException}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
-import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
-import com.ing.baker.runtime.model.recipeinstance.execution.{EventsLobby, TransitionExecution}
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.Value
 import com.typesafe.scalalogging.LazyLogging

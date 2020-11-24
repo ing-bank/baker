@@ -198,16 +198,12 @@ trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
         (baker, recipeId) = bakerAndRecipeId
         // Two answers that take 0.6 seconds each!
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenAnswer((_: InvocationOnMock) => {
-          effect.delay(println("started 1111111111")) *>
           timer.sleep(600.millis).to[F]
-            .map(_ => println("done 111111111"))
             .as(InteractionOneSuccessful(interactionOneIngredientValue))
         })
         _ = when(testInteractionTwoMock.apply(anyString()))
           .thenAnswer((_: InvocationOnMock) => {
-              println("started 222222222")
               timer.sleep(600.millis).unsafeRunSync()
-              println("done 2222222")
               EventFromInteractionTwo(interactionTwoIngredientValue)
           })
         recipeInstanceId = UUID.randomUUID().toString
@@ -216,7 +212,6 @@ trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         finish <- timer.clock.realTime(MILLISECONDS).to[F]
         executingTimeInMilliseconds = finish - start
-        _ = println(Console.YELLOW + executingTimeInMilliseconds + Console.RESET)
       } yield
         assert(
           executingTimeInMilliseconds < 1000,

@@ -1,15 +1,13 @@
-package com.ing.baker.runtime.model.recipeinstance.execution
+package com.ing.baker.runtime.model.recipeinstance
 
-import fs2._
-import cats.implicits._
 import cats.effect.concurrent.Ref
-import cats.effect.{CancelToken, ConcurrentEffect, IO, Timer}
+import cats.effect.{ConcurrentEffect, IO, Timer}
+import cats.implicits._
 import com.ing.baker.il.petrinet.{InteractionTransition, Place}
 import com.ing.baker.petrinet.api.{Marking, marshalMarking}
 import com.ing.baker.runtime.model.BakerComponents
-import com.ing.baker.runtime.model.recipeinstance.execution.ExecutionSequence.RetryingTransitions
-import com.ing.baker.runtime.model.recipeinstance.{FailureStrategy, RecipeInstance}
-import com.ing.baker.runtime.scaladsl.{EventInstance, SensoryEventResult}
+import com.ing.baker.runtime.scaladsl.EventInstance
+import fs2._
 
 import scala.concurrent.duration._
 
@@ -17,15 +15,11 @@ object ExecutionSequence {
 
   def build[F[_]](recipeInstance: RecipeInstance[F])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[ExecutionSequence[F]] =
     for {
-      //eventsLobby <- EventsLobby.build[F]
       retries <- Ref.of[F, Set[Long]](Set.empty)
       executionSequence = new ExecutionSequence[F](
         recipeInstance = recipeInstance,
         retryingTransitions = retries)
-        //eventsLobby = eventsLobby)
     } yield executionSequence
-
-  type RetryingTransitions[F[_]] = Ref[F, Set[Long]]
 }
 
 /** TODO rewrite this within the context of 1 event
@@ -46,8 +40,7 @@ object ExecutionSequence {
   */
 case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = TransitionExecution.generateId,
                                                            recipeInstance: RecipeInstance[F],
-                                                           retryingTransitions: RetryingTransitions[F],
-                                                           //eventsLobby: EventsLobby[F]
+                                                           retryingTransitions: Ref[F, Set[Long]]
                                                           )(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) {
 
   def base(transitionExecution: TransitionExecution): Stream[F, EventInstance] =
@@ -79,12 +72,15 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
         } yield outcome.output -> enabledExecutions
 
       case outcome: TransitionExecution.Outcome.Failed =>
+
+        /*
         println(Console.RED_B +
           s""" Failed: transitionId = ${outcome.transitionId}
           | executionId = ${outcome.transitionExecutionId}
           | Strategy: ${outcome.exceptionStrategy}
           | Reason: ${outcome.failureReason}
           |""".stripMargin + Console.RESET)
+         */
 
         outcome.exceptionStrategy match {
           case FailureStrategy.Continue(marking, output) =>

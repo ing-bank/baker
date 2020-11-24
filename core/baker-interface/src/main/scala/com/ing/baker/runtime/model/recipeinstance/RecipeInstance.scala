@@ -9,7 +9,6 @@ import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstanceEventValidation.OrphanTransitionExecution
-import com.ing.baker.runtime.model.recipeinstance.execution.{ExecutionSequence, TransitionExecution}
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, RecipeInstanceCreated}
 import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.scalalogging.LazyLogging
@@ -45,9 +44,7 @@ case class RecipeInstance[F[_]](
       _ <- runningSequences.update(_ + (startedExecutionSequence.sequenceId -> startedExecutionSequence))
       _ <- components.eventStream.publish(EventReceived(
         currentTime, recipe.name, recipe.recipeId, recipeInstanceId, correlationId, input))
-    } yield startedExecutionSequence
-      .base(initialExecution)
-      .onFinalize(runningSequences.update(_ - startedExecutionSequence.sequenceId)))
+    } yield startedExecutionSequence.base(initialExecution))
   }
 
   def stopRetryingInteraction(interactionName: String)(implicit effect: Sync[F]): F[Unit] =

@@ -5,7 +5,6 @@ import com.ing.baker.il.petrinet.{Place, Transition}
 import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstanceEventValidation.{EventValidation, OrphanTransitionExecution}
-import com.ing.baker.runtime.model.recipeinstance.execution.TransitionExecution
 import com.ing.baker.runtime.scaladsl.EventInstance
 
 import scala.concurrent.duration.FiniteDuration
