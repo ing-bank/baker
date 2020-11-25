@@ -37,6 +37,18 @@ abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] 
     new String(base64)
   }
 
+  def translate[G[_]](mapK: F ~> G): InteractionInstanceF[G] =
+    new InteractionInstanceF[G] {
+      override val run: Seq[IngredientInstance] => G[Option[EventInstance]] =
+        (i: Seq[IngredientInstance]) => mapK(self.run(i))
+      override val name: String =
+        self.name
+      override val input: Seq[Type] =
+        self.input
+      override val output: Option[Map[String, Map[String, Type]]] =
+        self.output
+    }
+
   def asJava(converter: F ~> CompletableFuture): javadsl.InteractionInstance =
     new javadsl.InteractionInstance {
       override val name: String =
