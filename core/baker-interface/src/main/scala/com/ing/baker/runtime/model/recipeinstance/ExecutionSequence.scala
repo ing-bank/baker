@@ -189,7 +189,7 @@ case class ExecutionSequence[F[_]] private[recipeinstance](sequenceId: Long = Tr
         _ <- execution.validateInteractionOutput[F](interaction, Some(eventInstance))
         // TODO this is awaiting the Transition Execution refactor
         petriNet = execution.recipe.petriNet
-        producedMarking: Marking[Place] = execution.createOutputMarkingForPetriNet(petriNet.outMarking(interaction), Some(eventInstance))
+        producedMarking: Marking[Place] = execution.createOutputMarking(petriNet.outMarking(interaction), Some(eventInstance))
         transformedEvent: Option[EventInstance] = execution.transformOutputWithTheInteractionTransitionOutputTransformers(interaction, Some(eventInstance))
         // TODO all of this can be done inside the execution and should be refactored together with it
         timestamp <- timer.clock.realTime(MILLISECONDS)

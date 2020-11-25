@@ -23,6 +23,7 @@ object InMemoryBaker {
 }
 
 object InMemoryBakerJava {
+
   def java(config: BakerConfig): javadsl.Baker = {
     implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
     implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)

@@ -17,6 +17,17 @@ import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.Future
 
+/** TODO Remove intermediary BakerF interface
+  * TODO refactor RecipeInstanceManager + Baker
+  * TODO refactor failure handling
+  * TODO implement recipe instance deletion strategy from the recipe
+  * TODO logging
+  * TODO cleanup UX and BakerComponents utilization
+  * TODO review new interfaces InteractionInstanceF and EventResolutions
+  * TODO documentation
+  * TODO optimize compilation time by narrowing implicit syntax
+  */
+
 abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) extends BakerF[F] with LazyLogging { self =>
 
   val config: BakerConfig
