@@ -2,6 +2,7 @@ package com.ing.baker.runtime.inmemory
 
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
 import cats.~>
+import com.ing.baker.runtime.inmemory.InMemoryBaker.build
 import com.ing.baker.runtime.javadsl
 import com.ing.baker.runtime.model.{Baker, BakerComponents, BakerConfig}
 
@@ -19,8 +20,10 @@ object InMemoryBaker {
       BakerComponents[IO](interactionInstanceManager, recipeInstanceManager, recipeManager, eventStream)
     new InMemoryBaker(config)
   }
+}
 
-  def java(config: BakerConfig = BakerConfig()): javadsl.BakerF = {
+object InMemoryBakerJava {
+  def java(config: BakerConfig): javadsl.BakerF = {
     implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
     implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     val bakerF = build(config).unsafeRunSync().translate[Future](
@@ -32,6 +35,10 @@ object InMemoryBaker {
       }
     )
     new javadsl.BakerF(bakerF)
+  }
+
+  def java() : javadsl.BakerF = {
+    java(BakerConfig())
   }
 }
 
