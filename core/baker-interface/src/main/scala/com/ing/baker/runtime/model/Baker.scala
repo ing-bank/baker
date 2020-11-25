@@ -4,17 +4,20 @@ import cats.effect.concurrent.Deferred
 import cats.effect.{ConcurrentEffect, Timer}
 import cats.implicits._
 import cats.effect.implicits._
+import cats.~>
 import fs2.{Pipe, Stream}
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.BakerException.{ImplementationsException, RecipeValidationException}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
-import com.ing.baker.runtime.scaladsl._
+import com.ing.baker.runtime.scaladsl.{Baker => DeprecatedBaker, _}
 import com.ing.baker.types.Value
 import com.typesafe.scalalogging.LazyLogging
 
-abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) extends BakerF[F] with LazyLogging {
+import scala.concurrent.Future
+
+abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) extends BakerF[F] with LazyLogging { self =>
 
   val config: BakerConfig
 
@@ -412,4 +415,57 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
   override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): F[Unit] =
     components.recipeInstanceManager.stopRetryingInteraction(recipeInstanceId, interactionName)
       .timeout(config.processEventTimeout)
+
+  def asDeprecatedFutureImplementation(mapK: F ~> Future, comapK: Future ~> F): DeprecatedBaker =
+    new DeprecatedBaker {
+      override def addRecipe(compiledRecipe: CompiledRecipe): Future[String] =
+        mapK(self.addRecipe(compiledRecipe))
+      override def getRecipe(recipeId: String): Future[RecipeInformation] =
+        mapK(self.getRecipe(recipeId))
+      override def getAllRecipes: Future[Map[String, RecipeInformation]] =
+        mapK(self.getAllRecipes)
+      override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] =
+        mapK(self.bake(recipeId, recipeInstanceId))
+      override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] =
+        mapK(self.fireEventAndResolveWhenReceived(recipeInstanceId, event, correlationId))
+      override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventResult] =
+        mapK(self.fireEventAndResolveWhenCompleted(recipeInstanceId, event, correlationId))
+      override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): Future[SensoryEventResult] =
+        mapK(self.fireEventAndResolveOnEvent(recipeInstanceId, event, onEvent, correlationId))
+      override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): EventResolutions = {
+        val old = self.fireEvent(recipeInstanceId, event, correlationId)
+        EventResolutions(mapK(old.resolveWhenReceived), mapK(old.resolveWhenCompleted))
+      }
+      override def getAllRecipeInstancesMetadata: Future[Set[RecipeInstanceMetadata]] =
+        mapK(self.getAllRecipeInstancesMetadata)
+      override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] =
+        mapK(self.getRecipeInstanceState(recipeInstanceId))
+      override def getIngredients(recipeInstanceId: String): Future[Map[String, Value]] =
+        mapK(self.getIngredients(recipeInstanceId))
+      override def getEvents(recipeInstanceId: String): Future[Seq[EventMoment]] =
+        mapK(self.getEvents(recipeInstanceId))
+      override def getEventNames(recipeInstanceId: String): Future[Seq[String]] =
+        mapK(self.getEventNames(recipeInstanceId))
+      override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle): Future[String] =
+        mapK(self.getVisualState(recipeInstanceId, style))
+      override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Future[Unit] =
+        mapK(self.registerEventListener(recipeName, listenerFunction))
+      override def registerEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Future[Unit] =
+        mapK(self.registerEventListener(listenerFunction))
+      override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): Future[Unit] =
+        mapK(self.registerBakerEventListener(listenerFunction))
+      override def addInteractionInstance(implementation: InteractionInstance): Future[Unit] =
+        mapK(self.addInteractionInstance(implementation.translate(comapK)))
+      override def addInteractionInstances(implementations: Seq[InteractionInstance]): Future[Unit] =
+        mapK(self.addInteractionInstances(implementations.map(_.translate(comapK))))
+      override def gracefulShutdown(): Future[Unit] =
+        mapK(self.gracefulShutdown())
+      override def retryInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
+        mapK(self.retryInteraction(recipeInstanceId, interactionName))
+      override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): Future[Unit] =
+        mapK(self.resolveInteraction(recipeInstanceId, interactionName, event))
+      override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
+        mapK(self.stopRetryingInteraction(recipeInstanceId, interactionName))
+    }
+
 }

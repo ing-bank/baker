@@ -23,10 +23,10 @@ object InMemoryBaker {
 }
 
 object InMemoryBakerJava {
-  def java(config: BakerConfig): javadsl.BakerF = {
+  def java(config: BakerConfig): javadsl.Baker = {
     implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
     implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-    val bakerF = build(config).unsafeRunSync().translate[Future](
+    val bakerF = build(config).unsafeRunSync().asDeprecatedFutureImplementation(
       new (IO ~> Future) {
         def apply[A](fa: IO[A]): Future[A] = fa.unsafeToFuture()
       },
@@ -34,10 +34,10 @@ object InMemoryBakerJava {
         def apply[A](fa: Future[A]): IO[A] = IO.fromFuture(IO(fa))
       }
     )
-    new javadsl.BakerF(bakerF)
+    new javadsl.Baker(bakerF)
   }
 
-  def java() : javadsl.BakerF = {
+  def java() : javadsl.Baker = {
     java(BakerConfig())
   }
 }
