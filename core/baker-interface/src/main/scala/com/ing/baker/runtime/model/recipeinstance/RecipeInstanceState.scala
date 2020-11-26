@@ -164,7 +164,7 @@ case class RecipeInstanceState(
     copy(sequenceNumber = sequenceNumber + 1)
 
   def aggregatePetriNetChanges(transitionExecution: TransitionExecution, outcome: TransitionExecution.Outcome.Completed): RecipeInstanceState =
-    copy(marking = (marking |-| transitionExecution.consume) |+| outcome.produced)
+    copy(marking = (marking |-| transitionExecution.consume) |+| transitionExecution.producedMarking(outcome.output))
 
   def addCompletedCorrelationId(transitionExecution: TransitionExecution): RecipeInstanceState =
     copy(completedCorrelationIds = completedCorrelationIds ++ transitionExecution.correlationId)

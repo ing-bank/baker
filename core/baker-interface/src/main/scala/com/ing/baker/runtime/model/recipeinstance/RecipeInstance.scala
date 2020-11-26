@@ -1,10 +1,11 @@
 package com.ing.baker.runtime.model.recipeinstance
 
+import cats.implicits._
 import cats.data.EitherT
 import cats.effect.concurrent.Ref
 import cats.effect.{ConcurrentEffect, Effect, IO, Sync, Timer}
-import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
@@ -15,10 +16,7 @@ import fs2.Stream
 
 import scala.concurrent.duration._
 
-case class RecipeInstance[F[_]](recipeInstanceId: String,
-                                settings: RecipeInstance.Settings,
-                                state: Ref[F, RecipeInstanceState],
-                               ) extends LazyLogging {
+case class RecipeInstance[F[_]](recipeInstanceId: String, settings: RecipeInstance.Settings, state: Ref[F, RecipeInstanceState]) extends LazyLogging {
 
   /** Validates an attempt to fire an event, and if valid, executes the cascading effect of firing the event.
     * The returning effect will resolve right after the event has been recorded, but asynchronously cascades the recipe
@@ -104,19 +102,18 @@ case class RecipeInstance[F[_]](recipeInstanceId: String,
       case outcome: TransitionExecution.Outcome.Failed =>
 
         outcome.exceptionStrategy match {
-          case FailureStrategy.Continue(marking, output) =>
+          case ExceptionStrategyOutcome.Continue(eventName) =>
             handleExecutionOutcome(finishedExecution)(TransitionExecution.Outcome.Completed(
               timeStarted = outcome.timeStarted,
               timeCompleted = outcome.timeFailed,
-              produced = marking,
-              output = output))
+              output = Some(EventInstance(eventName, Map.empty))))
 
-          case FailureStrategy.BlockTransition =>
+          case ExceptionStrategyOutcome.BlockTransition =>
             state
               .update(_.transitionExecutionToFailedState(finishedExecution, outcome))
               .as(None -> Set.empty[TransitionExecution])
 
-          case FailureStrategy.RetryWithDelay(delay) =>
+          case ExceptionStrategyOutcome.RetryWithDelay(delay) =>
             for {
               _ <- state.update(_
                 .transitionExecutionToFailedState(finishedExecution, outcome)
