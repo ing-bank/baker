@@ -28,14 +28,12 @@ case class RecipeInstanceState(
   def isInactive: Boolean =
     executions.values.forall(_.isInactive)
 
-  def getInteractionExecution(interactionName: String): Option[(InteractionTransition, TransitionExecution)] =
+  def getInteractionExecution(interactionName: String): Option[TransitionExecution] =
     for {
       transition <- recipe.interactionTransitions.find(_.interactionName == interactionName)
       transitionExecution <- executions.collectFirst {
-        case (_, execution) if execution.transition.id == transition.id =>
-          execution
-      }
-    } yield (transition, transitionExecution)
+        case (_, execution) if execution.transition.id == transition.id => execution }
+    } yield transitionExecution
 
   def sensoryEventByName(name: String): Option[EventDescriptor] =
     recipe.sensoryEvents.find(_.name == name)

@@ -110,7 +110,7 @@ private[recipeinstance] case class TransitionExecution(
       case _ => false
     }
 
-  def getFailure[F[_]](implicit effect: Sync[F]): F[TransitionExecution.State.Failed] =
+  private def getFailure[F[_]](implicit effect: Sync[F]): F[TransitionExecution.State.Failed] =
     state match {
       case failure: TransitionExecution.State.Failed => effect.pure(failure)
       case _ => effect.raiseError(new IllegalStateException("This INTERNAL method should be called only after making sure this is a failed execution"))
@@ -146,6 +146,72 @@ private[recipeinstance] case class TransitionExecution(
           buildCompletedOutcome(startTime, endTime, producedMarking, output)
       }
     } yield outcome
+
+  def stopRetryingInteraction[F[_]](implicit effect: Sync[F], timer: Timer[F]): F[TransitionExecution.Outcome.Failed] =
+    if (isRetrying)
+      for {
+        timestamp <- timer.clock.realTime(MILLISECONDS)
+        failureReason <- getFailureReason
+        outcome = TransitionExecution.Outcome.Failed(
+          executionSequenceId = executionSequenceId,
+          transitionExecutionId = id,
+          transitionId = transition.id,
+          correlationId,
+          timestamp,
+          timestamp,
+          marshalMarking(consume),
+          input,
+          failureReason,
+          FailureStrategy.BlockTransition)
+      } yield outcome
+    else effect.raiseError(new FatalInteractionException("Interaction is not retrying"))
+
+  def retryBlockedInteraction[F[_]](implicit effect: Sync[F], timer: Timer[F]): F[TransitionExecution.Outcome.Failed] =
+    if (isBlocked)
+      for {
+        timestamp <- timer.clock.realTime(MILLISECONDS)
+        failureReason <- getFailureReason
+        outcome = TransitionExecution.Outcome.Failed(
+          executionSequenceId = executionSequenceId,
+          transitionExecutionId = id,
+          transitionId = transition.id,
+          correlationId,
+          timestamp,
+          timestamp,
+          marshalMarking(consume),
+          input,
+          failureReason,
+          FailureStrategy.RetryWithDelay(0))
+      } yield outcome
+    else effect.raiseError(new FatalInteractionException("Interaction is not blocked"))
+
+  def resolveBlockedInteraction[F[_]](eventInstance: EventInstance)(implicit effect: Sync[F], timer: Timer[F]): F[TransitionExecution.Outcome.Failed] =
+    (isBlocked, transition) match {
+      case (true, interactionTransition: InteractionTransition) =>
+        for {
+          _ <- validateInteractionOutput[F](interactionTransition, Some(eventInstance))
+          producedMarking: Marking[Place] = createOutputMarking(recipe.petriNet.outMarking(interactionTransition), Some(eventInstance))
+          transformedEvent: Option[EventInstance] = transformOutputWithTheInteractionTransitionOutputTransformers(interactionTransition, Some(eventInstance))
+          timestamp <- timer.clock.realTime(MILLISECONDS)
+          failureReason <- getFailureReason
+          outcome = TransitionExecution.Outcome.Failed(
+            executionSequenceId = executionSequenceId,
+            transitionExecutionId = id,
+            transitionId = transition.id,
+            correlationId,
+            timestamp,
+            timestamp,
+            marshalMarking(consume),
+            input,
+            failureReason,
+            FailureStrategy.Continue(producedMarking, transformedEvent)
+          )
+        } yield outcome
+      case (false, _) =>
+        effect.raiseError(new FatalInteractionException("Interaction is not blocked"))
+      case _ =>
+        effect.raiseError(new FatalInteractionException("TransitionExecution is not for an Interaction"))
+    }
 
   private def buildCompletedOutcome(startTime: Long, endTime: Long, producedMarking: Marking[Place], output: Option[EventInstance]): TransitionExecution.Outcome =
     TransitionExecution.Outcome.Completed(executionSequenceId, id, transition.getId, correlationId, startTime, endTime, marshalMarking(consume), producedMarking.marshall, output)
