@@ -7,8 +7,6 @@ import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejecti
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstanceEventValidation.EventValidation
 import com.ing.baker.runtime.scaladsl.EventInstance
 
-import scala.concurrent.duration.FiniteDuration
-
 object RecipeInstanceEventValidation {
 
   type Reason = String
@@ -50,8 +48,8 @@ trait RecipeInstanceEventValidation { recipeInstance: RecipeInstanceState =>
     accept(())
 
   private def eventIsInRecipe(event: EventInstance): EventValidation[(Transition, EventDescriptor)] = {
-    val maybeTransition = transitionByLabel(event.name)
-    val maybeSensoryEvent = sensoryEventByName(event.name)
+    val maybeTransition = recipe.petriNet.transitions.find(_.label == event.name)
+    val maybeSensoryEvent = recipe.sensoryEvents.find(_.name == event.name)
     (maybeTransition, maybeSensoryEvent) match {
       case (Some(transition), Some(sensoryEvent)) =>
         accept(transition -> sensoryEvent)
@@ -92,7 +90,7 @@ trait RecipeInstanceEventValidation { recipeInstance: RecipeInstanceState =>
   }
 
   private def transitionNotBlocked(transition: Transition): EventValidation[Unit] =
-    if (isBlocked(transition))
+    if (hasFailed(transition))
       reject(FireSensoryEventRejection.FiringLimitMet(recipeInstance.recipeInstanceId),
         "Transition is blocked by a previous failure")
     else

@@ -16,21 +16,31 @@ import com.ing.baker.types.Value
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 /** TODO Remove intermediary BakerF interface
   * TODO refactor RecipeInstanceManager + Baker
-  * TODO refactor failure handling
   * TODO implement recipe instance deletion strategy from the recipe
   * TODO logging
   * TODO cleanup UX and BakerComponents utilization
   * TODO review new interfaces InteractionInstanceF and EventResolutions
   * TODO documentation
+  * TODO apply ingredients filter from the recipe instance settings
   * TODO optimize compilation time by narrowing implicit syntax
   */
+object Baker {
+
+  case class Config(allowAddingRecipeWithoutRequiringInstances: Boolean = false,
+                    bakeTimeout: FiniteDuration = 10.seconds,
+                    processEventTimeout: FiniteDuration = 10.seconds,
+                    inquireTimeout: FiniteDuration = 10.seconds,
+                    shutdownTimeout: FiniteDuration = 10.seconds,
+                    addRecipeTimeout: FiniteDuration = 10.seconds)
+}
 
 abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) extends BakerF[F] with LazyLogging { self =>
 
-  val config: BakerConfig
+  val config: Baker.Config
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.

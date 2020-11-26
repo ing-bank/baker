@@ -3,6 +3,7 @@ package com.ing.baker.runtime.model
 import cats.implicits._
 import cats.{Functor, MonadError}
 import com.ing.baker.il.petrinet.InteractionTransition
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceF}
 
 trait InteractionInstanceManager[F[_]] {
@@ -17,7 +18,7 @@ trait InteractionInstanceManager[F[_]] {
   def execute(interaction: InteractionTransition, input: Seq[IngredientInstance])(implicit effect: MonadError[F, Throwable]): F[Option[EventInstance]] = {
     get(interaction).flatMap {
       case Some(implementation) => implementation.execute(input)
-      case None => effect.raiseError(new IllegalStateException(s"No implementation available for interaction ${interaction.interactionName}"))
+      case None => effect.raiseError(new FatalInteractionException(s"No implementation available for interaction ${interaction.interactionName}"))
     }
   }
 

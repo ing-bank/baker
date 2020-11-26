@@ -4,13 +4,13 @@ import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
 import cats.~>
 import com.ing.baker.runtime.inmemory.InMemoryBaker.build
 import com.ing.baker.runtime.javadsl
-import com.ing.baker.runtime.model.{Baker, BakerComponents, BakerConfig}
+import com.ing.baker.runtime.model.{Baker, BakerComponents}
 
 import scala.concurrent._
 
 object InMemoryBaker {
 
-  def build(config: BakerConfig = BakerConfig())(implicit timer: Timer[IO], cs: ContextShift[IO]): IO[Baker[IO]] = for {
+  def build(config: Baker.Config = Baker.Config())(implicit timer: Timer[IO], cs: ContextShift[IO]): IO[Baker[IO]] = for {
     interactionInstanceManager <- InMemoryInteractionInstanceManager.build
     recipeInstanceManager <- InMemoryRecipeInstanceManager.build
     recipeManager <- InMemoryRecipeManager.build
@@ -24,7 +24,7 @@ object InMemoryBaker {
 
 object InMemoryBakerJava {
 
-  def java(config: BakerConfig): javadsl.Baker = {
+  def java(config: Baker.Config): javadsl.Baker = {
     implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
     implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     val bakerF = build(config).unsafeRunSync().asDeprecatedFutureImplementation(
@@ -39,11 +39,11 @@ object InMemoryBakerJava {
   }
 
   def java() : javadsl.Baker = {
-    java(BakerConfig())
+    java(Baker.Config())
   }
 }
 
-final class InMemoryBaker(val config: BakerConfig)(implicit components: BakerComponents[IO], effect: ConcurrentEffect[IO], timer: Timer[IO]) extends Baker[IO] {
+final class InMemoryBaker(val config: Baker.Config)(implicit components: BakerComponents[IO], effect: ConcurrentEffect[IO], timer: Timer[IO]) extends Baker[IO] {
 
   /**
     * Attempts to gracefully shutdown the baker system.
