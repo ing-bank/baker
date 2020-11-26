@@ -33,37 +33,13 @@ object TransitionExecution {
     case object Active extends State
   }
 
-  sealed trait Outcome {
-
-    val transitionExecutionId: Long
-
-    val transitionId: Long
-  }
+  sealed trait Outcome
 
   object Outcome {
 
-    case class Completed(executionSequenceId: Long,
-                         transitionExecutionId: Long,
-                         transitionId: Long,
-                         correlationId: Option[String],
-                         timeStarted: Long,
-                         timeCompleted: Long,
-                         consumed: Marking[Long],
-                         produced: Marking[Long],
-                         output: Option[EventInstance]
-                        ) extends Outcome
+    case class Completed(timeStarted: Long, timeCompleted: Long, produced: Marking[Place], output: Option[EventInstance]) extends Outcome
 
-    case class Failed(executionSequenceId: Long,
-                      transitionExecutionId: Long,
-                      transitionId: Long,
-                      correlationId: Option[String],
-                      timeStarted: Long,
-                      timeFailed: Long,
-                      consume: Marking[Id],
-                      input: Option[EventInstance],
-                      failureReason: String,
-                      exceptionStrategy: FailureStrategy
-                     ) extends Outcome
+    case class Failed(timeStarted: Long, timeFailed: Long, failureReason: String, exceptionStrategy: FailureStrategy) extends Outcome
   }
 }
 
@@ -72,30 +48,21 @@ object TransitionExecution {
   */
 private[recipeinstance] case class TransitionExecution(
   id: Long = TransitionExecution.generateId,
-  executionSequenceId: Long,
   recipeInstanceId: String,
   recipe: CompiledRecipe,
   transition: Transition,
   consume: Marking[Place],
-  input: Option[EventInstance],
+  input: Option[EventInstance], // TODO maybe this and ingredients can be moved to the execution part?
   ingredients: Map[String, Value],
   correlationId: Option[String],
   state: TransitionExecution.State = TransitionExecution.State.Active
 ) extends LazyLogging {
 
-  def isActive: Boolean =
+  def isInactive: Boolean =
     state match {
-      case TransitionExecution.State.Failed(_, _, _, FailureStrategy.RetryWithDelay(_)) ⇒ true
-      case TransitionExecution.State.Active ⇒ true
-      case _ ⇒ false
-    }
-
-  def isInactive: Boolean = !isActive
-
-  def hasFailed: Boolean =
-    state match {
-      case _: TransitionExecution.State.Failed => true
-      case _ => false
+      case TransitionExecution.State.Failed(_, _, _, FailureStrategy.RetryWithDelay(_)) ⇒ false
+      case TransitionExecution.State.Active ⇒ false
+      case _ ⇒ true
     }
 
   def isRetrying: Boolean =
@@ -110,20 +77,15 @@ private[recipeinstance] case class TransitionExecution(
       case _ => false
     }
 
-  private def getFailure[F[_]](implicit effect: Sync[F]): F[TransitionExecution.State.Failed] =
-    state match {
-      case failure: TransitionExecution.State.Failed => effect.pure(failure)
-      case _ => effect.raiseError(new IllegalStateException("This INTERNAL method should be called only after making sure this is a failed execution"))
-    }
-
-  def getFailureReason[F[_]](implicit effect: Sync[F]): F[String] =
-    getFailure.map(_.failureReason)
-
   def failureCount: Int =
     state match {
       case e: TransitionExecution.State.Failed ⇒ e.failureCount
       case _ => 0
     }
+
+  def toFailedState(failedOutcome: TransitionExecution.Outcome.Failed): TransitionExecution =
+    copy(state = TransitionExecution.State.Failed(
+      failedOutcome.timeFailed, failureCount + 1, failedOutcome.failureReason, failedOutcome.exceptionStrategy))
 
   def execute[F[_]](implicit components: BakerComponents[F], effect: Sync[F], timer: Timer[F]): F[TransitionExecution.Outcome] =
     for {
@@ -147,45 +109,33 @@ private[recipeinstance] case class TransitionExecution(
       }
     } yield outcome
 
-  def stopRetryingInteraction[F[_]](implicit effect: Sync[F], timer: Timer[F]): F[TransitionExecution.Outcome.Failed] =
+  def buildOutcomeForStopRetryingInteraction[F[_]](implicit effect: Sync[F], timer: Timer[F]): F[TransitionExecution.Outcome.Failed] =
     if (isRetrying)
       for {
         timestamp <- timer.clock.realTime(MILLISECONDS)
         failureReason <- getFailureReason
         outcome = TransitionExecution.Outcome.Failed(
-          executionSequenceId = executionSequenceId,
-          transitionExecutionId = id,
-          transitionId = transition.id,
-          correlationId,
           timestamp,
           timestamp,
-          marshalMarking(consume),
-          input,
           failureReason,
           FailureStrategy.BlockTransition)
       } yield outcome
     else effect.raiseError(new FatalInteractionException("Interaction is not retrying"))
 
-  def retryBlockedInteraction[F[_]](implicit effect: Sync[F], timer: Timer[F]): F[TransitionExecution.Outcome.Failed] =
+  def buildOutcomeForRetryingBlockedInteraction[F[_]](implicit effect: Sync[F], timer: Timer[F]): F[TransitionExecution.Outcome.Failed] =
     if (isBlocked)
       for {
         timestamp <- timer.clock.realTime(MILLISECONDS)
         failureReason <- getFailureReason
         outcome = TransitionExecution.Outcome.Failed(
-          executionSequenceId = executionSequenceId,
-          transitionExecutionId = id,
-          transitionId = transition.id,
-          correlationId,
           timestamp,
           timestamp,
-          marshalMarking(consume),
-          input,
           failureReason,
           FailureStrategy.RetryWithDelay(0))
       } yield outcome
     else effect.raiseError(new FatalInteractionException("Interaction is not blocked"))
 
-  def resolveBlockedInteraction[F[_]](eventInstance: EventInstance)(implicit effect: Sync[F], timer: Timer[F]): F[TransitionExecution.Outcome.Failed] =
+  def buildOutcomeForResolvingBlockedInteraction[F[_]](eventInstance: EventInstance)(implicit effect: Sync[F], timer: Timer[F]): F[TransitionExecution.Outcome.Completed] =
     (isBlocked, transition) match {
       case (true, interactionTransition: InteractionTransition) =>
         for {
@@ -193,18 +143,11 @@ private[recipeinstance] case class TransitionExecution(
           producedMarking: Marking[Place] = createOutputMarking(recipe.petriNet.outMarking(interactionTransition), Some(eventInstance))
           transformedEvent: Option[EventInstance] = transformOutputWithTheInteractionTransitionOutputTransformers(interactionTransition, Some(eventInstance))
           timestamp <- timer.clock.realTime(MILLISECONDS)
-          failureReason <- getFailureReason
-          outcome = TransitionExecution.Outcome.Failed(
-            executionSequenceId = executionSequenceId,
-            transitionExecutionId = id,
-            transitionId = transition.id,
-            correlationId,
+          outcome = TransitionExecution.Outcome.Completed(
             timestamp,
             timestamp,
-            marshalMarking(consume),
-            input,
-            failureReason,
-            FailureStrategy.Continue(producedMarking, transformedEvent)
+            producedMarking,
+            transformedEvent
           )
         } yield outcome
       case (false, _) =>
@@ -212,43 +155,6 @@ private[recipeinstance] case class TransitionExecution(
       case _ =>
         effect.raiseError(new FatalInteractionException("TransitionExecution is not for an Interaction"))
     }
-
-  private def buildCompletedOutcome(startTime: Long, endTime: Long, producedMarking: Marking[Place], output: Option[EventInstance]): TransitionExecution.Outcome =
-    TransitionExecution.Outcome.Completed(executionSequenceId, id, transition.getId, correlationId, startTime, endTime, marshalMarking(consume), producedMarking.marshall, output)
-
-  private def buildFailedOutcome(startTime: Long, endTime: Long, e: Throwable): TransitionExecution.Outcome = {
-    val throwable = e match {
-      case e: InvocationTargetException => e.getCause
-      case e => e
-    }
-    val exceptionStackTrace: String = {
-      val sw = new StringWriter()
-      throwable.printStackTrace(new PrintWriter(sw))
-      sw.toString
-    }
-    val failureReactionStrategy =
-      (throwable, transition) match {
-        case (e, _) if e.isInstanceOf[Error] =>
-          BlockTransition
-        case (_, interaction: InteractionTransition) =>
-          val interactionStrategy = interaction.failureStrategy.apply(failureCount + 1)
-          interactionStrategy match {
-            case ExceptionStrategyOutcome.BlockTransition =>
-              BlockTransition
-            case ExceptionStrategyOutcome.RetryWithDelay(delay) =>
-              RetryWithDelay(delay)
-            case ExceptionStrategyOutcome.Continue(eventName) =>
-              val runtimeEvent = EventInstance(eventName, Map.empty)
-              val outMarking = recipe.petriNet.outMarking(transition)
-              Continue(createOutputMarking(outMarking, Some(runtimeEvent)), Some(runtimeEvent))
-          }
-        case _ =>
-          BlockTransition
-      }
-    TransitionExecution.Outcome.Failed(
-      executionSequenceId, id, transition.getId, correlationId, startTime, endTime, marshalMarking(consume),
-      input, exceptionStackTrace, failureReactionStrategy)
-  }
 
   private def executeInteractionInstance[F[_]](interactionTransition: InteractionTransition)(implicit components: BakerComponents[F], effect: Sync[F], timer: Timer[F]): F[(Marking[Place], Option[EventInstance])] = {
 
@@ -293,13 +199,54 @@ private[recipeinstance] case class TransitionExecution(
     } yield outcome
   }
 
-  def createOutputMarking(outAdjacent: MultiSet[Place], interactionOutput: Option[EventInstance]): Marking[Place] =
+  private def buildCompletedOutcome(startTime: Long, endTime: Long, producedMarking: Marking[Place], output: Option[EventInstance]): TransitionExecution.Outcome =
+    TransitionExecution.Outcome.Completed(startTime, endTime, producedMarking, output)
+
+  private def buildFailedOutcome(startTime: Long, endTime: Long, e: Throwable): TransitionExecution.Outcome = {
+    val throwable = e match {
+      case e: InvocationTargetException => e.getCause
+      case e => e
+    }
+    val exceptionStackTrace: String = {
+      val sw = new StringWriter()
+      throwable.printStackTrace(new PrintWriter(sw))
+      sw.toString
+    }
+    val failureReactionStrategy =
+      (throwable, transition) match {
+        case (e, _) if e.isInstanceOf[Error] =>
+          BlockTransition
+        case (_, interaction: InteractionTransition) =>
+          val interactionStrategy = interaction.failureStrategy.apply(failureCount + 1)
+          interactionStrategy match {
+            case ExceptionStrategyOutcome.BlockTransition =>
+              BlockTransition
+            case ExceptionStrategyOutcome.RetryWithDelay(delay) =>
+              RetryWithDelay(delay)
+            case ExceptionStrategyOutcome.Continue(eventName) =>
+              val runtimeEvent = EventInstance(eventName, Map.empty)
+              val outMarking = recipe.petriNet.outMarking(transition)
+              Continue(createOutputMarking(outMarking, Some(runtimeEvent)), Some(runtimeEvent))
+          }
+        case _ =>
+          BlockTransition
+      }
+    TransitionExecution.Outcome.Failed(startTime, endTime, exceptionStackTrace, failureReactionStrategy)
+  }
+
+  private def getFailureReason[F[_]](implicit effect: Sync[F]): F[String] =
+    state match {
+      case failure: TransitionExecution.State.Failed => effect.pure(failure.failureReason)
+      case _ => effect.raiseError(new FatalInteractionException("This INTERNAL method should be called only after making sure this is a failed execution"))
+    }
+
+  private def createOutputMarking(outAdjacent: MultiSet[Place], interactionOutput: Option[EventInstance]): Marking[Place] =
     outAdjacent.keys.map { place =>
       val value: Any = interactionOutput.map(_.name).orNull
       place -> MultiSet.copyOff(Seq(value))
     }.toMarking
 
-  def validateInteractionOutput[F[_]](interactionTransition: InteractionTransition, interactionOutput: Option[EventInstance])(implicit effect: Sync[F]): F[Unit] = {
+  private def validateInteractionOutput[F[_]](interactionTransition: InteractionTransition, interactionOutput: Option[EventInstance])(implicit effect: Sync[F]): F[Unit] = {
     def fail(message: String): F[Unit] = effect.raiseError(new FatalInteractionException(message))
     def continue: F[Unit] = effect.unit
     interactionOutput match {
@@ -322,7 +269,7 @@ private[recipeinstance] case class TransitionExecution(
     }
   }
 
-  def transformOutputWithTheInteractionTransitionOutputTransformers(interactionTransition: InteractionTransition, interactionOutput: Option[EventInstance]): Option[EventInstance] = {
+  private def transformOutputWithTheInteractionTransitionOutputTransformers(interactionTransition: InteractionTransition, interactionOutput: Option[EventInstance]): Option[EventInstance] = {
     interactionOutput.map { eventInstance =>
       val eventOutputTransformer =
         interactionTransition.eventOutputTransformers.find { case (eventName, _) => eventInstance.name.equals(eventName) }

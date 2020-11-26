@@ -137,7 +137,7 @@ trait RecipeInstanceManager[F[_]] {
       case None => effect.raiseError(BakerException.NoSuchProcessException(recipeInstanceId))
     }
 
-  // TODO have to fail directly, see if getExistent matches the exeptions on the Baker level
+  // TODO have to fail directly, see if getExistent matches the exceptions on the Baker level
   def bake(recipeInstanceId: String, recipe: CompiledRecipe)(implicit components: BakerComponents[F], effect: Monad[F]): F[BakeOutcome] =
     get(recipeInstanceId).flatMap {
       case Some(RecipeInstanceStatus.Active(_)) =>
@@ -179,29 +179,20 @@ trait RecipeInstanceManager[F[_]] {
       recipeInstance <- getExistent(recipeInstanceId)
       currentState <- recipeInstance.state.get
     } yield RecipeVisualizer.visualizeRecipe(
-      recipeInstance.recipe,
+      currentState.recipe,
       style,
       eventNames = currentState.events.map(_.name).toSet,
       ingredientNames = currentState.ingredients.keySet
     )
 
-  def stopRetryingInteraction(recipeInstanceId: String, interactionName: String)(implicit effect: ConcurrentEffect[F]): F[Unit] =
-    for {
-      recipeInstance <- getExistent(recipeInstanceId)
-      _ <- recipeInstance.stopRetryingInteraction(interactionName)
-    } yield ()
+  def stopRetryingInteraction(recipeInstanceId: String, interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] =
+    getExistent(recipeInstanceId).map(_.stopRetryingInteraction(interactionName))
 
-  def retryBlockedInteraction(recipeInstanceId: String, interactionName: String)(implicit effect: ConcurrentEffect[F]): F[Unit] =
-    for {
-      recipeInstance <- getExistent(recipeInstanceId)
-      _ <- recipeInstance.retryBlockedInteraction(interactionName)
-    } yield ()
+  def retryBlockedInteraction(recipeInstanceId: String, interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Stream[F, EventInstance]] =
+    getExistent(recipeInstanceId).map(_.retryBlockedInteraction(interactionName))
 
-  def resolveBlockedInteraction(recipeInstanceId: String, interactionName: String, eventInstance: EventInstance)(implicit effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] =
-    for {
-      recipeInstance <- getExistent(recipeInstanceId)
-      _ <- recipeInstance.resolveBlockedInteraction(interactionName, eventInstance)
-    } yield ()
+  def resolveBlockedInteraction(recipeInstanceId: String, interactionName: String, eventInstance: EventInstance)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Stream[F, EventInstance]] =
+    getExistent(recipeInstanceId).map(_.resolveBlockedInteraction(interactionName, eventInstance))
 
   // TODO same as last 2
   private def getRecipeInstanceWithPossibleRejection(recipeInstanceId: String)(implicit effect: Functor[F]): EitherT[F, FireSensoryEventRejection, RecipeInstance[F]] =

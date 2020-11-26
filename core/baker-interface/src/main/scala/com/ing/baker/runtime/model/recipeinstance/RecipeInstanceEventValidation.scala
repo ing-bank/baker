@@ -4,7 +4,7 @@ import com.ing.baker.il.EventDescriptor
 import com.ing.baker.il.petrinet.{Place, Transition}
 import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
-import com.ing.baker.runtime.model.recipeinstance.RecipeInstanceEventValidation.{EventValidation, OrphanTransitionExecution}
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstanceEventValidation.EventValidation
 import com.ing.baker.runtime.scaladsl.EventInstance
 
 import scala.concurrent.duration.FiniteDuration
@@ -15,14 +15,11 @@ object RecipeInstanceEventValidation {
 
   type EventValidation[A] =
     Either[(FireSensoryEventRejection, Reason), A]
-
-  type OrphanTransitionExecution =
-    Long => TransitionExecution
 }
 
 trait RecipeInstanceEventValidation { recipeInstance: RecipeInstanceState =>
 
-  def validateExecution[F[_]](input: EventInstance, correlationId: Option[String], currentTime: Long): EventValidation[OrphanTransitionExecution] = {
+  def validateExecution[F[_]](input: EventInstance, correlationId: Option[String], currentTime: Long): EventValidation[TransitionExecution] = {
     for {
       transitionAndDescriptor <- eventIsInRecipe(input)
       (transition, descriptor) = transitionAndDescriptor
@@ -31,17 +28,15 @@ trait RecipeInstanceEventValidation { recipeInstance: RecipeInstanceState =>
       _ <- notReceivedCorrelationId(correlationId)
       _ <- transitionNotBlocked(transition)
       params <- consumableTokensAreAvailable(transition)
-      execution =
-        (parentExecutionSequenceId: Long) => TransitionExecution(
-          recipeInstanceId = recipeInstance.recipeInstanceId,
-          executionSequenceId = parentExecutionSequenceId,
-          recipe = recipeInstance.recipe,
-          transition = transition,
-          consume = params.head,
-          input = Some(input),
-          ingredients = recipeInstance.ingredients,
-          correlationId = correlationId
-        )
+      execution = TransitionExecution(
+        recipeInstanceId = recipeInstance.recipeInstanceId,
+        recipe = recipeInstance.recipe,
+        transition = transition,
+        consume = params.head,
+        input = Some(input),
+        ingredients = recipeInstance.ingredients,
+        correlationId = correlationId
+      )
     } yield execution
   }
 
@@ -75,20 +70,17 @@ trait RecipeInstanceEventValidation { recipeInstance: RecipeInstanceState =>
       continue
   }
 
-  private def withinReceivePeriod(currentTime: Long): EventValidation[Unit] = {
-    def outOfReceivePeriod(createdOn: Long, period: FiniteDuration): Boolean =
-      currentTime - createdOn > period.toMillis
+  private def withinReceivePeriod(currentTime: Long): EventValidation[Unit] =
     recipeInstance.recipe.eventReceivePeriod match {
-      case Some(receivePeriod) if outOfReceivePeriod(createdOn, receivePeriod) =>
+      case Some(receivePeriod) if currentTime - createdOn > receivePeriod.toMillis =>
         reject(FireSensoryEventRejection.ReceivePeriodExpired(recipeInstance.recipeInstanceId), "Receive period expired")
       case _ =>
         continue
     }
-  }
 
   private def notReceivedCorrelationId(correlationId: Option[String]): EventValidation[Unit] = {
     def alreadyReceived(correlation: String): Boolean =
-      recipeInstance.receivedCorrelationIds.contains(correlation) ||
+      recipeInstance.completedCorrelationIds.contains(correlation) ||
         recipeInstance.executions.values.exists(_.correlationId.contains(correlation))
     correlationId match {
       case Some(correlationId) if alreadyReceived(correlationId) =>

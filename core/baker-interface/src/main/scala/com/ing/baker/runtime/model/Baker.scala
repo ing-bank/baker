@@ -405,6 +405,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     */
   override def retryInteraction(recipeInstanceId: String, interactionName: String): F[Unit] =
     components.recipeInstanceManager.retryBlockedInteraction(recipeInstanceId, interactionName)
+      .flatMap(_.compile.drain)
       .timeout(config.processEventTimeout)
 
   /**
@@ -416,6 +417,7 @@ abstract class Baker[F[_]](implicit components: BakerComponents[F], effect: Conc
     */
   override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): F[Unit] =
     components.recipeInstanceManager.resolveBlockedInteraction(recipeInstanceId, interactionName, event)
+      .flatMap(_.compile.drain)
       .timeout(config.processEventTimeout)
 
   /**

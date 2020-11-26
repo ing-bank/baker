@@ -18,12 +18,10 @@ case class RecipeInstanceState(
                                 marking: Marking[Place],
                                 ingredients: Map[String, Value],
                                 events: List[EventMoment],
-                                receivedCorrelationIds: Set[String],
-                                executions: Map[Long, TransitionExecution]
+                                completedCorrelationIds: Set[String],
+                                executions: Map[Long, TransitionExecution],
+                                retryingExecutions: Set[Long]
                               ) extends RecipeInstanceEventValidation {
-
-  def activeExecutions: Iterable[TransitionExecution] =
-    executions.values.filter(_.isActive)
 
   def isInactive: Boolean =
     executions.values.forall(_.isInactive)
@@ -42,7 +40,7 @@ case class RecipeInstanceState(
     marking
 
   /** The marking that is already used by running jobs */
-  def reservedMarkings: Marking[Place] =
+  private def reservedMarkings: Marking[Place] =
     executions
       .map { case (_, execution) ⇒ execution.consume }
       .reduceOption(_ |+| _)
@@ -53,10 +51,7 @@ case class RecipeInstanceState(
     allMarking |-| reservedMarkings
 
   def consumableTokens(p: Place, transition: Transition, ofMarking: Marking[Place]): MultiSet[Any] = {
-    //ofMarking.getOrElse(p, MultiSet.empty)
-
     val edge = petriNet.findPTEdge(p, transition).map(_.asInstanceOf[Edge]).get
-
     ofMarking.get(p) match {
       case None ⇒ MultiSet.empty
       case Some(tokens) ⇒ tokens.filter { case (e, _) ⇒ edge.isAllowed(e) }
@@ -64,25 +59,6 @@ case class RecipeInstanceState(
   }
 
   def consumableMarkings(t: Transition, ofMarking: Marking[Place]): Iterable[Marking[Place]] = {
-    /*
-    // TODO this is not the most efficient, should break early when consumable tokens < edge weight
-
-    val consumable: immutable.Iterable[(Place, Int, MultiSet[Any])] = petriNet.inMarking(t).map {
-      case (place, count) ⇒ (place, count, ofMarking.getOrElse(place, MultiSet.empty))
-    }
-
-    // check if any any places have an insufficient number of tokens
-    if (consumable.exists {case (_, count, tokens) ⇒ tokens.multisetSize < count})
-      Seq.empty
-    else {
-      val consume = consumable.map {
-        case (place, count, tokens) ⇒ place -> MultiSet.copyOff[Any](tokens.allElements.take(count))
-      }.toMarking
-
-      // TODO lazily compute all permutations instead of only providing the first result
-      Seq(consume)
-    }
-    */
     // TODO this is not the most efficient, should break early when consumable tokens < edge weight
     val consumable = recipe.petriNet.inMarking(t).map {
       case (place, count) ⇒ (place, count, consumableTokens(place, t, ofMarking))
@@ -118,7 +94,7 @@ case class RecipeInstanceState(
 
   def isBlocked(transition: Transition): Boolean =
     executions.values
-      .exists(t => t.transition.id == transition.id && t.hasFailed)
+      .exists(t => t.transition.id == transition.id && t.isBlocked)
 
   def enabledParameters(ofMarking: Marking[Place]): Map[Transition, Iterable[Marking[Place]]] =
     enabledTransitions(ofMarking)
@@ -133,40 +109,14 @@ case class RecipeInstanceState(
       case _ => true
     }
 
-  /*
-  /** Finds the first transition that is enabled and can be fired automatically. */
-  def firstEnabledExecution: (RecipeInstanceState, Option[TransitionExecution]) = {
-    val enabled = enabledParameters(availableMarkings)
-    val canFire = enabled.find { case (transition, _) ⇒
-      !isBlocked(transition) && canBeFiredAutomatically(transition)
-    }
-    canFire.map { case (transition, markings) ⇒
-      val execution = TransitionExecution(
-        recipeInstanceId = recipeInstanceId,
-        recipe = recipe,
-        transition = transition,
-        consume = markings.head,
-        input = None,
-        ingredients = ingredients,
-        correlationId = None
-      )
-      (addExecution(execution), Some(execution))
-    }.getOrElse(this, None)
-  }
+  def addRetryingExecution(transitionExecutionId: Long): RecipeInstanceState =
+    copy(retryingExecutions = retryingExecutions + transitionExecutionId)
 
-  def allEnabledExecutions2: (RecipeInstanceState, Set[TransitionExecution]) = {
-    firstEnabledExecution match {
-      case (newInstance, None) =>
-        (newInstance, Set.empty)
-      case (newInstance, Some(execution)) =>
-        val (finalInstance, accExecutions) = newInstance.allEnabledExecutions
-        (finalInstance, accExecutions + execution)
-    }
-  }
-   */
+  def removeRetryingExecution(transitionExecutionId: Long): RecipeInstanceState =
+    copy(retryingExecutions = retryingExecutions - transitionExecutionId)
 
   /** Finds all enabled transitions that can be fired automatically. */
-  def allEnabledExecutions(parentExecutionSequenceId: Long): (RecipeInstanceState, Set[TransitionExecution]) = {
+  def allEnabledExecutions: (RecipeInstanceState, Set[TransitionExecution]) = {
     val enabled  = enabledParameters(availableMarkings)
     val canFire = enabled.filter { case (transition, _) ⇒
       !isBlocked(transition) && canBeFiredAutomatically(transition)
@@ -174,7 +124,6 @@ case class RecipeInstanceState(
     val executions = canFire.map {
       case (transition, markings) =>
         TransitionExecution(
-          executionSequenceId = parentExecutionSequenceId,
           recipeInstanceId = recipeInstanceId,
           recipe = recipe,
           transition = transition,
@@ -187,22 +136,22 @@ case class RecipeInstanceState(
     addExecution(executions: _*) -> executions.toSet
   }
 
-  def recordCompletedExecutionOutcome(completedOutcome: TransitionExecution.Outcome.Completed): (RecipeInstanceState, Set[TransitionExecution]) = {
+  def recordCompletedExecutionOutcome(transitionExecution: TransitionExecution, completedOutcome: TransitionExecution.Outcome.Completed): (RecipeInstanceState, Set[TransitionExecution]) = {
     aggregateOutputEvent(completedOutcome)
       .increaseSequenceNumber
-      .aggregatePetriNetChanges(completedOutcome)
-      .addReceivedCorrelationId(completedOutcome)
-      .removeExecution(completedOutcome)
-      .allEnabledExecutions(completedOutcome.executionSequenceId)
+      .aggregatePetriNetChanges(transitionExecution, completedOutcome)
+      .addCompletedCorrelationId(transitionExecution)
+      .removeExecution(transitionExecution)
+      .allEnabledExecutions
   }
 
   def addExecution(execution: TransitionExecution*): RecipeInstanceState =
     copy(executions = executions ++ execution.map(ex => ex.id -> ex))
 
-  def removeExecution(outcome: TransitionExecution.Outcome.Completed): RecipeInstanceState =
-    copy(executions = executions - outcome.transitionExecutionId)
+  def removeExecution(transitionExecution: TransitionExecution): RecipeInstanceState =
+    copy(executions = executions - transitionExecution.id)
 
-  def aggregateOutputEvent(outcome: TransitionExecution.Outcome.Completed): RecipeInstanceState = {
+  def aggregateOutputEvent(outcome: TransitionExecution.Outcome.Completed): RecipeInstanceState =
     outcome.output match {
       case None => this
       case Some(outputEvent) =>
@@ -210,39 +159,18 @@ case class RecipeInstanceState(
           ingredients = ingredients ++ outputEvent.providedIngredients,
           events = events :+ EventMoment(outputEvent.name, System.currentTimeMillis()))
     }
-  }
 
   def increaseSequenceNumber: RecipeInstanceState =
     copy(sequenceNumber = sequenceNumber + 1)
 
-  def aggregatePetriNetChanges(outcome: TransitionExecution.Outcome.Completed): RecipeInstanceState = {
-    val consumed: Marking[Place] = unmarshallMarking(petriNet.places, outcome.consumed)
-    val produced: Marking[Place] = unmarshallMarking(petriNet.places, outcome.produced)
-    copy(marking = (marking |-| consumed) |+| produced)
-  }
+  def aggregatePetriNetChanges(transitionExecution: TransitionExecution, outcome: TransitionExecution.Outcome.Completed): RecipeInstanceState =
+    copy(marking = (marking |-| transitionExecution.consume) |+| outcome.produced)
 
-  def addReceivedCorrelationId(outcome: TransitionExecution.Outcome.Completed): RecipeInstanceState =
-    copy(receivedCorrelationIds = receivedCorrelationIds ++ outcome.correlationId)
+  def addCompletedCorrelationId(transitionExecution: TransitionExecution): RecipeInstanceState =
+    copy(completedCorrelationIds = completedCorrelationIds ++ transitionExecution.correlationId)
 
-  def transitionExecutionToFailedState(failedOutcome: TransitionExecution.Outcome.Failed): RecipeInstanceState = {
-    val transition = transitionById(failedOutcome.transitionId)
-    val consumed: Marking[Place] = unmarshallMarking(petriNet.places, failedOutcome.consume)
-    lazy val newExecutionState =
-      TransitionExecution(
-        id = failedOutcome.transitionExecutionId,
-        executionSequenceId = failedOutcome.executionSequenceId,
-        recipeInstanceId = recipeInstanceId,
-        recipe = recipe,
-        transition = transition,
-        consume = consumed,
-        input = failedOutcome.input,
-        ingredients = ingredients,
-        correlationId = failedOutcome.correlationId)
-    val originalExecution = executions.getOrElse(failedOutcome.transitionExecutionId, newExecutionState)
-    val updatedExecution = originalExecution.copy(state =
-      TransitionExecution.State.Failed(failedOutcome.timeFailed, originalExecution.failureCount + 1, failedOutcome.failureReason, failedOutcome.exceptionStrategy))
-    addExecution(updatedExecution)
-  }
+  def transitionExecutionToFailedState(transitionExecution: TransitionExecution, failedOutcome: TransitionExecution.Outcome.Failed): RecipeInstanceState =
+    addExecution(transitionExecution.toFailedState(failedOutcome))
 }
 
 object RecipeInstanceState {
@@ -256,8 +184,9 @@ object RecipeInstanceState {
       marking = recipe.initialMarking,
       ingredients = Map.empty,
       events = List.empty,
-      receivedCorrelationIds = Set.empty,
-      executions = Map.empty
+      completedCorrelationIds = Set.empty,
+      executions = Map.empty,
+      retryingExecutions = Set.empty
     )
 }
 
