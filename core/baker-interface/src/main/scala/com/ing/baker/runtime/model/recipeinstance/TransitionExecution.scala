@@ -85,9 +85,10 @@ private[recipeinstance] case class TransitionExecution(
           case interactionTransition: InteractionTransition =>
             executeInteractionInstance(interactionTransition)
           case _: EventTransition =>
-            timer.clock.realTime(MILLISECONDS)
-              .flatMap(components.logging.firingEvent(recipeInstanceId, id, transition, _))
-              .as(input)
+              for {
+                timerstamp <- timer.clock.realTime(MILLISECONDS)
+                _ <- components.logging.firingEvent(recipeInstanceId, id, transition, timerstamp)
+              } yield input
           case _ =>
             effect.pure(None)
         }
