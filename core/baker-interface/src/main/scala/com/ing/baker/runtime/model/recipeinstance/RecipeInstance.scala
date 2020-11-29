@@ -1,16 +1,14 @@
 package com.ing.baker.runtime.model.recipeinstance
 
-import cats.implicits._
 import cats.data.EitherT
 import cats.effect.concurrent.Ref
 import cats.effect.{ConcurrentEffect, Effect, IO, Sync, Timer}
+import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
-import com.ing.baker.runtime.model.BakerComponents
-import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
+import com.ing.baker.runtime.model.{BakerComponents, FireSensoryEventRejection}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
-import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, RecipeInstanceCreated}
-import com.ing.baker.runtime.serialization.Encryption
+import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, EventRejected, RecipeInstanceCreated}
 import com.typesafe.scalalogging.LazyLogging
 import fs2.Stream
 
@@ -18,19 +16,21 @@ import scala.concurrent.duration._
 
 object RecipeInstance {
 
-  def empty[F[_]](recipe: CompiledRecipe, recipeInstanceId: String, settings: Settings)(implicit components: BakerComponents[F], effect: Sync[F], timer: Timer[F]): F[RecipeInstance[F]] =
+  case class Config(idleTTL: Option[FiniteDuration] = Some(5.seconds),
+                    ingredientsFilter: Seq[String] = Seq.empty)
+
+  def empty[F[_]](recipe: CompiledRecipe, recipeInstanceId: String, settings: Config)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[RecipeInstance[F]] =
     for {
       timestamp <- timer.clock.realTime(MILLISECONDS)
       state <- Ref.of[F, RecipeInstanceState](RecipeInstanceState.empty(recipeInstanceId, recipe, timestamp))
+      _ <- components.logging.recipeInstanceCreated(recipeInstanceId, timestamp, recipe)
       _ <- components.eventStream.publish(RecipeInstanceCreated(timestamp, recipe.recipeId, recipe.name, recipeInstanceId))
     } yield RecipeInstance(recipeInstanceId, settings, state)
-
-  case class Settings(idleTTL: Option[FiniteDuration], encryption: Encryption, ingredientsFilter: Seq[String])
 
   class FatalInteractionException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
 }
 
-case class RecipeInstance[F[_]](recipeInstanceId: String, settings: RecipeInstance.Settings, state: Ref[F, RecipeInstanceState]) extends LazyLogging {
+case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance.Config, state: Ref[F, RecipeInstanceState]) extends LazyLogging {
 
   /** Validates an attempt to fire an event, and if valid, executes the cascading effect of firing the event.
     * The returning effect will resolve right after the event has been recorded, but asynchronously cascades the recipe
@@ -40,14 +40,20 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, settings: RecipeInstan
     *         Note that the operation is wrapped within an effect because 2 reasons, first, the validation checks for
     *         current time, and second, if there is a rejection a message is logged, both are suspended into F.
     */
-  def fire(currentTime: Long, input: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, Stream[F, EventInstance]] =
+  def fireEventStream(input: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, Stream[F, EventInstance]] =
     for {
+      currentTime <- EitherT.liftF(timer.clock.realTime(MILLISECONDS))
       currentState <- EitherT.liftF(state.get)
-      initialExecution <- logRejectionReasonIfAny(currentState.validateExecution(input, correlationId, currentTime))
-      _ <- EitherT.liftF(components.eventStream.publish(EventReceived(
-        currentTime, currentState.recipe.name, currentState.recipe.recipeId, recipeInstanceId, correlationId, input)))
+      initialExecution <- EitherT.fromEither[F](currentState.validateExecution(input, correlationId, currentTime))
+        .leftSemiflatMap { case (rejection, reason)  =>
+          for {
+            _ <- components.logging.eventRejected(recipeInstanceId, input, reason)
+            _ <- components.eventStream.publish(EventRejected(currentTime, recipeInstanceId, correlationId, input, rejection.asReason))
+          } yield rejection
+        }
+      _ <- EitherT.liftF(components.eventStream.publish(EventReceived(currentTime, currentState.recipe.name, currentState.recipe.recipeId, recipeInstanceId, correlationId, input)))
     } yield baseCase(initialExecution)
-      .collect { case Some(output) => output }
+      .collect { case Some(output) => output.filterNot(config.ingredientsFilter) }
 
   def stopRetryingInteraction(interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] =
     for {
@@ -125,6 +131,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, settings: RecipeInstan
           _ <- state.update(_
             .recordFailedExecution(finishedExecution, strategy)
             .addRetryingExecution(finishedExecution.id))
+          _ <- components.logging.scheduleRetry(recipeInstanceId, finishedExecution.transition, delay)
           finalOutcome <- timer.sleep(delay.milliseconds) *> state.get.flatMap { currentState =>
             if (currentState.retryingExecutions.contains(finishedExecution.id)) {
               val currentTransitionExecution = currentState.executions(finishedExecution.id)
@@ -142,17 +149,18 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, settings: RecipeInstan
 
     def schedule: F[Unit] =
       state.get.flatMap { currentState =>
-        settings.idleTTL match {
+        config.idleTTL match {
           case Some(idleTTL) if currentState.isInactive =>
-            timer.sleep(idleTTL) *> confirmIdleStop(currentState.sequenceNumber)
+            timer.sleep(idleTTL) *> confirmIdleStop(currentState.sequenceNumber, idleTTL)
           case _ => effect.unit
         }
       }
 
-    def confirmIdleStop(sequenceNumber: Long): F[Unit] =
+    def confirmIdleStop(sequenceNumber: Long, originalIdleTTL: FiniteDuration): F[Unit] =
       state.get.flatMap { currentState =>
         if (currentState.isInactive && currentState.sequenceNumber == sequenceNumber)
-          components.recipeInstanceManager.idleStop(recipeInstanceId)
+          components.recipeInstanceManager.idleStop(recipeInstanceId) *>
+            components.logging.idleStop(recipeInstanceId, originalIdleTTL)
         else effect.unit
       }
 
@@ -166,22 +174,4 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, settings: RecipeInstan
       case Some(interactionExecution) =>
         effect.pure(interactionExecution)
     })
-
-  /** Helper function to log and remove the textual rejection reason of the `fire` operation. It basically exchanges the
-    * String inside the returning `Either` for an external effect `F`.
-    *
-    * @param validation
-    * @param effect
-    * @return
-    */
-  private def logRejectionReasonIfAny(validation: Either[(FireSensoryEventRejection, String), TransitionExecution])(implicit effect: Sync[F]): EitherT[F, FireSensoryEventRejection, TransitionExecution] = {
-    // TODO relate this to the recipe instance logger
-    EitherT(validation match {
-      case Left((rejection, reason)) =>
-        effect.delay(logger.info(s"Event rejected: $reason"))
-          .as(Left(rejection))
-      case Right(transitionExecution) =>
-        effect.pure(Right(transitionExecution))
-    })
-  }
 }

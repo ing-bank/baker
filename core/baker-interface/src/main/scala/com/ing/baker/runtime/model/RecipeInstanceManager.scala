@@ -1,180 +1,65 @@
 package com.ing.baker.runtime.model
 
-import cats.data.{EitherT, OptionT}
-import cats.effect.{ConcurrentEffect, Sync, Timer}
+import cats.data.EitherT
+import cats.effect.concurrent.Deferred
+import cats.effect.{ConcurrentEffect, Effect, Timer}
 import cats.implicits._
-import cats.{Functor, Monad}
-import fs2.Stream
-import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle, RecipeVisualizer}
-import com.ing.baker.runtime.common.{BakerException, RejectReason}
-import com.ing.baker.runtime.model.RecipeInstanceManager.{BakeOutcome, FireSensoryEventRejection, GetRecipeInstanceStateOutcome, RecipeInstanceStatus}
+import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
+import com.ing.baker.runtime.common.BakerException.{ProcessAlreadyExistsException, ProcessDeletedException}
+import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
+import com.ing.baker.runtime.model.RecipeInstanceManager.RecipeInstanceStatus
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
-import com.ing.baker.runtime.scaladsl.{EventInstance, EventRejected, RecipeInstanceMetadata, RecipeInstanceState}
-
-import scala.concurrent.duration.MILLISECONDS
+import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
+import fs2.{Pipe, Stream}
 
 object RecipeInstanceManager {
 
-  sealed trait BakeOutcome
-
-  // TODO Remove this and fail immediately in the manager operations with BakerExceptions
-  object BakeOutcome {
-
-    case object Baked extends BakeOutcome
-
-    case object RecipeInstanceDeleted extends BakeOutcome
-
-    case object RecipeInstanceAlreadyExists extends BakeOutcome
-  }
-
   sealed trait RecipeInstanceStatus[F[_]]
 
-  // TODO Remove this and fail immediately in the manager operations with BakerExceptions
   object RecipeInstanceStatus {
 
     case class Active[F[_]](recipeInstance: RecipeInstance[F]) extends RecipeInstanceStatus[F]
 
     case class Deleted[F[_]](recipeId: String, createdOn: Long, deletedOn: Long) extends RecipeInstanceStatus[F]
   }
-
-  sealed trait GetRecipeInstanceStateOutcome
-
-  // TODO Remove this and fail immediately in the manager operations with BakerExceptions
-  object GetRecipeInstanceStateOutcome {
-
-    case class Success(state: RecipeInstanceState) extends GetRecipeInstanceStateOutcome
-
-    case object RecipeInstanceDeleted extends GetRecipeInstanceStateOutcome
-
-    case object NoSuchRecipeInstance extends GetRecipeInstanceStateOutcome
-  }
-
-  sealed trait FireSensoryEventRejection {
-
-    def asReason: RejectReason
-  }
-
-  object FireSensoryEventRejection {
-
-    /**
-      * Indicates that a process can no longer receive events because the configured period has expired.
-      *
-      * @param recipeInstanceId The identifier of the RecipeInstanceId
-      */
-    case class ReceivePeriodExpired(recipeInstanceId: String) extends FireSensoryEventRejection {
-
-      def asReason: RejectReason = RejectReason.ReceivePeriodExpired
-    }
-
-    /**
-      * @param msg error message for the request
-      * @param recipeInstanceId The identifier of the RecipeInstanceId
-      */
-    case class InvalidEvent(recipeInstanceId: String, msg: String) extends FireSensoryEventRejection {
-
-      def asReason: RejectReason = RejectReason.InvalidEvent
-    }
-
-    /**
-      * Returned if a process has been deleted
-      *
-      * @param recipeInstanceId The identifier of the RecipeInstanceId
-      */
-    case class RecipeInstanceDeleted(recipeInstanceId: String) extends FireSensoryEventRejection {
-
-      def asReason: RejectReason = RejectReason.ProcessDeleted
-    }
-
-    /**
-      * Returned if the process is uninitialized
-      *
-      * @param recipeInstanceId The identifier of the RecipeInstanceId
-      */
-    case class NoSuchRecipeInstance(recipeInstanceId: String) extends FireSensoryEventRejection {
-
-      def asReason: RejectReason = RejectReason.NoSuchProcess
-    }
-
-    /**
-      * The firing limit, the number of times this event may fire, was met.
-      *
-      * @param recipeInstanceId The identifier of the RecipeInstanceId
-      */
-    case class FiringLimitMet(recipeInstanceId: String) extends FireSensoryEventRejection {
-
-      def asReason: RejectReason = RejectReason.FiringLimitMet
-    }
-
-    /**
-      * An event with the same correlation id was already received.
-      *
-      * @param recipeInstanceId The identifier of the RecipeInstanceId
-      * @param correlationId The identifier used to secure uniqueness
-      */
-    case class AlreadyReceived(recipeInstanceId: String, correlationId: String) extends FireSensoryEventRejection {
-
-      def asReason: RejectReason = RejectReason.AlreadyReceived
-    }
-  }
 }
 
 trait RecipeInstanceManager[F[_]] {
 
-  def add(recipeInstanceId: String, recipe: CompiledRecipe)(implicit components: BakerComponents[F]): F[Unit]
+  protected def store(newRecipeInstance: RecipeInstance[F])(implicit components: BakerComponents[F]): F[Unit]
 
-  def get(recipeInstanceId: String): F[Option[RecipeInstanceStatus[F]]]
-
-  def update(recipeInstanceId: String, updateFunction: RecipeInstance[F] => RecipeInstance[F]): F[RecipeInstance[F]]
+  protected def fetch(recipeInstanceId: String): F[Option[RecipeInstanceStatus[F]]]
 
   def idleStop(recipeInstanceId: String): F[Unit]
 
   def getAllRecipeInstancesMetadata: F[Set[RecipeInstanceMetadata]]
 
-  def getExistent(recipeInstanceId: String)(implicit effect: Sync[F]): F[RecipeInstance[F]] =
-    get(recipeInstanceId).flatMap {
-      case Some(RecipeInstanceStatus.Active(recipeInstance)) => effect.pure(recipeInstance)
-      case Some(RecipeInstanceStatus.Deleted(_, _, _)) => effect.raiseError(BakerException.ProcessDeletedException(recipeInstanceId))
-      case None => effect.raiseError(BakerException.NoSuchProcessException(recipeInstanceId))
-    }
+  def bake(recipeId: String, recipeInstanceId: String, config: RecipeInstance.Config)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[Unit] =
+    for {
+      _ <- fetch(recipeInstanceId).flatMap[Unit] {
+        case Some(RecipeInstanceStatus.Active(_)) =>
+          effect.raiseError(ProcessAlreadyExistsException(recipeInstanceId))
+        case Some(RecipeInstanceStatus.Deleted(_, _, _)) =>
+          effect.raiseError(ProcessDeletedException(recipeInstanceId))
+        case None =>
+          effect.unit
+      }
+      recipeInfo <- components.recipeManager.getRecipe(recipeId)
+      newRecipeInstance <- RecipeInstance.empty[F](recipeInfo.compiledRecipe, recipeInstanceId, config)
+      _ <- store(newRecipeInstance)
+    } yield ()
 
-  // TODO have to fail directly, see if getExistent matches the exceptions on the Baker level
-  def bake(recipeInstanceId: String, recipe: CompiledRecipe)(implicit components: BakerComponents[F], effect: Monad[F]): F[BakeOutcome] =
-    get(recipeInstanceId).flatMap {
-      case Some(RecipeInstanceStatus.Active(_)) =>
-        effect.pure(BakeOutcome.RecipeInstanceAlreadyExists)
-      case Some(RecipeInstanceStatus.Deleted(_, _, _)) =>
-        effect.pure(BakeOutcome.RecipeInstanceDeleted)
-      case None =>
-        add(recipeInstanceId, recipe).as(BakeOutcome.Baked)
-    }
+  def getRecipeInstanceState(recipeInstanceId: String)(implicit effect: Effect[F]): F[RecipeInstanceState] =
+    getExistent(recipeInstanceId).flatMap(
+      _.state.get.map { currentState =>
+        RecipeInstanceState(
+          recipeInstanceId,
+          currentState.ingredients,
+          currentState.events
+        )
+      })
 
-  // TODO same as last one
-  def getRecipeInstanceState(recipeInstanceId: String)(implicit effect: Monad[F]): F[GetRecipeInstanceStateOutcome] =
-    get(recipeInstanceId).flatMap {
-      case Some(RecipeInstanceStatus.Active(recipeInstance)) =>
-        recipeInstance.state.get.map { currentState =>
-          GetRecipeInstanceStateOutcome.Success(RecipeInstanceState(
-            recipeInstanceId,
-            currentState.ingredients,
-            currentState.events
-          ))
-        }
-      case Some(RecipeInstanceStatus.Deleted(_, _, _)) =>
-        effect.pure(GetRecipeInstanceStateOutcome.RecipeInstanceDeleted)
-      case None =>
-        effect.pure(GetRecipeInstanceStateOutcome.NoSuchRecipeInstance)
-    }
-
-  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, Stream[F, EventInstance]] = {
-    EitherT.liftF( timer.clock.realTime(MILLISECONDS) ).flatMap { currentTime =>
-      getRecipeInstanceWithPossibleRejection(recipeInstanceId)
-        .flatMap(_.fire(currentTime, event, correlationId))
-        .leftSemiflatMap(rejection => components.eventStream.publish(EventRejected(
-          currentTime, recipeInstanceId, correlationId, event, rejection.asReason)).as(rejection))
-    }
-  }
-
-  def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle = RecipeVisualStyle.default)(implicit effect: Sync[F]): F[String] =
+  def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle = RecipeVisualStyle.default)(implicit effect: Effect[F]): F[String] =
     for {
       recipeInstance <- getExistent(recipeInstanceId)
       currentState <- recipeInstance.state.get
@@ -185,8 +70,61 @@ trait RecipeInstanceManager[F[_]] {
       ingredientNames = currentState.ingredients.keySet
     )
 
+  def fireEventStream(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, Stream[F, EventInstance]] =
+    EitherT(fetch(recipeInstanceId).map {
+      case None =>
+        Left(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId))
+      case Some(RecipeInstanceStatus.Deleted(_, _, _)) =>
+        Left(FireSensoryEventRejection.RecipeInstanceDeleted(recipeInstanceId))
+      case Some(RecipeInstanceStatus.Active(recipeInstance)) =>
+        Right(recipeInstance)
+    }).flatMap(_.fireEventStream(event, correlationId))
+
+  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[SensoryEventStatus] =
+    fireEventStream(recipeInstanceId, event, correlationId)
+      .value.flatMap(foldToStatus(_.compile.drain))
+
+  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[SensoryEventResult] = {
+    def awaitForCompletion(stream: Stream[F, EventInstance]): F[SensoryEventResult] =
+      stream.through(aggregateResult).compile.lastOrError
+    fireEventStream(recipeInstanceId, event, correlationId)
+      .value.flatMap(foldToResult(awaitForCompletion))
+  }
+
+  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[SensoryEventResult] = {
+    def awaitForEvent(stream: Stream[F, EventInstance]): F[SensoryEventResult] =
+      Deferred[F, SensoryEventResult].flatMap { eventDeferred =>
+        stream.through(aggregateResult).evalTap(intermediateResult =>
+          if(intermediateResult.eventNames.contains(onEvent))
+            effect.attempt(eventDeferred.complete(intermediateResult)).void
+          else effect.unit
+        ).compile.drain *> eventDeferred.get
+      }
+    fireEventStream(recipeInstanceId, event, correlationId)
+      .value.flatMap(foldToResult(awaitForEvent))
+  }
+
+  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[(F[SensoryEventStatus], F[SensoryEventResult])] =
+    fireEventStream(recipeInstanceId, event, correlationId)
+      .value.flatMap(outcome =>
+        for {
+          received <- Deferred[F, Unit]
+          completed <- Deferred[F, SensoryEventResult]
+          _ <- outcome match {
+            case Left(_) =>
+              effect.unit
+            case Right(stream) =>
+              stream
+                .through(aggregateResult)
+                .last.evalTap(r => completed.complete(r.get))
+                .compile.drain *> received.complete(())
+          }
+        } yield (
+          foldToStatus((_: Unit) => received.get)(outcome.map(_ => ())),
+          foldToResult((_: Unit) => completed.get)(outcome.map(_ => ()))))
+
   def stopRetryingInteraction(recipeInstanceId: String, interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] =
-    getExistent(recipeInstanceId).map(_.stopRetryingInteraction(interactionName))
+    getExistent(recipeInstanceId).flatMap(_.stopRetryingInteraction(interactionName))
 
   def retryBlockedInteraction(recipeInstanceId: String, interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Stream[F, EventInstance]] =
     getExistent(recipeInstanceId).map(_.retryBlockedInteraction(interactionName))
@@ -194,15 +132,55 @@ trait RecipeInstanceManager[F[_]] {
   def resolveBlockedInteraction(recipeInstanceId: String, interactionName: String, eventInstance: EventInstance)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Stream[F, EventInstance]] =
     getExistent(recipeInstanceId).map(_.resolveBlockedInteraction(interactionName, eventInstance))
 
-  // TODO same as last 2
-  private def getRecipeInstanceWithPossibleRejection(recipeInstanceId: String)(implicit effect: Functor[F]): EitherT[F, FireSensoryEventRejection, RecipeInstance[F]] =
-    EitherT(get(recipeInstanceId).map {
-      case None =>
-        Left(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId))
-      case Some(RecipeInstanceStatus.Deleted(_, _, _)) =>
-        Left(FireSensoryEventRejection.RecipeInstanceDeleted(recipeInstanceId))
-      case Some(RecipeInstanceStatus.Active(recipeInstance)) =>
-        Right(recipeInstance)
-    })
+  private def getExistent(recipeInstanceId: String)(implicit effect: Effect[F]): F[RecipeInstance[F]] =
+    fetch(recipeInstanceId).flatMap {
+      case Some(RecipeInstanceStatus.Active(recipeInstance)) => effect.pure(recipeInstance)
+      case Some(RecipeInstanceStatus.Deleted(_, _, _)) => effect.raiseError(BakerException.ProcessDeletedException(recipeInstanceId))
+      case None => effect.raiseError(BakerException.NoSuchProcessException(recipeInstanceId))
+    }
 
+  private def aggregateResult: Pipe[F, EventInstance, SensoryEventResult] = {
+    val zero = SensoryEventResult(SensoryEventStatus.Completed, Seq.empty, Map.empty)
+    _.scan(zero)((result, event) =>
+      result.copy(
+        eventNames = result.eventNames :+ event.name,
+        ingredients = result.ingredients ++ event.providedIngredients)
+    )
+  }
+
+  private def foldToStatus[A](f: A => F[Unit])(outcome: Either[FireSensoryEventRejection, A])(implicit effect: Effect[F]): F[SensoryEventStatus] =
+    outcome match {
+      case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
+        effect.raiseError(BakerException.IllegalEventException(message))
+      case Left(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0)) =>
+        effect.raiseError(BakerException.NoSuchProcessException(recipeInstanceId0))
+      case Left(_: FireSensoryEventRejection.FiringLimitMet) =>
+        effect.pure(SensoryEventStatus.FiringLimitMet)
+      case Left(_: FireSensoryEventRejection.AlreadyReceived) =>
+        effect.pure(SensoryEventStatus.AlreadyReceived)
+      case Left(_: FireSensoryEventRejection.ReceivePeriodExpired) =>
+        effect.pure(SensoryEventStatus.ReceivePeriodExpired)
+      case Left(_: FireSensoryEventRejection.RecipeInstanceDeleted) =>
+        effect.pure(SensoryEventStatus.RecipeInstanceDeleted)
+      case Right(a) =>
+        f(a).as(SensoryEventStatus.Received)
+    }
+
+  private def foldToResult[A](f: A => F[SensoryEventResult])(outcome: Either[FireSensoryEventRejection, A])(implicit effect: Effect[F]): F[SensoryEventResult] =
+    outcome match {
+      case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
+        effect.raiseError(BakerException.IllegalEventException(message))
+      case Left(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0)) =>
+        effect.raiseError(BakerException.NoSuchProcessException(recipeInstanceId0))
+      case Left(_: FireSensoryEventRejection.FiringLimitMet) =>
+        effect.pure(SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
+      case Left(_: FireSensoryEventRejection.AlreadyReceived) =>
+        effect.pure(SensoryEventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
+      case Left(_: FireSensoryEventRejection.ReceivePeriodExpired) =>
+        effect.pure(SensoryEventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
+      case Left(_: FireSensoryEventRejection.RecipeInstanceDeleted) =>
+        effect.pure(SensoryEventResult(SensoryEventStatus.RecipeInstanceDeleted, Seq.empty, Map.empty))
+      case Right(a) =>
+        f(a)
+    }
 }

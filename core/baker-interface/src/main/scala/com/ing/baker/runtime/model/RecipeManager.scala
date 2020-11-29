@@ -1,12 +1,66 @@
 package com.ing.baker.runtime.model
 
+import cats.implicits._
+import cats.Monad
+import cats.effect.{Effect, Timer}
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.common.BakerException.{ImplementationsException, NoSuchRecipeException, RecipeValidationException}
+import com.ing.baker.runtime.scaladsl.{RecipeAdded, RecipeInformation}
+
+import scala.concurrent.duration
 
 trait RecipeManager[F[_]] {
 
-  def addRecipe(compiledRecipe: CompiledRecipe)(implicit components: BakerComponents[F]): F[String]
+  protected def store(compiledRecipe: CompiledRecipe, timestamp: Long): F[Unit]
 
-  def getRecipe(recipeId: String): F[Option[(CompiledRecipe, Long)]]
+  protected def fetchAll: F[Map[String, (CompiledRecipe, Long)]]
 
-  def getAllRecipes: F[Map[String, (CompiledRecipe, Long)]]
+  protected def fetch(recipeId: String): F[Option[(CompiledRecipe, Long)]]
+
+  def addRecipe(compiledRecipe: CompiledRecipe, allowAddingRecipeWithoutRequiringInstances: Boolean)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[String] =
+    for {
+      implementationErrors <-
+        if (allowAddingRecipeWithoutRequiringInstances) effect.pure(List.empty)
+        else getImplementationErrors(compiledRecipe)
+      _ <-
+        if (implementationErrors.nonEmpty)
+          effect.raiseError(ImplementationsException(implementationErrors.mkString(", ")))
+        else if (compiledRecipe.validationErrors.nonEmpty)
+          effect.raiseError(RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
+        else
+          for {
+            timestamp <- timer.clock.realTime(duration.MILLISECONDS)
+            _ <- store(compiledRecipe, timestamp)
+            _ <- components.logging.addedRecipe(compiledRecipe, timestamp)
+            _ <- components.eventStream.publish(RecipeAdded(compiledRecipe.name, compiledRecipe.recipeId, timestamp, compiledRecipe))
+          } yield ()
+    } yield compiledRecipe.recipeId
+
+  def getRecipe(recipeId: String)(implicit components: BakerComponents[F], effect: Effect[F]): F[RecipeInformation] =
+    fetch(recipeId).flatMap[RecipeInformation] {
+      case Some((compiledRecipe, timestamp)) =>
+        getImplementationErrors(compiledRecipe).map(
+          RecipeInformation(compiledRecipe, timestamp, _))
+      case None =>
+        effect.raiseError(NoSuchRecipeException(recipeId))
+    }
+
+  def getAllRecipes(implicit components: BakerComponents[F], effect: Effect[F]): F[Map[String, RecipeInformation]] =
+    fetchAll.flatMap(_.toList
+      .traverse { case (recipeId, (compiledRecipe, timestamp)) =>
+        getImplementationErrors(compiledRecipe)
+          .map(errors => recipeId -> RecipeInformation(compiledRecipe, timestamp, errors))
+      }
+      .map(_.toMap))
+
+  private def getImplementationErrors(compiledRecipe: CompiledRecipe)(implicit components: BakerComponents[F], effect: Monad[F]): F[Set[String]] = {
+    compiledRecipe.interactionTransitions.toList
+      .traverse(x => components
+        .interactionInstanceManager.contains(x)
+        .map(has => (has, x.originalInteractionName)))
+      .map(_
+        .filterNot(_._1)
+        .map(x => s"No implementation provided for interaction: ${x._2}")
+        .toSet)
+  }
 }

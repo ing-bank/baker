@@ -3,7 +3,7 @@ package com.ing.baker.runtime.model.recipeinstance
 import com.ing.baker.il.EventDescriptor
 import com.ing.baker.il.petrinet.{Place, Transition}
 import com.ing.baker.petrinet.api.Marking
-import com.ing.baker.runtime.model.RecipeInstanceManager.FireSensoryEventRejection
+import com.ing.baker.runtime.model.FireSensoryEventRejection
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstanceEventValidation.EventValidation
 import com.ing.baker.runtime.scaladsl.EventInstance
 

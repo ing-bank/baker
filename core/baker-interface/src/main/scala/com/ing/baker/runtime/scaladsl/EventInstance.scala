@@ -4,11 +4,19 @@ import com.ing.baker.il.EventDescriptor
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.{common, javadsl}
-import com.ing.baker.types.{Converters, NullValue, RecordValue, Value}
+import com.ing.baker.types.{Converters, NullValue, PrimitiveValue, RecordValue, Value}
 
 import scala.collection.JavaConverters._
 
 case class EventInstance(name: String, providedIngredients: Map[String, Value]) extends common.EventInstance with ScalaApi {
+
+  def filterNot(ingredientsFilter: Seq[String]): EventInstance =
+    copy(providedIngredients =
+      providedIngredients.map(ingredient =>
+        if (ingredientsFilter.contains(ingredient._1))
+          ingredient._1 -> PrimitiveValue("")
+        else
+          ingredient))
 
   def validate(descriptor: EventDescriptor): Seq[String] =
     if (descriptor.name != name)

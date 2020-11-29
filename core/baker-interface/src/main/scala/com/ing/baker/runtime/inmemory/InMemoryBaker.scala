@@ -2,29 +2,26 @@ package com.ing.baker.runtime.inmemory
 
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
 import cats.~>
-import com.ing.baker.runtime.inmemory.InMemoryBaker.build
 import com.ing.baker.runtime.javadsl
-import com.ing.baker.runtime.model.{Baker, BakerComponents}
+import com.ing.baker.runtime.model.{BakerComponents, BakerF}
 
 import scala.concurrent._
 
 object InMemoryBaker {
 
-  def build(config: Baker.Config = Baker.Config())(implicit timer: Timer[IO], cs: ContextShift[IO]): IO[Baker[IO]] = for {
+  def build(config: BakerF.Config = BakerF.Config())(implicit timer: Timer[IO], cs: ContextShift[IO]): IO[BakerF[IO]] = for {
     interactionInstanceManager <- InMemoryInteractionInstanceManager.build
     recipeInstanceManager <- InMemoryRecipeInstanceManager.build
     recipeManager <- InMemoryRecipeManager.build
     eventStream <- InMemoryEventStream.build
-  } yield {
-    implicit val components: BakerComponents[IO] =
-      BakerComponents[IO](interactionInstanceManager, recipeInstanceManager, recipeManager, eventStream)
-    new InMemoryBaker(config)
+  } yield buildWith(BakerComponents[IO](interactionInstanceManager, recipeInstanceManager, recipeManager, eventStream), config)
+
+  def buildWith(components: BakerComponents[IO], config: BakerF.Config = BakerF.Config())(implicit timer: Timer[IO], cs: ContextShift[IO]): BakerF[IO] = {
+    implicit val c: BakerComponents[IO] = components
+    new InMemoryBakerImpl(config)
   }
-}
 
-object InMemoryBakerJava {
-
-  def java(config: Baker.Config): javadsl.Baker = {
+  def java(config: BakerF.Config): javadsl.Baker = {
     implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
     implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     val bakerF = build(config).unsafeRunSync().asDeprecatedFutureImplementation(
@@ -39,11 +36,11 @@ object InMemoryBakerJava {
   }
 
   def java() : javadsl.Baker = {
-    java(Baker.Config())
+    java(BakerF.Config())
   }
 }
 
-final class InMemoryBaker(val config: Baker.Config)(implicit components: BakerComponents[IO], effect: ConcurrentEffect[IO], timer: Timer[IO]) extends Baker[IO] {
+final class InMemoryBakerImpl(val config: BakerF.Config)(implicit components: BakerComponents[IO], effect: ConcurrentEffect[IO], timer: Timer[IO]) extends BakerF[IO] {
 
   /**
     * Attempts to gracefully shutdown the baker system.

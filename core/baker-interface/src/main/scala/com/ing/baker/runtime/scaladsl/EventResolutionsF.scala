@@ -5,7 +5,9 @@ import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.common.SensoryEventStatus
 
-trait EventResolutionsF[F[_]] extends common.EventResolutions[F] with ScalaApi { self =>
+import scala.concurrent.Future
+
+abstract class EventResolutionsF[F[_]] extends common.EventResolutions[F] with ScalaApi { self =>
 
   type SensoryEventResultType = SensoryEventResult
 
@@ -16,4 +18,7 @@ trait EventResolutionsF[F[_]] extends common.EventResolutions[F] with ScalaApi {
       override def resolveWhenCompleted: G[SensoryEventResultType] =
         mapK(self.resolveWhenCompleted)
     }
+
+  def asDeprecatedFutureImplementation(transform: F ~> Future): EventResolutions =
+    EventResolutions(transform(self.resolveWhenReceived), transform(self.resolveWhenCompleted))
 }
