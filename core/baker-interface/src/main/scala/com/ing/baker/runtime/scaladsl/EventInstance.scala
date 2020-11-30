@@ -1,15 +1,22 @@
 package com.ing.baker.runtime.scaladsl
 
 import com.ing.baker.il.EventDescriptor
+import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.{common, javadsl}
-import com.ing.baker.types.{Converters, NullValue, RecordValue, Value}
+import com.ing.baker.types.{Converters, NullValue, PrimitiveValue, RecordValue, Value}
 
 import scala.collection.JavaConverters._
 
-case class EventInstance(name: String,
-                         providedIngredients: Map[String, Value])
-  extends common.EventInstance with ScalaApi {
+case class EventInstance(name: String, providedIngredients: Map[String, Value]) extends common.EventInstance with ScalaApi {
+
+  def filterNot(ingredientsFilter: Seq[String]): EventInstance =
+    copy(providedIngredients =
+      providedIngredients.map(ingredient =>
+        if (ingredientsFilter.contains(ingredient._1))
+          ingredient._1 -> PrimitiveValue("")
+        else
+          ingredient))
 
   def validate(descriptor: EventDescriptor): Seq[String] =
     if (descriptor.name != name)
@@ -29,6 +36,34 @@ case class EventInstance(name: String,
             Seq.empty
         }
       }
+
+  def validateAsOutputOf(interactionTransition: InteractionTransition): Option[String] = {
+    val nullIngredients = providedIngredients.collect { case (name, null) => name }
+    if (nullIngredients.nonEmpty)
+        Some(s"Interaction '${interactionTransition.interactionName}' returned null for ingredients: ${nullIngredients.mkString(", ")}")
+    else interactionTransition.originalEvents.find(_.name == name) match {
+      case None =>
+        Some(s"Interaction '${interactionTransition.interactionName}' returned unknown event '$name, expected one of: ${interactionTransition.eventsToFire.map(_.name).mkString(",")}")
+      case Some(eventType) =>
+        val errors = validate(eventType)
+        if (errors.nonEmpty)
+          Some(s"Event '$name' does not match the expected type: ${errors.mkString}")
+        else
+          None
+    }
+  }
+
+  def transformWith(interactionTransition: InteractionTransition): EventInstance = {
+    val eventOutputTransformer =
+      interactionTransition.eventOutputTransformers.find { case (eventName, _) => name.equals(eventName) }
+    eventOutputTransformer match {
+      case Some((_, eventOutputTransformer)) =>
+        EventInstance(
+          eventOutputTransformer.newEventName,
+          providedIngredients.map { case (name, value) => eventOutputTransformer.ingredientRenames.getOrElse(name, name) -> value })
+      case None => this
+    }
+  }
 
   def asJava: javadsl.EventInstance =
     new javadsl.EventInstance(name, providedIngredients.asJava)
