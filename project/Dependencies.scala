@@ -8,6 +8,7 @@ object Dependencies {
   val akkaPersistenceCassandraVersion = "1.0.3"
   val akkaHttpVersion = "10.2.1"
   val http4sVersion = "0.21.8"
+  val fs2Version = "2.4.4"
   val circeVersion = "0.13.0"
   val kamonAkkaVersion = "2.1.8"
 
@@ -51,6 +52,8 @@ object Dependencies {
   val akkaDiscoveryKube = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaManagementVersion
 
   val scalaKafkaClient = "net.cakesolutions" %% "scala-kafka-client" % "2.3.1"
+  val fs2Core = "co.fs2" %% "fs2-core" % fs2Version
+  val fs2Io = "co.fs2" %% "fs2-io" % fs2Version
   val fs2kafka = "com.github.fd4s" %% "fs2-kafka" % "1.0.0"
   val levelDB = "org.iq80.leveldb" % "leveldb" % "0.12"
 

@@ -11,7 +11,7 @@ object ExceptionStrategyOutcome {
     * Retries firing the transition after some delay.
     */
   case class RetryWithDelay(delay: Long) extends ExceptionStrategyOutcome {
-    require(delay > 0, "Delay must be greater then zero")
+    require(delay >= 0, "Delay must be greater or equal then zero")
   }
 
   case class Continue(eventName: String) extends ExceptionStrategyOutcome
