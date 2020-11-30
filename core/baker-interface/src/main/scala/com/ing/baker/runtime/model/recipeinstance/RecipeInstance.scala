@@ -32,14 +32,6 @@ object RecipeInstance {
 
 case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance.Config, state: Ref[F, RecipeInstanceState]) extends LazyLogging {
 
-  /** Validates an attempt to fire an event, and if valid, executes the cascading effect of firing the event.
-    * The returning effect will resolve right after the event has been recorded, but asynchronously cascades the recipe
-    * instance execution semantics.
-    *
-    * @return either a validation rejection or TODO.
-    *         Note that the operation is wrapped within an effect because 2 reasons, first, the validation checks for
-    *         current time, and second, if there is a rejection a message is logged, both are suspended into F.
-    */
   def fireEventStream(input: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, Stream[F, EventInstance]] =
     for {
       currentTime <- EitherT.liftF(timer.clock.realTime(MILLISECONDS))
@@ -80,6 +72,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
     }
       .collect { case Some(output) => output }
 
+  /** The "base case" is the very 1st step in the stream of executing transitions that create EventInstances  */
   private def baseCase(transitionExecution: TransitionExecution)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): Stream[F, Option[EventInstance]] =
     for {
       _ <- Stream.eval(state.update(_.addExecution(transitionExecution)))
@@ -87,17 +80,8 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
       output <- inductionStep(transitionExecution, outcome)
     } yield output
 
-  /** Induction step of the recipe instance execution semantics.
-    * Attempts to progress the execution of the recipe instance from the outcome of a previous execution.
-    *
-    * This is separated because we must be careful to take only the latest state of the recipe instance by fetching it
-    * from the RecipeInstanceManager component, this is because effects are happening asynchronously.
-    *
-    * Note that the execution effects are still suspended and should be run on due time to move the recipe instance state
-    * forward with the resulting TransitionExecution.Outcome.
-    *
-    * @param finishedExecution
-    * @return
+  /** The "induction step" is the "repeating" 2nd, 3rd... nth step in the stream of executing transitions that create
+    * EventInstances, notice the recursion when there exist enabled transitions, which are outcome of executing this step
     */
   private def inductionStep(finishedExecution: TransitionExecution, outcome: TransitionExecution.Outcome)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): Stream[F, Option[EventInstance]] =
     for {

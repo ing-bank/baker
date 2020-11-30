@@ -35,8 +35,20 @@ object TransitionExecution {
   }
 }
 
-/** A data structure representing the properties and state of progression of a recipe instance; it might represent an
-  * internal event firing or an interaction execution
+/** A data structure that describes a single execution of a Recipe's transition, it contains everything the transition
+  * needs to fire, including possible Interaction input event, current available ingredients, corresponding correlation
+  * id etc.
+  *
+  * It is used by the RecipeInstance to execute each step of a recipe, once built the 'execute' method will run the
+  * related transition, do proper validations on output, log and publish baker events, and return information to be
+  * used by RecipeInstanceState.recordCompletedExecution to move the RecipeInstance state "forward".
+  *
+  * This data container is created in 2 locations:
+  * 1) by the RecipeInstanceEventValidation.validateExecution method, which validates a sensory event and if valid
+  * creates a new TransitionExecution.
+  * 2) by the RecipeInstanceState.allEnabledExecutions, indirectly called when RecipeInstanceState.recordCompletedExecution
+  * is called, such will create a TransitionExecution for each recipe transition which can be fired in consequence of
+  * a previously executed TransitionExecution.
   */
 private[recipeinstance] case class TransitionExecution(
   id: Long = TransitionExecution.generateId,

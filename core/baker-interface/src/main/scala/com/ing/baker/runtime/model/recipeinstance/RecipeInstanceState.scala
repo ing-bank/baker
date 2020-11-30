@@ -74,7 +74,7 @@ case class RecipeInstanceState(
   def removeRetryingExecution(transitionExecutionId: Long): RecipeInstanceState =
     copy(retryingExecutions = retryingExecutions - transitionExecutionId)
 
-  def allEnabledExecutions: (RecipeInstanceState, Set[TransitionExecution]) = {
+  private def allEnabledExecutions: (RecipeInstanceState, Set[TransitionExecution]) = {
 
     def canBeFiredAutomatically(transition: Transition): Boolean =
       transition match {
