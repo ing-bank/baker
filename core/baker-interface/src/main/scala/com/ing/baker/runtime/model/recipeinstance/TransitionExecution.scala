@@ -202,6 +202,8 @@ private[recipeinstance] case class TransitionExecution(
     interactionOutput match {
       case None if interactionTransition.eventsToFire.nonEmpty =>
         fail(s"Interaction '${interactionTransition.interactionName}' did not provide any output, expected one of: ${interactionTransition.eventsToFire.map(_.name).mkString(",")}")
+      case None =>
+        effect.unit
       case Some(event) =>
         event.validateAsOutputOf(interactionTransition).fold(effect.unit)(fail)
     }
