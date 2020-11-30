@@ -18,14 +18,13 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 /**
-  * TODO implement recipe instance deletion strategy from the recipe
-  * TODO optimize compilation time by narrowing implicit syntax
-  * TODO documentation
+  * TODO create a Resource based runtime execution which runs the retention period stream and allocates a Blocker context
   */
 object BakerF {
 
   case class Config(allowAddingRecipeWithoutRequiringInstances: Boolean = false,
                     recipeInstanceConfig: RecipeInstance.Config = RecipeInstance.Config(),
+                    retentionPeriodCheckInterval: FiniteDuration = 10.seconds,
                     bakeTimeout: FiniteDuration = 10.seconds,
                     processEventTimeout: FiniteDuration = 10.seconds,
                     inquireTimeout: FiniteDuration = 10.seconds,

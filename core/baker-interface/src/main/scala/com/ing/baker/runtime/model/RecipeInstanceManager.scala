@@ -2,7 +2,7 @@ package com.ing.baker.runtime.model
 
 import cats.data.EitherT
 import cats.effect.concurrent.Deferred
-import cats.effect.{ConcurrentEffect, Effect, Timer}
+import cats.effect.{ConcurrentEffect, Effect, Resource, Timer}
 import cats.implicits._
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common.BakerException.{ProcessAlreadyExistsException, ProcessDeletedException}
@@ -11,6 +11,8 @@ import com.ing.baker.runtime.model.RecipeInstanceManager.RecipeInstanceStatus
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
 import fs2.{Pipe, Stream}
+
+import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
 
 object RecipeInstanceManager {
 
@@ -30,9 +32,24 @@ trait RecipeInstanceManager[F[_]] {
 
   protected def fetch(recipeInstanceId: String): F[Option[RecipeInstanceStatus[F]]]
 
+  protected def fetchAll: F[Map[String, RecipeInstanceStatus[F]]]
+
+  protected def remove(recipeInstanceId: String): F[Unit]
+
   def idleStop(recipeInstanceId: String): F[Unit]
 
   def getAllRecipeInstancesMetadata: F[Set[RecipeInstanceMetadata]]
+
+  def startRetentionPeriodStream(interval: FiniteDuration)(implicit effect: Effect[F], timer: Timer[F]): Resource[F, Unit] =
+    Stream.awakeEvery[F](interval).evalMap { _ =>
+      for {
+        allRecipeInstances <- fetchAll
+        _ <- allRecipeInstances.toList.traverse { case (recipeInstanceId, instance) =>
+          computeShouldDelete(instance).flatMap(shouldDelete =>
+            if (shouldDelete) remove(recipeInstanceId) else effect.unit)
+        }
+      } yield ()
+    }.compile.resource.drain
 
   def bake(recipeId: String, recipeInstanceId: String, config: RecipeInstance.Config)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[Unit] =
     for {
@@ -183,4 +200,17 @@ trait RecipeInstanceManager[F[_]] {
       case Right(a) =>
         f(a)
     }
+
+  private def computeShouldDelete(status: RecipeInstanceStatus[F])(implicit effect: Effect[F], timer: Timer[F]): F[Boolean] =
+    for {
+      currentTime <- timer.clock.realTime(MILLISECONDS)
+      result <- status match {
+        case RecipeInstanceStatus.Active(recipeInstance) =>
+          recipeInstance.state.get.map { currentState =>
+            currentState.recipe.retentionPeriod.exists(_.toMillis + currentState.createdOn < currentTime)
+          }
+        case RecipeInstanceStatus.Deleted(_, _, _) =>
+          effect.pure(false)
+      }
+    } yield result
 }

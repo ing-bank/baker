@@ -5,7 +5,7 @@ import java.util.UUID
 import cats.effect.ConcurrentEffect
 import cats.implicits._
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
-import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, ProcessAlreadyExistsException}
+import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, ProcessAlreadyExistsException, ProcessDeletedException}
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceF, RecipeEventMetadata}
 import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
@@ -350,5 +350,31 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
         "InteractionThreeSuccessful"
       )
     }
+
+    /* TODO (see BakerF TODO)
+    test("properly handle a retention period") { context =>
+
+      val retentionPeriod = 300.millis
+
+      val recipe: Recipe =
+        Recipe("RetentionPeriodRecipe")
+          .withSensoryEvents(initialEvent)
+          .withInteractions(interactionOne)
+          .withRetentionPeriod(retentionPeriod)
+
+      for {
+        bakerAndRecipeId<- context.setupBakerWithRecipe(recipe, mockImplementations)
+        (baker, recipeId) = bakerAndRecipeId
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.getRecipeInstanceState(recipeInstanceId)
+        _ <- timer.sleep((retentionPeriod.toMillis + 100).millis).to[F]
+        result <- effect.attempt(baker.getRecipeInstanceState(recipeInstanceId))
+      } yield result match {
+        case Left(_: ProcessDeletedException) => succeed
+        case a => fail(s"Should have failed with ProcessDeletedException, instead got: $a")
+      }
+    }
+     */
   }
 }

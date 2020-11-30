@@ -34,4 +34,10 @@ final class InMemoryRecipeInstanceManager(inmem: Ref[IO, InMemoryRecipeInstanceM
       case (recipeInstanceId, RecipeInstanceStatus.Deleted(recipeId, createdOn, _)) =>
         IO.pure(RecipeInstanceMetadata(recipeId, recipeInstanceId, createdOn))
     }).map(_.toSet)
+
+  override protected def fetchAll: IO[Map[String, RecipeInstanceStatus[IO]]] =
+    inmem.get
+
+  override protected def remove(recipeInstanceId: String): IO[Unit] =
+    inmem.update(_ - recipeInstanceId)
 }
