@@ -13,7 +13,6 @@ import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.runtime.serialization.ProtoMap
 import com.typesafe.scalalogging.LazyLogging
 
-import scala.io.Source
 import scala.util.Try
 
 object RecipeLoader extends LazyLogging {

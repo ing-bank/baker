@@ -293,7 +293,9 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
     `bakery-baker-client`,
     `baker-interface`,
     `bakery-interaction-protocol`,
-    `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`
+    `baker-recipe-compiler`,
+    `baker-recipe-dsl`,
+    `baker-intermediate-language`
   )
 
 lazy val `bakery-baker` = project.in(file("bakery/baker"))
