@@ -1,8 +1,6 @@
 package com.ing.baker.runtime.akka
 
 import akka.actor.{ActorSystem, Address, AddressFromURIString}
-import akka.persistence.query.PersistenceQuery
-import akka.persistence.query.scaladsl.{CurrentEventsByPersistenceIdQuery, CurrentPersistenceIdsQuery, PersistenceIdsQuery}
 import cats.data.NonEmptyList
 import com.ing.baker.runtime.akka.AkkaBakerConfig.BakerValidationSettings
 import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider}

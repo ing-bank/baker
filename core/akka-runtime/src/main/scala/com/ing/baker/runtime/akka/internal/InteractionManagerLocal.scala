@@ -7,6 +7,7 @@ import com.ing.baker.runtime.scaladsl.InteractionInstance
 
 import scala.compat.java8.FunctionConverters._
 import scala.concurrent.Future
+import scala.collection.convert.AsScalaConverters
 
 /**
   * The InteractionManager is responsible for all implementation of interactions.
@@ -14,10 +15,16 @@ import scala.concurrent.Future
   *
   * @param interactionImplementations All
   */
-class InteractionManagerLocal(private var interactionImplementations: Seq[InteractionInstance] = Seq.empty) extends InteractionManager {
+class InteractionManagerLocal(private var interactionImplementations: Seq[InteractionInstance] = Seq.empty)
+  extends InteractionManager with AsScalaConverters {
 
   private val implementationCache: ConcurrentHashMap[InteractionTransition, InteractionInstance] =
     new ConcurrentHashMap[InteractionTransition, InteractionInstance]
+
+  interactionImplementations.foreach(addImplementation)
+
+  override def listAllImplementations: Future[List[InteractionInstance]] =
+    Future.successful(asScalaIterator(implementationCache.values().iterator()).toList)
 
   def addImplementation(implementation: InteractionInstance): Future[Unit] =
     Future.successful(interactionImplementations :+= implementation)
