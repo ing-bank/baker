@@ -1,6 +1,6 @@
 package com.ing.bakery.baker
 
-import java.io.{ByteArrayInputStream, File}
+import java.io.{ByteArrayInputStream, File, InputStream}
 import java.nio.file.Files
 import java.util.Base64
 import java.util.zip.{GZIPInputStream, ZipException}
@@ -27,18 +27,22 @@ object RecipeLoader extends LazyLogging {
       }
     } yield ()
 
-  private def loadRecipes(path: String): IO[List[CompiledRecipe]] = {
+  private[baker] def decode(bytes: Array[Byte]): Try[Array[Byte]] = Try {
+    Base64.getDecoder.decode(new String(bytes))
+  } recover {
+    case _: IllegalArgumentException =>
+      bytes
+  }
 
-    def extract(str: String): Try[Array[Byte]] = {
-      val decodedBytes = Base64.getDecoder.decode(str)
-      Try {
-        val inputStream = new GZIPInputStream(new ByteArrayInputStream(decodedBytes))
-        Stream.continually(inputStream.read()).takeWhile(_ != -1).map(_.toByte).toArray
-      } recover {
-        case _: ZipException =>
-          decodedBytes
-      }
-    }
+  private[baker] def unzip(bytes: Array[Byte]): Try[Array[Byte]] = Try {
+    val inputStream = new GZIPInputStream(new ByteArrayInputStream(bytes))
+    Stream.continually(inputStream.read()).takeWhile(_ != -1).map(_.toByte).toArray
+  } recover {
+    case _: ZipException =>
+      bytes
+  }
+
+  private[baker] def loadRecipes(path: String): IO[List[CompiledRecipe]] = {
 
     def recipeFiles(path: String): IO[List[File]] = IO {
       val d = new File(path)
@@ -55,14 +59,20 @@ object RecipeLoader extends LazyLogging {
 
     for {
       files <- recipeFiles(path)
-      recipes <- files.traverse { file =>
-        for {
-          string <- IO(new String(Files.readAllBytes(file.toPath)))
-          payload <- IO.fromTry(extract(string))
-          protoRecipe <- IO.fromTry(protobuf.CompiledRecipe.validate(payload))
-          recipe <- IO.fromTry(ProtoMap.ctxFromProto(protoRecipe))
-        } yield recipe
-      }
+      recipes <- files.traverse(f => fromInputStream(Files.newInputStream(f.toPath)))
     } yield recipes
+  }
+
+  private def inputStreamToBytes(is: InputStream): Array[Byte] =
+    Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray
+
+  def fromInputStream(inputStream: InputStream): IO[CompiledRecipe] = {
+    for {
+      rawBytes <- IO(inputStreamToBytes(inputStream))
+      decodedBytes <- IO.fromTry(decode(rawBytes))
+      payload <- IO.fromTry(unzip(decodedBytes))
+      protoRecipe <- IO.fromTry(protobuf.CompiledRecipe.validate(payload))
+      recipe <- IO.fromTry(ProtoMap.ctxFromProto(protoRecipe))
+    } yield recipe
   }
 }
