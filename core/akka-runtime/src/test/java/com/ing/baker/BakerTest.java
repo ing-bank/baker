@@ -58,7 +58,7 @@ public class BakerTest {
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
 
         String recipeInstanceId = UUID.randomUUID().toString();
-        Baker jBaker = AkkaBaker.java(config, actorSystem, LocalInteractions.apply(implementationsList));
+        Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
         java.util.Map<String, Value> ingredients = jBaker.addRecipe(compiledRecipe)
                 .thenCompose(recipeId -> {
                     assertEquals(compiledRecipe.getValidationErrors().size(), 0);
@@ -81,7 +81,7 @@ public class BakerTest {
 
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
 
-        Baker jBaker = AkkaBaker.java(config, actorSystem, LocalInteractions.apply(implementationsList));
+        Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
         String recipeId = jBaker.addRecipe(compiledRecipe).get();
 
         String requestId = UUID.randomUUID().toString();
@@ -100,7 +100,7 @@ public class BakerTest {
 
         exception.expect(ExecutionException.class);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
-        Baker jBaker = AkkaBaker.java(config, actorSystem, LocalInteractions.apply(new ArrayList<>()));
+        Baker jBaker = AkkaBaker.java(config, actorSystem);
 
         jBaker.addRecipe(compiledRecipe).get();
     }
@@ -108,7 +108,7 @@ public class BakerTest {
     @Test
     public void shouldExecuteCompleteFlow() throws BakerException, ExecutionException, InterruptedException {
 
-        Baker jBaker = AkkaBaker.java(config, actorSystem, LocalInteractions.apply(implementationsList));
+        Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
 
         List<BakerEvent> bakerEvents = new LinkedList<>();
         jBaker.registerBakerEventListener(bakerEvents::add);

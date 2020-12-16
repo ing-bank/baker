@@ -105,6 +105,7 @@ object AkkaBakerConfig extends LazyLogging {
   def from(config: Config, actorSystem: ActorSystem, interactions: LocalInteractions): AkkaBakerConfig = {
     if (!config.getAs[Boolean]("baker.config-file-included").getOrElse(false))
       throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
+
     AkkaBakerConfig(
       timeouts = Timeouts.from(config),
       bakerValidationSettings = BakerValidationSettings.from(config),

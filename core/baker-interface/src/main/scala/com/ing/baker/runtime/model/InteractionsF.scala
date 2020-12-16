@@ -34,8 +34,6 @@ trait InteractionsF[F[_]] {
         .forall { descriptor =>
           implementation.input.exists(_.isAssignableFrom(descriptor.`type`))
         }
-    println(s"transition: ${transition.interactionName} implementation ${implementation.name},  ${implementation.input} ${transition.requiredIngredients.size} | name: $interactionNameMatches, size $inputSizeMatches, types $inputNamesAndTypesMatches")
-
     interactionNameMatches && inputSizeMatches && inputNamesAndTypesMatches
   }
 }

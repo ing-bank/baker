@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Address, Props}
 import akka.pattern.{FutureRef, ask}
 import akka.util.Timeout
 import cats.data.NonEmptyList
+import cats.effect.IO
 import cats.implicits._
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -20,6 +21,7 @@ import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 
+import java.util.{List => JavaList}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.postfixOps
@@ -45,11 +47,13 @@ object AkkaBaker {
   def java(config: Config, actorSystem: ActorSystem): javadsl.Baker =
     new javadsl.Baker(apply(config, actorSystem, LocalInteractions()))
 
-  def java(config: Config, actorSystem: ActorSystem, interactions: LocalInteractions): javadsl.Baker =
-    new javadsl.Baker(apply(config, actorSystem, interactions))
+  def java(config: Config, actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
+    new javadsl.Baker(apply(config, actorSystem,
+      LocalInteractions.fromJava(interactions)(IO.contextShift(actorSystem.getDispatcher))))
 
-  def javaLocalDefault(actorSystem: ActorSystem, interactions: LocalInteractions): javadsl.Baker =
-    new javadsl.Baker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem, interactions)))
+  def javaLocalDefault(actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
+    new javadsl.Baker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem,
+      LocalInteractions.fromJava(interactions)(IO.contextShift(actorSystem.getDispatcher)))))
 
   def javaOther(baker: scaladsl.Baker): javadsl.Baker =
     new javadsl.Baker(baker)

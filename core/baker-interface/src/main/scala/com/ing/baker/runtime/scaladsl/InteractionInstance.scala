@@ -25,15 +25,14 @@ case class InteractionInstance( name: String,
 
 object InteractionInstance {
 
+  def fromF(interactionInstanceF: InteractionInstanceF[Future]): InteractionInstance =
+    interactionInstanceF.asDeprecatedFutureImplementation(FunctionK.id)
+
   def unsafeFromList(implementations: List[AnyRef])(implicit ec: ExecutionContext): List[InteractionInstance] = {
     implementations.map(unsafeFrom(_))
   }
 
   def unsafeFrom(implementation: AnyRef)(implicit ec: ExecutionContext): InteractionInstance = {
-    val ioInstance = InteractionInstanceF.unsafeFrom[IO](implementation)
-    InteractionInstance(
-      name = ioInstance.name, input = ioInstance.input,
-      run = in => ioInstance.run(in).unsafeToFuture(),
-      output = ioInstance.output)
+    fromF(InteractionInstanceF.unsafeFrom[Future](implementation))
   }
 }

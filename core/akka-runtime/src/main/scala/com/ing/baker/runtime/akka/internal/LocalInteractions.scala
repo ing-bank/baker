@@ -36,14 +36,13 @@ object LocalInteractions {
   def apply(interactionInstances: List[InteractionInstanceF[IO]]) =
     new LocalInteractions(interactionInstances)
 
-  def apply(interactions: java.util.List[Object]) =
+  def fromJava(interactions: java.util.List[AnyRef])(implicit cs: ContextShift[IO]) =
     new LocalInteractions(interactions
       .asScala
       .map {
-        case javaInteraction: com.ing.baker.runtime.javadsl.InteractionInstance => javaInteraction.asScala
-        case other => other
-      }
-      .map(t => InteractionInstanceF.unsafeFrom[IO](t)).toList
+        case javaInteraction: com.ing.baker.runtime.javadsl.InteractionInstance => fromFuture(javaInteraction.asScala)
+        case other => InteractionInstanceF.unsafeFrom[IO](other)
+      }     .toList
     )
 
 

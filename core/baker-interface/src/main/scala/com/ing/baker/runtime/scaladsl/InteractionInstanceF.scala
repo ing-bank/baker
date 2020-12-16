@@ -64,6 +64,11 @@ abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] 
           .thenApply(_.fold(Optional.empty[javadsl.EventInstance]())(e => Optional.of(e.asJava)))
     }
 
+  def asDeprecatedFutureImplementation(transform: F ~> Future): InteractionInstance = {
+    val transformedRun = (in: Seq[IngredientInstance]) => transform(run(in))
+    InteractionInstance(
+      name = name, input = input, run = transformedRun, output = output)
+  }
 }
 
 object InteractionInstanceF {
