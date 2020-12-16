@@ -36,11 +36,17 @@ object LocalInteractions {
   def apply(interactionInstances: List[InteractionInstanceF[IO]]) =
     new LocalInteractions(interactionInstances)
 
-  def apply(interactions: java.util.List[AnyRef]) =
+  def apply(interactions: java.util.List[Object]) =
     new LocalInteractions(interactions
-        .asScala
-        .map(t => InteractionInstanceF.unsafeFrom[IO](t)).toList
+      .asScala
+      .map {
+        case javaInteraction: com.ing.baker.runtime.javadsl.InteractionInstance => javaInteraction.asScala
+        case other => other
+      }
+      .map(t => InteractionInstanceF.unsafeFrom[IO](t)).toList
     )
+
+
 }
 
 /** The LocalInteractions class is responsible for all implementation of interactions.
@@ -63,7 +69,6 @@ class LocalInteractions(val availableImplementations: List[InteractionInstanceF[
     instances.find(implementation => compatible(interaction, implementation)).orNull
 
   override def findImplementation(transition: InteractionTransition)(implicit sync: Sync[IO]): IO[Option[InteractionInstanceF[IO]]] =
-
     for {
       cacheRef <- transitionToInteractionCache
       cache <- cacheRef.get

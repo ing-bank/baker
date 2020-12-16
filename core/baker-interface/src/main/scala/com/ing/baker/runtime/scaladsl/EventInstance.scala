@@ -43,7 +43,7 @@ case class EventInstance(name: String, providedIngredients: Map[String, Value]) 
         Some(s"Interaction '${interactionTransition.interactionName}' returned null for ingredients: ${nullIngredients.mkString(", ")}")
     else interactionTransition.originalEvents.find(_.name == name) match {
       case None =>
-        Some(s"Interaction '${interactionTransition.interactionName}' returned unknown event '$name, expected one of: ${interactionTransition.eventsToFire.map(_.name).mkString(",")}")
+        Some(s"Interaction '${interactionTransition.interactionName}' returned unknown event '$name', expected one of: ${interactionTransition.eventsToFire.map(_.name).mkString(",")}")
       case Some(eventType) =>
         val errors = validate(eventType)
         if (errors.nonEmpty)

@@ -73,7 +73,7 @@ object RecipeRuntime {
         // the event name must match an event name from the interaction output
           interaction.originalEvents.find(_.name == event.name) match {
             case None =>
-              Some(s"Interaction '${interaction.interactionName}' returned unknown event '${event.name}, expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
+              Some(s"Interaction '${interaction.interactionName}' returned unknown event '${event.name}', expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
             case Some(eventType) =>
               val errors = event.validate(eventType)
 

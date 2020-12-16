@@ -46,12 +46,16 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
       "providing implementations in a sequence" in {
         val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, LocalInteractions(mockImplementations))
-        baker.getAllRecipes.map(r => assert(r.nonEmpty))
+        for {
+         _ <- baker.getAllRecipes
+        } yield succeed
       }
 
       "providing an implementation with the class simplename same as the interaction" in {
         val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, LocalInteractions(InteractionInstance.unsafeFrom(new implementations.InteractionOne())))
-        baker.getAllRecipes.map(r => assert(r.nonEmpty))
+        for {
+          _ <- baker.getAllRecipes
+        } yield succeed
       }
 
       "providing an implementation for a renamed interaction" in {

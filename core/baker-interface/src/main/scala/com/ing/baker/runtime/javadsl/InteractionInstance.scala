@@ -28,6 +28,18 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
 
   override def execute(input: util.List[IngredientInstance]): CompletableFuture[Optional[EventInstance]]
 
+  def asScala: scaladsl.InteractionInstance =
+    scaladsl.InteractionInstance(
+      name,
+      input.asScala,
+      input => FutureConverters.toScala(execute(input.map(_.asJava).asJava)
+        .thenApply[Option[scaladsl.EventInstance]] {
+        optional =>
+          if (optional.isPresent) Some(optional.get().asScala)
+          else None
+      }),
+      if (output.isPresent) Some(output.get.asScala.toMap.mapValues(_.asScala.toMap)) else None
+    )
 }
 
 object InteractionInstance {

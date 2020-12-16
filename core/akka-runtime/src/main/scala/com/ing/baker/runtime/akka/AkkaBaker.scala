@@ -109,7 +109,6 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   }
 
   private def getImplementationErrors(compiledRecipe: CompiledRecipe): Future[Set[String]] = {
-    //TODO optimize so that we do not have to much traffic if its a remote InteractionManager
     compiledRecipe.interactionTransitions.toList
       .traverse(x => config.interactions.hasImplementationFor(x).map(has => (has, x.originalInteractionName)))
       .map(_
