@@ -13,20 +13,25 @@ import scala.compat.java8.FunctionConverters._
 
 object LocalInteractions {
 
-  def apply(interactionInstance: InteractionInstanceF[IO]) =
-    new LocalInteractions(List(interactionInstance))
-
   def apply() = new LocalInteractions(List.empty)
 
+  def apply(interactionInstance: InteractionInstance)(implicit cs: ContextShift[IO]) =
+    new LocalInteractions(List(fromFuture(interactionInstance)))
+
   def apply(interactionInstances: List[InteractionInstance])(implicit cs: ContextShift[IO]) =
-    new LocalInteractions(interactionInstances.map(i =>
-      InteractionInstanceF.build(
-        _name = i.name,
-        _input = i.input,
-        _run = p => IO.fromFuture(IO(i.run(p))),
-        _output = i.output
-      )
-    ))
+    new LocalInteractions(interactionInstances.map(fromFuture))
+
+  private def fromFuture(i: InteractionInstance)(implicit cs: ContextShift[IO]): InteractionInstanceF[IO] = {
+    InteractionInstanceF.build(
+      _name = i.name,
+      _input = i.input,
+      _run = p => IO.fromFuture(IO(i.run(p))),
+      _output = i.output
+    )
+  }
+
+  def apply(interactionInstance: InteractionInstanceF[IO]) =
+    new LocalInteractions(List(interactionInstance))
 
   def apply(interactionInstances: List[InteractionInstanceF[IO]]) =
     new LocalInteractions(interactionInstances)

@@ -11,6 +11,7 @@ import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy;
 import com.ing.baker.recipe.javadsl.Recipe;
 import com.ing.baker.runtime.akka.AkkaBaker;
+import com.ing.baker.runtime.akka.internal.LocalInteractions;
 import com.ing.baker.runtime.javadsl.Baker;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -152,9 +153,8 @@ public class Webshop {
         when(validateOrderMock.apply(any(), any())).thenReturn(new ValidateOrder.Valid());
 
         ActorSystem system = ActorSystem.create("webshop");
-        Baker baker = AkkaBaker.java(config, system);
-
-        baker.addInteractionInstances(ImmutableList.of(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock));
+        Baker baker = AkkaBaker.java(config, system,
+                LocalInteractions.apply(ImmutableList.of(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock)));
 
         String recipeId = baker.addRecipe(recipe).get();
 

@@ -29,10 +29,10 @@ abstract class BakerModelSpec[F[_]]
 
   def runAll()(implicit effect: ConcurrentEffect[F], classTag: ClassTag[F[Any]]): Unit = {
     runSetupTests()
-//    runEnquireTests()
-//    runExecutionSemanticsTests()
-//    runEdgeCasesTests()
-//    runFailureTests()
+    runEnquireTests()
+    runExecutionSemanticsTests()
+    runEdgeCasesTests()
+    runFailureTests()
   }
 
   case class Context(buildBaker: List[InteractionInstanceF[F]] => F[BakerF[F]]) {
@@ -42,7 +42,7 @@ abstract class BakerModelSpec[F[_]]
       val recipe = getRecipe(newRecipeName)
       for {
         _ <- setupMockResponse
-        bakerAndRecipeId <- setupBakerWithRecipe(recipe, implementations)
+        bakerAndRecipeId <- setupBakerWithRecipe(recipe, mockImplementations ++ implementations)
       } yield bakerAndRecipeId
     }
 
@@ -56,7 +56,7 @@ abstract class BakerModelSpec[F[_]]
     def setupBakerWithNoRecipe(implementations: List[InteractionInstanceF[F]])(implicit effect: Sync[F], classTag: ClassTag[F[Any]]): F[BakerF[F]] = {
       for {
         _ <- setupMockResponse
-        baker <- buildBaker(implementations)
+        baker <- buildBaker(implementations ++ mockImplementations)
       } yield baker
     }
   }

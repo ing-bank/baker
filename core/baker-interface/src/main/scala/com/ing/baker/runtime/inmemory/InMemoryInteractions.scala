@@ -16,9 +16,5 @@ final class InMemoryInteractions(implementations: Seq[InteractionInstanceF[IO]])
   override def instances: IO[Seq[InteractionInstanceF[IO]]] = IO(implementations)
 
   override def findImplementation(transition: InteractionTransition)(implicit sync: Sync[IO]): IO[Option[InteractionInstanceF[IO]]] =
-    IO {
-      println(s"in find implementation ${transition.interactionName}")
-      implementations.find(compatible(transition, _))
-    }
-
+    IO(implementations.find(compatible(transition, _)))
 }

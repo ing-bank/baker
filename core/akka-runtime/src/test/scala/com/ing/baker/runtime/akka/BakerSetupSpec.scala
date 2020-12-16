@@ -126,7 +126,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, LocalInteractions(List.empty))
+        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, LocalInteractions())
 
         recoverToExceptionIf[ImplementationsException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))

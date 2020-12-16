@@ -42,6 +42,9 @@ object AkkaBaker {
   def javaWithConfig(config: AkkaBakerConfig): javadsl.Baker =
     new javadsl.Baker(withConfig(config))
 
+  def java(config: Config, actorSystem: ActorSystem): javadsl.Baker =
+    new javadsl.Baker(apply(config, actorSystem, LocalInteractions()))
+
   def java(config: Config, actorSystem: ActorSystem, interactions: LocalInteractions): javadsl.Baker =
     new javadsl.Baker(apply(config, actorSystem, interactions))
 

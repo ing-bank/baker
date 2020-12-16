@@ -53,7 +53,7 @@ object MainMetrics extends IOApp with LazyLogging {
       } toList).flatten
     }
 
-    val interactionManager = LocalInteractions((interactions)
+    val interactionManager = LocalInteractions(interactions)
 
     val bakerConfig = AkkaBakerConfig(
       interactions = interactionManager,
