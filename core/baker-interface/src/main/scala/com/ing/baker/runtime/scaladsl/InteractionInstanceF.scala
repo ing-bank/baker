@@ -1,18 +1,17 @@
 package com.ing.baker.runtime.scaladsl
 
-import java.lang.reflect.Method
-import java.security.MessageDigest
-import java.util
-import java.util.{Base64, Optional}
-import java.util.concurrent.CompletableFuture
-
-import cats.Applicative
-import cats.~>
+import cats.effect.Effect
 import cats.implicits._
+import cats.{Applicative, ~>}
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.{common, javadsl}
 import com.ing.baker.types.{Converters, Type}
 
+import java.lang.reflect.Method
+import java.security.MessageDigest
+import java.util
+import java.util.concurrent.CompletableFuture
+import java.util.{Base64, Optional}
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.reflect.ClassTag
@@ -65,11 +64,6 @@ abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] 
           .thenApply(_.fold(Optional.empty[javadsl.EventInstance]())(e => Optional.of(e.asJava)))
     }
 
-  def asDeprecatedFutureImplementation(transform: F ~> Future): InteractionInstance = {
-    val transformedRun = (in: Seq[IngredientInstance]) => transform(run(in))
-    InteractionInstance(
-      name = name, input = input, run = transformedRun, output = output)
-  }
 }
 
 object InteractionInstanceF {

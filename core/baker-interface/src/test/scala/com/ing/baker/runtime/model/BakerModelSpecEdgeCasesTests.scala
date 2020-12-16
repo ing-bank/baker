@@ -14,6 +14,7 @@ import org.mockito.invocation.InvocationOnMock
 
 import scala.reflect.ClassTag
 import scala.concurrent.duration._
+import cats.implicits._
 
 trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
 
@@ -29,9 +30,8 @@ trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
           .withSensoryEvent(initialEvent)
 
       for {
-        bakerAndRecipeId<- context.setupBakerWithRecipe(recipe, mockImplementations)
+        bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, mockImplementations)
         (baker, _) = bakerAndRecipeId
-        _ <- baker.addInteractionInstances(mockImplementations)
 
         compiledRecipe = RecipeCompiler.compileRecipe(recipe)
         recipeId <- baker.addRecipe(compiledRecipe)

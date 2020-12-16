@@ -64,8 +64,8 @@ trait BakerModelFixtures[F[_]] extends TestRecipe[F] with MockitoSugar {
   val testOptionalIngredientInteractionMock: OptionalIngredientInteraction = mock[OptionalIngredientInteraction]
   val testProvidesNothingInteractionMock: ProvidesNothingInteraction = mock[ProvidesNothingInteraction]
 
-  def mockImplementations(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): Seq[InteractionInstanceF[F]] =
-    Seq(
+  def mockImplementations(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): List[InteractionInstanceF[F]] =
+    List(
       testInteractionOneMock,
       testInteractionTwoMock,
       testInteractionThreeMock,

@@ -1,8 +1,7 @@
 package com.ing.baker.runtime.model
 
-import cats.implicits._
-import cats.Monad
 import cats.effect.{Effect, Timer}
+import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.BakerException.{ImplementationsException, NoSuchRecipeException, RecipeValidationException}
 import com.ing.baker.runtime.scaladsl.{RecipeAdded, RecipeInformation}
@@ -53,10 +52,10 @@ trait RecipeManager[F[_]] {
       }
       .map(_.toMap))
 
-  private def getImplementationErrors(compiledRecipe: CompiledRecipe)(implicit components: BakerComponents[F], effect: Monad[F]): F[Set[String]] = {
+  private def getImplementationErrors(compiledRecipe: CompiledRecipe)(implicit components: BakerComponents[F], effect: Effect[F]): F[Set[String]] = {
     compiledRecipe.interactionTransitions.toList
       .traverse(x => components
-        .interactionInstanceManager.contains(x)
+        .interactions.hasImplementationFor(x)
         .map(has => (has, x.originalInteractionName)))
       .map(_
         .filterNot(_._1)

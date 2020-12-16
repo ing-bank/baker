@@ -18,8 +18,9 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceRuntime}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
-import com.ing.baker.runtime.akka.internal.{InteractionManager, RecipeRuntime}
+import com.ing.baker.runtime.akka.internal.{LocalInteractions, RecipeRuntime}
 import com.ing.baker.runtime.akka.{namedCachedThreadPool, _}
+import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.Value
@@ -34,10 +35,10 @@ object ProcessIndex {
   def props(recipeInstanceIdleTimeout: Option[FiniteDuration],
             retentionCheckInterval: Option[FiniteDuration],
             configuredEncryption: Encryption,
-            interactionManager: InteractionManager,
+            interactions: InteractionsF[IO],
             recipeManager: ActorRef,
             ingredientsFilter: Seq[String]) =
-    Props(new ProcessIndex(recipeInstanceIdleTimeout, retentionCheckInterval, configuredEncryption, interactionManager, recipeManager, ingredientsFilter))
+    Props(new ProcessIndex(recipeInstanceIdleTimeout, retentionCheckInterval, configuredEncryption, interactions, recipeManager, ingredientsFilter))
 
   sealed trait ProcessStatus
 
@@ -75,7 +76,7 @@ object ProcessIndex {
 class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
                    retentionCheckInterval: Option[FiniteDuration],
                    configuredEncryption: Encryption,
-                   interactionManager: InteractionManager,
+                   interactionManager: InteractionsF[IO],
                    recipeManager: ActorRef,
                    ingredientsFilter: Seq[String]) extends PersistentActor {
 

@@ -1,18 +1,18 @@
 package webshop.simple
 
 import java.util.UUID
-
 import akka.actor.ActorSystem
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.runtime.akka.AkkaBaker
+import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import org.mockito.Mockito._
-import org.scalatest.{AsyncFlatSpec, Matchers}
-import org.scalatestplus.mockito.MockitoSugar
+import org.scalatest.flatspec.AsyncFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.Future
 
-class WebshopRecipeSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
+class WebshopRecipeSpec extends AsyncFlatSpec with Matchers  {
 
   "The WebshopRecipeReflection" should "compile the recipe without errors" in {
     RecipeCompiler.compileRecipe(SimpleWebshopRecipeReflection.recipe)
@@ -59,7 +59,10 @@ class WebshopRecipeSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
   it should "reserve items in happy conditions" in {
 
     val system: ActorSystem = ActorSystem("baker-webshop-system")
-    val baker: Baker = AkkaBaker.localDefault(system)
+
+    val reserveItemsInstance: InteractionInstance =
+      InteractionInstance.unsafeFrom(new ReserveItemsMock)
+    val baker: Baker = AkkaBaker.localDefault(system, Interactions(reserveItemsInstance))
 
     val compiled = RecipeCompiler.compileRecipe(SimpleWebshopRecipe.recipe)
     val recipeInstanceId: String = UUID.randomUUID().toString
@@ -72,11 +75,8 @@ class WebshopRecipeSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
     val paymentMade = EventInstance
       .unsafeFrom(SimpleWebshopRecipeReflection.PaymentMade())
 
-    val reserveItemsInstance: InteractionInstance =
-      InteractionInstance.unsafeFrom(new ReserveItemsMock)
 
     for {
-      _ <- baker.addInteractionInstance(reserveItemsInstance)
       recipeId <- baker.addRecipe(compiled)
       _ <- baker.bake(recipeId, recipeInstanceId)
       _ <- baker.fireEventAndResolveWhenCompleted(
@@ -97,7 +97,12 @@ class WebshopRecipeSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
   it should "reserve items in happy conditions (mockito)" in {
 
     val system: ActorSystem = ActorSystem("baker-webshop-system")
-    val baker: Baker = AkkaBaker.localDefault(system)
+    // The ReserveItems interaction being mocked by Mockito
+    val mockedReserveItems: ReserveItems = mock[ReserveItems]
+
+    val reserveItemsInstance: InteractionInstance =
+      InteractionInstance.unsafeFrom(mockedReserveItems)
+    val baker: Baker = AkkaBaker.localDefault(system, Interactions(reserveItemsInstance))
 
     val compiled = RecipeCompiler.compileRecipe(SimpleWebshopRecipe.recipe)
     val recipeInstanceId: String = UUID.randomUUID().toString
@@ -110,16 +115,11 @@ class WebshopRecipeSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
     val paymentMade = EventInstance
       .unsafeFrom(SimpleWebshopRecipeReflection.PaymentMade())
 
-    // The ReserveItems interaction being mocked by Mockito
-    val mockedReserveItems: ReserveItems = mock[ReserveItems]
-    val reserveItemsInstance: InteractionInstance =
-      InteractionInstance.unsafeFrom(mockedReserveItems)
 
     when(mockedReserveItems.apply(orderId, items))
       .thenReturn(Future.successful(SimpleWebshopRecipeReflection.ItemsReserved(items)))
 
     for {
-      _ <- baker.addInteractionInstance(reserveItemsInstance)
       recipeId <- baker.addRecipe(compiled)
       _ <- baker.bake(recipeId, recipeInstanceId)
       _ <- baker.fireEventAndResolveWhenCompleted(

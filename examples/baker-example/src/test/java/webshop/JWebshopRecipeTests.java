@@ -4,6 +4,7 @@ import akka.actor.ActorSystem;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.runtime.akka.AkkaBaker;
+import com.ing.baker.runtime.akka.internal.LocalInteractions;
 import com.ing.baker.runtime.javadsl.Baker;
 import com.ing.baker.runtime.javadsl.EventInstance;
 import com.ing.baker.runtime.javadsl.EventMoment;
@@ -46,8 +47,6 @@ public class JWebshopRecipeTests {
     public void shouldRunSimpleInstance() {
 
         ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-        Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
-
         List<String> items = new ArrayList<>(2);
         items.add("item1");
         items.add("item2");
@@ -62,9 +61,11 @@ public class JWebshopRecipeTests {
         CompiledRecipe compiledRecipe =
                 RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
+        Baker baker = AkkaBaker.javaLocalDefault(actorSystem, LocalInteractions.apply(reserveItemsInstance));
+
+
         String recipeInstanceId = "first-instance-id";
-        CompletableFuture<List<String>> result = baker.addInteractionInstance(reserveItemsInstance)
-                .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
+        CompletableFuture<List<String>> result = baker.addRecipe(compiledRecipe)
                 .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
                 .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
                 .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))
@@ -80,12 +81,6 @@ public class JWebshopRecipeTests {
     public void shouldRunSimpleInstanceMockitoSample() {
 
         ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-        Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
-
-        List<String> items = new ArrayList<>(2);
-        items.add("item1");
-        items.add("item2");
-
         EventInstance firstOrderPlaced =
                 EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
         EventInstance paymentMade =
@@ -96,6 +91,15 @@ public class JWebshopRecipeTests {
                 mock(JWebshopRecipe.ReserveItems.class);
         InteractionInstance reserveItemsInstance =
                 InteractionInstance.from(reserveItemsMock);
+
+        Baker baker = AkkaBaker.javaLocalDefault(actorSystem,
+                LocalInteractions.apply(scala.collection.immutable.List(reserveItemsInstance).toSeq));
+
+        List<String> items = new ArrayList<>(2);
+        items.add("item1");
+        items.add("item2");
+
+
         CompiledRecipe compiledRecipe =
                 RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
@@ -104,8 +108,7 @@ public class JWebshopRecipeTests {
                 new JWebshopRecipe.ReserveItems.ItemsReserved(items));
 
         String recipeInstanceId = "first-instance-id";
-        CompletableFuture<List<String>> result = baker.addInteractionInstance(reserveItemsInstance)
-                .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
+        CompletableFuture<List<String>> result = baker.addRecipe(compiledRecipe)
                 .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
                 .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
                 .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))

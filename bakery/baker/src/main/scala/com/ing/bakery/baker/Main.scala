@@ -68,7 +68,7 @@ object Main extends IOApp with LazyLogging {
       eventSink <- KafkaEventSink.resource(eventSinkSettings)
       baker = AkkaBaker
         .withConfig(AkkaBakerConfig(
-          interactionManager = serviceDiscovery.buildInteractionManager,
+          interactions = serviceDiscovery.interactions,
           bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
           timeouts = AkkaBakerConfig.Timeouts.from(config),
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config),

@@ -294,24 +294,6 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
       .timeout(config.inquireTimeout)
 
   /**
-    * Adds an interaction implementation to baker.
-    *
-    * @param implementation The implementation object
-    */
-  override def addInteractionInstance(implementation: InteractionInstanceF[F]): F[Unit] =
-    components.interactionInstanceManager.add(implementation)
-      .timeout(config.addRecipeTimeout)
-
-  /**
-    * Adds a sequence of interaction implementation to baker.
-    *
-    * @param implementations The implementation object
-    */
-  override def addInteractionInstances(implementations: Seq[InteractionInstanceF[F]]): F[Unit] =
-    implementations.toList.traverse(components.interactionInstanceManager.add).void
-      .timeout(config.addRecipeTimeout)
-
-  /**
     * Retries a blocked interaction.
     *
     * @return
@@ -380,10 +362,6 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.registerEventListener(listenerFunction))
       override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): G[Unit] =
         mapK(self.registerBakerEventListener(listenerFunction))
-      override def addInteractionInstance(implementation: InteractionInstanceF[G]): G[Unit] =
-        mapK(self.addInteractionInstance(implementation.translate(comapK)))
-      override def addInteractionInstances(implementations: Seq[InteractionInstanceF[G]]): G[Unit] =
-        mapK(self.addInteractionInstances(implementations.map(_.translate(comapK))))
       override def gracefulShutdown(): G[Unit] =
         mapK(self.gracefulShutdown())
       override def retryInteraction(recipeInstanceId: String, interactionName: String): G[Unit] =
@@ -432,10 +410,6 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.registerEventListener(listenerFunction))
       override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): Future[Unit] =
         mapK(self.registerBakerEventListener(listenerFunction))
-      override def addInteractionInstance(implementation: InteractionInstance): Future[Unit] =
-        mapK(self.addInteractionInstance(implementation.translate(comapK)))
-      override def addInteractionInstances(implementations: Seq[InteractionInstance]): Future[Unit] =
-        mapK(self.addInteractionInstances(implementations.map(_.translate(comapK))))
       override def gracefulShutdown(): Future[Unit] =
         mapK(self.gracefulShutdown())
       override def retryInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =

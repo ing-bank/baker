@@ -1,25 +1,30 @@
 package com.ing.bakery.baker
 
-import java.io.File
-import java.net.InetSocketAddress
-
 import akka.actor.{ActorSystem, Props}
 import akka.cluster.Cluster
+import cats.Id
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.baker.recipe.javadsl.Interaction
 import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
-import com.ing.baker.runtime.akka.internal.InteractionManagerLocal
+import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
-import com.ing.baker.runtime.scaladsl.InteractionInstance
+import com.ing.baker.runtime.scaladsl.{InteractionInstance, InteractionInstanceF}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import kamon.Kamon
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.server.Server
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
+import skuber.LabelSelector
+import skuber.api.client.KubernetesClient
 
+import java.io.File
+import java.net.InetSocketAddress
+import java.util
 import scala.collection.JavaConverters._
+import scala.collection.immutable
 import scala.concurrent.ExecutionContext
 
 
@@ -44,11 +49,11 @@ object Main extends IOApp with LazyLogging {
     val loggingEnabled = bakerConfig.getBoolean("api-logging-enabled")
     logger.info(s"Logging of API: $loggingEnabled  - MUST NEVER BE SET TO 'true' IN PRODUCTION")
 
-    val configurationClasses = bakerConfig.getStringList("interaction-configuration-classes")
+    val configurationClasses = bakerConfig.getStringList("interaction.local-configuration-classes")
 
     val eventSinkSettings = bakerConfig.getConfig("kafka-event-sink").as[KafkaEventSinkSettings]
 
-    val interactions = {
+    val interactions: List[InteractionInstanceF[IO]] = {
       if (configurationClasses.size() == 0) {
         logger.warn("No interactions configured, probably interaction-configuration-classes config parameter is empty")
       }
@@ -57,27 +62,49 @@ object Main extends IOApp with LazyLogging {
         val ctx = new AnnotationConfigApplicationContext()
         ctx.register(configClass)
         ctx.refresh()
-        val interactionsAsJavaMap: java.util.Map[String, Interaction] =
-          ctx.getBeansOfType(classOf[com.ing.baker.recipe.javadsl.Interaction])
-        val interactions = interactionsAsJavaMap.asScala.values.map(InteractionInstance.unsafeFrom).toList
+        val interactionsAsJavaMap: util.Map[String, Interaction] =
+          ctx.getBeansOfType(classOf[Interaction])
+        val interactions = interactionsAsJavaMap
+          .asScala
+          .values
+          .map(InteractionInstanceF.unsafeFrom[IO])
+          .toList
         logger.info(s"Loaded ${interactions.size} interactions from $configurationClass: ${interactions.sortBy(_.name).map(_.name).mkString(",")}")
         interactions
       } toList).flatten
     }
-
-    val interactionManager = new InteractionManagerLocal(interactions)
+    val localInteractions = LocalInteractions(interactions)
 
     logger.info("Starting Akka Baker...")
-    val baker = AkkaBaker.withConfig(AkkaBakerConfig(
-      interactionManager = interactionManager,
-      bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
-      timeouts = AkkaBakerConfig.Timeouts.from(config),
-      bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)
-    )(system))
 
+    val remoteInteractionCallContext: ExecutionContext = system.dispatchers.lookup("remote-interaction-dispatcher")
+
+    val k8s: KubernetesClient = skuber.k8sInit
     val mainResource: Resource[IO, (Server[IO], Server[IO])] =
       for {
+        interactionHttpClient <- BlazeClientBuilder[IO](remoteInteractionCallContext, None) // todo SSL context
+          .withCheckEndpointAuthentication(false)
+          .resource
+
         eventSink <- KafkaEventSink.resource(eventSinkSettings)
+
+        interactionDiscovery <- InteractionDiscovery.resource(
+          interactionHttpClient,
+          k8s,
+          localInteractions,
+          bakerConfig.getIntList("interaction.localhost-ports").asScala.map(_.toInt).toList,
+          noneIfEmpty(bakerConfig.getString("interaction.pod-label-selector"))
+            .map(_.split("="))
+            .map { kv => LabelSelector(LabelSelector.IsEqualRequirement(kv(0), kv(1))) }
+        )
+
+        baker = AkkaBaker.withConfig(AkkaBakerConfig(
+          interactions = interactionDiscovery.interactions,
+          bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
+          timeouts = AkkaBakerConfig.Timeouts.from(config),
+          bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)
+        )(system))
+
         _ <- Resource.liftF(eventSink.attach(baker))
         _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(configPath, baker))
         _ <- Resource.liftF(IO.async[Unit] { callback =>
@@ -86,12 +113,14 @@ object Main extends IOApp with LazyLogging {
             callback(Right(()))
           }
         })
+
         metricsService <- MetricService.resource(
           InetSocketAddress.createUnresolved("0.0.0.0", metricsPort)
         )
+
         bakerService <- BakerService.resource(baker,
           InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort),
-          apiUrlPrefix, interactionManager, loggingEnabled)
+          apiUrlPrefix, interactionDiscovery.interactions, loggingEnabled)
       } yield (bakerService, metricsService)
 
     mainResource.use( servers => {
@@ -101,4 +130,6 @@ object Main extends IOApp with LazyLogging {
     }
     ).as(ExitCode.Success)
   }
+
+  private def noneIfEmpty(str: String): Option[String] = if (str == null || str.isEmpty) None else Some(str)
 }

@@ -1,11 +1,11 @@
 package com.ing.bakery.baker
 
 import java.net.InetSocketAddress
-
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
-import com.ing.baker.runtime.akka.internal.InteractionManager
+import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.common.BakerException
+import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EventInstance}
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.typesafe.scalalogging.LazyLogging
@@ -27,7 +27,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object BakerService {
 
-  def resource(baker: Baker, hostname: InetSocketAddress, apiUrlPrefix: String, interactions: InteractionManager, loggingEnabled: Boolean)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+  def resource(baker: Baker, hostname: InetSocketAddress, apiUrlPrefix: String, interactions: InteractionsF[IO], loggingEnabled: Boolean)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
     val apiLoggingAction: Option[String => IO[Unit]] = if (loggingEnabled) {
       val apiLogger = LoggerFactory.getLogger("API")
       Some(s => IO(apiLogger.info(s)))
@@ -43,11 +43,11 @@ object BakerService {
       ).resource
   }
 
-  def routes(baker: Baker, interactionManager: InteractionManager)(implicit cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] =
+  def routes(baker: Baker, interactionManager: InteractionsF[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] =
     new BakerService(baker, interactionManager).routes
 }
 
-final class BakerService private(baker: Baker, interactionManager: InteractionManager)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
+final class BakerService private(baker: Baker, interactionManager: InteractionsF[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
 
   object CorrelationId extends OptionalQueryParamDecoderMatcher[String]("correlationId")
 
@@ -82,7 +82,7 @@ final class BakerService private(baker: Baker, interactionManager: InteractionMa
       case GET -> Root / "health" => Ok()
 
       case GET -> Root / "interactions" => for {
-        interactions <- IO.fromFuture(IO(interactionManager.listAllImplementations))
+        interactions <- interactionManager.instances
         resp <- Ok(interactions.map(_.name).asJson)
       } yield resp
 

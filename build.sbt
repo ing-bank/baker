@@ -275,7 +275,8 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
       cassandraDriverQueryBuilder,
       cassandraDriverMetrics,
       prometheus,
-      prometheusJmx
+      prometheusJmx,
+      skuber
     ) ++ testDeps(
       slf4jApi,
       logback,

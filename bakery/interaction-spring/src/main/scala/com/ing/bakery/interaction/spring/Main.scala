@@ -42,7 +42,7 @@ object Main extends App with LazyLogging{
       logger.info("Starting for configuration: " + configurationClassString)
       val implementations = getImplementations(configurationClassString)
       logger.info("Starting RemoteInteractionLoader")
-      RemoteInteractionLoader.apply(implementations)
+      RemoteInteractionLoader(implementations)
     } catch {
       case ex: Exception =>
         throw new IllegalStateException(s"Unable to initialize the interaction instances", ex)

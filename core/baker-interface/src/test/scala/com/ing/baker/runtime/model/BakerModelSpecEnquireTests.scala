@@ -1,16 +1,11 @@
 package com.ing.baker.runtime.model
 
-import java.util.UUID
-
-import cats.effect.ConcurrentEffect
 import cats.implicits._
+import cats.effect.ConcurrentEffect
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.recipe.scaladsl.Recipe
-import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceF}
-import org.mockito.Matchers.{eq => mockitoEq, _}
-import org.mockito.Mockito._
+import com.ing.baker.runtime.scaladsl.EventInstance
 
-import scala.concurrent.duration._
+import java.util.UUID
 import scala.reflect.ClassTag
 
 trait BakerModelSpecEnquireTests[F[_]] { self: BakerModelSpec[F] =>
@@ -77,32 +72,6 @@ trait BakerModelSpecEnquireTests[F[_]] { self: BakerModelSpec[F] =>
         _ = firstEventGraph should not be secondEventGraph
       } yield succeed
     }
-/*
-    test("testy test") { context =>
-      val recipe = Recipe("TestyTestRecipe")
-        .withInteractions(
-          interactionFour
-            .withRequiredEvents(secondEvent),
-        )
-        .withSensoryEvents(
-          eventFromInteractionTwo,
-          secondEvent)
-      for {
-        bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, Seq(InteractionInstanceF.unsafeFrom[F](testInteractionFourMock)))
-        (baker, recipeId) = bakerAndRecipeId
-        recipeInstanceId = UUID.randomUUID().toString
-        _ = when(testInteractionFourMock.apply()).thenReturn(InteractionFourSuccessful("success-ingredient"))
-        _ <- baker.bake(recipeId, recipeInstanceId)
-        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(EventFromInteractionTwo("my-ingredient-value")))
-        vis <- baker.getVisualState(recipeInstanceId)
-        compiled = RecipeCompiler.compileRecipe(recipe)
-        visPetri = compiled.getPetriNetVisualization
-        _ = println()
-        _ = println(vis)
-        _ = println()
-        _ <- timer.sleep(1.seconds).to[F]
-      } yield succeed
-    }
-*/
+
   }
 }

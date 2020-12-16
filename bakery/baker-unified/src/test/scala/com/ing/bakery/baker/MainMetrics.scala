@@ -7,7 +7,7 @@ import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.baker.recipe.javadsl.Interaction
-import com.ing.baker.runtime.akka.internal.InteractionManagerLocal
+import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.typesafe.config.ConfigFactory
@@ -53,10 +53,10 @@ object MainMetrics extends IOApp with LazyLogging {
       } toList).flatten
     }
 
-    val interactionManager = new InteractionManagerLocal(interactions)
+    val interactionManager = LocalInteractions((interactions)
 
     val bakerConfig = AkkaBakerConfig(
-      interactionManager = interactionManager,
+      interactions = interactionManager,
       bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
       timeouts = AkkaBakerConfig.Timeouts.from(config),
       bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)

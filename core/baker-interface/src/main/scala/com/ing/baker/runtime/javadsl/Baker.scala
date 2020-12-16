@@ -55,22 +55,6 @@ class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker
     toCompletableFuture(baker.addRecipe(compiledRecipe))
 
   /**
-    * Adds a single interaction implementation to baker.
-    *
-    * @param implementation The implementation that should be added.
-    */
-  def addInteractionInstance(@Nonnull implementation: InteractionInstance): CompletableFuture[Unit] =
-    toCompletableFuture(baker.addInteractionInstance(implementation.asScala))
-
-  /**
-    * Adds all the provided interaction implementations to baker.
-    *
-    * @param implementations An iterable of implementations that should be added.
-    */
-  def addInteractionInstances(@Nonnull implementations: java.util.List[InteractionInstance]): CompletableFuture[Unit] =
-    toCompletableFuture(baker.addInteractionInstances(implementations.asScala.map(_.asScala)))
-
-  /**
     * Attempts to gracefully shutdown the baker system.
     */
   def gracefulShutdown(): CompletableFuture[Unit] =
