@@ -9,7 +9,7 @@ import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, Intera
 
 trait InteractionsF[F[_]] {
 
-  def instances: F[Seq[InteractionInstanceF[F]]]
+  def availableInstances: F[List[InteractionInstanceF[F]]]
 
   def findImplementation(transition: InteractionTransition)(implicit sync: Sync[F]): F[Option[InteractionInstanceF[F]]]
 

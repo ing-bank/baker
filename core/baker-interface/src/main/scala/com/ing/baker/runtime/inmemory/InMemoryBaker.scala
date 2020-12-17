@@ -11,7 +11,7 @@ import scala.concurrent._
 object InMemoryBaker {
 
   def build(config: BakerF.Config = BakerF.Config(),
-            implementations: Seq[InteractionInstanceF[IO]])(implicit timer: Timer[IO], cs: ContextShift[IO]): IO[BakerF[IO]] = for {
+            implementations: List[InteractionInstanceF[IO]])(implicit timer: Timer[IO], cs: ContextShift[IO]): IO[BakerF[IO]] = for {
     recipeInstanceManager <- InMemoryRecipeInstanceManager.build
     recipeManager <- InMemoryRecipeManager.build
     eventStream <- InMemoryEventStream.build
@@ -24,7 +24,7 @@ object InMemoryBaker {
     new InMemoryBakerImpl(config)
   }
 
-  def java(config: BakerF.Config, implementations: Seq[InteractionInstanceF[IO]]): javadsl.Baker = {
+  def java(config: BakerF.Config, implementations: List[InteractionInstanceF[IO]]): javadsl.Baker = {
     implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
     implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     val bakerF = build(config, implementations).unsafeRunSync().asDeprecatedFutureImplementation(
@@ -39,7 +39,7 @@ object InMemoryBaker {
   }
 
   def java(): javadsl.Baker = {
-    java(BakerF.Config(), Seq.empty)
+    java(BakerF.Config(), List.empty)
   }
 }
 

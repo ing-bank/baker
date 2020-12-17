@@ -99,7 +99,7 @@ object Main extends IOApp with LazyLogging {
         )
 
         baker = AkkaBaker.withConfig(AkkaBakerConfig(
-          interactions = interactionDiscovery.interactions,
+          interactions = interactionDiscovery,
           bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
           timeouts = AkkaBakerConfig.Timeouts.from(config),
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)
@@ -120,7 +120,7 @@ object Main extends IOApp with LazyLogging {
 
         bakerService <- BakerService.resource(baker,
           InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort),
-          apiUrlPrefix, interactionDiscovery.interactions, loggingEnabled)
+          apiUrlPrefix, interactionDiscovery, loggingEnabled)
       } yield (bakerService, metricsService)
 
     mainResource.use( servers => {

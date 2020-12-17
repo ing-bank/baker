@@ -7,13 +7,13 @@ import com.ing.baker.runtime.scaladsl.InteractionInstanceF
 
 object InMemoryInteractions {
 
-  def build(implementations: Seq[InteractionInstanceF[IO]]): IO[InMemoryInteractions] =
+  def build(implementations: List[InteractionInstanceF[IO]]): IO[InMemoryInteractions] =
     IO(new InMemoryInteractions(implementations))
 }
 
-final class InMemoryInteractions(implementations: Seq[InteractionInstanceF[IO]]) extends InteractionsF[IO] {
+final class InMemoryInteractions(implementations: List[InteractionInstanceF[IO]]) extends InteractionsF[IO] {
 
-  override def instances: IO[Seq[InteractionInstanceF[IO]]] = IO(implementations)
+  override def availableInstances: IO[List[InteractionInstanceF[IO]]] = IO(implementations)
 
   override def findImplementation(transition: InteractionTransition)(implicit sync: Sync[IO]): IO[Option[InteractionInstanceF[IO]]] =
     IO(implementations.find(compatible(transition, _)))
