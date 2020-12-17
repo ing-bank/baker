@@ -8,9 +8,8 @@ import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Sync, Timer}
 import cats.implicits._
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.model.InteractionsF
-import com.ing.baker.runtime.scaladsl.{InteractionInstance, InteractionInstanceF}
+import com.ing.baker.runtime.scaladsl.InteractionInstanceF
 import com.ing.bakery.interaction.RemoteInteractionClient
 import com.ing.bakery.protocol.InteractionExecution
 import com.typesafe.scalalogging.LazyLogging
