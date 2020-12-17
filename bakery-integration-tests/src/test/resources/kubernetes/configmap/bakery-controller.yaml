@@ -29,7 +29,7 @@ spec:
       image: controller:local
       env:
         - name: BAKERY_HTTPS_MUTUAL_AUTH
-          value: "true"
+          value: "false"
         - name: USE_CRDS
           value: "false"
         - name: INTERACTION_HTTPS_KEYSTORE_SECRET
