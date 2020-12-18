@@ -91,8 +91,8 @@ object Dependencies {
   val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
   val circeGenericExtras = "io.circe" %% "circe-generic-extras" % circeVersion
 
-  val catsEffect = "org.typelevel" %% "cats-effect" % "2.2.0"
-  val catsCore = "org.typelevel" %% "cats-core" % "2.2.0"
+  val catsEffect = "org.typelevel" %% "cats-effect" % "2.3.1"
+  val catsCore = "org.typelevel" %% "cats-core" % "2.3.1"
   val console4Cats = "dev.profunktor" %% "console4cats" % "0.8.0"
   val catsRetry = "com.github.cb372" %% "cats-retry" % "2.0.0"
 
