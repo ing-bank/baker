@@ -26,7 +26,7 @@ abstract class BakerySmokeTests  extends BakeryFunSpec {
   }
 
   protected val ExpectedBakerEvents = List(
-    "RecipeAdded",
+//    "RecipeAdded",
     "RecipeAdded",
     "RecipeInstanceCreated",
     "EventReceived",
