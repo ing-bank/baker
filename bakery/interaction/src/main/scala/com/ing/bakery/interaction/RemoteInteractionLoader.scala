@@ -31,7 +31,7 @@ object RemoteInteractionLoader extends LazyLogging {
 
     RemoteInteractionService.resource(implementations, address, None /* todo tls config */)
       .use(_ => {
-        logger.info("Interactions started successfully, starting health service")
+        logger.info(s"Interactions started successfully at $address, now starting health service $healthServiceAddress")
         HealthService.resource(healthServiceAddress)
           .use(_ => IO.never)
           .unsafeRunAsyncAndForget()

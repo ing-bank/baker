@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: interactions
+  labels:
+    bakery: webshop
+spec:
+  selector:
+    matchLabels:
+      bakery: webshop
+  template:
+    metadata:
+      labels:
+        bakery: webshop
+    spec:
+      automountServiceAccountToken: true
+      containers:
+        - name: interactions
+          image: interaction-make-payment-and-ship-items:local
+#           volumeMounts:
+#             - mountPath: /opt/docker/conf/
+#               name: config
+#               readOnly: true
+          ports:
+            - containerPort: 8081
+              name: interactions
+              protocol: TCP
+            - containerPort: 9999
+              name: ints-health
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /health
+              port:  ints-health
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          readinessProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /health
+              port:  ints-health
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+      restartPolicy: Always
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+#       volumes:
+#         - name: config
+#           projected:
+#             defaultMode: 420
+#             sources:
+#               - secret:
+#                   name: bakery
+#               - configMap:
+#                   name: bakery
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: interactions
+  labels:
+    bakery: webshop
+
+spec:
+  ports:
+    - name: interactions
+      protocol: TCP
+      port: 8081
+      targetPort: interactions
+  selector:
+    bakery: webshop
+  type: ClusterIP
+  sessionAffinity: None

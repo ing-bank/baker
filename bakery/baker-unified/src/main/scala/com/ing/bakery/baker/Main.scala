@@ -11,7 +11,6 @@ import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.scaladsl.{InteractionInstance, InteractionInstanceF}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import kamon.Kamon
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -32,8 +31,6 @@ object Main extends IOApp with LazyLogging {
 
   override def run(args: List[String]): IO[ExitCode] = {
 
-    Kamon.init()
-
     val configPath = sys.env.getOrElse("CONFIG_DIRECTORY", "/opt/docker/conf")
     val config = ConfigFactory.load(ConfigFactory.parseFile(new File(s"$configPath/application.conf")))
     val bakerConfig = config.getConfig("baker")
@@ -49,7 +46,7 @@ object Main extends IOApp with LazyLogging {
     val loggingEnabled = bakerConfig.getBoolean("api-logging-enabled")
     logger.info(s"Logging of API: $loggingEnabled  - MUST NEVER BE SET TO 'true' IN PRODUCTION")
 
-    val configurationClasses = bakerConfig.getStringList("interaction.local-configuration-classes")
+    val configurationClasses = bakerConfig.getStringList("interactions.local-configuration-classes")
 
     val eventSinkSettings = bakerConfig.getConfig("kafka-event-sink").as[KafkaEventSinkSettings]
 
@@ -77,7 +74,7 @@ object Main extends IOApp with LazyLogging {
 
     logger.info("Starting Akka Baker...")
 
-    val remoteInteractionCallContext: ExecutionContext = system.dispatchers.lookup("remote-interaction-dispatcher")
+    val remoteInteractionCallContext: ExecutionContext = system.dispatchers.lookup("akka.actor.remote-interaction-dispatcher")
 
     val k8s: KubernetesClient = skuber.k8sInit
     val mainResource: Resource[IO, (Server[IO], Server[IO])] =
@@ -92,8 +89,8 @@ object Main extends IOApp with LazyLogging {
           interactionHttpClient,
           k8s,
           localInteractions,
-          bakerConfig.getIntList("interaction.localhost-ports").asScala.map(_.toInt).toList,
-          noneIfEmpty(bakerConfig.getString("interaction.pod-label-selector"))
+          bakerConfig.getIntList("interactions.localhost-ports").asScala.map(_.toInt).toList,
+          noneIfEmpty(bakerConfig.getString("interactions.pod-label-selector"))
             .map(_.split("="))
             .map { kv => LabelSelector(LabelSelector.IsEqualRequirement(kv(0), kv(1))) }
         )

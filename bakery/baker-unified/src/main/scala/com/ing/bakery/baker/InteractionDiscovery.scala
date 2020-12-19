@@ -37,24 +37,33 @@ object InteractionDiscovery extends LazyLogging {
       .map(_.flatten)
   }
 
-  def extractInterfacesFromDeployedInteraction(httpClient: Client[IO], deployedService: Service)
+  def extractInterfacesFromDeployedInteraction(httpClient: Client[IO], deployedService: Service, port: Int)
                                               (implicit contextShift: ContextShift[IO], timer: Timer[IO])
   : IO[List[InteractionInstanceF[IO]]] = {
-    val deployedPort = deployedService.spec
-      .flatMap(_.ports.find(_.name == "http-api")) // todo this is a convention
-      .map(_.port)
-      .getOrElse(8080)
     val protocol = /*if(interactionClientTLS.isDefined) "https" else */ "http"
-    extractInteractions(httpClient, Uri.unsafeFromString(s"$protocol://${deployedService.name}:$deployedPort/"))
+    extractInteractions(httpClient, Uri.unsafeFromString(s"$protocol://${deployedService.name}:$port/"))
   }
 
   private def extractInteractions(httpClient: Client[IO], address: Uri)
                                 (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[List[InteractionInstanceF[IO]]] = {
     val client = new RemoteInteractionClient(httpClient, address)
 
-    within(time = 10 minutes, split = 40) { // check every 15 seconds for interfaces for 10 minutes
-      // after 10 minutes the failed assertion is propagated, we assume the service is gone and never comes back
-      logger.info(s"Extracting interactions from ${address.toString}")
+    def within[A](giveUpAfter: FiniteDuration, retries: Int)(f: IO[A])(implicit timer: Timer[IO]): IO[A] = {
+      def attempt(count: Int, times: FiniteDuration): IO[A] = {
+        if (count < 1) f else f.attempt.flatMap {
+          case Left(e) =>
+            logger.error(s"Failed to list interactions @ ${address.toString}", e)
+            IO.sleep(times) *> attempt(count - 1, times)
+
+          case Right(a) => IO(a)
+        }
+      }
+      attempt(retries, giveUpAfter / retries)
+    }
+
+    within(giveUpAfter = 10 minutes, retries = 40) {
+      // check every 15 seconds for interfaces for 10 minutes
+      logger.info(s"Extracting interactions @ ${address.toString}")
       client.interface.map { interfaces =>
         assert(interfaces.nonEmpty)
         interfaces.map(interaction => {
@@ -67,16 +76,6 @@ object InteractionDiscovery extends LazyLogging {
         })
       }
     }
-  }
-
-  private def within[A](time: FiniteDuration, split: Int)(f: IO[A])(implicit timer: Timer[IO]): IO[A] = {
-    def inner(count: Int, times: FiniteDuration): IO[A] = {
-      if (count < 1) f else f.attempt.flatMap {
-        case Left(_) => IO.sleep(times) *> inner(count - 1, times)
-        case Right(a) => IO(a)
-      }
-    }
-    inner(split, time / split)
   }
 
   def resource(interactionHttpClient: Client[IO],
@@ -146,23 +145,24 @@ final class InteractionDiscovery(val availableInteractions: List[InteractionInst
     d <- discovered
   } yield availableInteractions ++ d.values().asScala.flatten
 
-  def update(event: K8SWatchEvent[Service])(implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[Unit] = {
-
+  def update(event: K8SWatchEvent[Service])(implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[Any] = (for {
+    spec <- event._object.spec
+    port <- spec.ports.find(_.name == "interactions")
+  } yield {
     event._type match {
 
       case EventType.ADDED | EventType.MODIFIED => for {
+        interfaces <- extractInterfacesFromDeployedInteraction(interactionHttpClient, event._object, port.port)
         d <- discovered
-        interfaces <- extractInterfacesFromDeployedInteraction(interactionHttpClient, event._object)
       } yield d.put(event._object.name, interfaces)
 
       case EventType.DELETED => for {
-          d <- discovered
-        } yield d.remove(event._object.name)
+        d <- discovered
+      } yield d.remove(event._object.name)
 
       case EventType.ERROR =>
         IO(logger.error(s"Event type ERROR on service watch for service ${event._object}"))
     }
-
-  }
+  }) getOrElse IO.unit
 
 }

@@ -16,15 +16,15 @@ class BakeryUnifiedSmokeTests extends BakerySmokeTests with Matchers {
         _ = recipes.length shouldBe 1
         _ = recipes should contain("Webshop")
 
-        _ <- DefinitionFile("configmap/baker-webshop-update-recipes.yaml", context.namespace)
-        _ <- eventually("Webshop baker added an extra recipe") {
-          for {
-            recipes <- context.clientApp.listRecipeNames
-            _ = recipes.length shouldBe 2
-            _ = recipes should contain("Webshop")
-            _ = recipes should contain("ItemReservation")
-          } yield ()
-        }
+//        _ <- DefinitionFile("unified/extra-recipe.yaml", context.namespace)
+//        _ <- eventually("Webshop baker added an extra recipe") {
+//          for {
+//            recipes <- context.clientApp.listRecipeNames
+//            _ = recipes.length shouldBe 2
+//            _ = recipes should contain("Webshop")
+//            _ = recipes should contain("ItemReservation")
+//          } yield ()
+//        }
 
         orderId <- context.clientApp.createCheckoutOrder(List("item1", "item2"))
 
@@ -83,7 +83,7 @@ class BakeryUnifiedSmokeTests extends BakerySmokeTests with Matchers {
     * @return the resources each test can use
     */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] =
-    BakeryEnvironment.resource(testArguments, BakeryEnvironment.configMapNamespace)
+    BakeryEnvironment.resource(testArguments, BakeryEnvironment.unifiedNamespace)
 
 
 }

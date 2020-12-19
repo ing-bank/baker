@@ -6,7 +6,6 @@ import com.ing.baker.recipe.javadsl.Interaction
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.ing.bakery.interaction.RemoteInteractionLoader
 import com.typesafe.scalalogging.LazyLogging
-import kamon.Kamon
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 
 import scala.collection.JavaConverters._
@@ -16,8 +15,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * Expects single argument containing Spring configuration
  */
 object Main extends App with LazyLogging{
-
-  Kamon.init()
 
   def getImplementations(configurationClassString: String) : List[InteractionInstance] = {
     val configClass = Class.forName(configurationClassString)

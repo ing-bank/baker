@@ -10,7 +10,6 @@ object Dependencies {
   val http4sVersion = "0.21.8"
   val fs2Version = "2.4.4"
   val circeVersion = "0.13.0"
-  val kamonAkkaVersion = "2.1.8"
 
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
 
@@ -64,10 +63,6 @@ object Dependencies {
   val scalaGraph = "org.scala-graph" %% "graph-core" % "1.13.1"
   val scalaGraphDot = "org.scala-graph" %% "graph-dot" % "1.13.0"
   val graphvizJava = "guru.nidi" % "graphviz-java" % "0.17.1"
-
-  val kamon = "io.kamon" %% "kamon-bundle" % kamonAkkaVersion
-  val kamonAkka = "io.kamon" %% "kamon-akka" % kamonAkkaVersion
-  val kamonPrometheus = "io.kamon" %% "kamon-prometheus" % kamonAkkaVersion
 
   val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.9.0"
   val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.14.0"

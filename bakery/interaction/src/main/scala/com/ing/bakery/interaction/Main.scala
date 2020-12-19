@@ -1,7 +1,6 @@
 package com.ing.bakery.interaction
 
 import com.ing.baker.runtime.scaladsl.InteractionInstance
-import kamon.Kamon
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -9,8 +8,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
   * Expects single argument containing comma-separated list of interactions' entry points
   */
 object Main extends App {
-
-  Kamon.init()
 
   def getImplementations(classNames: String): List[InteractionInstance] = {
     val interactions: List[String] = classNames.split(",").toList

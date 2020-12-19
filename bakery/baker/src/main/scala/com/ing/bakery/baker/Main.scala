@@ -14,7 +14,6 @@ import com.ing.bakery.interaction.BakeryHttp
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import javax.net.ssl.SSLContext
-import kamon.Kamon
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -25,7 +24,6 @@ import scala.concurrent.ExecutionContext
 object Main extends IOApp with LazyLogging {
 
   override def run(args: List[String]): IO[ExitCode] = {
-    Kamon.init()
 
 
     val config = ConfigFactory.load(ConfigFactory.parseFile(new File("/bakery-config/application.conf")))

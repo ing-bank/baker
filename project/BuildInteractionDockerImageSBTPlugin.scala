@@ -123,7 +123,6 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
       |
       |import com.ing.bakery.interaction.RemoteInteractionLoader
       |import com.ing.baker.runtime.scaladsl.InteractionInstance
-      |import kamon.Kamon
       |
       |import scala.concurrent.ExecutionContext.Implicits.global
       |
@@ -131,7 +130,6 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
       |  * Expects single argument containing full classpath entry point for interaction
       |  */
       |object Main extends App {
-      |  Kamon.init()
       |
       |  private def runApp(classNames: String): Unit =
       |    try {
@@ -160,7 +158,6 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
       |import com.ing.baker.recipe.javadsl.Interaction
       |import com.ing.baker.runtime.scaladsl.InteractionInstance
       |import com.typesafe.scalalogging.LazyLogging
-      |import kamon.Kamon
       |import org.springframework.context.annotation.AnnotationConfigApplicationContext
       |
       |import scala.collection.JavaConverters._
@@ -171,7 +168,6 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
       | */
       |object Main extends App with LazyLogging{
       |
-      |  Kamon.init()
       |
       |  def getImplementations(configurationClassString: String) : List[InteractionInstance] = {
       |    val configClass = Class.forName(configurationClassString)

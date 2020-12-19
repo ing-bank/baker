@@ -8,7 +8,6 @@ import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.bakery.clustercontroller.controllers.{BakerController, InteractionController, ForceRollingUpdateOnConfigMapUpdate}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import kamon.Kamon
 import skuber.api.client.KubernetesClient
 
 import scala.concurrent.ExecutionContext
@@ -16,7 +15,6 @@ import scala.concurrent.ExecutionContext
 object Main extends IOApp with LazyLogging {
 
   override def run(args: List[String]): IO[ExitCode] = {
-    Kamon.init()
 
     val config = ConfigFactory.load()
     val useCrds = config.getBoolean("bakery-controller.use-crds")
