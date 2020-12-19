@@ -107,6 +107,12 @@ data:
   application.conf: |
 
     baker {
+      kafka-event-sink {
+        enabled: true,
+        bootstrap-servers: "kafka-event-sink:9092",
+        baker-events-topic: "baker-events",
+        recipe-events-topic: "recipe-events"
+      }
       interactions {
         local-configuration-classes = []
         localhost-ports = [ 8081 ]
@@ -235,7 +241,7 @@ spec:
   ports:
     - name: api
       protocol: TCP
-      port: 8080
+      port: 8081
       targetPort: state-api
   selector:
     name: webshop-baker

@@ -8,11 +8,11 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
   state =>
     val extracted = Project.extract(state)
     "set version in ThisBuild := \"local\"" ::
-//    "bakery-baker-docker-generate/docker:publishLocal" ::
+    "bakery-baker-docker-generate/docker:publishLocal" ::
      "docker-baker-unified/docker:publishLocal" ::
       "bakery-client-example/docker:publishLocal" ::
       "bakery-kafka-listener-example/docker:publishLocal" ::
-//      "bakery-controller-docker-generate/docker:publishLocal" ::
+      "bakery-controller-docker-generate/docker:publishLocal" ::
       "project bakery-interaction-example-make-payment-and-ship-items" ::
       "buildInteractionDockerImage --image-name=interaction-make-payment-and-ship-items --publish=local --interaction=webshop.webservice.MakePaymentInstance --interaction=webshop.webservice.ShipItemsInstance" ::
       "project bakery-interaction-example-reserve-items" ::
