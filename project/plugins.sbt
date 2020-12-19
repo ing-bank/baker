@@ -20,6 +20,4 @@ addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.3.9")
 
 addSbtPlugin("no.arktekk.sbt" % "aether-deploy" % "0.26.0")
 
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.10.0-RC1")
-
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.30"

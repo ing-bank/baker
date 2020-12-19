@@ -2,17 +2,12 @@ package com.ing.bakery.baker
 
 import java.io.CharArrayWriter
 import java.net.InetSocketAddress
-import java.util
 
-import akka.actor.{Actor, ActorLogging, Props}
-import akka.cluster.Cluster
-import akka.cluster.ClusterEvent.{ClusterDomainEvent, InitialStateAsEvents, MemberDowned, MemberRemoved, MemberUp, MemberWeaklyUp, UnreachableMember}
-import akka.cluster.metrics.MetricsCollector
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.typesafe.scalalogging.LazyLogging
-import io.prometheus.client.{Collector, CollectorRegistry}
 import io.prometheus.client.exporter.common.TextFormat
 import io.prometheus.client.hotspot._
+import io.prometheus.client.{Collector, CollectorRegistry}
 import io.prometheus.jmx.JmxCollector
 import org.http4s.dsl.io._
 import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
