@@ -16,6 +16,7 @@ import com.datastax.oss.driver.api.querybuilder.term.Term
 import com.typesafe.scalalogging.LazyLogging
 import io.prometheus.client.exporter.common.TextFormat
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper._
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -26,7 +27,7 @@ import scala.collection.convert.ImplicitConversions._
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
 
-class AkkaCassandraJmxMetricsSpec extends AnyFreeSpec with LazyLogging with Eventually {
+class AkkaCassandraJmxMetricsSpec extends AnyFreeSpec with LazyLogging with Eventually with BeforeAndAfterAll {
 
   import TestActors._
   implicit override val patienceConfig: PatienceConfig =
@@ -42,6 +43,11 @@ class AkkaCassandraJmxMetricsSpec extends AnyFreeSpec with LazyLogging with Even
   implicit val ec: ExecutionContext = ExecutionContext.global
   private val system: ActorSystem = ActorSystem("baker")
   private val persistenceInitActor = system.actorOf(Props(classOf[AwaitPersistenceInit]), s"persistenceInit-${UUID.randomUUID().toString}")
+
+
+  override protected def afterAll(): Unit = {
+    system.terminate()
+  }
 
   def createSession = {
     CqlSession.builder()
