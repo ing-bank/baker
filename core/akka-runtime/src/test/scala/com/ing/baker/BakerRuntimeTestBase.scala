@@ -19,9 +19,11 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpecLike
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatestplus.mockito.MockitoSugar
-
 import java.nio.file.Paths
 import java.util.UUID
+
+import io.prometheus.client.CollectorRegistry
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -180,7 +182,7 @@ trait BakerRuntimeTestBase
          |
          |baker {
          |  actor.provider = "cluster-sharded"
-         |  cluster.seed-nodes = ["akka.tcp://$actorSystemName@localhost:$port"]
+         |  cluster.seed-nodes = ["akka://$actorSystemName@localhost:$port"]
          |}
     """.stripMargin).withFallback(localLevelDBConfig(actorSystemName, journalInitializeTimeout, journalPath, snapshotsPath))
 

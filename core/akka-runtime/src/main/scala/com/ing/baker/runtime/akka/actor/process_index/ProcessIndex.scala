@@ -4,6 +4,7 @@ import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, Terminate
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.ask
 import akka.persistence.{PersistentActor, RecoveryCompleted}
+import akka.sensors.actor.PersistentActorMetrics
 import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import cats.instances.future._
@@ -78,9 +79,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
                    configuredEncryption: Encryption,
                    interactionManager: InteractionsF[IO],
                    recipeManager: ActorRef,
-                   ingredientsFilter: Seq[String]) extends PersistentActor {
+                   ingredientsFilter: Seq[String]) extends PersistentActor with PersistentActorMetrics {
 
-  val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
+  override val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
   import context.dispatcher
 

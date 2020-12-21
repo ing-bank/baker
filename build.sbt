@@ -151,7 +151,8 @@ lazy val `baker-akka-runtime` = project.in(file("core/akka-runtime"))
         scalapbRuntime,
         protobufJava,
         slf4jApi,
-        scalaLogging
+        scalaLogging,
+        sensors
       ) ++ testDeps(
         akkaStream,
         akkaTestKit,
@@ -163,6 +164,7 @@ lazy val `baker-akka-runtime` = project.in(file("core/akka-runtime"))
         betterFiles,
         graphvizJava,
         junitInterface,
+        logback,
         scalaTest,
         scalaCheck,
         scalaCheckPlus,

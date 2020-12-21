@@ -3,6 +3,7 @@ package com.ing.baker.runtime.akka
 import java.net.MalformedURLException
 import java.util.concurrent.TimeUnit
 import java.util.{Optional, UUID}
+
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
@@ -19,6 +20,7 @@ import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance, RecipeEventMetadata}
 import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
 import com.typesafe.config.{Config, ConfigFactory}
+import io.prometheus.client.CollectorRegistry
 import org.mockito.Matchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
@@ -38,7 +40,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
   before {
     resetMocks()
     setupMockResponse()
-
+    CollectorRegistry.defaultRegistry.clear()
     //clean the in-memory journal before each test
     val tp = TestProbe()
     tp.send(StorageExtension(defaultActorSystem).journalStorage, InMemoryJournalStorage.ClearJournal)
@@ -234,7 +236,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           |  }
           |
           |  cluster {
-          |    seed-nodes = ["akka.tcp://remoteTest@127.0.0.1:2555"]
+          |    seed-nodes = ["akka://remoteTest@127.0.0.1:2555"]
           |    auto-down-unreachable-after = 10s
           |  }
           |}

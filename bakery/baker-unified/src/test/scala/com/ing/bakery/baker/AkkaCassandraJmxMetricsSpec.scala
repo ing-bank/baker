@@ -8,6 +8,7 @@ import java.util.UUID
 import akka.actor.{ActorLogging, ActorSystem, NoSerializationVerificationNeeded, Props}
 import akka.pattern.ask
 import akka.persistence.PersistentActor
+import akka.sensors.actor.PersistentActorMetrics
 import akka.util.Timeout
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.querybuilder.QueryBuilder._
@@ -106,7 +107,7 @@ object TestActors {
 
   case object Pong extends NoSerializationVerificationNeeded
 
-  class AwaitPersistenceInit extends PersistentActor with ActorLogging {
+  class AwaitPersistenceInit extends PersistentActor with ActorLogging with PersistentActorMetrics {
 
     override val persistenceId: String = s"persistenceInit-${UUID.randomUUID()}"
 
