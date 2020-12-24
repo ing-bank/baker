@@ -51,8 +51,6 @@ spec:
       ports:
         - name: prometheus
           containerPort: 9095
-        - name: kamon
-          containerPort: 5266
       resources:
         requests:
           memory: 256M
