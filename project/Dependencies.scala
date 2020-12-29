@@ -114,7 +114,7 @@ object Dependencies {
   val typeSafeConfig = "com.typesafe" % "config" % "1.4.1"
 
   val objenisis = "org.objenesis" % "objenesis" % "3.1"
-  val jodaTime = "joda-time" % "joda-time" % "2.10.8"
+  val jodaTime = "joda-time" % "joda-time" % "2.10.9"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.30"
   val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val logstash =  "net.logstash.logback" % "logstash-logback-encoder" % "6.4"
