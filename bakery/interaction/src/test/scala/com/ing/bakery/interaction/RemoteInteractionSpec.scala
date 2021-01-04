@@ -44,28 +44,28 @@ class RemoteInteractionSpec extends BakeryFunSpec {
    * @return the resources each test can use
    */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
-    val context = Context(
+    Resource.pure[IO, Context](Context(
       withInteractionInstances = { interaction => runTest =>
         (for {
-        server <- RemoteInteractionService.resource(interaction, InetSocketAddress.createUnresolved("localhost", 0), Some(serviceTLSConfig))
-        client <- RemoteInteractionClient.resource(server.baseUri, executionContext, Some(clientTLSConfig))
-      } yield (server, client))
-          .use { case (_,c) =>
+          server <- RemoteInteractionService.resource(interaction, InetSocketAddress.createUnresolved("127.0.0.1", 0), Some(serviceTLSConfig))
+          client <- RemoteInteractionClient.resource(server.baseUri, executionContext, Some(clientTLSConfig))
+        } yield (server, client))
+          .use { case (_,c) => {
             runTest(c)
+          }
           }
       },
       withNoTrustClient = { interaction => runTest =>
         (
           for {
-            server <- RemoteInteractionService.resource(interaction, InetSocketAddress.createUnresolved("localhost", 0), Some(serviceNoTrustTLSConfig))
+            server <- RemoteInteractionService.resource(interaction, InetSocketAddress.createUnresolved("127.0.0.1", 0), Some(serviceNoTrustTLSConfig))
             client <- RemoteInteractionClient.resource(server.baseUri, executionContext, Some(clientTLSConfig))
           } yield (server, client))
           .use { case (_,c) =>
             runTest(c)
           }
       }
-    )
-    Resource.pure[IO, Context](context)
+    ))
   }
 
   /** Refines the `ConfigMap` populated with the -Dkey=value arguments coming from the "sbt testOnly" command.

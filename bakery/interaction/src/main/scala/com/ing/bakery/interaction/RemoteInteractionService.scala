@@ -13,6 +13,7 @@ import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.blaze._
 import org.http4s.server.{Router, Server}
+import org.http4s.server.middleware.Logger
 
 import scala.concurrent.ExecutionContext
 
@@ -46,8 +47,11 @@ final class RemoteInteractionService(interactions: List[InteractionInstance])(im
   implicit val executeRequestEntityDecoder: EntityDecoder[IO, List[IngredientInstance]] = jsonOf[IO, List[IngredientInstance]]
   implicit val executeResponseEntityEncoder: EntityEncoder[IO, I.ExecutionResult] = jsonEncoderOf[IO, I.ExecutionResult]
 
-  def build: HttpApp[IO] =
-    api.orNotFound
+  def build: HttpApp[IO] = Logger.httpApp(
+    logHeaders = true,
+    logBody = true,
+    logAction = Some( (x: String) => IO(println(x))),
+  )(api.orNotFound)
 
   private val Interactions: List[I.Interaction] =
     interactions.map(interaction =>
