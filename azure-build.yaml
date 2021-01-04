@@ -5,6 +5,12 @@ trigger:
       - master
       - feature*
 
+parameters:
+  - name: ForcePublish
+    default: false
+    type: boolean
+    displayName: Force publish (otherwise nothing is published from PR/branch builds)
+
 pool:
   vmImage: 'ubuntu-latest'
 
@@ -82,7 +88,7 @@ steps:
         sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project bakery-interaction-example-make-payment-and-ship-items; test; project bakery-interaction-example-reserve-items; test; project bakery-client-example; test; project bakery-kafka-listener-example; test"
       failOnStderr: false
 
-  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
+  - ${{ if or(eq(parameters['ForcePublish'],true),eq(variables['Build.SourceBranch'], 'refs/heads/master')) }}:
     - task: Bash@3
       displayName: 'Prepare publishing credentials'
       inputs:
