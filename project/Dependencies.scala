@@ -78,7 +78,7 @@ object Dependencies {
   val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.0.5"
 
   val skuber = "io.skuber" %% "skuber" % "2.6.0"
-  val play = "com.typesafe.play" %% "play-json" % "2.9.1"
+  val play = "com.typesafe.play" %% "play-json" % "2.9.2"
 
   val http4s = "org.http4s" %% "http4s-core" % http4sVersion
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sVersion
