@@ -1,14 +1,16 @@
 package com.ing.bakery.interaction.spring
 
 import java.util
-
 import com.ing.baker.recipe.javadsl.Interaction
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.ing.bakery.interaction.RemoteInteractionLoader
+import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 
+import java.io.File
 import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
@@ -38,7 +40,7 @@ object Main extends App with LazyLogging{
     try {
       logger.info("Starting for configuration: " + configurationClassString)
       val implementations = getImplementations(configurationClassString)
-      logger.info("Starting RemoteInteractionLoader")
+      logger.info(s"Starting RemoteInteractionLoader for $configurationClassString")
       RemoteInteractionLoader(implementations)
     } catch {
       case ex: Exception =>

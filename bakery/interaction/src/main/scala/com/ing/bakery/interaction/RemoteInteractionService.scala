@@ -19,14 +19,17 @@ import scala.concurrent.ExecutionContext
 
 object RemoteInteractionService {
 
-  def resource(interactions: List[InteractionInstance], address: InetSocketAddress, tlsConfig: Option[BakeryHttp.TLSConfig])(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] = {
+  def resource(interactions: List[InteractionInstance],
+               address: InetSocketAddress,
+               tlsConfig: Option[BakeryHttp.TLSConfig],
+               apiLoggingEnabled: Boolean = false)(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] = {
     val tls = tlsConfig.map { tlsConfig =>
       val sslConfig = BakeryHttp.loadSSLContext(tlsConfig)
       val sslParams = sslConfig.getDefaultSSLParameters
       sslParams.setNeedClientAuth(true)
       (sslConfig, sslParams)
     }
-    val service = new RemoteInteractionService(interactions)
+    val service = new RemoteInteractionService(interactions, apiLoggingEnabled)
     val builder0 = BlazeServerBuilder[IO](ExecutionContext.global)
       .bindSocketAddress(address)
       .withHttpApp(service.build)
@@ -38,19 +41,19 @@ object RemoteInteractionService {
   }
 }
 
-final class RemoteInteractionService(interactions: List[InteractionInstance])(implicit timer: Timer[IO], cs: ContextShift[IO]) {
+final class RemoteInteractionService(interactions: List[InteractionInstance],
+                                     apiLoggingEnabled: Boolean = false)(implicit timer: Timer[IO], cs: ContextShift[IO]) {
 
   import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
 
   implicit val interactionEntityEncoder: EntityEncoder[IO, List[I.Interaction]] = jsonEncoderOf[IO,  List[I.Interaction]]
-
   implicit val executeRequestEntityDecoder: EntityDecoder[IO, List[IngredientInstance]] = jsonOf[IO, List[IngredientInstance]]
   implicit val executeResponseEntityEncoder: EntityEncoder[IO, I.ExecutionResult] = jsonEncoderOf[IO, I.ExecutionResult]
 
   def build: HttpApp[IO] = Logger.httpApp(
-    logHeaders = true,
-    logBody = true,
-    logAction = Some( (x: String) => IO(println(x))),
+    logHeaders = apiLoggingEnabled,
+    logBody = apiLoggingEnabled,
+    logAction = if (apiLoggingEnabled) Some( (x: String) => IO(println(x))) else None,
   )(api.orNotFound)
 
   private val Interactions: List[I.Interaction] =

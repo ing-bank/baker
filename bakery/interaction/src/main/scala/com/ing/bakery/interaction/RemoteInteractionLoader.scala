@@ -14,6 +14,8 @@ object RemoteInteractionLoader extends LazyLogging {
   def apply(implementations: List[InteractionInstance]): Unit = {
     val config = ConfigFactory.load()
     val port = config.getInt("interactions.http-api-port")
+    val apiLoggingEnabled = config.getBoolean("interactions.api-logging-enabled")
+
 //    val httpsEnabled = config.getBoolean("interactions.https-enabled")
 //    val keystorePath = config.getString("interactions.interaction.https-keystore-path")
 //    val keystorePassword = config.getString("interactions.interaction.https-keystore-password")
@@ -29,7 +31,7 @@ object RemoteInteractionLoader extends LazyLogging {
     implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
     implicit val timer: Timer[IO] = IO.timer(executionContext)
 
-    RemoteInteractionService.resource(implementations, address, None /* todo tls config */)
+    RemoteInteractionService.resource(implementations, address, None /* todo tls config */, apiLoggingEnabled)
       .use(_ => {
         logger.info(s"Interactions started successfully at $address, now starting health service $healthServiceAddress")
         HealthService.resource(healthServiceAddress)
