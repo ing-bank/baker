@@ -111,7 +111,7 @@ final class ServiceDiscovery private(
       override def listAll: IO[List[InteractionInstanceF[IO]]] =
         cacheInteractions.get.map(_.values.toList)
 
-      override def findImplementation(transition: InteractionTransition)
+      override def findFor(transition: InteractionTransition)
                                      (implicit sync: Sync[IO]): IO[Option[InteractionInstanceF[IO]]] =
         cacheInteractions.get.map(_.values.find(compatible(transition, _)))
     }
