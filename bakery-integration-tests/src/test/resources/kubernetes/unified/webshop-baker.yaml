@@ -54,7 +54,12 @@ spec:
             successThreshold: 1
             timeoutSeconds: 10
         - name: interactions
-          image: bakery-interaction-example-reserve-items:local
+          image: interaction-example-reserve-items:local
+          env:
+            - name: INTERACTION_HTTPS_ENABLED
+              value: "false"
+            - name: BAAS_COMPONENT_HTTP_API_PORT
+              value: "8081"
           ports:
             - containerPort: 8081
               name: interactions

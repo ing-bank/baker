@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.akka.internal
 
 import java.lang.reflect.InvocationTargetException
+
 import akka.event.EventStream
 import cats.effect.{ContextShift, IO}
 import com.ing.baker.il

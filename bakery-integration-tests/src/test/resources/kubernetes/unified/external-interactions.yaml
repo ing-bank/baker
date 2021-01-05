@@ -17,12 +17,15 @@ spec:
       containers:
         - name: interactions
           image: interaction-make-payment-and-ship-items:local
+          env:
+            - name: INTERACTION_HTTPS_ENABLED
+              value: "false"
 #           volumeMounts:
 #             - mountPath: /opt/docker/conf/
 #               name: config
 #               readOnly: true
           ports:
-            - containerPort: 8081
+            - containerPort: 8080
               name: interactions
               protocol: TCP
             - containerPort: 9999
@@ -57,10 +60,8 @@ spec:
 #           projected:
 #             defaultMode: 420
 #             sources:
-#               - secret:
-#                   name: bakery
 #               - configMap:
-#                   name: bakery
+#                   name: external-interactions
 ---
 kind: Service
 apiVersion: v1
@@ -68,7 +69,6 @@ metadata:
   name: interactions
   labels:
     bakery: webshop
-
 spec:
   ports:
     - name: interactions
@@ -79,3 +79,15 @@ spec:
     bakery: webshop
   type: ClusterIP
   sessionAffinity: None
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: external-interactions
+data:
+  application.conf: |
+    bakery-component {
+      interaction {
+        https-enabled = false
+      }
+    }

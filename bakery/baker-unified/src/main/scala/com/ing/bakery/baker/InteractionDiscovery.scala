@@ -2,12 +2,11 @@ package com.ing.bakery.baker
 
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source}
-import akka.stream.{KillSwitches, RestartSettings, UniqueKillSwitch}
+import akka.stream.{KillSwitch, KillSwitches, RestartSettings, UniqueKillSwitch}
 import akka.{Done, NotUsed}
 import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Sync, Timer}
 import cats.implicits._
-import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.akka.internal.{CachingTransitionLookups, LocalInteractions}
 import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.scaladsl.InteractionInstanceF
@@ -84,7 +83,7 @@ object InteractionDiscovery extends LazyLogging {
                localhostPorts: List[Int],
                podLabelSelector: Option[LabelSelector])(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem): Resource[IO, InteractionDiscovery] = {
 
-    def watchSource(discovery: InteractionDiscovery): Source[K8SWatchEvent[Service], UniqueKillSwitch] = {
+    def watchSource: Source[K8SWatchEvent[Service], UniqueKillSwitch] = {
       val watchFilter: ListOptions = ListOptions(labelSelector = podLabelSelector)
       /*, timeoutSeconds = Some(45)*/ // Note, we decided to go for long connections against renewing every 45 seconds due an issue with OpenShift 3.11 not being able to respond to calls with resourceVersion as supposed to be
 
@@ -120,7 +119,14 @@ object InteractionDiscovery extends LazyLogging {
         interactionHttpClient
       )
       killSwitch <- IO {
-        watchSource(discovery).toMat(updateSink(discovery))(Keep.left).run()
+        if (podLabelSelector.isDefined) watchSource.toMat(updateSink(discovery))(Keep.left).run()
+        else {
+          logger.info("Pod selector not specified, watching interactions not enabled")
+          new KillSwitch {
+            override def shutdown(): Unit = ()
+            override def abort(ex: Throwable): Unit = ()
+          }
+        }
       }
     } yield (discovery, killSwitch)) { case (_, hook) => IO(hook.shutdown()) }.map(_._1)
   }

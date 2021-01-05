@@ -16,6 +16,7 @@ class BakeryUnifiedSmokeTests extends BakerySmokeTests with Matchers {
         _ = recipes.length shouldBe 1
         _ = recipes should contain("Webshop")
 
+        // we don't support adding recipes in unified setup, as of yet
 //        _ <- DefinitionFile("unified/extra-recipe.yaml", context.namespace)
 //        _ <- eventually("Webshop baker added an extra recipe") {
 //          for {
@@ -72,6 +73,20 @@ class BakeryUnifiedSmokeTests extends BakerySmokeTests with Matchers {
       } yield succeed
     }
   }
+
+  override val ExpectedBakerEvents = List( // override because we don't support adding recipes in unified setup, as of yet
+    "RecipeAdded",
+    "RecipeInstanceCreated",
+    "EventReceived",
+    "InteractionStarted",
+    "EventReceived",
+    "EventReceived",
+    "InteractionCompleted",
+    "InteractionStarted",
+    "InteractionCompleted",
+    "InteractionStarted"
+  )
+
 
   /** Creates a `Resource` which allocates and liberates the expensive resources each test can use.
     * For example web servers, network connection, database mocks.

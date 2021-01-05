@@ -37,9 +37,6 @@ object MainMetrics extends IOApp with LazyLogging {
     val configurationClasses = bakery.getStringList("interaction-configuration-classes")
 
     val interactions = {
-      if (configurationClasses.size() == 0) {
-        logger.warn("No interactions configured, probably interaction-configuration-classes config parameter is empty")
-      }
       (configurationClasses.asScala map { configurationClass =>
         val configClass = Class.forName(configurationClass)
         val ctx = new AnnotationConfigApplicationContext()

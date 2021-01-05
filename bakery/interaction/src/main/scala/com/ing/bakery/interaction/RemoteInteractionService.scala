@@ -64,7 +64,6 @@ final class RemoteInteractionService(interactions: List[InteractionInstance],
 
     case GET -> Root / "interactions" => Ok(Interactions)
 
-    // todo why is this needed? labels belong to kube/deployment, not to API
     case GET -> Root / "interactions-with-version" =>
       // Environment variable injected by the Bakery Controller from the Interaction Resource Definition file
       val version: String = sys.env.getOrElse("BAKERY_INTERACTION_VERSION", "unknown")

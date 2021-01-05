@@ -13,10 +13,10 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
       "bakery-client-example/docker:publishLocal" ::
       "bakery-kafka-listener-example/docker:publishLocal" ::
       "bakery-controller-docker-generate/docker:publishLocal" ::
-      "project bakery-interaction-example-make-payment-and-ship-items" ::
+      "project interaction-example-make-payment-and-ship-items" ::
       "buildInteractionDockerImage --image-name=interaction-make-payment-and-ship-items --publish=local --interaction=webshop.webservice.MakePaymentInstance --interaction=webshop.webservice.ShipItemsInstance" ::
-      "project bakery-interaction-example-reserve-items" ::
-      "buildInteractionDockerImage --image-name=bakery-interaction-example-reserve-items --publish=local --interaction=webshop.webservice.ReserveItemsConfiguration --springEnabled=true" ::
+      "project interaction-example-reserve-items" ::
+      "buildInteractionDockerImage --image-name=interaction-example-reserve-items --publish=local --interaction=webshop.webservice.ReserveItemsConfiguration --springEnabled=true" ::
       "project bakery-integration-tests" ::
       state
 })
@@ -575,12 +575,12 @@ lazy val `bakery-kafka-listener-example` = project
   )
   .dependsOn(`baker-types`, `bakery-baker-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
 
-lazy val `bakery-interaction-example-reserve-items` = project.in(file("examples/bakery-interaction-examples/reserve-items"))
+lazy val `interaction-example-reserve-items` = project.in(file("examples/bakery-interaction-examples/reserve-items"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "bakery-interaction-example-reserve-items",
+    moduleName := "interaction-example-reserve-items",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
@@ -597,12 +597,12 @@ lazy val `bakery-interaction-example-reserve-items` = project.in(file("examples/
   )
   .dependsOn(`bakery-interaction`, `baker-recipe-dsl`)
 
-lazy val `bakery-interaction-example-make-payment-and-ship-items` = project.in(file("examples/bakery-interaction-examples/make-payment-and-ship-items"))
+lazy val `interaction-example-make-payment-and-ship-items` = project.in(file("examples/bakery-interaction-examples/make-payment-and-ship-items"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "bakery-interaction-example-make-payment-and-ship-items",
+    moduleName := "interaction-example-make-payment-and-ship-items",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
@@ -637,8 +637,8 @@ lazy val `bakery-integration-tests` = project.in(file("bakery-integration-tests"
   .dependsOn(
     `bakery-baker-client`,
     `bakery-client-example`,
-    `bakery-interaction-example-make-payment-and-ship-items`,
-    `bakery-interaction-example-reserve-items`)
+    `interaction-example-make-payment-and-ship-items`,
+    `interaction-example-reserve-items`)
 
 lazy val `sbt-bakery-docker-generate` = project.in(file("docker/sbt-bakery-docker-generate"))
   .settings(defaultModuleSettings)

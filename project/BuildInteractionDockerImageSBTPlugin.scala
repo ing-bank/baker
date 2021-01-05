@@ -144,7 +144,7 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
       |    }
       |
       |
-      |  args.headOption.map(runApp).getOrElse(throw new IllegalAccessException("Expected class name a parameter"))
+      |  args.headOption.map(runApp).getOrElse(throw new IllegalAccessException("Expected class name as a parameter"))
       |}
       |""".stripMargin
 

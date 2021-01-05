@@ -23,7 +23,6 @@ import java.io.File
 import java.net.InetSocketAddress
 import java.util
 import scala.collection.JavaConverters._
-import scala.collection.immutable
 import scala.concurrent.ExecutionContext
 
 
@@ -52,7 +51,7 @@ object Main extends IOApp with LazyLogging {
 
     val interactions: List[InteractionInstanceF[IO]] = {
       if (configurationClasses.size() == 0) {
-        logger.warn("No interactions configured, probably interaction-configuration-classes config parameter is empty")
+        logger.info("No interactions configured, probably interaction-configuration-classes config parameter is empty")
       }
       (configurationClasses.asScala map { configurationClass =>
         val configClass = Class.forName(configurationClass)
