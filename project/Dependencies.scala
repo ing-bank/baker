@@ -25,7 +25,7 @@ object Dependencies {
   val scalaTest = "org.scalatest" %% "scalatest" % "3.2.2"
   val mockito = "org.mockito" % "mockito-all" % "1.10.19"
   val mockitoScala = "org.mockito" %% "mockito-scala" % "1.16.0"
-  val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % "1.16.0"
+  val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % "1.16.13"
   val mockServer = "org.mock-server" % "mockserver-netty" % "5.11.1"
   val junitInterface = "com.novocode" % "junit-interface" % "0.11"
   val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.7.0"
