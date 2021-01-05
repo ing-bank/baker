@@ -57,25 +57,24 @@ trait CachingTransitionLookups {
   protected def findCompatible(instances: List[InteractionInstanceF[IO]], interaction: InteractionTransition): InteractionInstanceF[IO] =
     instances.find(implementation => compatible(interaction, implementation)).orNull
 
-  override def findImplementation(transition: InteractionTransition)(implicit sync: Sync[IO]): IO[Option[InteractionInstanceF[IO]]] =
+  override def findFor(transition: InteractionTransition)(implicit sync: Sync[IO]): IO[Option[InteractionInstanceF[IO]]] =
     for {
       cacheRef <- transitionToInteractionCache
       cache <- cacheRef.get
-      instances <- self.availableInstances
+      instances <- self.listAll
     } yield Option(cache.computeIfAbsent(transition, (findCompatible (instances, _)).asJava))
 }
 
-/** The LocalInteractions class is responsible for all implementation of interactions.
-  * It knows all implementations available locally, and gives the correct implementation for an interaction.
+/** The LocalInteractions class is responsible for all implementations available locally, and gives the correct implementation for an interaction.
   * The set of interactions is immutable and interactions known for
   */
 class LocalInteractions(val availableImplementations: List[InteractionInstanceF[IO]]) extends InteractionsF[IO] with CachingTransitionLookups {
 
-  override def availableInstances: IO[List[InteractionInstanceF[IO]]] = IO(availableImplementations)
+  override def listAll: IO[List[InteractionInstanceF[IO]]] = IO(availableImplementations)
 
   def combine(other: LocalInteractions): IO[LocalInteractions] = for {
-    otherImplementations <- other.availableInstances
-    theseImplementations <- availableInstances
+    otherImplementations <- other.listAll
+    theseImplementations <- listAll
   } yield LocalInteractions(theseImplementations ++ otherImplementations)
 
 }

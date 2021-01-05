@@ -28,7 +28,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        interactions.findImplementation(interactionTransition).map(_ should equal(Some(interactionImplementation)))
+        interactions.findFor(interactionTransition).map(_ should equal(Some(interactionImplementation)))
       }
 
       "multiple interaction implementations are available" in {
@@ -46,7 +46,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        interactionManager.findImplementation(interactionTransition).map(_ should equal(Some(interactionImplementation1)))
+        interactionManager.findFor(interactionTransition).map(_ should equal(Some(interactionImplementation1)))
       }
 
       "two implementations with the same correct name but only one has the correct input types" in {
@@ -64,7 +64,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        interactionManager.findImplementation(interactionTransition).map(_ should equal(Some(interactionImplementation2)))
+        interactionManager.findFor(interactionTransition).map(_ should equal(Some(interactionImplementation2)))
       }
     }
 
@@ -80,7 +80,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        interactionManager.findImplementation(interactionTransition).map(_ should equal(None))
+        interactionManager.findFor(interactionTransition).map(_ should equal(None))
       }
 
       "an interaction implementation has a wrong ingredient input type" in {
@@ -94,7 +94,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.CharArray)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        interactionManager.findImplementation(interactionTransition).map(_ should equal(None))
+        interactionManager.findFor(interactionTransition).map(_ should equal(None))
       }
 
       "an interaction implementation has extra ingredient input types" in {
@@ -108,7 +108,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        interactionManager.findImplementation(interactionTransition).map(_ should equal(None))
+        interactionManager.findFor(interactionTransition).map(_ should equal(None))
       }
 
       "an interaction implementation has not enough ingredient input types" in {
@@ -123,14 +123,14 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val ingredientDescriptor2: IngredientDescriptor = IngredientDescriptor("ingredientName2", types.CharArray)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor, ingredientDescriptor2))
 
-        interactionManager.findImplementation(interactionTransition).map(_ should equal(None))
+        interactionManager.findFor(interactionTransition).map(_ should equal(None))
       }
 
       "empty interaction seq" in {
         val interactionManager: LocalInteractions = LocalInteractions()
 
         val interactionTransition: InteractionTransition = mock[InteractionTransition]
-        interactionManager.findImplementation(interactionTransition).map(_ should equal(None))
+        interactionManager.findFor(interactionTransition).map(_ should equal(None))
       }
     }
   }

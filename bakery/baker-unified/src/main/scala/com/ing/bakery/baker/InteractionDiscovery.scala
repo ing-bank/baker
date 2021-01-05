@@ -18,6 +18,7 @@ import skuber._
 import skuber.api.client.{EventType, KubernetesClient}
 import skuber.json.format._
 
+import java.net.ConnectException
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
@@ -51,9 +52,13 @@ object InteractionDiscovery extends LazyLogging {
       def attempt(count: Int, times: FiniteDuration): IO[A] = {
         if (count < 1) f else f.attempt.flatMap {
           case Left(e) =>
-            logger.error(s"Failed to list interactions @ ${address.toString}", e)
+            e match {
+              case _: ConnectException =>
+                logger.info(s"Can't connect to interactions @ ${address.toString}, the container may still be starting...")
+              case _ =>
+                logger.error(s"Failed to list interactions @ ${address.toString}", e)
+            }
             IO.sleep(times) *> attempt(count - 1, times)
-
           case Right(a) => IO(a)
         }
       }
@@ -65,8 +70,8 @@ object InteractionDiscovery extends LazyLogging {
       logger.info(s"Extracting interactions @ ${address.toString}")
       client.interface.map { interfaces =>
         assert(interfaces.nonEmpty)
+        logger.info(s"Loaded ${interfaces.size} interactions: ${interfaces.map(_.name).mkString(",")}")
         interfaces.map(interaction => {
-          logger.info(s"Interaction ${interaction.name} (${interaction.input})")
           InteractionInstanceF.build[IO](
             _name = interaction.name,
             _input = interaction.input,
@@ -112,7 +117,7 @@ object InteractionDiscovery extends LazyLogging {
     }
 
     Resource.make(for {
-      sameJvmInteractions <- localInteractions.availableInstances
+      sameJvmInteractions <- localInteractions.listAll
       samePodInteractions <- extractSamePodInteractions(interactionHttpClient, localhostPorts)
       discovery = new InteractionDiscovery(
         samePodInteractions ++ sameJvmInteractions,
@@ -147,7 +152,7 @@ final class InteractionDiscovery(val availableInteractions: List[InteractionInst
       discovered <- discoveredRef.get
     } yield discovered
 
-  def availableInstances: IO[List[InteractionInstanceF[IO]]] = for {
+  def listAll: IO[List[InteractionInstanceF[IO]]] = for {
     d <- discovered
   } yield availableInteractions ++ d.values().asScala.flatten
 

@@ -82,7 +82,7 @@ final class BakerService private(baker: Baker, interactionManager: InteractionsF
       case GET -> Root / "health" => Ok()
 
       case GET -> Root / "interactions" => for {
-        interactions <- interactionManager.availableInstances
+        interactions <- interactionManager.listAll
         resp <- Ok(interactions.map(_.name).asJson)
       } yield resp
 

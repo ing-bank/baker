@@ -13,8 +13,8 @@ object InMemoryInteractions {
 
 final class InMemoryInteractions(implementations: List[InteractionInstanceF[IO]]) extends InteractionsF[IO] {
 
-  override def availableInstances: IO[List[InteractionInstanceF[IO]]] = IO(implementations)
+  override def listAll: IO[List[InteractionInstanceF[IO]]] = IO(implementations)
 
-  override def findImplementation(transition: InteractionTransition)(implicit sync: Sync[IO]): IO[Option[InteractionInstanceF[IO]]] =
+  override def findFor(transition: InteractionTransition)(implicit sync: Sync[IO]): IO[Option[InteractionInstanceF[IO]]] =
     IO(implementations.find(compatible(transition, _)))
 }

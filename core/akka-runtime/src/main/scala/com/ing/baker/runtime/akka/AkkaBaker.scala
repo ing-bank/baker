@@ -114,7 +114,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
 
   private def getImplementationErrors(compiledRecipe: CompiledRecipe): Future[Set[String]] = {
     compiledRecipe.interactionTransitions.toList
-      .traverse(x => config.interactions.hasImplementationFor(x).map(has => (has, x.originalInteractionName)))
+      .traverse(x => config.interactions.existsFor(x).map(has => (has, x.originalInteractionName)))
       .map(_
         .filterNot(_._1)
         .map(x => s"No implementation provided for interaction: ${x._2}")

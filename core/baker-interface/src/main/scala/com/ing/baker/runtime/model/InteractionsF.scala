@@ -9,15 +9,14 @@ import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, Intera
 
 trait InteractionsF[F[_]] {
 
-  def availableInstances: F[List[InteractionInstanceF[F]]]
+  def listAll: F[List[InteractionInstanceF[F]]]
 
-  def findImplementation(transition: InteractionTransition)(implicit sync: Sync[F]): F[Option[InteractionInstanceF[F]]]
+  def findFor(transition: InteractionTransition)(implicit sync: Sync[F]): F[Option[InteractionInstanceF[F]]]
 
-  def hasImplementationFor(interaction: InteractionTransition)(implicit sync: Sync[F]): F[Boolean] =
-    findImplementation(interaction).map(_.nonEmpty)
+  def existsFor(interaction: InteractionTransition)(implicit sync: Sync[F]): F[Boolean] = findFor(interaction).map(_.nonEmpty)
 
   def execute(interaction: InteractionTransition, input: Seq[IngredientInstance])(implicit sync: Sync[F], effect: MonadError[F, Throwable]): F[Option[EventInstance]] =
-    findImplementation(interaction)
+    findFor(interaction)
       .flatMap {
       case Some(implementation) => implementation.execute(input)
       case None => effect.raiseError(new FatalInteractionException(s"No implementation available for interaction ${interaction.interactionName}"))

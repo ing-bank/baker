@@ -55,7 +55,7 @@ trait RecipeManager[F[_]] {
   private def getImplementationErrors(compiledRecipe: CompiledRecipe)(implicit components: BakerComponents[F], effect: Effect[F]): F[Set[String]] = {
     compiledRecipe.interactionTransitions.toList
       .traverse(x => components
-        .interactions.hasImplementationFor(x)
+        .interactions.existsFor(x)
         .map(has => (has, x.originalInteractionName)))
       .map(_
         .filterNot(_._1)
