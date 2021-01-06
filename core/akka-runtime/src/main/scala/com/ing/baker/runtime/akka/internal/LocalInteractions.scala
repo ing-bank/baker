@@ -46,6 +46,7 @@ object LocalInteractions {
 
 }
 
+/** Caching of match of interaction to a transition  */
 trait CachingTransitionLookups {
   self: InteractionsF[IO] =>
 
@@ -66,7 +67,7 @@ trait CachingTransitionLookups {
 }
 
 /** The LocalInteractions class is responsible for all implementations available locally, and gives the correct implementation for an interaction.
-  * The set of interactions is immutable and interactions known for
+  * The set of interactions is immutable.
   */
 class LocalInteractions(val availableImplementations: List[InteractionInstanceF[IO]]) extends InteractionsF[IO] with CachingTransitionLookups {
 
