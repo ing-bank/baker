@@ -1,11 +1,11 @@
 package com.ing.bakery.baker
 
 import java.net.InetSocketAddress
-
 import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
 import cats.effect.{ExitCode, IO, IOApp, Resource}
+import com.ing.bakery.metrics.MetricService
 import com.ing.baker.recipe.javadsl.Interaction
 import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}

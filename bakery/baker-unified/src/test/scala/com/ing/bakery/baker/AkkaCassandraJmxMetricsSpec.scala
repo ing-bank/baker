@@ -4,7 +4,6 @@ package com.ing.bakery.baker
 import java.io.CharArrayWriter
 import java.net.InetSocketAddress
 import java.util.UUID
-
 import akka.actor.{ActorLogging, ActorSystem, NoSerializationVerificationNeeded, Props}
 import akka.pattern.ask
 import akka.persistence.PersistentActor
@@ -13,6 +12,7 @@ import akka.util.Timeout
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.querybuilder.QueryBuilder._
 import com.datastax.oss.driver.api.querybuilder.term.Term
+import com.ing.bakery.metrics.MetricService
 import com.typesafe.scalalogging.LazyLogging
 import io.prometheus.client.exporter.common.TextFormat
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper._

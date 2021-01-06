@@ -17,7 +17,6 @@ class RemoteInteraction(mock: ClientAndServer) {
       request()
         .withMethod("GET")
         .withPath("/api/bakery/interactions")
-        .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost")
     ).respond(
       response()
         .withStatusCode(200)
@@ -32,7 +31,6 @@ class RemoteInteraction(mock: ClientAndServer) {
       request()
         .withMethod("GET")
         .withPath("/api/bakery/interactions-with-version")
-        .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost")
     ).respond(
       response()
         .withStatusCode(200)
@@ -49,8 +47,7 @@ class RemoteInteraction(mock: ClientAndServer) {
     mock.when(
       request()
         .withMethod("GET")
-        .withPath("/api/bakery/interactions-with-version")
-        .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost"),
+        .withPath("/api/bakery/interactions-with-version"),
       Times.exactly(1)
     ).respond(
       response()
@@ -63,7 +60,7 @@ class RemoteInteraction(mock: ClientAndServer) {
       request()
         .withMethod("GET")
         .withPath("/api/bakery/interactions")
-        .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost"))
+    )
   }
 
   def interfaceWithVersionWasQueried: IO[Unit] = IO {
@@ -71,6 +68,6 @@ class RemoteInteraction(mock: ClientAndServer) {
       request()
         .withMethod("GET")
         .withPath("/api/bakery/interactions-with-version")
-        .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost"))
+    )
   }
 }

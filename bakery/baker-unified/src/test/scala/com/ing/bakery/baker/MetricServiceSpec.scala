@@ -2,8 +2,8 @@ package com.ing.bakery.baker
 
 import java.io.File
 import java.net.InetSocketAddress
-
 import cats.effect.{ContextShift, IO, Timer}
+import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.ConfigFactory
 import org.http4s.Status.Ok
 import org.http4s.client.blaze.BlazeClientBuilder

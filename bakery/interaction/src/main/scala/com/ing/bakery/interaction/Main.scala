@@ -18,7 +18,7 @@ object Main extends App {
 
   private def runApp(classNames: String): Unit =
     try {
-      RemoteInteractionLoader.apply(getImplementations(classNames))
+      RemoteInteractionLoader(getImplementations(classNames))
     } catch {
       case ex: Exception =>
         throw new IllegalStateException(s"Unable to initialize the classes $classNames", ex)

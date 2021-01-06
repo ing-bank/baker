@@ -218,8 +218,12 @@ lazy val `bakery-interaction-protocol` = project.in(file("bakery/interaction-pro
     libraryDependencies ++= Seq(
       http4s,
       http4sDsl,
+      http4sServer,
       http4sClient,
-      http4sCirce
+      http4sCirce,
+      http4sPrometheus,
+      prometheus,
+      prometheusJmx
     )
   )
   .dependsOn(`baker-interface`)
@@ -266,15 +270,12 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
       http4sDsl,
       http4sCirce,
       http4sServer,
-      http4sPrometheus,
       springCore,
       springContext,
       scalaKafkaClient,
       cassandraDriverCore,
       cassandraDriverQueryBuilder,
       cassandraDriverMetrics,
-      prometheus,
-      prometheusJmx,
       skuber
     ) ++ testDeps(
       slf4jApi,

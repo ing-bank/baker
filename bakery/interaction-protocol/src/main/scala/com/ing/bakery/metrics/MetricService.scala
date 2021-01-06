@@ -1,7 +1,4 @@
-package com.ing.bakery.baker
-
-import java.io.CharArrayWriter
-import java.net.InetSocketAddress
+package com.ing.bakery.metrics
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.typesafe.scalalogging.LazyLogging
@@ -15,6 +12,8 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.{Router, Server}
 import org.http4s.{HttpRoutes, _}
 
+import java.io.CharArrayWriter
+import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext
 import scala.io.Source
 

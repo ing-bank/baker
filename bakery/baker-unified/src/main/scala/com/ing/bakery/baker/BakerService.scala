@@ -19,11 +19,14 @@ import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.runtime.serialization.JsonDecoders._
+import io.prometheus.client.CollectorRegistry
+import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.server.middleware.Logger
 import org.http4s.server.{Router, Server}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
+import org.http4s.server.middleware.Metrics
 
 object BakerService {
 
@@ -32,15 +35,18 @@ object BakerService {
       val apiLogger = LoggerFactory.getLogger("API")
       Some(s => IO(apiLogger.info(s)))
     } else None
-    BlazeServerBuilder[IO](ec)
-      .bindSocketAddress(hostname)
-      .withHttpApp(
-        Logger.httpApp(
-          logHeaders = loggingEnabled,
-          logBody = loggingEnabled,
-          logAction = apiLoggingAction)
-        (Router(apiUrlPrefix -> routes(baker, interactions)) orNotFound)
-      ).resource
+    for {
+      metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "api")
+      server <- BlazeServerBuilder[IO](ec)
+        .bindSocketAddress(hostname)
+        .withHttpApp(
+          Logger.httpApp(
+            logHeaders = loggingEnabled,
+            logBody = loggingEnabled,
+            logAction = apiLoggingAction)
+          (Router(apiUrlPrefix -> Metrics[IO](metrics)(routes(baker, interactions))) orNotFound)
+        ).resource
+    } yield server
   }
 
   def routes(baker: Baker, interactionManager: InteractionsF[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] =

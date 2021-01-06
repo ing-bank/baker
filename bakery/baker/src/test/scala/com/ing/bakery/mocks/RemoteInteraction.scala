@@ -48,7 +48,6 @@ class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance)
     request()
       .withMethod("POST")
 //      .withPath(s"/api/bakery/interaction/apply")
-      .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost")
 
 }
 
