@@ -33,9 +33,14 @@ object RemoteInteractionService {
       (sslConfig, sslParams)
     }
     val service = new RemoteInteractionService(interactions)
+    def interactionRequestClassifier(request: Request[IO]): Option[String] = {
+      // ... /interactions/<id>/execute - we take ID part we care most about
+      val p = request.pathInfo.split('/')
+      if (p.length == 3) Some(p(2)) else None
+    }
 
     for {
-      metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "api")
+      metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
       app = BlazeServerBuilder[IO](ExecutionContext.global)
         .bindSocketAddress(address)
         .withHttpApp(
@@ -43,7 +48,8 @@ object RemoteInteractionService {
             logHeaders = apiLoggingEnabled,
             logBody = apiLoggingEnabled,
             logAction = if (apiLoggingEnabled) Some( (x: String) => IO(println(x))) else None
-          )(Router("/api/bakery" -> Metrics[IO](metrics)(service.routes)) orNotFound)
+          )(Router("/api/bakery" -> Metrics[IO](metrics,
+            classifierF = interactionRequestClassifier)(service.routes)) orNotFound)
         )
       server <- (tls match {
         case Some((sslConfig, sslParams)) => app.withSslContextAndParameters(sslConfig, sslParams)

@@ -31,12 +31,26 @@ import org.http4s.server.middleware.Metrics
 object BakerService {
 
   def resource(baker: Baker, hostname: InetSocketAddress, apiUrlPrefix: String, interactions: InteractionsF[IO], loggingEnabled: Boolean)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+
+    val bakeryRequestClassifier: Request[IO] => Option[String] = { request =>
+      val uriPath = request.uri.path
+      val p = uriPath.takeRight(uriPath.length - apiUrlPrefix.length)
+
+      if (p.startsWith("/app")) Some(p) // cardinality is low, we don't care
+      else if (p.startsWith("/instances")) {
+        val action = p.split('/') // /instances/<id>/<action>/... - we don't want ID here
+        if (action.length >= 4) Some(s"/instances/${action(3)}") else None
+      } else None
+
+    }
+
     val apiLoggingAction: Option[String => IO[Unit]] = if (loggingEnabled) {
       val apiLogger = LoggerFactory.getLogger("API")
       Some(s => IO(apiLogger.info(s)))
     } else None
+
     for {
-      metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "api")
+      metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_api")
       server <- BlazeServerBuilder[IO](ec)
         .bindSocketAddress(hostname)
         .withHttpApp(
@@ -44,7 +58,7 @@ object BakerService {
             logHeaders = loggingEnabled,
             logBody = loggingEnabled,
             logAction = apiLoggingAction)
-          (Router(apiUrlPrefix -> Metrics[IO](metrics)(routes(baker, interactions))) orNotFound)
+          (Router(apiUrlPrefix -> Metrics[IO](metrics, classifierF = bakeryRequestClassifier)(routes(baker, interactions))) orNotFound)
         ).resource
     } yield server
   }

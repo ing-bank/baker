@@ -15,6 +15,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.prometheus.client.CollectorRegistry
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import org.http4s.Request
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.middleware.Metrics
 import org.http4s.metrics.prometheus.Prometheus
@@ -80,16 +81,23 @@ object Main extends IOApp with LazyLogging {
     val remoteInteractionCallContext: ExecutionContext = system.dispatchers.lookup("akka.actor.remote-interaction-dispatcher")
 
     val k8s: KubernetesClient = skuber.k8sInit
+
+    def interactionRequestClassifier(request: Request[IO]): Option[String] = {
+      // /api/bakery/interactions/<id>/execute - we take ID part we care most about
+      val p = request.uri.path.split('/')
+      if (p.length == 5) Some(p(4)) else None
+    }
+
     val mainResource: Resource[IO, Server[IO]] =
       for {
-        metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "interactions")
+        metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
         interactionHttpClient <- BlazeClientBuilder[IO](remoteInteractionCallContext, None) // todo SSL context
           .withCheckEndpointAuthentication(false)
           .resource
         eventSink <- KafkaEventSink.resource(eventSinkSettings)
 
         interactionDiscovery <- InteractionDiscovery.resource(
-          Metrics[IO](metrics)(interactionHttpClient),
+          Metrics[IO](metrics, interactionRequestClassifier)(interactionHttpClient),
           k8s,
           localInteractions,
           bakerConfig.getIntList("interactions.localhost-ports").asScala.map(_.toInt).toList,
