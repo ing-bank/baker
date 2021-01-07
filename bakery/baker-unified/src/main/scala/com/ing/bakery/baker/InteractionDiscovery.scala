@@ -18,6 +18,7 @@ import skuber._
 import skuber.api.client.{EventType, KubernetesClient}
 import skuber.json.format._
 
+import java.io.IOException
 import java.net.ConnectException
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
@@ -53,7 +54,7 @@ object InteractionDiscovery extends LazyLogging {
         if (count < 1) f else f.attempt.flatMap {
           case Left(e) =>
             e match {
-              case _: ConnectException =>
+              case _: IOException =>
                 logger.info(s"Can't connect to interactions @ ${address.toString}, the container may still be starting...")
               case _ =>
                 logger.error(s"Failed to list interactions @ ${address.toString}", e)

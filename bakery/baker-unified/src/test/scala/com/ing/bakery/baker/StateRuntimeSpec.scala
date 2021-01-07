@@ -1,17 +1,16 @@
 package com.ing.bakery.baker
 
-import java.net.InetSocketAddress
-import java.util.UUID
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance, InteractionInstanceF}
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceF}
 import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
 import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
-import com.ing.bakery.recipe.{Interactions, ItemReservationRecipe}
+import com.ing.bakery.recipe.ItemReservationRecipe
 import com.ing.bakery.scaladsl.{BakerClient, ResponseError}
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
@@ -20,11 +19,14 @@ import org.mockserver.integration.ClientAndServer
 import org.scalatest.ConfigMap
 import org.scalatest.compatible.Assertion
 import org.scalatest.matchers.should.Matchers
+import skuber.LabelSelector
 import skuber.api.client.KubernetesClient
 
+import java.net.InetSocketAddress
+import java.util.UUID
 import scala.concurrent.Future
 
-class BakerNodeSpec extends BakeryFunSpec with Matchers {
+class StateRuntimeSpec extends BakeryFunSpec with Matchers {
 
   val recipe: CompiledRecipe =
     ItemReservationRecipe.compiledRecipe
@@ -58,20 +60,25 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
     awaitForServiceDiscoveryState(context)(_ shouldBe List.empty)
 
   def awaitForServiceDiscoveryState(context: Context)(f: List[InteractionInstanceF[IO]] => Assertion): IO[Assertion] =
-    eventually(context.serviceDiscovery.get.map(f))
+    eventually(
+      context.interactions.listAll.map(f)
+    )
 
   describe("Service Discovery") {
 
     test("Simple interaction discovery") { context =>
       for {
+        _ <- context.remoteInteraction.respondsWithInterfaces()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         _ <- context.kubeApiServer.deleteInteraction()
         _ <- awaitForEmptyServiceDiscovery(context)
+        _ <- context.remoteInteraction.respondsWithInterfaces()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
       } yield succeed
     }
+
     test("No interaction discovery from other scope") { context =>
       for {
         _ <- awaitForEmptyServiceDiscovery(context)
@@ -79,12 +86,14 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
         _ <- awaitForEmptyServiceDiscovery(context)
       } yield succeed
     }
+
   }
 
   describe("Bakery Baker") {
 
     test("Recipe management") { context =>
       for {
+        _ <- context.remoteInteraction.respondsWithInterfaces()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         recipeInformation <- io(context.client.getRecipe(recipeId))
@@ -103,6 +112,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.bake") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- context.remoteInteraction.respondsWithInterfaces()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
@@ -117,6 +127,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.bake (fail with ProcessAlreadyExistsException)") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- context.remoteInteraction.respondsWithInterfaces()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
@@ -135,6 +146,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.bake (fail with NoSuchRecipeException)") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- context.remoteInteraction.respondsWithInterfaces()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         e <- io(context.client
@@ -146,6 +158,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
 
     test("Baker.getRecipeInstanceState (fails with NoSuchProcessException)") { context =>
       for {
+        _ <- context.remoteInteraction.respondsWithInterfaces()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         e <- io(context.client
@@ -157,6 +170,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
 
     test("Baker.getRecipeInstanceState with SQL injection (fails with error 404)") { context =>
       for {
+        _ <- context.remoteInteraction.respondsWithInterfaces()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         e <- io(context.client
@@ -169,6 +183,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.fireEventAndResolveWhenReceived") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- context.remoteInteraction.respondsWithInterfaces()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
@@ -180,6 +195,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.fireEventAndResolveWhenCompleted") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- context.remoteInteraction.respondsWithInterfaces()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
@@ -197,6 +213,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
       val recipeInstanceId: String = UUID.randomUUID().toString
       val event = EventInstance("nonexistent", Map.empty)
       for {
+        _ <- context.remoteInteraction.respondsWithInterfaces()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
@@ -215,6 +232,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.fireEventAndResolveOnEvent") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- context.remoteInteraction.respondsWithInterfaces()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
@@ -232,6 +250,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.getAllRecipeInstancesMetadata") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- context.remoteInteraction.respondsWithInterfaces()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
@@ -244,6 +263,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.getVisualState") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- context.remoteInteraction.respondsWithInterfaces()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
@@ -255,6 +275,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.retryInteraction") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- context.remoteInteraction.respondsWithInterfaces()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         _ <- io(context.client.bake(recipeIdBlocking, recipeInstanceId))
@@ -279,6 +300,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
           ItemsReserved(reservedItems = ReservedItems(items = List(Item("resolution-item")), data = Array.empty))
         )
         for {
+          _ <- context.remoteInteraction.respondsWithInterfaces()
           _ <- context.kubeApiServer.deployInteraction()
           _ <- awaitForInteractionDiscovery(context)
           _ <- io(context.client.bake(recipeIdBlocking, recipeInstanceId))
@@ -303,6 +325,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.stopRetryingInteraction") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- context.remoteInteraction.respondsWithInterfaces()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
@@ -324,8 +347,8 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
 
   case class Context(
     client: Baker,
-    serviceDiscovery: ServiceDiscovery,
     remoteInteraction: RemoteInteraction,
+    interactions: InteractionDiscovery,
     eventListener: EventListener,
     kubeApiServer: KubeApiServer
   )
@@ -354,18 +377,11 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
       else safePath
     }
 
-    val interactionInstance: InteractionInstance =
-      InteractionInstance(
-        name = Interactions.ReserveItemsInteraction.name,
-        input = Interactions.ReserveItemsInteraction.inputIngredients.map(_.ingredientType),
-        run = _ => ??? // We never call this because it is mocked by mock server
-      )
-
     for {
       // Mock server
       mockServer <- Resource.make(IO(ClientAndServer.startClientAndServer(0)))(s => IO(s.stop()))
       remoteInteraction = new RemoteInteraction(mockServer)
-      kubeApiServer = new KubeApiServer(mockServer, interactionInstance)
+      kubeApiServer = new KubeApiServer(mockServer)
       _ <- Resource.liftF(kubeApiServer.noNewInteractions()) // Initial setup so that the service discovery component has something to query to immediately
 
       makeActorSystem = IO {
@@ -380,32 +396,30 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
         system.terminate().flatMap(_ => system.whenTerminated) }).void
       system <- Resource.make(makeActorSystem)(stopActorSystem)
 
-      k8s: KubernetesClient = {
-        implicit val sys = system
-        skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))
-      }
+      k8s: KubernetesClient = skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system)
       httpClient <- BlazeClientBuilder[IO](executionContext).resource
-      serviceDiscovery <- {
-        implicit val sys = system
-        ServiceDiscovery.resource(httpClient, k8s, "webshop")
-      }
+      interactionDiscovery <-
+        InteractionDiscovery.resource(httpClient, k8s, LocalInteractions(),
+          List.empty, Some( LabelSelector(LabelSelector.IsEqualRequirement("scope","webshop"))))(contextShift, timer, system)
+
       eventListener = new EventListener()
       baker = AkkaBaker
         .withConfig(AkkaBakerConfig.localDefault(system).copy(
-          interactions = serviceDiscovery.interactions,
+          interactions = interactionDiscovery,
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings(
-            allowAddingRecipeWithoutRequiringInstances = true))(system))
+            allowAddingRecipeWithoutRequiringInstances = true))(system)
+        )
 
       _ <- Resource.liftF(eventListener.eventSink.attach(baker))
       _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, baker))
 
-      server <- BakerService.resource(baker, InetSocketAddress.createUnresolved("127.0.0.1", 0), serviceDiscovery, loggingEnabled = true)
+      server <- BakerService.resource(baker, InetSocketAddress.createUnresolved("127.0.0.1", 0), "/api/bakery", interactionDiscovery, loggingEnabled = true)
       client <- BakerClient.resource(server.baseUri, "/api/bakery", executionContext)
 
     } yield Context(
       client,
-      serviceDiscovery,
       remoteInteraction,
+      interactionDiscovery,
       eventListener,
       kubeApiServer
     )

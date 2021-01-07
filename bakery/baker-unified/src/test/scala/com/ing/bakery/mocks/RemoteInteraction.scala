@@ -3,6 +3,7 @@ package com.ing.bakery.mocks
 import cats.effect.IO
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance}
 import com.ing.bakery.protocol.{InteractionExecution => I}
+import com.ing.bakery.recipe.Interactions
 import io.circe.syntax._
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.matchers.Times
@@ -14,9 +15,21 @@ import org.mockserver.verify.VerificationTimes
 class RemoteInteraction(mock: ClientAndServer) {
   import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
 
+  def respondsWithInterfaces(): IO[Unit] = IO {
+    mock.when(
+      receivedInquiry,
+      Times.exactly(1)
+    ).respond(
+      response()
+        .withStatusCode(200)
+        .withBody(List(I.Interaction("localhost", Interactions.ReserveItemsInteraction.name,
+          Interactions.ReserveItemsInteraction.inputIngredients.map(_.ingredientType).toList)).asJson.toString)
+    )
+  }
+
   def processesSuccessfullyAndFires(event: EventInstance): IO[Unit] = IO {
     mock.when(
-      applyMatch,
+      receivedExecutionRequest,
       Times.exactly(1)
     ).respond(
       response()
@@ -27,7 +40,7 @@ class RemoteInteraction(mock: ClientAndServer) {
 
   def processesWithFailure(e: Throwable): IO[Unit] = IO {
     mock.when(
-      applyMatch,
+      receivedExecutionRequest,
       Times.exactly(1)
     ).respond(
       response()
@@ -37,16 +50,21 @@ class RemoteInteraction(mock: ClientAndServer) {
   }
 
   def didNothing: IO[Unit] = IO {
-    mock.verify(applyMatch, VerificationTimes.exactly(0))
+    mock.verify(receivedExecutionRequest, VerificationTimes.exactly(0))
   }
 
   def receivedEvent(event: EventInstance): IO[Unit] = IO {
-    mock.verify(applyMatch, VerificationTimes.exactly(1))
+    mock.verify(receivedExecutionRequest, VerificationTimes.exactly(1))
   }
 
-  private def applyMatch: HttpRequest =
+  private def receivedExecutionRequest: HttpRequest =
     request()
       .withMethod("POST")
+
+  private def receivedInquiry: HttpRequest =
+    request()
+      .withPath("/api/bakery/interactions")
+      .withMethod("GET")
 
 }
 

@@ -15,6 +15,7 @@ class InMemoryBakerSpec extends BakerModelSpec[IO] {
   override def contextBuilder(testArguments: Unit): Resource[IO, Context] =
     for {
       _ <- Resource.liftF(IO.unit)
+      _ = InMemoryBaker.java() // for coverage
     } yield Context((interactions: List[scaladsl.InteractionInstanceF[IO]]) => InMemoryBaker.build(BakerF.Config(
       bakeTimeout = 10.seconds,
       processEventTimeout = 10.seconds,
@@ -22,4 +23,6 @@ class InMemoryBakerSpec extends BakerModelSpec[IO] {
       shutdownTimeout = 10.seconds,
       addRecipeTimeout = 10.seconds
     ), interactions))
+
+
 }
