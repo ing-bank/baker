@@ -13,7 +13,7 @@ object Dependencies {
   val mockitoScalaVersion = "1.16.13"
   val catsVersion = "2.3.1"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "5.2.12.RELEASE"
+  val springVersion = "5.3.2"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
     .exclude("com.typesafe.akka", "akka-actor")
