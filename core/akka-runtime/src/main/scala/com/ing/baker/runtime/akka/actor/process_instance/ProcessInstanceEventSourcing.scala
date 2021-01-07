@@ -7,6 +7,7 @@ import ProcessInstanceEventSourcing._
 import akka.NotUsed
 import akka.actor.{ActorSystem, NoSerializationVerificationNeeded}
 import akka.persistence.query.scaladsl.CurrentEventsByPersistenceIdQuery
+import akka.sensors.actor.PersistentActorMetrics
 import akka.stream.scaladsl.Source
 import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
 import com.ing.baker.runtime.serialization.Encryption
@@ -112,7 +113,7 @@ object ProcessInstanceEventSourcing {
 abstract class ProcessInstanceEventSourcing[P : Identifiable, T : Identifiable, S, E](
     val petriNet: PetriNet[P, T],
     encryption: Encryption,
-    eventSourceFn: T => (S => E => S)) extends PersistentActor {
+    eventSourceFn: T => (S => E => S)) extends PersistentActor with PersistentActorMetrics {
 
   protected implicit val system: ActorSystem = context.system
 

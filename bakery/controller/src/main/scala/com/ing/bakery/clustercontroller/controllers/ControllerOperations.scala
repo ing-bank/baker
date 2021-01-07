@@ -103,7 +103,7 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
           IO(logger.error(s"Event type ERROR on ${rd.spec.names.kind} CRD: ${event._object}"))
       }).attempt.flatMap {
         case Left(e) =>
-          IO(logger.error(s"Error when handling the event ${event._type} ${event._object.metadata.name}: " + e.getMessage))
+          IO(logger.error(s"Error when handling the event ${event._type} ${event}: " + e.getMessage, e))
         case Right(_) =>
           IO.unit
       }

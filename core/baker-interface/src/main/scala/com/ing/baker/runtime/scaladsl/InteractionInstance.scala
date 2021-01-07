@@ -1,23 +1,22 @@
 package com.ing.baker.runtime.scaladsl
 
-import java.util.concurrent.CompletableFuture
-
 import cats.arrow.FunctionK
+import cats.effect.IO
 import cats.~>
 import com.ing.baker.runtime.javadsl
 import com.ing.baker.types.Type
 
+import java.util.concurrent.CompletableFuture
 import scala.compat.java8.FutureConverters
 import scala.concurrent.{ExecutionContext, Future}
 
-case class InteractionInstance(
-                                name: String,
+case class InteractionInstance( name: String,
                                 input: Seq[Type],
                                 run: Seq[IngredientInstance] => Future[Option[EventInstance]],
                                 output: Option[Map[String, Map[String, Type]]] = None
                               ) extends InteractionInstanceF[Future] {
 
-  def asJava: javadsl.InteractionInstance =
+  def asJavaCompletableFuture: javadsl.InteractionInstance =
     asJava(new (Future ~> CompletableFuture) {
       override def apply[A](fa: Future[A]): CompletableFuture[A] =
         FutureConverters.toJava(fa).toCompletableFuture

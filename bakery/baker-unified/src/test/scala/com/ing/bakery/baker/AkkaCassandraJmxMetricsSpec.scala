@@ -4,17 +4,19 @@ package com.ing.bakery.baker
 import java.io.CharArrayWriter
 import java.net.InetSocketAddress
 import java.util.UUID
-
 import akka.actor.{ActorLogging, ActorSystem, NoSerializationVerificationNeeded, Props}
 import akka.pattern.ask
 import akka.persistence.PersistentActor
+import akka.sensors.actor.PersistentActorMetrics
 import akka.util.Timeout
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.querybuilder.QueryBuilder._
 import com.datastax.oss.driver.api.querybuilder.term.Term
+import com.ing.bakery.metrics.MetricService
 import com.typesafe.scalalogging.LazyLogging
 import io.prometheus.client.exporter.common.TextFormat
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper._
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -25,7 +27,7 @@ import scala.collection.convert.ImplicitConversions._
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
 
-class AkkaCassandraJmxMetricsSpec extends AnyFreeSpec with LazyLogging with Eventually {
+class AkkaCassandraJmxMetricsSpec extends AnyFreeSpec with LazyLogging with Eventually with BeforeAndAfterAll {
 
   import TestActors._
   implicit override val patienceConfig: PatienceConfig =
@@ -41,6 +43,11 @@ class AkkaCassandraJmxMetricsSpec extends AnyFreeSpec with LazyLogging with Even
   implicit val ec: ExecutionContext = ExecutionContext.global
   private val system: ActorSystem = ActorSystem("baker")
   private val persistenceInitActor = system.actorOf(Props(classOf[AwaitPersistenceInit]), s"persistenceInit-${UUID.randomUUID().toString}")
+
+
+  override protected def afterAll(): Unit = {
+    system.terminate()
+  }
 
   def createSession = {
     CqlSession.builder()
@@ -106,7 +113,7 @@ object TestActors {
 
   case object Pong extends NoSerializationVerificationNeeded
 
-  class AwaitPersistenceInit extends PersistentActor with ActorLogging {
+  class AwaitPersistenceInit extends PersistentActor with ActorLogging with PersistentActorMetrics {
 
     override val persistenceId: String = s"persistenceInit-${UUID.randomUUID()}"
 

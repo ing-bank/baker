@@ -6,8 +6,10 @@ metadata:
     custom-resource-definition: interactions
     scope: webshop
 data:
-  image: bakery-interaction-example-reserve-items:local
+  image: interaction-example-reserve-items:local
   replicas: "2"
+  configMapMounts.0: test-config
+  secretMounts.0: test-secret
 ---
 apiVersion: v1
 kind: ConfigMap

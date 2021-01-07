@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Address, Props}
 import akka.pattern.{FutureRef, ask}
 import akka.util.Timeout
 import cats.data.NonEmptyList
+import cats.effect.IO
 import cats.implicits._
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -11,6 +12,7 @@ import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
+import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl._
@@ -19,6 +21,7 @@ import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 
+import java.util.{List => JavaList}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.postfixOps
@@ -26,26 +29,31 @@ import scala.util.Try
 
 object AkkaBaker {
 
-  def apply(config: Config, actorSystem: ActorSystem): scaladsl.Baker =
-    new AkkaBaker(AkkaBakerConfig.from(config, actorSystem))
+  def apply(config: Config, actorSystem: ActorSystem, interactions: LocalInteractions): scaladsl.Baker =
+    new AkkaBaker(AkkaBakerConfig.from(config, actorSystem, interactions))
 
   def withConfig(config: AkkaBakerConfig): AkkaBaker =
     new AkkaBaker(config)
 
-  def localDefault(actorSystem: ActorSystem): scaladsl.Baker =
-    new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem))
+  def localDefault(actorSystem: ActorSystem, interactions: LocalInteractions): scaladsl.Baker =
+    new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem, interactions))
 
-  def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem): scaladsl.Baker =
-    new AkkaBaker(AkkaBakerConfig.clusterDefault(seedNodes, actorSystem))
+  def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem, interactions: LocalInteractions): scaladsl.Baker =
+    new AkkaBaker(AkkaBakerConfig.clusterDefault(seedNodes, actorSystem, interactions))
 
   def javaWithConfig(config: AkkaBakerConfig): javadsl.Baker =
     new javadsl.Baker(withConfig(config))
 
   def java(config: Config, actorSystem: ActorSystem): javadsl.Baker =
-    new javadsl.Baker(apply(config, actorSystem))
+    new javadsl.Baker(apply(config, actorSystem, LocalInteractions()))
 
-  def javaLocalDefault(actorSystem: ActorSystem): javadsl.Baker =
-    new javadsl.Baker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem)))
+  def java(config: Config, actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
+    new javadsl.Baker(apply(config, actorSystem,
+      LocalInteractions.fromJava(interactions)(IO.contextShift(actorSystem.getDispatcher))))
+
+  def javaLocalDefault(actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
+    new javadsl.Baker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem,
+      LocalInteractions.fromJava(interactions)(IO.contextShift(actorSystem.getDispatcher)))))
 
   def javaOther(baker: scaladsl.Baker): javadsl.Baker =
     new javadsl.Baker(baker)
@@ -63,7 +71,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     config.bakerActorProvider.createRecipeManagerActor()
 
   val processIndexActor: ActorRef =
-    config.bakerActorProvider.createProcessIndexActor(config.interactionManager, recipeManager)
+    config.bakerActorProvider.createProcessIndexActor(config.interactions, recipeManager)
 
   /**
    * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -105,14 +113,13 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   }
 
   private def getImplementationErrors(compiledRecipe: CompiledRecipe): Future[Set[String]] = {
-    //TODO optimize so that we do not have to much traffic if its a remote InteractionManager
     compiledRecipe.interactionTransitions.toList
-      .traverse(x => config.interactionManager.hasImplementation(x).map(has => (has, x.originalInteractionName)))
+      .traverse(x => config.interactions.existsFor(x).map(has => (has, x.originalInteractionName)))
       .map(_
         .filterNot(_._1)
         .map(x => s"No implementation provided for interaction: ${x._2}")
         .toSet)
-  }
+  }.unsafeToFuture()
 
   /**
    * Returns the recipe information for the given RecipeId
@@ -448,24 +455,6 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       system.eventStream.subscribe(listenerActor, classOf[BakerEvent])
     }
   }
-
-  /**
-   * Adds an interaction implementation to baker.
-   *
-   * This is assumed to be a an object with a method named 'apply' defined on it.
-   *
-   * @param implementation The implementation object
-   */
-  override def addInteractionInstance(implementation: InteractionInstance): Future[Unit] =
-    config.interactionManager.addImplementation(implementation)
-
-  /**
-   * Adds a sequence of interaction implementation to baker.
-   *
-   * @param implementations The implementation object
-   */
-  override def addInteractionInstances(implementations: Seq[InteractionInstance]): Future[Unit] =
-    Future.sequence(implementations.map(addInteractionInstance)).map(_ => ())
 
   /**
    * Attempts to gracefully shutdown the baker system.

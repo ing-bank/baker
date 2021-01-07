@@ -11,7 +11,7 @@ import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.verify.VerificationTimes
 
-class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance) {
+class RemoteInteraction(mock: ClientAndServer) {
   import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
 
   def processesSuccessfullyAndFires(event: EventInstance): IO[Unit] = IO {
@@ -47,8 +47,6 @@ class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance)
   private def applyMatch: HttpRequest =
     request()
       .withMethod("POST")
-//      .withPath(s"/api/bakery/interaction/apply")
-      .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost")
 
 }
 

@@ -270,7 +270,9 @@ final class InteractionController(
     val podSpec = Pod.Spec(
       containers = List(interactionContainer),
       imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
-      volumes = List(
+      volumes =
+        if (interaction.spec.configMapMounts.isEmpty && interaction.spec.secretMounts.isEmpty) List.empty
+        else List(
         Volume(name = "config",
           source = ProjectedVolumeSource(
             sources = (interaction.spec.configMapMounts.getOrElse(List.empty).map(m => Some(ConfigMapProjection(m))) ++

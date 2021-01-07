@@ -5,6 +5,12 @@ trigger:
       - master
       - feature*
 
+parameters:
+  - name: ForcePublish
+    default: false
+    type: boolean
+    displayName: Force publish (otherwise nothing is published from PR/branch builds)
+
 pool:
   vmImage: 'ubuntu-latest'
 
@@ -79,10 +85,10 @@ steps:
     inputs:
       targetType: 'inline'
       script: |
-        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project bakery-interaction-example-make-payment-and-ship-items; test; project bakery-interaction-example-reserve-items; test; project bakery-client-example; test; project bakery-kafka-listener-example; test"
+        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project interaction-example-make-payment-and-ship-items; test; project interaction-example-reserve-items; test; project bakery-client-example; test; project bakery-kafka-listener-example; test"
       failOnStderr: false
 
-  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
+  - ${{ if or(eq(parameters['ForcePublish'],true),eq(variables['Build.SourceBranch'], 'refs/heads/master')) }}:
     - task: Bash@3
       displayName: 'Prepare publishing credentials'
       inputs:
@@ -91,7 +97,7 @@ steps:
       env:
         FEEDPASSWORD: $(feedPassword) # secrets extracted explicitly, other vars - from the group
 
-    - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "clean; aetherDeploy; project bakery-interaction-example-make-payment-and-ship-items; aetherDeploy; project bakery-interaction-example-reserve-items; aetherDeploy; project bakery-client-example; aetherDeploy; project bakery-kafka-listener-example; aetherDeploy"
+    - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "clean; aetherDeploy; project interaction-example-make-payment-and-ship-items; aetherDeploy; project interaction-example-reserve-items; aetherDeploy; project bakery-client-example; aetherDeploy; project bakery-kafka-listener-example; aetherDeploy"
       displayName: 'Building and publishing Baker with examples'
 
     - task: Docker@2

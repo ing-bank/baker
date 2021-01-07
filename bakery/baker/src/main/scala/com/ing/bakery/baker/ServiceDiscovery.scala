@@ -5,11 +5,11 @@ import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source}
 import akka.stream.{KillSwitches, Materializer, RestartSettings, UniqueKillSwitch}
 import akka.{Done, NotUsed}
 import cats.effect.concurrent.Ref
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{ContextShift, IO, Resource, Sync, Timer}
 import cats.implicits._
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.akka.internal.InteractionManager
-import com.ing.baker.runtime.scaladsl.InteractionInstance
+import com.ing.baker.runtime.model.InteractionsF
+import com.ing.baker.runtime.scaladsl.InteractionInstanceF
 import com.ing.bakery.interaction.RemoteInteractionClient
 import com.ing.bakery.protocol.InteractionExecution
 import com.typesafe.scalalogging.LazyLogging
@@ -26,7 +26,7 @@ import scala.concurrent.duration._
 object ServiceDiscovery extends LazyLogging {
 
   def empty(httpClient: Client[IO], scope: String): IO[ServiceDiscovery] =
-    Ref.of[IO, Map[String, InteractionInstance]](Map.empty).map(new ServiceDiscovery(_, httpClient, scope))
+    Ref.of[IO, Map[String, InteractionInstanceF[IO]]](Map.empty).map(new ServiceDiscovery(_, httpClient, scope))
 
   /** Creates resource of a ServiceDiscovery module, when acquired a stream of kubernetes services starts and feeds the
     * ServiceDiscovery module to give corresponding InteractionInstances
@@ -86,12 +86,12 @@ object ServiceDiscovery extends LazyLogging {
 }
 
 final class ServiceDiscovery private(
-  cacheInteractions: Ref[IO, Map[String, InteractionInstance]],
+  cacheInteractions: Ref[IO, Map[String, InteractionInstanceF[IO]]],
   interactionHttpClient: Client[IO],
   val scope: String
 ) extends LazyLogging {
 
-  def get: IO[List[InteractionInstance]] =
+  def get: IO[List[InteractionInstanceF[IO]]] =
     cacheInteractions.get.map(_.values.toList)
 
   def update(event: K8SWatchEvent[ConfigMap])(implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[Unit] =
@@ -106,16 +106,14 @@ final class ServiceDiscovery private(
         IO(logger.error(s"Event type ERROR on service watch for service ${event._object}"))
     }
 
-  def buildInteractionManager: InteractionManager =
-    new InteractionManager {
+  def interactions: InteractionsF[IO] =
+    new InteractionsF[IO] {
+      override def listAll: IO[List[InteractionInstanceF[IO]]] =
+        cacheInteractions.get.map(_.values.toList)
 
-      override def listAllImplementations: Future[List[InteractionInstance]] =
-        cacheInteractions.get.map(_.values.toList).unsafeToFuture()
-
-      override def addImplementation(interaction: InteractionInstance): Future[Unit] =
-        Future.failed(new IllegalStateException("Adding implementation instances is not supported on a Bakery cluster."))
-      override def getImplementation(interaction: InteractionTransition): Future[Option[InteractionInstance]] =
-        cacheInteractions.get.map(_.values.find(isCompatibleImplementation(interaction, _))).unsafeToFuture()
+      override def findFor(transition: InteractionTransition)
+                                     (implicit sync: Sync[IO]): IO[Option[InteractionInstanceF[IO]]] =
+        cacheInteractions.get.map(_.values.find(compatible(transition, _)))
     }
 
   private def addInteractionInstancesFrom(contract: ConfigMap)(implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[Unit] =
@@ -124,10 +122,10 @@ final class ServiceDiscovery private(
       interfaces <- extractInterfaces(contract)
       client = new RemoteInteractionClient(interactionHttpClient, address)
       interactions = interfaces.map { interaction =>
-        interaction.id -> InteractionInstance(
-          name = interaction.name,
-          input = interaction.input,
-          run = input => client.runInteraction(interaction.id, input).unsafeToFuture()
+        interaction.id -> InteractionInstanceF.build[IO](
+          _name = interaction.name,
+          _input = interaction.input,
+          _run = input => client.runInteraction(interaction.id, input)
         )
       }.toMap
       _ <- cacheInteractions.update(_ ++ interactions)

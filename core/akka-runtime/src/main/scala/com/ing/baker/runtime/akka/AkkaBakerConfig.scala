@@ -2,9 +2,11 @@ package com.ing.baker.runtime.akka
 
 import akka.actor.{ActorSystem, Address, AddressFromURIString}
 import cats.data.NonEmptyList
+import cats.effect.IO
 import com.ing.baker.runtime.akka.AkkaBakerConfig.BakerValidationSettings
 import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider}
-import com.ing.baker.runtime.akka.internal.{InteractionManager, InteractionManagerLocal}
+import com.ing.baker.runtime.akka.internal.LocalInteractions
+import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -14,7 +16,7 @@ import scala.concurrent.duration._
 
 case class AkkaBakerConfig(
                             bakerActorProvider: BakerActorProvider,
-                            interactionManager: InteractionManager,
+                            interactions: InteractionsF[IO],
                             timeouts: AkkaBakerConfig.Timeouts,
                             bakerValidationSettings: BakerValidationSettings
                           )(implicit val system: ActorSystem)
@@ -62,6 +64,10 @@ object AkkaBakerConfig extends LazyLogging {
   }
 
   def localDefault(actorSystem: ActorSystem): AkkaBakerConfig = {
+    localDefault(actorSystem, LocalInteractions())
+  }
+
+  def localDefault(actorSystem: ActorSystem, interactions: LocalInteractions): AkkaBakerConfig = {
     val localProvider =
       new LocalBakerActorProvider(
         retentionCheckInterval = 1.minute,
@@ -73,11 +79,11 @@ object AkkaBakerConfig extends LazyLogging {
       timeouts = Timeouts.default,
       bakerValidationSettings = BakerValidationSettings.default,
       bakerActorProvider = localProvider,
-      interactionManager = new InteractionManagerLocal(),
+      interactions = interactions
     )(actorSystem)
   }
 
-  def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem): AkkaBakerConfig = {
+  def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem, interactions: LocalInteractions): AkkaBakerConfig = {
     val clusterProvider =
       new ClusterBakerActorProvider(
         nrOfShards = 50,
@@ -92,18 +98,19 @@ object AkkaBakerConfig extends LazyLogging {
       timeouts = Timeouts.default,
       bakerValidationSettings = BakerValidationSettings.default,
       bakerActorProvider = clusterProvider,
-      interactionManager = new InteractionManagerLocal(),
+      interactions = interactions
     )(actorSystem)
   }
 
-  def from(config: Config, actorSystem: ActorSystem): AkkaBakerConfig = {
+  def from(config: Config, actorSystem: ActorSystem, interactions: LocalInteractions): AkkaBakerConfig = {
     if (!config.getAs[Boolean]("baker.config-file-included").getOrElse(false))
       throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
+
     AkkaBakerConfig(
       timeouts = Timeouts.from(config),
       bakerValidationSettings = BakerValidationSettings.from(config),
       bakerActorProvider = bakerProviderFrom(config),
-      interactionManager = interactionManagerFrom(config)
+      interactions = interactions
     )(actorSystem)
   }
 
@@ -141,7 +148,4 @@ object AkkaBakerConfig extends LazyLogging {
     }
   }
 
-  def interactionManagerFrom(config: Config): InteractionManager = {
-    new InteractionManagerLocal()
-  }
 }

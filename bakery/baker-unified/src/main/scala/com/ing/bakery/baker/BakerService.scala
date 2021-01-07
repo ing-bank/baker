@@ -1,11 +1,11 @@
 package com.ing.bakery.baker
 
 import java.net.InetSocketAddress
-
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
-import com.ing.baker.runtime.akka.internal.InteractionManager
+import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.common.BakerException
+import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EventInstance}
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.typesafe.scalalogging.LazyLogging
@@ -19,35 +19,55 @@ import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.runtime.serialization.JsonDecoders._
+import io.prometheus.client.CollectorRegistry
+import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.server.middleware.Logger
 import org.http4s.server.{Router, Server}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
+import org.http4s.server.middleware.Metrics
 
 object BakerService {
 
-  def resource(baker: Baker, hostname: InetSocketAddress, apiUrlPrefix: String, interactions: InteractionManager, loggingEnabled: Boolean)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+  def resource(baker: Baker, hostname: InetSocketAddress, apiUrlPrefix: String, interactions: InteractionsF[IO], loggingEnabled: Boolean)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+
+    val bakeryRequestClassifier: Request[IO] => Option[String] = { request =>
+      val uriPath = request.uri.path
+      val p = uriPath.takeRight(uriPath.length - apiUrlPrefix.length)
+
+      if (p.startsWith("/app")) Some(p) // cardinality is low, we don't care
+      else if (p.startsWith("/instances")) {
+        val action = p.split('/') // /instances/<id>/<action>/... - we don't want ID here
+        if (action.length >= 4) Some(s"/instances/${action(3)}") else None
+      } else None
+
+    }
+
     val apiLoggingAction: Option[String => IO[Unit]] = if (loggingEnabled) {
       val apiLogger = LoggerFactory.getLogger("API")
       Some(s => IO(apiLogger.info(s)))
     } else None
-    BlazeServerBuilder[IO](ec)
-      .bindSocketAddress(hostname)
-      .withHttpApp(
-        Logger.httpApp(
-          logHeaders = loggingEnabled,
-          logBody = loggingEnabled,
-          logAction = apiLoggingAction)
-        (Router(apiUrlPrefix -> routes(baker, interactions)) orNotFound)
-      ).resource
+
+    for {
+      metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_api")
+      server <- BlazeServerBuilder[IO](ec)
+        .bindSocketAddress(hostname)
+        .withHttpApp(
+          Logger.httpApp(
+            logHeaders = loggingEnabled,
+            logBody = loggingEnabled,
+            logAction = apiLoggingAction)
+          (Router(apiUrlPrefix -> Metrics[IO](metrics, classifierF = bakeryRequestClassifier)(routes(baker, interactions))) orNotFound)
+        ).resource
+    } yield server
   }
 
-  def routes(baker: Baker, interactionManager: InteractionManager)(implicit cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] =
+  def routes(baker: Baker, interactionManager: InteractionsF[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] =
     new BakerService(baker, interactionManager).routes
 }
 
-final class BakerService private(baker: Baker, interactionManager: InteractionManager)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
+final class BakerService private(baker: Baker, interactionManager: InteractionsF[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
 
   object CorrelationId extends OptionalQueryParamDecoderMatcher[String]("correlationId")
 
@@ -82,7 +102,7 @@ final class BakerService private(baker: Baker, interactionManager: InteractionMa
       case GET -> Root / "health" => Ok()
 
       case GET -> Root / "interactions" => for {
-        interactions <- IO.fromFuture(IO(interactionManager.listAllImplementations))
+        interactions <- interactionManager.listAll
         resp <- Ok(interactions.map(_.name).asJson)
       } yield resp
 

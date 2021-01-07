@@ -13,6 +13,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceRuntime
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.internal.RecipeRuntime._
+import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.MDC
@@ -73,7 +74,7 @@ object RecipeRuntime {
         // the event name must match an event name from the interaction output
           interaction.originalEvents.find(_.name == event.name) match {
             case None =>
-              Some(s"Interaction '${interaction.interactionName}' returned unknown event '${event.name}, expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
+              Some(s"Interaction '${interaction.interactionName}' returned unknown event '${event.name}', expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
             case Some(eventType) =>
               val errors = event.validate(eventType)
 
@@ -118,7 +119,7 @@ object RecipeRuntime {
   }
 }
 
-class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime[Place, Transition, RecipeInstanceState, EventInstance] {
+class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionsF[IO], eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime[Place, Transition, RecipeInstanceState, EventInstance] {
 
   protected implicit lazy val contextShift: ContextShift[IO] = IO.contextShift(ec)
   /**
@@ -186,7 +187,6 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
                       processState: RecipeInstanceState): IO[(Marking[Place], EventInstance)] = {
 
     // returns a delayed task that will get executed by the process instance
-    IO.fromFuture(IO {
 
       // add MDC values for logging
       MDC.put("RecipeInstanceId", processState.recipeInstanceId)
@@ -204,7 +204,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
         eventStream.publish(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName))
 
         // executes the interaction and obtain the (optional) output event
-        interactionManager.executeImplementation(interaction, input).map { interactionOutput =>
+        interactionManager.execute(interaction, input).map { interactionOutput =>
 
           // validates the event, throws a FatalInteraction exception if invalid
           RecipeRuntime.validateInteractionOutput(interaction, interactionOutput).foreach { validationError =>
@@ -232,9 +232,8 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
         MDC.remove("recipeName")
       }
 
-    }).handleErrorWith {
+    } handleErrorWith {
       case e: InvocationTargetException => IO.raiseError(e.getCause)
       case e: Throwable => IO.raiseError(e)
     }
-  }
 }

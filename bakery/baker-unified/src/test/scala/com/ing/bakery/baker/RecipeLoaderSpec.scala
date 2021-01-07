@@ -47,6 +47,24 @@ class RecipeLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll 
     Files.write(gzippedBase64RecipeFile.toPath, Base64.getEncoder.encode(gzippedBytes))
   }
 
+  test("Recipes for tests are OK") {
+    (for {
+      r1 <- RecipeLoader.fromInputStream(getClass.getResourceAsStream("/recipes/ItemReservation.recipe"))
+      r2 <- RecipeLoader.fromInputStream(getClass.getResourceAsStream("/recipes/ItemReservationBlocking.recipe"))
+    } yield {
+      assert(r1.name == "ItemReservation.recipe")
+      assert(r2.name == "ItemReservation.recipe")
+    }).unsafeRunSync()
+  }
+
+  test("Recipe loader from classpath") {
+    (for {
+      r <- RecipeLoader.loadRecipes(getClass.getResource("/recipes").getPath)
+    } yield {
+      assert(r.size == 2)
+    }).unsafeRunSync()
+  }
+
   test("GZipped then Base64ed recipe could be loaded") {
     (for {
       recipe <- RecipeLoader.fromInputStream(new FileInputStream(gzippedBase64RecipeFile))

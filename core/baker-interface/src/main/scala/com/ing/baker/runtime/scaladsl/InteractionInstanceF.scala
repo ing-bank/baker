@@ -1,18 +1,17 @@
 package com.ing.baker.runtime.scaladsl
 
-import java.lang.reflect.Method
-import java.security.MessageDigest
-import java.util
-import java.util.{Base64, Optional}
-import java.util.concurrent.CompletableFuture
-
-import cats.Applicative
-import cats.~>
+import cats.effect.Effect
 import cats.implicits._
+import cats.{Applicative, ~>}
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.{common, javadsl}
 import com.ing.baker.types.{Converters, Type}
 
+import java.lang.reflect.Method
+import java.security.MessageDigest
+import java.util
+import java.util.concurrent.CompletableFuture
+import java.util.{Base64, Optional}
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.reflect.ClassTag
@@ -96,8 +95,8 @@ object InteractionInstanceF {
     val method: Method = {
       val unmockedClass = common.unmock(implementation.getClass)
       unmockedClass.getMethods.count(_.getName == "apply") match {
-        case 0          => throw new IllegalArgumentException("Implementation does not have a apply function")
-        case n if n > 1 => throw new IllegalArgumentException("Implementation has multiple apply functions")
+        case 0          => throw new IllegalArgumentException(s"Implementation ${implementation.getClass.getName} does not have a apply function")
+        case n if n > 1 => throw new IllegalArgumentException(s"Implementation ${implementation.getClass.getName} has multiple apply functions")
         case _          => unmockedClass.getMethods.find(_.getName == "apply").get
       }
     }

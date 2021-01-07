@@ -2,11 +2,9 @@ package com.ing.bakery.baker
 
 import java.io.File
 import java.net.InetSocketAddress
-
-import akka.cluster.metrics.{MetricsCollector, NodeMetrics}
 import cats.effect.{ContextShift, IO, Timer}
+import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.ConfigFactory
-import kamon.Kamon
 import org.http4s.Status.Ok
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.scalatest.funsuite.AnyFunSuite
@@ -15,7 +13,6 @@ import org.scalatest.matchers.should.Matchers
 import scala.concurrent.ExecutionContext
 
 class MetricServiceSpec extends AnyFunSuite with Matchers {
-  Kamon.init()
   test("Metric service starts") {
 
     val configPath = sys.env.getOrElse("CONFIG_DIRECTORY", "/opt/docker/conf")

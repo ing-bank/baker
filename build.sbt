@@ -9,13 +9,14 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
     val extracted = Project.extract(state)
     "set version in ThisBuild := \"local\"" ::
     "bakery-baker-docker-generate/docker:publishLocal" ::
+     "docker-baker-unified/docker:publishLocal" ::
       "bakery-client-example/docker:publishLocal" ::
       "bakery-kafka-listener-example/docker:publishLocal" ::
       "bakery-controller-docker-generate/docker:publishLocal" ::
-      "project bakery-interaction-example-make-payment-and-ship-items" ::
+      "project interaction-example-make-payment-and-ship-items" ::
       "buildInteractionDockerImage --image-name=interaction-make-payment-and-ship-items --publish=local --interaction=webshop.webservice.MakePaymentInstance --interaction=webshop.webservice.ShipItemsInstance" ::
-      "project bakery-interaction-example-reserve-items" ::
-      "buildInteractionDockerImage --image-name=bakery-interaction-example-reserve-items --publish=local --interaction=webshop.webservice.ReserveItemsConfiguration --springEnabled=true" ::
+      "project interaction-example-reserve-items" ::
+      "buildInteractionDockerImage --image-name=interaction-example-reserve-items --publish=local --interaction=webshop.webservice.ReserveItemsConfiguration --springEnabled=true" ::
       "project bakery-integration-tests" ::
       state
 })
@@ -150,7 +151,8 @@ lazy val `baker-akka-runtime` = project.in(file("core/akka-runtime"))
         scalapbRuntime,
         protobufJava,
         slf4jApi,
-        scalaLogging
+        scalaLogging,
+        sensors
       ) ++ testDeps(
         akkaStream,
         akkaTestKit,
@@ -162,6 +164,7 @@ lazy val `baker-akka-runtime` = project.in(file("core/akka-runtime"))
         betterFiles,
         graphvizJava,
         junitInterface,
+        logback,
         scalaTest,
         scalaCheck,
         scalaCheckPlus,
@@ -215,8 +218,12 @@ lazy val `bakery-interaction-protocol` = project.in(file("bakery/interaction-pro
     libraryDependencies ++= Seq(
       http4s,
       http4sDsl,
+      http4sServer,
       http4sClient,
-      http4sCirce
+      http4sCirce,
+      http4sPrometheus,
+      prometheus,
+      prometheusJmx
     )
   )
   .dependsOn(`baker-interface`)
@@ -230,7 +237,6 @@ lazy val `bakery-baker-client` = project.in(file("bakery/baker-client"))
       http4sDsl,
       http4sClient,
       http4sCirce,
-      kamon,
       scalaLogging,
       catsRetry,
       http4sServer % "test",
@@ -264,18 +270,13 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
       http4sDsl,
       http4sCirce,
       http4sServer,
-      http4sPrometheus,
       springCore,
       springContext,
       scalaKafkaClient,
-      kamon,
-      kamonAkka,
-      kamonPrometheus,
       cassandraDriverCore,
       cassandraDriverQueryBuilder,
       cassandraDriverMetrics,
-      prometheus,
-      prometheusJmx
+      skuber
     ) ++ testDeps(
       slf4jApi,
       logback,
@@ -319,10 +320,7 @@ lazy val `bakery-baker` = project.in(file("bakery/baker"))
       http4sDsl,
       http4sCirce,
       http4sServer,
-      scalaKafkaClient,
-      kamon,
-      kamonAkka,
-      kamonPrometheus
+      scalaKafkaClient
     ) ++ testDeps(
       slf4jApi,
       logback,
@@ -353,8 +351,6 @@ lazy val `bakery-interaction` = project.in(file("bakery/interaction"))
       circe,
       catsEffect,
       catsCore,
-      kamon,
-      kamonPrometheus
     ) ++ testDeps(
       scalaTest,
       logback
@@ -375,8 +371,6 @@ lazy val `bakery-interaction-spring` = project.in(file("bakery/interaction-sprin
       circe,
       catsEffect,
       catsCore,
-      kamon,
-      kamonPrometheus,
       springCore,
       springContext,
       scalaLogging
@@ -404,9 +398,7 @@ lazy val `bakery-controller` = project.in(file("bakery/controller"))
       http4sDsl,
       http4sServer,
       akkaStream,
-      akkaProtobuf,
-      kamon,
-      kamonPrometheus
+      akkaProtobuf
     ) ++ testDeps(
       slf4jApi,
       logback,
@@ -434,6 +426,26 @@ lazy val `bakery-controller-docker-generate` = project.in(file("docker/bakery-co
     maintainer in Docker := "Bakery OSS",
     packageSummary in Docker := "Prometheus operator implementation for Bakery workloads",
     packageName in Docker := "controller",
+    dockerBaseImage := "adoptopenjdk/openjdk11",
+    libraryDependencies ++= Seq(
+      logback,
+      logstash
+    ),
+    dockerUpdateLatest := true, // todo only for master branch
+    version in Docker := Keys.version.value
+  )
+
+lazy val `docker-baker-unified` = project.in(file("docker/baker-unified"))
+  .settings(commonSettings, noPublishSettings)
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
+  .dependsOn(`baker-unified`)
+  .settings(
+    mainClass in Compile := Some("com.ing.bakery.baker.Main"),
+    dockerRepository := Some("ingbakery"),
+    dockerExposedPorts ++= Seq(8080),
+    maintainer in Docker := "Bakery OSS",
+    packageSummary in Docker := "Baker recipe state - Akka cluster node",
+    packageName in Docker := "baker-unified",
     dockerBaseImage := "adoptopenjdk/openjdk11",
     libraryDependencies ++= Seq(
       logback,
@@ -489,8 +501,6 @@ lazy val `baker-example` = project
         http4sCirce,
         circe,
         circeGeneric,
-        kamon,
-        kamonPrometheus,
         akkaPersistenceCassandra,
         akkaPersistenceQuery
       ) ++ testDeps(
@@ -566,12 +576,12 @@ lazy val `bakery-kafka-listener-example` = project
   )
   .dependsOn(`baker-types`, `bakery-baker-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
 
-lazy val `bakery-interaction-example-reserve-items` = project.in(file("examples/bakery-interaction-examples/reserve-items"))
+lazy val `interaction-example-reserve-items` = project.in(file("examples/bakery-interaction-examples/reserve-items"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "bakery-interaction-example-reserve-items",
+    moduleName := "interaction-example-reserve-items",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
@@ -588,12 +598,12 @@ lazy val `bakery-interaction-example-reserve-items` = project.in(file("examples/
   )
   .dependsOn(`bakery-interaction`, `baker-recipe-dsl`)
 
-lazy val `bakery-interaction-example-make-payment-and-ship-items` = project.in(file("examples/bakery-interaction-examples/make-payment-and-ship-items"))
+lazy val `interaction-example-make-payment-and-ship-items` = project.in(file("examples/bakery-interaction-examples/make-payment-and-ship-items"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "bakery-interaction-example-make-payment-and-ship-items",
+    moduleName := "interaction-example-make-payment-and-ship-items",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
@@ -628,8 +638,8 @@ lazy val `bakery-integration-tests` = project.in(file("bakery-integration-tests"
   .dependsOn(
     `bakery-baker-client`,
     `bakery-client-example`,
-    `bakery-interaction-example-make-payment-and-ship-items`,
-    `bakery-interaction-example-reserve-items`)
+    `interaction-example-make-payment-and-ship-items`,
+    `interaction-example-reserve-items`)
 
 lazy val `sbt-bakery-docker-generate` = project.in(file("docker/sbt-bakery-docker-generate"))
   .settings(defaultModuleSettings)

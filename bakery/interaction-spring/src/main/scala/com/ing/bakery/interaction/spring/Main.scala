@@ -1,23 +1,22 @@
 package com.ing.bakery.interaction.spring
 
 import java.util
-
 import com.ing.baker.recipe.javadsl.Interaction
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.ing.bakery.interaction.RemoteInteractionLoader
+import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import kamon.Kamon
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 
+import java.io.File
 import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Expects single argument containing Spring configuration
  */
 object Main extends App with LazyLogging{
-
-  Kamon.init()
 
   def getImplementations(configurationClassString: String) : List[InteractionInstance] = {
     val configClass = Class.forName(configurationClassString)
@@ -41,8 +40,8 @@ object Main extends App with LazyLogging{
     try {
       logger.info("Starting for configuration: " + configurationClassString)
       val implementations = getImplementations(configurationClassString)
-      logger.info("Starting RemoteInteractionLoader")
-      RemoteInteractionLoader.apply(implementations)
+      logger.info(s"Starting RemoteInteractionLoader for $configurationClassString")
+      RemoteInteractionLoader(implementations)
     } catch {
       case ex: Exception =>
         throw new IllegalStateException(s"Unable to initialize the interaction instances", ex)

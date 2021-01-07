@@ -65,7 +65,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
 
   import context.dispatcher
 
-  val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
+  override val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
   val recipeInstanceId = context.self.path.name
 

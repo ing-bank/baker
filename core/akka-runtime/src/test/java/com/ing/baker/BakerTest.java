@@ -6,6 +6,7 @@ import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.runtime.akka.AkkaBaker;
+import com.ing.baker.runtime.akka.internal.LocalInteractions;
 import com.ing.baker.runtime.common.BakerException;
 import com.ing.baker.runtime.common.SensoryEventStatus;
 import com.ing.baker.runtime.javadsl.*;
@@ -27,7 +28,7 @@ import static org.junit.Assert.*;
 
 public class BakerTest {
 
-    private java.util.List<InteractionInstance> implementationsList = ImmutableList.of(
+    private java.util.List<Object> implementationsList = ImmutableList.of(
             InteractionInstance.from(new JavaCompiledRecipeTest.InteractionOneImpl()),
             InteractionInstance.from(new JavaCompiledRecipeTest.InteractionTwo()),
             InteractionInstance.from(new JavaCompiledRecipeTest.InteractionThreeImpl()),
@@ -57,9 +58,8 @@ public class BakerTest {
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
 
         String recipeInstanceId = UUID.randomUUID().toString();
-        Baker jBaker = AkkaBaker.java(config, actorSystem);
-        java.util.Map<String, Value> ingredients = jBaker.addInteractionInstances(implementationsList)
-                .thenCompose(x -> jBaker.addRecipe(compiledRecipe))
+        Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
+        java.util.Map<String, Value> ingredients = jBaker.addRecipe(compiledRecipe)
                 .thenCompose(recipeId -> {
                     assertEquals(compiledRecipe.getValidationErrors().size(), 0);
                     return jBaker.bake(recipeId, recipeInstanceId);
@@ -81,8 +81,7 @@ public class BakerTest {
 
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
 
-        Baker jBaker = AkkaBaker.java(config, actorSystem);
-        jBaker.addInteractionInstances(implementationsList);
+        Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
         String recipeId = jBaker.addRecipe(compiledRecipe).get();
 
         String requestId = UUID.randomUUID().toString();
@@ -109,13 +108,12 @@ public class BakerTest {
     @Test
     public void shouldExecuteCompleteFlow() throws BakerException, ExecutionException, InterruptedException {
 
-        Baker jBaker = AkkaBaker.java(config, actorSystem);
+        Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
 
         List<BakerEvent> bakerEvents = new LinkedList<>();
         jBaker.registerBakerEventListener(bakerEvents::add);
 
         // Setup recipe
-        jBaker.addInteractionInstances(implementationsList);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
         String recipeId = jBaker.addRecipe(compiledRecipe).get();
         EventInstance eventOne = EventInstance.from(new JavaCompiledRecipeTest.EventOne());

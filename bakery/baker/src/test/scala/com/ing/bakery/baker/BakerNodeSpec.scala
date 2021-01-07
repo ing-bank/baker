@@ -2,13 +2,12 @@ package com.ing.bakery.baker
 
 import java.net.InetSocketAddress
 import java.util.UUID
-
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance, InteractionInstanceF}
 import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
 import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
@@ -58,7 +57,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
   def awaitForEmptyServiceDiscovery(context: Context): IO[Assertion] =
     awaitForServiceDiscoveryState(context)(_ shouldBe List.empty)
 
-  def awaitForServiceDiscoveryState(context: Context)(f: List[InteractionInstance] => Assertion): IO[Assertion] =
+  def awaitForServiceDiscoveryState(context: Context)(f: List[InteractionInstanceF[IO]] => Assertion): IO[Assertion] =
     eventually(context.serviceDiscovery.get.map(f))
 
   describe("Service Discovery") {
@@ -365,7 +364,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
     for {
       // Mock server
       mockServer <- Resource.make(IO(ClientAndServer.startClientAndServer(0)))(s => IO(s.stop()))
-      remoteInteraction = new RemoteInteraction(mockServer, interactionInstance)
+      remoteInteraction = new RemoteInteraction(mockServer)
       kubeApiServer = new KubeApiServer(mockServer, interactionInstance)
       _ <- Resource.liftF(kubeApiServer.noNewInteractions()) // Initial setup so that the service discovery component has something to query to immediately
 
@@ -393,7 +392,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
       eventListener = new EventListener()
       baker = AkkaBaker
         .withConfig(AkkaBakerConfig.localDefault(system).copy(
-          interactionManager = serviceDiscovery.buildInteractionManager,
+          interactions = serviceDiscovery.interactions,
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings(
             allowAddingRecipeWithoutRequiringInstances = true))(system))
 

@@ -55,7 +55,7 @@
             "containers": [
               {
                 "name": "reserve-items",
-                "image": "bakery-interaction-example-reserve-items:1.0.0",
+                "image": "interaction-example-reserve-items:1.0.0",
                 "ports": [
                   {
                     "containerPort": 8080,

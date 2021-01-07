@@ -4,6 +4,7 @@ import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, Terminate
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.ask
 import akka.persistence.{PersistentActor, RecoveryCompleted}
+import akka.sensors.actor.PersistentActorMetrics
 import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import cats.instances.future._
@@ -18,8 +19,9 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceRuntime}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
-import com.ing.baker.runtime.akka.internal.{InteractionManager, RecipeRuntime}
+import com.ing.baker.runtime.akka.internal.{LocalInteractions, RecipeRuntime}
 import com.ing.baker.runtime.akka.{namedCachedThreadPool, _}
+import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.Value
@@ -34,10 +36,10 @@ object ProcessIndex {
   def props(recipeInstanceIdleTimeout: Option[FiniteDuration],
             retentionCheckInterval: Option[FiniteDuration],
             configuredEncryption: Encryption,
-            interactionManager: InteractionManager,
+            interactions: InteractionsF[IO],
             recipeManager: ActorRef,
             ingredientsFilter: Seq[String]) =
-    Props(new ProcessIndex(recipeInstanceIdleTimeout, retentionCheckInterval, configuredEncryption, interactionManager, recipeManager, ingredientsFilter))
+    Props(new ProcessIndex(recipeInstanceIdleTimeout, retentionCheckInterval, configuredEncryption, interactions, recipeManager, ingredientsFilter))
 
   sealed trait ProcessStatus
 
@@ -75,11 +77,11 @@ object ProcessIndex {
 class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
                    retentionCheckInterval: Option[FiniteDuration],
                    configuredEncryption: Encryption,
-                   interactionManager: InteractionManager,
+                   interactionManager: InteractionsF[IO],
                    recipeManager: ActorRef,
-                   ingredientsFilter: Seq[String]) extends PersistentActor {
+                   ingredientsFilter: Seq[String]) extends PersistentActor with PersistentActorMetrics {
 
-  val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
+  override val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
   import context.dispatcher
 

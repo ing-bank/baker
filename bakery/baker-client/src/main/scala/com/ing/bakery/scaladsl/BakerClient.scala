@@ -330,22 +330,6 @@ final class BakerClient(
     throw new NotImplementedError("registerBakerEventListener is not implemented for client bakers")
 
   /**
-    * Adds an interaction implementation to baker.
-    *
-    * @param implementation The implementation object
-    */
-  override def addInteractionInstance(implementation: InteractionInstance): Future[Unit] =
-    throw new NotImplementedError("addInteractionInstance is not implemented for client bakers, instances are deployed independently, please view the documentation")
-
-  /**
-    * Adds a sequence of interaction implementation to baker.
-    *
-    * @param implementations The implementation object
-    */
-  override def addInteractionInstances(implementations: Seq[InteractionInstance]): Future[Unit] =
-    throw new NotImplementedError("addInteractionInstances is not implemented for client bakers, instances are deployed independently, please view the documentation")
-
-  /**
     * Attempts to gracefully shutdown the baker system.
     */
   override def gracefulShutdown(): Future[Unit] =

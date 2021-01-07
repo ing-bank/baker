@@ -1,16 +1,18 @@
 package com.ing.baker.runtime
 
+import cats.effect.IO
 import com.ing.baker.BakerRuntimeTestBase
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.runtime.ScalaDSLRuntime._
 import com.ing.baker.runtime.scaladsl.Baker
 import com.typesafe.config.ConfigFactory
+
 import java.util.UUID
-
 import com.ing.baker.runtime.akka.AkkaBaker
+import com.ing.baker.runtime.akka.internal.LocalInteractions
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class ExamplesSpec extends BakerRuntimeTestBase  {
   override def actorSystemName = "ExamplesSpec"
@@ -64,12 +66,11 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
       }
 
       val implementations =
-        Seq(validateOrderImpl, manufactureGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
+        List(validateOrderImpl, manufactureGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
 
-      val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem)
+      val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, LocalInteractions(implementations))
 
       for {
-        _ <- Future.traverse(implementations)(baker.addInteractionInstance)
         recipeId <- baker.addRecipe(compiledRecipe)
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)

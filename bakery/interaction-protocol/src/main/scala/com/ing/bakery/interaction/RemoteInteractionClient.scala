@@ -2,13 +2,15 @@ package com.ing.bakery.interaction
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
-import com.ing.bakery.interaction.BakeryHttp.Headers.{Intent, `X-Bakery-Intent`}
 import com.ing.bakery.protocol.InteractionExecution
+import io.prometheus.client.CollectorRegistry
 import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.dsl.io._
+import org.http4s.client.middleware.Metrics
 import org.http4s.dsl.io._
+import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.{Uri, _}
 
 import scala.concurrent.ExecutionContext
@@ -37,15 +39,12 @@ final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit 
 
   def interface: IO[List[InteractionExecution.Interaction]] =
     client.expect[List[InteractionExecution.Interaction]]( GET(
-      hostname / "api" / "bakery" / "interactions",
-      `X-Bakery-Intent`(Intent.`Remote-Interaction`, hostname)
+      hostname / "api" / "bakery" / "interactions"
     ))
 
   def interfaceWithVersion: IO[InteractionExecution.InteractionsWithVersion] = {
     for {
-      request <- GET(
-        hostname / "api" / "bakery" / "interactions-with-version",
-        `X-Bakery-Intent`(Intent.`Remote-Interaction`, hostname))
+      request <- GET(hostname / "api" / "bakery" / "interactions-with-version")
       status <- client.status(request)
       response <- {
         // Backwards compatibility for Bakery 3.1 interaction nodes that DO NOT publish the "interactions-with-version" endpoint
@@ -58,9 +57,7 @@ final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit 
   def runInteraction(interactionId: String, input: Seq[IngredientInstance]): IO[Option[EventInstance]] = {
     val request = POST(
       input.toList,
-      hostname / "api" / "bakery" / "interactions" / interactionId / "execute",
-      `X-Bakery-Intent`(Intent.`Remote-Interaction`, hostname)
-    )
+      hostname / "api" / "bakery" / "interactions" / interactionId / "execute")
     client.expect[InteractionExecution.ExecutionResult](request)
       .flatMap {
         case InteractionExecution.ExecutionResult(Right(success)) =>

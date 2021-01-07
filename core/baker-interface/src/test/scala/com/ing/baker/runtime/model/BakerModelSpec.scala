@@ -1,7 +1,5 @@
 package com.ing.baker.runtime.model
 
-import java.util.UUID
-
 import cats.effect.{ConcurrentEffect, IO, Resource, Sync}
 import cats.implicits._
 import com.ing.baker.compiler.RecipeCompiler
@@ -11,6 +9,7 @@ import com.ing.bakery.utils.BakeryFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfter, ConfigMap}
 
+import java.util.UUID
 import scala.reflect.ClassTag
 
 abstract class BakerModelSpec[F[_]]
@@ -36,33 +35,30 @@ abstract class BakerModelSpec[F[_]]
     runFailureTests()
   }
 
-  case class Context(buildBaker: F[BakerF[F]]) {
+  case class Context(buildBaker: List[InteractionInstanceF[F]] => F[BakerF[F]]) {
 
-    def setupBakerWithRecipe(recipeName: String, appendUUIDToTheRecipeName: Boolean = true)(implicit effect: Sync[F], classTag: ClassTag[F[Any]]): F[(BakerF[F], String)] = {
+    def setupBakerWithRecipe(recipeName: String, implementations: List[InteractionInstanceF[F]] = List.empty, appendUUIDToTheRecipeName: Boolean = true)(implicit effect: Sync[F], classTag: ClassTag[F[Any]]): F[(BakerF[F], String)] = {
       val newRecipeName = if (appendUUIDToTheRecipeName) s"$recipeName-${UUID.randomUUID().toString}" else recipeName
       val recipe = getRecipe(newRecipeName)
       for {
         _ <- setupMockResponse
-        bakerAndRecipeId <- setupBakerWithRecipe(recipe, mockImplementations)
+        bakerAndRecipeId <- setupBakerWithRecipe(recipe, mockImplementations ++ implementations)
       } yield bakerAndRecipeId
     }
 
-    def setupBakerWithRecipe(recipe: Recipe, implementations: Seq[InteractionInstanceF[F]])(implicit effect: Sync[F]): F[(BakerF[F], String)] = {
+    def setupBakerWithRecipe(recipe: Recipe, implementations: List[InteractionInstanceF[F]])(implicit effect: Sync[F]): F[(BakerF[F], String)] = {
       for {
-        baker <- buildBaker
-        _ <- baker.addInteractionInstances(implementations)
+        baker <- buildBaker(implementations)
         recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
       } yield (baker, recipeId)
     }
 
-    def setupBakerWithNoRecipe(implicit effect: Sync[F], classTag: ClassTag[F[Any]]): F[BakerF[F]] = {
+    def setupBakerWithNoRecipe(implementations: List[InteractionInstanceF[F]])(implicit effect: Sync[F], classTag: ClassTag[F[Any]]): F[BakerF[F]] = {
       for {
         _ <- setupMockResponse
-        baker <- buildBaker
-        _ <- baker.addInteractionInstances(mockImplementations)
+        baker <- buildBaker(implementations ++ mockImplementations)
       } yield baker
     }
-
   }
 
   /** Represents the "sealed resources context" that each test can use. */

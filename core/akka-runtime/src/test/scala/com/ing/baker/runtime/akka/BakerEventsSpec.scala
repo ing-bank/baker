@@ -74,7 +74,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
   private val eventReceiveTimeout = 1 seconds
 
   before {
-    resetMocks
+    resetMocks()
     setupMockResponse()
 
     // Clean inmemory-journal before each test

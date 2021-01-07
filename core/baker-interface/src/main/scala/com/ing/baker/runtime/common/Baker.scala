@@ -301,20 +301,6 @@ trait Baker[F[_]] extends LanguageApi {
   def registerBakerEventListener(listenerFunction: language.ConsumerFunction[BakerEventType]): F[Unit]
 
   /**
-    * Adds an interaction implementation to baker.
-    *
-    * @param implementation The implementation object
-    */
-  def addInteractionInstance(implementation: InteractionInstanceType): F[Unit]
-
-  /**
-    * Adds a sequence of interaction implementation to baker.
-    *
-    * @param implementations The implementation object
-    */
-  def addInteractionInstances(implementations: language.Seq[InteractionInstanceType]): F[Unit]
-
-  /**
     * Attempts to gracefully shutdown the baker system.
     */
   def gracefulShutdown(): F[Unit]

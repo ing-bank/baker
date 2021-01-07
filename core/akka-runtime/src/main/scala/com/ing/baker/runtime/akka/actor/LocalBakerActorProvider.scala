@@ -1,11 +1,13 @@
 package com.ing.baker.runtime.akka.actor
 
 import akka.actor.{ActorRef, ActorSystem}
+import cats.effect.IO
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{GetIndex, Index}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager
-import com.ing.baker.runtime.akka.internal.InteractionManager
+import com.ing.baker.runtime.akka.internal.LocalInteractions
+import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.serialization.Encryption
 
 import scala.concurrent.Await
@@ -18,7 +20,7 @@ class LocalBakerActorProvider(
     configuredEncryption: Encryption
   ) extends BakerActorProvider {
 
-  override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(
+  override def createProcessIndexActor(interactionManager: InteractionsF[IO], recipeManager: ActorRef)(
     implicit actorSystem: ActorSystem): ActorRef = {
     actorSystem.actorOf(
       ProcessIndex.props(

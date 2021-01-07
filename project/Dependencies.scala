@@ -5,14 +5,15 @@ object Dependencies {
 
   val akkaVersion = "2.6.10"
   val akkaManagementVersion = "1.0.9"
-  val akkaPersistenceCassandraVersion = "1.0.3"
-  val akkaHttpVersion = "10.2.1"
-  val http4sVersion = "0.21.8"
-  val fs2Version = "2.4.4"
+  val akkaPersistenceCassandraVersion = "1.0.4"
+  val akkaHttpVersion = "10.2.2"
+  val http4sVersion = "0.21.15"
+  val fs2Version = "2.4.6"
   val circeVersion = "0.13.0"
-  val kamonAkkaVersion = "2.1.8"
-
+  val mockitoScalaVersion = "1.16.13"
+  val catsVersion = "2.3.1"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
+  val springVersion = "5.2.12.RELEASE"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
     .exclude("com.typesafe.akka", "akka-actor")
@@ -22,11 +23,11 @@ object Dependencies {
     .exclude("com.typesafe.akka", "akka-protobuf")
 
   val scalaJava8Compat = "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
-  val scalaTest = "org.scalatest" %% "scalatest" % "3.2.2"
+  val scalaTest = "org.scalatest" %% "scalatest" % "3.2.3"
   val mockito = "org.mockito" % "mockito-all" % "1.10.19"
-  val mockitoScala = "org.mockito" %% "mockito-scala" % "1.16.0"
-  val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % "1.16.0"
-  val mockServer = "org.mock-server" % "mockserver-netty" % "5.11.1"
+  val mockitoScala = "org.mockito" %% "mockito-scala" % mockitoScalaVersion
+  val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
+  val mockServer = "org.mock-server" % "mockserver-netty" % "5.11.2"
   val junitInterface = "com.novocode" % "junit-interface" % "0.11"
   val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.7.0"
 
@@ -63,14 +64,11 @@ object Dependencies {
 
   val scalaGraph = "org.scala-graph" %% "graph-core" % "1.13.1"
   val scalaGraphDot = "org.scala-graph" %% "graph-dot" % "1.13.0"
-  val graphvizJava = "guru.nidi" % "graphviz-java" % "0.17.1"
-
-  val kamon = "io.kamon" %% "kamon-bundle" % kamonAkkaVersion
-  val kamonAkka = "io.kamon" %% "kamon-akka" % kamonAkkaVersion
-  val kamonPrometheus = "io.kamon" %% "kamon-prometheus" % kamonAkkaVersion
+  val graphvizJava = "guru.nidi" % "graphviz-java" % "0.18.0"
 
   val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.9.0"
   val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.14.0"
+  val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.0.4"
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.9.0"
@@ -78,7 +76,7 @@ object Dependencies {
   val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.0.5"
 
   val skuber = "io.skuber" %% "skuber" % "2.6.0"
-  val play = "com.typesafe.play" %% "play-json" % "2.9.1"
+  val play = "com.typesafe.play" %% "play-json" % "2.9.2"
 
   val http4s = "org.http4s" %% "http4s-core" % http4sVersion
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sVersion
@@ -91,10 +89,10 @@ object Dependencies {
   val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
   val circeGenericExtras = "io.circe" %% "circe-generic-extras" % circeVersion
 
-  val catsEffect = "org.typelevel" %% "cats-effect" % "2.2.0"
-  val catsCore = "org.typelevel" %% "cats-core" % "2.2.0"
+  val catsEffect = "org.typelevel" %% "cats-effect" % catsVersion
+  val catsCore = "org.typelevel" %% "cats-core" % catsVersion
   val console4Cats = "dev.profunktor" %% "console4cats" % "0.8.0"
-  val catsRetry = "com.github.cb372" %% "cats-retry" % "2.0.0"
+  val catsRetry = "com.github.cb372" %% "cats-retry" % "2.1.0"
 
   val jnrConstants = "com.github.jnr" % "jnr-constants" % "0.9.9"
 
@@ -107,25 +105,25 @@ object Dependencies {
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.13.0"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.14.0"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
 
   val typeSafeConfig = "com.typesafe" % "config" % "1.4.1"
 
   val objenisis = "org.objenesis" % "objenesis" % "3.1"
-  val jodaTime = "joda-time" % "joda-time" % "2.10.8"
+  val jodaTime = "joda-time" % "joda-time" % "2.10.9"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.30"
   val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val logstash =  "net.logstash.logback" % "logstash-logback-encoder" % "6.4"
-  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.0"
+  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.2"
   val scalaCheckPlus = "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2"
   val scalaCheckPlusMockito = "org.scalatestplus" %% "scalatestplus-mockito" % "1.0.0-M2"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 
 
-  val springContext = "org.springframework" % "spring-context" % "5.2.10.RELEASE"
-  val springCore = "org.springframework" % "spring-core" % "5.2.10.RELEASE"
+  val springContext = "org.springframework" % "spring-context" % springVersion
+  val springCore = "org.springframework" % "spring-core" % springVersion
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) = modules.map(m => m % scope)
 

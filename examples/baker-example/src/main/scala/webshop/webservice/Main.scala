@@ -7,7 +7,6 @@ import cats.effect.{ExitCode, IO, IOApp, Resource, SyncIO}
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.scaladsl._
 import com.typesafe.config.ConfigFactory
-import kamon.Kamon
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.log4s.Logger
 
@@ -38,9 +37,6 @@ object Main extends IOApp {
         terminateCluster(resources) *>
         terminateActorSystem(resources)
     )
-
-  def terminateKamon: IO[Unit] =
-    IO.fromFuture(IO(Kamon.stopModules()))
 
   def terminateCluster(resources: SystemResources): IO[Unit] =
     IO {

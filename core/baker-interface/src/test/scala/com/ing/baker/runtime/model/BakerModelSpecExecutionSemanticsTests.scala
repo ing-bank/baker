@@ -144,7 +144,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
           .withInteractions(interaction1, interaction2, interaction3)
           .withSensoryEvent(sensoryEvent)
 
-      val interactionInstances = Seq(
+      val interactionInstances = List(
         InteractionInstanceF.build[F](
           _name = "Interaction1",
           _input = Seq(Int32),

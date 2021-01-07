@@ -14,6 +14,9 @@ object RemoteInteractionLoader extends LazyLogging {
   def apply(implementations: List[InteractionInstance]): Unit = {
     val config = ConfigFactory.load()
     val port = config.getInt("bakery-component.http-api-port")
+    val metricsPort = config.getInt("bakery-component.metrics-port")
+    val apiLoggingEnabled = config.getBoolean("bakery-component.api-logging-enabled")
+
     val httpsEnabled = config.getBoolean("bakery-component.interaction.https-enabled")
     val keystorePath = config.getString("bakery-component.interaction.https-keystore-path")
     val keystorePassword = config.getString("bakery-component.interaction.https-keystore-password")
@@ -22,16 +25,16 @@ object RemoteInteractionLoader extends LazyLogging {
     val healthServiceAddress = InetSocketAddress.createUnresolved("0.0.0.0", 9999)
     val address = InetSocketAddress.createUnresolved("0.0.0.0", port)
     val tlsConfig =
-      if(httpsEnabled) Some(BakeryHttp.TLSConfig(password = keystorePassword, keystorePath = keystorePath, keystoreType = keystoreType))
+      if (httpsEnabled) Some(BakeryHttp.TLSConfig(password = keystorePassword, keystorePath = keystorePath, keystoreType = keystoreType))
       else None
 
     implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
     implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
     implicit val timer: Timer[IO] = IO.timer(executionContext)
 
-    RemoteInteractionService.resource(implementations, address, tlsConfig)
+    RemoteInteractionService.resource(implementations, address, tlsConfig, apiLoggingEnabled, metricsPort)
       .use(_ => {
-        logger.info("Interactions started successfully, starting health service")
+        logger.info(s"Interactions started successfully at $address, now starting health service $healthServiceAddress")
         HealthService.resource(healthServiceAddress)
           .use(_ => IO.never)
           .unsafeRunAsyncAndForget()

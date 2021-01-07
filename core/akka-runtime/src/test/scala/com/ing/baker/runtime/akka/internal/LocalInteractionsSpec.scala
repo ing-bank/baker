@@ -1,5 +1,6 @@
 package com.ing.baker.runtime.akka.internal
 
+import cats.effect.{ContextShift, IO}
 import com.ing.baker.il.IngredientDescriptor
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.scaladsl.InteractionInstance
@@ -7,10 +8,13 @@ import com.ing.baker.types
 import com.ing.baker.types.Type
 import org.mockito.Mockito.when
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AsyncWordSpecLike
+import org.scalatest.wordspec.{AnyWordSpecLike, AsyncWordSpecLike}
 import org.scalatestplus.mockito.MockitoSugar
 
-class InteractionManagerLocalSpec extends AsyncWordSpecLike with Matchers with MockitoSugar {
+import scala.concurrent.ExecutionContext
+
+class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
+  implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
   "getImplementation" should {
     "return Some" when {
       "an interaction implementation is available" in {
@@ -18,13 +22,13 @@ class InteractionManagerLocalSpec extends AsyncWordSpecLike with Matchers with M
         when(interactionImplementation.name).thenReturn("InteractionName")
         when(interactionImplementation.input).thenReturn(Seq(types.Int32))
 
-        val interactionManager: InteractionManagerLocal = new InteractionManagerLocal(Seq(interactionImplementation))
+        val interactions: LocalInteractions = LocalInteractions(List(interactionImplementation))
         val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        interactionManager.getImplementation(interactionTransition).map(_ should equal(Some(interactionImplementation)))
+        interactions.findFor(interactionTransition).map(_ should equal(Some(interactionImplementation)))
       }
 
       "multiple interaction implementations are available" in {
@@ -36,13 +40,13 @@ class InteractionManagerLocalSpec extends AsyncWordSpecLike with Matchers with M
         when(interactionImplementation2.name).thenReturn("InteractionName2")
         when(interactionImplementation2.input).thenReturn(Seq(types.Int32))
 
-        val interactionManager: InteractionManagerLocal = new InteractionManagerLocal(Seq(interactionImplementation1, interactionImplementation2))
+        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation1, interactionImplementation2))
         val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        interactionManager.getImplementation(interactionTransition).map(_ should equal(Some(interactionImplementation1)))
+        interactionManager.findFor(interactionTransition).map(_ should equal(Some(interactionImplementation1)))
       }
 
       "two implementations with the same correct name but only one has the correct input types" in {
@@ -54,13 +58,13 @@ class InteractionManagerLocalSpec extends AsyncWordSpecLike with Matchers with M
         when(interactionImplementation2.name).thenReturn("InteractionName")
         when(interactionImplementation2.input).thenReturn(Seq(types.Int32))
 
-        val interactionManager: InteractionManagerLocal = new InteractionManagerLocal(Seq(interactionImplementation1, interactionImplementation2))
+        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation1, interactionImplementation2))
         val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        interactionManager.getImplementation(interactionTransition).map(_ should equal(Some(interactionImplementation2)))
+        interactionManager.findFor(interactionTransition).map(_ should equal(Some(interactionImplementation2)))
       }
     }
 
@@ -70,13 +74,13 @@ class InteractionManagerLocalSpec extends AsyncWordSpecLike with Matchers with M
         when(interactionImplementation.name).thenReturn("InteractionName")
         when(interactionImplementation.input).thenReturn(Seq(types.Int32))
 
-        val interactionManager: InteractionManagerLocal = new InteractionManagerLocal(Seq(interactionImplementation))
+        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
         val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("WrongInteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        interactionManager.getImplementation(interactionTransition).map(_ should equal(None))
+        interactionManager.findFor(interactionTransition).map(_ should equal(None))
       }
 
       "an interaction implementation has a wrong ingredient input type" in {
@@ -84,13 +88,13 @@ class InteractionManagerLocalSpec extends AsyncWordSpecLike with Matchers with M
         when(interactionImplementation.name).thenReturn("InteractionName")
         when(interactionImplementation.input).thenReturn(Seq(types.Int32))
 
-        val interactionManager: InteractionManagerLocal = new InteractionManagerLocal(Seq(interactionImplementation))
+        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
         val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.CharArray)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        interactionManager.getImplementation(interactionTransition).map(_ should equal(None))
+        interactionManager.findFor(interactionTransition).map(_ should equal(None))
       }
 
       "an interaction implementation has extra ingredient input types" in {
@@ -98,13 +102,13 @@ class InteractionManagerLocalSpec extends AsyncWordSpecLike with Matchers with M
         when(interactionImplementation.name).thenReturn("InteractionName")
         when(interactionImplementation.input).thenReturn(Seq(types.Int32, types.CharArray))
 
-        val interactionManager: InteractionManagerLocal = new InteractionManagerLocal(Seq(interactionImplementation))
+        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
         val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        interactionManager.getImplementation(interactionTransition).map(_ should equal(None))
+        interactionManager.findFor(interactionTransition).map(_ should equal(None))
       }
 
       "an interaction implementation has not enough ingredient input types" in {
@@ -112,21 +116,21 @@ class InteractionManagerLocalSpec extends AsyncWordSpecLike with Matchers with M
         when(interactionImplementation.name).thenReturn("InteractionName")
         when(interactionImplementation.input).thenReturn(Seq(types.Int32))
 
-        val interactionManager: InteractionManagerLocal = new InteractionManagerLocal(Seq(interactionImplementation))
+        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
         val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         val ingredientDescriptor2: IngredientDescriptor = IngredientDescriptor("ingredientName2", types.CharArray)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor, ingredientDescriptor2))
 
-        interactionManager.getImplementation(interactionTransition).map(_ should equal(None))
+        interactionManager.findFor(interactionTransition).map(_ should equal(None))
       }
 
       "empty interaction seq" in {
-        val interactionManager: InteractionManagerLocal = new InteractionManagerLocal(Seq.empty)
+        val interactionManager: LocalInteractions = LocalInteractions()
 
         val interactionTransition: InteractionTransition = mock[InteractionTransition]
-        interactionManager.getImplementation(interactionTransition).map(_ should equal(None))
+        interactionManager.findFor(interactionTransition).map(_ should equal(None))
       }
     }
   }

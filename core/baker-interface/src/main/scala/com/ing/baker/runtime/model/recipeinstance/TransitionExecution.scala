@@ -144,7 +144,7 @@ private[recipeinstance] case class TransitionExecution(
     }
 
     def execute: F[Option[EventInstance]] =
-      components.interactionInstanceManager.execute(interactionTransition, buildInteractionInput)
+      components.interactions.execute(interactionTransition, buildInteractionInput)
 
     for {
       startTime <- timer.clock.realTime(MILLISECONDS)

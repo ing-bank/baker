@@ -1,16 +1,15 @@
 package com.ing.baker
 
-import java.nio.file.Paths
-import java.util.UUID
-
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
+import cats.effect.IO
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.CaseClassIngredient
 import com.ing.baker.recipe.TestRecipe.{fireTwoEventsInteraction, _}
 import com.ing.baker.recipe.common.Recipe
 import com.ing.baker.runtime.akka.AkkaBaker
+import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import com.ing.baker.types.{Converters, Value}
 import com.typesafe.config.{Config, ConfigFactory}
@@ -20,8 +19,12 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpecLike
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatestplus.mockito.MockitoSugar
+import java.nio.file.Paths
+import java.util.UUID
 
-import scala.concurrent.Future
+import io.prometheus.client.CollectorRegistry
+
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -35,7 +38,7 @@ trait BakerRuntimeTestBase
   def actorSystemName: String
 
   implicit val timeout: FiniteDuration = 10 seconds
-
+  implicit val contextShift = IO.contextShift(ExecutionContext.global)
   //Values to use for setting and checking the ingredients
 
   //Default values to be used for the ingredients in the tests
@@ -91,8 +94,8 @@ trait BakerRuntimeTestBase
   protected val testOptionalIngredientInteractionMock: OptionalIngredientInteraction = mock[OptionalIngredientInteraction]
   protected val testProvidesNothingInteractionMock: ProvidesNothingInteraction = mock[ProvidesNothingInteraction]
 
-  protected val mockImplementations: Seq[InteractionInstance] =
-    Seq(
+  protected val mockImplementations: List[InteractionInstance] =
+    List(
       testInteractionOneMock,
       testInteractionTwoMock,
       testInteractionThreeMock,
@@ -179,7 +182,7 @@ trait BakerRuntimeTestBase
          |
          |baker {
          |  actor.provider = "cluster-sharded"
-         |  cluster.seed-nodes = ["akka.tcp://$actorSystemName@localhost:$port"]
+         |  cluster.seed-nodes = ["akka://$actorSystemName@localhost:$port"]
          |}
     """.stripMargin).withFallback(localLevelDBConfig(actorSystemName, journalInitializeTimeout, journalPath, snapshotsPath))
 
@@ -206,18 +209,17 @@ trait BakerRuntimeTestBase
     setupBakerWithRecipe(recipe, mockImplementations)(actorSystem)
   }
 
-  protected def setupBakerWithRecipe(recipe: Recipe, implementations: Seq[InteractionInstance])
+  protected def setupBakerWithRecipe(recipe: Recipe, implementations: List[InteractionInstance])
                                     (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
-    val baker = AkkaBaker(ConfigFactory.load(), actorSystem)
-    baker.addInteractionInstances(implementations).flatMap { _ =>
-      baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).map(baker -> _)(actorSystem.dispatcher)
-    }
+    implicit val contextShift = IO.contextShift(actorSystem.dispatcher)
+    val baker = AkkaBaker(ConfigFactory.load(), actorSystem, LocalInteractions(implementations))
+    baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).map(baker -> _)(actorSystem.dispatcher)
   }
 
   protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Future[Baker] = {
     setupMockResponse()
-    val baker = AkkaBaker(ConfigFactory.load(), actorSystem)
-    baker.addInteractionInstances(mockImplementations).map { _ => baker }
+    implicit val contextShift = IO.contextShift(actorSystem.dispatcher)
+    Future.successful(AkkaBaker(ConfigFactory.load(), actorSystem, LocalInteractions(mockImplementations)))
   }
 
   protected def setupMockResponse(): Unit = {

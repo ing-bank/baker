@@ -1,24 +1,31 @@
 package com.ing.bakery.interaction
 
 import java.net.InetSocketAddress
-
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.bakery.protocol.{InteractionExecution => I}
 import com.ing.baker.runtime.scaladsl.{IngredientInstance, InteractionInstance}
+import com.ing.bakery.metrics.MetricService
 import io.circe.Json
 import io.circe.syntax._
+import io.prometheus.client.CollectorRegistry
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
+import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.server.blaze._
 import org.http4s.server.{Router, Server}
+import org.http4s.server.middleware.{Logger, Metrics}
 
 import scala.concurrent.ExecutionContext
 
 object RemoteInteractionService {
 
-  def resource(interactions: List[InteractionInstance], address: InetSocketAddress, tlsConfig: Option[BakeryHttp.TLSConfig])(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] = {
+  def resource(interactions: List[InteractionInstance],
+               address: InetSocketAddress,
+               tlsConfig: Option[BakeryHttp.TLSConfig],
+               apiLoggingEnabled: Boolean = false,
+               metricsPort: Int = 9096)(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] = {
     val tls = tlsConfig.map { tlsConfig =>
       val sslConfig = BakeryHttp.loadSSLContext(tlsConfig)
       val sslParams = sslConfig.getDefaultSSLParameters
@@ -26,34 +33,51 @@ object RemoteInteractionService {
       (sslConfig, sslParams)
     }
     val service = new RemoteInteractionService(interactions)
-    val builder0 = BlazeServerBuilder[IO](ExecutionContext.global)
-      .bindSocketAddress(address)
-      .withHttpApp(service.build)
-    val builder1 = tls match {
-      case Some((sslConfig, sslParams)) => builder0.withSslContextAndParameters(sslConfig, sslParams)
-      case None => builder0
+    def interactionRequestClassifier(request: Request[IO]): Option[String] = {
+      // ... /interactions/<id>/execute - we take ID part we care most about
+      val p = request.pathInfo.split('/')
+      if (p.length == 3) Some(p(2)) else None
     }
-    builder1.resource
+
+    for {
+      metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
+      app = BlazeServerBuilder[IO](ExecutionContext.global)
+        .bindSocketAddress(address)
+        .withHttpApp(
+          Logger.httpApp(
+            logHeaders = apiLoggingEnabled,
+            logBody = apiLoggingEnabled,
+            logAction = if (apiLoggingEnabled) Some( (x: String) => IO(println(x))) else None
+          )(Router("/api/bakery" -> Metrics[IO](metrics,
+            classifierF = interactionRequestClassifier)(service.routes)) orNotFound)
+        )
+      server <- (tls match {
+        case Some((sslConfig, sslParams)) => app.withSslContextAndParameters(sslConfig, sslParams)
+        case None => app
+      }).resource
+      _ <- MetricService.resource(
+        InetSocketAddress.createUnresolved("0.0.0.0", metricsPort)
+      )(cs, timer, ExecutionContext.global)
+
+    } yield server
+
   }
 }
 
-final class RemoteInteractionService(interactions: List[InteractionInstance])(implicit timer: Timer[IO], cs: ContextShift[IO]) {
+final class RemoteInteractionService(interactions: List[InteractionInstance],
+                                     apiLoggingEnabled: Boolean = false)(implicit timer: Timer[IO], cs: ContextShift[IO]) {
 
   import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
 
   implicit val interactionEntityEncoder: EntityEncoder[IO, List[I.Interaction]] = jsonEncoderOf[IO,  List[I.Interaction]]
-
   implicit val executeRequestEntityDecoder: EntityDecoder[IO, List[IngredientInstance]] = jsonOf[IO, List[IngredientInstance]]
   implicit val executeResponseEntityEncoder: EntityEncoder[IO, I.ExecutionResult] = jsonEncoderOf[IO, I.ExecutionResult]
-
-  def build: HttpApp[IO] =
-    api.orNotFound
 
   private val Interactions: List[I.Interaction] =
     interactions.map(interaction =>
       I.Interaction(interaction.shaBase64, interaction.name, interaction.input.toList))
 
-  def api: HttpRoutes[IO] = Router("/api/bakery" -> HttpRoutes.of[IO] {
+  def routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
 
     case GET -> Root / "interactions" => Ok(Interactions)
 
@@ -80,5 +104,5 @@ final class RemoteInteractionService(interactions: List[InteractionInstance])(im
             Ok(I.ExecutionResult(Left(I.Failure(I.NoInstanceFound))))
         }
       } yield response
-  })
+  }
 }

@@ -14,16 +14,19 @@ import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
+import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance, RecipeEventMetadata}
 import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
 import com.typesafe.config.{Config, ConfigFactory}
+import io.prometheus.client.CollectorRegistry
 import org.mockito.Matchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.slf4j.LoggerFactory
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -37,7 +40,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
   before {
     resetMocks()
     setupMockResponse()
-
+    CollectorRegistry.defaultRegistry.clear()
     //clean the in-memory journal before each test
     val tp = TestProbe()
     tp.send(StorageExtension(defaultActorSystem).journalStorage, InMemoryJournalStorage.ClearJournal)
@@ -70,7 +73,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         exception <- Future.successful {
           intercept[IllegalArgumentException] {
-            AkkaBaker(config, setupActorSystem)
+            AkkaBaker(config, setupActorSystem, LocalInteractions())
           }
         }
         _ <- setupActorSystem.terminate()
@@ -93,7 +96,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val setupActorSystem = ActorSystem("setup-actor-system", config)
       for {
         exception <- Future.successful {
-          intercept[MalformedURLException](AkkaBaker(config, setupActorSystem))
+          intercept[MalformedURLException](AkkaBaker(config, setupActorSystem, LocalInteractions()))
         }
         _ <- setupActorSystem.terminate()
       } yield assert(exception.getMessage contains "wrong-address")
@@ -112,7 +115,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val setupActorSystem = ActorSystem("setup-actor-system", config)
       for {
         exception <- Future.successful {
-          intercept[IllegalArgumentException](AkkaBaker(config, setupActorSystem))
+          intercept[IllegalArgumentException](AkkaBaker(config, setupActorSystem, LocalInteractions()))
         }
         _ <- setupActorSystem.terminate()
       } yield assert(exception.getMessage contains "No default service discovery implementation configured in `akka.discovery.method`")
@@ -233,16 +236,15 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           |  }
           |
           |  cluster {
-          |    seed-nodes = ["akka.tcp://remoteTest@127.0.0.1:2555"]
+          |    seed-nodes = ["akka://remoteTest@127.0.0.1:2555"]
           |    auto-down-unreachable-after = 10s
           |  }
           |}
         """.stripMargin).withFallback(ConfigFactory.load())
 
-      val baker = AkkaBaker(config, ActorSystem.apply("remoteTest", config))
+      val baker = AkkaBaker(config, ActorSystem.apply("remoteTest", config), LocalInteractions(mockImplementations))
 
       for {
-        _ <- baker.addInteractionInstances(mockImplementations)
         recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
         recipeInstanceId = UUID.randomUUID().toString
@@ -297,7 +299,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           .withInteractions(interaction1, interaction2, interaction3)
           .withSensoryEvent(sensoryEvent)
 
-      val interactionInstances = Seq(
+      val interactionInstances = List(
         InteractionInstance(
           name = "Interaction1",
           input = Seq(Int32),
@@ -513,7 +515,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         val manufactureGoodsMock: ManufactureGoods = mock[Webshop.ManufactureGoods]
         val validateOrderMock: ValidateOrder = mock[Webshop.ValidateOrder]
 
-        val implementations = Seq(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock).map(InteractionInstance.unsafeFrom(_))
+        val implementations = List(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock).map(InteractionInstance.unsafeFrom(_))
 
         def createProcess(baker: Baker, recipeId: String): Future[Unit] = {
           for {
@@ -571,12 +573,10 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
               .withPredefinedIngredients(("missingJavaOptional", ingredientValue)))
           .withSensoryEvent(initialEvent)
 
-      val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem)
+      val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, LocalInteractions(mockImplementations))
+      val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
 
       for {
-        _ <- baker.addInteractionInstances(mockImplementations)
-
-        compiledRecipe = RecipeCompiler.compileRecipe(recipe)
         recipeId <- baker.addRecipe(compiledRecipe)
 
         recipeInstanceId = UUID.randomUUID().toString
@@ -1164,9 +1164,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       def second(recipeId: String) = {
         val system2 = ActorSystem("persistenceTest2", localLevelDBConfig("persistenceTest2"))
-        val baker2 = AkkaBaker(ConfigFactory.load(), system2)
+        val baker2 = AkkaBaker(ConfigFactory.load(), system2, LocalInteractions(mockImplementations))
         (for {
-          _ <- baker2.addInteractionInstances(mockImplementations)
           state <- baker2.getRecipeInstanceState(recipeInstanceId)
           recipe <- baker2.getRecipe(recipeId)
           recipeId0 <- baker2.addRecipe(compiledRecipe)
