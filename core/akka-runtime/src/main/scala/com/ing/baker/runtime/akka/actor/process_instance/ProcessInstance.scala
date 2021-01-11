@@ -64,7 +64,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
                                                                runtime: ProcessInstanceRuntime[P, T, S, E]) extends ProcessInstanceEventSourcing[P, T, S, E](petriNet, settings.encryption, runtime.eventSource) {
 
   import context.dispatcher
-  context.setReceiveTimeout(1 hour)
+  context.setReceiveTimeout(15 minutes)
 
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
@@ -173,7 +173,12 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       }
 
     case ReceiveTimeout =>
-      log.warning(s"Process $persistenceId has been stopped by idle timeout")
+      if (instance.activeJobs.isEmpty) {
+        log.warning(s"Process $persistenceId has been stopped by idle timeout")
+        context.stop(context.self)
+      } else {
+        log.warning("Receive timeout happened but jobs are still active: will wait for another receive timeout")
+      }
 
     case GetState ⇒
       val instanceState: InstanceState = mapStateToProtocol(instance)
