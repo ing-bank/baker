@@ -172,13 +172,10 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       } else
         context.stop(context.self)
 
-    case IdleStop(n) ⇒
+    case IdleStop(n) =>
       if (n == instance.sequenceNr && instance.activeJobs.isEmpty) {
         log.idleStop(recipeInstanceId, settings.idleTTL.getOrElse(Duration.Zero))
         context.stop(context.self)
-      } else {
-        log.info(s"Process $persistenceId idle stop wasn't processed: message seq $n, instance seq ${instance.sequenceNr}, active jobs: ${instance.activeJobs.size}; rescheduling idle stop attempt")
-        scheduleIdleStop(instance.sequenceNr)
       }
 
     case ReceiveTimeout =>
@@ -396,18 +393,15 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       case (updatedInstance, jobs) ⇒
 
         if (jobs.isEmpty && updatedInstance.activeJobs.isEmpty)
-          scheduleIdleStop(updatedInstance.sequenceNr)
+          settings.idleTTL.foreach { ttl ⇒
+            system.scheduler.scheduleOnce(ttl, context.self, IdleStop(updatedInstance.sequenceNr))
+          }
 
         jobs.foreach(job ⇒ executeJob(job, sender()))
         (updatedInstance, jobs)
     }
   }
 
-  private def scheduleIdleStop(seq: Long): Unit = {
-    settings.idleTTL.foreach { ttl ⇒
-      system.scheduler.scheduleOnce(ttl, context.self, IdleStop(seq))
-    }
-  }
 
   def executeJob(job: Job[P, T, S], originalSender: ActorRef): Unit = {
 
