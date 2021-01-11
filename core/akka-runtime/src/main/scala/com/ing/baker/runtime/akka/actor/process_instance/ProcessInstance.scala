@@ -64,7 +64,9 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
                                                                runtime: ProcessInstanceRuntime[P, T, S, E]) extends ProcessInstanceEventSourcing[P, T, S, E](petriNet, settings.encryption, runtime.eventSource) {
 
   import context.dispatcher
-  context.setReceiveTimeout(15 minutes)
+
+  // setting up receive timeout to stop actor, when it's not stopped by IdleStop message
+  context.setReceiveTimeout(settings.idleTTL.getOrElse(15 minutes) * 2)
 
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
@@ -130,6 +132,9 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       sender() ! Uninitialized(recipeInstanceId)
       context.stop(context.self)
 
+    case ReceiveTimeout =>
+      log.warning(s"${persistenceId}: Receive timeout received in uninitialized state")
+      context.stop(context.self)
   }
 
   def waitForDeleteConfirmation(instance: Instance[P, T, S]): Receive = {
@@ -141,6 +146,10 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     case DeleteMessagesFailure(cause, toSequenceNr) =>
       log.processHistoryDeletionFailed(recipeInstanceId, toSequenceNr, cause)
       context become running(instance, Map.empty)
+
+    case ReceiveTimeout =>
+      log.warning(s"${persistenceId}: Receive timeout received in delete confirmation state")
+      context.stop(context.self)
   }
 
 
