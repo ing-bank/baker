@@ -7,7 +7,7 @@ trigger:
 
 parameters:
   - name: ForcePublish
-    default: true
+    default: false
     type: boolean
     displayName: Force publish (otherwise nothing is published from PR/branch builds)
 
