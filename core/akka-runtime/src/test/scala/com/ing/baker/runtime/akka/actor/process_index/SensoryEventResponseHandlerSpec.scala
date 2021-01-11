@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.actor.ActorSystem
-import akka.testkit.{TestDuration, TestKit, TestProbe}
+import akka.testkit.{TestDuration, TestProbe}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.runtime.akka.actor.AkkaTestBase
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{NotifyBoth, NotifyOnEvent, NotifyWhenCompleted, NotifyWhenReceived}
@@ -11,16 +10,12 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, SensoryEventResult}
 import com.ing.baker.types.{PrimitiveValue, Value}
-import io.prometheus.client.CollectorRegistry
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers._
-import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class SensoryEventResponseHandlerSpec extends AkkaTestBase("SensoryEventResponseHandlerSpec")
-  with AnyWordSpecLike {
+class SensoryEventResponseHandlerSpec extends AkkaTestBase("SensoryEventResponseHandlerSpec")  {
 
   implicit val ec: ExecutionContext = system.dispatcher
 
