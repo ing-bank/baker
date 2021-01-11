@@ -10,7 +10,6 @@ import org.scalatest.wordspec.AnyWordSpecLike
 abstract class AkkaTestBase(actorSystemName: String = "testActorSystem") extends TestKit(ActorSystem(actorSystemName))
     with AnyWordSpecLike
     with ImplicitSender
-    with BeforeAndAfter
     with BeforeAndAfterAll {
 
   override def afterAll() = {
@@ -18,7 +17,6 @@ abstract class AkkaTestBase(actorSystemName: String = "testActorSystem") extends
     shutdown(system)
     CollectorRegistry.defaultRegistry.clear()
   }
-
 
   def expectMsgInAnyOrderPF[Out](pfs: PartialFunction[Any, Out]*): Unit = {
     if (pfs.nonEmpty) {
