@@ -38,7 +38,7 @@ class RecipeManagerImplSpec extends AsyncWordSpecLike
       } yield {
         val recipes: Seq[CompiledRecipe] = all.map(_._1)
         (id1 == "1"
-          && id2 == "id2"
+          && id2 == "2"
           && check1.get._1 == recipe1
           && check2.get._1 == recipe2
           && recipes.size == 2
