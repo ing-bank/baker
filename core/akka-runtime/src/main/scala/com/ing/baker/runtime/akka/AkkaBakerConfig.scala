@@ -53,7 +53,7 @@ object AkkaBakerConfig extends LazyLogging {
         defaultAddRecipeTimeout = 10.seconds,
       )
 
-    def from(config: Config) =
+    def apply(config: Config): Timeouts =
       Timeouts(
         defaultBakeTimeout = config.as[FiniteDuration]("baker.bake-timeout"),
         defaultProcessEventTimeout = config.as[FiniteDuration]("baker.process-event-timeout"),
@@ -68,22 +68,30 @@ object AkkaBakerConfig extends LazyLogging {
   }
 
   def localDefault(actorSystem: ActorSystem, interactions: LocalInteractions): AkkaBakerConfig = {
+    val defaultTimeouts = Timeouts.default
+
     val localProvider =
       new LocalBakerActorProvider(
         retentionCheckInterval = 1.minute,
         ingredientsFilter = List.empty,
         actorIdleTimeout = Some(5.minutes),
-        configuredEncryption = Encryption.NoEncryption
+        configuredEncryption = Encryption.NoEncryption,
+        timeouts = defaultTimeouts
       )
+
     AkkaBakerConfig(
-      timeouts = Timeouts.default,
+      timeouts = defaultTimeouts,
       bakerValidationSettings = BakerValidationSettings.default,
       bakerActorProvider = localProvider,
       interactions = interactions
     )(actorSystem)
   }
 
-  def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem, interactions: LocalInteractions): AkkaBakerConfig = {
+  def clusterDefault(seedNodes: NonEmptyList[Address],
+                     actorSystem: ActorSystem,
+                     interactions: LocalInteractions): AkkaBakerConfig = {
+    val defaultTimeouts = Timeouts.default
+
     val clusterProvider =
       new ClusterBakerActorProvider(
         nrOfShards = 50,
@@ -92,10 +100,12 @@ object AkkaBakerConfig extends LazyLogging {
         ingredientsFilter = List.empty,
         journalInitializeTimeout = 30.seconds,
         seedNodes = ClusterBakerActorProvider.SeedNodesList(seedNodes),
-        configuredEncryption = Encryption.NoEncryption
+        configuredEncryption = Encryption.NoEncryption,
+        timeouts = defaultTimeouts
       )
+
     AkkaBakerConfig(
-      timeouts = Timeouts.default,
+      timeouts = defaultTimeouts,
       bakerValidationSettings = BakerValidationSettings.default,
       bakerActorProvider = clusterProvider,
       interactions = interactions
@@ -107,7 +117,7 @@ object AkkaBakerConfig extends LazyLogging {
       throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
 
     AkkaBakerConfig(
-      timeouts = Timeouts.from(config),
+      timeouts = Timeouts.apply(config),
       bakerValidationSettings = BakerValidationSettings.from(config),
       bakerActorProvider = bakerProviderFrom(config),
       interactions = interactions
@@ -126,14 +136,14 @@ object AkkaBakerConfig extends LazyLogging {
           retentionCheckInterval = config.as[FiniteDuration]("baker.actor.retention-check-interval"),
           ingredientsFilter = config.as[List[String]]("baker.filtered-ingredient-values"),
           actorIdleTimeout = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout"),
-          encryption
+          configuredEncryption = encryption,
+          timeouts = Timeouts.default
         )
       case Some("cluster-sharded") =>
         new ClusterBakerActorProvider(
           nrOfShards = config.as[Int]("baker.actor.cluster.nr-of-shards"),
           retentionCheckInterval = config.as[FiniteDuration]("baker.actor.retention-check-interval"),
           actorIdleTimeout = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout"),
-          ingredientsFilter = config.as[List[String]]("baker.filtered-ingredient-values"),
           journalInitializeTimeout = config.as[FiniteDuration]("baker.journal-initialize-timeout"),
           seedNodes = {
             val seedList = config.as[Option[List[String]]]("baker.cluster.seed-nodes")
@@ -142,7 +152,9 @@ object AkkaBakerConfig extends LazyLogging {
             else
               ClusterBakerActorProvider.ServiceDiscovery
           },
-          configuredEncryption = encryption
+          ingredientsFilter = config.as[List[String]]("baker.filtered-ingredient-values"),
+          configuredEncryption = encryption,
+          Timeouts.default
         )
       case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
     }

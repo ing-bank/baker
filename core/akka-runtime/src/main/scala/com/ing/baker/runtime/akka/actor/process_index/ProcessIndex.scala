@@ -11,6 +11,7 @@ import cats.instances.future._
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api._
+import com.ing.baker.runtime.RecipeManager
 import com.ing.baker.runtime.akka.actor.Util.logging._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
@@ -19,7 +20,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceRuntime}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
-import com.ing.baker.runtime.akka.internal.{LocalInteractions, RecipeRuntime}
+import com.ing.baker.runtime.akka.internal.RecipeRuntime
 import com.ing.baker.runtime.akka.{namedCachedThreadPool, _}
 import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
@@ -37,9 +38,15 @@ object ProcessIndex {
             retentionCheckInterval: Option[FiniteDuration],
             configuredEncryption: Encryption,
             interactions: InteractionsF[IO],
-            recipeManager: ActorRef,
+            recipeManager: RecipeManager,
             ingredientsFilter: Seq[String]) =
-    Props(new ProcessIndex(recipeInstanceIdleTimeout, retentionCheckInterval, configuredEncryption, interactions, recipeManager, ingredientsFilter))
+    Props(new ProcessIndex(
+      recipeInstanceIdleTimeout,
+      retentionCheckInterval,
+      configuredEncryption,
+      interactions,
+      recipeManager,
+      ingredientsFilter))
 
   sealed trait ProcessStatus
 
@@ -78,7 +85,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
                    retentionCheckInterval: Option[FiniteDuration],
                    configuredEncryption: Encryption,
                    interactionManager: InteractionsF[IO],
-                   recipeManager: ActorRef,
+                   recipeManager: RecipeManager,
                    ingredientsFilter: Seq[String]) extends PersistentActor with PersistentActorMetrics {
 
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
@@ -97,9 +104,11 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   def updateCache() = {
     // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
-    val futureResult = recipeManager.ask(GetAllRecipes)(updateCacheTimeout).mapTo[AllRecipes]
-    val allRecipes = Await.result(futureResult, updateCacheTimeout)
-    recipeCache ++= allRecipes.recipes.map(ri => ri.compiledRecipe.recipeId -> (ri.compiledRecipe, ri.timestamp))
+    val futureResult: Future[Seq[(CompiledRecipe, Long)]] = recipeManager.all()
+    val allRecipes: Seq[(CompiledRecipe, Long)] = Await.result(futureResult, updateCacheTimeout)
+    recipeCache ++= allRecipes.map {
+      case (recipe, timestamp) => recipe.recipeId -> (recipe, timestamp)
+    }
   }
 
   def getRecipeWithTimeStamp(recipeId: String): Option[(CompiledRecipe, Long)] =
@@ -150,7 +159,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         .exists { p => meta.createdDateTime + p.toMillis < System.currentTimeMillis() }
   }
 
-  def withActiveProcess(recipeInstanceId: String)(fn: ActorRef => Unit) = {
+  private def withActiveProcess(recipeInstanceId: String)(fn: ActorRef => Unit): Unit = {
     context.child(recipeInstanceId) match {
       case None if !index.contains(recipeInstanceId) => sender() ! NoSuchProcess(recipeInstanceId)
       case None if index(recipeInstanceId).isDeleted => sender() ! ProcessDeleted(recipeInstanceId)
@@ -166,10 +175,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   def getInteractionJob(recipeInstanceId: String, interactionName: String, processActor: ActorRef): OptionT[Future, (InteractionTransition, Id)] = {
     // we find which job correlates with the interaction
     for {
-      recipe     <- OptionT.fromOption(getCompiledRecipe(index(recipeInstanceId).recipeId))
+      recipe <- OptionT.fromOption(getCompiledRecipe(index(recipeInstanceId).recipeId))
       transition <- OptionT.fromOption(recipe.interactionTransitions.find(_.interactionName == interactionName))
-      state      <- OptionT(processActor.ask(GetState)(processInquireTimeout).mapTo[InstanceState].map(Option(_)))
-      jobId      <- OptionT.fromOption(state.jobs.collectFirst { case (jobId, job) if job.transitionId == transition.id => jobId }  )
+      state <- OptionT(processActor.ask(GetState)(processInquireTimeout).mapTo[InstanceState].map(Option(_)))
+      jobId <- OptionT.fromOption(state.jobs.collectFirst { case (jobId, job) if job.transitionId == transition.id => jobId })
     } yield (transition, jobId)
   }
 
@@ -292,7 +301,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         EitherT.liftF(IO.async(callback))
 
       def fetchCurrentTime: FireEventIO[Long] =
-        EitherT.liftF(IO { System.currentTimeMillis() })
+        EitherT.liftF(IO {
+          System.currentTimeMillis()
+        })
 
       def fetchInstance: FireEventIO[(ActorRef, ActorMetadata)] =
         context.child(recipeInstanceId) match {
@@ -343,6 +354,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       def validateWithinReceivePeriod(recipe: CompiledRecipe, metadata: ActorMetadata): FireEventIO[Unit] = {
         def outOfReceivePeriod(current: Long, period: FiniteDuration): Boolean =
           current - metadata.createdDateTime > period.toMillis
+
         for {
           currentTime <- fetchCurrentTime
           _ <- recipe.eventReceivePeriod match {
@@ -365,8 +377,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         // we find which job correlates with the interaction
         getInteractionJob(recipeInstanceId, interactionName, processActor).value.onComplete {
           case Success(Some((_, jobId))) => processActor.tell(OverrideExceptionStrategy(jobId, BlockTransition), originalSender)
-          case Success(_)                => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not retrying"))
-          case Failure(exception)        => originalSender ! akka.actor.Status.Failure(exception)
+          case Success(_) => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not retrying"))
+          case Failure(exception) => originalSender ! akka.actor.Status.Failure(exception)
         }
       }
 
@@ -378,8 +390,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
         getInteractionJob(recipeInstanceId, interactionName, processActor).value.onComplete {
           case Success(Some((_, jobId))) => processActor.tell(OverrideExceptionStrategy(jobId, RetryWithDelay(0)), originalSender)
-          case Success(_)                => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
-          case Failure(exception)        => originalSender ! akka.actor.Status.Failure(exception)
+          case Success(_) => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
+          case Failure(exception) => originalSender ! akka.actor.Status.Failure(exception)
         }
       }
 
@@ -403,7 +415,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
                 log.warning("Invalid event given: " + error)
                 originalSender ! InvalidEventWhenResolveBlocked(recipeInstanceId, error)
             }
-          case Success(_)         => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
+          case Success(_) => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
           case Failure(exception) => originalSender ! akka.actor.Status.Failure(exception)
         }
       }

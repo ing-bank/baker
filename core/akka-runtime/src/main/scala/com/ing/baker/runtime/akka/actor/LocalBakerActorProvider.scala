@@ -2,25 +2,27 @@ package com.ing.baker.runtime.akka.actor
 
 import akka.actor.{ActorRef, ActorSystem}
 import cats.effect.IO
+import com.ing.baker.runtime.akka.AkkaBakerConfig
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{GetIndex, Index}
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager
-import com.ing.baker.runtime.akka.internal.LocalInteractions
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor
 import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.serialization.Encryption
+import com.ing.baker.runtime.{RecipeManager, RecipeManagerActorImpl}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 class LocalBakerActorProvider(
-    retentionCheckInterval: FiniteDuration,
-    ingredientsFilter: List[String],
-    actorIdleTimeout: Option[FiniteDuration],
-    configuredEncryption: Encryption
-  ) extends BakerActorProvider {
+                               retentionCheckInterval: FiniteDuration,
+                               ingredientsFilter: List[String],
+                               actorIdleTimeout: Option[FiniteDuration],
+                               configuredEncryption: Encryption,
+                               timeouts: AkkaBakerConfig.Timeouts
+                             ) extends BakerActorProvider {
 
-  override def createProcessIndexActor(interactionManager: InteractionsF[IO], recipeManager: ActorRef)(
+  override def createProcessIndexActor(interactionManager: InteractionsF[IO], recipeManager: RecipeManager)(
     implicit actorSystem: ActorSystem): ActorRef = {
     actorSystem.actorOf(
       ProcessIndex.props(
@@ -33,8 +35,14 @@ class LocalBakerActorProvider(
       ))
   }
 
-  override def createRecipeManagerActor()(implicit actorSystem: ActorSystem): ActorRef = {
-    actorSystem.actorOf(RecipeManager.props())
+  override def createRecipeManager()(implicit actorSystem: ActorSystem): RecipeManager = {
+    import actorSystem.dispatcher
+
+    new RecipeManagerActorImpl(
+      actor = actorSystem.actorOf(RecipeManagerActor.props()),
+      settings = RecipeManagerActorImpl.Settings(
+        addRecipeTimeout = timeouts.defaultAddRecipeTimeout,
+        inquireTimeout = timeouts.defaultInquireTimeout))
   }
 
   override def getAllProcessesMetadata(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata] = {
