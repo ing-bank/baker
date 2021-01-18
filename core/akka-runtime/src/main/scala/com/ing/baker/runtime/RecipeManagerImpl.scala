@@ -9,7 +9,7 @@ class RecipeManagerImpl extends RecipeManager {
 
   val state:TrieMap[String, Row] = TrieMap.empty
 
-  override def add(compiledRecipe: CompiledRecipe): Future[String] = {
+  override def put(compiledRecipe: CompiledRecipe): Future[String] = {
     state.+=((compiledRecipe.recipeId, (compiledRecipe, System.currentTimeMillis())))
     Future.successful(compiledRecipe.recipeId)
   }
@@ -18,7 +18,7 @@ class RecipeManagerImpl extends RecipeManager {
     Future.successful(state.get(recipeId))
   }
 
-  override def all(): Future[Seq[Row]] = {
+  override def all: Future[Seq[Row]] = {
     Future.successful(state.values.toSeq)
   }
 }

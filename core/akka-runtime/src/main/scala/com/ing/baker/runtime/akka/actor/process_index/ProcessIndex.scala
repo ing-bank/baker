@@ -103,8 +103,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   }
 
   def updateCache() = {
-    // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
-    val futureResult: Future[Seq[(CompiledRecipe, Long)]] = recipeManager.all()
+    // TODO this is a synchronous ask on an actor whichcreateProcessActor is considered bad practice, alternative?
+    val futureResult: Future[Seq[(CompiledRecipe, Long)]] = recipeManager.all
     val allRecipes: Seq[(CompiledRecipe, Long)] = Await.result(futureResult, updateCacheTimeout)
     recipeCache ++= allRecipes.map {
       case (recipe, timestamp) => recipe.recipeId -> (recipe, timestamp)

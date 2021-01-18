@@ -10,7 +10,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class RecipeManagerActorImpl(actor: ActorRef, settings: RecipeManagerActorImpl.Settings)
                             (implicit ec: ExecutionContext) extends RecipeManager {
-  override def add(compiledRecipe: CompiledRecipe): Future[String] = {
+  override def put(compiledRecipe: CompiledRecipe): Future[String] = {
     implicit val timeout: Timeout = settings.addRecipeTimeout
     (actor ? AddRecipe(compiledRecipe)).mapTo[AddRecipeResponse].map(_.recipeId)
   }
@@ -23,7 +23,7 @@ class RecipeManagerActorImpl(actor: ActorRef, settings: RecipeManagerActorImpl.S
     }
   }
 
-  override def all(): Future[Seq[(CompiledRecipe, Long)]] = {
+  override def all: Future[Seq[(CompiledRecipe, Long)]] = {
     implicit val timeout: Timeout = settings.inquireTimeout
     (actor ? GetAllRecipes).mapTo[AllRecipes].map(_.recipes.map { r => (r.compiledRecipe, r.timestamp) })
   }
