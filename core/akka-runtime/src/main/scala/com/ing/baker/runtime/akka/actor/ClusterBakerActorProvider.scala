@@ -11,15 +11,16 @@ import akka.util.Timeout
 import cats.data.NonEmptyList
 import cats.effect.IO
 import com.ing.baker.il.sha256HashCode
+import com.ing.baker.runtime.akka.AkkaBakerConfig
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_index._
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
-import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.serialization.Encryption
+import com.ing.baker.runtime.{RecipeManager, RecipeManagerActorImpl}
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.duration._
@@ -36,11 +37,11 @@ object ClusterBakerActorProvider {
   case object ServiceDiscovery extends ClusterBootstrapMode
 
   /**
-   * This function calculates the names of the ActorIndex actors
-   * gets the least significant bits of the UUID, and returns the MOD 10
-   * So we have at most 10 manager actors created, all the petrinet actors will fall under these 10 actors
-   * Note, the nrOfShards used here has to be aligned with the nrOfShards used in the shardIdExtractor
-   */
+    * This function calculates the names of the ActorIndex actors
+    * gets the least significant bits of the UUID, and returns the MOD 10
+    * So we have at most 10 manager actors created, all the petrinet actors will fall under these 10 actors
+    * Note, the nrOfShards used here has to be aligned with the nrOfShards used in the shardIdExtractor
+    */
   def entityId(recipeInstanceId: String, nrOfShards: Int): String =
     s"index-${Math.abs(sha256HashCode(recipeInstanceId) % nrOfShards)}"
 
@@ -64,19 +65,20 @@ object ClusterBakerActorProvider {
 }
 
 class ClusterBakerActorProvider(
-    nrOfShards: Int,
-    retentionCheckInterval: FiniteDuration,
-    actorIdleTimeout: Option[FiniteDuration],
-    journalInitializeTimeout: FiniteDuration,
-    seedNodes: ClusterBootstrapMode,
-    ingredientsFilter: List[String],
-    configuredEncryption: Encryption
-  ) extends BakerActorProvider with LazyLogging {
+                                 nrOfShards: Int,
+                                 retentionCheckInterval: FiniteDuration,
+                                 actorIdleTimeout: Option[FiniteDuration],
+                                 journalInitializeTimeout: FiniteDuration,
+                                 seedNodes: ClusterBootstrapMode,
+                                 ingredientsFilter: List[String],
+                                 configuredEncryption: Encryption,
+                                 timeouts: AkkaBakerConfig.Timeouts
+                               ) extends BakerActorProvider with LazyLogging {
 
   private def initializeCluster()(implicit actorSystem: ActorSystem): Unit = {
     /**
-     * Join cluster after waiting for the persistenceInit actor, otherwise terminate here.
-     */
+      * Join cluster after waiting for the persistenceInit actor, otherwise terminate here.
+      */
     try {
       Await.result(Util.persistenceInit(journalInitializeTimeout), journalInitializeTimeout)
     } catch {
@@ -94,13 +96,14 @@ class ClusterBakerActorProvider(
   }
 
 
-  override def createProcessIndexActor(interactionManager: InteractionsF[IO], recipeManager: ActorRef)(implicit actorSystem: ActorSystem): ActorRef = {
+  override def createProcessIndexActor(interactionManager: InteractionsF[IO],
+                                       recipeManager: RecipeManager)(implicit actorSystem: ActorSystem): ActorRef = {
     val roles = Cluster(actorSystem).selfRoles
     ClusterSharding(actorSystem).start(
       typeName = "ProcessIndexActor",
       entityProps = ProcessIndex.props(actorIdleTimeout, Some(retentionCheckInterval), configuredEncryption, interactionManager, recipeManager, ingredientsFilter),
       settings = {
-        if(roles.contains("state-node"))
+        if (roles.contains("state-node"))
           ClusterShardingSettings(actorSystem).withRole("state-node")
         else
           ClusterShardingSettings(actorSystem)
@@ -110,12 +113,12 @@ class ClusterBakerActorProvider(
     )
   }
 
-  override def createRecipeManagerActor()(implicit actorSystem: ActorSystem): ActorRef = {
+  override def createRecipeManager()(implicit actorSystem: ActorSystem): RecipeManager = {
 
     initializeCluster()
 
     val singletonManagerProps = ClusterSingletonManager.props(
-      RecipeManager.props(),
+      RecipeManagerActor.props(),
       terminationMessage = PoisonPill,
       settings = ClusterSingletonManagerSettings(actorSystem))
     val roles = Cluster(actorSystem).selfRoles
@@ -131,7 +134,13 @@ class ClusterBakerActorProvider(
           ClusterSingletonProxySettings(actorSystem)
       })
 
-    actorSystem.actorOf(props = singletonProxyProps, name = "RecipeManagerProxy")
+    import actorSystem.dispatcher
+
+    new RecipeManagerActorImpl(
+      actor = actorSystem.actorOf(props = singletonProxyProps, name = "RecipeManagerProxy"),
+      settings = RecipeManagerActorImpl.Settings(
+        addRecipeTimeout = timeouts.defaultAddRecipeTimeout,
+        inquireTimeout = timeouts.defaultInquireTimeout))
   }
 
   def getAllProcessesMetadata(actor: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata] = {
@@ -140,7 +149,7 @@ class ClusterBakerActorProvider(
     import system.dispatcher
     implicit val akkaTimeout: Timeout = timeout
 
-    val futures = (0 to nrOfShards).map {shard => actor.ask(GetShardIndex(s"index-$shard")).mapTo[Index].map(_.entries)}
+    val futures = (0 to nrOfShards).map { shard => actor.ask(GetShardIndex(s"index-$shard")).mapTo[Index].map(_.entries) }
     val collected: Seq[ActorMetadata] = Util.collectFuturesWithin(futures, timeout, system.scheduler).flatten
 
     collected

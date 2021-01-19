@@ -1,13 +1,13 @@
 package com.ing.baker.runtime.akka.actor.recipe_manager
 
 import com.ing.baker.BakerRuntimeTestBase
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager.RecipeAdded
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor.RecipeAdded
 import com.ing.baker.runtime.akka.actor.serialization.{AkkaSerializerProvider, SerializationSpec}
 import com.ing.baker.runtime.serialization.Encryption
 import org.scalatest.TryValues._
 import com.ing.baker.runtime.akka.actor.serialization.SerializedDataProto._
 
-class RecipeManagerProtoSpec extends BakerRuntimeTestBase {
+class RecipeManagerActorProtoSpec extends BakerRuntimeTestBase {
 
   override def actorSystemName = "RecipeManagerProtoSpec"
 
