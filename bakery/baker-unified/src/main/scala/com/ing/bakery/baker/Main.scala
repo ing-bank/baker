@@ -109,7 +109,7 @@ object Main extends IOApp with LazyLogging {
         baker = AkkaBaker.withConfig(AkkaBakerConfig(
           interactions = interactionDiscovery,
           bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
-          timeouts = AkkaBakerConfig.Timeouts.from(config),
+          timeouts = AkkaBakerConfig.Timeouts.apply(config),
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)
         )(system))
 
