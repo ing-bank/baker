@@ -3,22 +3,22 @@ package com.ing.baker.runtime.akka.actor.recipe_manager
 import akka.actor.{ActorLogging, Props}
 import akka.persistence.PersistentActor
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager._
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 
 import scala.collection.mutable
 
-object RecipeManager {
+object RecipeManagerActor {
 
-  def props() = Props(new RecipeManager)
+  def props() = Props(new RecipeManagerActor)
 
   //Events
   //When a recipe is added
   case class RecipeAdded(compiledRecipe: CompiledRecipe, timeStamp: Long) extends BakerSerializable
 }
 
-class RecipeManager extends PersistentActor with ActorLogging {
+class RecipeManagerActor extends PersistentActor with ActorLogging {
 
   val compiledRecipes: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
 

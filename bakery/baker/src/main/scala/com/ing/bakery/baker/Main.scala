@@ -68,7 +68,7 @@ object Main extends IOApp with LazyLogging {
         .withConfig(AkkaBakerConfig(
           interactions = serviceDiscovery.interactions,
           bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
-          timeouts = AkkaBakerConfig.Timeouts.from(config),
+          timeouts = AkkaBakerConfig.Timeouts(config),
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config),
         )(system))
       _ <- Resource.liftF(eventSink.attach(baker))

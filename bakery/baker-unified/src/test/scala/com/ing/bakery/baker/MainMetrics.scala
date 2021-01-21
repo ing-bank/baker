@@ -55,7 +55,7 @@ object MainMetrics extends IOApp with LazyLogging {
     val bakerConfig = AkkaBakerConfig(
       interactions = interactionManager,
       bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
-      timeouts = AkkaBakerConfig.Timeouts.from(config),
+      timeouts = AkkaBakerConfig.Timeouts.apply(config),
       bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)
     )(system)
 

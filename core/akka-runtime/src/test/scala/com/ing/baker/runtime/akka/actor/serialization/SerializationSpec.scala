@@ -13,10 +13,10 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager.RecipeAdded
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor.RecipeAdded
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
-import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
+import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManagerActor, RecipeManagerProtocol}
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState, SensoryEventResult}
 import com.ing.baker.runtime.serialization.Encryption.{AESEncryption, NoEncryption}
@@ -152,7 +152,7 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
       ctxFromProto(ctxToProto(m)) === Success(m)
   }
 
-  checkFor[RecipeManager.RecipeAdded].run
+  checkFor[RecipeManagerActor.RecipeAdded].run
 
   checkFor[ProcessInstanceProtocol.Stop].run
 
