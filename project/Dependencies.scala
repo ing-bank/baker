@@ -8,9 +8,9 @@ object Dependencies {
   val akkaPersistenceCassandraVersion = "1.0.4"
   val akkaHttpVersion = "10.2.2"
   val http4sVersion = "0.21.15"
-  val fs2Version = "2.4.6"
+  val fs2Version = "2.5.0"
   val circeVersion = "0.13.0"
-  val mockitoScalaVersion = "1.16.13"
+  val mockitoScalaVersion = "1.16.15"
   val catsVersion = "2.3.1"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
   val springVersion = "5.2.12.RELEASE"
@@ -68,7 +68,7 @@ object Dependencies {
 
   val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.9.0"
   val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.14.0"
-  val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.0.4"
+  val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.0.7"
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.9.0"
