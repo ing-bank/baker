@@ -65,6 +65,9 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
 
   import context.dispatcher
 
+  // setting up receive timeout to stop actor, when it's not stopped by IdleStop message
+  context.setReceiveTimeout(settings.idleTTL.getOrElse(15 minutes) * 2)
+
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
   val recipeInstanceId = context.self.path.name
@@ -129,6 +132,9 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       sender() ! Uninitialized(recipeInstanceId)
       context.stop(context.self)
 
+    case ReceiveTimeout =>
+      log.warning(s"${persistenceId}: Receive timeout received in uninitialized state")
+      context.stop(context.self)
   }
 
   def waitForDeleteConfirmation(instance: Instance[P, T, S]): Receive = {
@@ -140,6 +146,10 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     case DeleteMessagesFailure(cause, toSequenceNr) =>
       log.processHistoryDeletionFailed(recipeInstanceId, toSequenceNr, cause)
       context become running(instance, Map.empty)
+
+    case ReceiveTimeout =>
+      log.warning(s"${persistenceId}: Receive timeout received in delete confirmation state")
+      context.stop(context.self)
   }
 
 
@@ -162,9 +172,19 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       } else
         context.stop(context.self)
 
-    case IdleStop(n) if n == instance.sequenceNr && instance.activeJobs.isEmpty ⇒
-      log.idleStop(recipeInstanceId, settings.idleTTL.getOrElse(Duration.Zero))
-      context.stop(context.self)
+    case IdleStop(n) =>
+      if (n == instance.sequenceNr && instance.activeJobs.isEmpty) {
+        log.idleStop(recipeInstanceId, settings.idleTTL.getOrElse(Duration.Zero))
+        context.stop(context.self)
+      }
+
+    case ReceiveTimeout =>
+      if (instance.activeJobs.isEmpty) {
+        log.warning(s"Process $persistenceId has been stopped by idle timeout")
+        context.stop(context.self)
+      } else {
+        log.warning("Receive timeout happened but jobs are still active: will wait for another receive timeout")
+      }
 
     case GetState ⇒
       val instanceState: InstanceState = mapStateToProtocol(instance)
@@ -381,6 +401,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
         (updatedInstance, jobs)
     }
   }
+
 
   def executeJob(job: Job[P, T, S], originalSender: ActorRef): Unit = {
 
