@@ -64,7 +64,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
-  override def addRecipe(compiledRecipe: CompiledRecipe): F[String] =
+  override def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): F[String] =
     components.recipeManager.addRecipe(compiledRecipe, config.allowAddingRecipeWithoutRequiringInstances)
       .timeout(config.addRecipeTimeout)
 
@@ -328,8 +328,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     new BakerF[G] {
       override val config: BakerF.Config =
         self.config
-      override def addRecipe(compiledRecipe: CompiledRecipe): G[String] =
-        mapK(self.addRecipe(compiledRecipe))
+      override def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): G[String] =
+        mapK(self.addRecipe(compiledRecipe, timeCreated))
       override def getRecipe(recipeId: String): G[RecipeInformation] =
         mapK(self.getRecipe(recipeId))
       override def getAllRecipes: G[Map[String, RecipeInformation]] =
@@ -374,8 +374,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
 
   def asDeprecatedFutureImplementation(mapK: F ~> Future, comapK: Future ~> F): DeprecatedBaker =
     new DeprecatedBaker {
-      override def addRecipe(compiledRecipe: CompiledRecipe): Future[String] =
-        mapK(self.addRecipe(compiledRecipe))
+      override def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] =
+        mapK(self.addRecipe(compiledRecipe, timeCreated))
       override def getRecipe(recipeId: String): Future[RecipeInformation] =
         mapK(self.getRecipe(recipeId))
       override def getAllRecipes: Future[Map[String, RecipeInformation]] =

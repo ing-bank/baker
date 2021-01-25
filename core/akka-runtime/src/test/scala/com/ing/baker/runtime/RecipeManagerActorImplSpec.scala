@@ -35,7 +35,7 @@ class RecipeManagerActorImplSpec extends TestKit(ActorSystem("MySpec"))
       val manager = new RecipeManagerActorImpl(actor.ref, settings)
       val recipe = mock[CompiledRecipe]
 
-      val eventualString = manager.put(recipe)
+      val eventualString = manager.put(recipe, System.currentTimeMillis())
       actor.expectMsg(AddRecipe(recipe))
       val id = UUID.randomUUID().toString
 

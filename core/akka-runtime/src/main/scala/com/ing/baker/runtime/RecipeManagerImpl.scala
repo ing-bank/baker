@@ -2,15 +2,15 @@ package com.ing.baker.runtime
 import com.ing.baker.il.CompiledRecipe
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class RecipeManagerImpl extends RecipeManager {
+private class RecipeManagerImpl(implicit val ex: ExecutionContext) extends RecipeManager {
   type Row = (CompiledRecipe, Long)
 
   val state:TrieMap[String, Row] = TrieMap.empty
 
-  override def put(compiledRecipe: CompiledRecipe): Future[String] = {
-    state.+=((compiledRecipe.recipeId, (compiledRecipe, System.currentTimeMillis())))
+  override def put(compiledRecipe: CompiledRecipe, createdTime: Long): Future[String] = {
+    state.+=((compiledRecipe.recipeId, (compiledRecipe, createdTime)))
     Future.successful(compiledRecipe.recipeId)
   }
 
@@ -21,4 +21,8 @@ class RecipeManagerImpl extends RecipeManager {
   override def all: Future[Seq[Row]] = {
     Future.successful(state.values.toSeq)
   }
+}
+
+object RecipeManagerImpl {
+  def pollingAware(implicit ex: ExecutionContext): RecipeManager = new RecipeManagerImpl() with PollingAware
 }

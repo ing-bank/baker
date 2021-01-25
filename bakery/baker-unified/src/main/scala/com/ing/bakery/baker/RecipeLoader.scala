@@ -1,10 +1,9 @@
 package com.ing.bakery.baker
 
 import java.io.{ByteArrayInputStream, File, InputStream}
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 import java.util.Base64
 import java.util.zip.{GZIPInputStream, ZipException}
-
 import cats.effect.{ContextShift, IO}
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
@@ -14,6 +13,8 @@ import com.ing.baker.runtime.serialization.ProtoMap
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.util.Try
+import java.nio.file.Files
+import java.nio.file.attribute.BasicFileAttributes
 
 object RecipeLoader extends LazyLogging {
 
@@ -21,9 +22,9 @@ object RecipeLoader extends LazyLogging {
     for {
       recipes <- RecipeLoader.loadRecipes(path)
       _ <- IO{ if (recipes.isEmpty) logger.error(s"No recipes found in the recipe directory ($path), probably misconfiguration?")
-          else logger.info(s"Recipes loaded: ${recipes.map(_.name)}") }
-      _ <- recipes.traverse { recipe =>
-        IO.fromFuture(IO(baker.addRecipe(recipe)))
+          else logger.info(s"Recipes loaded: ${recipes.map(_._1.name)}") }
+      _ <- recipes.traverse { case (recipe, time) =>
+        IO.fromFuture(IO(baker.addRecipe(recipe, time)))
       }
     } yield ()
 
@@ -42,7 +43,7 @@ object RecipeLoader extends LazyLogging {
       bytes
   }
 
-  private[baker] def loadRecipes(path: String): IO[List[CompiledRecipe]] = {
+  private[baker] def loadRecipes(path: String): IO[List[(CompiledRecipe, Long)]] = {
 
     def recipeFiles(path: String): IO[List[File]] = IO {
       val d = new File(path)
@@ -59,20 +60,26 @@ object RecipeLoader extends LazyLogging {
 
     for {
       files <- recipeFiles(path)
-      recipes <- files.traverse(f => fromInputStream(Files.newInputStream(f.toPath)))
+      recipes <- files.traverse {
+        f => fromInputStream(f.toPath)
+      }
     } yield recipes
   }
 
   private def inputStreamToBytes(is: InputStream): Array[Byte] =
     Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray
 
-  def fromInputStream(inputStream: InputStream): IO[CompiledRecipe] = {
+  def fromInputStream(path: Path): IO[(CompiledRecipe, Long)] = {
     for {
-      rawBytes <- IO(inputStreamToBytes(inputStream))
+      rawBytes <- IO(inputStreamToBytes(Files.newInputStream(path)))
       decodedBytes <- IO.fromTry(decode(rawBytes))
       payload <- IO.fromTry(unzip(decodedBytes))
       protoRecipe <- IO.fromTry(protobuf.CompiledRecipe.validate(payload))
       recipe <- IO.fromTry(ProtoMap.ctxFromProto(protoRecipe))
-    } yield recipe
+    } yield {
+      val attr = Files.readAttributes(path, classOf[BasicFileAttributes])
+      val millis: Long = attr.lastModifiedTime().toMillis
+      (recipe, millis)
+    }
   }
 }

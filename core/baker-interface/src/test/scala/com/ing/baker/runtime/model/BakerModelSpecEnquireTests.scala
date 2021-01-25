@@ -23,7 +23,7 @@ trait BakerModelSpecEnquireTests[F[_]] { self: BakerModelSpec[F] =>
       for {
         bakerWithRecipe <- context.setupBakerWithRecipe("returnAllRecipes", appendUUIDToTheRecipeName = false)
         (baker, recipeId) = bakerWithRecipe
-        recipeId2 <- baker.addRecipe(RecipeCompiler.compileRecipe(getRecipe("returnAllRecipes2")))
+        recipeId2 <- baker.addRecipe(RecipeCompiler.compileRecipe(getRecipe("returnAllRecipes2")), System.currentTimeMillis())
         recipes <- baker.getAllRecipes
         _ = recipes.size shouldBe 2
         _ = recipes(recipeId).compiledRecipe.name shouldBe "returnAllRecipes"
@@ -44,7 +44,7 @@ trait BakerModelSpecEnquireTests[F[_]] { self: BakerModelSpec[F] =>
       for {
         bakerWithRecipe <- context.setupBakerWithRecipe("returnHealthAllRecipe", appendUUIDToTheRecipeName = false)
         (baker, recipeId) = bakerWithRecipe
-        recipeId2 <- baker.addRecipe(RecipeCompiler.compileRecipe(getRecipe("returnHealthAllRecipe2")))
+        recipeId2 <- baker.addRecipe(RecipeCompiler.compileRecipe(getRecipe("returnHealthAllRecipe2")), System.currentTimeMillis())
         recipeInformations <- baker.getAllRecipes
         _ = recipeInformations.size shouldBe 2
         _ = recipeInformations.get(recipeId)
