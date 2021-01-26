@@ -81,10 +81,10 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
-  override def addRecipe(compiledRecipe: CompiledRecipe): Future[String] = {
+  override def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] = {
 
     if (config.bakerValidationSettings.allowAddingRecipeWithoutRequiringInstances) {
-      addToManager(compiledRecipe)
+      addToManager(compiledRecipe, timeCreated)
     } else {
       // check if every interaction has an implementation
       getImplementationErrors(compiledRecipe).flatMap { implementationErrors =>
@@ -93,16 +93,16 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
         } else if (compiledRecipe.validationErrors.nonEmpty) {
           Future.failed(RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
         } else {
-          addToManager(compiledRecipe)
+          addToManager(compiledRecipe, timeCreated)
         }
       }
     }
   }
 
-  private def addToManager(compiledRecipe: CompiledRecipe): Future[String] = {
+  private def addToManager(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] = {
     logger.info(s"Adding recipe ${compiledRecipe.name}")
 
-    val result = recipeManager.put(compiledRecipe)
+    val result = recipeManager.put(compiledRecipe, timeCreated)
     result.foreach(recipeId => logger.info(s"Recipe ${compiledRecipe.name} has been added as $recipeId"))
     result
   }

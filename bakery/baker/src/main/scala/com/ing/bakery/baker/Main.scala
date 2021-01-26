@@ -3,7 +3,6 @@ package com.ing.bakery.baker
 import java.io.File
 import java.net.InetSocketAddress
 import java.util.concurrent.Executors
-
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import akka.stream.{ActorMaterializer, Materializer}
@@ -13,6 +12,7 @@ import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.bakery.interaction.BakeryHttp
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
+
 import javax.net.ssl.SSLContext
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -20,6 +20,7 @@ import org.http4s.client.blaze.BlazeClientBuilder
 import skuber.api.client.KubernetesClient
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 object Main extends IOApp with LazyLogging {
 
@@ -37,6 +38,7 @@ object Main extends IOApp with LazyLogging {
     lazy val interactionClientKeystoreType = config.getString("bakery-component.interaction-client.https-keystore-type")
     lazy val scope = config.getString("bakery-component.interaction-client.scope")
 
+    val pollInterval = Duration.fromNanos(config.getDuration("bakery-component.recipe-poll-interval").toNanos)
     val loggingEnabled = config.getBoolean("bakery-component.api-logging-enabled")
     logger.info(s"Logging of API: ${loggingEnabled}  - MUST NEVER BE SET TO 'true' IN PRODUCTION")
 
@@ -73,6 +75,7 @@ object Main extends IOApp with LazyLogging {
         )(system))
       _ <- Resource.liftF(eventSink.attach(baker))
       _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(recipeDirectory, baker))
+      _ <- Resource.liftF(RecipeLoader.pollRecipesUpdates(recipeDirectory, baker, pollInterval))
       _ <- Resource.liftF(IO.async[Unit] { callback =>
         Cluster(system).registerOnMemberUp {
           callback(Right(()))

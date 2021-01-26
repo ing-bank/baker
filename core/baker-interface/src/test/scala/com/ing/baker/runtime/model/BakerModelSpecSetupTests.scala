@@ -25,7 +25,7 @@ trait BakerModelSpecSetupTests[F[_]] {
       for {
         baker <- context.setupBakerWithNoRecipe(mockImplementations)
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful("foobar")))
-        recipeId <- baker.addRecipe(simpleRecipe)
+        recipeId <- baker.addRecipe(simpleRecipe, System.currentTimeMillis())
         recipeInstanceId = java.util.UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, initialEvent.instance("initialIngredient"))
@@ -50,7 +50,7 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withSensoryEvent(initialEvent)
       for {
         baker <- context.setupBakerWithNoRecipe(List(InteractionInstanceF.unsafeFrom(new InteractionOneSimple())))
-        _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), System.currentTimeMillis())
       } yield succeed
     }
 

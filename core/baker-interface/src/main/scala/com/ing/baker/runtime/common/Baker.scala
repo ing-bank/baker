@@ -40,7 +40,17 @@ trait Baker[F[_]] extends LanguageApi {
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
-  def addRecipe(compiledRecipe: CompiledRecipe): F[String]
+  def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): F[String]
+
+  /**
+    * Adds a recipe to baker and returns a recipeId for the recipe.
+    *
+    * This function is idempotent, if the same (equal) recipe was added earlier this will return the same recipeId
+    *
+    * @param compiledRecipe The compiled recipe.
+    * @return A recipeId
+    */
+  def addRecipe(compiledRecipe: CompiledRecipe): F[String] = addRecipe(compiledRecipe, System.currentTimeMillis())
 
   /**
     * Returns the recipe information for the given RecipeId

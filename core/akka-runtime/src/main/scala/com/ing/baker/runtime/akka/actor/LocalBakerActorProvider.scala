@@ -38,7 +38,8 @@ class LocalBakerActorProvider(
   override def createRecipeManager()(implicit actorSystem: ActorSystem): RecipeManager = {
     import actorSystem.dispatcher
 
-    new RecipeManagerActorImpl(
+
+    RecipeManagerActorImpl.pollingAware(
       actor = actorSystem.actorOf(RecipeManagerActor.props()),
       settings = RecipeManagerActorImpl.Settings(
         addRecipeTimeout = timeouts.defaultAddRecipeTimeout,

@@ -1,9 +1,5 @@
 package com.ing.bakery.baker
 
-import java.io.{ByteArrayInputStream, File}
-import java.nio.file.Files
-import java.util.zip.{GZIPInputStream, ZipException}
-
 import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
@@ -13,6 +9,10 @@ import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.runtime.serialization.ProtoMap
 import org.apache.commons.codec.binary.Base64
 
+import java.io.{ByteArrayInputStream, File}
+import java.nio.file.Files
+import java.util.zip.{GZIPInputStream, ZipException}
+import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
 object RecipeLoader {
@@ -25,6 +25,22 @@ object RecipeLoader {
         IO.fromFuture(IO(baker.addRecipe(recipe)))
       }
     } yield ()
+
+  /**
+    * Schedule loading recipes every duration.
+    * @param path path to recipes
+    * @param baker Baker instance
+    * @param duration period for polling
+    * @param timer cats timer
+    * @param cs cats context shifting
+    * @return
+    */
+  def pollRecipesUpdates(path: String, baker: Baker, duration: FiniteDuration)
+                        (implicit timer: Timer[IO], cs: ContextShift[IO]): IO[Unit] = {
+    def pollRecipes: IO[Unit] = loadRecipesIntoBaker(path, baker) >> IO.sleep(duration) >> IO.suspend(pollRecipes)
+
+    pollRecipes
+  }
 
   def loadRecipesIfRecipeNotFound[A](path: String, baker: Baker)(f: IO[A])(implicit timer: Timer[IO], cs: ContextShift[IO]): IO[A] = {
     f.attempt.flatMap {

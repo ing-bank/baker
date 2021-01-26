@@ -128,7 +128,7 @@ trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
         .withSensoryEvents(initialEvent, secondEvent)
 
       for {
-        bakerAndRecipeId<- context.setupBakerWithRecipe(recipe, mockImplementations)
+        bakerAndRecipeId<- context.setupBakerWithRecipe(recipe,  mockImplementations)
         (baker, recipeId) = bakerAndRecipeId
         firstrecipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, firstrecipeInstanceId)
