@@ -73,7 +73,6 @@ object Main extends IOApp with LazyLogging {
         )(system))
       _ <- Resource.liftF(eventSink.attach(baker))
       _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(recipeDirectory, baker))
-      _ <- Resource.liftF(RecipeLoader.pollRecipesUpdates(recipeDirectory, baker, pollInterval))
       _ <- Resource.liftF(IO.async[Unit] { callback =>
         Cluster(system).registerOnMemberUp {
           callback(Right(()))
