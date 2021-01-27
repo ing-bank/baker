@@ -8,9 +8,9 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class RecipeManagerActorImpl(actor: ActorRef, settings: RecipeManagerActorImpl.Settings)
-                            (implicit ec: ExecutionContext) extends RecipeManager {
-  override def put(compiledRecipe: CompiledRecipe): Future[String] = {
+private class RecipeManagerActorImpl(actor: ActorRef, settings: RecipeManagerActorImpl.Settings)
+                            (implicit val ex: ExecutionContext) extends RecipeManager {
+  override def put(compiledRecipe: CompiledRecipe, createdTime: Long): Future[String] = {
     implicit val timeout: Timeout = settings.addRecipeTimeout
     (actor ? AddRecipe(compiledRecipe)).mapTo[AddRecipeResponse].map(_.recipeId)
   }
@@ -31,4 +31,7 @@ class RecipeManagerActorImpl(actor: ActorRef, settings: RecipeManagerActorImpl.S
 
 object RecipeManagerActorImpl {
   case class Settings(addRecipeTimeout: Timeout, inquireTimeout: Timeout)
+
+  def pollingAware(actor: ActorRef, settings: RecipeManagerActorImpl.Settings)
+           (implicit ex: ExecutionContext): RecipeManager = new RecipeManagerActorImpl(actor, settings) with PollingAware
 }

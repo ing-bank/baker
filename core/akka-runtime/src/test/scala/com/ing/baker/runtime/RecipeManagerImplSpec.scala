@@ -30,8 +30,8 @@ class RecipeManagerImplSpec extends AsyncWordSpecLike
       val recipe2 = CompiledRecipe("name", "2", petrinetMock, Marking.empty, Seq.empty, Option.empty, Option.empty)
 
       for {
-        id1 <- impl.put(recipe1)
-        id2 <- impl.put(recipe2)
+        id1 <- impl.put(recipe1, System.currentTimeMillis())
+        id2 <- impl.put(recipe2, System.currentTimeMillis())
         check1 <- impl.get(id1)
         check2 <- impl.get(id2)
         all <- impl.all
