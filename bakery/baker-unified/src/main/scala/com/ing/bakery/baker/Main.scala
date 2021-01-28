@@ -2,14 +2,13 @@ package com.ing.bakery.baker
 
 import akka.actor.{ActorSystem, Props}
 import akka.cluster.Cluster
-import cats.Id
 import cats.effect.{ExitCode, IO, IOApp, Resource}
-import com.ing.bakery.metrics.MetricService
 import com.ing.baker.recipe.javadsl.Interaction
 import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
 import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.scaladsl.InteractionInstanceF
+import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import io.prometheus.client.CollectorRegistry
@@ -29,6 +28,7 @@ import java.net.InetSocketAddress
 import java.util
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.Duration
 
 
 object Main extends IOApp with LazyLogging {
@@ -53,6 +53,8 @@ object Main extends IOApp with LazyLogging {
     val configurationClasses = bakerConfig.getStringList("interactions.local-configuration-classes")
 
     val eventSinkSettings = bakerConfig.getConfig("kafka-event-sink").as[KafkaEventSinkSettings]
+
+    val pollInterval = Duration.fromNanos(config.getDuration("baker.recipe-poll-interval").toNanos)
 
     val interactions: List[InteractionInstanceF[IO]] = {
       if (configurationClasses.size() == 0) {
@@ -88,7 +90,7 @@ object Main extends IOApp with LazyLogging {
       if (p.length == 5) Some(p(4)) else None
     }
 
-    val mainResource: Resource[IO, Server[IO]] =
+    val mainResource: Resource[IO, (Server[IO], AkkaBaker)] =
       for {
         metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
         interactionHttpClient <- BlazeClientBuilder[IO](remoteInteractionCallContext, None) // todo SSL context
@@ -129,14 +131,15 @@ object Main extends IOApp with LazyLogging {
         bakerService <- BakerService.resource(baker,
           InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort),
           apiUrlPrefix, interactionDiscovery, loggingEnabled)
-      } yield bakerService
+      } yield (bakerService, baker)
 
-    mainResource.use( s => {
-      logger.info(s"Bakery started at ${s.address}/${s.baseUri}, enabling the readiness in Akka management")
-      BakerReadinessCheck.enable()
-      IO.never
-    }
-    ).as(ExitCode.Success)
+    mainResource.use {
+      case (s, baker) => {
+        logger.info(s"Bakery started at ${s.address}/${s.baseUri}, enabling the readiness in Akka management")
+        BakerReadinessCheck.enable()
+        RecipeLoader.pollRecipesUpdates(configPath, baker, pollInterval)
+      }
+    }.as(ExitCode.Success)
   }
 
   private def noneIfEmpty(str: String): Option[String] = if (str == null || str.isEmpty) None else Some(str)

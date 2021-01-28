@@ -136,11 +136,12 @@ class ClusterBakerActorProvider(
 
     import actorSystem.dispatcher
 
-    new RecipeManagerActorImpl(
+    RecipeManagerActorImpl.pollingAware(
       actor = actorSystem.actorOf(props = singletonProxyProps, name = "RecipeManagerProxy"),
       settings = RecipeManagerActorImpl.Settings(
         addRecipeTimeout = timeouts.defaultAddRecipeTimeout,
-        inquireTimeout = timeouts.defaultInquireTimeout))
+        inquireTimeout = timeouts.defaultInquireTimeout)
+    )
   }
 
   def getAllProcessesMetadata(actor: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata] = {

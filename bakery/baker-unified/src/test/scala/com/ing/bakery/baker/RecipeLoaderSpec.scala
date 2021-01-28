@@ -1,9 +1,8 @@
 package com.ing.bakery.baker
 
 import java.io.{File, FileInputStream}
-import java.nio.file.Files
+import java.nio.file.{Files, Paths}
 import java.util.Base64
-
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.annotations.{FiresEvent, RecipeInstanceId, RequiresIngredient}
@@ -49,11 +48,11 @@ class RecipeLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll 
 
   test("Recipes for tests are OK") {
     (for {
-      r1 <- RecipeLoader.fromInputStream(getClass.getResourceAsStream("/recipes/ItemReservation.recipe"))
-      r2 <- RecipeLoader.fromInputStream(getClass.getResourceAsStream("/recipes/ItemReservationBlocking.recipe"))
+      r1 <- RecipeLoader.fromInputStream(Paths.get(getClass.getResource("/recipes/ItemReservation.recipe").toURI))
+      r2 <- RecipeLoader.fromInputStream(Paths.get(getClass.getResource("/recipes/ItemReservationBlocking.recipe").toURI))
     } yield {
-      assert(r1.name == "ItemReservation.recipe")
-      assert(r2.name == "ItemReservation.recipe")
+      assert(r1._1.name == "ItemReservation.recipe")
+      assert(r2._1.name == "ItemReservation.recipe")
     }).unsafeRunSync()
   }
 
@@ -67,36 +66,36 @@ class RecipeLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll 
 
   test("GZipped then Base64ed recipe could be loaded") {
     (for {
-      recipe <- RecipeLoader.fromInputStream(new FileInputStream(gzippedBase64RecipeFile))
+      recipe <- RecipeLoader.fromInputStream(gzippedBase64RecipeFile.toPath)
     } yield {
-      assert(recipe.name == "Webshop")
+      assert(recipe._1.name == "Webshop")
       ()
     }).unsafeRunSync()
   }
 
   test("GZipped recipe could be loaded") {
     (for {
-      recipe <- RecipeLoader.fromInputStream(new FileInputStream(gzippedRecipeFile))
+      recipe <- RecipeLoader.fromInputStream(gzippedRecipeFile.toPath)
     } yield {
-      assert(recipe.name == "Webshop")
+      assert(recipe._1.name == "Webshop")
       ()
     }).unsafeRunSync()
   }
 
   test("Plain Base64ed recipe could be loaded") {
     (for {
-      recipe <- RecipeLoader.fromInputStream(new FileInputStream(plainBase64RecipeFile))
+      recipe <- RecipeLoader.fromInputStream(plainBase64RecipeFile.toPath)
     } yield {
-      assert(recipe.name == "Webshop")
+      assert(recipe._1.name == "Webshop")
       ()
     }).unsafeRunSync()
   }
 
   test("Plain recipe could be loaded") {
     (for {
-      recipe <- RecipeLoader.fromInputStream(new FileInputStream(plainRecipeFile))
+      recipe <- RecipeLoader.fromInputStream(plainRecipeFile.toPath)
     } yield {
-      assert(recipe.name == "Webshop")
+      assert(recipe._1.name == "Webshop")
       ()
     }).unsafeRunSync()
   }

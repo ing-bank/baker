@@ -1,25 +1,24 @@
 package com.ing.bakery.baker
 
-import java.io.File
-import java.net.InetSocketAddress
-import java.util.concurrent.Executors
-
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
-import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.bakery.interaction.BakeryHttp
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import javax.net.ssl.SSLContext
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import org.http4s.client.blaze.BlazeClientBuilder
 import skuber.api.client.KubernetesClient
 
+import java.io.File
+import java.net.InetSocketAddress
+import java.util.concurrent.Executors
+import javax.net.ssl.SSLContext
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.Duration
 
 object Main extends IOApp with LazyLogging {
 
@@ -37,6 +36,7 @@ object Main extends IOApp with LazyLogging {
     lazy val interactionClientKeystoreType = config.getString("bakery-component.interaction-client.https-keystore-type")
     lazy val scope = config.getString("bakery-component.interaction-client.scope")
 
+    val pollInterval = Duration.fromNanos(config.getDuration("bakery-component.recipe-poll-interval").toNanos)
     val loggingEnabled = config.getBoolean("bakery-component.api-logging-enabled")
     logger.info(s"Logging of API: ${loggingEnabled}  - MUST NEVER BE SET TO 'true' IN PRODUCTION")
 
@@ -52,7 +52,7 @@ object Main extends IOApp with LazyLogging {
     val k8s: KubernetesClient = skuber.k8sInit
 
     val tlsConfig: Option[SSLContext] =
-      if(interactionClientHttpsEnabled)
+      if (interactionClientHttpsEnabled)
         Some(BakeryHttp.loadSSLContext(BakeryHttp.TLSConfig(
           password = interactionClientKeystorePassword,
           keystorePath = interactionClientKeystorePath,
@@ -60,7 +60,7 @@ object Main extends IOApp with LazyLogging {
         )))
       else None
 
-    val mainResource = for {
+    val mainResource: Resource[IO, AkkaBaker] = for {
       interactionHttpClient <- BlazeClientBuilder[IO](connectionPool, tlsConfig).withCheckEndpointAuthentication(false).resource
       serviceDiscovery <- ServiceDiscovery.resource(interactionHttpClient, k8s, scope)
       eventSink <- KafkaEventSink.resource(eventSinkSettings)
@@ -79,12 +79,13 @@ object Main extends IOApp with LazyLogging {
         }
       })
       _ <- BakerService.resource(baker, hostname, serviceDiscovery, loggingEnabled)
-    } yield ()
+    } yield (baker)
 
-    mainResource.use(_ => {
-      logger.info("Baker initalisation complete, enabling the readiness")
-      BakerReadinessCheck.enable()
-      IO.never}
-    ).as(ExitCode.Success)
+    mainResource.use {
+      baker =>
+        logger.info("Baker initalisation complete, enabling the readiness")
+        BakerReadinessCheck.enable()
+        RecipeLoader.pollRecipesUpdates(recipeDirectory, baker, pollInterval)
+    }.as(ExitCode.Success)
   }
 }

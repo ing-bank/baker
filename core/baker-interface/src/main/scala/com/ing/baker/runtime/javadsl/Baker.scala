@@ -51,8 +51,8 @@ class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker
     * @param compiledRecipe The compiled recipe.
     * @return A recipe identifier.
     */
-  def addRecipe(@Nonnull compiledRecipe: CompiledRecipe): CompletableFuture[String] =
-    toCompletableFuture(baker.addRecipe(compiledRecipe))
+  def addRecipe(@Nonnull compiledRecipe: CompiledRecipe, timeCreated: Long): CompletableFuture[String] =
+    toCompletableFuture(baker.addRecipe(compiledRecipe, timeCreated))
 
   /**
     * Attempts to gracefully shutdown the baker system.
@@ -68,6 +68,18 @@ class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker
     */
   def bake(@Nonnull recipeId: String, @Nonnull recipeInstanceId: String): CompletableFuture[Unit] =
     toCompletableFuture(baker.bake(recipeId, recipeInstanceId))
+
+
+  /**
+    * Adds a recipe to baker and returns a recipeId for the recipe.
+    *
+    * This function is idempotent, if the same (equal) recipe was added earlier this will return the same recipeId.
+    *
+    * @param compiledRecipe The compiled recipe.
+    * @return A recipe identifier.
+    */
+  override def addRecipe(@Nonnull compiledRecipe: CompiledRecipe): CompletableFuture[String] =
+    toCompletableFuture(baker.addRecipe(compiledRecipe))
 
   def fireEventAndResolveWhenReceived(@Nonnull recipeInstanceId: String, @Nonnull event: EventInstance, @Nonnull correlationId: String): CompletableFuture[SensoryEventStatus] =
     fireEventAndResolveWhenReceived(recipeInstanceId, event, Optional.of(correlationId))

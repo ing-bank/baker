@@ -92,7 +92,7 @@ final class BakerClient(
 
   implicit val eventInstanceResultEntityEncoder: EntityEncoder[IO, EventInstance] = jsonEncoderOf[IO, EventInstance]
 
-  override def addRecipe(compiledRecipe: CompiledRecipe): Future[String] =
+  override def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] =
     Future.failed(new NotImplementedError("Adding recipe via HTTP API is not supported"))
 
   private def parse[A](result: BakerResult)(implicit decoder: Decoder[A]): Either[Exception, A] = {
