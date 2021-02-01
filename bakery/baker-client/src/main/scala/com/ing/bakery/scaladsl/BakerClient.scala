@@ -28,6 +28,7 @@ object BakerClient {
     *
     * This method supports fail over to next host, available in list to support multi datacenters.
     * @param hosts Lists of hosts (multiple is supported for several DC)
+    *              * @param hosts Lists of hosts (multiple is supported for several DC)
     * @param apiUrlPrefix Prefix of Baker API URL, from the root of the host
     * @param executionContext Execution Context
     * @param filters Http Filters to be applied to the invocation pipeline
@@ -38,7 +39,8 @@ object BakerClient {
     * @return IO Resource for BakerClient
     */
 
-  def resourceBalanced(hosts: IndexedSeq[Uri],
+  def resourceBalancedWithLegacyFallback(hosts: IndexedSeq[Uri],
+                       legacyHosts: IndexedSeq[Uri] = IndexedSeq.empty,
                        apiUrlPrefix: String,
                        executionContext: ExecutionContext,
                        filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
@@ -49,8 +51,17 @@ object BakerClient {
     BlazeClientBuilder[IO](executionContext, tlsConfig.map(_.loadSSLContext))
       .resource
       .map(client => {
-        new BakerClient(client, hosts, apiUrlPrefix, filters)
+        new BakerClient(client, hosts, apiUrlPrefix, filters, legacyHosts = legacyHosts)
       })
+  }
+
+  def resourceBalanced(hosts: IndexedSeq[Uri],
+                       apiUrlPrefix: String,
+                       executionContext: ExecutionContext,
+                       filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
+                       tlsConfig: Option[TLSConfig] = None)
+                      (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
+    resourceBalancedWithLegacyFallback(hosts, IndexedSeq.empty, apiUrlPrefix, executionContext, filters, tlsConfig)
   }
 
   /**
@@ -87,7 +98,8 @@ final class BakerClient(
                          client: Client[IO],
                          hosts: IndexedSeq[Uri],
                          apiUrlPrefix: String,
-                         filters: Seq[Request[IO] => Request[IO]] = Seq.empty)
+                         filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
+                         legacyHosts: IndexedSeq[Uri] = IndexedSeq.empty)
                        (implicit ec: ExecutionContext) extends ScalaBaker with LazyLogging {
 
   implicit val eventInstanceResultEntityEncoder: EntityEncoder[IO, EventInstance] = jsonEncoderOf[IO, EventInstance]
@@ -118,7 +130,7 @@ final class BakerClient(
 
   private def callRemoteBaker[A](request: Uri => IO[Request[IO]])
                                            (implicit decoder: Decoder[A]): Future[A] = {
-    val fos = new FailoverState(hosts)
+    val fos = new FailoverState(hosts, legacyHosts)
 
     FailoverUtils.callWithFailOver(fos, client, request, filters, handleHttpErrors)
       .map(r => { parse(r)(decoder)})

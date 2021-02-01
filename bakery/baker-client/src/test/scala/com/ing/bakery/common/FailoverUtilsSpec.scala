@@ -2,6 +2,7 @@ package com.ing.bakery.common
 
 import cats.effect.IO
 import com.ing.baker.runtime.scaladsl.BakerResult
+import io.circe.ParsingFailure
 import org.http4s.Method.GET
 import org.http4s._
 import org.http4s.client.Client
@@ -44,6 +45,26 @@ class FailoverUtilsSpec extends AnyFunSpec with MockitoSugar {
 
       testMethod(fos, func)
     }
+
+    it("Balances two legacy hosts") {
+      val fos = new FailoverState(IndexedSeq(uriA), IndexedSeq(uriB))
+      var index: Int = 0
+
+      val func: Uri => IO[Request[IO]] = (uri) => {
+
+        index = index + 1
+        if (index >= 2) {
+          assert(uri == uriB)
+          GET(uri / "app" / "recipes")
+        } else {
+          assert(uri == uriA)
+            IO.raiseError(new ParsingFailure("error", new RuntimeException("error")))
+        }
+      }
+
+      testMethod(fos, func)
+    }
+
 
     it("Supports 1 host") {
       val fos = new FailoverState(IndexedSeq(uriA))

@@ -29,6 +29,25 @@ class FailoverStateSpec extends AnyFunSpec {
       assert(fos.uri == uriA)
     }
 
+    it("should support legacy") {
+
+      val fos = new FailoverState(IndexedSeq(uriA, uriB), IndexedSeq(uriC))
+
+      assert(fos.uri == uriA)
+
+      fos.failed()
+
+      assert(fos.uri == uriB)
+
+      fos.failed()
+
+      assert(fos.uri == uriC)
+
+      fos.failed()
+
+      assert(fos.uri == uriA)
+    }
+
 
     it("should fail without elements") {
 

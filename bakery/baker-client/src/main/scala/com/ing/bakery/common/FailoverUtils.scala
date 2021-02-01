@@ -9,7 +9,7 @@ import io.circe.Decoder
 import org.http4s.circe.jsonOf
 import org.http4s.client.Client
 import org.http4s.{Request, Response, Uri}
-import retry.RetryPolicies.{exponentialBackoff, limitRetries}
+import retry.RetryPolicies.{constantDelay, exponentialBackoff, limitRetries}
 import retry.{RetryDetails, retryingOnAllErrors}
 
 import scala.concurrent.ExecutionContext
@@ -44,7 +44,7 @@ object FailoverUtils extends LazyLogging {
         }))(handleHttpErrors)(jsonOf[IO, BakerResult])
 
     retryingOnAllErrors(
-      policy = limitRetries[IO](fos.size * config.retryTimes) |+| exponentialBackoff[IO](config.initialDelay),
+      policy = limitRetries[IO](fos.size * config.retryTimes) |+| constantDelay[IO](config.initialDelay),
       onError = (ex: Throwable, retryDetails: RetryDetails) => IO {
         val message = s"Failed to call ${fos.uri}, retry #${retryDetails.retriesSoFar}, error: ${ex.getMessage}"
         if (retryDetails.givingUp) logger.error(message) else logger.debug(message)
