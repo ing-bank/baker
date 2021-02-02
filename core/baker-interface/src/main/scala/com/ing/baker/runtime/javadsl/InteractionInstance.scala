@@ -29,7 +29,7 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
 
   override def execute(input: util.List[IngredientInstance]): CompletableFuture[Optional[EventInstance]]
 
-  private def convertExecute(input: Seq[scaladsl.IngredientInstance]) = {
+  private def wrapExecuteToFuture(input: Seq[scaladsl.IngredientInstance]) = {
     FutureConverters.toScala(execute(input.map(_.asJava).asJava)
       .thenApply[Option[scaladsl.EventInstance]] {
         optional =>
@@ -42,16 +42,16 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
     scaladsl.InteractionInstance(
       name,
       input.asScala,
-      input => convertExecute(input),
+      input => wrapExecuteToFuture(input),
       if (output.isPresent) Some(output.get.asScala.toMap.mapValues(_.asScala.toMap)) else None
     )
   }
 
-  def asF(implicit cs: ContextShift[IO]): InteractionInstanceF[IO] = {
+  def asEffectful(implicit cs: ContextShift[IO]): InteractionInstanceF[IO] = {
     InteractionInstanceF.build(
       name,
       input.asScala,
-      input => IO.fromFuture(IO(convertExecute(input)))(cs),
+      input => IO.fromFuture(IO(wrapExecuteToFuture(input)))(cs),
       if (output.isPresent) Some(output.get.asScala.toMap.mapValues(_.asScala.toMap)) else None
     )
   }
