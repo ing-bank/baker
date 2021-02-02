@@ -38,12 +38,16 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
       })
   }
 
+  private def outputOrNone = {
+    if (output.isPresent) Some(output.get.asScala.toMap.mapValues(_.asScala.toMap)) else None
+  }
+
   def asScala: scaladsl.InteractionInstance = {
     scaladsl.InteractionInstance(
       name,
       input.asScala,
       input => wrapExecuteToFuture(input),
-      if (output.isPresent) Some(output.get.asScala.toMap.mapValues(_.asScala.toMap)) else None
+      outputOrNone
     )
   }
 
@@ -52,7 +56,7 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
       name,
       input.asScala,
       input => IO.fromFuture(IO(wrapExecuteToFuture(input)))(cs),
-      if (output.isPresent) Some(output.get.asScala.toMap.mapValues(_.asScala.toMap)) else None
+      outputOrNone
     )
   }
 
