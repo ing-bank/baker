@@ -81,14 +81,6 @@ final class RemoteInteractionService(interactions: List[InteractionInstance],
 
     case GET -> Root / "interactions" => Ok(Interactions)
 
-    case GET -> Root / "interactions-with-version" =>
-      // Environment variable injected by the Bakery Controller from the Interaction Resource Definition file
-      val version: String = sys.env.getOrElse("BAKERY_INTERACTION_VERSION", "unknown")
-      Ok(Json.obj(
-        "version" -> Json.fromString(version),
-        "interactions" -> Json.fromValues(Interactions.map(_.asJson))
-      ))
-
     case req@POST -> Root /  "interactions" / id / "execute" =>
       for {
         request <- req.as[List[IngredientInstance]]
