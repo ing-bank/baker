@@ -12,6 +12,7 @@ class FailoverStateSpec extends AnyFunSpec {
   private val uriA = Uri(path = "baker-a-host")
   private val uriB = Uri(path = "baker-b-host")
   private val uriC = Uri(path = "baker-c-host")
+  private val uriD = Uri(path = "baker-d-host")
 
   describe("Balancer") {
 
@@ -29,7 +30,7 @@ class FailoverStateSpec extends AnyFunSpec {
       assert(fos.uri == uriA)
     }
 
-    it("should support legacy") {
+    it("should support legacy #1") {
 
       val fos = new FailoverState(IndexedSeq(uriA, uriB), IndexedSeq(uriC))
 
@@ -41,11 +42,53 @@ class FailoverStateSpec extends AnyFunSpec {
 
       fos.failed()
 
-      assert(fos.uri == uriC)
+      assert(fos.uri == uriA)
 
       fos.failed()
 
+      assert(fos.uri == uriB)
+    }
+
+    it("should support legacy #2") {
+
+      val fos = new FailoverState(IndexedSeq(uriA, uriB), IndexedSeq(uriC))
+
       assert(fos.uri == uriA)
+
+      fos.failed()
+
+      assert(fos.uri == uriB)
+
+      fos.failoverToLegacy()
+
+      assert(fos.uri == uriC)
+
+      fos.failoverToLegacy()
+
+      assert(fos.uri == uriC)
+    }
+
+    it("should support legacy #3") {
+
+      val fos = new FailoverState(IndexedSeq(uriA, uriB), IndexedSeq(uriC, uriD))
+
+      assert(fos.uri == uriA)
+
+      fos.failoverToLegacy()
+
+      assert(fos.uri == uriC)
+
+      fos.failoverToLegacy()
+
+      assert(fos.uri == uriD)
+
+      fos.failoverToLegacy()
+
+      assert(fos.uri == uriC)
+
+      fos.failoverToLegacy()
+
+      assert(fos.uri == uriD)
     }
 
 
