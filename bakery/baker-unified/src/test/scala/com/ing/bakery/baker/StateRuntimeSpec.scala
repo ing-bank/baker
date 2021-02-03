@@ -11,7 +11,7 @@ import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
 import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
 import com.ing.bakery.recipe.ItemReservationRecipe
-import com.ing.bakery.scaladsl.{BakerClient, ResponseError}
+import com.ing.bakery.scaladsl.{BakerClient, ResponseError, RetryToLegacyError}
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -177,7 +177,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
           .getRecipeInstanceState("select * from sometable")
           .map(_ => None)
           .recover { case e => Some(e) })
-      } yield e shouldBe Some(ResponseError(404, "Not found"))
+      } yield e shouldBe Some(RetryToLegacyError(404, "Not found"))
     }
 
     test("Baker.fireEventAndResolveWhenReceived") { context =>

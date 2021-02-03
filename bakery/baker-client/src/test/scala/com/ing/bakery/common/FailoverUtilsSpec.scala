@@ -1,15 +1,18 @@
 package com.ing.bakery.common
 
-import cats.effect.IO
+import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.runtime.scaladsl.BakerResult
+import io.circe.ParsingFailure
 import org.http4s.Method.GET
 import org.http4s._
 import org.http4s.client.Client
 import org.http4s.client.dsl.io._
+import org.http4s.dsl.impl.Root
 import org.mockito.scalatest.MockitoSugar
 import org.scalatest.funspec.AnyFunSpec
 
-import scala.concurrent.ExecutionContextExecutor
+import java.util.concurrent.{ExecutorService, Executors}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, ExecutionContextExecutorService}
 import scala.concurrent.duration._
 
 
@@ -44,6 +47,26 @@ class FailoverUtilsSpec extends AnyFunSpec with MockitoSugar {
 
       testMethod(fos, func)
     }
+
+    it("Balances two legacy hosts") {
+      val fos = new FailoverState(IndexedSeq(uriA), IndexedSeq(uriB))
+      var index: Int = 0
+
+      val func: Uri => IO[Request[IO]] = (uri) => {
+
+        index = index + 1
+        if (index >= 2) {
+          assert(uri == uriB)
+          GET(uri / "app" / "recipes")
+        } else {
+          assert(uri == uriA)
+            IO.raiseError(new ParsingFailure("error", new RuntimeException("error")))
+        }
+      }
+
+      testMethod(fos, func)
+    }
+
 
     it("Supports 1 host") {
       val fos = new FailoverState(IndexedSeq(uriA))

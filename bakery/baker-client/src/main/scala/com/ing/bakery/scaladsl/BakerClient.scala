@@ -4,7 +4,7 @@ import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, EventResolutions, InteractionInstance, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
+import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, EventResolutions, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.types.Value
@@ -27,16 +27,33 @@ object BakerClient {
     * the resulting `IO` is run, each time using the common connection pool.
     *
     * This method supports fail over to next host, available in list to support multi datacenters.
-    * @param hosts Lists of hosts (multiple is supported for several DC)
-    * @param apiUrlPrefix Prefix of Baker API URL, from the root of the host
-    * @param executionContext Execution Context
-    * @param filters Http Filters to be applied to the invocation pipeline
-    * @param tlsConfig TLSConfig
-    * @param cs Cat's implicits
-    * @param timer Cat's implicits
     *
+    * @param hosts            Lists of hosts (multiple is supported for several DC)
+    *                         * @param hosts Lists of hosts (multiple is supported for several DC)
+    * @param apiUrlPrefix     Prefix of Baker API URL, from the root of the host
+    * @param executionContext Execution Context
+    * @param filters          Http Filters to be applied to the invocation pipeline
+    * @param tlsConfig        TLSConfig
+    * @param cs               Cat's implicits
+    * @param timer            Cat's implicits
     * @return IO Resource for BakerClient
     */
+
+  def resourceBalancedWithLegacyFallback(hosts: IndexedSeq[Uri],
+                                         legacyHosts: IndexedSeq[Uri] = IndexedSeq.empty,
+                                         apiUrlPrefix: String,
+                                         executionContext: ExecutionContext,
+                                         filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
+                                         tlsConfig: Option[TLSConfig] = None)
+                                        (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
+    implicit val ex: ExecutionContext = executionContext
+
+    BlazeClientBuilder[IO](executionContext, tlsConfig.map(_.loadSSLContext))
+      .resource
+      .map(client => {
+        new BakerClient(client, hosts, apiUrlPrefix, filters, legacyHosts = legacyHosts)
+      })
+  }
 
   def resourceBalanced(hosts: IndexedSeq[Uri],
                        apiUrlPrefix: String,
@@ -44,26 +61,19 @@ object BakerClient {
                        filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
                        tlsConfig: Option[TLSConfig] = None)
                       (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
-    implicit val ex: ExecutionContext = executionContext
-
-    BlazeClientBuilder[IO](executionContext, tlsConfig.map(_.loadSSLContext))
-      .resource
-      .map(client => {
-        new BakerClient(client, hosts, apiUrlPrefix, filters)
-      })
+    resourceBalancedWithLegacyFallback(hosts, IndexedSeq.empty, apiUrlPrefix, executionContext, filters, tlsConfig)
   }
 
   /**
     * Creates client to remote Baker cluster
     *
-    * @param host Baker host
-    * @param apiUrlPrefix Prefix of Baker API URL, from the root of the host
+    * @param host             Baker host
+    * @param apiUrlPrefix     Prefix of Baker API URL, from the root of the host
     * @param executionContext Execution Context
-    * @param filters Http Filters to be applied to the invocation pipeline
-    * @param tlsConfig TLSConfig
-    * @param cs Cat's implicits
-    * @param timer Cat's implicits
-    *
+    * @param filters          Http Filters to be applied to the invocation pipeline
+    * @param tlsConfig        TLSConfig
+    * @param cs               Cat's implicits
+    * @param timer            Cat's implicits
     * @return IO Resource for BakerClient
     */
   def resource(host: Uri,
@@ -80,14 +90,25 @@ object BakerClient {
     new BakerClient(client, IndexedSeq(host), apiUrlPrefix, filters)(ec)
 }
 
-final case class ResponseError(status: Int, msg: String)
-  extends RuntimeException(status.toString + msg) with NoStackTrace
+class ResponseError(val status: Int, val msg: String)
+  extends RuntimeException(status.toString + msg) with NoStackTrace {
+}
+
+object ResponseError {
+  def apply(status: Int, msg: String) = new ResponseError(status, msg)
+
+  def unapply(error: ResponseError): Some[(Int, String)] =
+    Some((error.status, error.msg))
+}
+
+final case class RetryToLegacyError(override val status: Int, override val msg: String) extends ResponseError(status, msg)
 
 final class BakerClient(
                          client: Client[IO],
                          hosts: IndexedSeq[Uri],
                          apiUrlPrefix: String,
-                         filters: Seq[Request[IO] => Request[IO]] = Seq.empty)
+                         filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
+                         legacyHosts: IndexedSeq[Uri] = IndexedSeq.empty)
                        (implicit ec: ExecutionContext) extends ScalaBaker with LazyLogging {
 
   implicit val eventInstanceResultEntityEncoder: EntityEncoder[IO, EventInstance] = jsonEncoderOf[IO, EventInstance]
@@ -114,14 +135,38 @@ final class BakerClient(
   }
 
   private def handleHttpErrors(errorResponse: Response[IO]): IO[Throwable] =
-    errorResponse.bodyText.compile.foldMonoid.map(body => ResponseError(errorResponse.status.code, body))
+    errorResponse.bodyText.compile.foldMonoid.map(body =>
+      ResponseError(errorResponse.status.code, body)
+    )
 
-  private def callRemoteBaker[A](request: Uri => IO[Request[IO]])
-                                           (implicit decoder: Decoder[A]): Future[A] = {
-    val fos = new FailoverState(hosts)
+  private def handleLegacyAwareErrors(errorResponse: Response[IO]): IO[Throwable] =
+    errorResponse.bodyText.compile.foldMonoid.map { body =>
+      val responseCode = errorResponse.status.code
 
-    FailoverUtils.callWithFailOver(fos, client, request, filters, handleHttpErrors)
-      .map(r => { parse(r)(decoder)})
+      if (responseCode == 404) {
+        new RetryToLegacyError(responseCode, body)
+      } else {
+        ResponseError(responseCode, body)
+      }
+    }
+
+  private def callRemoteBakerService[A](request: Uri => IO[Request[IO]])(implicit decoder: Decoder[A]): Future[A] = {
+    callRemoteBakerImpl(request, handleHttpErrors)(decoder)
+  }
+
+  private def callRemoteBakerServiceLegacyAware[A](request: Uri => IO[Request[IO]])(implicit decoder: Decoder[A]): Future[A] = {
+    callRemoteBakerImpl(request, handleLegacyAwareErrors)(decoder)
+  }
+
+  private def callRemoteBakerImpl[A](request: Uri => IO[Request[IO]],
+                                     errorHandler: Response[IO] => IO[Throwable])
+                                    (implicit decoder: Decoder[A]): Future[A] = {
+    val fos = new FailoverState(hosts, legacyHosts)
+
+    FailoverUtils.callWithFailOver(fos, client, request, filters, errorHandler)
+      .map(r => {
+        parse(r)(decoder)
+      })
       .unsafeToFuture()
       .flatMap {
         case Left(bakerException: BakerException) =>
@@ -140,14 +185,16 @@ final class BakerClient(
     * @param recipeId
     * @return
     */
-  override def getRecipe(recipeId: String): Future[RecipeInformation] = callRemoteBaker[RecipeInformation](uri => GET(root(uri) / "app" / "recipes" / recipeId))
+  override def getRecipe(recipeId: String): Future[RecipeInformation] =
+    callRemoteBakerServiceLegacyAware[RecipeInformation](uri => GET(root(uri) / "app" / "recipes" / recipeId))
 
   /**
     * Returns all recipes added to this baker instance.
     *
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
-  override def getAllRecipes: Future[Map[String, RecipeInformation]] = callRemoteBaker[Map[String, RecipeInformation]](uri => GET(root(uri) / "app" / "recipes"))
+  override def getAllRecipes: Future[Map[String, RecipeInformation]] =
+    callRemoteBakerServiceLegacyAware[Map[String, RecipeInformation]](uri => GET(root(uri) / "app" / "recipes"))
 
   /**
     * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
@@ -157,7 +204,7 @@ final class BakerClient(
     * @return
     */
   override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] =
-    callRemoteBaker[Unit](host => POST(root(host) / "instances" / recipeInstanceId / "bake" / recipeId)).map { _ =>
+    callRemoteBakerService[Unit](host => POST(root(host) / "instances" / recipeInstanceId / "bake" / recipeId)).map { _ =>
       logger.info(s"Baked recipe instance '$recipeInstanceId' from recipe '$recipeId'")
     }
 
@@ -175,7 +222,7 @@ final class BakerClient(
   override def fireEventAndResolveWhenCompleted(recipeInstanceId: String,
                                                 event: EventInstance,
                                                 correlationId: Option[String]): Future[SensoryEventResult] =
-    callRemoteBaker[SensoryEventResult](
+    callRemoteBakerServiceLegacyAware[SensoryEventResult](
       host => POST(event, (root(host) / "instances" / recipeInstanceId / "fire-and-resolve-when-completed")
         .withOptionQueryParam("correlationId", correlationId))).map { result =>
       logger.info(s"For recipe instance '$recipeInstanceId', fired and completed event '${event.name}', resulting status ${result.sensoryEventStatus}")
@@ -197,7 +244,7 @@ final class BakerClient(
   override def fireEventAndResolveWhenReceived(recipeInstanceId: String,
                                                event: EventInstance,
                                                correlationId: Option[String]): Future[SensoryEventStatus] =
-    callRemoteBaker[SensoryEventStatus](
+    callRemoteBakerServiceLegacyAware[SensoryEventStatus](
       host => POST(event, (root(host) / "instances" / recipeInstanceId / "fire-and-resolve-when-received")
         .withOptionQueryParam("correlationId", correlationId))).map { result =>
       logger.info(s"For recipe instance '$recipeInstanceId', fired and received event '${event.name}', resulting status $result")
@@ -220,7 +267,7 @@ final class BakerClient(
                                           event: EventInstance,
                                           onEvent: String,
                                           correlationId: Option[String]): Future[SensoryEventResult] =
-    callRemoteBaker[SensoryEventResult](
+    callRemoteBakerServiceLegacyAware[SensoryEventResult](
       host => POST(event, (root(host) / "instances" / recipeInstanceId / "fire-and-resolve-on-event" / onEvent)
         .withOptionQueryParam("correlationId", correlationId))).map { result =>
       logger.info(s"For recipe instance '$recipeInstanceId', fired event '${event.name}', and resolved on event '$onEvent', resulting status ${result.sensoryEventStatus}")
@@ -255,7 +302,7 @@ final class BakerClient(
     * @return An index of all processes
     */
   override def getAllRecipeInstancesMetadata: Future[Set[RecipeInstanceMetadata]] =
-    callRemoteBaker[Set[RecipeInstanceMetadata]](host => GET(root(host) / "instances"))
+    callRemoteBakerServiceLegacyAware[Set[RecipeInstanceMetadata]](host => GET(root(host) / "instances"))
 
   /**
     * Returns the process state.
@@ -264,7 +311,7 @@ final class BakerClient(
     * @return The process state.
     */
   override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] =
-    callRemoteBaker[RecipeInstanceState](host => GET(root(host) / "instances" / recipeInstanceId))
+    callRemoteBakerServiceLegacyAware[RecipeInstanceState](host => GET(root(host) / "instances" / recipeInstanceId))
 
   /**
     * Returns all provided ingredients for a given RecipeInstance id.
@@ -273,7 +320,7 @@ final class BakerClient(
     * @return The provided ingredients.
     */
   override def getIngredients(recipeInstanceId: String): Future[Map[String, Value]] =
-    callRemoteBaker[Map[String, Value]](host => GET(root(host) / "instances" / recipeInstanceId / "ingredients"))
+    callRemoteBakerServiceLegacyAware[Map[String, Value]](host => GET(root(host) / "instances" / recipeInstanceId / "ingredients"))
 
   /**
     * Returns all fired events for a given RecipeInstance id.
@@ -282,7 +329,7 @@ final class BakerClient(
     * @return The events
     */
   override def getEvents(recipeInstanceId: String): Future[Seq[EventMoment]] =
-    callRemoteBaker[List[EventMoment]](host => GET(root(host) / "instances" / recipeInstanceId / "events"))
+    callRemoteBakerServiceLegacyAware[List[EventMoment]](host => GET(root(host) / "instances" / recipeInstanceId / "events"))
 
   /**
     * Returns all names of fired events for a given RecipeInstance id.
@@ -300,7 +347,7 @@ final class BakerClient(
     * @return A visual (.dot) representation of the process state.
     */
   override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle): Future[String] =
-    callRemoteBaker[String](host => GET(root(host) / "instances" / recipeInstanceId / "visual"))
+    callRemoteBakerServiceLegacyAware[String](host => GET(root(host) / "instances" / recipeInstanceId / "visual"))
 
   /**
     * Registers a listener to all runtime events for recipes with the given name run in this baker instance.
@@ -341,7 +388,7 @@ final class BakerClient(
     * @return
     */
   override def retryInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
-    callRemoteBaker[Unit](host => POST(root(host) / "instances" / recipeInstanceId / "interaction" / interactionName / "retry"))
+    callRemoteBakerServiceLegacyAware[Unit](host => POST(root(host) / "instances" / recipeInstanceId / "interaction" / interactionName / "retry"))
 
   /**
     * Resolves a blocked interaction by specifying it's output.
@@ -351,7 +398,7 @@ final class BakerClient(
     * @return
     */
   override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): Future[Unit] =
-    callRemoteBaker[Unit](host => POST(event, root(host) / "instances" / recipeInstanceId / "interaction" / interactionName / "resolve"))
+    callRemoteBakerServiceLegacyAware[Unit](host => POST(event, root(host) / "instances" / recipeInstanceId / "interaction" / interactionName / "resolve"))
 
   /**
     * Stops the retrying of an interaction.
@@ -359,5 +406,5 @@ final class BakerClient(
     * @return
     */
   override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
-    callRemoteBaker[Unit](host => POST(root(host) / "instances" / recipeInstanceId / "interaction" / interactionName / "stop-retrying"))
+    callRemoteBakerServiceLegacyAware[Unit](host => POST(root(host) / "instances" / recipeInstanceId / "interaction" / interactionName / "stop-retrying"))
 }
