@@ -72,7 +72,7 @@ object Dependencies {
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.10.0"
-  val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.9.0"
+  val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.10.0"
   val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.0.5"
 
   val skuber = "io.skuber" %% "skuber" % "2.6.0"
