@@ -38,9 +38,13 @@ object Main extends App with LazyLogging{
 
   private def runApp(configurationClassString: String): Unit =
     try {
-      logger.info("Starting for configuration: " + configurationClassString)
-      val implementations = getImplementations(configurationClassString)
-      logger.info(s"Starting RemoteInteractionLoader for $configurationClassString")
+      val implementations = configurationClassString
+        .split(",")
+        .foldLeft(List[InteractionInstance]())( (instances, c) => {
+          logger.info("Starting for configuration: " + c)
+          instances ++ getImplementations(c)
+        })
+      logger.info(s"Starting RemoteInteractionLoader")
       RemoteInteractionLoader(implementations)
     } catch {
       case ex: Exception =>
