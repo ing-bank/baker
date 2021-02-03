@@ -35,7 +35,6 @@ object InteractionExecutionJsonCodecs {
   implicit val typeCodec: Codec[Type] =  deriveCodec[Type]
 
   implicit val instanceInterfaceCodec: Codec[Interaction] = deriveCodec[Interaction]
-  implicit val instanceInterfacesWithVersionCodec: Codec[InteractionsWithVersion] = deriveCodec[InteractionsWithVersion]
   implicit val ingredientInstanceCodec: Codec[IngredientInstance] = deriveCodec[IngredientInstance]
 
   implicit val failureReasonCodec: Codec[FailureReason] = deriveCodec[FailureReason]
@@ -49,7 +48,6 @@ object InteractionExecutionJsonCodecs {
 object InteractionExecution {
 
   case class Interaction(id: String, name: String, input: List[Type])
-  case class InteractionsWithVersion(version: String, interactions: List[Interaction])
 
   case class ExecutionResult(outcome: Either[Failure, Success])
 

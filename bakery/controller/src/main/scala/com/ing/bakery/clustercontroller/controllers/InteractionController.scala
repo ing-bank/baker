@@ -180,10 +180,9 @@ final class InteractionController(
       Utils.within(10.minutes, split = 300) { // Check every 2 seconds for interfaces for 10 minutes
         versionCheck match {
           case Some(vcheck) =>
-            client.interfaceWithVersion.map { result =>
-              assert(result.version == vcheck || result.version == "skip-check")
-              assert(result.interactions.nonEmpty)
-              result.interactions
+            client.interface.map { result =>
+              assert(result.nonEmpty)
+              result
             }
           case None =>
             client.interface.map { interfaces => assert(interfaces.nonEmpty); interfaces }

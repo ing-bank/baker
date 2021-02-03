@@ -21,8 +21,10 @@ package object common {
     if (clazz.getName.contains("$$EnhancerByMockitoWithCGLIB$$")) {
       val originalName: String = clazz.getName.split("\\$\\$EnhancerByMockitoWithCGLIB\\$\\$")(0)
       clazz.getClassLoader.loadClass(originalName)
+    } else  if (clazz.getName.contains("$MockitoMock$")) {
+      val originalName: String = clazz.getName.split("\\$MockitoMock\\$")(0)
+      clazz.getClassLoader.loadClass(originalName)
     } else
       clazz
   }
-
 }

@@ -33,7 +33,6 @@ final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit 
   import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
 
   implicit val interactionEntityDecoder: EntityDecoder[IO, List[InteractionExecution.Interaction]] = jsonOf[IO,  List[InteractionExecution.Interaction]]
-  implicit val interactionsWithVersionEntityDecoder: EntityDecoder[IO, InteractionExecution.InteractionsWithVersion] = jsonOf[IO,  InteractionExecution.InteractionsWithVersion]
   implicit val executeRequestEntityEncoder: EntityEncoder[IO, List[IngredientInstance]] = jsonEncoderOf[IO, List[IngredientInstance]]
   implicit val executeResponseEntityDecoder: EntityDecoder[IO, InteractionExecution.ExecutionResult] = jsonOf[IO, InteractionExecution.ExecutionResult]
 
@@ -41,18 +40,6 @@ final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit 
     client.expect[List[InteractionExecution.Interaction]]( GET(
       hostname / "api" / "bakery" / "interactions"
     ))
-
-  def interfaceWithVersion: IO[InteractionExecution.InteractionsWithVersion] = {
-    for {
-      request <- GET(hostname / "api" / "bakery" / "interactions-with-version")
-      status <- client.status(request)
-      response <- {
-        // Backwards compatibility for Bakery 3.1 interaction nodes that DO NOT publish the "interactions-with-version" endpoint
-        if (status.code == 404) interface.map(InteractionExecution.InteractionsWithVersion("skip-check", _))
-        else client.expect[InteractionExecution.InteractionsWithVersion](request)
-      }
-    } yield response
-  }
 
   def runInteraction(interactionId: String, input: Seq[IngredientInstance]): IO[Option[EventInstance]] = {
     val request = POST(

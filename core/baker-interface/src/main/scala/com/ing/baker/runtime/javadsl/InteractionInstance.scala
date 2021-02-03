@@ -1,14 +1,15 @@
 package com.ing.baker.runtime.javadsl
 
+import cats.effect.{ContextShift, IO}
+import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
+import com.ing.baker.runtime.scaladsl.InteractionInstanceF
+import com.ing.baker.runtime.{common, scaladsl}
+import com.ing.baker.types.{Converters, Type}
+
 import java.lang.reflect.Method
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
-
-import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
-import com.ing.baker.runtime.{common, scaladsl}
-import com.ing.baker.types.{Converters, Type}
-
 import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters
 import scala.reflect.ClassTag
@@ -28,19 +29,37 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
 
   override def execute(input: util.List[IngredientInstance]): CompletableFuture[Optional[EventInstance]]
 
+  private def wrapExecuteToFuture(input: Seq[scaladsl.IngredientInstance]) = {
+    FutureConverters.toScala(execute(input.map(_.asJava).asJava)
+      .thenApply[Option[scaladsl.EventInstance]] {
+        optional =>
+          if (optional.isPresent) Some(optional.get().asScala)
+          else None
+      })
+  }
+
+  private def outputOrNone = {
+    if (output.isPresent) Some(output.get.asScala.toMap.mapValues(_.asScala.toMap)) else None
+  }
+
   def asScala: scaladsl.InteractionInstance = {
     scaladsl.InteractionInstance(
       name,
       input.asScala,
-      input => FutureConverters.toScala(execute(input.map(_.asJava).asJava)
-        .thenApply[Option[scaladsl.EventInstance]] {
-        optional =>
-          if (optional.isPresent) Some(optional.get().asScala)
-          else None
-      }),
-      if (output.isPresent) Some(output.get.asScala.toMap.mapValues(_.asScala.toMap)) else None
+      input => wrapExecuteToFuture(input),
+      outputOrNone
     )
   }
+
+  def asEffectful(implicit cs: ContextShift[IO]): InteractionInstanceF[IO] = {
+    InteractionInstanceF.build(
+      name,
+      input.asScala,
+      input => IO.fromFuture(IO(wrapExecuteToFuture(input)))(cs),
+      outputOrNone
+    )
+  }
+
 }
 
 object InteractionInstance {
