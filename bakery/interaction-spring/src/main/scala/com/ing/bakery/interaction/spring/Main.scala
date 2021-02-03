@@ -40,10 +40,8 @@ object Main extends App with LazyLogging{
 
     configurationClassString
       .split(',')
-      .foldLeft(List[InteractionInstance]())( (instances, c) => {
-        logger.info("Starting for configuration: " + c)
-        instances ++ forClass(c)
-      })
+      .map(forClass)
+      .toList.flatten
   }
 
   private def runApp(configurationClassString: String): Unit =
