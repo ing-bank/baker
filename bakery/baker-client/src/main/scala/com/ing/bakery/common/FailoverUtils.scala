@@ -3,14 +3,15 @@ package com.ing.bakery.common
 import cats.effect.{IO, Timer}
 import cats.implicits._
 import com.ing.baker.runtime.scaladsl.BakerResult
+import com.ing.bakery.scaladsl.RetryToLegacyError
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import org.http4s.circe.jsonOf
 import org.http4s.client.Client
 import org.http4s.{Request, Response, Uri}
-import retry.RetryPolicies.{exponentialBackoff, limitRetries}
-import retry.{RetryDetails, retryingOnAllErrors}
+import retry.RetryPolicies.{constantDelay, exponentialBackoff, limitRetries}
+import retry.{RetryDetails, retryingOnAllErrors, retryingOnSomeErrors}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -44,12 +45,20 @@ object FailoverUtils extends LazyLogging {
         }))(handleHttpErrors)(jsonOf[IO, BakerResult])
 
     retryingOnAllErrors(
-      policy = limitRetries[IO](fos.size * config.retryTimes) |+| exponentialBackoff[IO](config.initialDelay),
+      policy = limitRetries[IO](fos.allSize * config.retryTimes) |+| constantDelay[IO](config.initialDelay),
       onError = (ex: Throwable, retryDetails: RetryDetails) => IO {
-        val message = s"Failed to call ${fos.uri}, retry #${retryDetails.retriesSoFar}, error: ${ex.getMessage}"
-        if (retryDetails.givingUp) logger.error(message) else logger.debug(message)
-        fos.failed()
-        ()
+
+        ex match {
+          case _: RetryToLegacyError =>
+            fos.failoverToLegacy()
+            logger.warn("retrying to legacy baker")
+
+          case _ =>
+            val message = s"Failed to call ${fos.uri}, retry #${retryDetails.retriesSoFar}, error: ${ex.getMessage}"
+            fos.failed()
+            if (retryDetails.givingUp) logger.error(message) else logger.debug(message)
+        }
+
       })(call(fos.uri))
   }
 
