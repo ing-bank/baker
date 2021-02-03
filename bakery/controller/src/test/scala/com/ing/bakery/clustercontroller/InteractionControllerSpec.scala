@@ -51,14 +51,14 @@ class InteractionControllerSpec extends BakeryFunSpec with KubernetesMockito {
       _ <- mockUpdate(Deployment(interaction.name))
       _ <- mockCreate(Service(interaction.name).copy(spec =
         Some(Service.Spec(ports = mockedServicePort))))
-      _ <- context.remoteInteraction.publishesItsInterfaceWithVersion(interaction.spec.image, BakeryControllerFixtures.interaction)
+      _ <- context.remoteInteraction.publishesItsInterface(BakeryControllerFixtures.interaction)
       _ <- mockUpdate[ConfigMap](ConfigMap(interaction.name + "-manifest"))
       _ <- mockPatchingOfConfigMapWatchLabel("test-config")
       _ = validateMockitoUsage()
       _ <- context.k8sBakerControllerEventStream.fire(WatchEvent(EventType.MODIFIED, interaction))
       _ <- eventually("config relationship cache contains the deployment and config") {
         for {
-          _ <- context.remoteInteraction.interfaceWithVersionWasQueried
+          _ <- context.remoteInteraction.interfaceWasQueried
           _ <- verifyUpdate[Deployment](_.name == interaction.name)
           _ <- verifyUpdate[ConfigMap](_.name == interaction.name + "-manifest")
           _ <- verifyPatchingOfConfigMapWatchLabel("test-config")
@@ -76,7 +76,6 @@ class InteractionControllerSpec extends BakeryFunSpec with KubernetesMockito {
       _ <- mockUpdate(Deployment(interaction.name))
       _ <- mockCreate(Service(interaction.name).copy(spec =
         Some(Service.Spec(ports = mockedServicePort))))
-      _ <- context.remoteInteraction.noInterfaceWithVersionAvailable
       _ <- context.remoteInteraction.publishesItsInterface(BakeryControllerFixtures.interaction)
       _ <- mockUpdate[ConfigMap](ConfigMap(interaction.name + "-manifest"))
       _ <- mockPatchingOfConfigMapWatchLabel("test-config")
@@ -155,14 +154,14 @@ class InteractionControllerSpec extends BakeryFunSpec with KubernetesMockito {
       _ <- mockUpdate(Deployment(interaction.name))
       _ <- mockCreate(Service(interaction.name).copy(spec =
         Some(Service.Spec(ports = mockedServicePort))))
-      _ <- context.remoteInteraction.publishesItsInterfaceWithVersion(interaction.data("image"), BakeryControllerFixtures.interaction)
+      _ <- context.remoteInteraction.publishesItsInterface(BakeryControllerFixtures.interaction)
       _ <- mockUpdate[ConfigMap](ConfigMap(interaction.name + "-manifest"))
       _ <- mockPatchingOfConfigMapWatchLabel("test-config")
       _ = validateMockitoUsage()
       _ <- context.k8sBakerControllerEventStream_ConfigMap.fire(WatchEvent(EventType.MODIFIED, interaction))
       _ <- eventually("config relationship cache contains the deployment and config") {
         for {
-          _ <- context.remoteInteraction.interfaceWithVersionWasQueried
+          _ <- context.remoteInteraction.interfaceWasQueried
           _ <- verifyUpdate[Deployment](_.name == interaction.name)
           _ <- verifyUpdate[ConfigMap](_.name == interaction.name + "-manifest")
           _ <- verifyPatchingOfConfigMapWatchLabel("test-config")

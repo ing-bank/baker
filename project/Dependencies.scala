@@ -3,17 +3,17 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.6.10"
+  val akkaVersion = "2.6.12"
   val akkaManagementVersion = "1.0.9"
   val akkaPersistenceCassandraVersion = "1.0.4"
-  val akkaHttpVersion = "10.2.2"
-  val http4sVersion = "0.21.15"
+  val akkaHttpVersion = "10.2.3"
+  val http4sVersion = "0.21.17"
   val fs2Version = "2.5.0"
   val circeVersion = "0.13.0"
-  val mockitoScalaVersion = "1.16.15"
+  val mockitoScalaVersion = "1.16.23"
   val catsVersion = "2.3.1"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "5.2.12.RELEASE"
+  val springVersion = "5.3.3"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
     .exclude("com.typesafe.akka", "akka-actor")
@@ -66,12 +66,12 @@ object Dependencies {
   val scalaGraphDot = "org.scala-graph" %% "graph-dot" % "1.13.0"
   val graphvizJava = "guru.nidi" % "graphviz-java" % "0.18.0"
 
-  val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.9.0"
-  val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.14.0"
+  val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.10.0"
+  val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.15.0"
   val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.0.8"
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
-  val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.9.0"
+  val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.10.0"
   val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.9.0"
   val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.0.5"
 

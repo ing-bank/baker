@@ -26,35 +26,6 @@ class RemoteInteraction(mock: ClientAndServer) {
     )
   }
 
-  def publishesItsInterfaceWithVersion(version: String, interaction: InteractionInstance): IO[Unit] = IO {
-    mock.when(
-      request()
-        .withMethod("GET")
-        .withPath("/api/bakery/interactions-with-version")
-    ).respond(
-      response()
-        .withStatusCode(200)
-        .withBody(
-          I.InteractionsWithVersion(
-            version,
-            List(I.Interaction(interaction.shaBase64, interaction.name, interaction.input.toList))
-          ).asJson.toString
-        )
-    )
-  }
-
-  def noInterfaceWithVersionAvailable: IO[Unit] = IO {
-    mock.when(
-      request()
-        .withMethod("GET")
-        .withPath("/api/bakery/interactions-with-version"),
-      Times.exactly(1)
-    ).respond(
-      response()
-        .withStatusCode(404)
-    )
-  }
-
   def interfaceWasQueried: IO[Unit] = IO {
     mock.verify(
       request()
@@ -63,11 +34,4 @@ class RemoteInteraction(mock: ClientAndServer) {
     )
   }
 
-  def interfaceWithVersionWasQueried: IO[Unit] = IO {
-    mock.verify(
-      request()
-        .withMethod("GET")
-        .withPath("/api/bakery/interactions-with-version")
-    )
-  }
 }
