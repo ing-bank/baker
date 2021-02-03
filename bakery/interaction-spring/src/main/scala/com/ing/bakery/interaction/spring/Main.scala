@@ -18,34 +18,38 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 object Main extends App with LazyLogging{
 
-  def getImplementations(configurationClassString: String) : List[InteractionInstance] = {
-    val configClass = Class.forName(configurationClassString)
-    logger.info("Class found: " + configClass)
-    val ctx = new AnnotationConfigApplicationContext();
-    logger.info("Context created")
-    ctx.register(configClass)
-    logger.info("Context registered")
-    ctx.refresh()
-    logger.info("Context refreshed")
-    val interactions: util.Map[String, Interaction] =
-      ctx.getBeansOfType(classOf[com.ing.baker.recipe.javadsl.Interaction])
-    interactions.asScala.values.map(implementation => {
-      val instance = InteractionInstance.unsafeFrom(implementation)
-      logger.info("Added implementation: " + instance.name)
-      instance
-    }).toList
+  def implementations(configurationClassString: String) : List[InteractionInstance] = {
+
+    def forClass(c: String) = {
+      val configClass = Class.forName(c)
+      logger.info("Class found: " + configClass)
+      val ctx = new AnnotationConfigApplicationContext();
+      logger.info("Context created")
+      ctx.register(configClass)
+      logger.info("Context registered")
+      ctx.refresh()
+      logger.info("Context refreshed")
+      val interactions: util.Map[String, Interaction] =
+        ctx.getBeansOfType(classOf[com.ing.baker.recipe.javadsl.Interaction])
+      interactions.asScala.values.map(implementation => {
+        val instance = InteractionInstance.unsafeFrom(implementation)
+        logger.info("Added implementation: " + instance.name)
+        instance
+      }).toList
+    }
+
+    configurationClassString
+      .split(',')
+      .foldLeft(List[InteractionInstance]())( (instances, c) => {
+        logger.info("Starting for configuration: " + c)
+        instances ++ forClass(c)
+      })
   }
 
   private def runApp(configurationClassString: String): Unit =
     try {
-      val implementations = configurationClassString
-        .split(",")
-        .foldLeft(List[InteractionInstance]())( (instances, c) => {
-          logger.info("Starting for configuration: " + c)
-          instances ++ getImplementations(c)
-        })
       logger.info(s"Starting RemoteInteractionLoader")
-      RemoteInteractionLoader(implementations)
+      RemoteInteractionLoader(implementations(configurationClassString))
     } catch {
       case ex: Exception =>
         throw new IllegalStateException(s"Unable to initialize the interaction instances", ex)
