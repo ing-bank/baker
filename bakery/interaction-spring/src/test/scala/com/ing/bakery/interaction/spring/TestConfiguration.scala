@@ -11,7 +11,7 @@ class TestConfiguration {
   }
 
   @Bean
-  def getImplementationTwo: Interaction = {
-    new TestInteraction("Interaction two")
+  def getImplementationOneAnotherCopy: Interaction = {
+    new TestInteraction("Interaction one another copy")
   }
 }

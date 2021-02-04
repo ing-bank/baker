@@ -41,7 +41,8 @@ object Main extends App with LazyLogging{
     configurationClassString
       .split(',')
       .map(forClass)
-      .toList.flatten
+      .toList
+      .flatten
   }
 
   private def runApp(configurationClassString: String): Unit =

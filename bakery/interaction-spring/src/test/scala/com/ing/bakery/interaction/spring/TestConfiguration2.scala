@@ -7,11 +7,11 @@ import org.springframework.context.annotation.{Bean, Configuration}
 class TestConfiguration2 {
   @Bean
   def getImplementationThree: Interaction = {
-    new TestInteraction("Interaction three")
+    new TestInteraction2("Interaction three")
   }
 
   @Bean
   def getImplementationFour: Interaction = {
-    new TestInteraction("Interaction four")
+    new TestInteraction3("Interaction four")
   }
 }

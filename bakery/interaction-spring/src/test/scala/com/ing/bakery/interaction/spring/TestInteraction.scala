@@ -11,3 +11,19 @@ class TestInteraction(append: String) extends Interaction {
     new OutputEvent(output)
   }
 }
+
+class TestInteraction2(append: String) extends Interaction {
+  def apply(input: String): OutputEvent = {
+    val output = append + ":" + input
+    println(output)
+    new OutputEvent(output)
+  }
+}
+
+class TestInteraction3(append: String) extends Interaction {
+  def apply(input: String): OutputEvent = {
+    val output = append + ":" + input
+    println(output)
+    new OutputEvent(output)
+  }
+}
