@@ -6,6 +6,7 @@ import cats.implicits._
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceF}
+import com.ing.baker.types.Type
 
 trait InteractionsF[F[_]] {
 
@@ -35,5 +36,40 @@ trait InteractionsF[F[_]] {
         }
     interactionNameMatches && inputSizeMatches && inputNamesAndTypesMatches
   }
+
+
+  sealed trait InteractionIncompatible
+  case object NameNotFound extends InteractionIncompatible
+  case class InteractionMatchInputSizeFailed(
+                                              interactionName: String,
+                                              transitionArgsSize: Int,
+                                              implementationArgsSize: Int
+                                            ) extends InteractionIncompatible
+  case class InteractionMatchTypeFailed(
+                                         interactionName: String,
+                                         transitionInputTypesMissing: Seq[Type]
+                                       ) extends InteractionIncompatible
+
+  def interactionErrorsFor(transition: InteractionTransition)(implicit sync: Sync[F]): F[Seq[InteractionIncompatible]] = for {
+    all <- listAll
+    sameName = all.filter(_.name == transition.originalInteractionName)
+  } yield {
+    if (sameName.isEmpty) Seq(NameNotFound)
+    else sameName.flatMap(incompatibilityReason(transition, _))
+  }
+
+  def incompatibilityReason(transition: InteractionTransition, implementation: InteractionInstanceF[F]): Option[InteractionIncompatible] =
+    if (implementation.input.size != transition.requiredIngredients.size)
+      Some(InteractionMatchInputSizeFailed(implementation.name, transition.requiredIngredients.size, implementation.input.size))
+    else {
+      val missingTypes = transition.requiredIngredients.flatMap(i => {
+        if (implementation.input.exists(_.isAssignableFrom(i.`type`))) None else Some(i.`type`)
+      })
+      if (missingTypes.nonEmpty)
+        Some(InteractionMatchTypeFailed(implementation.name, missingTypes))
+      else
+        None
+    }
+
 }
 

@@ -134,7 +134,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         recoverToExceptionIf[ImplementationsException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
-        }.map(_ should have('message("No implementation provided for interaction: InteractionOne")))
+        }.map(_ should have('message("No implementation provided for interaction: InteractionOne: List(NameNotFound)")))
       }
 
       "a recipe provides an implementation for an interaction and does not comply to the Interaction" in {
@@ -147,7 +147,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         recoverToExceptionIf[ImplementationsException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
-        }.map(_ should have('message("No implementation provided for interaction: InteractionOne")))
+        }.map(_ should have('message("No implementation provided for interaction: InteractionOne: List(InteractionMatchInputSizeFailed(InteractionOne,2,1))")))
       }
     }
   }

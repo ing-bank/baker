@@ -1,16 +1,13 @@
 package com.ing.bakery.interaction.spring
 
-import java.util
 import com.ing.baker.recipe.javadsl.Interaction
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.ing.bakery.interaction.RemoteInteractionLoader
-import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 
-import java.io.File
+import java.util
 import scala.collection.JavaConverters._
-import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
