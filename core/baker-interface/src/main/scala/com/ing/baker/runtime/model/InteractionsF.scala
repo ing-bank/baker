@@ -4,24 +4,27 @@ import cats.MonadError
 import cats.effect.Sync
 import cats.implicits._
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.{FatalInteractionException, empty}
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceF}
 import com.ing.baker.types.Type
+
+import scala.Seq
 
 trait InteractionsF[F[_]] {
 
   def listAll: F[List[InteractionInstanceF[F]]]
 
-  def findFor(transition: InteractionTransition)(implicit sync: Sync[F]): F[Option[InteractionInstanceF[F]]]
+  def findFor(transition: InteractionTransition)(implicit sync: Sync[F]): F[Option[InteractionInstanceF[F]]] =
+    listAll.flatMap(all => sync.delay(all.find(compatible(transition, _))))
 
   def existsFor(interaction: InteractionTransition)(implicit sync: Sync[F]): F[Boolean] = findFor(interaction).map(_.nonEmpty)
 
   def execute(interaction: InteractionTransition, input: Seq[IngredientInstance])(implicit sync: Sync[F], effect: MonadError[F, Throwable]): F[Option[EventInstance]] =
     findFor(interaction)
       .flatMap {
-      case Some(implementation) => implementation.execute(input)
-      case None => effect.raiseError(new FatalInteractionException(s"No implementation available for interaction ${interaction.interactionName}"))
-    }
+        case Some(implementation) => implementation.execute(input)
+        case None => effect.raiseError(new FatalInteractionException(s"No implementation available for interaction ${interaction.interactionName}"))
+      }
 
   protected def compatible(transition: InteractionTransition, implementation: InteractionInstanceF[F]): Boolean = {
     val interactionNameMatches =
@@ -50,12 +53,16 @@ trait InteractionsF[F[_]] {
                                          transitionInputTypesMissing: Seq[Type]
                                        ) extends InteractionIncompatible
 
-  def interactionErrorsFor(transition: InteractionTransition)(implicit sync: Sync[F]): F[Seq[InteractionIncompatible]] = for {
+  def incompatibilities(transition: InteractionTransition)(implicit sync: Sync[F]): F[Seq[InteractionIncompatible]] = for {
     all <- listAll
-    sameName = all.filter(_.name == transition.originalInteractionName)
   } yield {
-    if (sameName.isEmpty) Seq(NameNotFound)
-    else sameName.flatMap(incompatibilityReason(transition, _))
+    if (all.exists(compatible(transition, _)))
+      Seq.empty
+    else {
+      val sameName = all.filter(_.name == transition.originalInteractionName)
+      if (sameName.isEmpty) Seq(NameNotFound)
+      else sameName.flatMap(incompatibilityReason(transition, _))
+    }
   }
 
   def incompatibilityReason(transition: InteractionTransition, implementation: InteractionInstanceF[F]): Option[InteractionIncompatible] =

@@ -55,11 +55,11 @@ trait RecipeManager[F[_]] {
   private def getImplementationErrors(compiledRecipe: CompiledRecipe)(implicit components: BakerComponents[F], effect: Effect[F]): F[Set[String]] = {
     compiledRecipe.interactionTransitions.toList
       .traverse(x => components
-        .interactions.interactionErrorsFor(x)
-        .map(errors => (errors, x.originalInteractionName)))
+        .interactions.incompatibilities(x)
+        .map((_, x.originalInteractionName)))
       .map(_
         .filterNot(_._1.isEmpty)
-        .map(x => s"No implementation provided for interaction: ${x._2}: ${x._1}")
+        .map(x => s"No compatible implementation provided for interaction: ${x._2}: ${x._1}")
         .toSet)
   }
 }

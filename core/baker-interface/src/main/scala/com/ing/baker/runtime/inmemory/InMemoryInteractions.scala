@@ -15,6 +15,4 @@ final class InMemoryInteractions(implementations: List[InteractionInstanceF[IO]]
 
   override def listAll: IO[List[InteractionInstanceF[IO]]] = IO(implementations)
 
-  override def findFor(transition: InteractionTransition)(implicit sync: Sync[IO]): IO[Option[InteractionInstanceF[IO]]] =
-    IO(implementations.find(compatible(transition, _)))
 }
