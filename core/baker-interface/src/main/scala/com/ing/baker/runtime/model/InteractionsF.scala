@@ -4,11 +4,9 @@ import cats.MonadError
 import cats.effect.Sync
 import cats.implicits._
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.{FatalInteractionException, empty}
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceF}
 import com.ing.baker.types.Type
-
-import scala.Seq
 
 trait InteractionsF[F[_]] {
 
@@ -47,11 +45,18 @@ trait InteractionsF[F[_]] {
                                               interactionName: String,
                                               transitionArgsSize: Int,
                                               implementationArgsSize: Int
-                                            ) extends InteractionIncompatible
+                                            ) extends InteractionIncompatible {
+    override def toString: String =
+      s"($interactionName input size differs: transition expects $transitionArgsSize, implementation provides $implementationArgsSize)"
+  }
+
   case class InteractionMatchTypeFailed(
                                          interactionName: String,
                                          transitionInputTypesMissing: Seq[Type]
-                                       ) extends InteractionIncompatible
+                                       ) extends InteractionIncompatible {
+    override def toString: String =
+      s"$interactionName input types mismatch: transition expects $transitionInputTypesMissing, not provided by implementation"
+  }
 
   def incompatibilities(transition: InteractionTransition)(implicit sync: Sync[F]): F[Seq[InteractionIncompatible]] = for {
     all <- listAll
@@ -59,9 +64,10 @@ trait InteractionsF[F[_]] {
     if (all.exists(compatible(transition, _)))
       Seq.empty
     else {
-      val sameName = all.filter(_.name == transition.originalInteractionName)
-      if (sameName.isEmpty) Seq(NameNotFound)
-      else sameName.flatMap(incompatibilityReason(transition, _))
+      all.filter(_.name == transition.originalInteractionName) match {
+        case Nil => Seq(NameNotFound)
+        case sameName => sameName.flatMap(incompatibilityReason(transition, _))
+      }
     }
   }
 
@@ -77,6 +83,5 @@ trait InteractionsF[F[_]] {
       else
         None
     }
-
 }
 
