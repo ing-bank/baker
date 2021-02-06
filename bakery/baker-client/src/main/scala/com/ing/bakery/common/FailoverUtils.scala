@@ -44,15 +44,11 @@ object FailoverUtils extends LazyLogging {
         .expectOr[BakerResult](
           request(uri, fos.endpoint.apiUrlPrefix)
             .map({ request: Request[IO] => filters.foldLeft(request)((acc, filter) => filter(acc))})
-        )(response => for {
-          _ <- IO{println(response)}
-          r <- handleHttpErrors(response)
-        } yield r)(jsonOf[IO, BakerResult])
+        )(handleHttpErrors)(jsonOf[IO, BakerResult])
 
     retryingOnAllErrors(
       policy = limitRetries[IO](fos.size * config.retryTimes) |+| constantDelay[IO](config.initialDelay),
       onError = (ex: Throwable, retryDetails: RetryDetails) => IO {
-        println(s"error $ex")
         ex match {
           case _: RetryToLegacyError if fallbackEndpoint.isDefined =>
             fallbackEndpoint.foreach( fep => {

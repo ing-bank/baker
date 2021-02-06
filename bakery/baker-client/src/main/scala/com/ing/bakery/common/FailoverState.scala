@@ -15,10 +15,8 @@ sealed class FailoverState(val endpoint: EndpointConfig) extends LazyLogging {
   val size: Int = endpoint.hosts.size
   val currentPosition: AtomicInteger = new AtomicInteger(0)
 
-  def failed(): Unit = {
+  def failed(): Unit =
     currentPosition.getAndUpdate((operand: Int) => if (operand + 1 < size) operand + 1 else 0)
-    println(s"failed $currentPosition")
-  }
 
   def uri: Uri = endpoint.hosts(currentPosition.get())
 }
