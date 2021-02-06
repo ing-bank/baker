@@ -1,12 +1,11 @@
 package com.ing.bakery.client
 
 import java.net.InetSocketAddress
-
 import cats.effect.concurrent.{MVar, MVar2}
 import cats.effect.{IO, Resource}
 import com.ing.bakery.common.{KeystoreConfig, TLSConfig}
 import com.ing.bakery.javadsl
-import com.ing.bakery.scaladsl.BakerClient
+import com.ing.bakery.scaladsl.{BakerClient, EndpointConfig}
 import com.ing.baker.runtime.scaladsl.BakerResult
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import io.circe.generic.auto._
@@ -103,8 +102,7 @@ class BakerClientSpec extends BakeryFunSpec {
       val uri3 = uri1 / "nowWorking"
 
       BakerClient.resourceBalanced(
-        hosts = IndexedSeq(uri3, uri2, uri1),
-        "/api/bakery",
+        endpointConfig = EndpointConfig(IndexedSeq(uri3, uri2, uri1)),
         executionContext = executionContext,
         filters = List.empty,
         tlsConfig = Some(clientTLSConfig))
@@ -120,7 +118,9 @@ class BakerClientSpec extends BakeryFunSpec {
       val testHeader = Header("X-Test", "Foo")
       val filter: java.util.function.Function[Request[IO], Request[IO]] = _.putHeaders(testHeader)
       for {
-        client <- IO.fromFuture(IO(FutureConverters.toScala(javadsl.BakerClient.build(host, "/api/bakery", List(filter).asJava, java.util.Optional.of(clientTLSConfig)))))
+        client <- IO.fromFuture(IO(FutureConverters.toScala(
+          javadsl.BakerClient.build(List(host).asJava, "/api/bakery",
+            List().asJava, "", List(filter).asJava, java.util.Optional.of(clientTLSConfig)))))
         _ <- IO.fromFuture(IO(FutureConverters.toScala(client.getAllRecipeInstancesMetadata)))
         headers <- context.receivedHeaders
       } yield assert(headers.contains(testHeader))

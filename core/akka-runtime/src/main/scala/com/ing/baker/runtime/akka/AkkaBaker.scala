@@ -99,13 +99,8 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     }
   }
 
-  private def addToManager(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] = {
-    logger.info(s"Adding recipe ${compiledRecipe.name}")
-
-    val result = recipeManager.put(compiledRecipe, timeCreated)
-    result.foreach(recipeId => logger.info(s"Recipe ${compiledRecipe.name} has been added as $recipeId"))
-    result
-  }
+  private def addToManager(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] =
+    recipeManager.put(compiledRecipe, timeCreated)
 
   private def getImplementationErrors(compiledRecipe: CompiledRecipe): Future[Set[String]] = {
     compiledRecipe.interactionTransitions.toList

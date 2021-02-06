@@ -11,7 +11,7 @@ import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
 import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
 import com.ing.bakery.recipe.ItemReservationRecipe
-import com.ing.bakery.scaladsl.{BakerClient, ResponseError, RetryToLegacyError}
+import com.ing.bakery.scaladsl.{BakerClient, RetryToLegacyError}
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
 import org.http4s.client.blaze.BlazeClientBuilder

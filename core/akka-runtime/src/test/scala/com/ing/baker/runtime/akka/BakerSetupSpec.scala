@@ -147,7 +147,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         recoverToExceptionIf[ImplementationsException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
-        }.map(_ should have('message("No compatible implementation provided for interaction: InteractionOne: List(InteractionMatchInputSizeFailed(InteractionOne,2,1))")))
+        }.map(_ should have('message("No compatible implementation provided for interaction: InteractionOne: List(InteractionOne input size differs: transition expects 2, implementation provides 1)")))
       }
     }
   }

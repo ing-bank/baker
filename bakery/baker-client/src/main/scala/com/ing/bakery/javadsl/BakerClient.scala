@@ -3,11 +3,11 @@ package com.ing.bakery.javadsl
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors.newCachedThreadPool
 import java.util.{Collections, Optional, List => JList}
-
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.runtime.javadsl.{Baker => JavaBaker}
 import com.ing.bakery.common.TLSConfig
 import com.ing.bakery.scaladsl
+import com.ing.bakery.scaladsl.EndpointConfig
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.{Request, Uri}
 
@@ -20,25 +20,6 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 object BakerClient {
   type Filter = java.util.function.Function[Request[IO], Request[IO]]
 
-  def build(hostname: String,
-            apiUrlString: String,
-            filters: JList[Filter],
-            tlsConfig: Optional[TLSConfig]): CompletableFuture[JavaBaker] = {
-    build(Collections.singletonList(hostname), apiUrlString, filters, tlsConfig)
-  }
-
-  def build(hostname: String, apiUrlString: String, filters: JList[Filter]): CompletableFuture[JavaBaker] = {
-    build(hostname, apiUrlString, filters, Optional.empty[TLSConfig]())
-  }
-
-  def build(hostname: String, apiUrlString: String, tlsConfig: Optional[TLSConfig]): CompletableFuture[JavaBaker] = {
-    build(hostname, apiUrlString, Collections.emptyList[Filter](), tlsConfig)
-  }
-
-  def build(hostname: String, apiUrlString: String): CompletableFuture[JavaBaker] = {
-    build(hostname, apiUrlString, Collections.emptyList[Filter](), Optional.empty[TLSConfig]())
-  }
-
   //TODO add resource cleanup possibility.
   /**
    * Return async result with JavaBaker instance, using hosts, filters and tlsConfig
@@ -50,6 +31,8 @@ object BakerClient {
    */
   def build(hosts: JList[String],
             apiUrlPrefix: String,
+            fallbackHosts: JList[String],
+            fallbackApiUrlPrefix: String,
             filters: JList[Filter],
             tlsConfig: Optional[TLSConfig]): CompletableFuture[JavaBaker] = {
 
@@ -67,8 +50,9 @@ object BakerClient {
       .map { client =>
         new scaladsl.BakerClient(
           client = client,
-          hosts = hosts.asScala.map(Uri.unsafeFromString).toIndexedSeq,
-          apiUrlPrefix = apiUrlPrefix,
+          EndpointConfig(hosts.asScala.map(Uri.unsafeFromString).toIndexedSeq, apiUrlPrefix),
+          if (fallbackHosts.size == 0) None
+          else Some(EndpointConfig(fallbackHosts.asScala.map(Uri.unsafeFromString).toIndexedSeq, fallbackApiUrlPrefix)),
           filters = filters.asScala.map(_.asScala))
       }
       .allocated

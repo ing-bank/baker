@@ -47,7 +47,7 @@ trait InteractionsF[F[_]] {
                                               implementationArgsSize: Int
                                             ) extends InteractionIncompatible {
     override def toString: String =
-      s"($interactionName input size differs: transition expects $transitionArgsSize, implementation provides $implementationArgsSize)"
+      s"$interactionName input size differs: transition expects $transitionArgsSize, implementation provides $implementationArgsSize"
   }
 
   case class InteractionMatchTypeFailed(

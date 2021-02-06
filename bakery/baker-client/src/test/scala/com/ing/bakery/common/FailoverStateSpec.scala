@@ -1,5 +1,6 @@
 package com.ing.bakery.common
 
+import com.ing.bakery.scaladsl.EndpointConfig
 import org.http4s.Uri
 import org.scalatest.funspec.AnyFunSpec
 
@@ -11,14 +12,12 @@ class FailoverStateSpec extends AnyFunSpec {
 
   private val uriA = Uri(path = "baker-a-host")
   private val uriB = Uri(path = "baker-b-host")
-  private val uriC = Uri(path = "baker-c-host")
-  private val uriD = Uri(path = "baker-d-host")
 
   describe("Balancer") {
 
     it("should support single element list") {
 
-      val fos = new FailoverState(IndexedSeq(uriA))
+      val fos = new FailoverState(EndpointConfig(IndexedSeq(uriA)))
 
       assert(fos.uri == uriA)
 
@@ -32,69 +31,19 @@ class FailoverStateSpec extends AnyFunSpec {
 
     it("should support legacy #1") {
 
-      val fos = new FailoverState(IndexedSeq(uriA, uriB), IndexedSeq(uriC))
-
+      val fos = new FailoverState(EndpointConfig(IndexedSeq(uriA, uriB)))
       assert(fos.uri == uriA)
-
       fos.failed()
-
       assert(fos.uri == uriB)
-
       fos.failed()
-
       assert(fos.uri == uriA)
-
       fos.failed()
-
       assert(fos.uri == uriB)
     }
-
-    it("should support legacy #2") {
-
-      val fos = new FailoverState(IndexedSeq(uriA, uriB), IndexedSeq(uriC))
-
-      assert(fos.uri == uriA)
-
-      fos.failed()
-
-      assert(fos.uri == uriB)
-
-      fos.failoverToLegacy()
-
-      assert(fos.uri == uriC)
-
-      fos.failoverToLegacy()
-
-      assert(fos.uri == uriC)
-    }
-
-    it("should support legacy #3") {
-
-      val fos = new FailoverState(IndexedSeq(uriA, uriB), IndexedSeq(uriC, uriD))
-
-      assert(fos.uri == uriA)
-
-      fos.failoverToLegacy()
-
-      assert(fos.uri == uriC)
-
-      fos.failoverToLegacy()
-
-      assert(fos.uri == uriD)
-
-      fos.failoverToLegacy()
-
-      assert(fos.uri == uriC)
-
-      fos.failoverToLegacy()
-
-      assert(fos.uri == uriD)
-    }
-
 
     it("should fail without elements") {
 
-      val fos = new FailoverState(IndexedSeq.empty)
+      val fos = new FailoverState(EndpointConfig(IndexedSeq.empty))
 
       assertThrows[IndexOutOfBoundsException](fos.uri)
 
@@ -104,7 +53,7 @@ class FailoverStateSpec extends AnyFunSpec {
     }
 
     it("should support multiply elements") {
-      val fos = new FailoverState(IndexedSeq(uriA, uriB))
+      val fos = new FailoverState(EndpointConfig(IndexedSeq(uriA, uriB)))
 
       assert(fos.uri == uriA)
 
