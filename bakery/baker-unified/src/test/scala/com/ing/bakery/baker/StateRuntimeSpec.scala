@@ -164,8 +164,10 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         e <- io(context.client
           .getRecipeInstanceState("nonexistent")
           .map(_ => None)
-          .recover { case e: BakerException => Some(e) })
-      } yield e shouldBe Some(BakerException.NoSuchProcessException("nonexistent"))
+          .recover { case e => Some(e) })
+      } yield {
+        e shouldBe Some(RetryToLegacyError(404, "{\"result\":\"error\",\"body\":{\"enum\":1,\"message\":\"nonexistent\"}}"))
+      }
     }
 
     test("Baker.getRecipeInstanceState with SQL injection (fails with error 404)") { context =>
