@@ -5,6 +5,7 @@ import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
 import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.common.BakerException
+import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EventInstance}
 import com.ing.baker.runtime.serialization.JsonEncoders._
@@ -88,6 +89,7 @@ final class BakerService private(baker: Baker, interactionManager: InteractionsF
 
   private def callBaker[A](f: => Future[A])(implicit encoder: Encoder[A]): IO[Response[IO]] = {
     IO.fromFuture(IO(f)).attempt.flatMap {
+      case Left(e: NoSuchProcessException) => NotFound(BakerResult(e))
       case Left(e: BakerException) => Ok(BakerResult(e))
       case Left(e) =>
         logger.error(s"Unexpected exception happened when calling Baker", e)
