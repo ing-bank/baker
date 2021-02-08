@@ -1,6 +1,6 @@
 package com.ing.bakery.common
 
-import cats.effect.{IO, Timer}
+import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
 import com.ing.baker.runtime.scaladsl.BakerResult
 import com.ing.bakery.scaladsl.{EndpointConfig, RetryToLegacyError}
@@ -9,6 +9,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import org.http4s.circe.jsonOf
 import org.http4s.client.Client
+import org.http4s.client.middleware.Logger
 import org.http4s.{Request, Response, Uri}
 import retry.RetryPolicies.{constantDelay, limitRetries}
 import retry.{RetryDetails, retryingOnAllErrors}
@@ -38,9 +39,12 @@ object FailoverUtils extends LazyLogging {
                        fallbackEndpoint: Option[EndpointConfig])
                       (implicit ec: ExecutionContext, decoder: Decoder[BakerResult]): IO[BakerResult] = {
     implicit val timer: Timer[IO] = IO.timer(ec)
+    implicit val cs: ContextShift[IO] = IO.contextShift(ec)
 
     def call(uri: Uri): IO[BakerResult] =
-      client
+      Logger(logBody = fos.endpoint.apiLoggingEnabled,
+        logHeaders = fos.endpoint.apiLoggingEnabled,
+        logAction = Some((s: String) => IO(logger.info(s))))(client)
         .expectOr[BakerResult](
           request(uri, fos.endpoint.apiUrlPrefix)
             .map({ request: Request[IO] => filters.foldLeft(request)((acc, filter) => filter(acc))})

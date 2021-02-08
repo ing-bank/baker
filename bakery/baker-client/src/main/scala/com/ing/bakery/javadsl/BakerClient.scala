@@ -34,7 +34,8 @@ object BakerClient {
             fallbackHosts: JList[String],
             fallbackApiUrlPrefix: String,
             filters: JList[Filter],
-            tlsConfig: Optional[TLSConfig]): CompletableFuture[JavaBaker] = {
+            tlsConfig: Optional[TLSConfig],
+            apiLoggingEnabled: Boolean): CompletableFuture[JavaBaker] = {
 
     val connectionPool: ExecutionContextExecutor = ExecutionContext.fromExecutor(newCachedThreadPool())
     val sslContext = if (tlsConfig.isPresent) Some(tlsConfig.get()).map(_.loadSSLContext) else None
@@ -50,9 +51,9 @@ object BakerClient {
       .map { client =>
         new scaladsl.BakerClient(
           client = client,
-          EndpointConfig(hosts.asScala.map(Uri.unsafeFromString).toIndexedSeq, apiUrlPrefix),
+          EndpointConfig(hosts.asScala.map(Uri.unsafeFromString).toIndexedSeq, apiUrlPrefix, apiLoggingEnabled),
           if (fallbackHosts.size == 0) None
-          else Some(EndpointConfig(fallbackHosts.asScala.map(Uri.unsafeFromString).toIndexedSeq, fallbackApiUrlPrefix)),
+          else Some(EndpointConfig(fallbackHosts.asScala.map(Uri.unsafeFromString).toIndexedSeq, fallbackApiUrlPrefix, apiLoggingEnabled)),
           filters = filters.asScala.map(_.asScala))
       }
       .allocated

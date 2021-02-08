@@ -78,14 +78,15 @@ object BakerClient {
                apiUrlPrefix: String,
                executionContext: ExecutionContext,
                filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
-               tlsConfig: Option[TLSConfig] = None)
+               tlsConfig: Option[TLSConfig] = None,
+               apiLoggingEnabled: Boolean = false)
               (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] =
-    resourceBalanced(EndpointConfig(IndexedSeq(host), apiUrlPrefix), executionContext, filters, tlsConfig)(cs, timer)
+    resourceBalanced(EndpointConfig(IndexedSeq(host), apiUrlPrefix, apiLoggingEnabled), executionContext, filters, tlsConfig)(cs, timer)
 
 
-  def apply(client: Client[IO], host: Uri, apiUrlPrefix: String, filters: Seq[Request[IO] => Request[IO]])
+  def apply(client: Client[IO], host: Uri, apiUrlPrefix: String, filters: Seq[Request[IO] => Request[IO]], apiLoggingEnabled: Boolean = false)
            (implicit ec: ExecutionContext): BakerClient =
-    new BakerClient(client, EndpointConfig(IndexedSeq(host), apiUrlPrefix), None, filters)(ec)
+    new BakerClient(client, EndpointConfig(IndexedSeq(host), apiUrlPrefix, apiLoggingEnabled), None, filters)(ec)
 }
 
 class ResponseError(val status: Int, val msg: String)
@@ -101,7 +102,7 @@ object ResponseError {
 
 final case class RetryToLegacyError(override val status: Int, override val msg: String) extends ResponseError(status, msg)
 
-final case class EndpointConfig(hosts: IndexedSeq[Uri], apiUrlPrefix: String = "/api/bakery")
+final case class EndpointConfig(hosts: IndexedSeq[Uri], apiUrlPrefix: String = "/api/bakery", apiLoggingEnabled: Boolean = false)
 
 final class BakerClient( client: Client[IO],
                          endpoint: EndpointConfig,
@@ -148,12 +149,12 @@ final class BakerClient( client: Client[IO],
       }
     }
 
-  private def callRemoteBakerService[A](request: (Uri, String) => IO[Request[IO]])(implicit decoder: Decoder[A]): Future[A] = 
+  private def callRemoteBakerService[A](request: (Uri, String) => IO[Request[IO]])(implicit decoder: Decoder[A]): Future[A] =
     callRemoteBakerImpl(request, handleHttpErrors, None)(decoder)
   
 
   private def callRemoteBakerServiceFallbackAware[A](request: (Uri, String) => IO[Request[IO]],
-                                                   fallbackEndpoint: Option[EndpointConfig])(implicit decoder: Decoder[A]): Future[A] = 
+                                                   fallbackEndpoint: Option[EndpointConfig])(implicit decoder: Decoder[A]): Future[A] =
     callRemoteBakerImpl(request, handleFallbackAwareErrors, fallbackEndpoint)(decoder)
 
   private def callRemoteBakerImpl[A](request: (Uri, String) => IO[Request[IO]],

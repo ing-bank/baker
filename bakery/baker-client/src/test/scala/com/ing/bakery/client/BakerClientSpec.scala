@@ -120,7 +120,7 @@ class BakerClientSpec extends BakeryFunSpec {
       for {
         client <- IO.fromFuture(IO(FutureConverters.toScala(
           javadsl.BakerClient.build(List(host).asJava, "/api/bakery",
-            List().asJava, "", List(filter).asJava, java.util.Optional.of(clientTLSConfig)))))
+            List().asJava, "", List(filter).asJava, java.util.Optional.of(clientTLSConfig), true))))
         _ <- IO.fromFuture(IO(FutureConverters.toScala(client.getAllRecipeInstancesMetadata)))
         headers <- context.receivedHeaders
       } yield assert(headers.contains(testHeader))
