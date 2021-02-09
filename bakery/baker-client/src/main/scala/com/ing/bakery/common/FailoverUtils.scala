@@ -23,6 +23,23 @@ object FailoverUtils extends LazyLogging {
 
   private val config: Config = loadConfig
 
+  def call(fos: FailoverState,
+           client: Client[IO],
+           request: (Uri, String) => IO[Request[IO]],
+           filters: Seq[Request[IO] => Request[IO]],
+           handleHttpErrors: Response[IO] => IO[Throwable])
+          (implicit ec: ExecutionContext, decoder: Decoder[BakerResult]): IO[BakerResult] = {
+    implicit val cs: ContextShift[IO] = IO.contextShift(ec)
+
+    Logger(logBody = fos.endpoint.apiLoggingEnabled,
+      logHeaders = fos.endpoint.apiLoggingEnabled,
+      logAction = Some((s: String) => IO(logger.info(s))))(client)
+      .expectOr[BakerResult](
+        request(fos.uri, fos.endpoint.apiUrlPrefix)
+          .map({ request: Request[IO] => filters.foldLeft(request)((acc, filter) => filter(acc))})
+      )(handleHttpErrors)(jsonOf[IO, BakerResult])
+  }
+
   /**
     * retry the HttpCall on different hosts
     *
@@ -39,16 +56,6 @@ object FailoverUtils extends LazyLogging {
                        fallbackEndpoint: Option[EndpointConfig])
                       (implicit ec: ExecutionContext, decoder: Decoder[BakerResult]): IO[BakerResult] = {
     implicit val timer: Timer[IO] = IO.timer(ec)
-    implicit val cs: ContextShift[IO] = IO.contextShift(ec)
-
-    def call(uri: Uri): IO[BakerResult] =
-      Logger(logBody = fos.endpoint.apiLoggingEnabled,
-        logHeaders = fos.endpoint.apiLoggingEnabled,
-        logAction = Some((s: String) => IO(logger.info(s))))(client)
-        .expectOr[BakerResult](
-          request(uri, fos.endpoint.apiUrlPrefix)
-            .map({ request: Request[IO] => filters.foldLeft(request)((acc, filter) => filter(acc))})
-        )(handleHttpErrors)(jsonOf[IO, BakerResult])
 
     retryingOnAllErrors(
       policy = limitRetries[IO](fos.size * config.retryTimes) |+| constantDelay[IO](config.initialDelay),
@@ -66,12 +73,11 @@ object FailoverUtils extends LazyLogging {
             if (retryDetails.givingUp) logger.error(message) else logger.debug(message)
         }
 
-      })(call(fos.uri))
+      })(call(fos, client, request, filters, handleHttpErrors))
   }
 
   private[common] def loadConfig: Config = {
     val config = ConfigFactory.load().getConfig("baker.client.failover")
-
     Config(Duration.fromNanos(config.getDuration("initial-delay").toNanos), config.getInt("retry-times"))
   }
 }
