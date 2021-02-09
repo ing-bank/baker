@@ -23,23 +23,6 @@ object FailoverUtils extends LazyLogging {
 
   private val config: Config = loadConfig
 
-  def call(fos: FailoverState,
-           client: Client[IO],
-           request: (Uri, String) => IO[Request[IO]],
-           filters: Seq[Request[IO] => Request[IO]],
-           handleHttpErrors: Response[IO] => IO[Throwable])
-          (implicit ec: ExecutionContext, decoder: Decoder[BakerResult]): IO[BakerResult] = {
-    implicit val cs: ContextShift[IO] = IO.contextShift(ec)
-
-    Logger(logBody = fos.endpoint.apiLoggingEnabled,
-      logHeaders = fos.endpoint.apiLoggingEnabled,
-      logAction = Some((s: String) => IO(logger.info(s))))(client)
-      .expectOr[BakerResult](
-        request(fos.uri, fos.endpoint.apiUrlPrefix)
-          .map({ request: Request[IO] => filters.foldLeft(request)((acc, filter) => filter(acc))})
-      )(handleHttpErrors)(jsonOf[IO, BakerResult])
-  }
-
   /**
     * retry the HttpCall on different hosts
     *
@@ -56,15 +39,17 @@ object FailoverUtils extends LazyLogging {
                        fallbackEndpoint: Option[EndpointConfig])
                       (implicit ec: ExecutionContext, decoder: Decoder[BakerResult]): IO[BakerResult] = {
     implicit val timer: Timer[IO] = IO.timer(ec)
+    implicit val cs: ContextShift[IO] = IO.contextShift(ec)
 
     retryingOnAllErrors(
-      policy = limitRetries[IO](fos.size * config.retryTimes) |+| constantDelay[IO](config.initialDelay),
+      policy = limitRetries[IO](
+        (fos.endpoint.hosts.size + fallbackEndpoint.map(_.hosts.size).getOrElse(0)) * config.retryTimes) |+| constantDelay[IO](config.initialDelay),
       onError = (ex: Throwable, retryDetails: RetryDetails) => IO {
         ex match {
           case _: RetryToLegacyError if fallbackEndpoint.isDefined =>
             fallbackEndpoint.foreach( fep => {
               logger.info(s"Retrying to fallback Baker API: $fep")
-              callWithFailOver(new FailoverState(fep), client, request, filters, handleHttpErrors, None)
+              fos.fallback(fep)
             })
 
           case _ =>
@@ -72,8 +57,15 @@ object FailoverUtils extends LazyLogging {
             fos.failed()
             if (retryDetails.givingUp) logger.error(message) else logger.debug(message)
         }
-
-      })(call(fos, client, request, filters, handleHttpErrors))
+      })(
+      Logger(logBody = fos.endpoint.apiLoggingEnabled,
+        logHeaders = fos.endpoint.apiLoggingEnabled,
+        logAction = Some((s: String) => IO(logger.info(s))))(client)
+        .expectOr[BakerResult](
+          request(fos.uri, fos.endpoint.apiUrlPrefix)
+            .map({ request: Request[IO] => filters.foldLeft(request)((acc, filter) => filter(acc))})
+        )(handleHttpErrors)(jsonOf[IO, BakerResult])
+    )
   }
 
   private[common] def loadConfig: Config = {

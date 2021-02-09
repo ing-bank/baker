@@ -12,6 +12,8 @@ class FailoverStateSpec extends AnyFunSpec {
 
   private val uriA = Uri(path = "baker-a-host")
   private val uriB = Uri(path = "baker-b-host")
+  private val uriC = Uri(path = "baker-c-host")
+  private val uriD = Uri(path = "baker-d-host")
 
   describe("Balancer") {
 
@@ -29,7 +31,7 @@ class FailoverStateSpec extends AnyFunSpec {
       assert(fos.uri == uriA)
     }
 
-    it("should support legacy #1") {
+    it("should support retries") {
 
       val fos = new FailoverState(EndpointConfig(IndexedSeq(uriA, uriB)))
       assert(fos.uri == uriA)
@@ -76,5 +78,48 @@ class FailoverStateSpec extends AnyFunSpec {
 
       Await.result(result, 5.seconds)
     }
+
+    it("should support fallback #1") {
+
+      val fos = new FailoverState(EndpointConfig(IndexedSeq(uriA, uriB)))
+      assert(fos.uri == uriA)
+
+      fos.failed()
+      assert(fos.uri == uriB)
+
+      fos.failed()
+      assert(fos.uri == uriA)
+
+      fos.failed()
+      assert(fos.uri == uriB)
+
+      fos.fallback(EndpointConfig( IndexedSeq(uriC)))
+      assert(fos.uri == uriC)
+
+      fos.failed()
+      assert(fos.uri == uriC)
+    }
+
+    it("should support fallback #2") {
+
+      val fos = new FailoverState(EndpointConfig(IndexedSeq(uriA, uriB)))
+
+      assert(fos.uri == uriA)
+
+      fos.failed()
+
+      assert(fos.uri == uriB)
+
+      fos.fallback(EndpointConfig(IndexedSeq(uriC, uriD)))
+
+      assert(fos.uri == uriC)
+      fos.failed()
+      assert(fos.uri == uriD)
+      fos.failed()
+      assert(fos.uri == uriC)
+
+    }
+
+
   }
 }
