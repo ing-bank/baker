@@ -20,6 +20,7 @@ import org.http4s.client.dsl.io._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
+import FailoverUtils._
 
 object BakerClient {
 
@@ -133,22 +134,6 @@ final class BakerClient( client: Client[IO],
     )
   }
 
-  private def handleHttpErrors(errorResponse: Response[IO]): IO[Throwable] =
-    errorResponse.bodyText.compile.foldMonoid.map(body =>
-      ResponseError(errorResponse.status.code, body)
-    )
-
-  private def handleFallbackAwareErrors(errorResponse: Response[IO]): IO[Throwable] =
-    errorResponse.bodyText.compile.foldMonoid.map { body =>
-      val responseCode = errorResponse.status.code
-
-      if (responseCode == 404) {
-        RetryToLegacyError(responseCode, body)
-      } else {
-        ResponseError(responseCode, body)
-      }
-    }
-
   private def callRemoteBakerService[A](request: (Uri, String) => IO[Request[IO]])(implicit decoder: Decoder[A]): Future[A] =
     callRemoteBakerImpl(request, handleHttpErrors, None)(decoder)
   
@@ -161,9 +146,7 @@ final class BakerClient( client: Client[IO],
                                      errorHandler: Response[IO] => IO[Throwable],
                                      fallbackEndpoint: Option[EndpointConfig])
                                     (implicit decoder: Decoder[A]): Future[A] = {
-    val fos = new FailoverState(endpoint)
-
-    FailoverUtils.callWithFailOver(fos, client, request, filters, errorHandler, fallbackEndpoint)
+    callWithFailOver(new FailoverState(endpoint), client, request, filters, errorHandler, fallbackEndpoint)
       .map(r => {
         parse(r)(decoder)
       })

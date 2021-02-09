@@ -3,7 +3,7 @@ package com.ing.bakery.common
 import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
 import com.ing.baker.runtime.scaladsl.BakerResult
-import com.ing.bakery.scaladsl.{EndpointConfig, RetryToLegacyError}
+import com.ing.bakery.scaladsl.{EndpointConfig, ResponseError, RetryToLegacyError}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
@@ -20,6 +20,22 @@ import scala.concurrent.duration._
 object FailoverUtils extends LazyLogging {
 
   case class Config(initialDelay: FiniteDuration, retryTimes: Int)
+
+  def handleHttpErrors(errorResponse: Response[IO]): IO[Throwable] =
+    errorResponse.bodyText.compile.foldMonoid.map(body =>
+      ResponseError(errorResponse.status.code, body)
+    )
+
+  def handleFallbackAwareErrors(errorResponse: Response[IO]): IO[Throwable] =
+    errorResponse.bodyText.compile.foldMonoid.map { body =>
+      val responseCode = errorResponse.status.code
+
+      if (responseCode == 404) {
+        RetryToLegacyError(responseCode, body)
+      } else {
+        ResponseError(responseCode, body)
+      }
+    }
 
   private val config: Config = loadConfig
 
