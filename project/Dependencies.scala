@@ -11,7 +11,7 @@ object Dependencies {
   val fs2Version = "2.5.0"
   val circeVersion = "0.13.0"
   val mockitoScalaVersion = "1.16.23"
-  val catsVersion = "2.3.1"
+  val catsVersion = "2.4.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
   val springVersion = "5.3.3"
 
@@ -52,7 +52,7 @@ object Dependencies {
   val akkaClusterBoostrap = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
   val akkaDiscoveryKube = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaManagementVersion
 
-  val scalaKafkaClient = "net.cakesolutions" %% "scala-kafka-client" % "2.3.1"
+  val scalaKafkaClient = "net.cakesolutions" %% "scala-kafka-client" % "2.4.0"
   val fs2Core = "co.fs2" %% "fs2-core" % fs2Version
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Version
   val fs2kafka = "com.github.fd4s" %% "fs2-kafka" % "1.0.0"
