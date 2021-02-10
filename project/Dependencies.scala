@@ -7,7 +7,7 @@ object Dependencies {
   val akkaManagementVersion = "1.0.9"
   val akkaPersistenceCassandraVersion = "1.0.4"
   val akkaHttpVersion = "10.2.3"
-  val http4sVersion = "0.21.17"
+  val http4sVersion = "0.21.18"
   val fs2Version = "2.5.0"
   val circeVersion = "0.13.0"
   val mockitoScalaVersion = "1.16.23"
@@ -29,7 +29,7 @@ object Dependencies {
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
   val mockServer = "org.mock-server" % "mockserver-netty" % "5.11.2"
   val junitInterface = "com.novocode" % "junit-interface" % "0.11"
-  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.7.0"
+  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.7.1"
 
   val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
 
@@ -72,8 +72,8 @@ object Dependencies {
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.10.0"
-  val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.9.0"
-  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.0.5"
+  val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.10.0"
+  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.1.16"
 
   val skuber = "io.skuber" %% "skuber" % "2.6.0"
   val play = "com.typesafe.play" %% "play-json" % "2.9.2"
@@ -112,7 +112,7 @@ object Dependencies {
   val typeSafeConfig = "com.typesafe" % "config" % "1.4.1"
 
   val objenisis = "org.objenesis" % "objenesis" % "3.1"
-  val jodaTime = "joda-time" % "joda-time" % "2.10.9"
+  val jodaTime = "joda-time" % "joda-time" % "2.10.10"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.30"
   val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val logstash =  "net.logstash.logback" % "logstash-logback-encoder" % "6.4"

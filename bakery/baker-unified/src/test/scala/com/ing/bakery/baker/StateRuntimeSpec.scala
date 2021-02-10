@@ -11,7 +11,7 @@ import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
 import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
 import com.ing.bakery.recipe.ItemReservationRecipe
-import com.ing.bakery.scaladsl.{BakerClient, ResponseError, RetryToLegacyError}
+import com.ing.bakery.scaladsl.{BakerClient, RetryToLegacyError}
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -164,8 +164,10 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         e <- io(context.client
           .getRecipeInstanceState("nonexistent")
           .map(_ => None)
-          .recover { case e: BakerException => Some(e) })
-      } yield e shouldBe Some(BakerException.NoSuchProcessException("nonexistent"))
+          .recover { case e => Some(e) })
+      } yield {
+        e shouldBe Some(RetryToLegacyError(404, "{\"result\":\"error\",\"body\":{\"enum\":1,\"message\":\"nonexistent\"}}"))
+      }
     }
 
     test("Baker.getRecipeInstanceState with SQL injection (fails with error 404)") { context =>

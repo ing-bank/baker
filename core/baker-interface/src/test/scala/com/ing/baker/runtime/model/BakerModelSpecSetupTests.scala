@@ -109,7 +109,7 @@ trait BakerModelSpecSetupTests[F[_]] {
       for {
         baker <- context.buildBaker(List.empty)
         _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).attempt.map {
-          case Left(e) => e should have('message("No implementation provided for interaction: InteractionOne"))
+          case Left(e) => e should have('message("No compatible implementation provided for interaction: InteractionOne: List(NameNotFound)"))
           case Right(_) => fail("Adding a recipe should fail")
         }
       } yield succeed
@@ -124,7 +124,7 @@ trait BakerModelSpecSetupTests[F[_]] {
       for {
         baker <- context.buildBaker(List(InteractionInstanceF.unsafeFrom(new InteractionOneWrongApply())))
         _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).attempt.map {
-          case Left(e) => e should have('message("No implementation provided for interaction: InteractionOne"))
+          case Left(e) => e should have('message("No compatible implementation provided for interaction: InteractionOne: List(InteractionOne input size differs: transition expects 2, implementation provides 1)"))
           case Right(_) => fail("Adding an interaction should fail")
         }
       } yield succeed

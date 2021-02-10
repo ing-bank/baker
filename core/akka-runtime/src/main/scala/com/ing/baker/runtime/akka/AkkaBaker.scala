@@ -99,20 +99,15 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     }
   }
 
-  private def addToManager(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] = {
-    logger.info(s"Adding recipe ${compiledRecipe.name}")
-
-    val result = recipeManager.put(compiledRecipe, timeCreated)
-    result.foreach(recipeId => logger.info(s"Recipe ${compiledRecipe.name} has been added as $recipeId"))
-    result
-  }
+  private def addToManager(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] =
+    recipeManager.put(compiledRecipe, timeCreated)
 
   private def getImplementationErrors(compiledRecipe: CompiledRecipe): Future[Set[String]] = {
     compiledRecipe.interactionTransitions.toList
-      .traverse(x => config.interactions.existsFor(x).map(has => (has, x.originalInteractionName)))
+      .traverse(x => config.interactions.incompatibilities(x).map((_, x.originalInteractionName)))
       .map(_
-        .filterNot(_._1)
-        .map(x => s"No implementation provided for interaction: ${x._2}")
+        .filterNot(_._1.isEmpty)
+        .map(x => s"No compatible implementation provided for interaction: ${x._2}: ${x._1}")
         .toSet)
   }.unsafeToFuture()
 

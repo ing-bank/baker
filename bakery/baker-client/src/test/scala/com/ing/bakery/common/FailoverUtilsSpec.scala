@@ -1,106 +1,140 @@
 package com.ing.bakery.common
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.concurrent.Ref
+import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.runtime.scaladsl.BakerResult
-import io.circe.ParsingFailure
+import com.ing.bakery.scaladsl.{BakerClient, EndpointConfig}
 import org.http4s.Method.GET
 import org.http4s._
 import org.http4s.client.Client
+import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.dsl.io._
-import org.http4s.dsl.impl.Root
-import org.mockito.scalatest.MockitoSugar
-import org.scalatest.funspec.AnyFunSpec
+import org.http4s.dsl.io._
+import org.http4s.implicits._
+import org.http4s.server.Router
+import org.http4s.server.blaze.BlazeServerBuilder
+import org.scalatest.funspec.FixtureAsyncFunSpec
+import org.scalatest.{Assertion, FutureOutcome}
+import io.circe.generic.auto._
+import com.ing.baker.runtime.serialization.JsonEncoders._
+import org.http4s.circe.jsonEncoderOf
 
-import java.util.concurrent.{ExecutorService, Executors}
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, ExecutionContextExecutorService}
-import scala.concurrent.duration._
+import java.net.InetSocketAddress
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 
-class FailoverUtilsSpec extends AnyFunSpec with MockitoSugar {
+class FailoverUtilsSpec extends FixtureAsyncFunSpec   {
 
   import FailoverUtils._
-
   implicit val ec: ExecutionContextExecutor = scala.concurrent.ExecutionContext.global
+  implicit val contextShift: ContextShift[IO] =
+    IO.contextShift(ec)
 
+  implicit val timer: Timer[IO] =
+    IO.timer(ec)
   import com.ing.baker.runtime.serialization.JsonDecoders._
+  implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
+  val callbackCollector: mutable.ListBuffer[String] = ListBuffer.empty
 
-  describe("FailoverUtils") {
+  case class Context(client: Client[IO],
+                     server200: Uri,
+                     server400: Uri,
+                     server500: Uri)
 
-    val uriA = Uri(path = "baker-a-host")
-    val uriB = Uri(path = "baker-b-host")
+  def contextBuilder: Resource[IO, Context] = {
 
-    it("Balances 2 hosts") {
-      val fos = new FailoverState(IndexedSeq(uriA, uriB))
-      var index: Int = 0
+    for {
+      server200 <-
+        BlazeServerBuilder[IO](ExecutionContext.global)
+          .bindSocketAddress( InetSocketAddress.createUnresolved("localhost", 0))
+          .withHttpApp(
+            Router("/" -> HttpRoutes.of[IO] {
+              case _ =>
+                for {
+                  response <- Ok(BakerResult(List.empty[Int]))
+                } yield {
+                  callbackCollector.append("200")
+                  response
+                }
+            }).orNotFound
+          )
+          .resource
 
-      val func: Uri => IO[Request[IO]] = (uri) => {
+      server500 <- BlazeServerBuilder[IO](ExecutionContext.global)
+      .bindSocketAddress( InetSocketAddress.createUnresolved("localhost", 0))
+      .withHttpApp(
+        Router("/" -> HttpRoutes.of[IO] {
+          case _ =>
+            callbackCollector.append("500")
+            InternalServerError()
+        }).orNotFound
+        )
+      .resource
 
-        index = index + 1
-        if (index >= 2) {
-          assert(uri == uriB)
-          GET(uri / "app" / "recipes")
-        } else {
-          assert(uri == uriA)
-          IO.raiseError(new RuntimeException)
-        }
-      }
+      server400 <- BlazeServerBuilder[IO](ExecutionContext.global)
+        .bindSocketAddress( InetSocketAddress.createUnresolved("localhost", 0))
+        .withHttpApp(
+          Router("/" -> HttpRoutes.of[IO] {
+            case _ =>
+              callbackCollector.append("400")
+              NotFound()
+          }).orNotFound
+        )
+        .resource
 
-      testMethod(fos, func)
-    }
-
-    it("Balances two legacy hosts") {
-      val fos = new FailoverState(IndexedSeq(uriA), IndexedSeq(uriB))
-      var index: Int = 0
-
-      val func: Uri => IO[Request[IO]] = (uri) => {
-
-        index = index + 1
-        if (index >= 2) {
-          assert(uri == uriB)
-          GET(uri / "app" / "recipes")
-        } else {
-          assert(uri == uriA)
-            IO.raiseError(new ParsingFailure("error", new RuntimeException("error")))
-        }
-      }
-
-      testMethod(fos, func)
-    }
-
-
-    it("Supports 1 host") {
-      val fos = new FailoverState(IndexedSeq(uriA))
-      var index: Int = 0
-
-      val func: Uri => IO[Request[IO]] = (uri) => {
-
-        index = index + 1
-
-        assert(uri == uriA)
-        if (index >= 2) {
-          GET(uri / "app" / "recipes")
-        } else {
-          IO.raiseError(new RuntimeException)
-        }
-      }
-
-      testMethod(fos, func)
-    }
-
-    it("implements initial configuration for retry") {
-      val config = FailoverUtils.loadConfig
-
-      assert(config.initialDelay == 5.milliseconds)
-      assert(config.retryTimes == 2)
-    }
+      client <- BlazeClientBuilder[IO](executionContext).resource
+    } yield Context(client,
+      Uri.unsafeFromString(s"http://localhost:${server200.address.getPort}"),
+      Uri.unsafeFromString(s"http://localhost:${server400.address.getPort}"),
+      Uri.unsafeFromString(s"http://localhost:${server500.address.getPort}")
+    )
   }
 
-  private def testMethod(fos: FailoverState, func: Uri => IO[Request[IO]]): BakerResult = {
-    val client = mock[Client[IO]]
+  def test(specText: String)(runTest: Context => IO[Assertion]): Unit =
+    it(specText)(_ => contextBuilder.use(runTest).unsafeToFuture())
 
-    when(client.expectOr(any[IO[Request[IO]]])(any[Response[IO] => IO[Throwable]])(any[EntityDecoder[IO, BakerResult]]))
-      .thenReturn(IO(mock[BakerResult]))
+  override type FixtureParam = Unit
+  override def withFixture(test: OneArgAsyncTest): FutureOutcome = test.apply(())
 
-    callWithFailOver(fos, client, func, Seq.empty, _ => IO.raiseError(new RuntimeException))(ec, bakerResultDecoder).unsafeRunSync()
+  describe("Failover utils") {
+    test("processes non-fallback request after 500") { context =>
+      callbackCollector.clear()
+      val fos = new FailoverState(EndpointConfig(IndexedSeq(context.server500, context.server200)))
+      for {
+        result <- callWithFailOver(fos, context.client,
+        (uri, _) => GET(uri / "app" / "recipes"), Seq.empty,
+          FailoverUtils.handleHttpErrors, None)(executionContext, bakerResultDecoder)
+      } yield {
+        assert(result == BakerResult(List.empty[Int]))
+        assert(callbackCollector.toList == List("500", "200"))
+      }
+    }
+
+    test("falls back after 400") { context =>
+      callbackCollector.clear()
+      val fos = new FailoverState(EndpointConfig(IndexedSeq(context.server400, context.server500)))
+      for {
+        _ <- callWithFailOver(fos, context.client,
+          (uri, _) => GET(uri / "app" / "recipes"), Seq.empty,
+          FailoverUtils.handleFallbackAwareErrors, Some(EndpointConfig(IndexedSeq(context.server200))))(executionContext, bakerResultDecoder)
+      } yield {
+        assert(callbackCollector.toList == List("400", "200"))
+      }
+    }
+
+    test("processes fallback request after 500 and then 400") { context =>
+      callbackCollector.clear()
+      val fos = new FailoverState(EndpointConfig(IndexedSeq(context.server500, context.server400)))
+      for {
+        result <- callWithFailOver(fos, context.client,
+          (uri, _) => GET(uri / "app" / "recipes"), Seq.empty,
+          FailoverUtils.handleFallbackAwareErrors, Some(EndpointConfig(IndexedSeq(context.server200))))(executionContext, bakerResultDecoder)
+      } yield {
+        assert(result == BakerResult(List.empty[Int]))
+        assert(callbackCollector.toList == List("500", "400", "200"))
+      }
+    }
   }
 }

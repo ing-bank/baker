@@ -3,7 +3,6 @@ package com.ing.baker.runtime.inmemory
 import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.model.{BakerF, BakerModelSpec}
 import com.ing.baker.runtime.scaladsl
-import com.ing.baker.runtime.scaladsl.InteractionInstanceF
 
 import scala.concurrent.duration._
 
