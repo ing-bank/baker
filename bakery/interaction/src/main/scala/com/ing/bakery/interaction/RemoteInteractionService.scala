@@ -75,7 +75,7 @@ final class RemoteInteractionService(interactions: List[InteractionInstance],
 
   private val Interactions: List[I.Interaction] =
     interactions.map(interaction =>
-      I.Interaction(interaction.shaBase64, interaction.name, interaction.input.toList))
+      I.Interaction(interaction.shaBase64, interaction.name, interaction.input, interaction.output))
 
   def routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
 

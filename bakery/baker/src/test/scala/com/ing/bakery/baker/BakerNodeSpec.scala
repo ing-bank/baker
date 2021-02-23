@@ -7,8 +7,9 @@ import cats.effect.{IO, Resource}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance, InteractionInstanceF}
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionExecutionDescriptor, InteractionInstance, InteractionInstanceF}
 import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
+import com.ing.bakery.protocol.InteractionExecution
 import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
 import com.ing.bakery.recipe.{Interactions, ItemReservationRecipe}
@@ -88,6 +89,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         recipeInformation <- io(context.client.getRecipe(recipeId))
+        interactionInformation <- io(context.client.getInteraction("ReserveItems"))
         noSuchRecipeError <- io(context.client
           .getRecipe("nonexistent")
           .map(_ => None)
@@ -95,6 +97,7 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
         allRecipes <- io(context.client.getAllRecipes)
       } yield {
         recipeInformation.compiledRecipe.name shouldBe recipe.name
+        interactionInformation shouldBe Some(InteractionExecutionDescriptor("id", "ReserveItems", Seq.empty, None))
         noSuchRecipeError shouldBe Some(BakerException.NoSuchRecipeException("nonexistent"))
         allRecipes.get(recipeId).map(_.compiledRecipe.name) shouldBe Some(recipe.name)
       }

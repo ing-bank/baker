@@ -87,6 +87,10 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     components.recipeManager.getAllRecipes
       .timeout(config.inquireTimeout)
 
+
+  override def getInteraction(interactionName: String): F[InteractionExecutionDescriptor] =
+    components.interactions.listAll.map(_.filter(_.name == interactionName))
+
   /**
     * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
     *
@@ -334,6 +338,9 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.getRecipe(recipeId))
       override def getAllRecipes: G[Map[String, RecipeInformation]] =
         mapK(self.getAllRecipes)
+      override def getInteraction(interactionName: String): G[Option[InteractionExecutionDescriptor]] =
+        mapK(self.getInteraction(interactionName))
+
       override def bake(recipeId: String, recipeInstanceId: String): G[Unit] =
         mapK(self.bake(recipeId, recipeInstanceId))
       override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): G[SensoryEventStatus] =

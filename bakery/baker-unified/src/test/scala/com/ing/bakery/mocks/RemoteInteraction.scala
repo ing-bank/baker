@@ -23,7 +23,9 @@ class RemoteInteraction(mock: ClientAndServer) {
       response()
         .withStatusCode(200)
         .withBody(List(I.Interaction("localhost", Interactions.ReserveItemsInteraction.name,
-          Interactions.ReserveItemsInteraction.inputIngredients.map(_.ingredientType).toList)).asJson.toString)
+          Interactions.ReserveItemsInteraction.inputIngredients.map(_.ingredientType).toList,
+          Some(Interactions.ReserveItemsInteraction.output.map(e => e.name -> e.providedIngredients.map(i => i.name -> i.ingredientType).toMap).toMap)
+        )).asJson.toString)
     )
   }
 

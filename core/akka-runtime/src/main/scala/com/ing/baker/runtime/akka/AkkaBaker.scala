@@ -142,6 +142,11 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       )
   }
 
+
+  override def getInteraction(interactionName: String): Future[Option[InteractionExecutionDescriptor]] =
+    config.interactions.listAll.flatMap(_.find(_.name == interactionName).map(i =>
+    InteractionExecutionDescriptor(i.id))).un
+
   /**
     * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
     *

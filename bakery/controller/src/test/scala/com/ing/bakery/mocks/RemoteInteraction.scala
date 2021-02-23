@@ -21,7 +21,7 @@ class RemoteInteraction(mock: ClientAndServer) {
       response()
         .withStatusCode(200)
         .withBody(
-          List(I.Interaction(interaction.shaBase64, interaction.name, interaction.input.toList)).asJson.toString
+          List(I.Interaction(interaction.shaBase64, interaction.name, interaction.input.toList, interaction.output)).asJson.toString
         )
     )
   }

@@ -17,6 +17,8 @@ import scala.concurrent.Future
 import scala.reflect.ClassTag
 import scala.util.Try
 
+case class InteractionExecutionDescriptor(id: String, name: String, input: Seq[Type], output: Option[Map[String, Map[String, Type]]])
+
 abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] with ScalaApi { self =>
 
   val run: Seq[IngredientInstance] => F[Option[EventInstance]]

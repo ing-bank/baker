@@ -36,7 +36,7 @@ class KubeApiServer(mock: ClientAndServer, interaction: InteractionInstance) {
 
   private def eventOfInteractionManifest(port: Int, tpe: WatchEventType, scope: String): WatchEvent = {
     val creationContractName: String = "test-interaction-manifest"
-    val interfaces = List(I.Interaction(interaction.shaBase64, interaction.name, interaction.input.toList))
+    val interfaces = List(I.Interaction(interaction.shaBase64, interaction.name, interaction.input, interaction.output))
     new WatchEvent {
       override type Resource = skuber.ConfigMap
       override def item: Resource = {

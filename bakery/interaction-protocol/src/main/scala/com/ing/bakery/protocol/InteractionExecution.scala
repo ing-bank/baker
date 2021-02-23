@@ -47,8 +47,6 @@ object InteractionExecutionJsonCodecs {
 
 object InteractionExecution {
 
-  case class Interaction(id: String, name: String, input: List[Type])
-
   case class ExecutionResult(outcome: Either[Failure, Success])
 
   sealed trait Result
