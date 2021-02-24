@@ -7,6 +7,7 @@ import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, EventResolutions, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
+import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 import com.ing.baker.types.Value
 import com.ing.bakery.common.{FailoverState, FailoverUtils, TLSConfig}
 import com.typesafe.scalalogging.LazyLogging
@@ -21,6 +22,7 @@ import org.http4s.client.dsl.io._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
 import FailoverUtils._
+import com.ing.baker.runtime.serialization.InteractionExecution
 
 object BakerClient {
 
@@ -190,6 +192,10 @@ final class BakerClient( client: Client[IO],
     callRemoteBakerService[Unit]((host, prefix) => POST(root(host, prefix) / "instances" / recipeInstanceId / "bake" / recipeId)).map { _ =>
       logger.info(s"Baked recipe instance '$recipeInstanceId' from recipe '$recipeId'")
     }
+
+
+  override def getInteraction(interactionName: String): Future[Option[InteractionExecution.Descriptor]] =
+    callRemoteBakerService[Option[InteractionExecution.Descriptor]]((host, prefix) => GET(root(host, prefix) / "app" / "interactions" / interactionName))
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.

@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import cats.effect.IO
 import com.ing.baker.runtime.scaladsl.InteractionInstance
-import com.ing.bakery.protocol.{InteractionExecution => I}
+import com.ing.baker.runtime.serialization.{InteractionExecution => I}
 import com.ing.bakery.mocks.WatchEvent.WatchEventType
 import io.circe.syntax._
 import org.mockserver.integration.ClientAndServer
@@ -32,11 +32,11 @@ class KubeApiServer(mock: ClientAndServer, interaction: InteractionInstance) {
     )
   }
 
-  import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
+  import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 
   private def eventOfInteractionManifest(port: Int, tpe: WatchEventType, scope: String): WatchEvent = {
     val creationContractName: String = "test-interaction-manifest"
-    val interfaces = List(I.Interaction(interaction.shaBase64, interaction.name, interaction.input, interaction.output))
+    val interfaces = List(I.Descriptor(interaction.shaBase64, interaction.name, interaction.input, interaction.output))
     new WatchEvent {
       override type Resource = skuber.ConfigMap
       override def item: Resource = {

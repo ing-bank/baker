@@ -7,7 +7,8 @@ import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 import com.ing.baker.runtime.model.InteractionsF
-import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EventInstance, InteractionExecutionDescriptor, InteractionInstanceF}
+import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EventInstance, InteractionInstanceF}
+import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe._
@@ -20,7 +21,6 @@ import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.runtime.serialization.JsonDecoders._
-import com.ing.bakery.protocol.InteractionExecution
 import io.prometheus.client.CollectorRegistry
 import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.server.middleware.Logger
@@ -85,7 +85,7 @@ final class BakerService private(baker: Baker, interactionManager: InteractionsF
 
   implicit val eventInstanceDecoder: EntityDecoder[IO, EventInstance] = jsonOf[IO, EventInstance]
   implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
-  implicit val interactionEntityEncoder: EntityEncoder[IO, InteractionExecutionDescriptor] = jsonEncoderOf[IO, InteractionExecutionDescriptor]
+  implicit val interactionEntityEncoder: EntityEncoder[IO, InteractionExecution.Descriptor] = jsonEncoderOf[IO, InteractionExecution.Descriptor]
 
   def routes: HttpRoutes[IO] = app <+> instance
 
@@ -112,7 +112,7 @@ final class BakerService private(baker: Baker, interactionManager: InteractionsF
 
       case GET -> Root / "interactions" / InteractionName(name) =>
         interactionManager.listAll.flatMap(_.find(name == _.name) match {
-            case Some(i) => Ok(InteractionExecutionDescriptor(i.shaBase64, i.name, i.input, i.output))
+            case Some(i) => Ok(InteractionExecution.Descriptor(i.shaBase64, i.name, i.input, i.output))
             case None => NotFound()
         })
 

@@ -1,17 +1,18 @@
 package com.ing.baker.runtime.serialization
 
 import java.util.Base64
-
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.petrinet.api.{Marking, PetriNet}
 import com.ing.baker.runtime.common.{BakerException, RejectReason, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
+import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, IngredientInstance, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
 import com.ing.baker.runtime.serialization.JsonEncoders._
+import com.ing.baker.types
 import com.ing.baker.types._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.CursorOp.DownField
 import io.circe.Decoder._
+import io.circe.Encoder.{encodeList, encodeMap, encodeString}
 import io.circe.KeyDecoder.decodeKeyString
 import io.circe._
 import io.circe.syntax._
@@ -106,4 +107,5 @@ object JsonDecoders extends LazyLogging {
       exception <- BakerException.decode(message, `enum`).toEither.left.map(DecodingFailure.fromThrowable(_, List.empty))
     } yield exception
   }
+
 }

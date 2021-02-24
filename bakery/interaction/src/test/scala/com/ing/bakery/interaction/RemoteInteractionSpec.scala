@@ -3,7 +3,7 @@ package com.ing.bakery.interaction
 import java.net.InetSocketAddress
 
 import cats.effect.{IO, Resource}
-import com.ing.bakery.protocol.{InteractionExecution => I}
+import com.ing.baker.runtime.serialization.{InteractionExecution => I}
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
 import com.ing.baker.types.{CharArray, Int64, PrimitiveValue}
 import com.ing.bakery.testing.BakeryFunSpec
@@ -101,8 +101,8 @@ class RemoteInteractionSpec extends BakeryFunSpec {
         for {
           result <- client.interface
         } yield assert(result == List(
-          I.Interaction(implementation0.shaBase64, implementation0.name, implementation0.input.toList, implementation0.output),
-          I.Interaction(implementation1.shaBase64, implementation1.name, implementation1.input.toList, implementation1.output)
+          I.Descriptor(implementation0.shaBase64, implementation0.name, implementation0.input.toList, implementation0.output),
+          I.Descriptor(implementation1.shaBase64, implementation1.name, implementation1.input.toList, implementation1.output)
         ))
       }
     }

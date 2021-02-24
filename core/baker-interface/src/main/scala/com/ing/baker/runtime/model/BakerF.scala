@@ -11,6 +11,7 @@ import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
 import com.ing.baker.runtime.scaladsl.{Baker => DeprecatedBaker, _}
+import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.types.Value
 import com.typesafe.scalalogging.LazyLogging
 
@@ -88,8 +89,11 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
       .timeout(config.inquireTimeout)
 
 
-  override def getInteraction(interactionName: String): F[InteractionExecutionDescriptor] =
-    components.interactions.listAll.map(_.filter(_.name == interactionName))
+  override def getInteraction(interactionName: String): F[Option[InteractionExecution.Descriptor]] =
+    components.interactions
+      .listAll
+      .map(_.find(_.name == interactionName)
+        .map(i => InteractionExecution.Descriptor(i.shaBase64, i.name, i.input, i.output)))
 
   /**
     * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
@@ -338,7 +342,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.getRecipe(recipeId))
       override def getAllRecipes: G[Map[String, RecipeInformation]] =
         mapK(self.getAllRecipes)
-      override def getInteraction(interactionName: String): G[Option[InteractionExecutionDescriptor]] =
+      override def getInteraction(interactionName: String): G[Option[InteractionExecution.Descriptor]] =
         mapK(self.getInteraction(interactionName))
 
       override def bake(recipeId: String, recipeInstanceId: String): G[Unit] =
@@ -387,6 +391,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.getRecipe(recipeId))
       override def getAllRecipes: Future[Map[String, RecipeInformation]] =
         mapK(self.getAllRecipes)
+      override def getInteraction(interactionName: String): Future[Option[InteractionExecution.Descriptor]] =
+        mapK(self.getInteraction(interactionName))
       override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] =
         mapK(self.bake(recipeId, recipeInstanceId))
       override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] =

@@ -4,14 +4,14 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 import java.util.function.{BiConsumer, Consumer}
-
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
-import javax.annotation.Nonnull
 
+import javax.annotation.Nonnull
 import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
@@ -222,6 +222,10 @@ class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker
     */
   def getAllRecipes: CompletableFuture[java.util.Map[String, RecipeInformation]] =
     FutureConverters.toJava(baker.getAllRecipes).toCompletableFuture.thenApply(_.mapValues(_.asJava).asJava)
+
+
+  def getInteraction(interactionName: String): CompletableFuture[Option[InteractionExecution.Descriptor]] =
+    FutureConverters.toJava(baker.getInteraction((interactionName))).toCompletableFuture
 
   /**
     * Returns an index of all processes.

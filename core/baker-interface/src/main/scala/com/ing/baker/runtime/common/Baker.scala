@@ -2,7 +2,7 @@ package com.ing.baker.runtime.common
 
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
-import com.ing.baker.runtime.scaladsl.InteractionExecutionDescriptor
+import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.types.Value
 
 /**
@@ -68,7 +68,7 @@ trait Baker[F[_]] extends LanguageApi {
     */
   def getAllRecipes: F[language.Map[String, RecipeInformationType]]
 
-  def getInteraction(interactionName: String): F[Option[InteractionExecutionDescriptor]]
+  def getInteraction(interactionName: String): F[Option[InteractionExecution.Descriptor]]
 
   /**
     * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier

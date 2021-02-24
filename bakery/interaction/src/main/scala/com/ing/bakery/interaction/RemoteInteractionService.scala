@@ -2,8 +2,8 @@ package com.ing.bakery.interaction
 
 import java.net.InetSocketAddress
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import com.ing.bakery.protocol.{InteractionExecution => I}
 import com.ing.baker.runtime.scaladsl.{IngredientInstance, InteractionInstance}
+import com.ing.baker.runtime.serialization.{InteractionExecution => I}
 import com.ing.bakery.metrics.MetricService
 import io.circe.Json
 import io.circe.syntax._
@@ -67,15 +67,15 @@ object RemoteInteractionService {
 final class RemoteInteractionService(interactions: List[InteractionInstance],
                                      apiLoggingEnabled: Boolean = false)(implicit timer: Timer[IO], cs: ContextShift[IO]) {
 
-  import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
+  import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 
-  implicit val interactionEntityEncoder: EntityEncoder[IO, List[I.Interaction]] = jsonEncoderOf[IO,  List[I.Interaction]]
+  implicit val interactionEntityEncoder: EntityEncoder[IO, List[I.Descriptor]] = jsonEncoderOf[IO,  List[I.Descriptor]]
   implicit val executeRequestEntityDecoder: EntityDecoder[IO, List[IngredientInstance]] = jsonOf[IO, List[IngredientInstance]]
   implicit val executeResponseEntityEncoder: EntityEncoder[IO, I.ExecutionResult] = jsonEncoderOf[IO, I.ExecutionResult]
 
-  private val Interactions: List[I.Interaction] =
+  private val Interactions: List[I.Descriptor] =
     interactions.map(interaction =>
-      I.Interaction(interaction.shaBase64, interaction.name, interaction.input, interaction.output))
+      I.Descriptor(interaction.shaBase64, interaction.name, interaction.input, interaction.output))
 
   def routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
 
