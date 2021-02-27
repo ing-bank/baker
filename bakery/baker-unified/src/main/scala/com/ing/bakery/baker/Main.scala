@@ -118,10 +118,14 @@ object Main extends IOApp with LazyLogging {
         _ <- Resource.liftF(eventSink.attach(baker))
         _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(configPath, baker))
         _ <- Resource.liftF(IO.async[Unit] { callback =>
-          Cluster(system).registerOnMemberUp {
-            logger.info("Akka cluster is now up")
+          //If using local Baker the registerOnMemberUp is never called, should onl be used during local testing.
+          if (bakerConfig.getString("actor.provider") == "local")
             callback(Right(()))
-          }
+          else
+            Cluster(system).registerOnMemberUp {
+              logger.info("Akka cluster is now up")
+              callback(Right(()))
+            }
         })
 
         _ <- MetricService.resource(
