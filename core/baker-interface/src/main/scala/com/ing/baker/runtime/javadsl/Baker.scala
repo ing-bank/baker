@@ -225,7 +225,11 @@ class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker
 
 
   def getInteraction(interactionName: String): CompletableFuture[Option[InteractionExecution.Descriptor]] =
-    FutureConverters.toJava(baker.getInteraction((interactionName))).toCompletableFuture
+    FutureConverters.toJava(baker.getInteraction(interactionName)).toCompletableFuture
+
+
+  def getAllInteractions: CompletableFuture[List[InteractionExecution.Descriptor]] =
+    FutureConverters.toJava(baker.getAllInteractions).toCompletableFuture
 
   /**
     * Returns an index of all processes.

@@ -89,7 +89,6 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         recipeInformation <- io(context.client.getRecipe(recipeId))
-        interactionInformation <- io(context.client.getInteraction("ReserveItems"))
         noSuchRecipeError <- io(context.client
           .getRecipe("nonexistent")
           .map(_ => None)
@@ -97,7 +96,6 @@ class BakerNodeSpec extends BakeryFunSpec with Matchers {
         allRecipes <- io(context.client.getAllRecipes)
       } yield {
         recipeInformation.compiledRecipe.name shouldBe recipe.name
-        interactionInformation shouldBe Some(InteractionExecution.Descriptor("id", "ReserveItems", Seq.empty, None))
         noSuchRecipeError shouldBe Some(BakerException.NoSuchRecipeException("nonexistent"))
         allRecipes.get(recipeId).map(_.compiledRecipe.name) shouldBe Some(recipe.name)
       }

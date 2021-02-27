@@ -68,7 +68,10 @@ trait Baker[F[_]] extends LanguageApi {
     */
   def getAllRecipes: F[language.Map[String, RecipeInformationType]]
 
+  def getAllInteractions: F[List[InteractionExecution.Descriptor]]
+
   def getInteraction(interactionName: String): F[Option[InteractionExecution.Descriptor]]
+
 
   /**
     * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier

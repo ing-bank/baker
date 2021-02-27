@@ -7,6 +7,8 @@ import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceF}
+import com.ing.baker.runtime.serialization.InteractionExecution
+import com.ing.baker.types.{CharArray, ListType, RecordField, RecordType}
 import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
 import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
@@ -97,6 +99,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
         recipeInformation <- io(context.client.getRecipe(recipeId))
+        interactionInformation <- io(context.client.getInteraction("ReserveItems"))
         noSuchRecipeError <- io(context.client
           .getRecipe("nonexistent")
           .map(_ => None)
@@ -104,6 +107,13 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         allRecipes <- io(context.client.getAllRecipes)
       } yield {
         recipeInformation.compiledRecipe.name shouldBe recipe.name
+        interactionInformation shouldBe Some(
+          InteractionExecution.Descriptor("JR2RmDQeloEh8RddWyvOj9oayIkL/7DxzYlQIN7viuA=","ReserveItems",
+          Seq(
+            RecordType(Seq(RecordField("orderId", CharArray))),
+            ListType(RecordType(Seq(RecordField("itemId", CharArray))))
+          ), None)
+        )
         noSuchRecipeError shouldBe Some(BakerException.NoSuchRecipeException("nonexistent"))
         allRecipes.get(recipeId).map(_.compiledRecipe.name) shouldBe Some(recipe.name)
       }

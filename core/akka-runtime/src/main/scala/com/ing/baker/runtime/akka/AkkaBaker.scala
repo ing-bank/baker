@@ -149,6 +149,11 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       _.find(_.name == interactionName)
         .map(i => InteractionExecution.Descriptor(i.shaBase64, i.name, i.input, i.output))).unsafeToFuture()
 
+
+  override def getAllInteractions: Future[List[InteractionExecution.Descriptor]] =
+    config.interactions.listAll.map(_.map(
+      i => InteractionExecution.Descriptor(i.shaBase64, i.name, i.input, i.output))).unsafeToFuture()
+
   /**
     * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
     *

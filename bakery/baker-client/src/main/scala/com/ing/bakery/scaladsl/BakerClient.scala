@@ -197,6 +197,10 @@ final class BakerClient( client: Client[IO],
   override def getInteraction(interactionName: String): Future[Option[InteractionExecution.Descriptor]] =
     callRemoteBakerService[Option[InteractionExecution.Descriptor]]((host, prefix) => GET(root(host, prefix) / "app" / "interactions" / interactionName))
 
+
+  override def getAllInteractions: Future[List[InteractionExecution.Descriptor]] =
+    callRemoteBakerService[List[InteractionExecution.Descriptor]]((host, prefix) => GET(root(host, prefix) / "app" / "interactions"))
+
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
     *
