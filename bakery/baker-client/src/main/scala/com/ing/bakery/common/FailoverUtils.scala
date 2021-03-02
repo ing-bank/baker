@@ -2,8 +2,10 @@ package com.ing.bakery.common
 
 import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
+import com.ing.baker.runtime.common.BakerException
+import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 import com.ing.baker.runtime.scaladsl.BakerResult
-import com.ing.bakery.scaladsl.{EndpointConfig, ResponseError, RetryToLegacyError}
+import com.ing.bakery.scaladsl.{EndpointConfig, ResponseError}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
@@ -31,7 +33,7 @@ object FailoverUtils extends LazyLogging {
       val responseCode = errorResponse.status.code
 
       if (responseCode == 404) {
-        RetryToLegacyError(responseCode, body)
+        NoSuchProcessException("UNKNOWN")
       } else {
         ResponseError(responseCode, body)
       }
@@ -62,12 +64,11 @@ object FailoverUtils extends LazyLogging {
         (fos.endpoint.hosts.size + fallbackEndpoint.map(_.hosts.size).getOrElse(0)) * config.retryTimes) |+| constantDelay[IO](config.initialDelay),
       onError = (ex: Throwable, retryDetails: RetryDetails) => IO {
         ex match {
-          case _: RetryToLegacyError if fallbackEndpoint.isDefined =>
+          case _: BakerException.NoSuchProcessException if fallbackEndpoint.isDefined =>
             fallbackEndpoint.foreach( fep => {
               logger.info(s"Retrying to fallback Baker API: $fep")
               fos.fallback(fep)
             })
-
           case _ =>
             val message = s"Failed to call ${fos.uri}, retry #${retryDetails.retriesSoFar}, error: ${ex.getMessage}"
             fos.failed()
@@ -76,7 +77,7 @@ object FailoverUtils extends LazyLogging {
       })(
       Logger(logBody = fos.endpoint.apiLoggingEnabled,
         logHeaders = fos.endpoint.apiLoggingEnabled,
-        logAction = Some((s: String) => IO(logger.info(s))))(client)
+        logAction = Some((s: String) => IO(logger.debug(s))))(client)
         .expectOr[BakerResult](
           request(fos.uri, fos.endpoint.apiUrlPrefix)
             .map({ request: Request[IO] => filters.foldLeft(request)((acc, filter) => filter(acc))})
