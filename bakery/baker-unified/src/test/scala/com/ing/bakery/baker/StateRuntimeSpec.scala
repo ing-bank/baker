@@ -13,7 +13,7 @@ import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
 import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
 import com.ing.bakery.recipe.ItemReservationRecipe
-import com.ing.bakery.scaladsl.{BakerClient, RetryToLegacyError}
+import com.ing.bakery.scaladsl.BakerClient
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -23,9 +23,11 @@ import org.scalatest.compatible.Assertion
 import org.scalatest.matchers.should.Matchers
 import skuber.LabelSelector
 import skuber.api.client.KubernetesClient
-
 import java.net.InetSocketAddress
 import java.util.UUID
+
+import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
+
 import scala.concurrent.Future
 
 class StateRuntimeSpec extends BakeryFunSpec with Matchers {
@@ -176,7 +178,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
           .map(_ => None)
           .recover { case e => Some(e) })
       } yield {
-        e shouldBe Some(RetryToLegacyError(404, "{\"result\":\"error\",\"body\":{\"enum\":1,\"message\":\"nonexistent\"}}"))
+        e shouldBe Some(NoSuchProcessException("UNKNOWN"))
       }
     }
 
@@ -189,7 +191,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
           .getRecipeInstanceState("select * from sometable")
           .map(_ => None)
           .recover { case e => Some(e) })
-      } yield e shouldBe Some(RetryToLegacyError(404, "Not found"))
+      } yield e shouldBe Some(NoSuchProcessException("UNKNOWN"))
     }
 
     test("Baker.fireEventAndResolveWhenReceived") { context =>

@@ -103,8 +103,6 @@ object ResponseError {
     Some((error.status, error.msg))
 }
 
-final case class RetryToLegacyError(override val status: Int, override val msg: String) extends ResponseError(status, msg)
-
 final case class EndpointConfig(hosts: IndexedSeq[Uri], apiUrlPrefix: String = "/api/bakery", apiLoggingEnabled: Boolean = false)
 
 final class BakerClient( client: Client[IO],
