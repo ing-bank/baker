@@ -38,8 +38,7 @@ object RemoteInteractionService {
     val service = new RemoteInteractionService(interactions)
 
     def interactionRequestClassifier(request: Request[IO]): Option[String] = {
-      // ... /interactions/<id>/execute - we take ID part we care most about
-      val p = request.pathInfo.split('/')
+      val p = request.pathInfo.split('/')       // ... /interactions/<id>/execute - we take ID part we care most about
       (if (p.length == 4) Some(p(2)) else None).map(v => idToNameMap.getOrElse(v.take(8), "unknown"))
     }
 
