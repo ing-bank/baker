@@ -64,7 +64,7 @@ object Dependencies {
 
   val scalaGraph = "org.scala-graph" %% "graph-core" % "1.13.1"
   val scalaGraphDot = "org.scala-graph" %% "graph-dot" % "1.13.0"
-  val graphvizJava = "guru.nidi" % "graphviz-java" % "0.18.0"
+  val graphvizJava = "guru.nidi" % "graphviz-java" % "0.18.1"
 
   val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.10.0"
   val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.15.0"
