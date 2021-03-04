@@ -40,8 +40,8 @@ object BakerService {
       if (p.startsWith("/app")) Some(p) // cardinality is low, we don't care
       else if (p.startsWith("/instances")) {
         val action = p.split('/') // /instances/<id>/<action>/... - we don't want ID here
-        if (action.length >= 4) Some(s"/instances/${action(3)}") else None
-      } else None
+        if (action.length >= 4) Some(s"/instances/${action(3)}") else Some("/instances/state")
+      } else Some("unknown")
 
     }
 
