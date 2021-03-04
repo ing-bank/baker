@@ -21,7 +21,6 @@ import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.server.Server
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import skuber.LabelSelector
-import skuber.api.client.KubernetesClient
 
 import java.io.File
 import java.net.InetSocketAddress
@@ -82,14 +81,6 @@ object Main extends IOApp with LazyLogging {
 
     val remoteInteractionCallContext: ExecutionContext = system.dispatchers.lookup("akka.actor.remote-interaction-dispatcher")
 
-    val k8s: KubernetesClient = skuber.k8sInit
-
-    def interactionRequestClassifier(request: Request[IO]): Option[String] = {
-      // /api/bakery/interactions/<id>/execute - we take ID part we care most about
-      val p = request.uri.path.split('/')
-      if (p.length == 5) Some(p(4)) else None
-    }
-
     val mainResource: Resource[IO, (Server[IO], AkkaBaker)] =
       for {
         metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
@@ -99,8 +90,8 @@ object Main extends IOApp with LazyLogging {
         eventSink <- KafkaEventSink.resource(eventSinkSettings)
 
         interactionDiscovery <- InteractionDiscovery.resource(
-          Metrics[IO](metrics, interactionRequestClassifier)(interactionHttpClient),
-          k8s,
+          interactionHttpClient,
+          skuber.k8sInit,
           localInteractions,
           bakerConfig.getIntList("interactions.localhost-ports").asScala.map(_.toInt).toList,
           noneIfEmpty(bakerConfig.getString("interactions.pod-label-selector"))

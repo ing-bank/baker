@@ -1,6 +1,6 @@
 package com.ing.bakery.interaction
 
-import java.net.InetSocketAddress
+import java.net.{InetSocketAddress, URLEncoder}
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.bakery.protocol.{InteractionExecution => I}
 import com.ing.baker.runtime.scaladsl.{IngredientInstance, InteractionInstance}
@@ -26,6 +26,9 @@ object RemoteInteractionService {
                tlsConfig: Option[BakeryHttp.TLSConfig],
                apiLoggingEnabled: Boolean = false,
                metricsPort: Int = 9096)(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] = {
+
+    val idToNameMap = interactions.map(i => URLEncoder.encode(i.shaBase64, "UTF-8").take(8) -> i.name ).toMap
+
     val tls = tlsConfig.map { tlsConfig =>
       val sslConfig = BakeryHttp.loadSSLContext(tlsConfig)
       val sslParams = sslConfig.getDefaultSSLParameters
@@ -33,10 +36,10 @@ object RemoteInteractionService {
       (sslConfig, sslParams)
     }
     val service = new RemoteInteractionService(interactions)
+
     def interactionRequestClassifier(request: Request[IO]): Option[String] = {
-      // ... /interactions/<id>/execute - we take ID part we care most about
-      val p = request.pathInfo.split('/')
-      if (p.length == 3) Some(p(2)) else None
+      val p = request.pathInfo.split('/')       // ... /interactions/<id>/execute - we take ID part we care most about
+      (if (p.length == 4) Some(p(2)) else None).map(v => idToNameMap.getOrElse(v.take(8), "unknown"))
     }
 
     for {

@@ -30,7 +30,7 @@ object RecipeLoader extends LazyLogging {
     for {
       recipes <- RecipeLoader.loadRecipes(path)
       _ <- IO{ if (recipes.isEmpty) logger.error(s"No recipes found in the recipe directory ($path), probably misconfiguration?")
-          else logger.info(s"Recipes loaded: ${recipes.map(_._1.name)}") }
+          else logger.debug(s"Recipes loaded: ${recipes.map(_._1.name)}") }
       _ <- recipes.traverse { case (recipe, time) =>
         IO.fromFuture(IO(baker.addRecipe(recipe, time)))
       }
