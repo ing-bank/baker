@@ -13,92 +13,31 @@ spec:
       served: true
       # One and only one version must be marked as the storage version.
       storage: true
-  validation:
-    openAPIV3Schema:
-      type: object
-      properties:
-        spec:
+      schema:
+        openAPIV3Schema:
           type: object
-          required:
-            - image
-            - recipes
           properties:
-            image:
-              type: string
-            imagePullSecret:
-              type: string
-            serviceAccountSecret:
-              type: string
-            kafkaBootstrapServers:
-              type: string
-            replicas:
-              type: integer
-              minimum: 0
-            recipes:
-              type: array
-              items:
-                type: string
-            resources:
+            spec:
               type: object
-              properties:
-                requests:
-                  type: object
-                  properties:
-                    memory:
-                      type: string
-                    cpu:
-                      type: string
-                limits:
-                  type: object
-                  properties:
-                    memory:
-                      type: string
-                    cpu:
-                      type: string
-            config:
-              type: string
-            secrets:
-              type: string
-            apiLoggingEnabled:
-              type: boolean
-            sidecar:
               required:
                 - image
-              type: object
+                - recipes
               properties:
                 image:
                   type: string
-                environment:
-                  type: object
-                  x-kubernetes-preserve-unknown-fields: true
-                configVolumeMountPath:
+                imagePullSecret:
                   type: string
-                livenessProbe:
-                  type: object
-                  required:
-                    - scheme
-                    - port
-                    - path
-                  properties:
-                    scheme:
-                      type: string
-                    port:
-                      type: integer
-                    path:
-                      type: string
-                readinessProbe:
-                  type: object
-                  required:
-                    - scheme
-                    - port
-                    - path
-                  properties:
-                    scheme:
-                      type: string
-                    port:
-                      type: integer
-                    path:
-                      type: string
+                serviceAccountSecret:
+                  type: string
+                kafkaBootstrapServers:
+                  type: string
+                replicas:
+                  type: integer
+                  minimum: 0
+                recipes:
+                  type: array
+                  items:
+                    type: string
                 resources:
                   type: object
                   properties:
@@ -116,6 +55,67 @@ spec:
                           type: string
                         cpu:
                           type: string
+                config:
+                  type: string
+                secrets:
+                  type: string
+                apiLoggingEnabled:
+                  type: boolean
+                sidecar:
+                  required:
+                    - image
+                  type: object
+                  properties:
+                    image:
+                      type: string
+                    environment:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    configVolumeMountPath:
+                      type: string
+                    livenessProbe:
+                      type: object
+                      required:
+                        - scheme
+                        - port
+                        - path
+                      properties:
+                        scheme:
+                          type: string
+                        port:
+                          type: integer
+                        path:
+                          type: string
+                    readinessProbe:
+                      type: object
+                      required:
+                        - scheme
+                        - port
+                        - path
+                      properties:
+                        scheme:
+                          type: string
+                        port:
+                          type: integer
+                        path:
+                          type: string
+                    resources:
+                      type: object
+                      properties:
+                        requests:
+                          type: object
+                          properties:
+                            memory:
+                              type: string
+                            cpu:
+                              type: string
+                        limits:
+                          type: object
+                          properties:
+                            memory:
+                              type: string
+                            cpu:
+                              type: string
 
   # either Namespaced or Cluster
   scope: Namespaced
