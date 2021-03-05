@@ -19,7 +19,6 @@ import skuber.api.client.{EventType, KubernetesClient}
 import skuber.json.format._
 
 import java.io.IOException
-import java.net.ConnectException
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
@@ -84,7 +83,7 @@ object InteractionDiscovery extends LazyLogging {
   }
 
   def resource(interactionHttpClient: Client[IO],
-               k8s: KubernetesClient,
+               k8s: => KubernetesClient,
                localInteractions: LocalInteractions,
                localhostPorts: List[Int],
                podLabelSelector: Option[LabelSelector])(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem): Resource[IO, InteractionDiscovery] = {

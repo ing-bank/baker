@@ -8,9 +8,7 @@ import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.dsl.io._
-import org.http4s.client.middleware.Metrics
 import org.http4s.dsl.io._
-import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.{Uri, _}
 
 import scala.concurrent.ExecutionContext
