@@ -1,14 +1,13 @@
 package com.ing.bakery.baker
 
-import java.net.InetSocketAddress
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
-import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EventInstance}
-import com.ing.baker.runtime.serialization.JsonEncoders._
+import com.ing.baker.runtime.serialization.InteractionExecution
+import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe._
 import io.circe.generic.auto._
@@ -17,17 +16,17 @@ import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
-import org.http4s.server.blaze.BlazeServerBuilder
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import io.prometheus.client.CollectorRegistry
 import org.http4s.metrics.prometheus.Prometheus
-import org.http4s.server.middleware.Logger
+import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.server.middleware.{Logger, Metrics}
 import org.http4s.server.{Router, Server}
 import org.slf4j.LoggerFactory
 
+import java.net.InetSocketAddress
 import scala.concurrent.{ExecutionContext, Future}
-import org.http4s.server.middleware.Metrics
 
 object BakerService {
 
@@ -84,6 +83,7 @@ final class BakerService private(baker: Baker, interactionManager: InteractionsF
 
   implicit val eventInstanceDecoder: EntityDecoder[IO, EventInstance] = jsonOf[IO, EventInstance]
   implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
+  implicit val interactionEntityEncoder: EntityEncoder[IO, InteractionExecution.Descriptor] = jsonEncoderOf[IO, InteractionExecution.Descriptor]
 
   def routes: HttpRoutes[IO] = app <+> instance
 
@@ -103,10 +103,9 @@ final class BakerService private(baker: Baker, interactionManager: InteractionsF
     HttpRoutes.of[IO] {
       case GET -> Root / "health" => Ok()
 
-      case GET -> Root / "interactions" => for {
-        interactions <- interactionManager.listAll
-        resp <- Ok(interactions.map(_.name).asJson)
-      } yield resp
+      case GET -> Root / "interactions" => callBaker(baker.getAllInteractions)
+
+      case GET -> Root / "interactions" / InteractionName(name) => callBaker(baker.getInteraction(name))
 
       case GET -> Root / "recipes" => callBaker(baker.getAllRecipes)
 

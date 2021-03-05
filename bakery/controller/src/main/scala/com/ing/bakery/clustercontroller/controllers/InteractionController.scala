@@ -18,8 +18,8 @@ import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, Object
 import Utils.ConfigurableContainer
 import akka.actor.ActorSystem
 import com.ing.bakery.interaction.RemoteInteractionClient
-import com.ing.bakery.protocol.InteractionExecution
 import ControllerOperations._
+import com.ing.baker.runtime.serialization.InteractionExecution
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -66,7 +66,7 @@ final class InteractionController(
 ) extends ControllerOperations[InteractionResource] with LazyLogging {
 
   implicit lazy val replicaSetListFormat: Format[ReplicaSetList] = ListResourceFormat[ReplicaSet]
-  import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
+  import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 
   // TODO make these operations atomic, if one fails we need to rollback previous ones
   def create(resource: InteractionResource)(implicit k8s: KubernetesClient): IO[Unit] = {
@@ -77,7 +77,7 @@ final class InteractionController(
         older = idemCreate(oldKubernetesDeployment(resource))
       ).map(_.fold(identity, identity))
 
-    def logOutcome(deploymentAlreadyExisted: Boolean, manifestAlreadyExisted: Boolean, interfaces: List[InteractionExecution.Interaction]): IO[Unit] = IO {
+    def logOutcome(deploymentAlreadyExisted: Boolean, manifestAlreadyExisted: Boolean, interfaces: List[InteractionExecution.Descriptor]): IO[Unit] = IO {
       if(deploymentAlreadyExisted || manifestAlreadyExisted)
         logger.debug(s"Deployed (idem) interactions from interaction set named '${resource.name}': ${interfaces.map(_.name).mkString(", ")}")
       else
@@ -132,7 +132,7 @@ final class InteractionController(
         v1 = io(k8s.update[Deployment](deployment(resource))),
         older = io(k8s.update[skuber.ext.Deployment](oldKubernetesDeployment(resource)))).void
 
-    def updateManifest(addressAndInterfaces: (Uri, List[InteractionExecution.Interaction])): IO[Unit] = {
+    def updateManifest(addressAndInterfaces: (Uri, List[InteractionExecution.Descriptor])): IO[Unit] = {
       val (address, interfaces) = addressAndInterfaces
       io(k8s.update[ConfigMap](interactionManifest(resource, address, interfaces))).void
     }
@@ -168,7 +168,7 @@ final class InteractionController(
   private def stopWatchingForConfigMaps(interaction: InteractionResource)(implicit k8s: KubernetesClient): IO[Unit] =
     forAllConfigMapMounts(interaction, configWatch.stopWatchingConfigOf(_, interaction.name))
 
-  private def extractInterfacesFromDeployedInteraction(deployedService: Service, k8s: KubernetesClient, versionCheck: Option[String] = None): IO[(Uri, List[InteractionExecution.Interaction])] = {
+  private def extractInterfacesFromDeployedInteraction(deployedService: Service, k8s: KubernetesClient, versionCheck: Option[String] = None): IO[(Uri, List[InteractionExecution.Descriptor])] = {
     val deployedPort = deployedService.spec
       .flatMap(_.ports.find(_.name == "http-api"))
       .map(_.port)
@@ -176,7 +176,7 @@ final class InteractionController(
     val protocol = if(interactionClientTLS.isDefined) "https" else "http"
     val address = Uri.unsafeFromString(s"$protocol://${deployedService.name}:$deployedPort/")
 
-    def interfacesPoll(client: RemoteInteractionClient): IO[List[InteractionExecution.Interaction]] =
+    def interfacesPoll(client: RemoteInteractionClient): IO[List[InteractionExecution.Descriptor]] =
       Utils.within(10.minutes, split = 300) { // Check every 2 seconds for interfaces for 10 minutes
         versionCheck match {
           case Some(vcheck) =>
@@ -217,10 +217,10 @@ final class InteractionController(
     protocol = Protocol.TCP
   )
 
-  import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
+  import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 
 
-  private def interactionManifest(interaction: InteractionResource, address: Uri, interactions: List[InteractionExecution.Interaction]): ConfigMap = {
+  private def interactionManifest(interaction: InteractionResource, address: Uri, interactions: List[InteractionExecution.Descriptor]): ConfigMap = {
     val name = intermediateInteractionManifestConfigMapName(interaction)
     val interactionsData =  interactions.asJson.toString
     ConfigMap(
