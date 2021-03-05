@@ -10,8 +10,8 @@ import cats.implicits._
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.scaladsl.InteractionInstanceF
+import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.bakery.interaction.RemoteInteractionClient
-import com.ing.bakery.protocol.InteractionExecution
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser._
 import org.http4s.Uri
@@ -144,11 +144,11 @@ final class ServiceDiscovery private(
       case None => IO.raiseError(new IllegalStateException("'address' key not found in interaction creation contract config map"))
     }
 
-  import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
+  import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 
-  private def extractInterfaces(contract: ConfigMap): IO[List[InteractionExecution.Interaction]] = {
+  private def extractInterfaces(contract: ConfigMap): IO[List[InteractionExecution.Descriptor]] = {
     contract.data.get("interfaces").map(parse) map {
-      case Right(json) => json.as[List[InteractionExecution.Interaction]].map(interactions =>
+      case Right(json) => json.as[List[InteractionExecution.Descriptor]].map(interactions =>
         IO.pure(interactions)
       ) getOrElse IO.raiseError(new IllegalStateException(s"Can't decode list from $json"))
       case Left(value) =>

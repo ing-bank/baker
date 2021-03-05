@@ -16,6 +16,7 @@ import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl._
+import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.runtime.{RecipeManager, javadsl, scaladsl}
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
@@ -141,6 +142,17 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
           ).map(_.toMap)
       )
   }
+
+
+  override def getInteraction(interactionName: String): Future[Option[InteractionExecution.Descriptor]] =
+    config.interactions.listAll.map(
+      _.find(_.name == interactionName)
+        .map(i => InteractionExecution.Descriptor(i.shaBase64, i.name, i.input, i.output))).unsafeToFuture()
+
+
+  override def getAllInteractions: Future[List[InteractionExecution.Descriptor]] =
+    config.interactions.listAll.map(_.map(
+      i => InteractionExecution.Descriptor(i.shaBase64, i.name, i.input, i.output))).unsafeToFuture()
 
   /**
     * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier

@@ -1,9 +1,9 @@
-package com.ing.bakery.protocol
+package com.ing.baker.runtime.serialization
 
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
 import com.ing.baker.types.Type
-import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.{Codec, Decoder, Encoder, Json}
+import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
 
 /**
   * Protocol executed after a match between a QuestMandate and InteractionAgent has been made and after both
@@ -29,12 +29,18 @@ object InteractionExecutionJsonCodecs {
   implicit val recordFieldCcodec: Codec[RecordField] = deriveCodec[RecordField]
   implicit val recordValueCodec: Codec[RecordValue] = deriveCodec[RecordValue]
   implicit val listTypeCodec: Codec[ListType] = deriveCodec[ListType]
-  implicit val listValueCodecc: Codec[ListValue] = deriveCodec[ListValue]
+  implicit val listValueCodec: Codec[ListValue] = deriveCodec[ListValue]
 
   implicit val primitiveTypeCodec: Codec[PrimitiveType] = deriveCodec[PrimitiveType]
   implicit val typeCodec: Codec[Type] =  deriveCodec[Type]
 
-  implicit val instanceInterfaceCodec: Codec[Interaction] = deriveCodec[Interaction]
+  private val removeNulls: ((String, Json)) => Boolean = {
+    case (_, v) => !v.isNull
+  }
+
+  implicit val interactionExecutionDescriptorEncoder: Encoder[Descriptor] = deriveEncoder[Descriptor].mapJsonObject(_.filter(removeNulls))
+  implicit val interactionExecutionDescriptorDecoder: Decoder[Descriptor] = deriveDecoder[Descriptor]
+
   implicit val ingredientInstanceCodec: Codec[IngredientInstance] = deriveCodec[IngredientInstance]
 
   implicit val failureReasonCodec: Codec[FailureReason] = deriveCodec[FailureReason]
@@ -47,8 +53,7 @@ object InteractionExecutionJsonCodecs {
 
 object InteractionExecution {
 
-  case class Interaction(id: String, name: String, input: List[Type])
-
+  case class Descriptor(id: String, name: String, input: Seq[Type], output: Option[Map[String, Map[String, Type]]])
   case class ExecutionResult(outcome: Either[Failure, Success])
 
   sealed trait Result

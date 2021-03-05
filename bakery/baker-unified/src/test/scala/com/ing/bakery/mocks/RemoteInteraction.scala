@@ -2,7 +2,7 @@ package com.ing.bakery.mocks
 
 import cats.effect.IO
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance}
-import com.ing.bakery.protocol.{InteractionExecution => I}
+import com.ing.baker.runtime.serialization.{InteractionExecution => I}
 import com.ing.bakery.recipe.Interactions
 import io.circe.syntax._
 import org.mockserver.integration.ClientAndServer
@@ -13,7 +13,7 @@ import org.mockserver.model.HttpResponse.response
 import org.mockserver.verify.VerificationTimes
 
 class RemoteInteraction(mock: ClientAndServer) {
-  import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
+  import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 
   def respondsWithInterfaces(): IO[Unit] = IO {
     mock.when(
@@ -22,8 +22,10 @@ class RemoteInteraction(mock: ClientAndServer) {
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody(List(I.Interaction("localhost", Interactions.ReserveItemsInteraction.name,
-          Interactions.ReserveItemsInteraction.inputIngredients.map(_.ingredientType).toList)).asJson.toString)
+        .withBody(List(I.Descriptor("localhost", Interactions.ReserveItemsInteraction.name,
+          Interactions.ReserveItemsInteraction.inputIngredients.map(_.ingredientType).toList,
+          Some(Interactions.ReserveItemsInteraction.output.map(e => e.name -> e.providedIngredients.map(i => i.name -> i.ingredientType).toMap).toMap)
+        )).asJson.toString)
     )
   }
 
