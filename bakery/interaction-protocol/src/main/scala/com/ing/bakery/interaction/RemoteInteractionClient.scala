@@ -2,7 +2,8 @@ package com.ing.bakery.interaction
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
-import com.ing.bakery.protocol.InteractionExecution
+import com.ing.baker.runtime.serialization.InteractionExecution
+import io.prometheus.client.CollectorRegistry
 import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -27,14 +28,15 @@ object RemoteInteractionClient {
 
 final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
 
-  import com.ing.bakery.protocol.InteractionExecutionJsonCodecs._
+  import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 
-  implicit val interactionEntityDecoder: EntityDecoder[IO, List[InteractionExecution.Interaction]] = jsonOf[IO,  List[InteractionExecution.Interaction]]
+  implicit val interactionEntityDecoder: EntityDecoder[IO, List[InteractionExecution.Descriptor]] = jsonOf[IO, List[InteractionExecution.Descriptor]]
+
   implicit val executeRequestEntityEncoder: EntityEncoder[IO, List[IngredientInstance]] = jsonEncoderOf[IO, List[IngredientInstance]]
   implicit val executeResponseEntityDecoder: EntityDecoder[IO, InteractionExecution.ExecutionResult] = jsonOf[IO, InteractionExecution.ExecutionResult]
 
-  def interface: IO[List[InteractionExecution.Interaction]] =
-    client.expect[List[InteractionExecution.Interaction]]( GET(
+  def interface: IO[List[InteractionExecution.Descriptor]] =
+    client.expect[List[InteractionExecution.Descriptor]]( GET(
       hostname / "api" / "bakery" / "interactions"
     ))
 
