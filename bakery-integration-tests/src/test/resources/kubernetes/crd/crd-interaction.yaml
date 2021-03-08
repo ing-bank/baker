@@ -13,87 +13,87 @@ spec:
       served: true
       # One and only one version must be marked as the storage version.
       storage: true
-  validation:
-    openAPIV3Schema:
-      type: object
-      properties:
-        spec:
+        schema:
+          openAPIV3Schema::
           type: object
           properties:
-            image:
-              type: string
-            imagePullSecret:
-              type: string
-            replicas:
-              type: integer
-              minimum: 1
-            resources:
+            spec:
               type: object
               properties:
-                requests:
+                image:
+                  type: string
+                imagePullSecret:
+                  type: string
+                replicas:
+                  type: integer
+                  minimum: 1
+                resources:
                   type: object
                   properties:
-                    memory:
-                      type: string
-                    cpu:
-                      type: string
-                limits:
-                  type: object
-                  properties:
-                    memory:
-                      type: string
-                    cpu:
-                      type: string
-            env:
-              type: array
-              items:
-                oneOf:
-                  - type: object
-                    properties:
-                      name:
-                        type: string
-                      value:
-                        type: string
-                    required: ["name", "value"]
-                  - type: object
-                    properties:
-                      name:
-                        type: string
-                      valueFrom:
-                        oneOf:
-                          - type: object
-                            properties:
-                              configMapKeyRef:
-                                type: object
+                    requests:
+                      type: object
+                      properties:
+                        memory:
+                          type: string
+                        cpu:
+                          type: string
+                    limits:
+                      type: object
+                      properties:
+                        memory:
+                          type: string
+                        cpu:
+                          type: string
+                env:
+                  type: array
+                  items:
+                    oneOf:
+                      - type: object
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                        required: ["name", "value"]
+                      - type: object
+                        properties:
+                          name:
+                            type: string
+                          valueFrom:
+                            oneOf:
+                              - type: object
                                 properties:
-                                  name:
-                                    type: string
-                                  key:
-                                    type: string
-                                required: ["name", "key"]
-                            required: ["configMapKeyRef"]
-                          - type: object
-                            properties:
-                              secretKeyRef:
-                                type: object
+                                  configMapKeyRef:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      key:
+                                        type: string
+                                    required: ["name", "key"]
+                                required: ["configMapKeyRef"]
+                              - type: object
                                 properties:
-                                  name:
-                                    type: string
-                                  key:
-                                    type: string
-                                required: ["name", "key"]
-                            required: ["secretKeyRef"]
-                    required: ["name", "valueFrom"]
-            configMapMounts:
-              type: array
-              items:
-                type: string
-            secretMounts:
-              type: array
-              items:
-                type: string
-          required:
-            - image
+                                  secretKeyRef:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                      key:
+                                        type: string
+                                    required: ["name", "key"]
+                                required: ["secretKeyRef"]
+                        required: ["name", "valueFrom"]
+                configMapMounts:
+                  type: array
+                  items:
+                    type: string
+                secretMounts:
+                  type: array
+                  items:
+                    type: string
+              required:
+                - image
   # either Namespaced or Cluster
   scope: Namespaced
   names:

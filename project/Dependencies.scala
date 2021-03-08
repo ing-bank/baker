@@ -3,17 +3,18 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.6.12"
-  val akkaManagementVersion = "1.0.9"
+  val akkaVersion = "2.6.13"
+  val akkaManagementVersion = "1.0.10"
   val akkaPersistenceCassandraVersion = "1.0.4"
-  val akkaHttpVersion = "10.2.3"
-  val http4sVersion = "0.21.18"
-  val fs2Version = "2.5.0"
+  val akkaHttpVersion = "10.2.4"
+  val http4sVersion = "0.21.20"
+  val fs2Version = "2.5.3"
   val circeVersion = "0.13.0"
-  val mockitoScalaVersion = "1.16.23"
-  val catsVersion = "2.3.1"
+  val mockitoScalaVersion = "1.16.29"
+  val catsVersion = "2.3.3"
+  val catsCoreVersion = "2.4.2"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "5.3.3"
+  val springVersion = "5.3.4"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
     .exclude("com.typesafe.akka", "akka-actor")
@@ -23,7 +24,7 @@ object Dependencies {
     .exclude("com.typesafe.akka", "akka-protobuf")
 
   val scalaJava8Compat = "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
-  val scalaTest = "org.scalatest" %% "scalatest" % "3.2.6"
+  val scalaTest = "org.scalatest" %% "scalatest" % "3.2.5"
   val mockito = "org.mockito" % "mockito-all" % "1.10.19"
   val mockitoScala = "org.mockito" %% "mockito-scala" % mockitoScalaVersion
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
@@ -64,16 +65,16 @@ object Dependencies {
 
   val scalaGraph = "org.scala-graph" %% "graph-core" % "1.13.1"
   val scalaGraphDot = "org.scala-graph" %% "graph-dot" % "1.13.0"
-  val graphvizJava = "guru.nidi" % "graphviz-java" % "0.18.0"
+  val graphvizJava = "guru.nidi" % "graphviz-java" % "0.18.1"
 
   val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.10.0"
   val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.15.0"
-  val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.0.8"
+  val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.1.0"
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.10.0"
   val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.10.0"
-  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.1.16"
+  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.1.18"
 
   val skuber = "io.skuber" %% "skuber" % "2.6.0"
   val play = "com.typesafe.play" %% "play-json" % "2.9.2"
@@ -90,7 +91,7 @@ object Dependencies {
   val circeGenericExtras = "io.circe" %% "circe-generic-extras" % circeVersion
 
   val catsEffect = "org.typelevel" %% "cats-effect" % catsVersion
-  val catsCore = "org.typelevel" %% "cats-core" % catsVersion
+  val catsCore = "org.typelevel" %% "cats-core" % catsCoreVersion
   val console4Cats = "dev.profunktor" %% "console4cats" % "0.8.0"
   val catsRetry = "com.github.cb372" %% "cats-retry" % "2.1.0"
 
@@ -105,7 +106,7 @@ object Dependencies {
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.14.0"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.15.5"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
 
@@ -116,7 +117,7 @@ object Dependencies {
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.30"
   val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
   val logstash =  "net.logstash.logback" % "logstash-logback-encoder" % "6.4"
-  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.2"
+  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.3"
   val scalaCheckPlus = "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2"
   val scalaCheckPlusMockito = "org.scalatestplus" %% "scalatestplus-mockito" % "1.0.0-M2"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"

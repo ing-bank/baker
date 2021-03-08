@@ -14,7 +14,7 @@ trait PollingAware extends RecipeManager with LazyLogging {
     this.get(compiledRecipe.recipeId).flatMap {
       maybe =>
         if (maybe.isEmpty || (maybe.isDefined && maybe.get._2 < createdTime)) {
-          logger.info(s"Adding/updating recipe ${compiledRecipe.name} : ${compiledRecipe.recipeId}")
+          logger.debug(s"Adding/updating recipe ${compiledRecipe.name} : ${compiledRecipe.recipeId}")
           super.put(compiledRecipe, createdTime)
         } else {
           Future.successful(compiledRecipe.recipeId)
