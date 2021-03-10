@@ -25,6 +25,7 @@ object RemoteInteractionService {
                address: InetSocketAddress,
                tlsConfig: Option[BakeryHttp.TLSConfig],
                apiLoggingEnabled: Boolean = false,
+               interactionPerTypeMetricsEnabled: Boolean = false,
                metricsPort: Int = 9096)(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] = {
 
     val idToNameMap = interactions.map(i => URLEncoder.encode(i.shaBase64, "UTF-8").take(8) -> i.name ).toMap
@@ -37,10 +38,10 @@ object RemoteInteractionService {
     }
     val service = new RemoteInteractionService(interactions)
 
-    def interactionRequestClassifier(request: Request[IO]): Option[String] = {
+    def interactionRequestClassifier(request: Request[IO]): Option[String] = if (interactionPerTypeMetricsEnabled) {
       val p = request.pathInfo.split('/')       // ... /interactions/<id>/execute - we take ID part we care most about
       (if (p.length == 4) Some(p(2)) else None).map(v => idToNameMap.getOrElse(v.take(8), "unknown"))
-    }
+    } else None
 
     for {
       metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
