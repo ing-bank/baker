@@ -273,9 +273,6 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
       springCore,
       springContext,
       scalaKafkaClient,
-      cassandraDriverCore,
-      cassandraDriverQueryBuilder,
-      cassandraDriverMetrics,
       skuber
     ) ++ testDeps(
       slf4jApi,
@@ -285,8 +282,10 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
       circe,
       circeGeneric,
       akkaInmemoryJournal,
+      cassandraDriverCore,
+      cassandraDriverQueryBuilder,
+      cassandraDriverMetrics,
       cassandraUnit
-
     )
   )
   .dependsOn(
