@@ -35,8 +35,8 @@ object AkkaBakerConfig extends LazyLogging {
   sealed trait RecipeManagerType
 
   implicit val recipeManagerTypeReader: ValueReader[RecipeManagerType] = (config: Config, path: String) => {
-    if (config.hasPath(path) && config.getString(path) == "actor") ActorRecipeManagerType
-    else InMemoryRecipeManagerType
+    if (config.hasPath(path) && config.getString(path) == "inmemory") InMemoryRecipeManagerType
+    else ActorRecipeManagerType
   }
 
   object BakerValidationSettings {
