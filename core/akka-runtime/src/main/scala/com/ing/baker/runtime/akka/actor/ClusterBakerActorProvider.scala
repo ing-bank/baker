@@ -12,6 +12,7 @@ import cats.data.NonEmptyList
 import cats.effect.IO
 import com.ing.baker.il.sha256HashCode
 import com.ing.baker.runtime.akka.AkkaBakerConfig
+import com.ing.baker.runtime.akka.AkkaBakerConfig.{InMemoryRecipeManagerType, RecipeManagerType}
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
@@ -20,7 +21,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.serialization.Encryption
-import com.ing.baker.runtime.{RecipeManager, RecipeManagerActorImpl}
+import com.ing.baker.runtime.{RecipeManager, RecipeManagerActorImpl, RecipeManagerImpl}
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.duration._
@@ -72,7 +73,8 @@ class ClusterBakerActorProvider(
                                  seedNodes: ClusterBootstrapMode,
                                  ingredientsFilter: List[String],
                                  configuredEncryption: Encryption,
-                                 timeouts: AkkaBakerConfig.Timeouts
+                                 timeouts: AkkaBakerConfig.Timeouts,
+                                 recipeManagerType: RecipeManagerType
                                ) extends BakerActorProvider with LazyLogging {
 
   private def initializeCluster()(implicit actorSystem: ActorSystem): Unit = {
@@ -114,7 +116,14 @@ class ClusterBakerActorProvider(
   }
 
   override def createRecipeManager()(implicit actorSystem: ActorSystem): RecipeManager = {
+    if (recipeManagerType == InMemoryRecipeManagerType) {
+      RecipeManagerImpl.pollingAware(actorSystem.dispatcher)
+    } else {
+      createRecipeManagerActor
+    }
+  }
 
+  private def createRecipeManagerActor(implicit actorSystem: ActorSystem): RecipeManager = {
     initializeCluster()
 
     val singletonManagerProps = ClusterSingletonManager.props(
