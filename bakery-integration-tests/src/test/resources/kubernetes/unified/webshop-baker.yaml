@@ -206,17 +206,19 @@ data:
       }
     }
 
-    bakery-cassandra-session-provider {
-      profile = "akka-persistence-cassandra-profile"
-      username = "cassandra"
-      password = "cassandra"
-      local-datacenter = "datacenter1"
-      contact-points = "cassandra"
-      port = 9042
-    }
-
     datastax-java-driver {
-      load-balancing-policy.local-datacenter = "datacenter1"
+
+      basic {
+        contact-points = ["cassandra"]
+        load-balancing-policy.local-datacenter = "datacenter1"
+      }
+      advanced {
+        auth-provider {
+          class = PlainTextAuthProvider
+          username = "cassandra"
+          password = "cassandra"
+        }
+      }
       profiles {
         akka-persistence-cassandra-profile {
           basic.request {
