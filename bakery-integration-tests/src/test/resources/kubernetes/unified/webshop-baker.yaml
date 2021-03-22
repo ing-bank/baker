@@ -152,9 +152,6 @@ data:
 
         cassandra {
 
-          session-provider = "com.ing.bakery.akka.persistence.cassandra.InstrumentedCassandraSessionProvider"
-          session-provider-config = "bakery-cassandra-session-provider"
-
           session-dispatcher = "akka.persistence.cassandra.default-dispatcher"
           datastax-java-driver-config = "datastax-java-driver"
 
@@ -228,10 +225,6 @@ data:
           }
         }
       }
-    }
-
-    bakery-cassandra-session-provider {
-      profile = "akka-persistence-cassandra-profile"
     }
 
 binaryData:
