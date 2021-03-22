@@ -232,9 +232,9 @@ class InteractionControllerSpec extends BakeryFunSpec with KubernetesMockito {
         for {
           eventStream <- K8sEventStream.resource[InteractionResource]
           eventStream_ConfigMap <- K8sEventStream.resource[ConfigMap]
-          configControllerCache <- Resource.liftF(ForceRollingUpdateOnConfigMapUpdate.build)
-          _ <- Resource.liftF(mockWatch(eventStream))
-          _ <- Resource.liftF(mockWatchForConfigMaps(eventStream_ConfigMap))
+          configControllerCache <- Resource.eval(ForceRollingUpdateOnConfigMapUpdate.build)
+          _ <- Resource.eval(mockWatch(eventStream))
+          _ <- Resource.eval(mockWatchForConfigMaps(eventStream_ConfigMap))
           _ <- InteractionController.run(configControllerCache, executionContext)
           _ <- InteractionController.runFromConfigMaps(configControllerCache, executionContext)
         } yield Context(k8s, eventStream, eventStream_ConfigMap, configControllerCache, new RemoteInteraction(mockServer), mockServer.getLocalPort)

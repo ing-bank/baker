@@ -396,7 +396,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       mockServer <- Resource.make(IO(ClientAndServer.startClientAndServer(0)))(s => IO(s.stop()))
       remoteInteraction = new RemoteInteraction(mockServer)
       kubeApiServer = new KubeApiServer(mockServer)
-      _ <- Resource.liftF(kubeApiServer.noNewInteractions()) // Initial setup so that the service discovery component has something to query to immediately
+      _ <- Resource.eval(kubeApiServer.noNewInteractions()) // Initial setup so that the service discovery component has something to query to immediately
 
       makeActorSystem = IO {
         ActorSystem(UUID.randomUUID().toString, ConfigFactory.parseString(
@@ -424,8 +424,8 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
             allowAddingRecipeWithoutRequiringInstances = true))(system)
         )
 
-      _ <- Resource.liftF(eventListener.eventSink.attach(baker))
-      _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, baker))
+      _ <- Resource.eval(eventListener.eventSink.attach(baker))
+      _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, baker))
 
       server <- BakerService.resource(baker, InetSocketAddress.createUnresolved("127.0.0.1", 0), "/api/bakery", interactionDiscovery, loggingEnabled = true)
       client <- BakerClient.resource(server.baseUri, "/api/bakery", executionContext)
