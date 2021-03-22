@@ -209,7 +209,7 @@ data:
     datastax-java-driver {
 
       basic {
-        contact-points = ["cassandra"]
+        contact-points = ["cassandra:9042"]
         load-balancing-policy.local-datacenter = "datacenter1"
       }
       advanced {
