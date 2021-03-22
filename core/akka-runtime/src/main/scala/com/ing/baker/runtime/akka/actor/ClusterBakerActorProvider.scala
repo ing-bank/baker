@@ -116,6 +116,8 @@ class ClusterBakerActorProvider(
   }
 
   override def createRecipeManager()(implicit actorSystem: ActorSystem): RecipeManager = {
+    // todo move to a more proper location
+    initializeCluster()
     if (recipeManagerType == InMemoryRecipeManagerType) {
       RecipeManagerImpl.pollingAware(actorSystem.dispatcher)
     } else {
@@ -124,7 +126,6 @@ class ClusterBakerActorProvider(
   }
 
   private def createRecipeManagerActor(implicit actorSystem: ActorSystem): RecipeManager = {
-    initializeCluster()
 
     val singletonManagerProps = ClusterSingletonManager.props(
       RecipeManagerActor.props(),
