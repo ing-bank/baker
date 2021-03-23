@@ -24,4 +24,4 @@ jobs:
       uses: RIGS-IT/xanitizer-action@v1
       with:
         license: ${{ secrets.XANITIZER_LICENSE }}
-        configFile: .github/workflows/XanitizerConfig.xml
+        configFile: .github/workflows/baker.XanitizerConfig
