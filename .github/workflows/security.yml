@@ -21,6 +21,9 @@ jobs:
     - name: Dependency check
       run: sbt dependencyCheck
 
+    - name: Sonar scan
+      run: sbt sonarScan
+
     - name: Compile
       run: sbt compile
 
