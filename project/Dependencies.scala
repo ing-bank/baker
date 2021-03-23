@@ -5,16 +5,16 @@ object Dependencies {
 
   val akkaVersion = "2.6.13"
   val akkaManagementVersion = "1.0.10"
-  val akkaPersistenceCassandraVersion = "1.0.4"
+  val akkaPersistenceCassandraVersion = "1.0.5"
   val akkaHttpVersion = "10.2.4"
   val http4sVersion = "0.21.20"
   val fs2Version = "2.5.3"
   val circeVersion = "0.13.0"
-  val mockitoScalaVersion = "1.16.29"
-  val catsVersion = "2.3.3"
+  val mockitoScalaVersion = "1.16.32"
+  val catsVersion = "2.4.0"
   val catsCoreVersion = "2.4.2"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "5.3.4"
+  val springVersion = "5.3.5"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
     .exclude("com.typesafe.akka", "akka-actor")
@@ -106,13 +106,13 @@ object Dependencies {
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.15.5"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.15.6"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
 
   val typeSafeConfig = "com.typesafe" % "config" % "1.4.1"
 
-  val objenisis = "org.objenesis" % "objenesis" % "3.1"
+  val objenisis = "org.objenesis" % "objenesis" % "3.2"
   val jodaTime = "joda-time" % "joda-time" % "2.10.10"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.30"
   val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"

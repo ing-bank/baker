@@ -18,13 +18,13 @@ object HoldCleanup {
 
   def resource(hostname: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Unit] =
     for {
-      lock <- Resource.liftF(MVar.empty[IO, Unit])
+      lock <- Resource.eval(MVar.empty[IO, Unit])
       _ <- BlazeServerBuilder[IO](ec)
         .bindSocketAddress(hostname)
         .withHttpApp(new HoldCleanup(lock).build)
         .resource
-      _ <- Resource.liftF(printYellow(s"To terminate the tests, please visit http://localhost:${hostname.getPort}/"))
-      _ <- Resource.liftF(lock.take *> IO.sleep(1.seconds))
+      _ <- Resource.eval(printYellow(s"To terminate the tests, please visit http://localhost:${hostname.getPort}/"))
+      _ <- Resource.eval(lock.take *> IO.sleep(1.seconds))
     } yield ()
 }
 
