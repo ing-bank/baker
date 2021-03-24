@@ -26,3 +26,10 @@ jobs:
       with:
         license: ${{ secrets.XANITIZER_LICENSE }}
         configFile: .github/workflows/baker.XanitizerConfig
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: Xanitizer-Reports
+        path: |
+          *-Findings-List.pdf
+          *-Findings-List.sarif
