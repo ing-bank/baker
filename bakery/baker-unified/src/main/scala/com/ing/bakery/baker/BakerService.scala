@@ -8,10 +8,11 @@ import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EventInstance}
 import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
+import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe._
 import io.circe.generic.auto._
-import io.circe.syntax._
+import io.prometheus.client.CollectorRegistry
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._

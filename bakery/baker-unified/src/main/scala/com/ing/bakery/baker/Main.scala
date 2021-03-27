@@ -1,6 +1,6 @@
 package com.ing.bakery.baker
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.baker.recipe.javadsl.Interaction
@@ -14,9 +14,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.prometheus.client.CollectorRegistry
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import org.http4s.Request
 import org.http4s.client.blaze.BlazeClientBuilder
-import org.http4s.client.middleware.Metrics
 import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.server.Server
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
@@ -41,9 +39,7 @@ object Main extends IOApp with LazyLogging {
     implicit val system: ActorSystem = ActorSystem("baker", config)
     implicit val executionContext: ExecutionContext = system.dispatcher
 
-    system.actorOf(Props[ClusterEventWatch], name = "ClusterEventWatch")
-
-    val httpServerPort = bakerConfig.getInt("api-port")
+    val apiPort = bakerConfig.getInt("api-port")
     val metricsPort = bakerConfig.getInt("metrics-port")
     val apiUrlPrefix = bakerConfig.getString("api-url-prefix")
     val loggingEnabled = bakerConfig.getBoolean("api-logging-enabled")
@@ -81,9 +77,10 @@ object Main extends IOApp with LazyLogging {
 
     val remoteInteractionCallContext: ExecutionContext = system.dispatchers.lookup("akka.actor.remote-interaction-dispatcher")
 
-    val mainResource: Resource[IO, (Server[IO], AkkaBaker)] =
+    val mainResource: Resource[IO, (Server[IO], Server[IO], AkkaBaker)] =
       for {
-        metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
+        proxy <- ApiProxy.resource(config, system, apiPort)
+        _ <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
         interactionHttpClient <- BlazeClientBuilder[IO](remoteInteractionCallContext, None) // todo SSL context
           .withCheckEndpointAuthentication(false)
           .resource
@@ -124,12 +121,12 @@ object Main extends IOApp with LazyLogging {
         )
 
         bakerService <- BakerService.resource(baker,
-          InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort),
+          InetSocketAddress.createUnresolved("0.0.0.0", apiPort),
           apiUrlPrefix, interactionDiscovery, loggingEnabled)
-      } yield (bakerService, baker)
+      } yield (proxy, bakerService, baker)
 
     mainResource.use {
-      case (s, baker) => {
+      case (proxy, s, baker) => {
         logger.info(s"Bakery started at ${s.address}/${s.baseUri}, enabling the readiness in Akka management")
         BakerReadinessCheck.enable()
         RecipeLoader.pollRecipesUpdates(configPath, baker, pollInterval)
