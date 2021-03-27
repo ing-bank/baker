@@ -72,8 +72,8 @@ object Dependencies {
   val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.1.0"
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
-  val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.10.0"
-  val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.10.0"
+  val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.11.0"
+  val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.11.0"
   val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.1.18"
 
   val skuber = "io.skuber" %% "skuber" % "2.6.0"
@@ -120,7 +120,7 @@ object Dependencies {
   val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.3"
   val scalaCheckPlus = "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2"
   val scalaCheckPlusMockito = "org.scalatestplus" %% "scalatestplus-mockito" % "1.0.0-M2"
-  val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
+  val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.3"
 
 
   val springContext = "org.springframework" % "spring-context" % springVersion
