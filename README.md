@@ -147,3 +147,6 @@ To use custom fonts, see <http://www.graphviz.org/doc/fontfaq.txt>.
 # References
 1. DOT Graph Description Language (https://en.wikipedia.org/wiki/DOT_(graph_description_language)) - explains more about the format Baker uses to produce a graphical representation of the recipe;
 2. Order fulfillment (https://en.wikipedia.org/wiki/Order_fulfillment) - gives an idea about the theory behind order fulfillment strategies. As you are in the business of producing and selling products to people, you are in the business of fulfillment;
+
+# Security
+Baker uses free open-source license from [Xanitizer](https://www.xanitizer.com/xanitizer) for code security scans.
