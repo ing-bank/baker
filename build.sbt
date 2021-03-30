@@ -49,7 +49,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   maintainer in Docker := "The Bakery Team",
   dockerRepository in Docker := sys.env.get("BAKERY_DOCKER_REPO"),
   dockerBaseImage := "adoptopenjdk/openjdk11",
-  version in Docker := "local" // used by smoke tests for locally built images
+  version in Docker := "local", // used by smoke tests for locally built images
 )
 
 val dependencyOverrideSettings = Seq(
@@ -58,7 +58,11 @@ val dependencyOverrideSettings = Seq(
     akkaActor,
     akkaStream,
     akkaProtobuf,
-    jnrConstants
+    jnrConstants,
+    snakeYaml,
+    jacksonDatabind,
+    bouncyCastleBcprov,
+    bouncyCastleBcpkix
   )
 )
 
