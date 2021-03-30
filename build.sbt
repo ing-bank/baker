@@ -53,16 +53,18 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
 )
 
 val dependencyOverrideSettings = Seq(
+  libraryDependencies ++= Seq(
+    snakeYaml,
+    jacksonDatabind,
+    bouncyCastleBcprov,
+    bouncyCastleBcpkix
+  ),
   dependencyOverrides ++= Seq(
     catsCore,
     akkaActor,
     akkaStream,
     akkaProtobuf,
-    jnrConstants,
-    snakeYaml,
-    jacksonDatabind,
-    bouncyCastleBcprov,
-    bouncyCastleBcpkix
+    jnrConstants
   )
 )
 
@@ -254,7 +256,7 @@ lazy val `bakery-baker-client` = project.in(file("bakery/baker-client"))
   .dependsOn(`baker-interface`)
 
 lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
-  .settings(commonSettings ++ Publish.settings)
+  .settings(defaultModuleSettings)
   .settings(
     moduleName := "baker-unified",
     scalacOptions ++= Seq(
@@ -303,7 +305,7 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
   )
 
 lazy val `bakery-baker` = project.in(file("bakery/baker"))
-  .settings(commonSettings ++ Publish.settings)
+  .settings(defaultModuleSettings)
   .settings(
     moduleName := "bakery-baker",
     scalacOptions ++= Seq(
