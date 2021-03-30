@@ -8,11 +8,11 @@ object Dependencies {
   val akkaPersistenceCassandraVersion = "1.0.5"
   val akkaHttpVersion = "10.2.4"
   val http4sVersion = "0.21.21"
-  val fs2Version = "3.0.0"
+  val fs2Version = "2.5.3"
   val circeVersion = "0.13.0"
   val mockitoScalaVersion = "1.16.33"
   val catsVersion = "2.4.1"
-  val catsCoreVersion = "2.5.0"
+  val catsCoreVersion = "2.4.2"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
   val springVersion = "5.3.5"
 
