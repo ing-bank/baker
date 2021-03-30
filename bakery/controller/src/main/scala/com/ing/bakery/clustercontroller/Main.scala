@@ -38,12 +38,12 @@ object Main extends IOApp with LazyLogging {
     }
 
     (for {
-      configWatch <- Resource.liftF(ForceRollingUpdateOnConfigMapUpdate.build)
+      configWatch <- Resource.eval(ForceRollingUpdateOnConfigMapUpdate.build)
       _ <- configWatch.runController
       _ <- BakeryControllerService.resource(InetSocketAddress.createUnresolved("0.0.0.0", 8080))
-      _ <- if(useCrds) InteractionController.run(configWatch, connectionPool, interactionMutualTLS, interactionClientMutualTLS) else Resource.liftF(IO.unit)
+      _ <- if(useCrds) InteractionController.run(configWatch, connectionPool, interactionMutualTLS, interactionClientMutualTLS) else Resource.eval(IO.unit)
       _ <- InteractionController.runFromConfigMaps(configWatch, connectionPool, interactionMutualTLS, interactionClientMutualTLS)
-      _ <- if(useCrds) BakerController.run(configWatch, interactionClientMutualTLS) else Resource.liftF(IO.unit)
+      _ <- if(useCrds) BakerController.run(configWatch, interactionClientMutualTLS) else Resource.eval(IO.unit)
       _ <- BakerController.runFromConfigMaps(configWatch, interactionClientMutualTLS)
     } yield ()).use(_ => IO.never).as(ExitCode.Success)
   }

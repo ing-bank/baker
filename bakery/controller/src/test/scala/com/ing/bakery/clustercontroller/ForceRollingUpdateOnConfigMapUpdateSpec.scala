@@ -79,7 +79,7 @@ class ForceRollingUpdateOnConfigMapUpdateSpec extends BakeryFunSpec with Kuberne
             options.labelSelector
               .exists(_.requirements.exists(_.key == COMPONENT_CONFIG_WATCH_LABEL))
           _ = doAnswer(eventStream.source).when(k8s).watchWithOptions(argThat[ListOptions](f = isFilteringOnWatchLabel), *)(*, *, *)
-          configControllerCache <- Resource.liftF(ForceRollingUpdateOnConfigMapUpdate.build)
+          configControllerCache <- Resource.eval(ForceRollingUpdateOnConfigMapUpdate.build)
           _ <- configControllerCache.runController
         } yield Context(k8s, eventStream, configControllerCache)
       }

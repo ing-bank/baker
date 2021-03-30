@@ -66,7 +66,7 @@ class BakerClientSpec extends BakeryFunSpec {
     val sslParams = sslConfig.getDefaultSSLParameters
     sslParams.setNeedClientAuth(true)
     for {
-      receivedHeaders <- Resource.liftF(MVar.empty[IO, List[Header]])
+      receivedHeaders <- Resource.eval(MVar.empty[IO, List[Header]])
       service <- BlazeServerBuilder[IO](ExecutionContext.global)
         .withSslContextAndParameters(sslConfig, sslParams)
         .bindSocketAddress(InetSocketAddress.createUnresolved("localhost", 0))

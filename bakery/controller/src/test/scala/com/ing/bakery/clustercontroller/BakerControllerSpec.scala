@@ -225,9 +225,9 @@ class BakerControllerSpec extends BakeryFunSpec with KubernetesMockito {
         for {
           eventStream <- K8sEventStream.resource[BakerResource]
           eventStream_ConfigMap <- K8sEventStream.resource[ConfigMap]
-          configControllerCache <- Resource.liftF(ForceRollingUpdateOnConfigMapUpdate.build)
-          _ <- Resource.liftF(mockWatch(eventStream))
-          _ <- Resource.liftF(mockWatchForConfigMaps(eventStream_ConfigMap))
+          configControllerCache <- Resource.eval(ForceRollingUpdateOnConfigMapUpdate.build)
+          _ <- Resource.eval(mockWatch(eventStream))
+          _ <- Resource.eval(mockWatchForConfigMaps(eventStream_ConfigMap))
           _ <- BakerController.run(configControllerCache)
           _ <- BakerController.runFromConfigMaps(configControllerCache)
         } yield Context(k8s, eventStream, eventStream_ConfigMap, configControllerCache)
