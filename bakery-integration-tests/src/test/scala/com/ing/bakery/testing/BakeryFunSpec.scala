@@ -51,7 +51,7 @@ abstract class BakeryFunSpec extends FixtureAsyncFunSpecLike {
       if(debugMode)
         (for {
           context <- contextBuilder(args)
-          holdResult <- Resource.liftF(runTest(context).attempt)
+          holdResult <- Resource.eval(runTest(context).attempt)
           _ = println("Preliminary tests results:")
           _ = holdResult match {
             case Left(e) =>
@@ -63,7 +63,7 @@ abstract class BakeryFunSpec extends FixtureAsyncFunSpecLike {
               println(Console.GREEN + r + Console.RESET)
           }
           _ <- HoldCleanup.resource(InetSocketAddress.createUnresolved("0.0.0.0", 9191))
-          result <- Resource.liftF(IO.fromEither(holdResult))
+          result <- Resource.eval(IO.fromEither(holdResult))
         } yield result).use(IO.pure).unsafeToFuture()
       else
         contextBuilder(args).use(runTest).unsafeToFuture()
