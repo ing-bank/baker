@@ -2,7 +2,7 @@ package com.ing.bakery.clustercontroller
 
 import java.io.ByteArrayInputStream
 
-import cats.effect.{ContextShift, IO}
+import cats.effect.IO
 import com.ing.bakery.interaction.BakeryHttp
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -12,7 +12,7 @@ import skuber.json.format.secretFmt
 
 case class MutualAuthKeystoreConfig(secretName: String, fileName: String, password: String, _type: String) {
 
-  def loadKeystore(k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[SSLContext] =
+  def loadKeystore(k8s: KubernetesClient): IO[SSLContext] =
     for {
       keystoreSecret <- IO.fromFuture(IO(k8s.get[skuber.Secret](secretName)))
       fileNotFound = IO.raiseError[SSLContext](new IllegalStateException(s"Did not find keystore '$fileName' on secret $secretName"))

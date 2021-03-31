@@ -1,6 +1,6 @@
 package com.ing.bakery.scaladsl
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import cats.implicits._
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
@@ -23,6 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
 import FailoverUtils._
 import com.ing.baker.runtime.serialization.InteractionExecution
+import cats.effect.Temporal
 
 object BakerClient {
 
@@ -47,7 +48,7 @@ object BakerClient {
                                          executionContext: ExecutionContext,
                                          filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
                                          tlsConfig: Option[TLSConfig] = None)
-                                        (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
+                                        (implicit timer: Temporal[IO]): Resource[IO, BakerClient] = {
     implicit val ex: ExecutionContext = executionContext
 
     BlazeClientBuilder[IO](executionContext, tlsConfig.map(_.loadSSLContext))
@@ -61,7 +62,7 @@ object BakerClient {
                        executionContext: ExecutionContext,
                        filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
                        tlsConfig: Option[TLSConfig] = None)
-                      (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
+                      (implicit timer: Temporal[IO]): Resource[IO, BakerClient] = {
     resourceBalancedWithLegacyFallback(endpointConfig, None, executionContext, filters, tlsConfig)
   }
 
@@ -83,7 +84,7 @@ object BakerClient {
                filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
                tlsConfig: Option[TLSConfig] = None,
                apiLoggingEnabled: Boolean = false)
-              (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] =
+              (implicit timer: Temporal[IO]): Resource[IO, BakerClient] =
     resourceBalanced(EndpointConfig(IndexedSeq(host), apiUrlPrefix, apiLoggingEnabled), executionContext, filters, tlsConfig)(cs, timer)
 
 

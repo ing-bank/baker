@@ -1,6 +1,6 @@
 package com.ing.bakery.baker
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import cats.implicits._
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
@@ -27,10 +27,11 @@ import org.slf4j.LoggerFactory
 
 import java.net.InetSocketAddress
 import scala.concurrent.{ExecutionContext, Future}
+import cats.effect.Temporal
 
 object BakerService {
 
-  def resource(baker: Baker, hostname: InetSocketAddress, apiUrlPrefix: String, interactions: InteractionsF[IO], loggingEnabled: Boolean)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+  def resource(baker: Baker, hostname: InetSocketAddress, apiUrlPrefix: String, interactions: InteractionsF[IO], loggingEnabled: Boolean)(implicit timer: Temporal[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
 
     val bakeryRequestClassifier: Request[IO] => Option[String] = { request =>
       val uriPath = request.uri.path
@@ -63,11 +64,11 @@ object BakerService {
     } yield server
   }
 
-  def routes(baker: Baker, interactionManager: InteractionsF[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] =
+  def routes(baker: Baker, interactionManager: InteractionsF[IO])(implicit timer: Temporal[IO]): HttpRoutes[IO] =
     new BakerService(baker, interactionManager).routes
 }
 
-final class BakerService private(baker: Baker, interactionManager: InteractionsF[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
+final class BakerService private(baker: Baker, interactionManager: InteractionsF[IO])(implicit cs: ContextShift[IO], timer: Temporal[IO]) extends LazyLogging {
 
   object CorrelationId extends OptionalQueryParamDecoderMatcher[String]("correlationId")
 

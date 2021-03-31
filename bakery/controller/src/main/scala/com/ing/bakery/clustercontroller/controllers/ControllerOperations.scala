@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source}
 import akka.stream.{KillSwitches, Materializer, RestartSettings, UniqueKillSwitch}
 import akka.{Done, NotUsed}
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.ing.bakery.clustercontroller.controllers.Utils.FromConfigMapValidation
 import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json.Format
@@ -13,13 +13,14 @@ import skuber.{ConfigMap, K8SException, K8SWatchEvent, LabelSelector, ListOption
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import cats.effect.Temporal
 
 object ControllerOperations extends LazyLogging {
 
   /** This utility is intended for Kubernetes operations, normally an api call to api version apps/v1, if the error is 404,
     * that means we are in an old kubernetes environment and we need to use an older version like extensions/apps/v1beta1
     */
-  def attemptOpOrTryOlderVersion[A, B](v1: => IO[A], older: => IO[B])(implicit cs: ContextShift[IO]): IO[Either[A, B]] =
+  def attemptOpOrTryOlderVersion[A, B](v1: => IO[A], older: => IO[B]): IO[Either[A, B]] =
     v1.map(Left(_)).handleErrorWith {
       case e: K8SException if e.status.code.contains(404) =>
         older.map(Right(_))
@@ -32,7 +33,7 @@ object ControllerOperations extends LazyLogging {
     * @param resource to be created
     * @return true if no-op because a resource with the same name already existed, false if the operation was executed.
     */
-  def idemCreate[O <: ObjectResource](resource: O)(implicit rd: ResourceDefinition[O], fmt: Format[O], l: LoggingContext, k8s: KubernetesClient, cs: ContextShift[IO]): IO[Boolean] =
+  def idemCreate[O <: ObjectResource](resource: O)(implicit rd: ResourceDefinition[O], fmt: Format[O], l: LoggingContext, k8s: KubernetesClient): IO[Boolean] =
     io(k8s.create(resource)).map(_ => false).handleErrorWith {
       case e: K8SException if e.status.code.contains(409) =>
         logger.debug(s"ADDED ${rd.spec.names.kind} (already existed, trying next step)")
@@ -41,7 +42,7 @@ object ControllerOperations extends LazyLogging {
         IO.raiseError(e)
     }
 
-  def createOrFetch[O <: ObjectResource](resource: O)(implicit rd: ResourceDefinition[O], fmt: Format[O], l: LoggingContext, k8s: KubernetesClient, cs: ContextShift[IO]): IO[O] =
+  def createOrFetch[O <: ObjectResource](resource: O)(implicit rd: ResourceDefinition[O], fmt: Format[O], l: LoggingContext, k8s: KubernetesClient): IO[O] =
     io(k8s.create(resource)).handleErrorWith {
       case e: K8SException if e.status.code.contains(409) =>
         logger.debug(s"ADDED ${rd.spec.names.kind} (already existed, will fetch it instead)") 
@@ -52,7 +53,7 @@ object ControllerOperations extends LazyLogging {
 
   /** Cleaner transform from scala Future to cats IO
     */
-  def io[A](ref: => Future[A])(implicit cs: ContextShift[IO]): IO[A] =
+  def io[A](ref: => Future[A]): IO[A] =
     IO.fromFuture(IO.delay(ref))
 }
 
@@ -82,8 +83,7 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
 
   def runController(labelFilter: Option[(String, String)] = None, existsLabelFilter: Option[String] = None)(
     implicit
-    contextShift: ContextShift[IO],
-    timer: Timer[IO],
+    timer: Temporal[IO],
     actorSystem: ActorSystem,
     materializer: Materializer,
     fmt: Format[O],

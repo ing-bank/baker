@@ -4,8 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source}
 import akka.stream.{KillSwitches, Materializer, RestartSettings, UniqueKillSwitch}
 import akka.{Done, NotUsed}
-import cats.effect.concurrent.Ref
-import cats.effect.{ContextShift, IO, Resource, Sync, Timer}
+import cats.effect.{IO, Resource, Sync}
 import cats.implicits._
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.model.InteractionsF
@@ -22,6 +21,7 @@ import skuber.json.format._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import cats.effect.{ Ref, Temporal }
 
 object ServiceDiscovery extends LazyLogging {
 
@@ -39,7 +39,7 @@ object ServiceDiscovery extends LazyLogging {
     * @param timer to be used by the streams
     * @return
     */
-  def resource(interactionHttpClient: Client[IO], k8s: KubernetesClient, scope: String)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, ServiceDiscovery] = {
+  def resource(interactionHttpClient: Client[IO], k8s: KubernetesClient, scope: String)(implicit timer: Temporal[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, ServiceDiscovery] = {
 
     def watchSource(serviceDiscovery: ServiceDiscovery): Source[K8SWatchEvent[ConfigMap], UniqueKillSwitch] = {
       val watchFilter: ListOptions = {
@@ -94,7 +94,7 @@ final class ServiceDiscovery private(
   def get: IO[List[InteractionInstanceF[IO]]] =
     cacheInteractions.get.map(_.values.toList)
 
-  def update(event: K8SWatchEvent[ConfigMap])(implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[Unit] =
+  def update(event: K8SWatchEvent[ConfigMap])(implicit timer: Temporal[IO]): IO[Unit] =
     event._type match {
       case EventType.ADDED =>
         addInteractionInstancesFrom(event._object)
@@ -113,7 +113,7 @@ final class ServiceDiscovery private(
 
     }
 
-  private def addInteractionInstancesFrom(contract: ConfigMap)(implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[Unit] =
+  private def addInteractionInstancesFrom(contract: ConfigMap)(implicit timer: Temporal[IO]): IO[Unit] =
     for {
       address <- extractAddress(contract)
       interfaces <- extractInterfaces(contract)

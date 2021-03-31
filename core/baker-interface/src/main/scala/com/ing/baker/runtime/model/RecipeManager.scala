@@ -1,12 +1,13 @@
 package com.ing.baker.runtime.model
 
-import cats.effect.{Effect, Timer}
+import cats.effect.Effect
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.BakerException.{ImplementationsException, NoSuchRecipeException, RecipeValidationException}
 import com.ing.baker.runtime.scaladsl.{RecipeAdded, RecipeInformation}
 
 import scala.concurrent.duration
+import cats.effect.Temporal
 
 trait RecipeManager[F[_]] {
 
@@ -16,7 +17,7 @@ trait RecipeManager[F[_]] {
 
   protected def fetch(recipeId: String): F[Option[(CompiledRecipe, Long)]]
 
-  def addRecipe(compiledRecipe: CompiledRecipe, allowAddingRecipeWithoutRequiringInstances: Boolean)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[String] =
+  def addRecipe(compiledRecipe: CompiledRecipe, allowAddingRecipeWithoutRequiringInstances: Boolean)(implicit components: BakerComponents[F], effect: Effect[F], timer: Temporal[F]): F[String] =
     for {
       implementationErrors <-
         if (allowAddingRecipeWithoutRequiringInstances) effect.pure(List.empty)
