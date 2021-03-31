@@ -5,16 +5,16 @@ object Dependencies {
 
   val akkaVersion = "2.6.13"
   val akkaManagementVersion = "1.0.10"
-  val akkaPersistenceCassandraVersion = "1.0.4"
+  val akkaPersistenceCassandraVersion = "1.0.5"
   val akkaHttpVersion = "10.2.4"
-  val http4sVersion = "0.21.20"
-  val fs2Version = "2.5.4"
+  val http4sVersion = "0.21.21"
+  val fs2Version = "2.5.3"
   val circeVersion = "0.13.0"
-  val mockitoScalaVersion = "1.16.29"
-  val catsVersion = "2.3.3"
+  val mockitoScalaVersion = "1.16.33"
+  val catsVersion = "2.4.1"
   val catsCoreVersion = "2.4.2"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "5.3.4"
+  val springVersion = "5.3.5"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
     .exclude("com.typesafe.akka", "akka-actor")
@@ -72,8 +72,8 @@ object Dependencies {
   val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.1.0"
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
-  val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.10.0"
-  val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.10.0"
+  val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.11.0"
+  val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.11.0"
   val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.1.18"
 
   val skuber = "io.skuber" %% "skuber" % "2.6.0" excludeAll(
@@ -109,13 +109,13 @@ object Dependencies {
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.15.5"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.15.6"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
 
   val typeSafeConfig = "com.typesafe" % "config" % "1.4.1"
 
-  val objenisis = "org.objenesis" % "objenesis" % "3.1"
+  val objenisis = "org.objenesis" % "objenesis" % "3.2"
   val jodaTime = "joda-time" % "joda-time" % "2.10.10"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.30"
   val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
@@ -123,7 +123,7 @@ object Dependencies {
   val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.3"
   val scalaCheckPlus = "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2"
   val scalaCheckPlusMockito = "org.scalatestplus" %% "scalatestplus-mockito" % "1.0.0-M2"
-  val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
+  val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.3"
 
 
   val springContext = "org.springframework" % "spring-context" % springVersion

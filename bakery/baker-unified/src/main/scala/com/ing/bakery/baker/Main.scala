@@ -106,9 +106,9 @@ object Main extends IOApp with LazyLogging {
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)
         )(system))
 
-        _ <- Resource.liftF(eventSink.attach(baker))
-        _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(configPath, baker))
-        _ <- Resource.liftF(IO.async[Unit] { callback =>
+        _ <- Resource.eval(eventSink.attach(baker))
+        _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(configPath, baker))
+        _ <- Resource.eval(IO.async[Unit] { callback =>
           //If using local Baker the registerOnMemberUp is never called, should onl be used during local testing.
           if (bakerConfig.getString("actor.provider") == "local")
             callback(Right(()))

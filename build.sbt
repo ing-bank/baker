@@ -64,7 +64,11 @@ val dependencyOverrideSettings = Seq(
     akkaActor,
     akkaStream,
     akkaProtobuf,
-    jnrConstants
+    jnrConstants,
+    snakeYaml,
+    jacksonDatabind,
+    bouncyCastleBcprov,
+    bouncyCastleBcpkix
   )
 )
 
