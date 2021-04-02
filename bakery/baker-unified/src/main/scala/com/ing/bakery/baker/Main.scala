@@ -77,9 +77,9 @@ object Main extends IOApp with LazyLogging {
 
     val remoteInteractionCallContext: ExecutionContext = system.dispatchers.lookup("akka.actor.remote-interaction-dispatcher")
 
-    val mainResource: Resource[IO, (Server[IO], Server[IO], AkkaBaker)] =
+    val mainResource: Resource[IO, (Server[IO], AkkaBaker)] =
       for {
-        proxy <- ApiProxy.resource(config, system, apiPort)
+        _ <- Watcher.resource(config, system)
         _ <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
         interactionHttpClient <- BlazeClientBuilder[IO](remoteInteractionCallContext, None) // todo SSL context
           .withCheckEndpointAuthentication(false)
@@ -123,10 +123,10 @@ object Main extends IOApp with LazyLogging {
         bakerService <- BakerService.resource(baker,
           InetSocketAddress.createUnresolved("0.0.0.0", apiPort),
           apiUrlPrefix, interactionDiscovery, loggingEnabled)
-      } yield (proxy, bakerService, baker)
+      } yield (bakerService, baker)
 
     mainResource.use {
-      case (proxy, s, baker) => {
+      case (s, baker) => {
         logger.info(s"Bakery started at ${s.address}/${s.baseUri}, enabling the readiness in Akka management")
         BakerReadinessCheck.enable()
         RecipeLoader.pollRecipesUpdates(configPath, baker, pollInterval)
