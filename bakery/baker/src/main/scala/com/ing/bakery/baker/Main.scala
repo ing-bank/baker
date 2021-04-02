@@ -71,9 +71,9 @@ object Main extends IOApp with LazyLogging {
           timeouts = AkkaBakerConfig.Timeouts(config),
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config),
         )(system))
-      _ <- Resource.liftF(eventSink.attach(baker))
-      _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(recipeDirectory, baker))
-      _ <- Resource.liftF(IO.async[Unit] { callback =>
+      _ <- Resource.eval(eventSink.attach(baker))
+      _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(recipeDirectory, baker))
+      _ <- Resource.eval(IO.async[Unit] { callback =>
         Cluster(system).registerOnMemberUp {
           callback(Right(()))
         }
