@@ -26,4 +26,5 @@ object Watcher {
 
 trait Watcher {
   def resource(config: Config, system: ActorSystem): Resource[IO, Unit]
+  def trigger: Unit
 }

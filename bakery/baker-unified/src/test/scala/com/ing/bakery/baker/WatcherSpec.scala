@@ -9,6 +9,7 @@ import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
 import org.http4s.Status.Ok
 import org.http4s.client.blaze.BlazeClientBuilder
+import org.scalatest.concurrent.Eventually
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.funspec.FixtureAsyncFunSpecLike
 import org.scalatest.funsuite.AnyFunSuite
@@ -19,7 +20,7 @@ import java.net.InetSocketAddress
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 
-class WatcherSpec extends AnyFunSuite with Matchers {
+class WatcherSpec extends AnyFunSuite with Matchers with Eventually {
 
   test("Watcher starts") {
     val config = ConfigFactory.load("application-watcher.conf")
@@ -40,9 +41,13 @@ class WatcherSpec extends AnyFunSuite with Matchers {
 
     } yield ())
 
-    s.use(_ => IO.unit).unsafeRunSync()
+    s.use(_ => IO.unit).unsafeRunAsyncAndForget()
 
     assert(TestWatcher.started)
+    assert(!TestWatcher.triggered)
+    eventually {
+      assert(TestWatcher.triggered)
+    }
 
   }
 
