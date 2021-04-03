@@ -49,16 +49,26 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   maintainer in Docker := "The Bakery Team",
   dockerRepository in Docker := sys.env.get("BAKERY_DOCKER_REPO"),
   dockerBaseImage := "adoptopenjdk/openjdk11",
-  version in Docker := "local" // used by smoke tests for locally built images
+  version in Docker := "local", // used by smoke tests for locally built images
 )
 
 val dependencyOverrideSettings = Seq(
+  libraryDependencies ++= Seq(
+    snakeYaml,
+    jacksonDatabind,
+    bouncyCastleBcprov,
+    bouncyCastleBcpkix
+  ),
   dependencyOverrides ++= Seq(
     catsCore,
     akkaActor,
     akkaStream,
     akkaProtobuf,
-    jnrConstants
+    jnrConstants,
+    snakeYaml,
+    jacksonDatabind,
+    bouncyCastleBcprov,
+    bouncyCastleBcpkix
   )
 )
 
@@ -250,7 +260,7 @@ lazy val `bakery-baker-client` = project.in(file("bakery/baker-client"))
   .dependsOn(`baker-interface`)
 
 lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
-  .settings(commonSettings ++ Publish.settings)
+  .settings(defaultModuleSettings)
   .settings(
     moduleName := "baker-unified",
     scalacOptions ++= Seq(
@@ -299,7 +309,7 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
   )
 
 lazy val `bakery-baker` = project.in(file("bakery/baker"))
-  .settings(commonSettings ++ Publish.settings)
+  .settings(defaultModuleSettings)
   .settings(
     moduleName := "bakery-baker",
     scalacOptions ++= Seq(
