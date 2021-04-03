@@ -16,6 +16,6 @@ class TestWatcher extends Watcher {
 
   override def resource(config: Config, system: ActorSystem): Resource[IO, Unit] = {
     implicit val timer: Timer[IO] = IO.timer(system.dispatcher)
-    Resource.liftF(IO(TestWatcher.started = true) >> IO.sleep(100 millis) >> IO(TestWatcher.triggered = true) )
+    Resource.eval(IO(TestWatcher.started = true) >> IO.sleep(100 millis) >> IO(TestWatcher.triggered = true) )
   }
 }
