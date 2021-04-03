@@ -10,14 +10,14 @@ object Watcher {
 
   def resource(config: Config, system: ActorSystem)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Unit] = {
 
-    val watcher = config.getString("baker.watcher")
+    val watcherClass = config.getString("baker.watcher.class")
 
-    if (watcher != "") {
-      Class.forName(watcher).getDeclaredConstructor().newInstance() match {
+    if (watcherClass != "") {
+      Class.forName(watcherClass).getDeclaredConstructor().newInstance() match {
         case w: Watcher =>
           w.resource(config, system)
         case _ =>
-          throw new IllegalArgumentException(s"Class $watcher defined in bakery.proxy-filter must extend com.ing.bakery.baker.Watcher")
+          throw new IllegalArgumentException(s"Class $watcherClass defined in bakery.proxy-filter must extend com.ing.bakery.baker.Watcher")
       }
     } else Resource.liftF(IO.unit)
   }
