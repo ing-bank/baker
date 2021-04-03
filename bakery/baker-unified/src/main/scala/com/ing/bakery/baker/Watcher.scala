@@ -19,7 +19,7 @@ object Watcher {
         case _ =>
           throw new IllegalArgumentException(s"Class $watcherClass defined in bakery.proxy-filter must extend com.ing.bakery.baker.Watcher")
       }
-    } else Resource.liftF(IO.unit)
+    } else Resource.eval(IO.unit)
   }
 }
 
