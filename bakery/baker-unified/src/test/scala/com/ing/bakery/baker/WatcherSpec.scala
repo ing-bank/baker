@@ -44,6 +44,7 @@ class WatcherSpec extends AnyFunSuite with Matchers with Eventually {
     s.use(_ => IO.unit).unsafeRunAsyncAndForget()
 
     assert(TestWatcher.started)
+    assert(WatcherReadinessCheck.ready)
     assert(!TestWatcher.triggered)
     eventually {
       assert(TestWatcher.triggered)

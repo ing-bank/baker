@@ -4,27 +4,36 @@ import akka.actor.ActorSystem
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.typesafe.config.Config
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
+
+object WatcherReadinessCheck {
+  var ready: Boolean = false
+  def enable(): Unit = { WatcherReadinessCheck.ready = true }
+}
+
+class WatcherReadinessCheck extends (() => Future[Boolean]) {
+  override def apply(): Future[Boolean] = Future.successful(WatcherReadinessCheck.ready)
+}
 
 object Watcher {
 
   def resource(config: Config, system: ActorSystem)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Unit] = {
 
-    val watcherClass = config.getString("baker.watcher.class")
+    val watcher = config.getString("baker.watcher.class")
 
-    if (watcherClass != "") {
-      Class.forName(watcherClass).getDeclaredConstructor().newInstance() match {
+    if (watcher != "") {
+      Class.forName(watcher).getDeclaredConstructor().newInstance() match {
         case w: Watcher =>
-          w.resource(config, system)
+          w.resource(config, system, WatcherReadinessCheck.enable())
         case _ =>
-          throw new IllegalArgumentException(s"Class $watcherClass defined in bakery.proxy-filter must extend com.ing.bakery.baker.Watcher")
+          throw new IllegalArgumentException(s"Class $watcher defined in bakery.proxy-filter must extend com.ing.bakery.baker.Watcher")
       }
-    } else Resource.eval(IO.unit)
+    } else Resource.eval(IO(WatcherReadinessCheck.enable()))
   }
 }
 
 
 trait Watcher {
-  def resource(config: Config, system: ActorSystem): Resource[IO, Unit]
+  def resource(config: Config, system: ActorSystem, callbackEnable: => Unit): Resource[IO, Unit]
   def trigger: Unit
 }
