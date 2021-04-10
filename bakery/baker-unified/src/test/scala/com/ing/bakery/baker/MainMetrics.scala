@@ -64,7 +64,7 @@ object MainMetrics extends IOApp with LazyLogging {
 
     val mainResource: Resource[IO, Server[IO]] =
       for {
-        _ <- Resource.eval(IO.async[Unit] { callback =>
+        _ <- Resource.eval(IO.async_[Unit] { callback =>
           Cluster(system).registerOnMemberUp {
             logger.info("Akka cluster is now up")
             callback(Right(()))

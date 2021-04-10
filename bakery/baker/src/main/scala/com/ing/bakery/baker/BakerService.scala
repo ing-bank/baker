@@ -2,7 +2,7 @@ package com.ing.bakery.baker
 
 import java.net.InetSocketAddress
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import cats.implicits._
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EventInstance}
@@ -23,10 +23,11 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import cats.effect.Temporal
 
 object BakerService  {
 
-  def resource(baker: Baker, hostname: InetSocketAddress, serviceDiscovery: ServiceDiscovery, loggingEnabled: Boolean)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+  def resource(baker: Baker, hostname: InetSocketAddress, serviceDiscovery: ServiceDiscovery, loggingEnabled: Boolean)(implicit timer: Temporal[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
     val apiLoggingAction: Option[String => IO[Unit]] = if (loggingEnabled) {
       val apiLogger = LoggerFactory.getLogger("API")
       Some(s => IO(apiLogger.info(s)))
@@ -45,7 +46,7 @@ object BakerService  {
   }
 }
 
-final class BakerService private(baker: Baker, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
+final class BakerService private(baker: Baker, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Temporal[IO]) extends LazyLogging {
 
   object CorrelationId extends OptionalQueryParamDecoderMatcher[String]("correlationId")
 

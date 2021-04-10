@@ -3,21 +3,22 @@ package com.ing.bakery.helpers
 import akka.actor.ActorSystem
 import akka.stream.{OverflowStrategy, QueueOfferResult}
 import akka.stream.scaladsl.{Source, SourceQueueWithComplete}
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import skuber.ObjectResource
 import skuber.api.client.WatchEvent
 
 import scala.concurrent.duration._
+import cats.effect.Temporal
 
 object K8sEventStream {
 
-  def resource[O <: ObjectResource](implicit system: ActorSystem, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, K8sEventStream[O]] = {
+  def resource[O <: ObjectResource](implicit system: ActorSystem, timer: Temporal[IO]): Resource[IO, K8sEventStream[O]] = {
     val q = Source.queue[WatchEvent[O]](bufferSize = 1, overflowStrategy = OverflowStrategy.fail)
     Resource.make(IO(q.preMaterialize()).map { case (queue, source) => new K8sEventStream[O](queue, source) })(_.close)
   }
 }
 
-class K8sEventStream[O <: ObjectResource](queue: SourceQueueWithComplete[WatchEvent[O]], _source: Source[WatchEvent[O], _])(implicit cs: ContextShift[IO], timer: Timer[IO]) {
+class K8sEventStream[O <: ObjectResource](queue: SourceQueueWithComplete[WatchEvent[O]], _source: Source[WatchEvent[O], _])(implicit cs: ContextShift[IO], timer: Temporal[IO]) {
 
   def source: Source[WatchEvent[O], _] = _source
 

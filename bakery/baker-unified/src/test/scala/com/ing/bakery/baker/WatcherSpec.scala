@@ -1,7 +1,7 @@
 package com.ing.bakery.baker
 
 import akka.actor.ActorSystem
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.bakery.mocks.EventListener
@@ -19,13 +19,14 @@ import java.io.File
 import java.net.InetSocketAddress
 import java.util.UUID
 import scala.concurrent.ExecutionContext
+import cats.effect.Temporal
 
 class WatcherSpec extends AnyFunSuite with Matchers with Eventually {
 
   test("Watcher starts") {
     val config = ConfigFactory.load("application-watcher.conf")
     implicit val executionContext: ExecutionContext = ExecutionContext.global
-    implicit val timer: Timer[IO] = IO.timer(executionContext)
+    implicit val timer: Temporal[IO] = IO.timer(executionContext)
     implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
     val s = (for {
       system <- Resource.make(IO {

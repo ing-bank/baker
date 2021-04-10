@@ -1,6 +1,6 @@
 package com.ing.bakery.clustercontroller.controllers
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.ing.bakery.clustercontroller.MutualAuthKeystoreConfig
 import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json.Format
@@ -14,6 +14,7 @@ import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, Object
 import Utils.ConfigurableContainer
 import akka.actor.ActorSystem
 import ControllerOperations._
+import cats.effect.Temporal
 
 object BakerController {
 
@@ -21,8 +22,7 @@ object BakerController {
     configWatch: ForceRollingUpdateOnConfigMapUpdate, 
     interactionClientTLS: Option[MutualAuthKeystoreConfig] = None
   )(implicit actorSystem: ActorSystem, 
-    cs: ContextShift[IO], 
-    timer: Timer[IO], 
+    timer: Temporal[IO], 
     k8s: KubernetesClient
   ): Resource[IO, Unit] =
     new BakerController(configWatch, interactionClientTLS).runController()
@@ -31,8 +31,7 @@ object BakerController {
     configWatch: ForceRollingUpdateOnConfigMapUpdate, 
     interactionClientTLS: Option[MutualAuthKeystoreConfig] = None
   )(implicit actorSystem: ActorSystem, 
-    cs: ContextShift[IO], 
-    timer: Timer[IO], 
+    timer: Temporal[IO], 
     k8s: KubernetesClient
   ): Resource[IO, Unit] =
     new BakerController(configWatch, interactionClientTLS)
@@ -45,7 +44,7 @@ final class BakerController(
   interactionClientTLS: Option[MutualAuthKeystoreConfig] = None
 )(implicit 
   cs: ContextShift[IO], 
-  timer: Timer[IO]
+  timer: Temporal[IO]
 ) extends ControllerOperations[BakerResource] with LazyLogging {
 
   implicit lazy val replicaSetListFormat: Format[ReplicaSetList] = ListResourceFormat[ReplicaSet]

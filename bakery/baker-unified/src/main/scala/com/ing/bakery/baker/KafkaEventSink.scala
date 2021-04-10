@@ -2,7 +2,7 @@ package com.ing.bakery.baker
 
 import cakesolutions.kafka.KafkaProducer.Conf
 import cakesolutions.kafka.{KafkaProducer, KafkaProducerRecord}
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
 import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance}
@@ -10,11 +10,12 @@ import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
 import org.apache.kafka.common.serialization.StringSerializer
+import cats.effect.Temporal
 
 trait EventSink {
   def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit]
   def close(): Unit = ()
-  def attach(baker: AkkaBaker)(implicit cs: ContextShift[IO]): IO[Unit] = {
+  def attach(baker: AkkaBaker): IO[Unit] = {
     IO.fromFuture(IO{baker.registerBakerEventListener {
       event => fire(event).unsafeRunAsyncAndForget()
     }}).flatMap(_ =>
@@ -26,7 +27,7 @@ trait EventSink {
 
 object KafkaEventSink extends LazyLogging {
 
-  def resource(settings: KafkaEventSinkSettings)(implicit contextShift: ContextShift[IO], timer: Timer[IO]): Resource[IO, EventSink] = {
+  def resource(settings: KafkaEventSinkSettings)(implicit timer: Temporal[IO]): Resource[IO, EventSink] = {
 
     Resource.make(
       if (settings.enabled) {
@@ -39,7 +40,7 @@ object KafkaEventSink extends LazyLogging {
         logger.info(s"Kafka configuration is not provided, using simple logging event sink")
         IO {
           new EventSink {
-            override def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit] = {
+            override def fire(event: Any): IO[Unit] = {
               IO.delay(logger.debug(s">>> $event"))
             }
           }
@@ -56,7 +57,7 @@ class KafkaEventSink(
 
   override def close(): Unit = kafkaProducer.close()
 
-  def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit] = {
+  def fire(event: Any): IO[Unit] = {
     (event match {
       case eventInstance: EventInstance =>
         Some(KafkaProducerRecord[String, String](settings.`recipe-events-topic`, None, eventInstance.asJson.noSpaces))

@@ -2,7 +2,7 @@ package com.ing.bakery.clustercontroller
 
 import java.net.InetSocketAddress
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
@@ -10,10 +10,11 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.{Router, Server}
 
 import scala.concurrent.ExecutionContext
+import cats.effect.Temporal
 
 object BakeryControllerService {
 
-  def resource(hostname: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+  def resource(hostname: InetSocketAddress)(implicit timer: Temporal[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
     for {
       binding <- BlazeServerBuilder[IO](ec)
         .bindSocketAddress(hostname)

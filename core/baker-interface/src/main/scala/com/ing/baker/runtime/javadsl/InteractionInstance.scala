@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.javadsl
 
-import cats.effect.{ContextShift, IO}
+import cats.effect.IO
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.scaladsl.InteractionInstanceF
 import com.ing.baker.runtime.{common, scaladsl}
@@ -51,7 +51,7 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
     )
   }
 
-  def asEffectful(implicit cs: ContextShift[IO]): InteractionInstanceF[IO] = {
+  def asEffectful: InteractionInstanceF[IO] = {
     InteractionInstanceF.build(
       name,
       input.asScala,

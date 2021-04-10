@@ -1,7 +1,7 @@
 package com.ing.bakery.clustercontroller.controllers
 
 import cats.implicits._
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.ing.bakery.clustercontroller.MutualAuthKeystoreConfig
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
@@ -23,6 +23,7 @@ import com.ing.baker.runtime.serialization.InteractionExecution
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import cats.effect.Temporal
 
 object InteractionController {
 
@@ -34,8 +35,7 @@ object InteractionController {
   )(implicit 
     actorSystem: ActorSystem, 
     k8s: KubernetesClient, 
-    cs: ContextShift[IO], 
-    timer: Timer[IO]
+    timer: Temporal[IO]
   ): Resource[IO, Unit] =
     new InteractionController(configWatch, connectionPool, interactionTLS, interactionClientTLS).runController()
 
@@ -47,8 +47,7 @@ object InteractionController {
   )(implicit 
     actorSystem: ActorSystem,
     k8s: KubernetesClient,
-    cs: ContextShift[IO],
-    timer: Timer[IO]
+    timer: Temporal[IO]
   ): Resource[IO, Unit] =
     new InteractionController(configWatch, connectionPool, interactionTLS, interactionClientTLS)
       .fromConfigMaps(InteractionResource.fromConfigMap)
@@ -62,7 +61,7 @@ final class InteractionController(
   interactionClientTLS: Option[MutualAuthKeystoreConfig] = None
 )(implicit 
   cs: ContextShift[IO], 
-  timer: Timer[IO]
+  timer: Temporal[IO]
 ) extends ControllerOperations[InteractionResource] with LazyLogging {
 
   implicit lazy val replicaSetListFormat: Format[ReplicaSetList] = ListResourceFormat[ReplicaSet]

@@ -3,8 +3,7 @@ package com.ing.bakery.clustercontroller.controllers
 import java.util.UUID
 
 import akka.actor.ActorSystem
-import cats.effect.concurrent.Ref
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import cats.implicits._
 import com.ing.bakery.clustercontroller.controllers.ControllerOperations._
 import com.ing.bakery.clustercontroller.controllers.ForceRollingUpdateOnConfigMapUpdate.DeploymentTemplateLabelsPatch
@@ -15,6 +14,7 @@ import skuber.apps.v1.Deployment
 import skuber.json.ext.format.depFormat
 import skuber.json.format.{configMapFmt, metadataPatchWrite}
 import skuber.{ConfigMap, ObjectResource, ResourceDefinition}
+import cats.effect.{ Ref, Temporal }
 
 /** Triggers a roll-update on Deployments when chosen ConfigMaps are updated.
   *
@@ -49,10 +49,10 @@ final class ForceRollingUpdateOnConfigMapUpdate private (cache: Ref[IO, Map[Stri
   def getRelatedConfigMaps(deploymentName: String): IO[List[String]] =
     cache.get.map(_.filter(_._2.contains(deploymentName)).keys.toList)
 
-  def watchConfigOf(configMapName: String, deploymentName: String)(implicit cs: ContextShift[IO], k8s: KubernetesClient): IO[Unit] =
+  def watchConfigOf(configMapName: String, deploymentName: String)(implicit k8s: KubernetesClient): IO[Unit] =
     addComponentConfigWatchLabelTo(configMapName) *> addRelationNoKubeOp(configMapName, deploymentName)
 
-  def stopWatchingConfigOf(configMapName: String, deploymentName: String)(implicit cs: ContextShift[IO], k8s: KubernetesClient): IO[Unit] = {
+  def stopWatchingConfigOf(configMapName: String, deploymentName: String)(implicit k8s: KubernetesClient): IO[Unit] = {
     for {
       _ <- removeRelationNoKubeOp(configMapName, deploymentName)
       leftDeployments <- get(configMapName)
@@ -60,13 +60,13 @@ final class ForceRollingUpdateOnConfigMapUpdate private (cache: Ref[IO, Map[Stri
     } yield ()
   }
 
-  def stopWatchingConfigFor(deploymentName: String)(implicit cs: ContextShift[IO], k8s: KubernetesClient): IO[Unit] =
+  def stopWatchingConfigFor(deploymentName: String)(implicit k8s: KubernetesClient): IO[Unit] =
     for {
       oldConfigMaps <- getRelatedConfigMaps(deploymentName)
       _ <- oldConfigMaps.parTraverse(stopWatchingConfigOf(_, deploymentName))
     } yield ()
 
-  def forceUpdate(deploymentName: String)(implicit cd: ContextShift[IO], k8s: KubernetesClient): IO[Unit] = {
+  def forceUpdate(deploymentName: String)(implicit k8s: KubernetesClient): IO[Unit] = {
     def patch[D <: ObjectResource](implicit format: Format[D], rd: ResourceDefinition[D]): IO[D] =
       io(k8s.patch[DeploymentTemplateLabelsPatch, D](
         deploymentName,
@@ -98,16 +98,16 @@ final class ForceRollingUpdateOnConfigMapUpdate private (cache: Ref[IO, Map[Stri
       entries.mapValues(_ - deploymentName)
     }
 
-  def runController(implicit actorSystem: ActorSystem, cs: ContextShift[IO], timer: Timer[IO], k8s: KubernetesClient): Resource[IO, Unit] =
+  def runController(implicit actorSystem: ActorSystem, timer: Temporal[IO], k8s: KubernetesClient): Resource[IO, Unit] =
     controller.runController(existsLabelFilter = Some(ForceRollingUpdateOnConfigMapUpdate.COMPONENT_CONFIG_WATCH_LABEL))
 
-  private def addComponentConfigWatchLabelTo(configRef: String)(implicit cs: ContextShift[IO], k8s: KubernetesClient): IO[Unit] =
+  private def addComponentConfigWatchLabelTo(configRef: String)(implicit k8s: KubernetesClient): IO[Unit] =
     IO.fromFuture(IO(k8s.patch[MetadataPatch, ConfigMap](
       configRef,
       MetadataPatch(labels = Some(Map(ForceRollingUpdateOnConfigMapUpdate.componentConfigWatchLabel)))
     ))).void
 
-  private def removeComponentConfigWatchLabelTo(configRef: String)(implicit cs: ContextShift[IO], k8s: KubernetesClient): IO[Unit] =
+  private def removeComponentConfigWatchLabelTo(configRef: String)(implicit k8s: KubernetesClient): IO[Unit] =
     IO.fromFuture(IO(k8s.patch[MetadataPatch, ConfigMap](
       configRef,
       MetadataPatch(labels = Some(Map(
@@ -116,7 +116,7 @@ final class ForceRollingUpdateOnConfigMapUpdate private (cache: Ref[IO, Map[Stri
       )))
     ))).void
 
-  private def controller(implicit actorSystem: ActorSystem, cs: ContextShift[IO], timer: Timer[IO]): ControllerOperations[ConfigMap] =
+  private def controller(implicit actorSystem: ActorSystem, timer: Temporal[IO]): ControllerOperations[ConfigMap] =
     new ControllerOperations[ConfigMap] {
       override def create(resource: ConfigMap)(implicit k8s: KubernetesClient): IO[Unit] = IO.unit
       override def upgrade(resource: ConfigMap)(implicit k8s: KubernetesClient): IO[Unit] =

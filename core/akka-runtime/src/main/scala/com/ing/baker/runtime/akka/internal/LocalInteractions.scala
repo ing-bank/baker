@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.akka.internal
 
-import cats.effect.concurrent.Ref
-import cats.effect.{ContextShift, IO, Sync}
+import cats.effect.{IO, Sync}
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.scaladsl.{InteractionInstance, InteractionInstanceF}
@@ -9,18 +8,19 @@ import com.ing.baker.runtime.scaladsl.{InteractionInstance, InteractionInstanceF
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
 import scala.compat.java8.FunctionConverters._
+import cats.effect.Ref
 
 object LocalInteractions {
 
   def apply() = new LocalInteractions(List.empty)
 
-  def apply(interactionInstance: InteractionInstance)(implicit cs: ContextShift[IO]) =
+  def apply(interactionInstance: InteractionInstance) =
     new LocalInteractions(List(fromFuture(interactionInstance)))
 
-  def apply(interactionInstances: List[InteractionInstance])(implicit cs: ContextShift[IO]) =
+  def apply(interactionInstances: List[InteractionInstance]) =
     new LocalInteractions(interactionInstances.map(fromFuture))
 
-  private def fromFuture(i: InteractionInstance)(implicit cs: ContextShift[IO]): InteractionInstanceF[IO] = {
+  private def fromFuture(i: InteractionInstance): InteractionInstanceF[IO] = {
     InteractionInstanceF.build(
       _name = i.name,
       _input = i.input,
@@ -35,7 +35,7 @@ object LocalInteractions {
   def apply(interactionInstances: List[InteractionInstanceF[IO]]) =
     new LocalInteractions(interactionInstances)
 
-  def fromJava(interactions: java.util.List[AnyRef])(implicit cs: ContextShift[IO]) =
+  def fromJava(interactions: java.util.List[AnyRef]) =
     new LocalInteractions(interactions
       .asScala
       .map {
