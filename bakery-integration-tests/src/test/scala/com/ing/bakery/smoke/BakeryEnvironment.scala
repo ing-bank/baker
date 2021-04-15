@@ -60,10 +60,10 @@ object BakeryEnvironment {
       _ <- Resource.eval(printGreen("Bakery webshop"))
       _ <- DefinitionFile.resource("cassandra.yaml", namespace)
       _ <- DefinitionFile.resource("kafka-event-sink.yaml", namespace)
-      _ <- DefinitionFile.resource("unified/external-interactions.yaml", namespace)
+      _ <- DefinitionFile.resource("external-interactions.yaml", namespace)
 
       _ <- Resource.eval(Pod.waitUntilAllPodsAreReady(namespace))
-      _ <- DefinitionFile.resource("unified/webshop-baker.yaml", namespace)
+      _ <- DefinitionFile.resource("webshop-baker.yaml", namespace)
       _ <- DefinitionFile.resource("example-client-app.yaml", namespace)
       _ <- Resource.eval(Pod.waitUntilAllPodsAreReady(namespace))
 

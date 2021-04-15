@@ -16,8 +16,7 @@ class BakeryUnifiedSmokeTests extends BakerySmokeTests with Matchers {
         _ = recipes.length shouldBe 1
         _ = recipes should contain("Webshop")
 
-        // we don't support adding recipes in unified setup, as of yet
-//        _ <- DefinitionFile("unified/extra-recipe.yaml", context.namespace)
+//        _ <- DefinitionFile("extra-recipe.yaml", context.namespace)
 //        _ <- eventually("Webshop baker added an extra recipe") {
 //          for {
 //            recipes <- context.clientApp.listRecipeNames

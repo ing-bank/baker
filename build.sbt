@@ -6,8 +6,7 @@ def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = proje
 
 lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocker")({
   state =>
-    "set version in ThisBuild := \"local\"" ::
-    "bakery-baker-docker-generate/docker:publishLocal" ::
+    "set ThisBuild / version := \"local\"" ::
      "docker-baker-unified/docker:publishLocal" ::
       "bakery-client-example/docker:publishLocal" ::
       "bakery-kafka-listener-example/docker:publishLocal" ::
@@ -38,7 +37,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     "-Xfatal-warnings"
   ),
   coverageExcludedPackages := "<empty>;.*javadsl.*;.*scaladsl.*;.*common.*;.*protobuf.*;.*Main.*",
-  packageOptions in(Compile, packageBin) +=
+  packageBin / packageOptions +=
     Package.ManifestAttributes(
       "Build-Time" -> new java.util.Date().toString,
       "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
@@ -47,10 +46,10 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
 )
 
 val dockerSettings = Seq(
-  maintainer in Docker := "The Bakery Team",
+  Docker / maintainer := "The Bakery Team",
   dockerBaseImage := "adoptopenjdk/openjdk11",
   dockerUpdateLatest := true, // todo only for master branch
-  version in Docker := "local", // used by smoke tests for locally built images
+  Docker / version := "local", // used by smoke tests for locally built images
 )
 
 val dependencyOverrideSettings = Seq(
@@ -81,7 +80,7 @@ lazy val noPublishSettings = Seq(
 
 lazy val defaultModuleSettings = commonSettings ++ dependencyOverrideSettings ++ Publish.settings
 
-lazy val scalaPBSettings = Seq(PB.targets in Compile := Seq(scalapb.gen() -> (sourceManaged in Compile).value))
+lazy val scalaPBSettings = Seq(Compile / PB.targets := Seq(scalapb.gen() -> (Compile / sourceManaged).value))
 
 lazy val `baker-types` = project.in(file("core/baker-types"))
   .settings(defaultModuleSettings)
@@ -358,9 +357,9 @@ lazy val `docker-baker-unified` = project.in(file("docker/baker-unified"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .dependsOn(`baker-unified`)
   .settings(
-    mainClass in Compile := Some("com.ing.bakery.baker.Main"),
+    Compile / mainClass := Some("com.ing.bakery.baker.Main"),
     dockerExposedPorts ++= Seq(8080),
-    packageName in Docker := "baker-unified",
+    Docker / packageName := "baker-unified",
     dockerBaseImage := "adoptopenjdk/openjdk11",
     libraryDependencies ++= Seq(
       logback,
@@ -406,7 +405,7 @@ lazy val `baker-example` = project
   )
   .settings(dockerSettings)
   .settings(
-    packageName in Docker := "baker-example-app",
+    Docker / packageName := "baker-example-app",
     dockerExposedPorts := Seq(8080)
   )
   .dependsOn(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`)
@@ -437,7 +436,7 @@ lazy val `bakery-client-example` = project
   )
   .settings(dockerSettings)
   .settings(
-    packageName in Docker := "bakery-client-example"
+    Docker / packageName := "bakery-client-example"
   )
   .dependsOn(`baker-types`, `bakery-baker-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
 
@@ -465,7 +464,7 @@ lazy val `bakery-kafka-listener-example` = project
   )
   .settings(dockerSettings)
   .settings(
-    packageName in Docker := "bakery-kafka-listener-example"
+    Docker / packageName := "bakery-kafka-listener-example"
   )
   .dependsOn(`baker-types`, `bakery-baker-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
 
@@ -539,8 +538,8 @@ lazy val `sbt-bakery-docker-generate` = project.in(file("docker/sbt-bakery-docke
   .settings(noPublishSettings) // docker plugin can't be published, at least not to azure feed
   .settings(
     // workaround to let plugin be used in the same project without publishing it
-    sourceGenerators in Compile += Def.task {
-      val file = (sourceManaged in Compile).value / "bakery" / "sbt" / "BuildInteractionDockerImageSBTPlugin.scala"
+    Compile / sourceGenerators  += Def.task {
+      val file = (Compile / sourceManaged).value / "bakery" / "sbt" / "BuildInteractionDockerImageSBTPlugin.scala"
       val sourceFile = IO.readBytes(baseDirectory.value.getParentFile.getParentFile / "project" / "BuildInteractionDockerImageSBTPlugin.scala")
       IO.write(file, sourceFile)
       Seq(file)

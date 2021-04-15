@@ -1,0 +1,8 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webshop-baker-extra-recipe
+binaryData:
+  ItemReservation.recipe: >-
+    H4sICPsu+18AA0l0ZW1SZXNlcnZhdGlvbi5yZWNpcGUArVLNTsJAEG4plPUDdLsiaYwmpPFgMBrFKNGD8eABOAjBcOG2sGvSBMEU5GWMiY/iG/gWPofT0mjA2FP3Mjt/33zfZFBpzfVTT890sJBzfzo5CfTIf9biy8a7NXyzcAe3EygdNKXqT+RC+mM5HOuwayYOwV/WY+VdAe5togjbp0BLiQxz0EEpSi8naSVuUAri/7Lv2DvCPnJ+AgiQVXIu6V8RqdASadPy9pCfhrQo5XhbKP26VOklA9WKMY1ocn3F61EHU46xfLfuq1n9+DxABeW/WrmJbThrQihYwEY8n5zu4B5tFKIddsdyRNoTuYtk7oTYHjTTORZuoD94SP1kCJYqsLJWniGZhR+h3BQ2s7jhmqLK8jznmt7/enaowqaKNZY2s3nGDYFy3IxslrPYWpE1eD6yLBx0zVVdqqvzC9lQp5dnj7LxDQGZ+Q6TAwAA
