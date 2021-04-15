@@ -35,5 +35,5 @@ object Watcher {
 
 trait Watcher {
   def resource(config: Config, system: ActorSystem, callbackEnable: () => Unit): Resource[IO, Unit]
-  def trigger: Unit
+  def trigger(): Unit
 }

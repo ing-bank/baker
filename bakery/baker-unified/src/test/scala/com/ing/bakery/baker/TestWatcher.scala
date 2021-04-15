@@ -12,7 +12,7 @@ object TestWatcher {
 
 class TestWatcher extends Watcher {
 
-  override def trigger: Unit = {
+  override def trigger(): Unit = {
     TestWatcher.triggered = true
   }
 
