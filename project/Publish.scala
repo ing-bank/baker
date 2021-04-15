@@ -14,9 +14,9 @@ object Publish {
   import aether.AetherKeys._
 
   val SuppressJavaDocsAndSources = Seq(
-    sources in doc := Seq(),
-    publishArtifact in packageDoc := false,
-    publishArtifact in packageSrc := false
+    doc / sources  := Seq(),
+    packageDoc / publishArtifact  := false,
+    packageSrc / publishArtifact  := false
   )
 
   val StableToAzureFeed = Seq(
