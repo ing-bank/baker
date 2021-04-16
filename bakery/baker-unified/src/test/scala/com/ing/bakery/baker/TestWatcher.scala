@@ -13,10 +13,16 @@ object TestWatcher {
 
 class TestWatcher extends Watcher {
 
-  override def trigger: Unit = TestWatcher.triggered = true
+  override def trigger(): Unit = {
+    TestWatcher.triggered = true
+  }
 
-  override def resource(config: Config, system: ActorSystem, callbackEnable: => Unit): Resource[IO, Unit] = {
-    implicit val timer: Temporal[IO] = IO.timer(system.dispatcher)
-    Resource.eval(IO{TestWatcher.started = true; callbackEnable} >> IO.sleep(100 millis) >> IO(TestWatcher.triggered = true) )
+  override def resource(config: Config, system: ActorSystem, callbackEnable: () => Unit): Resource[IO, Unit] = {
+    implicit val timer: Timer[IO] = IO.timer(system.dispatcher)
+    Resource.eval(IO{
+      TestWatcher.started = true
+      callbackEnable()
+    } >> IO.sleep(100 millis)
+      >> IO(TestWatcher.triggered = true) )
   }
 }

@@ -28,17 +28,6 @@ object AkkaBakerConfig extends LazyLogging {
 
   case class BakerValidationSettings(allowAddingRecipeWithoutRequiringInstances: Boolean)
 
-  case object ActorRecipeManagerType extends RecipeManagerType
-
-  case object InMemoryRecipeManagerType extends RecipeManagerType
-
-  sealed trait RecipeManagerType
-
-  implicit val recipeManagerTypeReader: ValueReader[RecipeManagerType] = (config: Config, path: String) => {
-    if (config.hasPath(path) && config.getString(path) == "inmemory") InMemoryRecipeManagerType
-    else ActorRecipeManagerType
-  }
-
   object BakerValidationSettings {
     def default: BakerValidationSettings = BakerValidationSettings(false)
 
@@ -87,9 +76,7 @@ object AkkaBakerConfig extends LazyLogging {
         retentionCheckInterval = 1.minute,
         ingredientsFilter = List.empty,
         actorIdleTimeout = Some(5.minutes),
-        configuredEncryption = Encryption.NoEncryption,
-        timeouts = defaultTimeouts,
-        recipeManagerType = InMemoryRecipeManagerType
+        configuredEncryption = Encryption.NoEncryption
       )
 
     AkkaBakerConfig(
@@ -113,9 +100,7 @@ object AkkaBakerConfig extends LazyLogging {
         ingredientsFilter = List.empty,
         journalInitializeTimeout = 30.seconds,
         seedNodes = ClusterBakerActorProvider.SeedNodesList(seedNodes),
-        configuredEncryption = Encryption.NoEncryption,
-        timeouts = defaultTimeouts,
-        recipeManagerType = ActorRecipeManagerType
+        configuredEncryption = Encryption.NoEncryption
       )
 
     AkkaBakerConfig(
@@ -150,9 +135,7 @@ object AkkaBakerConfig extends LazyLogging {
           retentionCheckInterval = config.as[FiniteDuration]("baker.actor.retention-check-interval"),
           ingredientsFilter = config.as[List[String]]("baker.filtered-ingredient-values"),
           actorIdleTimeout = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout"),
-          configuredEncryption = encryption,
-          timeouts = Timeouts.default,
-          recipeManagerType = config.as[RecipeManagerType]("baker.recipe-manager-type")
+          configuredEncryption = encryption
         )
       case Some("cluster-sharded") =>
         new ClusterBakerActorProvider(
@@ -168,9 +151,7 @@ object AkkaBakerConfig extends LazyLogging {
               ClusterBakerActorProvider.ServiceDiscovery
           },
           ingredientsFilter = config.as[List[String]]("baker.filtered-ingredient-values"),
-          configuredEncryption = encryption,
-          Timeouts.default,
-          recipeManagerType = config.as[RecipeManagerType]("baker.recipe-manager-type")
+          configuredEncryption = encryption
         )
       case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
     }

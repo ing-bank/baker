@@ -496,4 +496,34 @@ object ProcessIndexProto {
         } yield ProcessAlreadyExists(recipeInstanceId)
     }
 
+  implicit def recipeFoundProto: ProtoMap[RecipeFound, protobuf.RecipeFound] =
+    new ProtoMap[RecipeFound, protobuf.RecipeFound] {
+
+      val companion = protobuf.RecipeFound
+
+      def toProto(a: RecipeFound): protobuf.RecipeFound =
+        protobuf.RecipeFound(Option(ctxToProto(a.compiledRecipe)), Option(a.timestamp))
+
+      def fromProto(message: protobuf.RecipeFound): Try[RecipeFound] =
+        for {
+          compiledRecipeProto <- versioned(message.compiledRecipe, "compiledRecipe")
+          timestamp <- versioned(message.timestamp, "timestamp")
+          compiledRecipe <- ctxFromProto(compiledRecipeProto)
+        } yield RecipeFound(compiledRecipe, timestamp)
+    }
+
+  implicit def noRecipeFoundProto: ProtoMap[NoRecipeFound, protobuf.NoRecipeFound] =
+    new ProtoMap[NoRecipeFound, protobuf.NoRecipeFound] {
+
+      val companion = protobuf.NoRecipeFound
+
+      def toProto(a: NoRecipeFound): protobuf.NoRecipeFound =
+        protobuf.NoRecipeFound(Option(a.recipeId))
+
+      def fromProto(message: protobuf.NoRecipeFound): Try[NoRecipeFound] =
+        for {
+          recipeId <- versioned(message.recipeId, "recipeId")
+        } yield NoRecipeFound(recipeId)
+    }
+
 }
