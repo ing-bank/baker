@@ -18,43 +18,7 @@ object BakeryEnvironment {
     clientAppHostname: Uri
   )
 
-  def configMapNamespace(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Namespace] =
-    for {
-      namespace <- Namespace.resource
-      _ <- Resource.eval(printGreen("\nCreating Bakery cluster environment for configmaps"))
-      _ <- DefinitionFile.resource("cassandra.yaml", namespace)
-      _ <- DefinitionFile.resource("configmap/bakery-controller.yaml", namespace)
-      _ <- DefinitionFile.resource("example-config.yaml", namespace)
-      _ <- DefinitionFile.resource("kafka-event-sink.yaml", namespace)
-      _ <- Resource.eval(Pod.waitUntilAllPodsAreReady(namespace))
-
-      _ <- Resource.eval(printGreen("\nAdding custom resources: interactions, listeners, recipe"))
-      _ <- DefinitionFile.resource("configmap/interactions-example.yaml", namespace)
-      _ <- DefinitionFile.resource("configmap/baker-webshop.yaml", namespace)
-      _ <- DefinitionFile.resource("example-client-app.yaml", namespace)
-      _ <- Resource.eval(Pod.waitUntilAllPodsAreReady(namespace))
-    } yield namespace
-
-  def crdNamespace(implicit connectionPool: ExecutionContext, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Namespace] =
-    for {
-    namespace <- Namespace.resource
-    _ <- Resource.eval(printGreen("\nCreating Bakery cluster environment for CRD"))
-    _ <- DefinitionFile.resource("crd/crd-baker.yaml")
-    _ <- DefinitionFile.resource("crd/crd-interaction.yaml")
-    _ <- DefinitionFile.resource("cassandra.yaml", namespace)
-    _ <- DefinitionFile.resource("crd/bakery-controller.yaml", namespace)
-    _ <- DefinitionFile.resource("example-config.yaml", namespace)
-    _ <- DefinitionFile.resource("kafka-event-sink.yaml", namespace)
-    _ <- Resource.eval(Pod.waitUntilAllPodsAreReady(namespace))
-
-    _ <- Resource.eval(printGreen("\nAdding custom resources: interactions, listeners, recipe"))
-    _ <- DefinitionFile.resource("crd/interactions-example.yaml", namespace)
-    _ <- DefinitionFile.resource("crd/baker-webshop.yaml", namespace)
-    _ <- DefinitionFile.resource("example-client-app.yaml", namespace)
-    _ <- Resource.eval(Pod.waitUntilAllPodsAreReady(namespace))
-  } yield namespace
-
-  def unifiedNamespace(implicit connectionPool: ExecutionContext, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Namespace] =
+  def namespace(implicit connectionPool: ExecutionContext, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Namespace] =
     for {
       namespace <- Namespace.resource
       _ <- Resource.eval(printGreen("Bakery webshop"))

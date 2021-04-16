@@ -7,9 +7,9 @@ def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = proje
 lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocker")({
   state =>
     "set ThisBuild / version := \"local\"" ::
-     "docker-baker-unified/docker:publishLocal" ::
-      "bakery-client-example/docker:publishLocal" ::
-      "bakery-kafka-listener-example/docker:publishLocal" ::
+     "docker-baker-unified/docker/publishLocal" ::
+      "bakery-client-example/docker/publishLocal" ::
+      "bakery-kafka-listener-example/docker/publishLocal" ::
       "project interaction-example-make-payment-and-ship-items" ::
       "buildInteractionDockerImage --image-name=interaction-make-payment-and-ship-items --publish=local --interaction=webshop.webservice.MakePaymentInstance --interaction=webshop.webservice.ShipItemsInstance" ::
       "project interaction-example-reserve-items" ::

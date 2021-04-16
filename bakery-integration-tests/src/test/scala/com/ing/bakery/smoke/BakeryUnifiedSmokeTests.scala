@@ -5,26 +5,31 @@ import com.ing.bakery.smoke.k8s.{DefinitionFile, Pod}
 import io.circe.parser._
 import org.scalatest.matchers.should.Matchers
 import webshop.webservice.OrderStatus
+import scala.concurrent.duration._
 
-class BakeryUnifiedSmokeTests extends BakerySmokeTests with Matchers {
+class BakeryUnifiedSmokeTests extends BakerySmokeTests  with Matchers {
 
-  describe("The Bakery cluster without CRDs") {
+
+  describe("The Bakery cluster") {
 
     test("runs a happy path flow") { context =>
       for {
-        recipes <- context.clientApp.listRecipeNames
-        _ = recipes.length shouldBe 1
-        _ = recipes should contain("Webshop")
-
-//        _ <- DefinitionFile("extra-recipe.yaml", context.namespace)
-//        _ <- eventually("Webshop baker added an extra recipe") {
-//          for {
-//            recipes <- context.clientApp.listRecipeNames
-//            _ = recipes.length shouldBe 2
-//            _ = recipes should contain("Webshop")
-//            _ = recipes should contain("ItemReservation")
-//          } yield ()
-//        }
+        _ <- eventually {
+          for {recipes <- context.clientApp.listRecipeNames
+               _ = recipes.length shouldBe 1
+               _ = recipes should contain("Webshop")
+               } yield ()
+        }
+        _ <- DefinitionFile("extra-recipe.yaml", context.namespace)
+        _ <- within(3 minutes, 30) {
+          for {
+            recipes <- context.clientApp.listRecipeNames
+            _ = recipes.length shouldBe 2
+            _ = recipes should contain("Webshop")
+            _ = recipes should contain("ItemReservation.recipe")
+            // 'ItemReservation.recipe' is the ID of this recipe
+          } yield ()
+        }
 
         orderId <- context.clientApp.createCheckoutOrder(List("item1", "item2"))
 
@@ -97,7 +102,6 @@ class BakeryUnifiedSmokeTests extends BakerySmokeTests with Matchers {
     * @return the resources each test can use
     */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] =
-    BakeryEnvironment.resource(testArguments, BakeryEnvironment.unifiedNamespace)
-
+    BakeryEnvironment.resource(testArguments, BakeryEnvironment.namespace)
 
 }

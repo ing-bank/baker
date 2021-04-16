@@ -20,12 +20,8 @@ spec:
           env:
             - name: INTERACTION_HTTPS_ENABLED
               value: "false"
-#           volumeMounts:
-#             - mountPath: /opt/docker/conf/
-#               name: config
-#               readOnly: true
           ports:
-            - containerPort: 8080
+            - containerPort: 8081
               name: interactions
               protocol: TCP
             - containerPort: 9999

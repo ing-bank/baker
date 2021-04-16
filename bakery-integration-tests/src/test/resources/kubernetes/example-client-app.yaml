@@ -57,7 +57,5 @@ spec:
               containerPort: 8082
               protocol: TCP
           env:
-            - name: BAKERY_BAKER_HOSTNAME
-              value: http://webshop-baker:8081/
-            - name: BAAS_COMPONENT_HTTP_API_PORT
-              value: "8082"
+            - name: BAKER_URL_PREFIX
+              value: http://webshop-baker:8080
