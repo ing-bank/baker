@@ -13,14 +13,14 @@ object RemoteInteractionLoader extends LazyLogging {
 
   def apply(implementations: List[InteractionInstance]): Unit = {
     val config = ConfigFactory.load()
-    val port = config.getInt("bakery-component.http-api-port")
-    val metricsPort = config.getInt("bakery-component.metrics-port")
-    val apiLoggingEnabled = config.getBoolean("bakery-component.api-logging-enabled")
-    val interactionPerTypeMetricsEnabled = config.getBoolean("bakery-component.interaction-per-type-metrics-enabled")
-    val httpsEnabled = config.getBoolean("bakery-component.interaction.https-enabled")
-    val keystorePath = config.getString("bakery-component.interaction.https-keystore-path")
-    val keystorePassword = config.getString("bakery-component.interaction.https-keystore-password")
-    val keystoreType = config.getString("bakery-component.interaction.https-keystore-type")
+    val port = config.getInt("baker.interactions.http-api-port")
+    val metricsPort = config.getInt("baker.interactions.metrics-port")
+    val apiLoggingEnabled = config.getBoolean("baker.interactions.api-logging-enabled")
+    val interactionPerTypeMetricsEnabled = config.getBoolean("baker.interactions.per-type-metrics-enabled")
+    val httpsEnabled = config.getBoolean("baker.interactions.https-enabled")
+    val keystorePath = config.getString("baker.interactions.https-keystore-path")
+    val keystorePassword = config.getString("baker.interactions.https-keystore-password")
+    val keystoreType = config.getString("baker.interactions.https-keystore-type")
 
     val healthServiceAddress = InetSocketAddress.createUnresolved("0.0.0.0", 9999)
     val address = InetSocketAddress.createUnresolved("0.0.0.0", port)

@@ -11,7 +11,6 @@ import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.SensoryEventStatus
@@ -167,8 +166,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
         Future.successful(())
       case ProcessAlreadyExists(_) =>
         Future.failed(ProcessAlreadyExistsException(recipeInstanceId))
-      case RecipeManagerProtocol.NoRecipeFound(_) =>
+      case NoRecipeFound(recipeId) =>
         Future.failed(NoSuchRecipeException(recipeId))
+
     }
   }
 
@@ -392,7 +392,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       getRecipeResponse <- processIndexActor.ask(GetCompiledRecipe(recipeInstanceId))(config.timeouts.defaultInquireTimeout)
       processState <- getRecipeInstanceState(recipeInstanceId)
       response <- getRecipeResponse match {
-        case RecipeManagerProtocol.RecipeFound(compiledRecipe, _) =>
+        case RecipeFound(compiledRecipe, _) =>
           Future.successful(RecipeVisualizer.visualizeRecipe(
             compiledRecipe,
             style,

@@ -74,20 +74,20 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
         Project.extract(state).appendWithSession(Seq(
           name := arguments.name,
           libraryDependencies ++= moduleID.toSeq,
-          packageName in Docker := arguments.name,
-          version in ThisBuild := moduleID.map(_.revision).getOrElse((version in ThisBuild).value),
-          javaOptions in Universal += arguments.interactions.mkString(","),
-          livenessProbe in kube := NoProbe,
+          Docker / packageName  := arguments.name,
+          ThisBuild / version := moduleID.map(_.revision).getOrElse((ThisBuild / version ).value),
+          Universal / javaOptions  += arguments.interactions.mkString(","),
+          kube / livenessProbe := NoProbe,
           dockerBaseImage := "adoptopenjdk/openjdk11",
-          sourceGenerators in Compile += Def.task {
+          Compile / sourceGenerators  += Def.task {
             val mainClassName =
-              (mainClass in Compile).value.getOrElse(throw new MessageOnlyException("mainClass in Compile is required"))
+              (Compile / mainClass).value.getOrElse(throw new MessageOnlyException("mainClass in Compile is required"))
 
             val pathList = mainClassName.split("\\.")
 
             val file =
               (pathList.dropRight(1) :+ pathList.last + ".scala")
-                .foldLeft((sourceManaged in Compile).value) {
+                .foldLeft((Compile / sourceManaged).value) {
                   case (file, subPath) => file / subPath
                 }
 
@@ -99,8 +99,8 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
         ), state)
 
       val commandName = arguments.publish match {
-        case "local" => "docker:publishLocal"
-        case _ => "docker:publish"
+        case "local" => "docker/publishLocal"
+        case _ => "docker/publish"
       }
       val updatedState = Command.process(commandName, stateWithNewDependency)
       Command.process("kubeyml:gen", updatedState)
@@ -113,7 +113,7 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
 
   override lazy val projectSettings: Seq[Def.Setting[_]] = Seq(
     mainClassBody := None,
-    mainClass in Compile := Some("com.ing.bakery.Main"),
+    Compile / mainClass := Some("com.ing.bakery.Main"),
     commands += buildDockerCommand
   )
 

@@ -19,7 +19,7 @@ abstract class BakerySmokeTests  extends BakeryFunSpec {
    */
   def argumentsBuilder(config: ConfigMap): TestArguments = {
     val clientAppHostname = Uri.unsafeFromString(
-      config.getOptional[String]("client-app").getOrElse("http://localhost:8080"))
+      config.getOptional[String]("client-app").getOrElse("http://localhost:8082"))
     BakeryEnvironment.Arguments(
       clientAppHostname = clientAppHostname
     )

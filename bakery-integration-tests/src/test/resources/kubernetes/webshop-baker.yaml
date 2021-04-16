@@ -1,0 +1,256 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webshop-baker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: webshop-baker
+  template:
+    metadata:
+      labels:
+        name: webshop-baker
+    spec:
+      automountServiceAccountToken: true
+      containers:
+        - name: state
+          image: baker-unified:local
+          volumeMounts:
+            - mountPath: /opt/docker/conf/
+              name: config
+              readOnly: true
+          ports:
+            - containerPort: 8080
+              name: state-api
+              protocol: TCP
+            - containerPort: 9095
+              name: state-metrics
+              protocol: TCP
+            - containerPort: 8558
+              name: management
+              protocol: TCP
+            - containerPort: 2552
+              name: remoting
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /health/alive
+              port: management
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          readinessProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /health/ready
+              port: management
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+        - name: interactions
+          image: interaction-example-reserve-items:local
+          env:
+            - name: INTERACTION_HTTPS_ENABLED
+              value: "false"
+          ports:
+            - containerPort: 8081
+              name: interactions
+              protocol: TCP
+            - containerPort: 9096
+              name: ints-metrics
+              protocol: TCP
+            - containerPort: 9999
+              name: ints-health
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /health
+              port:  ints-health
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          readinessProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /health
+              port:  ints-health
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+      restartPolicy: Always
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: config
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  name: webshop-baker
+              - configMap:
+                  name: webshop-baker-recipes
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webshop-baker
+data:
+  test.conf: |
+    test = conf
+  application.conf: |
+
+    baker {
+      recipe-poll-interval: 5 seconds
+      kafka-event-sink {
+        enabled: true,
+        bootstrap-servers: "kafka-event-sink:9092",
+        baker-events-topic: "baker-events",
+        recipe-events-topic: "recipe-events"
+      }
+      interactions {
+        local-configuration-classes = []
+        localhost-ports = [ 8081 ]
+        pod-label-selector = "bakery=webshop"
+      }
+    }
+
+    akka {
+      actor {
+        provider = "cluster"
+      }
+      remote.artery {
+        canonical {
+          hostname = "127.0.0.1"
+          port = 2551
+        }
+      }
+
+      cluster {
+        seed-nodes = ["akka://baker@127.0.0.1:2551"]
+      }
+
+      persistence {
+
+        max-concurrent-recoveries = 10
+        snapshot-store.plugin = ""
+
+        journal {
+          plugin = "akka.persistence.cassandra.journal"
+          auto-start-journals = ["akka.persistence.cassandra.journal"]
+        }
+
+        cassandra {
+
+          session-dispatcher = "akka.persistence.cassandra.default-dispatcher"
+          datastax-java-driver-config = "datastax-java-driver"
+
+          read-profile = "akka-persistence-cassandra-profile"
+          write-profile = "akka-persistence-cassandra-profile"
+
+          meta-in-events-by-tag-view = off
+          support-all-persistence-ids = off
+          coordinated-shutdown-on-error = off
+
+          journal {
+
+            class = "akka.persistence.cassandra.journal.CassandraJournal"
+            plugin-dispatcher = "akka.persistence.cassandra.default-dispatcher"
+
+            keyspace-autocreate = true
+            tables-autocreate = true
+
+            keyspace = "akka"
+            table = "messages"
+
+            table-compaction-strategy {
+              class = "SizeTieredCompactionStrategy"
+            }
+
+            metadata-table = "metadata"
+            replication-strategy = "SimpleStrategy"
+
+          }
+
+          events-by-tag {
+            enabled = false
+            pubsub-notification = off
+          }
+
+          healthcheck {
+            plugin-location = "akka.persistence.cassandra"
+            timeout = 5s
+            health-check-cql = "SELECT now() FROM system.local"
+          }
+
+          default-dispatcher {
+            type = Dispatcher
+            executor = "fork-join-executor"
+            fork-join-executor {
+              parallelism-min = 6
+              parallelism-factor = 1
+              parallelism-max = 6
+            }
+          }
+        }
+      }
+    }
+
+    datastax-java-driver {
+
+      basic {
+        contact-points = ["cassandra:9042"]
+        load-balancing-policy.local-datacenter = "datacenter1"
+      }
+      advanced {
+        auth-provider {
+          class = PlainTextAuthProvider
+          username = "cassandra"
+          password = "cassandra"
+        }
+      }
+      profiles {
+        akka-persistence-cassandra-profile {
+          basic.request {
+            consistency = LOCAL_QUORUM
+            default-idempotence = true
+          }
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webshop-baker-recipes
+  labels:
+    version: "1"
+binaryData:
+  Webshop.recipe: >-
+    CgdXZWJzaG9wErEQChYKFAoQdW5hdmFpbGFibGVJdGVtcxABCkVaQwo/ChdTaGlwcGluZ0FkZHJlc3NSZWNlaXZlZBIkCg9zaGlwcGluZ0FkZHJlc3MSESIPCg0KB2FkZHJlc3MSAggREAEKEwoRCg1yZXNlcnZlZEl0ZW1zEAEKCwoJCgVpdGVtcxABCg8KDQoJU2hpcEl0ZW1zEAIKnANimQMKRAoYT3JkZXJIYWRVbmF2YWlsYWJsZUl0ZW1zEigKEHVuYXZhaWxhYmxlSXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCk8KDUl0ZW1zUmVzZXJ2ZWQSPgoNcmVzZXJ2ZWRJdGVtcxItIisKHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCgoKBGRhdGESAggWEkQKGE9yZGVySGFkVW5hdmFpbGFibGVJdGVtcxIoChB1bmF2YWlsYWJsZUl0ZW1zEhQaEgoQIg4KDAoGaXRlbUlkEgIIERJPCg1JdGVtc1Jlc2VydmVkEj4KDXJlc2VydmVkSXRlbXMSLSIrCh0KBWl0ZW1zEhQaEgoQIg4KDAoGaXRlbUlkEgIIEQoKCgRkYXRhEgIIFiIcCgdvcmRlcklkEhEiDwoNCgdvcmRlcklkEgIIESIdCgVpdGVtcxIUGhIKECIOCgwKBml0ZW1JZBICCBEqDFJlc2VydmVJdGVtczIMUmVzZXJ2ZUl0ZW1zUhAaDgjoBxEAAAAAAAAAQBgFCkhaRgpCChpQYXltZW50SW5mb3JtYXRpb25SZWNlaXZlZBIkChJwYXltZW50SW5mb3JtYXRpb24SDiIMCgoKBGluZm8SAggREAEKFVoTCg8KDVBheW1lbnRGYWlsZWQQAApQWk4KSgoLT3JkZXJQbGFjZWQSHAoHb3JkZXJJZBIRIg8KDQoHb3JkZXJJZBICCBESHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggREAEKFQoTCg9zaGlwcGluZ0FkZHJlc3MQAQpKWkgKRAoYT3JkZXJIYWRVbmF2YWlsYWJsZUl0ZW1zEigKEHVuYXZhaWxhYmxlSXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggREAAK2wNi2AMKcQoRUGF5bWVudFN1Y2Nlc3NmdWwSXAoNc2hpcHBpbmdPcmRlchJLIkkKHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCgoKBGRhdGESAggWChwKB2FkZHJlc3MSESIPCg0KB2FkZHJlc3MSAggRCg8KDVBheW1lbnRGYWlsZWQScQoRUGF5bWVudFN1Y2Nlc3NmdWwSXAoNc2hpcHBpbmdPcmRlchJLIkkKHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCgoKBGRhdGESAggWChwKB2FkZHJlc3MSESIPCg0KB2FkZHJlc3MSAggREg8KDVBheW1lbnRGYWlsZWQiFgoQcmVjaXBlSW5zdGFuY2VJZBICCBEiPgoNcmVzZXJ2ZWRJdGVtcxItIisKHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCgoKBGRhdGESAggWIiQKD3NoaXBwaW5nQWRkcmVzcxIRIg8KDQoHYWRkcmVzcxICCBEiJAoScGF5bWVudEluZm9ybWF0aW9uEg4iDAoKCgRpbmZvEgIIESoLTWFrZVBheW1lbnQyC01ha2VQYXltZW50UhAaDgjoBxEAAAAAAAAAQBgFClVaUwpPCg1JdGVtc1Jlc2VydmVkEj4KDXJlc2VydmVkSXRlbXMSLSIrCh0KBWl0ZW1zEhQaEgoQIg4KDAoGaXRlbUlkEgIIEQoKCgRkYXRhEgIIFhAAChMKEQoNc2hpcHBpbmdPcmRlchABChlaFwoTChFTaGlwcGluZ0NvbmZpcm1lZBAACndadQpxChFQYXltZW50U3VjY2Vzc2Z1bBJcCg1zaGlwcGluZ09yZGVyEksiSQodCgVpdGVtcxIUGhIKECIOCgwKBml0ZW1JZBICCBEKCgoEZGF0YRICCBYKHAoHYWRkcmVzcxIRIg8KDQoHYWRkcmVzcxICCBEQAAoRCg8KC01ha2VQYXltZW50EAIKGAoWChJwYXltZW50SW5mb3JtYXRpb24QAQoSChAKDFJlc2VydmVJdGVtcxACCrMBYrABChMKEVNoaXBwaW5nQ29uZmlybWVkEhMKEVNoaXBwaW5nQ29uZmlybWVkIlwKDXNoaXBwaW5nT3JkZXISSyJJCh0KBWl0ZW1zEhQaEgoQIg4KDAoGaXRlbUlkEgIIEQoKCgRkYXRhEgIIFgocCgdhZGRyZXNzEhEiDwoNCgdhZGRyZXNzEgIIESoJU2hpcEl0ZW1zMglTaGlwSXRlbXNSEBoOCOgHEQAAAAAAAABAGAUKDQoLCgdvcmRlcklkEAESBggLEBAYARIGCBEQCxgBEiAIEhAKGAEiGE9yZGVySGFkVW5hdmFpbGFibGVJdGVtcxIVCBIQDBgBIg1JdGVtc1Jlc2VydmVkEgYIAhALGAESBggGEBEYARIGCAgQFBgBEgYICBADGAESBggBEAkYARIGCAkQCxgBEgYIBRASGAESBggDEAUYARIGCAwQAhgBEgYIChAAGAESBggNEBMYARIZCAQQDhgBIhFTaGlwcGluZ0NvbmZpcm1lZBIGCA8QDRgBEhkIEBAPGAEiEVBheW1lbnRTdWNjZXNzZnVsEhUIEBAHGAEiDVBheW1lbnRGYWlsZWQSBggTEAQYARIGCBQQBRgBOhA5YTJmOGMyODgwZWE4ZmMw
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: webshop-baker
+spec:
+  ports:
+    - name: api
+      protocol: TCP
+      port: 8080
+      targetPort: state-api
+  selector:
+    name: webshop-baker
+  type: ClusterIP
+  sessionAffinity: None

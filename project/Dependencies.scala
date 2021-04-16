@@ -3,18 +3,18 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.6.13"
+  val akkaVersion = "2.6.14"
   val akkaManagementVersion = "1.0.10"
-  val akkaPersistenceCassandraVersion = "1.0.4"
+  val akkaPersistenceCassandraVersion = "1.0.5"
   val akkaHttpVersion = "10.2.4"
-  val http4sVersion = "0.21.20"
-  val fs2Version = "3.0.1"
+  val http4sVersion = "0.21.22"
+  val fs2Version = "2.5.4"
   val circeVersion = "0.13.0"
-  val mockitoScalaVersion = "1.16.29"
-  val catsVersion = "2.3.3"
+  val mockitoScalaVersion = "1.16.37"
+  val catsVersion = "2.4.1"
   val catsCoreVersion = "2.4.2"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "5.3.4"
+  val springVersion = "5.3.6"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
     .exclude("com.typesafe.akka", "akka-actor")
@@ -24,7 +24,7 @@ object Dependencies {
     .exclude("com.typesafe.akka", "akka-protobuf")
 
   val scalaJava8Compat = "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
-  val scalaTest = "org.scalatest" %% "scalatest" % "3.2.6"
+  val scalaTest = "org.scalatest" %% "scalatest" % "3.2.7"
   val mockito = "org.mockito" % "mockito-all" % "1.10.19"
   val mockitoScala = "org.mockito" %% "mockito-scala" % mockitoScalaVersion
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
@@ -69,12 +69,12 @@ object Dependencies {
 
   val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.10.0"
   val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.15.0"
-  val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.1.0"
+  val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.1.1"
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
-  val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.10.0"
-  val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.10.0"
-  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.1.18"
+  val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.11.0"
+  val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.11.0"
+  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.1.19"
 
   val skuber = "io.skuber" %% "skuber" % "2.6.0" excludeAll(
     ExclusionRule("org.yaml"),
@@ -109,13 +109,13 @@ object Dependencies {
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.15.5"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.15.8"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
 
   val typeSafeConfig = "com.typesafe" % "config" % "1.4.1"
 
-  val objenisis = "org.objenesis" % "objenesis" % "3.1"
+  val objenisis = "org.objenesis" % "objenesis" % "3.2"
   val jodaTime = "joda-time" % "joda-time" % "2.10.10"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.30"
   val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
@@ -123,7 +123,7 @@ object Dependencies {
   val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.3"
   val scalaCheckPlus = "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2"
   val scalaCheckPlusMockito = "org.scalatestplus" %% "scalatestplus-mockito" % "1.0.0-M2"
-  val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
+  val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.3"
 
 
   val springContext = "org.springframework" % "spring-context" % springVersion

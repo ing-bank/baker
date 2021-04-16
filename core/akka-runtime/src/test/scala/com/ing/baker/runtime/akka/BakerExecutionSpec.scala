@@ -57,8 +57,6 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           |
           |baker.actor.provider = "cluster-sharded"
           |
-          |baker.recipe-manager-type = "actor"
-          |
           |akka.management {
           |  cluster.bootstrap {
           |    contact-point-discovery {
@@ -112,8 +110,6 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           |akka.actor.provider = "cluster"
           |
           |baker.actor.provider = "cluster-sharded"
-          |
-          |baker.recipe-manager-type = "actor"
           |
           |""".stripMargin).withFallback(ConfigFactory.load())
       val setupActorSystem = ActorSystem("setup-actor-system", config)
@@ -1168,8 +1164,9 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       def second(recipeId: String) = {
         val system2 = ActorSystem("persistenceTest2", localLevelDBConfig("persistenceTest2"))
-        val baker2 = AkkaBaker(ConfigFactory.load(), system2, LocalInteractions(mockImplementations))
         (for {
+          baker2 <- setupBakerWithNoRecipe()(system2)
+          recipeId <- baker2.addRecipe(compiledRecipe)
           state <- baker2.getRecipeInstanceState(recipeInstanceId)
           recipe <- baker2.getRecipe(recipeId)
           recipeId0 <- baker2.addRecipe(compiledRecipe)
