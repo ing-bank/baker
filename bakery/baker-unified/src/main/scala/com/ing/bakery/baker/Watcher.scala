@@ -24,7 +24,7 @@ object Watcher {
     if (watcher != "") {
       Class.forName(watcher).getDeclaredConstructor().newInstance() match {
         case w: Watcher =>
-          w.resource(config, system, WatcherReadinessCheck.enable())
+          w.resource(config, system, () => WatcherReadinessCheck.enable())
         case _ =>
           throw new IllegalArgumentException(s"Class $watcher defined in bakery.proxy-filter must extend com.ing.bakery.baker.Watcher")
       }
@@ -34,6 +34,6 @@ object Watcher {
 
 
 trait Watcher {
-  def resource(config: Config, system: ActorSystem, callbackEnable: => Unit): Resource[IO, Unit]
-  def trigger: Unit
+  def resource(config: Config, system: ActorSystem, callbackEnable: () => Unit): Resource[IO, Unit]
+  def trigger(): Unit
 }

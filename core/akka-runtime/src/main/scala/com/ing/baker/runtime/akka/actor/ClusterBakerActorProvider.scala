@@ -11,17 +11,14 @@ import akka.util.Timeout
 import cats.data.NonEmptyList
 import cats.effect.IO
 import com.ing.baker.il.sha256HashCode
-import com.ing.baker.runtime.akka.AkkaBakerConfig
-import com.ing.baker.runtime.akka.AkkaBakerConfig.{InMemoryRecipeManagerType, RecipeManagerType}
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_index._
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.serialization.Encryption
-import com.ing.baker.runtime.{RecipeManager, RecipeManagerActorImpl, RecipeManagerImpl}
+import com.ing.baker.runtime.{RecipeManager, RecipeManagerImpl}
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.duration._
@@ -72,9 +69,7 @@ class ClusterBakerActorProvider(
                                  journalInitializeTimeout: FiniteDuration,
                                  seedNodes: ClusterBootstrapMode,
                                  ingredientsFilter: List[String],
-                                 configuredEncryption: Encryption,
-                                 timeouts: AkkaBakerConfig.Timeouts,
-                                 recipeManagerType: RecipeManagerType
+                                 configuredEncryption: Encryption
                                ) extends BakerActorProvider with LazyLogging {
 
   private def initializeCluster()(implicit actorSystem: ActorSystem): Unit = {
@@ -118,40 +113,7 @@ class ClusterBakerActorProvider(
   override def createRecipeManager()(implicit actorSystem: ActorSystem): RecipeManager = {
     // todo move to a more proper location
     initializeCluster()
-    if (recipeManagerType == InMemoryRecipeManagerType) {
-      RecipeManagerImpl.pollingAware(actorSystem.dispatcher)
-    } else {
-      createRecipeManagerActor
-    }
-  }
-
-  private def createRecipeManagerActor(implicit actorSystem: ActorSystem): RecipeManager = {
-
-    val singletonManagerProps = ClusterSingletonManager.props(
-      RecipeManagerActor.props(),
-      terminationMessage = PoisonPill,
-      settings = ClusterSingletonManagerSettings(actorSystem))
-    val roles = Cluster(actorSystem).selfRoles
-
-    actorSystem.actorOf(props = singletonManagerProps, name = recipeManagerName)
-
-    val singletonProxyProps = ClusterSingletonProxy.props(
-      singletonManagerPath = s"/user/$recipeManagerName",
-      settings = {
-        if (roles.contains("state-node"))
-          ClusterSingletonProxySettings(actorSystem).withRole("state-node")
-        else
-          ClusterSingletonProxySettings(actorSystem)
-      })
-
-    import actorSystem.dispatcher
-
-    RecipeManagerActorImpl.pollingAware(
-      actor = actorSystem.actorOf(props = singletonProxyProps, name = "RecipeManagerProxy"),
-      settings = RecipeManagerActorImpl.Settings(
-        addRecipeTimeout = timeouts.defaultAddRecipeTimeout,
-        inquireTimeout = timeouts.defaultInquireTimeout)
-    )
+    RecipeManagerImpl.pollingAware(actorSystem.dispatcher)
   }
 
   def getAllProcessesMetadata(actor: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata] = {

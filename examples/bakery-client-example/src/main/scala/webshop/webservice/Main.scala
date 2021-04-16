@@ -25,16 +25,16 @@ object Main extends IOApp {
 
     val config =
       ConfigFactory.load()
-    val bakeryHostname =
-      config.getString("bakery.baker-hostname")
+    val bakerUrlPrefix =
+      config.getString("baker-url-prefix")
     val httpPort =
-      config.getInt("bakery-component.http-api-port")
+      config.getInt("http-api-port")
     val connectionPool: ExecutionContextExecutor =
       ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
 
     val mainResource = for {
-      baker <- BakerClient.resource(Uri.unsafeFromString(bakeryHostname), "/api/bakery", connectionPool)
-      management <- StateNodeManagementClient.resource(Uri.unsafeFromString(bakeryHostname), connectionPool)
+      baker <- BakerClient.resource(Uri.unsafeFromString(bakerUrlPrefix), "/api/bakery", connectionPool)
+      management <- StateNodeManagementClient.resource(Uri.unsafeFromString(bakerUrlPrefix), connectionPool)
       _ <- BlazeServerBuilder[IO](connectionPool)
         .bindHttp(httpPort, "0.0.0.0")
         .withHttpApp(new WebShopService(new WebShopBaker(baker, checkoutRecipeId), management).build)

@@ -8,4 +8,4 @@ DATE=$(date +"%y%m%d%H%M%S")
 COMMIT=$( git log --pretty=format:'%h' -n 1)
 VERSION="${SEM_VERSION}-${DATE}-${COMMIT}"
 
-echo "version in ThisBuild := \"${VERSION}\"" > ./version.sbt
+echo "ThisBuild / version := \"${VERSION}\"" > ./version.sbt

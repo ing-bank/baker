@@ -2,15 +2,12 @@ package com.ing.baker.runtime.akka.actor
 
 import akka.actor.{ActorRef, ActorSystem}
 import cats.effect.IO
-import com.ing.baker.runtime.akka.AkkaBakerConfig
-import com.ing.baker.runtime.akka.AkkaBakerConfig.{InMemoryRecipeManagerType, RecipeManagerType}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{GetIndex, Index}
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor
 import com.ing.baker.runtime.model.InteractionsF
 import com.ing.baker.runtime.serialization.Encryption
-import com.ing.baker.runtime.{RecipeManager, RecipeManagerActorImpl, RecipeManagerImpl}
+import com.ing.baker.runtime.{RecipeManager, RecipeManagerImpl}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -19,9 +16,7 @@ class LocalBakerActorProvider(
                                retentionCheckInterval: FiniteDuration,
                                ingredientsFilter: List[String],
                                actorIdleTimeout: Option[FiniteDuration],
-                               configuredEncryption: Encryption,
-                               timeouts: AkkaBakerConfig.Timeouts,
-                               recipeManagerType: RecipeManagerType
+                               configuredEncryption: Encryption
                              ) extends BakerActorProvider {
 
   override def createProcessIndexActor(interactionManager: InteractionsF[IO], recipeManager: RecipeManager)(
@@ -37,20 +32,8 @@ class LocalBakerActorProvider(
       ))
   }
 
-  override def createRecipeManager()(implicit actorSystem: ActorSystem): RecipeManager = {
-    if (recipeManagerType == InMemoryRecipeManagerType)
-      RecipeManagerImpl.pollingAware(actorSystem.dispatcher)
-    else
-      createRecipeManagerActor(actorSystem)
-  }
-
-  private def createRecipeManagerActor(actorSystem: ActorSystem): RecipeManager = {
-    RecipeManagerActorImpl.pollingAware(
-      actor = actorSystem.actorOf(RecipeManagerActor.props()),
-      settings = RecipeManagerActorImpl.Settings(
-        addRecipeTimeout = timeouts.defaultAddRecipeTimeout,
-        inquireTimeout = timeouts.defaultInquireTimeout))(actorSystem.dispatcher)
-  }
+  override def createRecipeManager()(implicit actorSystem: ActorSystem): RecipeManager =
+    RecipeManagerImpl.pollingAware(actorSystem.dispatcher)
 
   override def getAllProcessesMetadata(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata] = {
     import akka.pattern.ask
