@@ -15,7 +15,7 @@ spec:
       automountServiceAccountToken: true
       containers:
         - name: state
-          image: baker-unified:local
+          image: baker-state:local
           volumeMounts:
             - mountPath: /opt/docker/conf/
               name: config
