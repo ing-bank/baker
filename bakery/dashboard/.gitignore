@@ -1,36 +1,4 @@
-/.idea/
-*/.idea/
-/project/boot/
-/project/plugins/project
-**/*.*~
-/**/logs
-target/
-lib_managed/
-src_managed/
-test-output/
-*.iml
-.classpath_nb
-it/logs
-native/
-*.log
-**/*.log
-*.sublime-*
-/activemq-data
-*.dot
-.ensime
-/**/*.pdf
-/**/.DS_Store
-site/
-/.sbtopts
-/.*sbtopts
-
-.bloop/
-*/.bloop/
-.vscode/
-.metals/
-*/**/metals.sbt
-
-.bsp/
+# See http://help.github.com/ignore-files/ for more about ignoring files.
 
 # compiled output
 /dist
