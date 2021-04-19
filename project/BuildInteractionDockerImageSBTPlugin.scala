@@ -99,8 +99,8 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
         ), state)
 
       val commandName = arguments.publish match {
-        case "local" => "docker/publishLocal"
-        case _ => "docker/publish"
+        case "local" => "Docker/publishLocal"
+        case _ => "Docker/publish"
       }
       val updatedState = Command.process(commandName, stateWithNewDependency)
       Command.process("kubeyml:gen", updatedState)

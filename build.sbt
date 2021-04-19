@@ -7,9 +7,9 @@ def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = proje
 lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocker")({
   state =>
     "set ThisBuild / version := \"local\"" ::
-     "docker-baker-unified/docker/publishLocal" ::
-      "bakery-client-example/docker/publishLocal" ::
-      "bakery-kafka-listener-example/docker/publishLocal" ::
+     "baker-state/Docker/publishLocal" ::
+      "bakery-client-example/Docker/publishLocal" ::
+      "bakery-kafka-listener-example/Docker/publishLocal" ::
       "project interaction-example-make-payment-and-ship-items" ::
       "buildInteractionDockerImage --image-name=interaction-make-payment-and-ship-items --publish=local --interaction=webshop.webservice.MakePaymentInstance --interaction=webshop.webservice.ShipItemsInstance" ::
       "project interaction-example-reserve-items" ::
@@ -259,10 +259,15 @@ lazy val `bakery-baker-client` = project.in(file("bakery/baker-client"))
   )
   .dependsOn(`baker-interface`)
 
-lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
+lazy val `baker-state` = project.in(file("bakery/baker-state"))
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "baker-unified",
+    Compile / mainClass := Some("com.ing.bakery.baker.Main"),
+    dockerExposedPorts ++= Seq(8080),
+    Docker / packageName := "baker-state",
+    dockerBaseImage := "adoptopenjdk/openjdk11",
+    moduleName := "baker-state",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
@@ -308,7 +313,6 @@ lazy val `baker-unified` = project.in(file("bakery/baker-unified"))
     `baker-intermediate-language`
   )
 
-
 lazy val `bakery-interaction` = project.in(file("bakery/interaction"))
   .settings(defaultModuleSettings)
   .settings(
@@ -352,25 +356,10 @@ lazy val `bakery-interaction-spring` = project.in(file("bakery/interaction-sprin
   )
   .dependsOn(`bakery-interaction`, `baker-recipe-dsl`)
 
-lazy val `docker-baker-unified` = project.in(file("docker/baker-unified"))
-  .settings(commonSettings, noPublishSettings)
-  .enablePlugins(JavaAppPackaging, DockerPlugin)
-  .dependsOn(`baker-unified`)
-  .settings(
-    Compile / mainClass := Some("com.ing.bakery.baker.Main"),
-    dockerExposedPorts ++= Seq(8080),
-    Docker / packageName := "baker-unified",
-    dockerBaseImage := "adoptopenjdk/openjdk11",
-    libraryDependencies ++= Seq(
-      logback,
-      logstash
-    )
-  ).settings(dockerSettings)
-
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .aggregate(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
-    `bakery-baker-client`, `baker-unified`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
+    `bakery-baker-client`, `baker-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
     `sbt-bakery-docker-generate`,
     `baker-interface`)
 

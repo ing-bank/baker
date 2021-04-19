@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import webshop.webservice.OrderStatus
 import scala.concurrent.duration._
 
-class BakeryUnifiedSmokeTests extends BakerySmokeTests  with Matchers {
+class BakeryWebshopTests extends BakerySmokeTests  with Matchers {
 
 
   describe("The Bakery cluster") {
@@ -79,16 +79,16 @@ class BakeryUnifiedSmokeTests extends BakerySmokeTests  with Matchers {
   }
 
   override val ExpectedBakerEvents = List( // override because we don't support adding recipes in unified setup, as of yet
-    "RecipeAdded",
-    "RecipeInstanceCreated",
     "EventReceived",
-    "InteractionStarted",
     "EventReceived",
     "EventReceived",
     "InteractionCompleted",
-    "InteractionStarted",
     "InteractionCompleted",
-    "InteractionStarted"
+    "InteractionCompleted",
+    "InteractionStarted",
+    "InteractionStarted",
+    "InteractionStarted",
+    "RecipeInstanceCreated"
   )
 
 
