@@ -36,7 +36,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     "-encoding", "utf8",
     "-Xfatal-warnings"
   ),
-  coverageExcludedPackages := "<empty>;.*javadsl.*;.*scaladsl.*;.*common.*;.*protobuf.*;.*protomappings.*;.*Main.*",
+  coverageExcludedPackages := "<empty>;bakery.sbt;.*javadsl.*;.*scaladsl.*;.*common.*;.*protobuf.*;.*protomappings.*;.*Main.*",
   packageBin / packageOptions +=
     Package.ManifestAttributes(
       "Build-Time" -> new java.util.Date().toString,
