@@ -113,11 +113,10 @@ data:
 
     baker {
       recipe-poll-interval: 5 seconds
-      kafka-event-sink {
-        enabled: true,
+      event-sink {
+        provider-class: "com.ing.bakery.baker.KafkaEventSink",
         bootstrap-servers: "kafka-event-sink:9092",
-        baker-events-topic: "baker-events",
-        recipe-events-topic: "recipe-events"
+        topic: "events"
       }
       interactions {
         local-configuration-classes = []
