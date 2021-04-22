@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.baker.recipe.javadsl.Interaction
-import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
 import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.scaladsl.InteractionInstanceF
@@ -42,12 +41,17 @@ object Main extends IOApp with LazyLogging {
     val apiPort = bakerConfig.getInt("api-port")
     val metricsPort = bakerConfig.getInt("metrics-port")
     val apiUrlPrefix = bakerConfig.getString("api-url-prefix")
+    val production = bakerConfig.getBoolean("production-safe-mode")
     val loggingEnabled = bakerConfig.getBoolean("api-logging-enabled")
-    logger.info(s"Logging of API: $loggingEnabled  - MUST NEVER BE SET TO 'true' IN PRODUCTION")
+
+    if (production && loggingEnabled) {
+      logger.error("Logging of API is enabled, but not allowed in production - stopping JVM")
+      System.exit(1)
+    }
 
     val configurationClasses = bakerConfig.getStringList("interactions.local-configuration-classes")
 
-    val eventSinkSettings = bakerConfig.getConfig("kafka-event-sink").as[KafkaEventSinkSettings]
+    val eventSinkSettings = bakerConfig.getConfig("event-sink")
 
     val pollInterval = Duration.fromNanos(config.getDuration("baker.recipe-poll-interval").toNanos)
 
@@ -84,7 +88,7 @@ object Main extends IOApp with LazyLogging {
         interactionHttpClient <- BlazeClientBuilder[IO](remoteInteractionCallContext, None) // todo SSL context
           .withCheckEndpointAuthentication(false)
           .resource
-        eventSink <- KafkaEventSink.resource(eventSinkSettings)
+        eventSink <- EventSink.resource(eventSinkSettings)
 
         interactionDiscovery <- InteractionDiscovery.resource(
           interactionHttpClient,

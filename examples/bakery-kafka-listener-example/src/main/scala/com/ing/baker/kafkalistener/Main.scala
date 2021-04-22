@@ -18,9 +18,8 @@ object Main extends IOApp with LazyLogging {
   case class KafkaListenerConfig(
     bootstrapServers: String,
     group: String,
-    `recipe-events-topic`: String,
-    `baker-events-topic`: String,
-    `event-processor-class`: String
+    `event-processor-class`: String,
+    topic: String
   )
 
 
@@ -54,18 +53,14 @@ object Main extends IOApp with LazyLogging {
     logger.info(s"Started listening $clientConfig")
 
     consumerStream(consumerSettings)
-      .evalTap(_.subscribeTo(
-        clientConfig.`recipe-events-topic`,
-        clientConfig.`baker-events-topic`))
+      .evalTap(_.subscribeTo(clientConfig.topic))
       .flatMap(_.stream)
       .map(committable => {
         val record = committable.record;
         val rawMessage = record.value
         record.topic match {
-          case clientConfig.`baker-events-topic` =>
+          case clientConfig.`topic` =>
             processIncomingMessage(rawMessage, bakerEventsDecoder.decodeJson, eventProcessor.bakerEvent, eventProcessor.parseFailure)
-          case clientConfig.`recipe-events-topic` =>
-            processIncomingMessage(rawMessage, eventInstanceDecoder.decodeJson, eventProcessor.recipeEvent, eventProcessor.parseFailure)
           case _ =>
             logger.warn(s"Don't know how to process events from topic ${record.topic}")
         }

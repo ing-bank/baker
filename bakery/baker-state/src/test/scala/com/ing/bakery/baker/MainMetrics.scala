@@ -28,7 +28,6 @@ object MainMetrics extends IOApp with LazyLogging {
 
     implicit val system: ActorSystem = ActorSystem("test", config)
     implicit val executionContext: ExecutionContext = system.dispatcher
-    system.actorOf(Props[ClusterEventWatch], name = "ClusterListener")
 
     val metricsPort = bakery.getInt("metrics-port")
     val loggingEnabled = bakery.getBoolean("api-logging-enabled")

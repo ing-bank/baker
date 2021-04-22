@@ -36,7 +36,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     "-encoding", "utf8",
     "-Xfatal-warnings"
   ),
-  coverageExcludedPackages := "<empty>;.*javadsl.*;.*scaladsl.*;.*common.*;.*protobuf.*;.*Main.*",
+  coverageExcludedPackages := "<empty>;bakery.sbt;.*javadsl.*;.*scaladsl.*;.*common.*;.*protobuf.*;.*protomappings.*;.*Main.*",
   packageBin / packageOptions +=
     Package.ManifestAttributes(
       "Build-Time" -> new java.util.Date().toString,
@@ -539,4 +539,3 @@ lazy val `sbt-bakery-docker-generate` = project.in(file("docker/sbt-bakery-docke
   .enablePlugins(SbtPlugin)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .dependsOn(`bakery-interaction`, `bakery-interaction-spring`)
-

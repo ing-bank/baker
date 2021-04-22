@@ -11,8 +11,8 @@ object Dependencies {
   val fs2Version = "2.5.4"
   val circeVersion = "0.13.0"
   val mockitoScalaVersion = "1.16.37"
-  val catsVersion = "2.5.0"
-  val catsCoreVersion = "2.4.2"
+  val catsEffectVersion = "2.4.1"
+  val catsCoreVersion = "2.6.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
   val springVersion = "5.3.6"
 
@@ -24,7 +24,7 @@ object Dependencies {
     .exclude("com.typesafe.akka", "akka-protobuf")
 
   val scalaJava8Compat = "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
-  val scalaTest = "org.scalatest" %% "scalatest" % "3.2.7"
+  val scalaTest = "org.scalatest" %% "scalatest" % "3.2.8"
   val mockito = "org.mockito" % "mockito-all" % "1.10.19"
   val mockitoScala = "org.mockito" %% "mockito-scala" % mockitoScalaVersion
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
@@ -93,7 +93,7 @@ object Dependencies {
   val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
   val circeGenericExtras = "io.circe" %% "circe-generic-extras" % circeVersion
 
-  val catsEffect = "org.typelevel" %% "cats-effect" % catsVersion
+  val catsEffect = "org.typelevel" %% "cats-effect" % catsEffectVersion
   val catsCore = "org.typelevel" %% "cats-core" % catsCoreVersion
   val console4Cats = "dev.profunktor" %% "console4cats" % "0.8.0"
   val catsRetry = "com.github.cb372" %% "cats-retry" % "2.1.0"
