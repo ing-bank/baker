@@ -539,4 +539,3 @@ lazy val `sbt-bakery-docker-generate` = project.in(file("docker/sbt-bakery-docke
   .enablePlugins(SbtPlugin)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .dependsOn(`bakery-interaction`, `bakery-interaction-spring`)
-
