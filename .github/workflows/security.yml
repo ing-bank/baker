@@ -18,15 +18,18 @@ jobs:
       with:
         java-version: 1.8
 
-    - name: Compile
-# Dependency check is broken -
+    - name: Dependency check
       run: sbt test:compile updateClassifiers
 
-    - name: Xanitizer Security Analysis
-      uses: RIGS-IT/xanitizer-action@v1
-      with:
-        license: ${{ secrets.XANITIZER_LICENSE }}
-        configFile: .github/workflows/baker.XanitizerConfig
+# Dependency check is broken now
+#     - name: Dependency check
+#       run: sbt dependencyCheck test:compile updateClassifiers
+#
+#     - name: Xanitizer Security Analysis
+#       uses: RIGS-IT/xanitizer-action@v1
+#       with:
+#         license: ${{ secrets.XANITIZER_LICENSE }}
+#         configFile: .github/workflows/baker.XanitizerConfig
 
     - uses: actions/upload-artifact@v2
       with:
