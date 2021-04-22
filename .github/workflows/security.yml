@@ -18,8 +18,9 @@ jobs:
       with:
         java-version: 1.8
 
-    - name: Dependency check
-      run: sbt dependencyCheck test:compile updateClassifiers
+# Dependency check is broken -
+#     - name: Dependency check
+#       run: sbt dependencyCheck test:compile updateClassifiers
 
     - name: Xanitizer Security Analysis
       uses: RIGS-IT/xanitizer-action@v1
