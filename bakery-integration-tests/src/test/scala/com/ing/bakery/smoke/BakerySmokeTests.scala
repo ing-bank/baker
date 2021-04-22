@@ -25,21 +25,5 @@ abstract class BakerySmokeTests  extends BakeryFunSpec {
     )
   }
 
-  protected val ExpectedBakerEvents = List(
-    "RecipeAdded",
-    "RecipeAdded",
-    "RecipeInstanceCreated",
-    "EventReceived",
-    "InteractionStarted",
-    "EventReceived",
-    "EventReceived",
-    "InteractionCompleted",
-    "InteractionStarted",
-    "InteractionCompleted",
-    "InteractionStarted"
-  )
 
-  protected val ExpectedRecipeEvents = List(
-    "OrderPlaced", "ShippingAddressReceived", "PaymentInformationReceived", "ItemsReserved", "PaymentSuccessful", "ShippingConfirmed"
-  )
 }
