@@ -1,4 +1,23 @@
 import {NgModule} from '@angular/core';
+import {BrowserModule} from '@angular/platform-browser';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
+import {HttpClientModule} from '@angular/common/http';
+
+// import { HttpClientInMemoryWebApiModule } from 'angular-in-memory-web-api';
+// import { InMemoryDataService } from './in-memory-data.service';
+
+
+// import { AppComponent } from './app.component';
+// import { HeroDetailComponent } from './hero-detail/hero-detail.component';
+// import { HeroesComponent } from './heroes/heroes.component';
+// import { HeroSearchComponent } from './hero-search/hero-search.component';
+// import { MessagesComponent } from './messages/messages.component';
+
+import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
+import {MatNativeDateModule} from "@angular/material/core";
+import {RecipesComponent} from "./recipes/recipes.component";
+import {MAT_FORM_FIELD_DEFAULT_OPTIONS} from "@angular/material/form-field";
+
 import {A11yModule} from '@angular/cdk/a11y';
 import {ClipboardModule} from '@angular/cdk/clipboard';
 import {DragDropModule} from '@angular/cdk/drag-drop';
@@ -25,7 +44,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatListModule} from '@angular/material/list';
 import {MatMenuModule} from '@angular/material/menu';
-import {MatNativeDateModule, MatRippleModule} from '@angular/material/core';
+import {MatRippleModule} from '@angular/material/core';
 import {MatPaginatorModule} from '@angular/material/paginator';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
@@ -43,8 +62,19 @@ import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatTreeModule} from '@angular/material/tree';
 import {OverlayModule} from '@angular/cdk/overlay';
 
+import {AppComponent} from "./app.component";
+import {AppRoutingModule} from './app-routing.module';
+import {InteractionsComponent} from "./interactions/interactions.component";
+
 @NgModule({
-  exports: [
+  imports: [
+    BrowserModule,
+    BrowserAnimationsModule,
+    FormsModule,
+    AppRoutingModule,
+    HttpClientModule,
+    MatNativeDateModule,
+    ReactiveFormsModule,
     A11yModule,
     ClipboardModule,
     CdkStepperModule,
@@ -89,8 +119,18 @@ import {OverlayModule} from '@angular/cdk/overlay';
     OverlayModule,
     PortalModule,
     ScrollingModule,
+  ],
+  entryComponents: [AppComponent],
+  declarations: [
+    AppComponent,
+    RecipesComponent,
+    InteractionsComponent
+  ],
+  bootstrap: [AppComponent],
+  providers: [
+    {provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: {appearance: 'fill'}},
   ]
 })
 
-export class DashboardModule {}
-
+export class AppModule {
+}
