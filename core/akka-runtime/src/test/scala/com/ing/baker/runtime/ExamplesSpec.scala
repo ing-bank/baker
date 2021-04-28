@@ -94,6 +94,7 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
           goodsShipped.instance(testTrackingId),
           invoiceWasSent.instance())
         _ = state.eventNames shouldBe expectedEvents.map(_.name)
+        _ = baker.gracefulShutdown()
       } yield succeed
     }
   }

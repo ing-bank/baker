@@ -59,26 +59,18 @@ class BakeryWebshopTests extends BakerySmokeTests  with Matchers {
             .map(status => status shouldBe OrderStatus.Complete.toString)
         }
 
-        recipeEvents <- Pod.execOnNamed("kafka-event-sink",
-          context.namespace, Some("kafkacat"))(s"kafkacat -b localhost:9092 -C -t recipe-events -o 0 -c ${ExpectedRecipeEvents.size}")
-
-        _ = recipeEvents
+        events <- Pod.execOnNamed("kafka-event-sink",
+          context.namespace, Some("kafkacat"))(s"kafkacat -b localhost:9092 -C -t events -o 0 -c ${ExpectedEvents.size}")
+        _ = events
           .map(parse)
-          .map(_.toOption.get.asObject.get.apply("name").get.asString.get).sorted shouldBe ExpectedRecipeEvents.sorted
-
-        bakerEvents <- Pod.execOnNamed("kafka-event-sink",
-          context.namespace, Some("kafkacat"))(s"kafkacat -b localhost:9092 -C -t baker-events -o 0 -c ${ExpectedBakerEvents.size}")
-
-        _ = bakerEvents
-          .map(parse)
-          .map(_.toOption.get.asObject.get.keys.head).sorted shouldBe ExpectedBakerEvents.sorted
+          .map(_.toOption.get.asObject.get.apply("name").get.asString.get).sorted shouldBe ExpectedEvents.sorted
 
         _ <- printGreen(s"Event streams contain all required events")
       } yield succeed
     }
   }
 
-  override val ExpectedBakerEvents = List( // override because we don't support adding recipes in unified setup, as of yet
+  val ExpectedEvents = List(
     "EventReceived",
     "EventReceived",
     "EventReceived",
@@ -88,7 +80,13 @@ class BakeryWebshopTests extends BakerySmokeTests  with Matchers {
     "InteractionStarted",
     "InteractionStarted",
     "InteractionStarted",
-    "RecipeInstanceCreated"
+    "ItemsReserved",
+    "OrderPlaced",
+    "PaymentInformationReceived",
+    "RecipeInstanceCreated",
+    "ShippingAddressReceived",
+    "ShippingConfirmed",
+    "PaymentSuccessful"
   )
 
 

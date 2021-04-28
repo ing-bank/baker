@@ -113,7 +113,7 @@ spec:
               exec:
                 command: ["/bin/sh",
                           "-c" ,
-                          "sleep 10; kafka-topics --zookeeper localhost:2181 --partitions=1 --replication-factor=1 --create --topic recipe-events; kafka-topics --zookeeper localhost:2181 --partitions=1 --replication-factor=1 --create --topic baker-events"]
+                          "sleep 10; kafka-topics --zookeeper localhost:2181 --partitions=1 --replication-factor=1 --create --topic events"]
           volumeMounts:
             - name: kafka-data
               mountPath: /var/lib/kafka
