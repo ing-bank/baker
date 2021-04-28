@@ -1,5 +1,5 @@
 {
-  "name": "material-aio-example",
+  "name": "bakery-dashboard",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
@@ -30,14 +30,20 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^0.1102.4",
+    "@angular-eslint/builder": "4.2.0",
+    "@angular-eslint/eslint-plugin": "4.2.0",
+    "@angular-eslint/eslint-plugin-template": "4.2.0",
+    "@angular-eslint/schematics": "4.2.0",
+    "@angular-eslint/template-parser": "4.2.0",
     "@angular/cli": "^11.2.4",
     "@angular/compiler-cli": "^11.0.0",
     "@angular/language-service": "^11.0.0",
     "@angular/localize": "^11.0.0",
     "@types/node": "^12.20.5",
-    "codelyzer": "^6.0.1",
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "@typescript-eslint/parser": "^4.22.0",
+    "eslint": "^7.25.0",
     "ts-node": "^8.10.2",
-    "tslint": "~6.1.3",
     "typescript": "~4.1.5"
   }
 }

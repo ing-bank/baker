@@ -9,7 +9,7 @@ import {Interaction, Interactions, Recipe, Recipes} from './bakery-api';
 @Injectable({ providedIn: 'root' })
 export class BakeryService {
 
-  private baseUrl = 'http://localhost:52052/api/bakery';  // URL to web api
+  private baseUrl = '/api/bakery';  // URL to web api http://localhost:52052
 
   httpOptions = {
     headers: new HttpHeaders({ 'Content-Type': 'application/json' })

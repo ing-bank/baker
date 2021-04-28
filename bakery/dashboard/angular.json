@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "material-aio-example": {
+    "bakery-dashboard": {
       "root": "",
       "sourceRoot": "src",
       "projectType": "application",
@@ -53,34 +53,34 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "material-aio-example:build"
+            "browserTarget": "bakery-dashboard:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "material-aio-example:build:production"
+              "browserTarget": "bakery-dashboard:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "material-aio-example:build"
+            "browserTarget": "bakery-dashboard:build"
           }
         },
         "lint": {
-          "builder": "@angular-devkit/build-angular:tslint",
+          "builder": "@angular-eslint/builder:lint",
           "options": {
-            "tsConfig": [
-              "tsconfig.app.json",
-              "tsconfig.spec.json"
-            ],
-            "exclude": [
-              "**/node_modules/**"
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "src/**/*.html"
             ]
           }
         }
       }
     }
   },
-  "defaultProject": "material-aio-example"
+  "defaultProject": "bakery-dashboard",
+  "cli": {
+    "defaultCollection": "@angular-eslint/schematics"
+  }
 }

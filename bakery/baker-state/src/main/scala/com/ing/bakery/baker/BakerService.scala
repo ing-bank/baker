@@ -1,6 +1,6 @@
 package com.ing.bakery.baker
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{Blocker, ContextShift, IO, Resource, Sync, Timer}
 import cats.implicits._
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
@@ -20,6 +20,7 @@ import org.http4s.implicits._
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import io.prometheus.client.CollectorRegistry
+import org.http4s.server.staticcontent._
 import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.{Logger, Metrics}
@@ -31,7 +32,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object BakerService {
 
-  def resource(baker: Baker, hostname: InetSocketAddress, apiUrlPrefix: String, interactions: InteractionsF[IO], loggingEnabled: Boolean)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+  def resource(baker: Baker, hostname: InetSocketAddress, apiUrlPrefix: String, dashboardPath: String, interactions: InteractionsF[IO], loggingEnabled: Boolean)
+              (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
 
     val bakeryRequestClassifier: Request[IO] => Option[String] = { request =>
       val uriPath = request.uri.path
@@ -41,8 +43,7 @@ object BakerService {
       else if (p.startsWith("/instances")) {
         val action = p.split('/') // /instances/<id>/<action>/... - we don't want ID here
         if (action.length >= 4) Some(s"/instances/${action(3)}") else Some("/instances/state")
-      } else Some("unknown")
-
+      } else None
     }
 
     val apiLoggingAction: Option[String => IO[Unit]] = if (loggingEnabled) {
@@ -52,6 +53,7 @@ object BakerService {
 
     for {
       metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_api")
+      blocker <- Blocker[IO]
       server <- BlazeServerBuilder[IO](ec)
         .bindSocketAddress(hostname)
         .withHttpApp(
@@ -59,7 +61,11 @@ object BakerService {
             logHeaders = loggingEnabled,
             logBody = loggingEnabled,
             logAction = apiLoggingAction)
-          (Router(apiUrlPrefix -> Metrics[IO](metrics, classifierF = bakeryRequestClassifier)(routes(baker, interactions))) orNotFound)
+          (
+            Router(
+              apiUrlPrefix -> Metrics[IO](metrics, classifierF = bakeryRequestClassifier)(routes(baker, interactions)),
+              "/" -> fileService(FileService.Config(dashboardPath, blocker))
+            ) orNotFound)
         ).resource
     } yield server
   }
@@ -111,6 +117,8 @@ final class BakerService private(baker: Baker, interactionManager: InteractionsF
       case GET -> Root / "recipes" => callBaker(baker.getAllRecipes)
 
       case GET -> Root / "recipes" / RecipeId(recipeId) => callBaker(baker.getRecipe(recipeId))
+
+      case GET -> Root / "recipes" / RecipeId(recipeId) / "visual" => callBaker(baker.getRecipeVisual(recipeId))
     })
 
   private def instance: HttpRoutes[IO] = Router("/instances" -> HttpRoutes.of[IO] {

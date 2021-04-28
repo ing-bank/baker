@@ -76,3 +76,4 @@ testem.log
 # System Files
 .DS_Store
 Thumbs.db
+/bakery/dashboard/dashboard.zip

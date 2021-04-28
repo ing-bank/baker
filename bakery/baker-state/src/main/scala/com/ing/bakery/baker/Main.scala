@@ -41,6 +41,7 @@ object Main extends IOApp with LazyLogging {
     val apiPort = bakerConfig.getInt("api-port")
     val metricsPort = bakerConfig.getInt("metrics-port")
     val apiUrlPrefix = bakerConfig.getString("api-url-prefix")
+    val dashboardPath = bakerConfig.getString("dashboard-path")
     val production = bakerConfig.getBoolean("production-safe-mode")
     val loggingEnabled = bakerConfig.getBoolean("api-logging-enabled")
 
@@ -126,7 +127,7 @@ object Main extends IOApp with LazyLogging {
 
         bakerService <- BakerService.resource(baker,
           InetSocketAddress.createUnresolved("0.0.0.0", apiPort),
-          apiUrlPrefix, interactionDiscovery, loggingEnabled)
+          apiUrlPrefix, dashboardPath, interactionDiscovery, loggingEnabled)
       } yield (bakerService, baker)
 
     mainResource.use {

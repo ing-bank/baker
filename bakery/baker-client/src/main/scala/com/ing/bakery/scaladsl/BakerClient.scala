@@ -136,7 +136,7 @@ final class BakerClient( client: Client[IO],
 
   private def callRemoteBakerService[A](request: (Uri, String) => IO[Request[IO]])(implicit decoder: Decoder[A]): Future[A] =
     callRemoteBakerImpl(request, handleHttpErrors, None)(decoder)
-  
+
 
   private def callRemoteBakerServiceFallbackAware[A](request: (Uri, String) => IO[Request[IO]],
                                                    fallbackEndpoint: Option[EndpointConfig])(implicit decoder: Decoder[A]): Future[A] =
@@ -169,7 +169,10 @@ final class BakerClient( client: Client[IO],
     * @return
     */
   override def getRecipe(recipeId: String): Future[RecipeInformation] =
-    callRemoteBakerServiceFallbackAware[RecipeInformation]((host, prefix) => GET(root(host, prefix) / "app" / "recipes" / recipeId), fallbackEndpoint)
+    callRemoteBakerService[RecipeInformation]((host, prefix) => GET(root(host, prefix) / "app" / "recipes" / recipeId))
+
+  override def getRecipeVisual(recipeId: String, style: RecipeVisualStyle): Future[String] =
+    callRemoteBakerService[String]((host, prefix) => GET(root(host, prefix) / "app" / "recipes" / recipeId / "visual"))
 
   /**
     * Returns all recipes added to this baker instance.
@@ -177,7 +180,7 @@ final class BakerClient( client: Client[IO],
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
   override def getAllRecipes: Future[Map[String, RecipeInformation]] =
-    callRemoteBakerServiceFallbackAware[Map[String, RecipeInformation]]( (host, prefix) => GET(root(host, prefix) / "app" / "recipes"), fallbackEndpoint)
+    callRemoteBakerService[Map[String, RecipeInformation]]( (host, prefix) => GET(root(host, prefix) / "app" / "recipes"))
 
   /**
     * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier

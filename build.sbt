@@ -1,6 +1,10 @@
 import Dependencies._
 import Keys._
+import com.typesafe.sbt.packager.MappingsHelper.{contentOf, directory}
+import com.typesafe.sbt.packager.universal.Archives
 import sbt.file
+
+import scala.sys.process.Process
 
 def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = project % "test->test;test->compile"
 
@@ -259,6 +263,41 @@ lazy val `bakery-baker-client` = project.in(file("bakery/baker-client"))
   )
   .dependsOn(`baker-interface`)
 
+val npmBuildTask = taskKey[File]("Dashboard build")
+
+lazy val `bakery-dashboard` = project.in(file("bakery/dashboard"))
+  .enablePlugins(UniversalPlugin)
+  .settings(commonSettings)
+  .settings(
+    name := "bakery-dashboard",
+    maintainer := "apollo@ing.com",
+    Universal / packageName  := s"bakery-dashboard",
+    Universal / mappings ++= Seq(file("dashboard.zip") -> "dashboard.zip"),
+    npmBuildTask := {
+      val processBuilder = Process("./npm-build.sh", file("bakery/dashboard"))
+      val process = processBuilder.run()
+      if(process.exitValue() != 0) throw new Error(s"NPM failed with exit value ${process.exitValue()}")
+      file("bakery/dashboard/dashboard.zip")
+    },
+    crossPaths := false,
+    Compile / doc / sources  := Seq.empty,
+    Compile / packageDoc / mappings := Seq(),
+    Compile / packageDoc / publishArtifact := false,
+    Compile / packageSrc / publishArtifact := false,
+    Compile / packageBin / publishArtifact := false,
+    Universal / packageBin  := npmBuildTask.value,
+    addArtifact(Artifact("dashboard", "zip", "zip"), npmBuildTask),
+    publish := (publish dependsOn (Universal / packageBin)).value,
+    publishLocal := (publishLocal dependsOn (Universal / packageBin)).value
+  )
+//  .settings(
+//    Compile / packageBin / artifact := npmBuildTask.value,
+//    packageBin :=
+//    packageZip := (Compile / baseDirectory).
+//      value / "target" / "universal" / (name.value + "-" + version.value + ".zip"),
+//    addArtifact(Universal / packageBin  / artifact, Universal / packageBin),
+//  )
+
 lazy val `baker-state` = project.in(file("bakery/baker-state"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(defaultModuleSettings)
@@ -267,6 +306,9 @@ lazy val `baker-state` = project.in(file("bakery/baker-state"))
     dockerExposedPorts ++= Seq(8080),
     Docker / packageName := "baker-state",
     dockerBaseImage := "adoptopenjdk/openjdk11",
+    Universal / mappings ++=
+      directory(s"${(`bakery-dashboard` / baseDirectory).value.getAbsolutePath}/dist")
+        .map(t => (t._1, t._2.replace("dist", "dashboard"))),
     moduleName := "baker-state",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
@@ -310,7 +352,8 @@ lazy val `baker-state` = project.in(file("bakery/baker-state"))
     `bakery-interaction-protocol`,
     `baker-recipe-compiler`,
     `baker-recipe-dsl`,
-    `baker-intermediate-language`
+    `baker-intermediate-language`,
+    `bakery-dashboard`
   )
 
 lazy val `bakery-interaction` = project.in(file("bakery/interaction"))
@@ -361,7 +404,7 @@ lazy val baker = project.in(file("."))
   .aggregate(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
     `bakery-baker-client`, `baker-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
     `sbt-bakery-docker-generate`,
-    `baker-interface`)
+    `baker-interface`, `bakery-dashboard`)
 
 lazy val `baker-example` = project
   .in(file("examples/baker-example"))
