@@ -270,7 +270,7 @@ lazy val `bakery-dashboard` = project.in(file("bakery/dashboard"))
   .settings(commonSettings)
   .settings(
     name := "bakery-dashboard",
-    maintainer := "apollo@ing.com",
+    maintainer := "The Bakery Team",
     Universal / packageName  := s"bakery-dashboard",
     Universal / mappings ++= Seq(file("dashboard.zip") -> "dashboard.zip"),
     npmBuildTask := {
