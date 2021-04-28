@@ -267,7 +267,7 @@ val npmBuildTask = taskKey[File]("Dashboard build")
 
 lazy val `bakery-dashboard` = project.in(file("bakery/dashboard"))
   .enablePlugins(UniversalPlugin)
-  .settings(commonSettings)
+  .settings(defaultModuleSettings)
   .settings(
     name := "bakery-dashboard",
     maintainer := "The Bakery Team",
@@ -290,13 +290,6 @@ lazy val `bakery-dashboard` = project.in(file("bakery/dashboard"))
     publish := (publish dependsOn (Universal / packageBin)).value,
     publishLocal := (publishLocal dependsOn (Universal / packageBin)).value
   )
-//  .settings(
-//    Compile / packageBin / artifact := npmBuildTask.value,
-//    packageBin :=
-//    packageZip := (Compile / baseDirectory).
-//      value / "target" / "universal" / (name.value + "-" + version.value + ".zip"),
-//    addArtifact(Universal / packageBin  / artifact, Universal / packageBin),
-//  )
 
 lazy val `baker-state` = project.in(file("bakery/baker-state"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
