@@ -12,6 +12,8 @@ import io.circe.generic.semiauto._
 import io.circe.syntax._
 import org.apache.kafka.common.serialization.StringSerializer
 
+import scala.util.{Failure, Success, Try}
+
 trait EventSink {
   def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit]
   def close(): Unit = ()
@@ -75,20 +77,31 @@ class KafkaEventSink(config: Config) extends EventSink with LazyLogging {
 
 object EventSink extends LazyLogging {
 
-  private lazy val NoSink = IO(new EventSink {
-    override def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit] = IO.unit
-  })
+  private lazy val NoSink = IO {
+    new EventSink {
+      override def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit] = IO.unit
+    }
+  }
 
   def resource(settings: Config)(implicit contextShift: ContextShift[IO], timer: Timer[IO]): Resource[IO, EventSink] = {
 
     Resource.make({
       val providerClass = settings.getString("provider-class")
-      if (providerClass.isEmpty) NoSink else {
-        Class.forName(providerClass).getDeclaredConstructor(classOf[com.typesafe.config.Config]).newInstance(settings) match {
-          case sink: EventSink =>
+      if (providerClass.isEmpty) {
+        logger.info("No provider class specified: Kafka event sink disabled")
+        NoSink
+      } else {
+        Try(Class.forName(providerClass).getDeclaredConstructor(classOf[com.typesafe.config.Config]).newInstance(settings)) match {
+          case Success(sink: EventSink) =>
             logger.info(s"Using sink implementation $providerClass")
             IO(sink)
-          case _ => NoSink
+          case Success(_) => {
+            logger.warn(s"Sink provider class $providerClass must extend ${EventSink.getClass.getCanonicalName}")
+            NoSink
+          }
+          case Failure(exception) =>
+            logger.error("Error initialising Kafka sink", exception)
+            NoSink
         }
       }
     })(sink => IO(sink.close()))
