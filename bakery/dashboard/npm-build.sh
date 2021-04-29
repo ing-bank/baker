@@ -2,6 +2,6 @@
 npm i
 #npm run test
 #npm run lint
-npm run build
+npm run build --prod
 zip -j dashboard.zip dist/*
 

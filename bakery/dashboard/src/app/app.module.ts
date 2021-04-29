@@ -17,7 +17,7 @@ import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {MatNativeDateModule} from "@angular/material/core";
 import {RecipesComponent} from "./recipes/recipes.component";
 import {MAT_FORM_FIELD_DEFAULT_OPTIONS} from "@angular/material/form-field";
-
+import { APP_INITIALIZER } from '@angular/core';
 import {A11yModule} from '@angular/cdk/a11y';
 import {ClipboardModule} from '@angular/cdk/clipboard';
 import {DragDropModule} from '@angular/cdk/drag-drop';
@@ -65,6 +65,11 @@ import {OverlayModule} from '@angular/cdk/overlay';
 import {AppComponent} from "./app.component";
 import {AppRoutingModule} from './app-routing.module';
 import {InteractionsComponent} from "./interactions/interactions.component";
+import {AppSettings, AppSettingsService} from "./app.settings";
+
+export function initializeApp(settings: AppSettingsService) {
+  return () => settings.load();
+}
 
 @NgModule({
   imports: [
@@ -126,10 +131,14 @@ import {InteractionsComponent} from "./interactions/interactions.component";
     RecipesComponent,
     InteractionsComponent
   ],
+   providers: [
+         AppSettingsService,
+         { provide: APP_INITIALIZER,
+           useFactory: initializeApp,
+           deps: [AppSettingsService], multi: true },
+         {provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: {appearance: 'fill'}}
+   ],
   bootstrap: [AppComponent],
-  providers: [
-    {provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: {appearance: 'fill'}},
-  ]
 })
 
 export class AppModule {

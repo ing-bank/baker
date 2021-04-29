@@ -5,19 +5,20 @@ import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 
 import {Interaction, Interactions, Recipe, Recipes} from './bakery-api';
+import {AppSettingsService} from './app.settings';
 
 @Injectable({ providedIn: 'root' })
 export class BakeryService {
 
-  private baseUrl = '/api/bakery';  // URL to web api http://localhost:52052
+  private baseUrl = AppSettingsService.settings.apiUrl;
 
   httpOptions = {
     headers: new HttpHeaders({ 'Content-Type': 'application/json' })
   };
 
   constructor(
-    private http: HttpClient) { }
 
+    private http: HttpClient) { }
 
   getRecipes(): Observable<Recipe[]> {
     return this.http.get<Recipes>(this.baseUrl + '/app/recipes')

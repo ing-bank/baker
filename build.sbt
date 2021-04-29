@@ -1,7 +1,6 @@
 import Dependencies._
-import Keys._
-import com.typesafe.sbt.packager.MappingsHelper.{contentOf, directory}
-import com.typesafe.sbt.packager.universal.Archives
+import com.typesafe.sbt.packager.MappingsHelper.directory
+import sbt.Keys._
 import sbt.file
 
 import scala.sys.process.Process
