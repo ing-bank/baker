@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 
-const SETTINGS_LOCATION = "assets/settings.json";
+const SETTINGS_LOCATION = "assets/settings/settings.json";
 
 export interface AppSettings {
   apiUrl: string;
