@@ -10,7 +10,7 @@ def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = proje
 lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocker")({
   state =>
     "set ThisBuild / version := \"local\"" ::
-     "baker-state/Docker/publishLocal" ::
+     "bakery-state/Docker/publishLocal" ::
       "bakery-client-example/Docker/publishLocal" ::
       "bakery-kafka-listener-example/Docker/publishLocal" ::
       "project interaction-example-make-payment-and-ship-items" ::
@@ -241,10 +241,10 @@ lazy val `bakery-interaction-protocol` = project.in(file("bakery/interaction-pro
   )
   .dependsOn(`baker-interface`)
 
-lazy val `bakery-baker-client` = project.in(file("bakery/baker-client"))
+lazy val `bakery-client` = project.in(file("bakery/client"))
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "bakery-baker-client",
+    moduleName := "bakery-client",
     libraryDependencies ++= Seq(
       http4s,
       http4sDsl,
@@ -290,18 +290,18 @@ lazy val `bakery-dashboard` = project.in(file("bakery/dashboard"))
     publishLocal := (publishLocal dependsOn (Universal / packageBin)).value
   )
 
-lazy val `baker-state` = project.in(file("bakery/baker-state"))
+lazy val `bakery-state` = project.in(file("bakery/state"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(defaultModuleSettings)
   .settings(
     Compile / mainClass := Some("com.ing.bakery.baker.Main"),
     dockerExposedPorts ++= Seq(8080),
-    Docker / packageName := "baker-state",
+    Docker / packageName := "bakery-state",
     dockerBaseImage := "adoptopenjdk/openjdk11",
     Universal / mappings ++=
       directory(s"${(`bakery-dashboard` / baseDirectory).value.getAbsolutePath}/dist")
         .map(t => (t._1, t._2.replace("dist", "dashboard"))),
-    moduleName := "baker-state",
+    moduleName := "bakery-state",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
@@ -339,7 +339,7 @@ lazy val `baker-state` = project.in(file("bakery/baker-state"))
   )
   .dependsOn(
     `baker-akka-runtime`,
-    `bakery-baker-client`,
+    `bakery-client`,
     `baker-interface`,
     `bakery-interaction-protocol`,
     `baker-recipe-compiler`,
@@ -394,7 +394,7 @@ lazy val `bakery-interaction-spring` = project.in(file("bakery/interaction-sprin
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .aggregate(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
-    `bakery-baker-client`, `baker-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
+    `bakery-client`, `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
     `sbt-bakery-docker-generate`,
     `baker-interface`, `bakery-dashboard`)
 
@@ -462,7 +462,7 @@ lazy val `bakery-client-example` = project
   .settings(
     Docker / packageName := "bakery-client-example"
   )
-  .dependsOn(`baker-types`, `bakery-baker-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
+  .dependsOn(`baker-types`, `bakery-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
 
 lazy val `bakery-kafka-listener-example` = project
   .in(file("examples/bakery-kafka-listener-example"))
@@ -490,7 +490,7 @@ lazy val `bakery-kafka-listener-example` = project
   .settings(
     Docker / packageName := "bakery-kafka-listener-example"
   )
-  .dependsOn(`baker-types`, `bakery-baker-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
+  .dependsOn(`baker-types`, `bakery-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
 
 lazy val `interaction-example-reserve-items` = project.in(file("examples/bakery-interaction-examples/reserve-items"))
   .enablePlugins(JavaAppPackaging)
@@ -535,7 +535,7 @@ lazy val `interaction-example-make-payment-and-ship-items` = project.in(file("ex
   )
   .dependsOn(`bakery-interaction`)
 
-lazy val `bakery-integration-tests` = project.in(file("bakery-integration-tests"))
+lazy val `bakery-integration-tests` = project.in(file("bakery/integration-tests"))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
   .settings(
@@ -552,7 +552,7 @@ lazy val `bakery-integration-tests` = project.in(file("bakery-integration-tests"
       )
   )
   .dependsOn(
-    `bakery-baker-client`,
+    `bakery-client`,
     `bakery-client-example`,
     `interaction-example-make-payment-and-ship-items`,
     `interaction-example-reserve-items`)

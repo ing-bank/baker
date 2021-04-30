@@ -1,5 +1,6 @@
 import {ChangeDetectorRef, Component, OnDestroy} from '@angular/core';
 import {MediaMatcher} from "@angular/cdk/layout";
+import {AppSettingsService} from "./app.settings";
 
 @Component({
   selector: 'app',
@@ -7,7 +8,7 @@ import {MediaMatcher} from "@angular/cdk/layout";
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnDestroy {
-  title = 'Bakery Dashboard';
+  title = AppSettingsService.settings.title;
   mobileQuery: MediaQueryList;
 
   private _mobileQueryListener: () => void;

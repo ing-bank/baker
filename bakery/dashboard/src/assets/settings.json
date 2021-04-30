@@ -1,3 +1,4 @@
 {
-  "apiUrl" : "/api/bakery"
+  "apiUrl" : "http://localhost:8080/api/bakery",
+  "title" : "Bakery OSS"
 }

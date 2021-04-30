@@ -4,7 +4,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 
-import {Interaction, Interactions, Recipe, Recipes} from './bakery-api';
+import {Interaction, Interactions, Recipe, Recipes, RecipeVisual} from './bakery.api';
 import {AppSettingsService} from './app.settings';
 
 @Injectable({ providedIn: 'root' })
@@ -27,6 +27,14 @@ export class BakeryService {
       }));
       // .pipe(catchError(this.handleError<Recipes>('getRecipes')));
     };
+
+  getRecipeVisual(recipeId: string): Observable<string> {
+    return this.http.get<RecipeVisual>(this.baseUrl + '/app/recipes/' + recipeId + '/visual')
+      .pipe(map(recipeVisual => {
+        return recipeVisual.body;
+      }));
+    // .pipe(catchError(this.handleError<Recipes>('getRecipes')));
+  };
 
   getInteractions(): Observable<Interaction[]> {
     return this.http.get<Interactions>(this.baseUrl + '/app/interactions')

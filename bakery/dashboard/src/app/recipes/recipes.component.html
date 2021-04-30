@@ -1,5 +1,7 @@
-<ul class="recipes">
-  <li *ngFor="let recipe of recipes">
-    <span class="recipe">{{recipe.recipeId}}</span> {{recipe.name}}
-  </li>
-</ul>
+<mat-selection-list #recipeList [multiple]="false" [ngModel]="selectedRecipe" (selectionChange)="recipeChanged($event)">
+  <mat-list-option *ngFor="let recipe of recipes" [value]="recipe">
+    {{recipe.recipeId}}: {{recipe.name}}
+  </mat-list-option>
+</mat-selection-list>
+
+<div id="recipeGraph"> </div>

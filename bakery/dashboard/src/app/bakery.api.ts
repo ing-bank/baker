@@ -15,6 +15,11 @@ export interface Recipe {
   validationErrors: string[];
 }
 
+export interface RecipeVisual {
+  result: string;
+  body: string;
+}
+
 export interface Interactions {
   result: string;
   body:   Interaction[];

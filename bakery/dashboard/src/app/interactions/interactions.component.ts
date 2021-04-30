@@ -1,6 +1,6 @@
 import {MediaMatcher} from '@angular/cdk/layout';
 import {ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
-import {Interaction, Recipe} from "../bakery-api";
+import {Interaction, Recipe} from "../bakery.api";
 import {BakeryService} from "../bakery.service";
 
 /** @title Bakery DashboardComponent */

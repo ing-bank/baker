@@ -5,6 +5,7 @@ const SETTINGS_LOCATION = "assets/settings.json";
 
 export interface AppSettings {
   apiUrl: string;
+  title: string;
 }
 
 @Injectable()
