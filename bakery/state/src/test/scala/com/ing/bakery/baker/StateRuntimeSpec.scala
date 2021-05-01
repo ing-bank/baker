@@ -8,9 +8,9 @@ import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceF}
 import com.ing.baker.runtime.serialization.InteractionExecution
-import com.ing.baker.types.{CharArray, ListType, RecordField, RecordType}
+import com.ing.baker.types.{ByteArray, CharArray, ListType, RecordField, RecordType}
 import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
-import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
+import com.ing.bakery.recipe.Events.{ItemsReserved, OrderHadUnavailableItems, OrderPlaced}
 import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
 import com.ing.bakery.recipe.ItemReservationRecipe
 import com.ing.bakery.scaladsl.BakerClient
@@ -23,9 +23,9 @@ import org.scalatest.compatible.Assertion
 import org.scalatest.matchers.should.Matchers
 import skuber.LabelSelector
 import skuber.api.client.KubernetesClient
+
 import java.net.InetSocketAddress
 import java.util.UUID
-
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 
 import scala.concurrent.Future
@@ -114,7 +114,13 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
           Seq(
             RecordType(Seq(RecordField("orderId", CharArray))),
             ListType(RecordType(Seq(RecordField("itemId", CharArray))))
-          ), None)
+          ),
+            Some(Map(
+              "OrderHadUnavailableItems" -> Map("unavailableItems" -> ListType(RecordType(Seq(RecordField("itemId", CharArray))))),
+              "ItemsReserved" -> Map("reservedItems" -> RecordType(Seq(RecordField("items",
+                ListType(RecordType(Seq(RecordField("itemId", CharArray))))), RecordField("data", ByteArray))))
+            ))
+          )
         )
         noSuchRecipeError shouldBe Some(BakerException.NoSuchRecipeException("nonexistent"))
         allRecipes.get(recipeId).map(_.compiledRecipe.name) shouldBe Some(recipe.name)
