@@ -75,7 +75,8 @@ object InteractionDiscovery extends LazyLogging {
           InteractionInstanceF.build[IO](
             _name = interaction.name,
             _input = interaction.input,
-            _run = input => client.runInteraction(interaction.id, input)
+            _output = interaction.output,
+            _run = input => client.runInteraction(interaction.id, input),
           )
         })
       }

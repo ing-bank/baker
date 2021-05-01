@@ -15,7 +15,12 @@
 }
 
 .interactions-interface {
-  font-size: 8px;
+  font-size: 10px;
+}
+
+.scroll-viewport {
+  height: 100%;
+  width: 500px;
 }
 
 .example-is-mobile .example-toolbar {
