@@ -1,4 +1,4 @@
-<mat-selection-list #recipeList [multiple]="false" [ngModel]="selectedRecipe" (selectionChange)="recipeChanged($event)">
+<mat-selection-list [multiple]="false" [ngModel]="selectedRecipe" (selectionChange)="recipeChanged($event)">
   <mat-list-option *ngFor="let recipe of recipes" [value]="recipe">
     {{recipe.recipeId}}: {{recipe.name}}
   </mat-list-option>

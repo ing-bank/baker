@@ -8,6 +8,16 @@
   right: 0;
 }
 
+.text-inside-grid {
+  height: 100%;
+  position: absolute;
+  left: 5px;
+}
+
+.interactions-interface {
+  font-size: 8px;
+}
+
 .example-is-mobile .example-toolbar {
   position: fixed;
   /* Make sure the toolbar will stay on top of the content as it scrolls past. */

@@ -26,35 +26,37 @@ import {AppRoutingModule} from './app-routing.module';
 import {InteractionsComponent} from "./interactions/interactions.component";
 import {AppSettingsService} from "./app.settings";
 import {graphviz} from "d3-graphviz";
+import {MatGridListModule} from "@angular/material/grid-list";
 
 export function initializeApp(settings: AppSettingsService) {
   return () => settings.load();
 }
 
 @NgModule({
-  imports: [
-    BrowserModule,
-    BrowserAnimationsModule,
-    FormsModule,
-    AppRoutingModule,
-    HttpClientModule,
-    ReactiveFormsModule,
-    A11yModule,
-    ClipboardModule,
-    CdkStepperModule,
-    CdkTableModule,
-    CdkTreeModule,
-    DragDropModule,
-    MatButtonModule,
-    MatButtonToggleModule,
-    MatIconModule,
-    MatListModule,
-    MatSidenavModule,
-    MatToolbarModule,
-    OverlayModule,
-    PortalModule,
-    ScrollingModule,
-  ],
+    imports: [
+        BrowserModule,
+        BrowserAnimationsModule,
+        FormsModule,
+        AppRoutingModule,
+        HttpClientModule,
+        ReactiveFormsModule,
+        A11yModule,
+        ClipboardModule,
+        CdkStepperModule,
+        CdkTableModule,
+        CdkTreeModule,
+        DragDropModule,
+        MatButtonModule,
+        MatButtonToggleModule,
+        MatIconModule,
+        MatListModule,
+        MatSidenavModule,
+        MatToolbarModule,
+        OverlayModule,
+        PortalModule,
+        ScrollingModule,
+        MatGridListModule,
+    ],
   entryComponents: [AppComponent],
   declarations: [
     AppComponent,

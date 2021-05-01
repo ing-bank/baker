@@ -2,11 +2,7 @@ import {
   Component,
   ElementRef,
   Renderer2,
-  Input,
-  OnChanges,
   OnInit,
-  Output,
-  SimpleChanges,
   ViewChild
 } from '@angular/core';
 import {Recipe} from "../bakery.api";

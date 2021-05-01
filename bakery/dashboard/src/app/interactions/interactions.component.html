@@ -1,5 +1,28 @@
-<ul class="recipes">
-  <li *ngFor="let interaction of interactions">
-    {{interaction.name}}
-  </li>
-</ul>
+<mat-grid-list cols="10" rowHeight="100%">
+  <mat-grid-tile colspan="2">
+    <div class="text-inside-grid">
+    <mat-selection-list #interactionList [multiple]="false" [ngModel]="selectedInteraction" (selectionChange)="interactionChanged($event)">
+      <mat-list-option *ngFor="let interaction of interactions" [value]="interaction">
+        {{interaction.name}}
+      </mat-list-option>
+    </mat-selection-list>
+    </div>
+  </mat-grid-tile>
+  <mat-grid-tile colspan="4">
+    <div class="text-inside-grid">
+    <p>Input</p>
+    <pre class="interactions-interface">
+      {{ selectedInteractionInput() }}
+    </pre>
+    </div>
+  </mat-grid-tile>
+  <mat-grid-tile colspan="4">
+    <div class="text-inside-grid">
+    <p>Output</p>
+    <pre>
+      {{ selectedInteractionOutput() }}
+    </pre>
+    </div>
+  </mat-grid-tile>
+</mat-grid-list>
+
