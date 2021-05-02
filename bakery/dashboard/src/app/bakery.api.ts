@@ -15,14 +15,30 @@ export interface Recipe {
   validationErrors: string[];
 }
 
-export interface RecipeVisual {
+export interface DigraphResponse {
   result: string;
   body: string;
 }
 
-export interface Interactions {
+export interface InteractionsResponse {
   result: string;
   body:   Interaction[];
+}
+
+export interface EventRecord {
+  name: string;
+  occurredOn: number;
+}
+
+export interface Instance {
+  recipeInstanceId: string;
+  ingredients:  { [key: string]: JSON };
+  events: EventRecord[];
+}
+
+export interface InstanceResponse {
+  result: string;
+  body:   Instance;
 }
 
 export interface Interaction {

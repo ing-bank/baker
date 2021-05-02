@@ -4,7 +4,15 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 
-import {Interaction, Interactions, Recipe, Recipes, RecipeVisual} from './bakery.api';
+import {
+  Interaction,
+  InteractionsResponse,
+  Recipe,
+  Recipes,
+  DigraphResponse,
+  InstanceResponse,
+  Instance
+} from './bakery.api';
 import {AppSettingsService} from './app.settings';
 
 @Injectable({ providedIn: 'root' })
@@ -16,56 +24,56 @@ export class BakeryService {
     headers: new HttpHeaders({ 'Content-Type': 'application/json' })
   };
 
-  constructor(
-
-    private http: HttpClient) { }
+  constructor(private http: HttpClient) { }
 
   getRecipes(): Observable<Recipe[]> {
     return this.http.get<Recipes>(this.baseUrl + '/app/recipes')
       .pipe(map(recipes => {
         return Object.values(recipes.body).map(r => r.compiledRecipe);
       }));
-      // .pipe(catchError(this.handleError<Recipes>('getRecipes')));
     };
 
   getRecipeVisual(recipeId: string): Observable<string> {
-    return this.http.get<RecipeVisual>(this.baseUrl + '/app/recipes/' + recipeId + '/visual')
-      .pipe(map(recipeVisual => {
-        return recipeVisual.body;
+    return this.http.get<DigraphResponse>(this.baseUrl + '/app/recipes/' + recipeId + '/visual')
+      .pipe(map(response => {
+        return response.body;
       }));
-    // .pipe(catchError(this.handleError<Recipes>('getRecipes')));
   };
 
   getInteractions(): Observable<Interaction[]> {
-    return this.http.get<Interactions>(this.baseUrl + '/app/interactions')
-      .pipe(map(interactions => {
-        return Object.values(interactions.body);
+    return this.http.get<InteractionsResponse>(this.baseUrl + '/app/interactions')
+      .pipe(map(response => {
+        return Object.values(response.body);
       }));
-    // .pipe(catchError(this.handleError<Recipes>('getRecipes')));
   };
 
-  /**
-   * Handle Http operation that failed.
-   * Let the app continue.
-   * @param operation - name of the operation that failed
-   * @param result - optional value to return as the observable result
-   */
-  private handleError<T>(operation = 'operation', result?: T) {
+  getInstance(instanceId: string): Observable<Instance|undefined> {
+    console.log('instance ' + instanceId);
+    return this.http.get<InstanceResponse>(this.baseUrl + '/instances/' + instanceId)
+      .pipe(
+        catchError(this.handleError<InstanceResponse>()),
+        map(response => {
+          if (response) {
+            return response.body;
+          } else {
+            return undefined;
+          }
+        }
+      ));
+  };
+
+  getInstanceVisual(instanceId: string): Observable<string> {
+    return this.http.get<DigraphResponse>(this.baseUrl + '/instances/' + instanceId + '/visual')
+      .pipe(map(response => {
+        return response.body;
+      }));
+  };
+
+  private handleError<T>(result?: T) {
     return (error: any): Observable<T> => {
-
-      // TODO: send the error to remote logging infrastructure
-      console.error(error); // log to console instead
-
-      // TODO: better job of transforming error for user consumption
-      this.log(`${operation} failed: ${error.message}`);
-
-      // Let the app keep running by returning an empty result.
+      console.log(`http request failed: ${error.message}`);
       return of(result as T);
     };
   }
 
-  /** Log a BakeryService message with the MessageService */
-  private log(message: string) {
-    console.log(`BakeryService: ${message}`);
-  }
 }

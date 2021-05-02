@@ -3,15 +3,15 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { RecipesComponent } from './recipes/recipes.component';
 import {InteractionsComponent} from "./interactions/interactions.component";
-// import { HeroesComponent } from './heroes/heroes.component';
-// import { HeroDetailComponent } from './hero-detail/hero-detail.component';
+import {InstancesComponent} from "./instances/instances.component";
+import {HomeComponent} from "./home/home.component";
 
 const routes: Routes = [
-  { path: '', redirectTo: '/', pathMatch: 'full' },
+  { path: '', component: HomeComponent },
   { path: 'recipes', component: RecipesComponent },
   { path: 'interactions', component: InteractionsComponent },
-  // { path: 'detail/:id', component: HeroDetailComponent },
-  // { path: 'heroes', component: HeroesComponent }
+  { path: 'instances', component: InstancesComponent },
+
 ];
 
 @NgModule({

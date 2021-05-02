@@ -1,4 +1,6 @@
 {
-  "apiUrl" : "http://localhost:8080/api/bakery",
-  "title" : "Bakery OSS"
+  "apiUrl" : "http://localhost:63713/api/bakery",
+  "title" : "Bakery OSS",
+  "bakeryVersion" : "123",
+  "stateVersion" : "456"
 }
