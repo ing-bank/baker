@@ -158,6 +158,7 @@ trait BakerRuntimeTestBase
          |  actor.read-journal-plugin = "akka.persistence.query.journal.leveldb"
          |  journal-initialize-timeout = $journalInitializeTimeout
          |
+         |  recipe-manager-type = "actor"
          |}
          |
          |logging.root.level = DEBUG
