@@ -1,7 +1,5 @@
 package com.ing.bakery.baker
 
-import cakesolutions.kafka.KafkaProducer.Conf
-import cakesolutions.kafka.{KafkaProducer, KafkaProducerRecord}
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.scaladsl._
@@ -10,8 +8,13 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
+import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.serialization.StringSerializer
 
+import scala.compat.java8.FutureConverters._
+import java.util.Properties
+import scala.concurrent.Promise
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 trait EventSink {
@@ -33,8 +36,13 @@ class KafkaEventSink(config: Config) extends EventSink with LazyLogging {
 
   private implicit val EventRecordEncoder: Encoder[EventRecord] = deriveEncoder[EventRecord]
 
-  private val producer =
-    KafkaProducer(Conf(new StringSerializer(), new StringSerializer(), config.getString("bootstrap-servers")))
+  private val producer = {
+    val props = new Properties
+    props.put("bootstrap.servers", config.getString("bootstrap-servers"))
+    new KafkaProducer(
+      props, new StringSerializer(), new StringSerializer(),
+    )
+  }
 
   private val topic = config.getString("topic")
 
@@ -58,6 +66,17 @@ class KafkaEventSink(config: Config) extends EventSink with LazyLogging {
       EventRecord("RecipeAdded", None, recipeName)
   }
 
+  private def producerCallback(promise: Promise[RecordMetadata]): Callback =
+    producerCallback(result => promise.complete(result))
+
+  private def producerCallback(callback: Try[RecordMetadata] => Unit): Callback =
+    (metadata: RecordMetadata, exception: Exception) => {
+      val result =
+        if (exception == null) Success(metadata)
+        else Failure(exception)
+      callback(result)
+    }
+
   override def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit] = (event match {
     case eventInstance: EventInstance => Some(recordOf(eventInstance))
     case bakerEvent: BakerEvent    => Some(recordOf(bakerEvent))
@@ -66,8 +85,15 @@ class KafkaEventSink(config: Config) extends EventSink with LazyLogging {
       None
   }) map { record =>
     IO.fromFuture(IO {
-      producer.send(KafkaProducerRecord[String, String](topic, None,
-        record.asJson.dropNullValues.toString.replace('\n', ' ')))
+      val promise = Promise[RecordMetadata]()
+      try {
+        producer.send(new ProducerRecord[String, String](topic, null,
+          record.asJson.dropNullValues.toString.replace('\n', ' ')),
+          producerCallback(promise))
+      } catch {
+        case NonFatal(e) => promise.failure(e)
+      }
+      promise.future
     }).map(_ =>  () )
   } getOrElse IO.unit
 

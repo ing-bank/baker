@@ -320,7 +320,7 @@ lazy val `bakery-state` = project.in(file("bakery/state"))
       http4sServer,
       springCore,
       springContext,
-      scalaKafkaClient,
+      kafkaClient,
       skuber
     ) ++ testDeps(
       slf4jApi,
