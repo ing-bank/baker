@@ -161,12 +161,3 @@ message NoSuchProcess {
 message ProcessAlreadyExists {
     optional string recipeInstanceId = 1;
 }
-
-message NoRecipeFound {
-    optional string recipeId = 1;
-}
-
-message RecipeFound {
-    optional CompiledRecipe compiledRecipe = 1;
-    optional int64 timestamp = 2;
-}

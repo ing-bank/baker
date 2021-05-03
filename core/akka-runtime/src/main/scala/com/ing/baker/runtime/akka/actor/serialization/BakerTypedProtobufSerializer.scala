@@ -7,6 +7,8 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
+import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManagerActor, RecipeManagerProtocol}
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.ProtoMap
 import SerializedDataProto._
@@ -17,7 +19,7 @@ object BakerTypedProtobufSerializer {
   def entries(actorRefProvider: ActorRefProvider)(serializersProvider: AkkaSerializerProvider): List[BinarySerializable] = {
     implicit val ev0 = serializersProvider
     implicit val ev1 = actorRefProvider
-    commonEntries ++ processIndexEntries ++ processInstanceEntries
+    commonEntries ++ processIndexEntries ++ processInstanceEntries ++ recipeManagerEntries
   }
 
   /** Hardcoded serializerId for this serializer. This should not conflict with other serializers.
@@ -96,11 +98,7 @@ object BakerTypedProtobufSerializer {
       forType[ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived]
         .register("ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived"),
       forType[ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet]
-        .register("ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet"),
-      forType[ProcessIndexProtocol.RecipeFound]
-        .register("ProcessIndexProtocol.RecipeFound"),
-      forType[ProcessIndexProtocol.NoRecipeFound]
-        .register("ProcessIndexProtocol.NoRecipeFound"),
+        .register("ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet")
     )
 
   def processInstanceEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] =
@@ -141,6 +139,25 @@ object BakerTypedProtobufSerializer {
         .register("Initialized")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.Initialized))
     )
 
+  def recipeManagerEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] =
+    List(
+      forType[RecipeManagerProtocol.AddRecipe]
+        .register("RecipeManagerProtocol.AddRecipe"),
+      forType[RecipeManagerProtocol.AddRecipeResponse]
+        .register("RecipeManagerProtocol.AddRecipeResponse"),
+      forType[RecipeManagerProtocol.GetRecipe]
+        .register("RecipeManagerProtocol.GetRecipe"),
+      forType[RecipeManagerProtocol.RecipeFound]
+        .register("RecipeManagerProtocol.RecipeFound"),
+      forType[RecipeManagerProtocol.NoRecipeFound]
+        .register("RecipeManagerProtocol.NoRecipeFound"),
+      forType[RecipeManagerProtocol.GetAllRecipes.type]
+        .register("RecipeManagerProtocol.GetAllRecipes"),
+      forType[RecipeManagerProtocol.AllRecipes]
+        .register("RecipeManagerProtocol.AllRecipes"),
+      forType[RecipeManagerActor.RecipeAdded]
+        .register("RecipeManager.RecipeAdded")
+    )
 }
 
 class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends TypedProtobufSerializer(system, BakerTypedProtobufSerializer.identifier, BakerTypedProtobufSerializer.entries(system.provider))

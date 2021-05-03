@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
 import akka.actor.ActorRef
-import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.scaladsl.{EventInstance, SensoryEventResult}
@@ -45,10 +44,6 @@ object ProcessIndexProtocol {
     * @param recipeInstanceId The identifier of the RecipeInstanceId
     */
   case class ProcessDeleted(recipeInstanceId: String) extends ProcessIndexMessage
-
-  case class RecipeFound(compiledRecipe: CompiledRecipe, timestamp: Long)  extends BakerSerializable
-
-  case class NoRecipeFound(recipeId: String) extends BakerSerializable
 
   /**
     * Returned if the process does not exist

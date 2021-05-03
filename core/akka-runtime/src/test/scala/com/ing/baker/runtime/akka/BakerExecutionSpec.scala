@@ -57,6 +57,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           |
           |baker.actor.provider = "cluster-sharded"
           |
+          |baker.recipe-manager-type = "actor"
+          |
           |akka.management {
           |  cluster.bootstrap {
           |    contact-point-discovery {
@@ -110,6 +112,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           |akka.actor.provider = "cluster"
           |
           |baker.actor.provider = "cluster-sharded"
+          |
+          |baker.recipe-manager-type = "actor"
           |
           |""".stripMargin).withFallback(ConfigFactory.load())
       val setupActorSystem = ActorSystem("setup-actor-system", config)
