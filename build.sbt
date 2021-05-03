@@ -44,8 +44,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     Package.ManifestAttributes(
       "Build-Time" -> new java.util.Date().toString,
       "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
-    ),
-  resolvers += Resolver.bintrayRepo("cakesolutions", "maven")
+    )
 )
 
 val dockerSettings = Seq(

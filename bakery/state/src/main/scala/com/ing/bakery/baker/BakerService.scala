@@ -74,7 +74,9 @@ object BakerService {
               Router(
                 apiUrlPrefix -> Metrics[IO](metrics, classifierF = bakeryRequestClassifier)(routes(baker, interactions)),
                 "/" -> HttpRoutes.of[IO] {
-                  case request => dashboardFile(request, request.pathInfo).getOrElseF(index(request))
+                  case request =>
+                    if (dashboardPath.isEmpty) NotFound()
+                    else dashboardFile(request, request.pathInfo).getOrElseF(index(request))
                 }
               ) orNotFound
             }, CORSConfig(
