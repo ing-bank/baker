@@ -13,6 +13,10 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor.RecipeAdded
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
+import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManagerActor, RecipeManagerProtocol}
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState, SensoryEventResult}
 import com.ing.baker.runtime.serialization.Encryption.{AESEncryption, NoEncryption}
@@ -56,6 +60,7 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
   import SerializationSpec.IntermediateLanguage._
   import SerializationSpec.ProcessIndex._
   import SerializationSpec.ProcessInstance._
+  import SerializationSpec.RecipeManager._
   import SerializationSpec.Runtime._
   import SerializationSpec.Types._
 
@@ -127,6 +132,28 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
 
   checkFor[ProcessIndexProtocol.ProcessAlreadyExists].run
 
+  checkFor[RecipeManagerProtocol.AddRecipe].run
+
+  checkFor[RecipeManagerProtocol.AddRecipeResponse].run
+
+  checkFor[RecipeManagerProtocol.GetRecipe].run
+
+  checkFor[RecipeManagerProtocol.RecipeFound].run
+
+  checkFor[RecipeManagerProtocol.NoRecipeFound].run
+
+  checkFor[RecipeManagerProtocol.AllRecipes].run
+
+  test("RecipeManagerProtocol.GetAllRecipes typed serialization") {
+    val m = RecipeManagerProtocol.GetAllRecipes
+    val serialized = serializer.toBinary(m)
+    val deserialized = serializer.fromBinary(serialized, serializer.manifest(m))
+    deserialized === m &&
+      ctxFromProto(ctxToProto(m)) === Success(m)
+  }
+
+  checkFor[RecipeManagerActor.RecipeAdded].run
+
   checkFor[ProcessInstanceProtocol.Stop].run
 
   test("ProcessInstanceProtocol.GetState typed serialization") {
@@ -162,6 +189,27 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
   checkFor[ProcessInstanceProtocol.TransitionFired].run
 
   checkFor[CompiledRecipe].run
+
+  test("Encryption works for the AnyRefMapping (case class)") {
+
+    val data = GetRecipe("test")
+    val encryption = new AESEncryption(List.fill(16)("0").mkString)
+    val withEncryption = serializer.serializersProvider.copy(encryption = encryption)
+    val withoutEncryption = serializer.serializersProvider.copy(encryption = NoEncryption)
+    val mapperEncryption = SerializedDataProto.akkaAnyRefMapping(withEncryption)
+    val mapperNoEncryption = SerializedDataProto.akkaAnyRefMapping(withoutEncryption)
+
+    val protoEn = mapperEncryption.toProto(data)
+    val protoNe = mapperNoEncryption.toProto(data)
+
+    val xEn = protoEn.data.get
+    val xNe = protoNe.data.get
+    assert(xEn != xNe)
+
+    val yEn = mapperEncryption.fromProto(protoEn).get.asInstanceOf[GetRecipe]
+    val yNe = mapperNoEncryption.fromProto(protoNe).get.asInstanceOf[GetRecipe]
+    assert(yEn == yNe)
+  }
 
   test("Encryption works for the AnyRefMapping (primitive value)") {
 
@@ -245,6 +293,43 @@ object SerializationSpec {
       events <- Gen.listOf(eventNameGen)
       ingredients <- Gen.listOf(ingredientsGen)
     } yield SensoryEventResult(status, events, ingredients.toMap)
+  }
+
+  object RecipeManager {
+
+    import IntermediateLanguage._
+    import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
+
+    implicit val addRecipeGen: Gen[AddRecipe] = recipeGen.map(AddRecipe)
+    implicit val getRecipeGen: Gen[GetRecipe] = recipeIdGen.map(GetRecipe)
+    implicit val recipeFoundGen: Gen[RecipeFound] = for {
+      compiledRecipe <- IntermediateLanguage.recipeGen
+      timestamp <- timestampGen
+    } yield RecipeFound(compiledRecipe, timestamp)
+
+
+    implicit val noRecipeFoundGen: Gen[NoRecipeFound] = recipeIdGen.map(NoRecipeFound)
+    implicit val addRecipeResponseGen: Gen[AddRecipeResponse] = recipeIdGen.map(AddRecipeResponse)
+    implicit val getAllRecipesGen: Gen[GetAllRecipes.type] = Gen.const(GetAllRecipes)
+
+    implicit val recipeEntriesGen: Gen[(String, CompiledRecipe)] = GenUtil.tuple(recipeIdGen, recipeGen)
+
+    implicit val recipeInformationGen: Gen[RecipeInformation] = for {
+      compiledRecipe <- recipeGen
+      timestamp <- timestampGen
+    } yield RecipeInformation(compiledRecipe, timestamp)
+
+    implicit val allRecipesGen: Gen[AllRecipes] = Gen.listOf(recipeInformationGen).map(AllRecipes(_))
+
+    implicit val messagesGen: Gen[AnyRef] = Gen.oneOf(
+      addRecipeGen, getRecipeGen, recipeFoundGen, noRecipeFoundGen, addRecipeResponseGen, getAllRecipesGen, allRecipesGen
+    )
+
+    implicit val recipeAddedGen: Gen[RecipeAdded] =
+      for {
+        timestamp <- Gen.chooseNum(0l, 20000l)
+        recipe <- recipeGen
+      } yield RecipeAdded(recipe, timestamp)
   }
 
   object ProcessIndex {

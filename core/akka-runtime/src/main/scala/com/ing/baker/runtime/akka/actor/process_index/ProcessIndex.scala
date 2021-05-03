@@ -18,6 +18,7 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceRuntime}
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
 import com.ing.baker.runtime.akka.{namedCachedThreadPool, _}
@@ -102,6 +103,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   }
 
   def updateCache() = {
+    // TODO this is a synchronous ask on an actor whichcreateProcessActor is considered bad practice, alternative?
     val futureResult: Future[Seq[(CompiledRecipe, Long)]] = recipeManager.all
     val allRecipes: Seq[(CompiledRecipe, Long)] = Await.result(futureResult, updateCacheTimeout)
     recipeCache ++= allRecipes.map {
