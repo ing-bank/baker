@@ -3,7 +3,7 @@ package com.ing.baker.runtime.model
 import cats.MonadError
 import cats.effect.Sync
 import cats.implicits._
-import com.ing.baker.il.EventDescriptor
+import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceF}
@@ -38,15 +38,27 @@ trait InteractionsF[F[_]] {
         }
 
     val outputEventNamesAndTypesMatches: Boolean =
-      if (implementation.output.isDefined) {
-        implementation.output.exists(output =>
-          output
-            .forall { implEvent =>
-              transition.originalEvents.exists(_.name == implEvent._1)
-            })
-      } else true //If the implementation output is not defined it should be ignored
+      if (implementation.output.isDefined) implementation.output.exists(doesOutputMatch(_, transition.originalEvents))
+      else true //If the implementation output is not defined the output validation should be not done
 
     interactionNameMatches && inputSizeMatches && inputNamesAndTypesMatches && outputEventNamesAndTypesMatches
+  }
+
+  private def doesOutputMatch(implementationOutput: Map[String, Map[String, Type]], transitionOutput: Seq[EventDescriptor]): Boolean = {
+    implementationOutput
+      .forall { implEvent =>
+        transitionOutput.exists(output =>
+          output.name == implEvent._1 &&
+          doesEventIngredientExists(implEvent._2, output.ingredients))
+      }
+  }
+
+  private def doesEventIngredientExists(implementationIngredients: Map[String, Type], transitionIngredients: Seq[IngredientDescriptor]): Boolean = {
+    transitionIngredients.forall(transitionIngredient =>
+      implementationIngredients.exists(implementationIngredient =>
+        transitionIngredient.name == implementationIngredient._1 &&
+        transitionIngredient.`type` == implementationIngredient._2
+      ))
   }
 
 

@@ -1,14 +1,14 @@
 package com.ing.baker.runtime.akka.internal
 
 import cats.effect.{ContextShift, IO}
-import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.scaladsl.{InteractionInstance, InteractionInstanceF}
+import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
+import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.ing.baker.types
-import com.ing.baker.types.Type
+import com.ing.baker.types.{Int16, Int32, Type}
 import org.mockito.Mockito.when
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.{AnyWordSpecLike, AsyncWordSpecLike}
+import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
 
 import scala.concurrent.ExecutionContext
@@ -40,13 +40,13 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         when(interactionImplementation.name).thenReturn("InteractionName")
         when(interactionImplementation.input).thenReturn(Seq(types.Int32))
         when(interactionImplementation.output).thenReturn(None)
-        when(interactionImplementation.output).thenReturn(Some(Map("outputEvent"-> Map.empty[String, Type])))
+        when(interactionImplementation.output).thenReturn(Some(Map("outputEvent"-> Map("outputIngredient" -> Int32, "outputIngredient2" -> Int16))))
 
         val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
-        when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq.empty)))
+        when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", Int32), IngredientDescriptor("outputIngredient2", Int16)))))
 
         val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
@@ -169,6 +169,38 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
         when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq.empty)))
+
+        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
+        interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
+      }
+
+      "an interaction implementation has a wrong output event ingredient name" in {
+        val interactionImplementation = mock[InteractionInstance]
+        when(interactionImplementation.name).thenReturn("InteractionName")
+        when(interactionImplementation.input).thenReturn(Seq(types.Int32))
+        when(interactionImplementation.output).thenReturn(Some(Map("outputEvent"-> Map("wrongOutputIngredient" -> Int32, "outputIngredient2" -> Int16))))
+
+        val interactionTransition = mock[InteractionTransition]
+        when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
+        val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
+        when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
+        when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", Int32), IngredientDescriptor("outputIngredient2", Int16)))))
+
+        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
+        interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
+      }
+
+      "an interaction implementation has a wrong output event ingredient type" in {
+        val interactionImplementation = mock[InteractionInstance]
+        when(interactionImplementation.name).thenReturn("InteractionName")
+        when(interactionImplementation.input).thenReturn(Seq(types.Int32))
+        when(interactionImplementation.output).thenReturn(Some(Map("outputEvent"-> Map("outputIngredient" -> Int16, "outputIngredient2" -> Int16))))
+
+        val interactionTransition = mock[InteractionTransition]
+        when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
+        val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
+        when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
+        when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", Int32), IngredientDescriptor("outputIngredient2", Int16)))))
 
         val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
