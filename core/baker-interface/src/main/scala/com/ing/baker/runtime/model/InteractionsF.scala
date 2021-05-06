@@ -3,6 +3,7 @@ package com.ing.baker.runtime.model
 import cats.MonadError
 import cats.effect.Sync
 import cats.implicits._
+import com.ing.baker.il.EventDescriptor
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceF}
@@ -35,7 +36,17 @@ trait InteractionsF[F[_]] {
         .forall { descriptor =>
           implementation.input.exists(_.isAssignableFrom(descriptor.`type`))
         }
-    interactionNameMatches && inputSizeMatches && inputNamesAndTypesMatches
+
+    val outputEventNamesAndTypesMatches: Boolean =
+      if (implementation.output.isDefined) {
+        implementation.output.exists(output =>
+          output
+            .forall { implEvent =>
+              transition.originalEvents.exists(_.name == implEvent._1)
+            })
+      } else true //If the implementation output is not defined it should be ignored
+
+    interactionNameMatches && inputSizeMatches && inputNamesAndTypesMatches && outputEventNamesAndTypesMatches
   }
 
 
