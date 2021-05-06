@@ -1,17 +1,18 @@
 package com.ing.baker.runtime.scaladsl
 
-import cats.effect.Effect
-import cats.implicits._
-import cats.{Applicative, ~>}
-import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
-import com.ing.baker.runtime.{common, javadsl}
-import com.ing.baker.types.{Converters, Type}
-
 import java.lang.reflect.Method
 import java.security.MessageDigest
 import java.util
 import java.util.concurrent.CompletableFuture
 import java.util.{Base64, Optional}
+
+import cats.implicits._
+import cats.{Applicative, ~>}
+import com.ing.baker.recipe.annotations.FiresEvent
+import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
+import com.ing.baker.runtime.{common, javadsl}
+import com.ing.baker.types.{Converters, Type}
+
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.reflect.ClassTag
@@ -61,7 +62,9 @@ abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] 
         }
       override def execute(input: util.List[javadsl.IngredientInstance]): CompletableFuture[Optional[javadsl.EventInstance]] =
         converter(self.run(input.asScala.map(_.asScala)))
-          .thenApply(_.fold(Optional.empty[javadsl.EventInstance]())(e => Optional.of(e.asJava)))
+          .thenApply(
+            _.fold(Optional.empty[javadsl.EventInstance]())(
+            e => Optional.of(e.asJava)))
     }
 
   def asDeprecatedFutureImplementation(transform: F ~> Future): InteractionInstance = {
@@ -100,6 +103,7 @@ object InteractionInstanceF {
         case _          => unmockedClass.getMethods.find(_.getName == "apply").get
       }
     }
+
     val name: String = {
       Try {
         method.getDeclaringClass.getDeclaredField("name")
@@ -125,15 +129,39 @@ object InteractionInstanceF {
         }
       }
     }
+
+    val output: Option[Map[String, Map[String, Type]]] = {
+      if (method.isAnnotationPresent(classOf[FiresEvent])) {
+        val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[FiresEvent]).oneOf()
+        val temp = Some(outputEventClasses.map(eventClass =>
+          eventClass.getSimpleName ->
+          eventClass.getDeclaredFields
+            .filter(field => !field.isSynthetic)
+            .map(f => f.getName -> Converters.readJavaType(f.getType)).toMap
+        ).toMap)
+        println("Output calculated")
+        println(temp)
+        temp
+      }
+      else None
+    }
+
     val run: Seq[IngredientInstance] => F[Option[EventInstance]] = runtimeInput => {
       // Translate the Value objects to the expected runtimeInput types
       val inputArgs: Seq[AnyRef] = runtimeInput.zip(method.getGenericParameterTypes).map {
         case (value, targetType) => value.value.as(targetType).asInstanceOf[AnyRef]
       }
-      val output = method.invoke(implementation, inputArgs: _*)
-      Option(output) match {
+      val callOutput = method.invoke(implementation, inputArgs: _*)
+
+      val futureClass: ClassTag[CompletableFuture[Any]] = implicitly[ClassTag[CompletableFuture[Any]]]
+
+      Option(callOutput) match {
         case Some(event) =>
           event match {
+              // Async interactions using java CompletableFuture needed for backwards compatibility
+              // Blocking since mapping on it does not seem to work.
+            case runtimeEventAsyncJava if futureClass.runtimeClass.isInstance(runtimeEventAsyncJava) =>
+              effect.pure(Some(EventInstance.unsafeFrom(runtimeEventAsyncJava.asInstanceOf[CompletableFuture[Any]].get())))
             case runtimeEventAsync if classTag.runtimeClass.isInstance(runtimeEventAsync) =>
               runtimeEventAsync
                 .asInstanceOf[F[Any]]
@@ -145,6 +173,6 @@ object InteractionInstanceF {
           effect.pure(None)
       }
     }
-    build[F](name, input, run, None)
+    build[F](name, input, run, output)
   }
 }

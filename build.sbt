@@ -123,7 +123,8 @@ lazy val `baker-interface` = project.in(file("core/baker-interface"))
       catsEffect,
       fs2Core,
       fs2Io,
-      scalaJava8Compat
+      scalaJava8Compat,
+      javaxInject
     ) ++ providedDeps(findbugs) ++ testDeps(
       scalaTest,
       scalaCheckPlusMockito,
@@ -134,6 +135,7 @@ lazy val `baker-interface` = project.in(file("core/baker-interface"))
   )
   .dependsOn(
     `baker-intermediate-language`,
+    `baker-annotations`,
     testScope(`baker-recipe-dsl`),
     testScope(`baker-recipe-compiler`),
     testScope(`baker-types`))
@@ -191,6 +193,13 @@ lazy val `baker-akka-runtime` = project.in(file("core/akka-runtime"))
   .enablePlugins(MultiJvmPlugin)
   .configs(MultiJvm)
 
+lazy val `baker-annotations` = project.in(file("core/baker-annotations"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "baker-annotations",
+    libraryDependencies ++= compileDeps(javaxInject)
+  )
+
 lazy val `baker-recipe-dsl` = project.in(file("core/recipe-dsl"))
   .settings(defaultModuleSettings)
   .settings(
@@ -208,7 +217,7 @@ lazy val `baker-recipe-dsl` = project.in(file("core/recipe-dsl"))
           junitInterface,
           slf4jApi
         )
-  ).dependsOn(`baker-types`)
+  ).dependsOn(`baker-types`, `baker-annotations`)
 
 lazy val `baker-recipe-compiler` = project.in(file("core/recipe-compiler"))
   .settings(defaultModuleSettings)
