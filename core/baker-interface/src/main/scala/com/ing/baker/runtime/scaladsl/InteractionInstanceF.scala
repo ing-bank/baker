@@ -130,20 +130,36 @@ object InteractionInstanceF {
       }
     }
 
-    val output: Option[Map[String, Map[String, Type]]] = {
-      if (method.isAnnotationPresent(classOf[FiresEvent])) {
-        val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[FiresEvent]).oneOf()
-        val temp = Some(outputEventClasses.map(eventClass =>
-          eventClass.getSimpleName ->
+    def extractOutput(method: Method): Map[String, Map[String, Type]] = {
+      val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[FiresEvent]).oneOf()
+      outputEventClasses.map(eventClass =>
+        eventClass.getSimpleName ->
           eventClass.getDeclaredFields
             .filter(field => !field.isSynthetic)
-            .map(f => f.getName -> Converters.readJavaType(f.getType)).toMap
-        ).toMap)
-        println("Output calculated")
-        println(temp)
-        temp
+            .map(f => f.getName -> Converters.readJavaType(f.getGenericType)).toMap
+      ).toMap
+    }
+
+    val output: Option[Map[String, Map[String, Type]]] = {
+      //Check the class itself for the FiresEvent annotation
+      if (method.isAnnotationPresent(classOf[FiresEvent])) {
+        Some(extractOutput(method))
       }
-      else None
+      // Check the direct parent interfaces for the class for the apply method and FiresEvent annotations.
+      else {
+        method.getDeclaringClass.getInterfaces.find {
+          clazz => {
+            Try {
+              clazz.getMethod(method.getName, method.getParameterTypes.toSeq: _*)
+            }.map { m: Method =>
+              m.isAnnotationPresent(classOf[FiresEvent])
+            }.getOrElse(false)
+          }
+        }.flatMap(clazz => {
+          Some(extractOutput(clazz.getMethod(method.getName, method.getParameterTypes.toSeq: _*)))
+        })
+      }
+      None
     }
 
     val run: Seq[IngredientInstance] => F[Option[EventInstance]] = runtimeInput => {
@@ -152,16 +168,16 @@ object InteractionInstanceF {
         case (value, targetType) => value.value.as(targetType).asInstanceOf[AnyRef]
       }
       val callOutput = method.invoke(implementation, inputArgs: _*)
-
       val futureClass: ClassTag[CompletableFuture[Any]] = implicitly[ClassTag[CompletableFuture[Any]]]
 
       Option(callOutput) match {
         case Some(event) =>
           event match {
-              // Async interactions using java CompletableFuture needed for backwards compatibility
-              // Blocking since mapping on it does not seem to work.
+            // Async interactions using java CompletableFuture
+            // Blocking since mapping to the correct F type is not possible at this time.
             case runtimeEventAsyncJava if futureClass.runtimeClass.isInstance(runtimeEventAsyncJava) =>
               effect.pure(Some(EventInstance.unsafeFrom(runtimeEventAsyncJava.asInstanceOf[CompletableFuture[Any]].get())))
+            // Async interactions using F
             case runtimeEventAsync if classTag.runtimeClass.isInstance(runtimeEventAsync) =>
               runtimeEventAsync
                 .asInstanceOf[F[Any]]

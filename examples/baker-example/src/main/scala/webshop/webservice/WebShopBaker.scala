@@ -22,11 +22,6 @@ object WebShopBaker {
     implicit val cs = IO.contextShift(ec)
 
     IO.fromFuture(IO(for {
-      _ <- baker.addInteractionInstances(Seq(
-        InteractionInstance.unsafeFrom(new ReserveItemsInstance()),
-        InteractionInstance.unsafeFrom(new MakePaymentInstance()),
-        InteractionInstance.unsafeFrom(new ShipItemsInstance())
-      ))
       checkoutRecipeId <- baker.addRecipe(checkoutFlowCompiledRecipe)
       _ = println(Console.GREEN + "V3 Checkout Recipe ID :: " + checkoutRecipeId + Console.RESET)
       _ <- baker.registerEventListener((name, event) => {
