@@ -68,7 +68,7 @@ trait Baker[F[_]] extends LanguageApi {
     */
   def getAllRecipes: F[language.Map[String, RecipeInformationType]]
 
-  def getAllInteractions: F[List[InteractionExecution.Descriptor]]
+  def getAllInteractions: F[language.Seq[InteractionExecution.Descriptor]]
 
   def getInteraction(interactionName: String): F[Option[InteractionExecution.Descriptor]]
 

@@ -96,7 +96,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         .map(i => InteractionExecution.Descriptor(i.shaBase64, i.name, i.input, i.output)))
 
 
-  override def getAllInteractions: F[List[InteractionExecution.Descriptor]] =
+  override def getAllInteractions: F[Seq[InteractionExecution.Descriptor]] =
     components.interactions.listAll
       .map(_.map(i => InteractionExecution.Descriptor(i.shaBase64, i.name, i.input, i.output)))
 
@@ -352,7 +352,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.getRecipe(recipeId))
       override def getAllRecipes: G[Map[String, RecipeInformation]] =
         mapK(self.getAllRecipes)
-      override def getAllInteractions: G[List[InteractionExecution.Descriptor]] =
+      override def getAllInteractions: G[Seq[InteractionExecution.Descriptor]] =
         mapK(self.getAllInteractions)
       override def getInteraction(interactionName: String): G[Option[InteractionExecution.Descriptor]] =
         mapK(self.getInteraction(interactionName))
@@ -403,7 +403,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.getRecipe(recipeId))
       override def getAllRecipes: Future[Map[String, RecipeInformation]] =
         mapK(self.getAllRecipes)
-      override def getAllInteractions: Future[List[InteractionExecution.Descriptor]] =
+      override def getAllInteractions: Future[Seq[InteractionExecution.Descriptor]] =
         mapK(self.getAllInteractions)
       override def getInteraction(interactionName: String): Future[Option[InteractionExecution.Descriptor]] =
         mapK(self.getInteraction(interactionName))

@@ -159,7 +159,6 @@ object InteractionInstanceF {
           Some(extractOutput(clazz.getMethod(method.getName, method.getParameterTypes.toSeq: _*)))
         })
       }
-      None
     }
 
     val run: Seq[IngredientInstance] => F[Option[EventInstance]] = runtimeInput => {
