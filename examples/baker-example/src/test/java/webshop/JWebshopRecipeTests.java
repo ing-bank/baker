@@ -87,7 +87,7 @@ public class JWebshopRecipeTests {
     }
 
     @Test
-    public void shouldRunSimpleInstanceMockitoSample() throws ExecutionException, InterruptedException, TimeoutException {
+    public void shouldRunSimpleInstanceMockitoSample() throws InterruptedException, TimeoutException {
         ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
         try {
             List<String> items = new ArrayList<>(2);
