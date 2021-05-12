@@ -7,7 +7,7 @@ import cats.implicits._
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, ProcessAlreadyExistsException, ProcessDeletedException}
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceF, RecipeEventMetadata}
+import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceF, InteractionInstanceInput, RecipeEventMetadata}
 import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
 import org.mockito.Matchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
@@ -147,19 +147,19 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
       val interactionInstances = List(
         InteractionInstanceF.build[F](
           _name = "Interaction1",
-          _input = Seq(Int32),
+          _input = Seq(InteractionInstanceInput(Option.empty, Int32)),
           _output = None,
           _run = _ => effect.pure(Some(EventInstance("interaction-1-happened", Map("ingredient-1" -> PrimitiveValue("data1")))))
         ),
         InteractionInstanceF.build[F](
           _name = "Interaction2",
-          _input = Seq(CharArray),
+          _input = Seq(InteractionInstanceInput(Option.empty, CharArray)),
           _output = None,
           _run = _ => effect.pure(Some(EventInstance("interaction-2-happened", Map("ingredient-2" -> PrimitiveValue("data2")))))
         ),
         InteractionInstanceF.build[F](
           _name = "Interaction3",
-          _input = Seq(CharArray),
+          _input = Seq(InteractionInstanceInput(Option.empty, CharArray)),
           _output = None,
           _run = _ => effect.pure(Some(EventInstance("interaction-3-happened", Map("final" -> PrimitiveValue("data3")))))
         )

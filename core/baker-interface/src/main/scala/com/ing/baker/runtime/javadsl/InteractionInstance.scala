@@ -22,9 +22,11 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
 
   override type Ingredient = IngredientInstance
 
+  override type Input = InteractionInstanceInput
+
   override val name: String
 
-  override val input: util.List[Type]
+  override val input: util.List[InteractionInstanceInput]
 
   override val output: Optional[util.Map[String, util.Map[String, Type]]] = Optional.empty()
 
@@ -46,7 +48,7 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
   def asScala: scaladsl.InteractionInstance = {
     scaladsl.InteractionInstance(
       name,
-      input.asScala,
+      input.asScala.map(input => input.asScala),
       input => wrapExecuteToFuture(input),
       outputOrNone
     )
@@ -55,7 +57,7 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
   def asEffectful(implicit cs: ContextShift[IO]): InteractionInstanceF[IO] = {
     InteractionInstanceF.build(
       name,
-      input.asScala,
+      input.asScala.map(input => input.asScala),
       input => IO.fromFuture(IO(wrapExecuteToFuture(input)))(cs),
       outputOrNone
     )

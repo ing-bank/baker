@@ -4,14 +4,14 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 import java.util.function.{BiConsumer, Consumer}
+
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
-
 import javax.annotation.Nonnull
+
 import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
@@ -27,6 +27,8 @@ class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker
   override type RecipeInstanceStateType = RecipeInstanceState
 
   override type InteractionInstanceType = InteractionInstance
+
+  override type InteractionInstanceDescriptorType = InteractionInstanceDescriptor
 
   override type BakerEventType = BakerEvent
 
@@ -224,12 +226,18 @@ class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker
     FutureConverters.toJava(baker.getAllRecipes).toCompletableFuture.thenApply(_.mapValues(_.asJava).asJava)
 
 
-  def getInteraction(interactionName: String): CompletableFuture[Option[InteractionExecution.Descriptor]] =
-    FutureConverters.toJava(baker.getInteraction(interactionName)).toCompletableFuture
+  def getInteraction(interactionName: String): CompletableFuture[Optional[InteractionInstanceDescriptorType]] =
+    FutureConverters
+      .toJava(baker.getInteraction(interactionName))
+      .toCompletableFuture
+      .thenApply(e => Optional.ofNullable(e.map(_.asJava()).orNull))
 
 
-  def getAllInteractions: CompletableFuture[java.util.List[InteractionExecution.Descriptor]] =
-    FutureConverters.toJava(baker.getAllInteractions).toCompletableFuture.thenApply(_.asJava)
+  def getAllInteractions: CompletableFuture[java.util.List[InteractionInstanceDescriptorType]] =
+    FutureConverters
+      .toJava(baker.getAllInteractions)
+      .toCompletableFuture
+      .thenApply(_.map(_.asJava()).asJava)
 
   /**
     * Returns an index of all processes.

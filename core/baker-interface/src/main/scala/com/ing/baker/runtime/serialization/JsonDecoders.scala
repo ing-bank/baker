@@ -1,23 +1,22 @@
 package com.ing.baker.runtime.serialization
 
 import java.util.Base64
+
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.petrinet.api.{Marking, PetriNet}
 import com.ing.baker.runtime.common.{BakerException, RejectReason, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, IngredientInstance, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
+import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.serialization.JsonEncoders._
-import com.ing.baker.types
 import com.ing.baker.types._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.CursorOp.DownField
 import io.circe.Decoder._
-import io.circe.Encoder.{encodeList, encodeMap, encodeString}
 import io.circe.KeyDecoder.decodeKeyString
 import io.circe._
-import io.circe.syntax._
 import io.circe.generic.semiauto._
 import scalax.collection.immutable.Graph
+import com.ing.baker.runtime.serialization.JsonCodec._
 
 object JsonDecoders extends LazyLogging {
 
@@ -100,6 +99,7 @@ object JsonDecoders extends LazyLogging {
 
   implicit val eventMomentDecoder: Decoder[EventMoment] = deriveDecoder[EventMoment]
   implicit val bakerResultDecoder: Decoder[BakerResult] = deriveDecoder[BakerResult]
+
   implicit val bakerExceptionDecoder: Decoder[BakerException] = (c: HCursor) => {
     for {
       message <- c.downField("message").as[String]
@@ -108,4 +108,6 @@ object JsonDecoders extends LazyLogging {
     } yield exception
   }
 
+  implicit val interactionInstanceInputDecoder: Decoder[InteractionInstanceInput] = deriveDecoder[InteractionInstanceInput]
+  implicit val interactionInstanceDescriptorDecoder: Decoder[InteractionInstanceDescriptor] = deriveDecoder[InteractionInstanceDescriptor]
 }

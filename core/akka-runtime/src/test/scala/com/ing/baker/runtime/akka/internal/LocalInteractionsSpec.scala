@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.internal
 import cats.effect.{ContextShift, IO}
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
-import com.ing.baker.runtime.scaladsl.InteractionInstance
+import com.ing.baker.runtime.scaladsl.{InteractionInstance, InteractionInstanceInput}
 import com.ing.baker.types
 import com.ing.baker.types.{Int16, Int32, Type}
 import org.mockito.Mockito.when
@@ -20,7 +20,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
       "an interaction implementation is available" in {
         val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
-        when(interactionImplementation.input).thenReturn(Seq(types.Int32))
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
         when(interactionImplementation.output).thenReturn(None)
 
         val interactionTransition = mock[InteractionTransition]
@@ -38,7 +38,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
       "an interaction implementation is available with output defined" in {
         val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
-        when(interactionImplementation.input).thenReturn(Seq(types.Int32))
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
         when(interactionImplementation.output).thenReturn(None)
         when(interactionImplementation.output).thenReturn(Some(Map("outputEvent"-> Map("outputIngredient" -> Int32, "outputIngredient2" -> Int16))))
 
@@ -58,12 +58,12 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
       "multiple interaction implementations are available" in {
         val interactionImplementation1 = mock[InteractionInstance]
         when(interactionImplementation1.name).thenReturn("InteractionName")
-        when(interactionImplementation1.input).thenReturn(Seq(types.Int32))
+        when(interactionImplementation1.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
         when(interactionImplementation1.output).thenReturn(None)
 
         val interactionImplementation2 = mock[InteractionInstance]
         when(interactionImplementation2.name).thenReturn("InteractionName2")
-        when(interactionImplementation2.input).thenReturn(Seq(types.Int32))
+        when(interactionImplementation2.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
         when(interactionImplementation2.output).thenReturn(None)
 
         val interactionTransition = mock[InteractionTransition]
@@ -82,12 +82,12 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
       "two implementations with the same correct name but only one has the correct input types" in {
         val interactionImplementation1 = mock[InteractionInstance]
         when(interactionImplementation1.name).thenReturn("InteractionName")
-        when(interactionImplementation1.input).thenReturn(Seq.empty[Type])
+        when(interactionImplementation1.input).thenReturn(Seq.empty[InteractionInstanceInput])
         when(interactionImplementation1.output).thenReturn(None)
 
         val interactionImplementation2 = mock[InteractionInstance]
         when(interactionImplementation2.name).thenReturn("InteractionName")
-        when(interactionImplementation2.input).thenReturn(Seq(types.Int32))
+        when(interactionImplementation2.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
         when(interactionImplementation2.output).thenReturn(None)
 
         val interactionTransition = mock[InteractionTransition]
@@ -105,12 +105,12 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
       "two implementations with the same correct name but only one has the correct output" in {
         val interactionImplementation1 = mock[InteractionInstance]
         when(interactionImplementation1.name).thenReturn("InteractionName")
-        when(interactionImplementation1.input).thenReturn(Seq(types.Int32))
+        when(interactionImplementation1.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
         when(interactionImplementation1.output).thenReturn(Some(Map("wrongOutputEvent"-> Map.empty[String, Type])))
 
         val interactionImplementation2 = mock[InteractionInstance]
         when(interactionImplementation2.name).thenReturn("InteractionName")
-        when(interactionImplementation2.input).thenReturn(Seq(types.Int32))
+        when(interactionImplementation2.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
         when(interactionImplementation2.output).thenReturn(Some(Map("outputEvent"-> Map.empty[String, Type])))
 
         val interactionTransition = mock[InteractionTransition]
@@ -131,7 +131,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
       "an interaction implementation has a wrong name" in {
         val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
-        when(interactionImplementation.input).thenReturn(Seq(types.Int32))
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
         when(interactionImplementation.output).thenReturn(None)
 
         val interactionTransition = mock[InteractionTransition]
@@ -146,7 +146,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
       "an interaction implementation has a wrong ingredient input type" in {
         val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
-        when(interactionImplementation.input).thenReturn(Seq(types.Int32))
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
         when(interactionImplementation.output).thenReturn(None)
 
         val interactionTransition = mock[InteractionTransition]
@@ -161,7 +161,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
       "an interaction implementation has a wrong output event name" in {
         val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
-        when(interactionImplementation.input).thenReturn(Seq(types.Int32))
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
         when(interactionImplementation.output).thenReturn(Some(Map("wrongOutputEvent"-> Map.empty[String, Type])))
 
         val interactionTransition = mock[InteractionTransition]
@@ -177,7 +177,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
       "an interaction implementation has a wrong output event ingredient name" in {
         val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
-        when(interactionImplementation.input).thenReturn(Seq(types.Int32))
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
         when(interactionImplementation.output).thenReturn(Some(Map("outputEvent"-> Map("wrongOutputIngredient" -> Int32, "outputIngredient2" -> Int16))))
 
         val interactionTransition = mock[InteractionTransition]
@@ -193,7 +193,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
       "an interaction implementation has a wrong output event ingredient type" in {
         val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
-        when(interactionImplementation.input).thenReturn(Seq(types.Int32))
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
         when(interactionImplementation.output).thenReturn(Some(Map("outputEvent"-> Map("outputIngredient" -> Int16, "outputIngredient2" -> Int16))))
 
         val interactionTransition = mock[InteractionTransition]
@@ -209,7 +209,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
       "an interaction implementation has extra ingredient input types" in {
         val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
-        when(interactionImplementation.input).thenReturn(Seq(types.Int32, types.CharArray))
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32),InteractionInstanceInput(Option.empty, types.CharArray)))
         when(interactionImplementation.output).thenReturn(None)
 
         val interactionTransition = mock[InteractionTransition]
@@ -224,7 +224,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
       "an interaction implementation has not enough ingredient input types" in {
         val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
-        when(interactionImplementation.input).thenReturn(Seq(types.Int32))
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
         when(interactionImplementation.output).thenReturn(None)
 
         val interactionTransition = mock[InteractionTransition]

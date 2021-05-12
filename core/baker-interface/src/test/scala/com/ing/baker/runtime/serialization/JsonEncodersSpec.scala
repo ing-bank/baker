@@ -5,7 +5,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.petrinet.api.{Marking, PetriNet}
 import com.ing.baker.runtime.common.RejectReason
-import com.ing.baker.runtime.scaladsl.EventInstance
+import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceDescriptor, InteractionInstanceInput}
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.types
 import com.ing.baker.types.{ListValue, PrimitiveValue}
@@ -75,6 +75,28 @@ class JsonEncodersSpec extends AnyFunSpec with Matchers {
 
       val typ5: types.Value = types.RecordValue(Map("1" -> typ2, "2" -> typ4))
       typ5.asJson.noSpaces shouldEqual """{"typ":2,"val":{"1":{"typ":3,"styp":"ByteArray","val":"f38="},"2":{"typ":1,"val":[{"typ":3,"styp":"ByteArray","val":"f38="},{"typ":3,"styp":"java.lang.String","val":"SuperString"}]}}}"""
+    }
+
+    it("should encode InteractionInstanceDescriptor") {
+      val interactionInstanceDescriptor = InteractionInstanceDescriptor("name", Seq(InteractionInstanceInput(Option.empty, com.ing.baker.types.CharArray)), Option.empty)
+      interactionInstanceDescriptor.asJson.noSpaces shouldEqual """{"name":"name","input":[{"name":null,"type":{"CharArray":{}}}],"output":null}"""
+
+      val interactionInstanceDescriptor2 = InteractionInstanceDescriptor("name", Seq(InteractionInstanceInput(Option.apply("inputname"), com.ing.baker.types.CharArray)), Option.empty)
+      interactionInstanceDescriptor2.asJson.noSpaces shouldEqual """{"name":"name","input":[{"name":"inputname","type":{"CharArray":{}}}],"output":null}"""
+
+      val interactionInstanceDescriptor3 = InteractionInstanceDescriptor("name", Seq(InteractionInstanceInput(Option.apply("inputname"),
+        com.ing.baker.types.CharArray)),
+        Option.apply(Map("outputEventName" -> Map("OutputIngredientName"-> com.ing.baker.types.CharArray))))
+      interactionInstanceDescriptor3.asJson.noSpaces shouldEqual """{"name":"name","input":[{"name":"inputname","type":{"CharArray":{}}}],"output":{"outputEventName":{"OutputIngredientName":{"CharArray":{}}}}}"""
+
+      val interactionInstanceDescriptor4 = InteractionInstanceDescriptor("name", Seq(InteractionInstanceInput(Option.apply("inputname"),
+        com.ing.baker.types.CharArray)),
+        Option.apply(Map("outputEventName" -> Map("OutputIngredientName"-> com.ing.baker.types.EnumType(Set("A"))))) )
+      interactionInstanceDescriptor4.asJson.noSpaces shouldEqual """{"name":"name","input":[{"name":"inputname","type":{"CharArray":{}}}],"output":{"outputEventName":{"OutputIngredientName":{"EnumType":{"options":["A"]}}}}}"""
+
+      val interactionInstanceDescriptor5 = InteractionInstanceDescriptor("name", Seq(InteractionInstanceInput(Option.empty, com.ing.baker.types.CharArray)), Some(Map()))
+      interactionInstanceDescriptor5.asJson.noSpaces shouldEqual """{"name":"name","input":[{"name":null,"type":{"CharArray":{}}}],"output":{}}"""
+
     }
   }
 }

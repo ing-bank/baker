@@ -1,7 +1,7 @@
 package com.ing.baker.runtime
 
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction}
-import com.ing.baker.runtime.scaladsl.{InteractionInstance, EventInstance, IngredientInstance}
+import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance, InteractionInstanceInput}
 import com.ing.baker.types.Converters.toJava
 import com.ing.baker.types.{Converters, Type, Value}
 
@@ -17,7 +17,7 @@ object ScalaDSLRuntime {
   def ScalaInteractionImplementation(i: Interaction, fn: Seq[IngredientInstance] => EventInstance): InteractionInstance = {
     InteractionInstance(
       name = i.name,
-      input = i.inputIngredients.map(_.ingredientType),
+      input = i.inputIngredients.map(i => InteractionInstanceInput(Some(i.name), i.ingredientType)),
       output = None,
       run = input => Future.successful(Some(fn(input)))
     )

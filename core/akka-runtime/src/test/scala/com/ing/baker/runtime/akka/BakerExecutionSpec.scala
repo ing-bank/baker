@@ -17,7 +17,7 @@ import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common._
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance, RecipeEventMetadata}
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance, InteractionInstanceInput, RecipeEventMetadata}
 import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
 import com.typesafe.config.{Config, ConfigFactory}
 import io.prometheus.client.CollectorRegistry
@@ -306,19 +306,19 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val interactionInstances = List(
         InteractionInstance(
           name = "Interaction1",
-          input = Seq(Int32),
+          input = Seq(InteractionInstanceInput(Option.empty, Int32)),
           output = None,
           run = _ => Future.successful(Some(EventInstance("interaction-1-happened", Map("ingredient-1" -> PrimitiveValue("data1")))))
         ),
         InteractionInstance(
           name = "Interaction2",
-          input = Seq(CharArray),
+          input = Seq(InteractionInstanceInput(Option.empty, CharArray)),
           output = None,
           run = _ => Future.successful(Some(EventInstance("interaction-2-happened", Map("ingredient-2" -> PrimitiveValue("data2")))))
         ),
         InteractionInstance(
           name = "Interaction3",
-          input = Seq(CharArray),
+          input = Seq(InteractionInstanceInput(Option.empty, CharArray)),
           output = None,
           run = _ => Future.successful(Some(EventInstance("interaction-3-happened", Map("final" -> PrimitiveValue("data3")))))
         )

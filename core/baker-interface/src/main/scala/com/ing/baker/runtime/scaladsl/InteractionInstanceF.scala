@@ -26,6 +26,8 @@ abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] 
 
   override type Ingredient = IngredientInstance
 
+  override type Input = InteractionInstanceInput
+
   override def execute(input: Seq[IngredientInstance]): F[Option[Event]] =
     run(input)
 
@@ -43,7 +45,7 @@ abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] 
         (i: Seq[IngredientInstance]) => mapK(self.run(i))
       override val name: String =
         self.name
-      override val input: Seq[Type] =
+      override val input: Seq[InteractionInstanceInput] =
         self.input
       override val output: Option[Map[String, Map[String, Type]]] =
         self.output
@@ -53,8 +55,8 @@ abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] 
     new javadsl.InteractionInstance {
       override val name: String =
         self.name
-      override val input: util.List[Type] =
-        self.input.asJava
+      override val input: util.List[javadsl.InteractionInstanceInput] =
+        self.input.map(input => input.asJava).asJava
       override val output: Optional[util.Map[String, util.Map[String, Type]]] =
         self.output match {
           case Some(out) => Optional.of(out.mapValues(_.asJava).asJava)
@@ -82,10 +84,10 @@ object InteractionInstanceF {
     Seq[IngredientInstance] => F[Option[EventInstance]],
     Option[Map[String, Map[String, Type]]]) => InteractionInstanceF[F]
 
-  def build[F[_]](_name: String, _input: Seq[Type], _run: Seq[IngredientInstance] => F[Option[EventInstance]], _output: Option[Map[String, Map[String, Type]]] = None): InteractionInstanceF[F] =
+  def build[F[_]](_name: String, _input: Seq[InteractionInstanceInput], _run: Seq[IngredientInstance] => F[Option[EventInstance]], _output: Option[Map[String, Map[String, Type]]] = None): InteractionInstanceF[F] =
     new InteractionInstanceF[F] {
       override val name: String = _name
-      override val input: Seq[Type] = _input
+      override val input: Seq[InteractionInstanceInput] = _input
       override val run: Seq[IngredientInstance] => F[Option[EventInstance]] = _run
       override val output: Option[Map[String, Map[String, Type]]] = _output
     }
@@ -121,9 +123,9 @@ object InteractionInstanceF {
           }.getOrElse(method.getDeclaringClass).getSimpleName
       }
     }
-    val input: Seq[Type] = {
+    val input: Seq[InteractionInstanceInput] = {
       method.getGenericParameterTypes.zip(method.getParameters).map { case (typ, _) =>
-        try { Converters.readJavaType(typ) }
+        try { InteractionInstanceInput(None, Converters.readJavaType(typ)) }
         catch { case e: Exception =>
           throw new IllegalArgumentException(s"Unsupported parameter type for interaction implementation '$name'", e)
         }

@@ -5,7 +5,8 @@ import java.util.Base64
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.common.{BakerException, RejectReason, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, SensoryEventResult}
+import com.ing.baker.runtime.scaladsl._
+import com.ing.baker.runtime.serialization.JsonCodec._
 import com.ing.baker.types
 import io.circe.Encoder._
 import io.circe._
@@ -77,4 +78,9 @@ object JsonEncoders {
       "message"-> message.asJson
     )
   }
+
+  implicit val interactionInstanceInputEncoder: Encoder[InteractionInstanceInput] =  deriveEncoder[InteractionInstanceInput]
+  implicit val interactionInstanceDescriptorEncoder: Encoder[InteractionInstanceDescriptor] = deriveEncoder[InteractionInstanceDescriptor]
+  implicit val optionalInteractionInstanceDescriptorEncoder: Encoder[Option[InteractionInstanceDescriptor]] = Encoder.encodeOption(interactionInstanceDescriptorEncoder)
+
 }

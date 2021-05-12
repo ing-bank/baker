@@ -1,9 +1,10 @@
 package com.ing.bakery.interaction
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
+import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceDescriptor}
 import com.ing.baker.runtime.serialization.InteractionExecution
-import io.prometheus.client.CollectorRegistry
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -29,6 +30,7 @@ object RemoteInteractionClient {
 final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
 
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
+  import com.ing.baker.runtime.serialization.JsonCodec._
 
   implicit val interactionEntityDecoder: EntityDecoder[IO, List[InteractionExecution.Descriptor]] = jsonOf[IO, List[InteractionExecution.Descriptor]]
 

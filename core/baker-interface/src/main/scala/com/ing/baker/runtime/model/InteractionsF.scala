@@ -33,9 +33,7 @@ trait InteractionsF[F[_]] {
     val inputNamesAndTypesMatches =
       transition
         .requiredIngredients
-        .forall { descriptor =>
-          implementation.input.exists(_.isAssignableFrom(descriptor.`type`))
-        }
+        .forall(descriptor => implementation.input.map(_.`type`).exists(_.isAssignableFrom(descriptor.`type`)))
 
     val outputEventNamesAndTypesMatches: Boolean =
       if (implementation.output.isDefined)
@@ -123,7 +121,7 @@ trait InteractionsF[F[_]] {
       Some(InteractionMatchOutputNotFound(transition.interactionName, transition.originalEvents))
     else {
       val missingTypes = transition.requiredIngredients.flatMap(i => {
-        if (implementation.input.exists(_.isAssignableFrom(i.`type`))) None else Some(i.`type`)
+        if (implementation.input.map(_.`type`).exists(_.isAssignableFrom(i.`type`))) None else Some(i.`type`)
       })
       if (missingTypes.nonEmpty)
         Some(InteractionMatchTypeFailed(implementation.name, missingTypes))
