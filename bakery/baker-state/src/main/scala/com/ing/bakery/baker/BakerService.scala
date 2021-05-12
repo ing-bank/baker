@@ -17,6 +17,8 @@ import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
+import com.ing.baker.runtime.serialization.JsonEncoders._
+import com.ing.baker.runtime.serialization.JsonDecoders._
 import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.{Logger, Metrics}
