@@ -53,7 +53,7 @@ object Dependencies {
   val akkaClusterBoostrap = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
   val akkaDiscoveryKube = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaManagementVersion
 
-  val scalaKafkaClient = "net.cakesolutions" %% "scala-kafka-client" % "2.3.1"
+  val kafkaClient = "org.apache.kafka" % "kafka-clients" % "2.8.0"
   val fs2Core = "co.fs2" %% "fs2-core" % fs2Version
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Version
   val fs2kafka = "com.github.fd4s" %% "fs2-kafka" % "1.0.0"

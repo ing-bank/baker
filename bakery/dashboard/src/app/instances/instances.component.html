@@ -1,0 +1,46 @@
+<form #instanceIdForm>
+<mat-form-field class="example-form-field">
+  <mat-label>Instance ID</mat-label>
+  <input matInput type="text" name="instanceId" [(ngModel)]="instanceId" (change)="instanceChanged()">
+  <button mat-button *ngIf="instanceId" matSuffix mat-icon-button aria-label="Clear" (click)="instanceId=''">
+    <mat-icon>close</mat-icon>
+  </button>
+</mat-form-field>
+</form>
+
+<mat-grid-list cols="8" rowHeight="100%">
+  <mat-grid-tile colspan="2">
+    <div class="text-inside-grid">
+      <p>Events</p>
+      <cdk-virtual-scroll-viewport class="scroll-viewport" itemSize="50">
+        <ul>
+          <li *ngFor="let event of instanceEvents" [value]="event">
+            {{event.name}}
+          </li>
+        </ul>
+      </cdk-virtual-scroll-viewport>
+    </div>
+  </mat-grid-tile>
+  <mat-grid-tile colspan="2">
+    <div class="text-inside-grid">
+      <p>Ingredients</p>
+      <cdk-virtual-scroll-viewport class="scroll-viewport" itemSize="50">
+        <ul>
+          <li *ngFor="let ingredient of instanceIngredients" [value]="ingredient">
+            {{ ingredient }}
+          </li>
+        </ul>
+      </cdk-virtual-scroll-viewport>
+    </div>
+  </mat-grid-tile>
+
+  <mat-grid-tile colspan="4">
+    <div class="text-inside-grid">
+      <h3>{{ displayedInstanceId }}</h3>
+      <cdk-virtual-scroll-viewport class="scroll-viewport" itemSize="50">
+        <div #instanceGraph></div>
+      </cdk-virtual-scroll-viewport>
+    </div>
+  </mat-grid-tile>
+</mat-grid-list>
+

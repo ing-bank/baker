@@ -5,7 +5,7 @@ import cats.effect.{ConcurrentEffect, Timer}
 import cats.implicits._
 import cats.~>
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
-import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
+import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.common.SensoryEventStatus
@@ -79,6 +79,11 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
   override def getRecipe(recipeId: String): F[RecipeInformation] =
     components.recipeManager.getRecipe(recipeId)
       .timeout(config.inquireTimeout)
+
+
+  override def getRecipeVisual(recipeId: String, style: RecipeVisualStyle): F[String] =
+    components.recipeManager.getRecipe(recipeId).map(recipe =>
+      RecipeVisualizer.visualizeRecipe(recipe.compiledRecipe, style))
 
   /**
     * Returns all recipes added to this baker instance.
@@ -351,6 +356,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.addRecipe(compiledRecipe, timeCreated))
       override def getRecipe(recipeId: String): G[RecipeInformation] =
         mapK(self.getRecipe(recipeId))
+      override def getRecipeVisual(recipeId: String, style: RecipeVisualStyle): G[String] =
+        mapK(self.getRecipeVisual(recipeId))
       override def getAllRecipes: G[Map[String, RecipeInformation]] =
         mapK(self.getAllRecipes)
       override def getAllInteractions: G[Seq[InteractionInstanceDescriptor]] =
@@ -402,6 +409,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.addRecipe(compiledRecipe, timeCreated))
       override def getRecipe(recipeId: String): Future[RecipeInformation] =
         mapK(self.getRecipe(recipeId))
+      override def getRecipeVisual(recipeId: String, style: RecipeVisualStyle): Future[String] =
+        mapK(self.getRecipeVisual(recipeId, style))
       override def getAllRecipes: Future[Map[String, RecipeInformation]] =
         mapK(self.getAllRecipes)
       override def getAllInteractions: Future[Seq[InteractionInstanceDescriptor]] =
