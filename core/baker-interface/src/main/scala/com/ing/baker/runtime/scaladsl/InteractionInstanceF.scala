@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.scaladsl
 
-import java.lang.reflect.Method
+import java.lang.reflect
+import java.lang.reflect.{Method, Parameter}
 import java.security.MessageDigest
 import java.util
 import java.util.concurrent.CompletableFuture
@@ -8,7 +9,7 @@ import java.util.{Base64, Optional}
 
 import cats.implicits._
 import cats.{Applicative, ~>}
-import com.ing.baker.recipe.annotations.FiresEvent
+import com.ing.baker.recipe.annotations.{FiresEvent, RequiresIngredient}
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.{common, javadsl}
 import com.ing.baker.types.{Converters, Type}
@@ -106,29 +107,77 @@ object InteractionInstanceF {
       }
     }
 
-    val name: String = {
+    val parentDefinition: Option[Class[_]] =
+      common.unmock(implementation.getClass).getInterfaces.find {
+        clazz => {
+          Try {
+            clazz.getMethod(method.getName, method.getParameterTypes.toSeq: _*)
+          }.isSuccess
+        }
+      }
+
+    val parentMethod: Option[Method] = {
+      parentDefinition.map(_.getMethod(method.getName, method.getParameterTypes.toSeq: _*))
+    }
+
+    def getNameFieldName(method: Method): Option[String] = {
       Try {
         method.getDeclaringClass.getDeclaredField("name")
       }.toOption match {
         // In case a specific 'name' field was found, this is used
         case Some(field) if field.getType == classOf[String] =>
           field.setAccessible(true)
-          field.get(implementation).asInstanceOf[String]
-        // Otherwise, try to find the interface that declared the method or falls back to the implementation class
-        case None =>
-          method.getDeclaringClass.getInterfaces.find {
-            clazz => Try {
-              clazz.getMethod(method.getName, method.getParameterTypes.toSeq: _*)
-            }.isSuccess
-          }.getOrElse(method.getDeclaringClass).getSimpleName
+          Some(field.get(implementation).asInstanceOf[String])
+        case None => None
       }
     }
-    val input: Seq[InteractionInstanceInput] = {
-      method.getGenericParameterTypes.zip(method.getParameters).map { case (typ, _) =>
-        try { InteractionInstanceInput(None, Converters.readJavaType(typ)) }
+
+    val name: String =
+    //First we check if the class of the method has a name field defined.
+      getNameFieldName(method)
+        .getOrElse(
+          parentMethod match {
+            //else If a parent method is defined we check the name field of this.
+            case Some(parentMethod) => getNameFieldName(parentMethod)
+              //If parent is defined but no name field we take the name of the parent.
+              .getOrElse(parentMethod.getDeclaringClass.getSimpleName)
+            //If no parent method is defined we take the class name
+            case None => method.getDeclaringClass.getSimpleName
+          })
+
+    def hasInputAnnotations(method: Method): Boolean = {
+      method.getGenericParameterTypes.zip(method.getParameters).exists {
+        case (_, parameter: Parameter) => parameter.isAnnotationPresent(classOf[RequiresIngredient])
+      }
+    }
+
+    def getInputWithAnnotatedNames(method: Method): Seq[InteractionInstanceInput] = {
+      method.getGenericParameterTypes.zip(method.getParameters).map { case (typ: reflect.Type, parameter: Parameter) =>
+        try {
+          if (parameter.isAnnotationPresent(classOf[RequiresIngredient])) {
+            val name = parameter.getAnnotationsByType(classOf[RequiresIngredient]).map((requiresIngredient: RequiresIngredient) => {
+              requiresIngredient.value()
+            }).head
+            InteractionInstanceInput(Option(name), Converters.readJavaType(typ))
+          }
+          else {
+            // We are not taking parameter.name as default since with Java reflection this will not be filled correctly with a name.
+            InteractionInstanceInput(None, Converters.readJavaType(typ))
+          }
+        }
         catch { case e: Exception =>
           throw new IllegalArgumentException(s"Unsupported parameter type for interaction implementation '$name'", e)
         }
+      }
+    }
+
+    val input: Seq[InteractionInstanceInput] = {
+      if(hasInputAnnotations(method)) {
+        getInputWithAnnotatedNames(method)
+      } else if(parentMethod.isDefined && hasInputAnnotations(parentMethod.get)) {
+        getInputWithAnnotatedNames(parentMethod.get)
+      } else {
+        getInputWithAnnotatedNames(method)
       }
     }
 
@@ -149,17 +198,13 @@ object InteractionInstanceF {
       }
       // Check the direct parent interfaces for the class for the apply method and FiresEvent annotations.
       else {
-        method.getDeclaringClass.getInterfaces.find {
-          clazz => {
-            Try {
-              clazz.getMethod(method.getName, method.getParameterTypes.toSeq: _*)
-            }.map { m: Method =>
-              m.isAnnotationPresent(classOf[FiresEvent])
-            }.getOrElse(false)
-          }
-        }.flatMap(clazz => {
-          Some(extractOutput(clazz.getMethod(method.getName, method.getParameterTypes.toSeq: _*)))
-        })
+        parentMethod match {
+          case Some(parentMethod) =>
+            if(parentMethod.isAnnotationPresent(classOf[FiresEvent]))
+              Some(extractOutput(parentMethod))
+            else None
+          case None => None
+        }
       }
     }
 
@@ -175,7 +220,7 @@ object InteractionInstanceF {
         case Some(event) =>
           event match {
             // Async interactions using java CompletableFuture
-            // Blocking since mapping to the correct F type is not possible at this time.
+            // TODO rewrite this to not block in in case of java CompletableFutures.
             case runtimeEventAsyncJava if futureClass.runtimeClass.isInstance(runtimeEventAsyncJava) =>
               effect.pure(Some(EventInstance.unsafeFrom(runtimeEventAsyncJava.asInstanceOf[CompletableFuture[Any]].get())))
             // Async interactions using F

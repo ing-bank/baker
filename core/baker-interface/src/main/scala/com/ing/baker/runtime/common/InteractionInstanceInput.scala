@@ -9,6 +9,7 @@ import com.ing.baker.types.Type
   */
 trait InteractionInstanceInput extends LanguageApi { self =>
 
+  //This is an Option because in Java we cannot get the name from the variable using reflection
   val name: language.Option[String]
 
   val `type`: Type
