@@ -26,14 +26,20 @@ trait InteractionsF[F[_]] {
       }
 
   protected def compatible(transition: InteractionTransition, implementation: InteractionInstanceF[F]): Boolean = {
-    val interactionNameMatches =
+    val interactionNameMatches: Boolean =
       transition.originalInteractionName == implementation.name
-    val inputSizeMatches =
+    val inputSizeMatches: Boolean =
       implementation.input.size == transition.requiredIngredients.size
-    val inputNamesAndTypesMatches =
-      transition
-        .requiredIngredients
-        .forall(descriptor => implementation.input.map(_.`type`).exists(_.isAssignableFrom(descriptor.`type`)))
+    val inputNamesAndTypesMatches: Boolean =
+      implementation.input.forall(ingredient => {
+        transition.requiredIngredients.exists(descriptor => {
+          if(ingredient.name.isDefined) {
+            ingredient.name.get == descriptor.name && ingredient.`type`.isAssignableFrom(descriptor.`type`)
+          } else {
+            ingredient.`type`.isAssignableFrom(descriptor.`type`)
+          }
+        }
+      )})
 
     val outputEventNamesAndTypesMatches: Boolean =
       if (implementation.output.isDefined)

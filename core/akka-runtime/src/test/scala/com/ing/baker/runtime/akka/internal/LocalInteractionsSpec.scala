@@ -35,6 +35,24 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         found.output shouldBe interactionImplementation.output
       }
 
+      "an interaction implementation is available with input name" in {
+        val interactionImplementation = mock[InteractionInstance]
+        when(interactionImplementation.name).thenReturn("InteractionName")
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option("ingredientName"), types.Int32)))
+        when(interactionImplementation.output).thenReturn(None)
+
+        val interactionTransition = mock[InteractionTransition]
+        when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
+        val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
+        when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
+
+        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
+        val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
+        found.name shouldBe interactionImplementation.name
+        found.input shouldBe interactionImplementation.input
+        found.output shouldBe interactionImplementation.output
+      }
+
       "an interaction implementation is available with output defined" in {
         val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
@@ -147,6 +165,21 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
         when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
+        when(interactionImplementation.output).thenReturn(None)
+
+        val interactionTransition = mock[InteractionTransition]
+        when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
+        val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.CharArray)
+        when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
+
+        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
+        interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
+      }
+
+      "an interaction implementation has a wrong ingredient input name" in {
+        val interactionImplementation = mock[InteractionInstance]
+        when(interactionImplementation.name).thenReturn("InteractionName")
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option("wrongIngredientName"), types.CharArray)))
         when(interactionImplementation.output).thenReturn(None)
 
         val interactionTransition = mock[InteractionTransition]
