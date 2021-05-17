@@ -83,6 +83,8 @@ class BakeryWebshopTests extends BakerySmokeTests  with Matchers {
     "ItemsReserved",
     "OrderPlaced",
     "PaymentInformationReceived",
+    "RecipeAdded",
+    "RecipeAdded",
     "RecipeInstanceCreated",
     "ShippingAddressReceived",
     "ShippingConfirmed",
