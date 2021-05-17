@@ -215,6 +215,10 @@ class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker
   def getRecipe(@Nonnull recipeId: String): CompletableFuture[RecipeInformation] =
     toCompletableFuture(baker.getRecipe(recipeId)).thenApply(_.asJava)
 
+
+  def getRecipeVisual(recipeId: String, style: RecipeVisualStyle): CompletableFuture[String] =
+    toCompletableFuture(baker.getRecipeVisual(recipeId))
+
   /**
     * Return alls recipes added to this Baker
     *

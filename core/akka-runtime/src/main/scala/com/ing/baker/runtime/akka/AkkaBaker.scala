@@ -129,6 +129,10 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     }
   }
 
+
+  override def getRecipeVisual(recipeId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): Future[String] =
+    getRecipe(recipeId).map(r => RecipeVisualizer.visualizeRecipe(r.compiledRecipe, style))
+
   /**
     * Returns all recipes added to this baker instance.
     *

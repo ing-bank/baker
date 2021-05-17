@@ -61,6 +61,8 @@ trait Baker[F[_]] extends LanguageApi {
     */
   def getRecipe(recipeId: String): F[RecipeInformationType]
 
+  def getRecipeVisual(recipeId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): F[String]
+
   /**
     * Returns all recipes added to this baker instance.
     *
@@ -71,7 +73,6 @@ trait Baker[F[_]] extends LanguageApi {
   def getAllInteractions: F[List[InteractionExecution.Descriptor]]
 
   def getInteraction(interactionName: String): F[Option[InteractionExecution.Descriptor]]
-
 
   /**
     * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
