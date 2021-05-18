@@ -4,7 +4,7 @@ import java.net.InetSocketAddress
 
 import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.serialization.{InteractionExecution => I}
-import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
+import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance, InteractionInstanceInput}
 import com.ing.baker.types.{CharArray, Int64, PrimitiveValue}
 import com.ing.bakery.testing.BakeryFunSpec
 import org.scalatest.ConfigMap
@@ -86,13 +86,13 @@ class RemoteInteractionSpec extends BakeryFunSpec {
 
     val implementation0 = InteractionInstance(
       name = "TestInteraction0",
-      input = Seq(CharArray, Int64).toList,
+      input = Seq(InteractionInstanceInput(Option.empty ,CharArray), InteractionInstanceInput(Option.empty, Int64)).toList,
       run = input => Future.successful(Some(result(input.head.value.as[String], input(1).value.as[Int])))
     )
 
     val implementation1 = InteractionInstance(
       name = "TestInteraction1",
-      input = Seq(CharArray, Int64),
+      input = Seq(InteractionInstanceInput(Option.empty ,CharArray), InteractionInstanceInput(Option.empty ,Int64)),
       run = input => Future.successful(Some(result(input.head.value.as[String] + "!", input(1).value.as[Int] + 1)))
     )
 

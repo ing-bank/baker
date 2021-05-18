@@ -6,7 +6,7 @@ import com.ing.baker.types.Type
 import scala.concurrent.{ExecutionContext, Future}
 
 case class InteractionInstance( name: String,
-                                input: Seq[Type],
+                                input: Seq[InteractionInstanceInput],
                                 run: Seq[IngredientInstance] => Future[Option[EventInstance]],
                                 output: Option[Map[String, Map[String, Type]]] = None
                               ) extends InteractionInstanceF[Future]

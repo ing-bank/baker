@@ -72,6 +72,7 @@ final class RemoteInteractionService(interactions: List[InteractionInstance],
                                      apiLoggingEnabled: Boolean = false)(implicit timer: Timer[IO], cs: ContextShift[IO]) {
 
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
+  import com.ing.baker.runtime.serialization.JsonCodec._
 
   implicit val interactionEntityEncoder: EntityEncoder[IO, List[I.Descriptor]] = jsonEncoderOf[IO,  List[I.Descriptor]]
   implicit val executeRequestEntityDecoder: EntityDecoder[IO, List[IngredientInstance]] = jsonOf[IO, List[IngredientInstance]]

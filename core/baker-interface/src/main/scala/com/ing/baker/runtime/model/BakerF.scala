@@ -11,7 +11,6 @@ import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
 import com.ing.baker.runtime.scaladsl.{Baker => DeprecatedBaker, _}
-import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.types.Value
 import com.typesafe.scalalogging.LazyLogging
 
@@ -46,6 +45,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
   override type RecipeInstanceStateType = RecipeInstanceState
 
   override type InteractionInstanceType = InteractionInstanceF[F]
+
+  override type InteractionInstanceDescriptorType = InteractionInstanceDescriptor
 
   override type BakerEventType = BakerEvent
 
@@ -94,16 +95,16 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
       .timeout(config.inquireTimeout)
 
 
-  override def getInteraction(interactionName: String): F[Option[InteractionExecution.Descriptor]] =
+  override def getInteraction(interactionName: String): F[Option[InteractionInstanceDescriptor]] =
     components.interactions
       .listAll
       .map(_.find(_.name == interactionName)
-        .map(i => InteractionExecution.Descriptor(i.shaBase64, i.name, i.input, i.output)))
+        .map(i => InteractionInstanceDescriptor(i.name, i.input, i.output)))
 
 
-  override def getAllInteractions: F[List[InteractionExecution.Descriptor]] =
+  override def getAllInteractions: F[Seq[InteractionInstanceDescriptor]] =
     components.interactions.listAll
-      .map(_.map(i => InteractionExecution.Descriptor(i.shaBase64, i.name, i.input, i.output)))
+      .map(_.map(i => InteractionInstanceDescriptor(i.name, i.input, i.output)))
 
   /**
    * Attempts to gracefully shutdown the baker system.
@@ -359,9 +360,9 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.getRecipeVisual(recipeId))
       override def getAllRecipes: G[Map[String, RecipeInformation]] =
         mapK(self.getAllRecipes)
-      override def getAllInteractions: G[List[InteractionExecution.Descriptor]] =
+      override def getAllInteractions: G[Seq[InteractionInstanceDescriptor]] =
         mapK(self.getAllInteractions)
-      override def getInteraction(interactionName: String): G[Option[InteractionExecution.Descriptor]] =
+      override def getInteraction(interactionName: String): G[Option[InteractionInstanceDescriptor]] =
         mapK(self.getInteraction(interactionName))
 
       override def bake(recipeId: String, recipeInstanceId: String): G[Unit] =
@@ -412,9 +413,9 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.getRecipeVisual(recipeId, style))
       override def getAllRecipes: Future[Map[String, RecipeInformation]] =
         mapK(self.getAllRecipes)
-      override def getAllInteractions: Future[List[InteractionExecution.Descriptor]] =
+      override def getAllInteractions: Future[Seq[InteractionInstanceDescriptor]] =
         mapK(self.getAllInteractions)
-      override def getInteraction(interactionName: String): Future[Option[InteractionExecution.Descriptor]] =
+      override def getInteraction(interactionName: String): Future[Option[InteractionInstanceDescriptor]] =
         mapK(self.getInteraction(interactionName))
       override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] =
         mapK(self.bake(recipeId, recipeInstanceId))

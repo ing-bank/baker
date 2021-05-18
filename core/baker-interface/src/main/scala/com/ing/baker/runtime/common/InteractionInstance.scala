@@ -12,6 +12,8 @@ trait InteractionInstance[F[_]] extends LanguageApi { self =>
 
   type Event <: EventInstance { type Language = self.Language }
 
+  type Input <: InteractionInstanceInput { type Language = self.Language }
+
   /**
     * The name of the interaction
     */
@@ -20,7 +22,7 @@ trait InteractionInstance[F[_]] extends LanguageApi { self =>
   /**
     * The input description, used to match on different versions of the implementation.
     */
-  val input: language.Seq[Type]
+  val input: language.Seq[Input]
 
   /**
    * The output description, used to match on different versions of the implementation.

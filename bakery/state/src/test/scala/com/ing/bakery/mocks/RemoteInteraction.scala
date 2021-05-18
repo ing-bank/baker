@@ -1,7 +1,7 @@
 package com.ing.bakery.mocks
 
 import cats.effect.IO
-import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance}
+import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceInput}
 import com.ing.baker.runtime.serialization.{InteractionExecution => I}
 import com.ing.bakery.recipe.Interactions
 import io.circe.syntax._
@@ -22,10 +22,10 @@ class RemoteInteraction(mock: ClientAndServer) {
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody(List(I.Descriptor("localhost", Interactions.ReserveItemsInteraction.name,
-          Interactions.ReserveItemsInteraction.inputIngredients.map(_.ingredientType).toList,
-          Some(Interactions.ReserveItemsInteraction.output.map(e => e.name -> e.providedIngredients.map(i => i.name -> i.ingredientType).toMap).toMap)
-        )).asJson.toString)
+            .withBody(List(I.Descriptor("localhost", Interactions.ReserveItemsInteraction.name,
+              Interactions.ReserveItemsInteraction.inputIngredients.map(i => InteractionInstanceInput(Some(i.name), i.ingredientType)).toList,
+              Some(Interactions.ReserveItemsInteraction.output.map(e => e.name -> e.providedIngredients.map(i => i.name -> i.ingredientType).toMap).toMap))
+            ).asJson.toString)
     )
   }
 

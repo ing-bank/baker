@@ -3,8 +3,9 @@ package webshop.webservice
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import cats.effect.concurrent.Ref
-import cats.effect.{ExitCode, IO, IOApp, Resource, SyncIO}
+import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.baker.runtime.akka.AkkaBaker
+import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.scaladsl._
 import com.typesafe.config.ConfigFactory
 import org.http4s.server.blaze.BlazeServerBuilder
@@ -18,12 +19,17 @@ object Main extends IOApp {
 
   val logger: Logger = org.log4s.getLogger
 
-  val system: Resource[IO, SystemResources] =
+  val system: Resource[IO, SystemResources] = {
+    implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
     Resource.make(
       for {
         actorSystem <- IO { ActorSystem("CheckoutService") }
         config <- IO { ConfigFactory.load() }
-        baker <- IO { AkkaBaker(config, actorSystem) }
+        baker <- IO { AkkaBaker(config, actorSystem, LocalInteractions(List(
+          InteractionInstance.unsafeFrom(new ReserveItemsInstance()),
+          InteractionInstance.unsafeFrom(new MakePaymentInstance()),
+          InteractionInstance.unsafeFrom(new ShipItemsInstance())
+        ))) }
         checkoutRecipeId <- WebShopBaker.initRecipes(baker)(timer, actorSystem.dispatcher)
         sd <- Ref.of[IO, Boolean](false)
         webShopBaker = new WebShopBaker(baker, checkoutRecipeId)(actorSystem.dispatcher)
@@ -37,6 +43,7 @@ object Main extends IOApp {
         terminateCluster(resources) *>
         terminateActorSystem(resources)
     )
+  }
 
   def terminateCluster(resources: SystemResources): IO[Unit] =
     IO {

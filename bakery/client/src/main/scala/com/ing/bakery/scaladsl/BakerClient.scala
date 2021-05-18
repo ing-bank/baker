@@ -1,14 +1,13 @@
 package com.ing.bakery.scaladsl
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import cats.implicits._
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, EventResolutions, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
+import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, EventResolutions, InteractionInstanceDescriptor, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
-import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 import com.ing.baker.types.Value
+import com.ing.bakery.common.FailoverUtils._
 import com.ing.bakery.common.{FailoverState, FailoverUtils, TLSConfig}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
@@ -21,27 +20,8 @@ import org.http4s.client.dsl.io._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
-import FailoverUtils._
-import com.ing.baker.runtime.serialization.InteractionExecution
 
 object BakerClient {
-
-  /** Use method `use` of the Resource, the client will be acquired and shut down automatically each time
-    * the resulting `IO` is run, each time using the common connection pool.
-    *
-    * This method supports fail over to next host, available in list to support multi datacenters.
-    *
-    * @param hosts            Lists of hosts (multiple is supported for several DC)
-    *                         * @param hosts Lists of hosts (multiple is supported for several DC)
-    * @param apiUrlPrefix     Prefix of Baker API URL, from the root of the host
-    * @param executionContext Execution Context
-    * @param filters          Http Filters to be applied to the invocation pipeline
-    * @param tlsConfig        TLSConfig
-    * @param cs               Cat's implicits
-    * @param timer            Cat's implicits
-    * @return IO Resource for BakerClient
-    */
-
   def resourceBalancedWithLegacyFallback(endpointConfig: EndpointConfig,
                                          fallbackEndpointConfig: Option[EndpointConfig] = None,
                                          executionContext: ExecutionContext,
@@ -195,12 +175,12 @@ final class BakerClient( client: Client[IO],
     }
 
 
-  override def getInteraction(interactionName: String): Future[Option[InteractionExecution.Descriptor]] =
-    callRemoteBakerService[Option[InteractionExecution.Descriptor]]((host, prefix) => GET(root(host, prefix) / "app" / "interactions" / interactionName))
+  override def getInteraction(interactionName: String): Future[Option[InteractionInstanceDescriptor]] =
+    callRemoteBakerService[Option[InteractionInstanceDescriptor]]((host, prefix) => GET(root(host, prefix) / "app" / "interactions" / interactionName))
 
 
-  override def getAllInteractions: Future[List[InteractionExecution.Descriptor]] =
-    callRemoteBakerService[List[InteractionExecution.Descriptor]]((host, prefix) => GET(root(host, prefix) / "app" / "interactions"))
+  override def getAllInteractions: Future[List[InteractionInstanceDescriptor]] =
+    callRemoteBakerService[List[InteractionInstanceDescriptor]]((host, prefix) => GET(root(host, prefix) / "app" / "interactions"))
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.

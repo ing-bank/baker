@@ -6,7 +6,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.internal.LocalInteractions
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceF}
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceDescriptor, InteractionInstanceF, InteractionInstanceInput}
 import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.types.{ByteArray, CharArray, ListType, RecordField, RecordType}
 import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
@@ -23,9 +23,9 @@ import org.scalatest.compatible.Assertion
 import org.scalatest.matchers.should.Matchers
 import skuber.LabelSelector
 import skuber.api.client.KubernetesClient
-
 import java.net.InetSocketAddress
 import java.util.UUID
+
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 
 import scala.concurrent.Future
@@ -110,12 +110,10 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       } yield {
         recipeInformation.compiledRecipe.name shouldBe recipe.name
         interactionInformation shouldBe Some(
-          InteractionExecution.Descriptor("JR2RmDQeloEh8RddWyvOj9oayIkL/7DxzYlQIN7viuA=","ReserveItems",
-          Seq(
-            RecordType(Seq(RecordField("orderId", CharArray))),
-            ListType(RecordType(Seq(RecordField("itemId", CharArray))))
-          ),
-            Some(Map(
+          InteractionInstanceDescriptor("ReserveItems",
+          Seq(InteractionInstanceInput(Option.apply("orderId"), RecordType(Seq(RecordField("orderId", CharArray)))),
+            InteractionInstanceInput(Option.apply("items"), ListType(RecordType(Seq(RecordField("itemId", CharArray)))))
+          ), Some(Map(
               "OrderHadUnavailableItems" -> Map("unavailableItems" -> ListType(RecordType(Seq(RecordField("itemId", CharArray))))),
               "ItemsReserved" -> Map("reservedItems" -> RecordType(Seq(RecordField("items",
                 ListType(RecordType(Seq(RecordField("itemId", CharArray))))), RecordField("data", ByteArray))))

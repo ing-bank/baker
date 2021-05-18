@@ -1,17 +1,19 @@
 package com.ing.baker.runtime.scaladsl
 
-import cats.effect.Effect
-import cats.implicits._
-import cats.{Applicative, ~>}
-import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
-import com.ing.baker.runtime.{common, javadsl}
-import com.ing.baker.types.{Converters, Type}
-
-import java.lang.reflect.Method
+import java.lang.reflect
+import java.lang.reflect.{Method, Parameter}
 import java.security.MessageDigest
 import java.util
 import java.util.concurrent.CompletableFuture
 import java.util.{Base64, Optional}
+
+import cats.implicits._
+import cats.{Applicative, ~>}
+import com.ing.baker.recipe.annotations.{FiresEvent, RequiresIngredient}
+import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
+import com.ing.baker.runtime.{common, javadsl}
+import com.ing.baker.types.{Converters, Type}
+
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.reflect.ClassTag
@@ -24,6 +26,8 @@ abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] 
   override type Event = EventInstance
 
   override type Ingredient = IngredientInstance
+
+  override type Input = InteractionInstanceInput
 
   override def execute(input: Seq[IngredientInstance]): F[Option[Event]] =
     run(input)
@@ -42,7 +46,7 @@ abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] 
         (i: Seq[IngredientInstance]) => mapK(self.run(i))
       override val name: String =
         self.name
-      override val input: Seq[Type] =
+      override val input: Seq[InteractionInstanceInput] =
         self.input
       override val output: Option[Map[String, Map[String, Type]]] =
         self.output
@@ -52,8 +56,8 @@ abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] 
     new javadsl.InteractionInstance {
       override val name: String =
         self.name
-      override val input: util.List[Type] =
-        self.input.asJava
+      override val input: util.List[javadsl.InteractionInstanceInput] =
+        self.input.map(input => input.asJava).asJava
       override val output: Optional[util.Map[String, util.Map[String, Type]]] =
         self.output match {
           case Some(out) => Optional.of(out.mapValues(_.asJava).asJava)
@@ -61,7 +65,9 @@ abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] 
         }
       override def execute(input: util.List[javadsl.IngredientInstance]): CompletableFuture[Optional[javadsl.EventInstance]] =
         converter(self.run(input.asScala.map(_.asScala)))
-          .thenApply(_.fold(Optional.empty[javadsl.EventInstance]())(e => Optional.of(e.asJava)))
+          .thenApply(
+            _.fold(Optional.empty[javadsl.EventInstance]())(
+            e => Optional.of(e.asJava)))
     }
 
   def asDeprecatedFutureImplementation(transform: F ~> Future): InteractionInstance = {
@@ -79,10 +85,10 @@ object InteractionInstanceF {
     Seq[IngredientInstance] => F[Option[EventInstance]],
     Option[Map[String, Map[String, Type]]]) => InteractionInstanceF[F]
 
-  def build[F[_]](_name: String, _input: Seq[Type], _run: Seq[IngredientInstance] => F[Option[EventInstance]], _output: Option[Map[String, Map[String, Type]]] = None): InteractionInstanceF[F] =
+  def build[F[_]](_name: String, _input: Seq[InteractionInstanceInput], _run: Seq[IngredientInstance] => F[Option[EventInstance]], _output: Option[Map[String, Map[String, Type]]] = None): InteractionInstanceF[F] =
     new InteractionInstanceF[F] {
       override val name: String = _name
-      override val input: Seq[Type] = _input
+      override val input: Seq[InteractionInstanceInput] = _input
       override val run: Seq[IngredientInstance] => F[Option[EventInstance]] = _run
       override val output: Option[Map[String, Map[String, Type]]] = _output
     }
@@ -100,40 +106,124 @@ object InteractionInstanceF {
         case _          => unmockedClass.getMethods.find(_.getName == "apply").get
       }
     }
-    val name: String = {
+
+    val parentDefinition: Option[Class[_]] =
+      common.unmock(implementation.getClass).getInterfaces.find {
+        clazz => {
+          Try {
+            clazz.getMethod(method.getName, method.getParameterTypes.toSeq: _*)
+          }.isSuccess
+        }
+      }
+
+    val parentMethod: Option[Method] = {
+      parentDefinition.map(_.getMethod(method.getName, method.getParameterTypes.toSeq: _*))
+    }
+
+    def getNameFieldName(method: Method): Option[String] = {
       Try {
         method.getDeclaringClass.getDeclaredField("name")
       }.toOption match {
         // In case a specific 'name' field was found, this is used
         case Some(field) if field.getType == classOf[String] =>
           field.setAccessible(true)
-          field.get(implementation).asInstanceOf[String]
-        // Otherwise, try to find the interface that declared the method or falls back to the implementation class
-        case None =>
-          method.getDeclaringClass.getInterfaces.find {
-            clazz => Try {
-              clazz.getMethod(method.getName, method.getParameterTypes.toSeq: _*)
-            }.isSuccess
-          }.getOrElse(method.getDeclaringClass).getSimpleName
+          Some(field.get(implementation).asInstanceOf[String])
+        case None => None
       }
     }
-    val input: Seq[Type] = {
-      method.getGenericParameterTypes.zip(method.getParameters).map { case (typ, _) =>
-        try { Converters.readJavaType(typ) }
+
+    val name: String =
+    //First we check if the class of the method has a name field defined.
+      getNameFieldName(method)
+        .getOrElse(
+          parentMethod match {
+            //else If a parent method is defined we check the name field of this.
+            case Some(parentMethod) => getNameFieldName(parentMethod)
+              //If parent is defined but no name field we take the name of the parent.
+              .getOrElse(parentMethod.getDeclaringClass.getSimpleName)
+            //If no parent method is defined we take the class name
+            case None => method.getDeclaringClass.getSimpleName
+          })
+
+    def hasInputAnnotations(method: Method): Boolean = {
+      method.getGenericParameterTypes.zip(method.getParameters).exists {
+        case (_, parameter: Parameter) => parameter.isAnnotationPresent(classOf[RequiresIngredient])
+      }
+    }
+
+    def getInputWithAnnotatedNames(method: Method): Seq[InteractionInstanceInput] = {
+      method.getGenericParameterTypes.zip(method.getParameters).map { case (typ: reflect.Type, parameter: Parameter) =>
+        try {
+          if (parameter.isAnnotationPresent(classOf[RequiresIngredient])) {
+            val name = parameter.getAnnotationsByType(classOf[RequiresIngredient]).map((requiresIngredient: RequiresIngredient) => {
+              requiresIngredient.value()
+            }).head
+            InteractionInstanceInput(Option(name), Converters.readJavaType(typ))
+          }
+          else {
+            // We are not taking parameter.name as default since with Java reflection this will not be filled correctly with a name.
+            InteractionInstanceInput(None, Converters.readJavaType(typ))
+          }
+        }
         catch { case e: Exception =>
           throw new IllegalArgumentException(s"Unsupported parameter type for interaction implementation '$name'", e)
         }
       }
     }
+
+    val input: Seq[InteractionInstanceInput] = {
+      if(hasInputAnnotations(method)) {
+        getInputWithAnnotatedNames(method)
+      } else if(parentMethod.isDefined && hasInputAnnotations(parentMethod.get)) {
+        getInputWithAnnotatedNames(parentMethod.get)
+      } else {
+        getInputWithAnnotatedNames(method)
+      }
+    }
+
+    def extractOutput(method: Method): Map[String, Map[String, Type]] = {
+      val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[FiresEvent]).oneOf()
+      outputEventClasses.map(eventClass =>
+        eventClass.getSimpleName ->
+          eventClass.getDeclaredFields
+            .filter(field => !field.isSynthetic)
+            .map(f => f.getName -> Converters.readJavaType(f.getGenericType)).toMap
+      ).toMap
+    }
+
+    val output: Option[Map[String, Map[String, Type]]] = {
+      //Check the class itself for the FiresEvent annotation
+      if (method.isAnnotationPresent(classOf[FiresEvent])) {
+        Some(extractOutput(method))
+      }
+      // Check the direct parent interfaces for the class for the apply method and FiresEvent annotations.
+      else {
+        parentMethod match {
+          case Some(parentMethod) =>
+            if(parentMethod.isAnnotationPresent(classOf[FiresEvent]))
+              Some(extractOutput(parentMethod))
+            else None
+          case None => None
+        }
+      }
+    }
+
     val run: Seq[IngredientInstance] => F[Option[EventInstance]] = runtimeInput => {
       // Translate the Value objects to the expected runtimeInput types
       val inputArgs: Seq[AnyRef] = runtimeInput.zip(method.getGenericParameterTypes).map {
         case (value, targetType) => value.value.as(targetType).asInstanceOf[AnyRef]
       }
-      val output = method.invoke(implementation, inputArgs: _*)
-      Option(output) match {
+      val callOutput = method.invoke(implementation, inputArgs: _*)
+      val futureClass: ClassTag[CompletableFuture[Any]] = implicitly[ClassTag[CompletableFuture[Any]]]
+
+      Option(callOutput) match {
         case Some(event) =>
           event match {
+            // Async interactions using java CompletableFuture
+            // TODO rewrite this to not block in in case of java CompletableFutures.
+            case runtimeEventAsyncJava if futureClass.runtimeClass.isInstance(runtimeEventAsyncJava) =>
+              effect.pure(Some(EventInstance.unsafeFrom(runtimeEventAsyncJava.asInstanceOf[CompletableFuture[Any]].get())))
+            // Async interactions using F
             case runtimeEventAsync if classTag.runtimeClass.isInstance(runtimeEventAsync) =>
               runtimeEventAsync
                 .asInstanceOf[F[Any]]
@@ -145,6 +235,6 @@ object InteractionInstanceF {
           effect.pure(None)
       }
     }
-    build[F](name, input, run, None)
+    build[F](name, input, run, output)
   }
 }
