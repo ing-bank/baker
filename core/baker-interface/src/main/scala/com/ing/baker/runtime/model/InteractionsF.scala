@@ -9,7 +9,9 @@ import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractio
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceF}
 import com.ing.baker.types.Type
 
+
 trait InteractionsF[F[_]] {
+
 
   def listAll: F[List[InteractionInstanceF[F]]]
 
@@ -33,17 +35,16 @@ trait InteractionsF[F[_]] {
     val inputNamesAndTypesMatches: Boolean =
       implementation.input.forall(ingredient => {
         transition.requiredIngredients.exists(descriptor => {
-          if(ingredient.name.isDefined) {
-            ingredient.name.get == descriptor.name && ingredient.`type`.isAssignableFrom(descriptor.`type`)
-          } else {
-            ingredient.`type`.isAssignableFrom(descriptor.`type`)
-          }
+          //We cannot use the name of the interaction input since we do not store the original input name.
+          //This means it will not bind on renamed ingredients.
+          ingredient.`type`.isAssignableFrom(descriptor.`type`)
         }
       )})
 
     val outputEventNamesAndTypesMatches: Boolean =
       if (implementation.output.isDefined)
-        implementation.output.get.size == transition.originalEvents.size &&
+        //For the output it is allowed
+        implementation.output.get.size <= transition.originalEvents.size &&
         implementation.output.exists(doesOutputMatch(_, transition.originalEvents))
       else true //If the implementation output is not defined the output validation should be not done
 
@@ -79,9 +80,9 @@ trait InteractionsF[F[_]] {
       s"$interactionName input size differs: transition expects $transitionArgsSize, implementation provides $implementationArgsSize"
   }
 
-  case class InteractionMatchTypeFailed(
+  case class InteractionMatchInputFailed(
                                          interactionName: String,
-                                         transitionInputTypesMissing: Seq[Type]
+                                         transitionInputTypesMissing: Seq[IngredientDescriptor]
                                        ) extends InteractionIncompatible {
     override def toString: String =
       s"$interactionName input types mismatch: transition expects $transitionInputTypesMissing, not provided by implementation"
@@ -121,16 +122,16 @@ trait InteractionsF[F[_]] {
   def incompatibilityReason(transition: InteractionTransition, implementation: InteractionInstanceF[F]): Option[InteractionIncompatible] =
     if (implementation.input.size != transition.requiredIngredients.size)
       Some(InteractionMatchInputSizeFailed(transition.interactionName, transition.requiredIngredients.size, implementation.input.size))
-    else if(implementation.output.isDefined && implementation.output.get.size != transition.originalEvents.size)
+    else if(implementation.output.isDefined && implementation.output.get.size > transition.originalEvents.size)
       Some(InteractionMatchOutputSizeFailed(transition.interactionName, transition.originalEvents.size, implementation.output.get.size))
     else if (implementation.output.isDefined && !implementation.output.exists(doesOutputMatch(_, transition.originalEvents)))
       Some(InteractionMatchOutputNotFound(transition.interactionName, transition.originalEvents))
     else {
       val missingTypes = transition.requiredIngredients.flatMap(i => {
-        if (implementation.input.map(_.`type`).exists(_.isAssignableFrom(i.`type`))) None else Some(i.`type`)
+        if (implementation.input.map(_.`type`).exists(_.isAssignableFrom(i.`type`))) None else Some(i)
       })
       if (missingTypes.nonEmpty)
-        Some(InteractionMatchTypeFailed(implementation.name, missingTypes))
+        Some(InteractionMatchInputFailed(implementation.name, missingTypes))
       else
         Some(UnknownReason("Unknown reason"))
     }

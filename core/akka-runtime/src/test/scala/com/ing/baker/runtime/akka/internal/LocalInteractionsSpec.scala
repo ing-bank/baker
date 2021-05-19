@@ -176,21 +176,6 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
-      "an interaction implementation has a wrong ingredient input name" in {
-        val interactionImplementation = mock[InteractionInstance]
-        when(interactionImplementation.name).thenReturn("InteractionName")
-        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option("wrongIngredientName"), types.CharArray)))
-        when(interactionImplementation.output).thenReturn(None)
-
-        val interactionTransition = mock[InteractionTransition]
-        when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
-        val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.CharArray)
-        when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
-
-        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
-        interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
-      }
-
       "an interaction implementation has a wrong output event name" in {
         val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
