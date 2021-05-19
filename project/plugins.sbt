@@ -20,6 +20,6 @@ addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent" % "0.1.6")
 
 addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.3.9")
 
-addSbtPlugin("no.arktekk.sbt" % "aether-deploy" % "0.26.0")
+addSbtPlugin("no.arktekk.sbt" % "aether-deploy" % "0.27.0")
 
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.30"
