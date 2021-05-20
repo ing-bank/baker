@@ -8,16 +8,16 @@ import scala.collection.JavaConverters;
 // TODO try to leave the same method names
 case class BakerEventsFlow private(private val events: Set[String]) {
 
-  @varargs def remove(events: String*): BakerEventsFlow =
+  def remove(events: String*): BakerEventsFlow =
     new BakerEventsFlow(this.events.diff(events.toSet))
 
-  @varargs def removeClass(events: Class[_]*): BakerEventsFlow =
+  def remove(events: Class[_]): BakerEventsFlow =
     remove(events.map(_.getSimpleName): _*)
 
-  @varargs def add(events: String*): BakerEventsFlow =
+  def add(event: String*): BakerEventsFlow =
     new BakerEventsFlow(this.events ++ events)
 
-  @varargs def addClass(events: Class[_]*): BakerEventsFlow =
+  def add(events: Class[_]): BakerEventsFlow =
     add(events.map(_.getSimpleName): _*)
 
   def getEvents: util.Set[String] = JavaConverters.setAsJavaSet(events)
