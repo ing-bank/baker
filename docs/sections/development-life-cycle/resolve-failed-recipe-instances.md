@@ -21,7 +21,7 @@ event to fire. So instead of failing the process continues.
 
 Example:
 
-``` java
+```java
   .withInteractions(
     of(ValidateOrder.class)
     .withInteractionFailureStrategy(
@@ -35,7 +35,7 @@ Example:
 Incremental back-off allows you to configure a retry mechanism that takes longer for each retry.
 The idea here is that you quickly retry at first but slower over time. To not overload your system but give it time to recover.
 
-``` java
+```java
   .withInteractions(
     of(ValidateOrder.class)
       .withDefaultFailureStrategy(new RetryWithIncrementalBackoffBuilder()
@@ -84,7 +84,7 @@ Either the interaction becomes [blocked(#blocked-interaction).
 
 Or if you configure so, the process continues with a predefined event:
 
-```
+```java
 .withDefaultFailureStrategy(new RetryWithIncrementalBackoffBuilder()
   .withFireRetryExhaustedEvent(SomeEvent.class))
 
@@ -100,7 +100,7 @@ This then serves as a fallback if none is defined for an interaction.
 
 For example:
 
-``` java
+```java
 final Recipe webshopRecipe = new Recipe("webshop")
     .withDefaultFailureStrategy(
         new RetryWithIncrementalBackoffBuilder()
@@ -123,15 +123,19 @@ to check this you will need to request the state of the `RecipeInstance` again.
 _Note: this behaviour can be automatically preconfigured by using the `RetryWithIncrementalBackoff` `FailureStrategy`
 on the `Interaction` of the `Recipe`_
 
-``` scala tab="Scala"
-val program: Future[Unit] = 
-    baker.retryInteraction(recipeInstanceId, "ReserveItems")
-```
+=== "Scala"
 
-``` java tab="Java"
-CompletableFuture<BoxedUnit> program = 
-    baker.retryInteraction(recipeInstanceId, "ReserveItems");
-```
+    ```scala 
+    val program: Future[Unit] = 
+        baker.retryInteraction(recipeInstanceId, "ReserveItems")
+    ```
+
+=== "Java"
+
+    ```java 
+    CompletableFuture<BoxedUnit> program = 
+        baker.retryInteraction(recipeInstanceId, "ReserveItems");
+    ```
 
 ## baker.resolveInteraction(recipeInstanceId, interactionName, event)
 
@@ -143,27 +147,35 @@ the one that would have had been computed by the `InteractionInstance`.
 _Note: this behaviour can be automatically preconfigured by using the `FireEventAfterFailure(eventName)` `FailureStrategy`
 on the `Interaction` of the `Recipe`_
 
-``` scala tab="Scala"
-val program: Future[Unit] = 
-    baker.resolveInteraction(recipeInstanceId, "ReserveItems", ItemsReserved(List("item1")))
-```
+=== "Scala"
 
-``` java tab="Java"
-CompletableFuture<BoxedUnit> program = 
-    baker.resolveInteraction(recipeInstanceId, "ReserveItems", new ItemsReserved(List("item1")));
-```
+    ```scala 
+    val program: Future[Unit] = 
+        baker.resolveInteraction(recipeInstanceId, "ReserveItems", ItemsReserved(List("item1")))
+    ```
+
+=== "Java"
+
+    ```java 
+    CompletableFuture<BoxedUnit> program = 
+        baker.resolveInteraction(recipeInstanceId, "ReserveItems", new ItemsReserved(List("item1")));
+    ```
 
 ## baker.stopRetryingInteraction(recipeInstanceId, interactionName)
 
 If an `Interaction` is configured with a `RetryWithIncrementalBackoff` `FailureStrategy` then it will not stop retrying 
 until you call this API or a successful outcome happens from the `InteractionInstance`.
 
-``` scala tab="Scala"
-val program: Future[Unit] = 
-    baker.stopRetryingInteraction(recipeInstanceId, "ReserveItems")
-```
+=== "Scala"
 
-``` java tab="Java"
-CompletableFuture<BoxedUnit> program = 
-    baker.stopRetryingInteraction(recipeInstanceId, "ReserveItems");
-```
+    ```scala 
+    val program: Future[Unit] = 
+        baker.stopRetryingInteraction(recipeInstanceId, "ReserveItems")
+    ```
+
+=== "Java"
+
+    ```java 
+    CompletableFuture<BoxedUnit> program = 
+        baker.stopRetryingInteraction(recipeInstanceId, "ReserveItems");
+    ```

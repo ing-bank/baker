@@ -1,10 +1,11 @@
 #!/bin/bash
 
+DIR=$(dirname $0)
 # bump this manually whenever breaking change occurs
-SEM_VERSION=$(cat version.sbt | sed 's/version in ThisBuild := \"\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\).*/\1.\2.\3/')
+SEM_VERSION=$($DIR/get-version.sh)
 
-DATE=$(date +"%Y%m%d_%H%M%S")
+DATE=$(date +"%y%m%d%H%M%S")
 COMMIT=$( git log --pretty=format:'%h' -n 1)
 VERSION="${SEM_VERSION}-${DATE}-${COMMIT}"
 
-echo "version in ThisBuild := \"${VERSION}\"" > ./version.sbt
+echo "ThisBuild / version := \"${VERSION}\"" > ./version.sbt

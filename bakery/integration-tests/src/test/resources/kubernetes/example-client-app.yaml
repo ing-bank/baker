@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-app-service
+  labels:
+    run: client-app-service
+spec:
+  selector:
+    app: client-app
+  ports:
+    - name: http-api
+      port: 8082
+      targetPort: http-api
+      protocol: TCP
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: client-app
+  name: client-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client-app
+  template:
+    metadata:
+      labels:
+        app: client-app
+    spec:
+      containers:
+        - name: kafka-listener
+          image: bakery-kafka-listener-example:local
+          resources:
+            requests:
+              memory: 256M
+              cpu: 200m
+        - name: client-app
+          image: bakery-client-example:local
+          imagePullPolicy: Never
+          resources:
+            requests:
+              memory: 256M
+              cpu: 200m
+          readinessProbe:
+            httpGet:
+              path: /api
+              port: 8082
+          livenessProbe:
+            httpGet:
+              path: /api
+              port: 8082
+          ports:
+            - name: http-api
+              containerPort: 8082
+              protocol: TCP
+          env:
+            - name: BAKER_URL_PREFIX
+              value: http://webshop-baker:8080

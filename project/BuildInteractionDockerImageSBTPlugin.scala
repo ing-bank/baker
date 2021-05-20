@@ -1,4 +1,4 @@
-package baas.sbt
+package bakery.sbt
 
 import java.nio.charset.Charset
 
@@ -15,8 +15,8 @@ import sbt._
 
 object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
 
-  case class CommandArgumentsBuilder(name: Option[String], publish: Option[String], artifact: Option[String], interactions: List[String])
-  case class CommandArguments(name: String, publish: String, artifact: Option[String], interactions: List[String])
+  case class CommandArgumentsBuilder(name: Option[String], publish: Option[String], artifact: Option[String], interactions: List[String], springEnabled: Option[Boolean])
+  case class CommandArguments(name: String, publish: String, artifact: Option[String], interactions: List[String], springEnabled: Boolean)
 
   override def requires: Plugins = DockerPlugin && JavaAppPackaging && KubeDeploymentPlugin
 
@@ -34,23 +34,27 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
       val PublishRegex = """--publish=(.+)""".r
       val ArtifactRegex = """--artifact=(.+)""".r
       val InteractionRegex = """--interaction=(.+)""".r
+      val SpringEnabledRegex = """--springEnabled=(.+)""".r
 
-      val builder = args.foldLeft(CommandArgumentsBuilder(None, None, None, List.empty)) { (builder, arg) =>
+      val builder = args.foldLeft(CommandArgumentsBuilder(None, None, None, List.empty, None)) { (builder, arg) =>
         arg match {
           case NameRegex(value) => builder.copy(name = Some(value))
           case PublishRegex(value) => builder.copy(publish = Some(value))
           case ArtifactRegex(value) => builder.copy(artifact = Some(value))
           case InteractionRegex(value) => builder.copy(interactions = value :: builder.interactions)
+          case SpringEnabledRegex(value) => builder.copy(springEnabled = Option.apply(value.toBoolean))
         }
       }
 
       val arguments = builder match {
-        case cmd@CommandArgumentsBuilder(Some(name), Some("local" | "remote") | None, artifact, interactions) if interactions.nonEmpty =>
-          CommandArguments(name, cmd.publish.getOrElse("remote"), artifact, interactions)
-        case CommandArgumentsBuilder(None, _, _, _) =>
+        case cmd@CommandArgumentsBuilder(Some(name), Some("local" | "remote") | None, artifact, interactions, None) if interactions.nonEmpty =>
+          CommandArguments(name, cmd.publish.getOrElse("remote"), artifact, interactions, false)
+        case cmd@CommandArgumentsBuilder(Some(name), Some("local" | "remote") | None, artifact, interactions, Some(springEnabled)) if interactions.nonEmpty =>
+          CommandArguments(name, cmd.publish.getOrElse("remote"), artifact, interactions, springEnabled)
+        case CommandArgumentsBuilder(None, _, _, _, _) =>
           throw new MessageOnlyException(s"Expected name for image (--image-name=<name>)")
-        case CommandArgumentsBuilder(_, _, _, interactions) if interactions.isEmpty =>
-          throw new MessageOnlyException(s"Expected at least one interaction (--interaction=<full-class-path>)")
+        case CommandArgumentsBuilder(_, _, _, interactions, _) if interactions.isEmpty =>
+          throw new MessageOnlyException(s"Expected at least one interaction or configuration (--interaction=<full-class-path>)")
         case _ =>
           throw new MessageOnlyException(s"Expected publish to be either local or remote or empty (--publish=<local|remote>)")
       }
@@ -70,31 +74,33 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
         Project.extract(state).appendWithSession(Seq(
           name := arguments.name,
           libraryDependencies ++= moduleID.toSeq,
-          packageName in Docker := arguments.name,
-          version in ThisBuild := moduleID.map(_.revision).getOrElse((version in ThisBuild).value),
-          javaOptions in Universal += arguments.interactions.mkString(","),
-          livenessProbe in kube := NoProbe,
-          sourceGenerators in Compile += Def.task {
+          Docker / packageName  := arguments.name,
+          ThisBuild / version := moduleID.map(_.revision).getOrElse((ThisBuild / version ).value),
+          Universal / javaOptions  += arguments.interactions.mkString(","),
+          kube / livenessProbe := NoProbe,
+          dockerBaseImage := "adoptopenjdk/openjdk11",
+          Compile / sourceGenerators  += Def.task {
             val mainClassName =
-              (mainClass in Compile).value.getOrElse(throw new MessageOnlyException("mainClass in Compile is required"))
+              (Compile / mainClass).value.getOrElse(throw new MessageOnlyException("mainClass in Compile is required"))
 
             val pathList = mainClassName.split("\\.")
 
             val file =
               (pathList.dropRight(1) :+ pathList.last + ".scala")
-                .foldLeft((sourceManaged in Compile).value) {
+                .foldLeft((Compile / sourceManaged).value) {
                   case (file, subPath) => file / subPath
                 }
 
-            val sourceBytes = mainClassBody.value.getOrElse(mainClassBodyDefault).getBytes(Charset.defaultCharset())
+            val mainClassDefault = if(arguments.springEnabled) mainClassBodySpringDefault else mainClassBodyDefault
+            val sourceBytes = mainClassBody.value.getOrElse(mainClassDefault).getBytes(Charset.defaultCharset())
             IO.write(file, sourceBytes)
             Seq(file)
           }.taskValue
         ), state)
 
       val commandName = arguments.publish match {
-        case "local" => "docker:publishLocal"
-        case _ => "docker:publish"
+        case "local" => "Docker/publishLocal"
+        case _ => "Docker/publish"
       }
       val updatedState = Command.process(commandName, stateWithNewDependency)
       Command.process("kubeyml:gen", updatedState)
@@ -107,17 +113,16 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
 
   override lazy val projectSettings: Seq[Def.Setting[_]] = Seq(
     mainClassBody := None,
-    mainClass in Compile := Some("com.ing.baker.baas.Main"),
+    Compile / mainClass := Some("com.ing.bakery.Main"),
     commands += buildDockerCommand
   )
 
   private val mainClassBodyDefault =
     """
-      |package com.ing.baker.baas
+      |package com.ing.bakery
       |
-      |import com.ing.baker.baas.interaction.RemoteInteractionLoader
+      |import com.ing.bakery.interaction.RemoteInteractionLoader
       |import com.ing.baker.runtime.scaladsl.InteractionInstance
-      |import kamon.Kamon
       |
       |import scala.concurrent.ExecutionContext.Implicits.global
       |
@@ -125,7 +130,6 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
       |  * Expects single argument containing full classpath entry point for interaction
       |  */
       |object Main extends App {
-      |  Kamon.init()
       |
       |  private def runApp(classNames: String): Unit =
       |    try {
@@ -140,7 +144,61 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
       |    }
       |
       |
-      |  args.headOption.map(runApp).getOrElse(throw new IllegalAccessException("Expected class name a parameter"))
+      |  args.headOption.map(runApp).getOrElse(throw new IllegalAccessException("Expected class name as a parameter"))
+      |}
+      |""".stripMargin
+
+  private val mainClassBodySpringDefault =
+    """
+      |package com.ing.bakery
+      |
+      |import java.util
+      |
+      |import com.ing.bakery.interaction.RemoteInteractionLoader
+      |import com.ing.baker.recipe.javadsl.Interaction
+      |import com.ing.baker.runtime.scaladsl.InteractionInstance
+      |import com.typesafe.scalalogging.LazyLogging
+      |import org.springframework.context.annotation.AnnotationConfigApplicationContext
+      |
+      |import scala.collection.JavaConverters._
+      |import scala.concurrent.ExecutionContext.Implicits.global
+      |
+      |/**
+      | * Expects single argument containing Spring configuration
+      | */
+      |object Main extends App with LazyLogging{
+      |
+      |
+      |  def getImplementations(configurationClassString: String) : List[InteractionInstance] = {
+      |    val configClass = Class.forName(configurationClassString)
+      |    logger.info("Class found: " + configClass)
+      |    val ctx = new AnnotationConfigApplicationContext();
+      |    logger.info("Context created")
+      |    ctx.register(configClass)
+      |    logger.info("Context registered")
+      |    ctx.refresh()
+      |    logger.info("Context refreshed")
+      |    val interactions: util.Map[String, Interaction] =
+      |      ctx.getBeansOfType(classOf[com.ing.baker.recipe.javadsl.Interaction])
+      |    interactions.asScala.values.map(implementation => {
+      |      val instance = InteractionInstance.unsafeFrom(implementation)
+      |      logger.info("Added implementation: " + instance.name)
+      |      instance
+      |    }).toList
+      |  }
+      |
+      |  private def runApp(configurationClassString: String): Unit =
+      |    try {
+      |      logger.info("Starting for configuration: " + configurationClassString)
+      |      val implementations = getImplementations(configurationClassString)
+      |      logger.info("Starting RemoteInteractionLoader")
+      |      RemoteInteractionLoader.apply(implementations)
+      |    } catch {
+      |      case ex: Exception =>
+      |        throw new IllegalStateException(s"Unable to initialize the interaction instances", ex)
+      |    }
+      |
+      |  args.headOption.map(runApp).getOrElse(throw new IllegalAccessException("Please provide a Spring configuration containing valid interactions"))
       |}
       |""".stripMargin
 }

@@ -1,5 +1,14 @@
 # Changelog
 
+# 3.1.0
+
+- Upgraded to akka 2.6.8 mainly to support [Lightbend's split brain resolver](https://doc.akka.io/docs/akka/2.6.8/split-brain-resolver.html)
+- Removed unused configuration from `com.ing.baker.runtime.akka.AkkaBakerConfig`, namely `readConfig`. Deleting this line from your config does not impact functionality.
+
+# 3.0.7
+
+[Baker 3 release notes](https://ing-bank.github.io/baker/sections/versions/baker-3-release-notes/)
+
 # 2.0.4
 
 - Fixed an issue that Map types would be translated to List types in the Java and Scala dsl
@@ -30,7 +39,7 @@ Note, this *ONLY* works if the interaction has become blocked.
 
 Sometimes, perhaps because of a bug in the code, a interaction is failing with the same exception each retry.
 
-You can now stop this retry from continueing unnecessarily.
+You can now stop this retry from continuing unnecessarily.
 
 ``` java
 baker.stopRetryingInteraction(recipeInstanceId, interactionName);
