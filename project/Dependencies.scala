@@ -76,7 +76,7 @@ object Dependencies {
   val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.11.0"
   val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.1.19"
 
-  val skuber = "io.skuber" %% "skuber" % "2.6.0" excludeAll(
+  val skuber = "io.github.hagay3" %% "skuber" % "2.7.0" excludeAll(
     ExclusionRule("org.yaml"),
     ExclusionRule("org.bouncycastle")
   )
