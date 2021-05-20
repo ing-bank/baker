@@ -22,7 +22,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
 import com.ing.baker.runtime.akka.{namedCachedThreadPool, _}
-import com.ing.baker.runtime.model.InteractionsF
+import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.Value
@@ -37,7 +37,7 @@ object ProcessIndex {
   def props(recipeInstanceIdleTimeout: Option[FiniteDuration],
             retentionCheckInterval: Option[FiniteDuration],
             configuredEncryption: Encryption,
-            interactions: InteractionsF[IO],
+            interactions: InteractionManager[IO],
             recipeManager: RecipeManager,
             ingredientsFilter: Seq[String]) =
     Props(new ProcessIndex(
@@ -84,7 +84,7 @@ object ProcessIndex {
 class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
                    retentionCheckInterval: Option[FiniteDuration],
                    configuredEncryption: Encryption,
-                   interactionManager: InteractionsF[IO],
+                   interactionManager: InteractionManager[IO],
                    recipeManager: RecipeManager,
                    ingredientsFilter: Seq[String]) extends PersistentActor with PersistentActorMetrics {
 

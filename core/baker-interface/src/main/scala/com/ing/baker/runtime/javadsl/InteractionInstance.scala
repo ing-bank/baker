@@ -7,14 +7,14 @@ import java.util.concurrent.CompletableFuture
 import cats.effect.{ContextShift, IO}
 import cats.~>
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
-import com.ing.baker.runtime.scaladsl.InteractionInstanceF
-import com.ing.baker.runtime.{common, scaladsl}
+import com.ing.baker.runtime.{common, javadsl, model, scaladsl}
 import com.ing.baker.types.Type
 
 import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.Future
+
 
 abstract class InteractionInstance extends common.InteractionInstance[CompletableFuture] with JavaApi {
 
@@ -54,15 +54,14 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
     )
   }
 
-  def asEffectful(implicit cs: ContextShift[IO]): InteractionInstanceF[IO] = {
-    InteractionInstanceF.build(
+  def asEffectful(implicit cs: ContextShift[IO]): common.InteractionInstance[IO] = {
+    model.InteractionInstance.build(
       name,
       input.asScala.map(input => input.asScala),
       input => IO.fromFuture(IO(wrapExecuteToFuture(input)))(cs),
       outputOrNone
     )
   }
-
 }
 
 object InteractionInstance {
@@ -72,9 +71,28 @@ object InteractionInstance {
   }
 
   def from(implementation: AnyRef): InteractionInstance = {
-    InteractionInstanceF.unsafeFrom[IO](implementation)
-      .asJava(new (IO ~> CompletableFuture) {
-        def apply[A](fa: IO[A]): CompletableFuture[A] = fa.unsafeToFuture().toJava.toCompletableFuture
-      })
+    fromModel(model.InteractionInstance.unsafeFrom[IO](implementation))
+  }
+
+  def fromModel(common: model.InteractionInstance[IO]) : InteractionInstance = {
+    val converter = new (IO ~> CompletableFuture) {
+      def apply[A](fa: IO[A]): CompletableFuture[A] = fa.unsafeToFuture().toJava.toCompletableFuture
+    }
+    new javadsl.InteractionInstance {
+      override val name: String =
+        common.name
+      override val input: util.List[javadsl.InteractionInstanceInput] =
+        common.input.map(input => input.asJava).asJava
+      override val output: Optional[util.Map[String, util.Map[String, Type]]] =
+        common.output match {
+          case Some(out) => Optional.of(out.mapValues(_.asJava).asJava)
+          case None => Optional.empty[util.Map[String, util.Map[String, Type]]]()
+        }
+      override def execute(input: util.List[javadsl.IngredientInstance]): CompletableFuture[Optional[javadsl.EventInstance]] =
+        converter(common.run(input.asScala.map(_.asScala)))
+          .thenApply(
+            _.fold(Optional.empty[javadsl.EventInstance]())(
+              e => Optional.of(e.asJava)))
+    }
   }
 }

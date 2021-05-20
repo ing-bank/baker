@@ -13,7 +13,7 @@ import org.scalatestplus.mockito.MockitoSugar
 
 import scala.concurrent.ExecutionContext
 
-class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
+class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
   implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
   "getImplementation" should {
     "return Some" when {
@@ -28,7 +28,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation.name
         found.input shouldBe interactionImplementation.input
@@ -46,7 +46,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation.name
         found.input shouldBe interactionImplementation.input
@@ -66,7 +66,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
         when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", Int32), IngredientDescriptor("outputIngredient2", Int16)))))
 
-        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation.name
         found.input shouldBe interactionImplementation.input
@@ -89,7 +89,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation1, interactionImplementation2))
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation1, interactionImplementation2))
 
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation1.name
@@ -113,7 +113,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation1, interactionImplementation2))
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation1, interactionImplementation2))
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation2.name
         found.input shouldBe interactionImplementation2.input
@@ -137,7 +137,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
         when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq.empty)))
 
-        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation1, interactionImplementation2))
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation1, interactionImplementation2))
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation2.name
         found.input shouldBe interactionImplementation2.input
@@ -157,7 +157,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
@@ -172,7 +172,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.CharArray)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
@@ -188,7 +188,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
         when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq.empty)))
 
-        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
@@ -204,7 +204,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
         when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", Int32), IngredientDescriptor("outputIngredient2", Int16)))))
 
-        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
@@ -220,7 +220,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
         when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", Int32), IngredientDescriptor("outputIngredient2", Int16)))))
 
-        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
@@ -235,7 +235,7 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
@@ -251,12 +251,12 @@ class LocalInteractionsSpec extends AnyWordSpecLike with Matchers with MockitoSu
         val ingredientDescriptor2: IngredientDescriptor = IngredientDescriptor("ingredientName2", types.CharArray)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor, ingredientDescriptor2))
 
-        val interactionManager: LocalInteractions = LocalInteractions(List(interactionImplementation))
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
       "empty interaction seq" in {
-        val interactionManager: LocalInteractions = LocalInteractions()
+        val interactionManager: CachedInteractionManager = CachedInteractionManager()
 
         val interactionTransition: InteractionTransition = mock[InteractionTransition]
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None

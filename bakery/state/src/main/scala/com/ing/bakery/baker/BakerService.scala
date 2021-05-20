@@ -5,7 +5,7 @@ import cats.effect.{Blocker, ContextShift, IO, Resource, Sync, Timer}
 import cats.implicits._
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
-import com.ing.baker.runtime.model.InteractionsF
+import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EventInstance}
 import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
@@ -35,7 +35,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object BakerService {
 
-  def resource(baker: Baker, hostname: InetSocketAddress, apiUrlPrefix: String, dashboardPath: String, interactions: InteractionsF[IO], loggingEnabled: Boolean)
+  def resource(baker: Baker, hostname: InetSocketAddress, apiUrlPrefix: String, dashboardPath: String, interactions: InteractionManager[IO], loggingEnabled: Boolean)
               (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
 
     val bakeryRequestClassifier: Request[IO] => Option[String] = { request =>
@@ -85,11 +85,11 @@ object BakerService {
           } yield server
     }
 
-    def routes(baker: Baker, interactionManager: InteractionsF[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] =
+    def routes(baker: Baker, interactionManager: InteractionManager[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] =
       new BakerService(baker, interactionManager).routes
   }
 
-  final class BakerService private(baker: Baker, interactionManager: InteractionsF[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
+  final class BakerService private(baker: Baker, interactionManager: InteractionManager[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
 
     object CorrelationId extends OptionalQueryParamDecoderMatcher[String]("correlationId")
 

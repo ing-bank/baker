@@ -14,7 +14,7 @@ import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
-import com.ing.baker.runtime.akka.internal.LocalInteractions
+import com.ing.baker.runtime.akka.internal.CachedInteractionManager
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance, InteractionInstanceInput, RecipeEventMetadata}
@@ -75,7 +75,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         exception <- Future.successful {
           intercept[IllegalArgumentException] {
-            AkkaBaker(config, setupActorSystem, LocalInteractions())
+            AkkaBaker(config, setupActorSystem, CachedInteractionManager())
           }
         }
         _ <- setupActorSystem.terminate()
@@ -98,7 +98,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val setupActorSystem = ActorSystem("setup-actor-system", config)
       for {
         exception <- Future.successful {
-          intercept[MalformedURLException](AkkaBaker(config, setupActorSystem, LocalInteractions()))
+          intercept[MalformedURLException](AkkaBaker(config, setupActorSystem, CachedInteractionManager()))
         }
         _ <- setupActorSystem.terminate()
       } yield assert(exception.getMessage contains "wrong-address")
@@ -119,7 +119,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val setupActorSystem = ActorSystem("setup-actor-system", config)
       for {
         exception <- Future.successful {
-          intercept[IllegalArgumentException](AkkaBaker(config, setupActorSystem, LocalInteractions()))
+          intercept[IllegalArgumentException](AkkaBaker(config, setupActorSystem, CachedInteractionManager()))
         }
         _ <- setupActorSystem.terminate()
       } yield assert(exception.getMessage contains "No default service discovery implementation configured in `akka.discovery.method`")
@@ -246,7 +246,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           |}
         """.stripMargin).withFallback(ConfigFactory.load())
 
-      val baker = AkkaBaker(config, ActorSystem.apply("remoteTest", config), LocalInteractions(mockImplementations))
+      val baker = AkkaBaker(config, ActorSystem.apply("remoteTest", config), CachedInteractionManager(mockImplementations))
 
       for {
         recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
@@ -577,7 +577,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
               .withPredefinedIngredients(("missingJavaOptional", ingredientValue)))
           .withSensoryEvent(initialEvent)
 
-      val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, LocalInteractions(mockImplementations))
+      val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachedInteractionManager(mockImplementations))
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
 
       for {

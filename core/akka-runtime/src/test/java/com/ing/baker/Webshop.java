@@ -11,7 +11,6 @@ import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy;
 import com.ing.baker.recipe.javadsl.Recipe;
 import com.ing.baker.runtime.akka.AkkaBaker;
-import com.ing.baker.runtime.akka.internal.LocalInteractions;
 import com.ing.baker.runtime.javadsl.Baker;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;

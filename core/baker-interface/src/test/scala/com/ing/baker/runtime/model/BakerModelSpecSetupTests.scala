@@ -4,8 +4,7 @@ import cats.effect.{ConcurrentEffect, IO}
 import cats.implicits._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.Recipe
-import com.ing.baker.runtime.model.ScalaDSLRuntime._
-import com.ing.baker.runtime.scaladsl.InteractionInstanceF
+import com.ing.baker.runtime.scaladsl.ScalaDSLRuntime._
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 
@@ -49,7 +48,7 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withInteraction(interactionOne.withName("interactionOneRenamed"))
         .withSensoryEvent(initialEvent)
       for {
-        baker <- context.setupBakerWithNoRecipe(List(InteractionInstanceF.unsafeFrom(new InteractionOneSimple())))
+        baker <- context.setupBakerWithNoRecipe(List(InteractionInstance.unsafeFrom(new InteractionOneSimple())))
         _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), System.currentTimeMillis())
       } yield succeed
     }
@@ -59,7 +58,7 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withInteraction(interactionOne)
         .withSensoryEvent(initialEvent)
       for {
-        baker <- context.setupBakerWithNoRecipe(List((InteractionInstanceF.unsafeFrom(new InteractionOneFieldName()))))
+        baker <- context.setupBakerWithNoRecipe(List((InteractionInstance.unsafeFrom(new InteractionOneFieldName()))))
         _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
       } yield succeed
     }
@@ -70,7 +69,7 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withInteraction(interactionOne)
         .withSensoryEvent(initialEvent)
       for {
-        baker <- context.buildBaker(List(InteractionInstanceF.unsafeFrom(new InteractionOneInterfaceImplementation())))
+        baker <- context.buildBaker(List(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
         _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
       } yield succeed
     }
@@ -80,7 +79,7 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withInteraction(interactionWithAComplexIngredient)
         .withSensoryEvent(initialEvent)
       for {
-        baker <- context.buildBaker(List(InteractionInstanceF.unsafeFrom(mock[ComplexIngredientInteraction])))
+        baker <- context.buildBaker(List(InteractionInstance.unsafeFrom(mock[ComplexIngredientInteraction])))
         _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
       } yield succeed
     }
@@ -122,7 +121,7 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withSensoryEvent(initialEvent)
 
       for {
-        baker <- context.buildBaker(List(InteractionInstanceF.unsafeFrom(new InteractionOneWrongApply())))
+        baker <- context.buildBaker(List(InteractionInstance.unsafeFrom(new InteractionOneWrongApply())))
         _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).attempt.map {
           case Left(e) => e should have('message("No compatible implementation provided for interaction: InteractionOne: List(InteractionOne input size differs: transition expects 2, implementation provides 1)"))
           case Right(_) => fail("Adding an interaction should fail")

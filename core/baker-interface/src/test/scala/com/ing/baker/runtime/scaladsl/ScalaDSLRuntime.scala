@@ -1,7 +1,6 @@
-package com.ing.baker.runtime.model
+package com.ing.baker.runtime.scaladsl
 
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction}
-import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance, InteractionInstanceInput}
 import com.ing.baker.types.Converters.toJava
 import com.ing.baker.types.{Converters, Value}
 
