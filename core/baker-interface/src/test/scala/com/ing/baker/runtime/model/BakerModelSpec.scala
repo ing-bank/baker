@@ -4,12 +4,11 @@ import cats.effect.{ConcurrentEffect, IO, Resource, Sync}
 import cats.implicits._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.Recipe
-import com.ing.baker.runtime.scaladsl.InteractionInstanceF
 import com.ing.bakery.utils.BakeryFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfter, ConfigMap}
-
 import java.util.UUID
+
 import scala.reflect.ClassTag
 
 abstract class BakerModelSpec[F[_]]
@@ -35,9 +34,9 @@ abstract class BakerModelSpec[F[_]]
     runFailureTests()
   }
 
-  case class Context(buildBaker: List[InteractionInstanceF[F]] => F[BakerF[F]]) {
+  case class Context(buildBaker: List[InteractionInstance[F]] => F[BakerF[F]]) {
 
-    def setupBakerWithRecipe(recipeName: String, implementations: List[InteractionInstanceF[F]] = List.empty, appendUUIDToTheRecipeName: Boolean = true)(implicit effect: Sync[F], classTag: ClassTag[F[Any]]): F[(BakerF[F], String)] = {
+    def setupBakerWithRecipe(recipeName: String, implementations: List[InteractionInstance[F]] = List.empty, appendUUIDToTheRecipeName: Boolean = true)(implicit effect: Sync[F], classTag: ClassTag[F[Any]]): F[(BakerF[F], String)] = {
       val newRecipeName = if (appendUUIDToTheRecipeName) s"$recipeName-${UUID.randomUUID().toString}" else recipeName
       val recipe = getRecipe(newRecipeName)
       for {
@@ -46,14 +45,14 @@ abstract class BakerModelSpec[F[_]]
       } yield bakerAndRecipeId
     }
 
-    def setupBakerWithRecipe(recipe: Recipe, implementations: List[InteractionInstanceF[F]])(implicit effect: Sync[F]): F[(BakerF[F], String)] = {
+    def setupBakerWithRecipe(recipe: Recipe, implementations: List[InteractionInstance[F]])(implicit effect: Sync[F]): F[(BakerF[F], String)] = {
       for {
         baker <- buildBaker(implementations)
         recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), System.currentTimeMillis())
       } yield (baker, recipeId)
     }
 
-    def setupBakerWithNoRecipe(implementations: List[InteractionInstanceF[F]])(implicit effect: Sync[F], classTag: ClassTag[F[Any]]): F[BakerF[F]] = {
+    def setupBakerWithNoRecipe(implementations: List[InteractionInstance[F]])(implicit effect: Sync[F], classTag: ClassTag[F[Any]]): F[BakerF[F]] = {
       for {
         _ <- setupMockResponse
         baker <- buildBaker(implementations ++ mockImplementations)

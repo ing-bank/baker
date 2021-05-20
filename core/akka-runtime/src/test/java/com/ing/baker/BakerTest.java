@@ -6,7 +6,6 @@ import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.runtime.akka.AkkaBaker;
-import com.ing.baker.runtime.akka.internal.LocalInteractions;
 import com.ing.baker.runtime.common.BakerException;
 import com.ing.baker.runtime.common.SensoryEventStatus;
 import com.ing.baker.runtime.javadsl.*;

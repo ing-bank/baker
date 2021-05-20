@@ -11,7 +11,7 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireS
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.akka.internal.LocalInteractions
+import com.ing.baker.runtime.akka.internal.CachedInteractionManager
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types
@@ -287,7 +287,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       recipeInstanceIdleTimeout = None,
       retentionCheckInterval = None,
       configuredEncryption = Encryption.NoEncryption,
-      interactionManager = LocalInteractions(),
+      interactionManager = CachedInteractionManager(),
       recipeManager = recipeManager,
       Seq.empty) {
       override def createProcessActor(id: String, compiledRecipe: CompiledRecipe) = petriNetActorRef

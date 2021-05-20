@@ -9,7 +9,7 @@ import com.ing.baker.recipe.CaseClassIngredient
 import com.ing.baker.recipe.TestRecipe.{fireTwoEventsInteraction, _}
 import com.ing.baker.recipe.common.Recipe
 import com.ing.baker.runtime.akka.AkkaBaker
-import com.ing.baker.runtime.akka.internal.LocalInteractions
+import com.ing.baker.runtime.akka.internal.CachedInteractionManager
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import com.ing.baker.types.{Converters, Value}
 import com.typesafe.config.{Config, ConfigFactory}
@@ -214,14 +214,14 @@ trait BakerRuntimeTestBase
   protected def setupBakerWithRecipe(recipe: Recipe, implementations: List[InteractionInstance])
                                     (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
     implicit val contextShift = IO.contextShift(actorSystem.dispatcher)
-    val baker = AkkaBaker(ConfigFactory.load(), actorSystem, LocalInteractions(implementations))
+    val baker = AkkaBaker(ConfigFactory.load(), actorSystem, CachedInteractionManager(implementations))
     baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).map(baker -> _)(actorSystem.dispatcher)
   }
 
   protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Future[Baker] = {
     setupMockResponse()
     implicit val contextShift = IO.contextShift(actorSystem.dispatcher)
-    Future.successful(AkkaBaker(ConfigFactory.load(), actorSystem, LocalInteractions(mockImplementations)))
+    Future.successful(AkkaBaker(ConfigFactory.load(), actorSystem, CachedInteractionManager(mockImplementations)))
   }
 
   protected def setupMockResponse(): Unit = {

@@ -4,9 +4,8 @@ import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.baker.recipe.javadsl.Interaction
-import com.ing.baker.runtime.akka.internal.LocalInteractions
+import com.ing.baker.runtime.akka.internal.CachedInteractionManager
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
-import com.ing.baker.runtime.scaladsl.InteractionInstanceF
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
@@ -18,10 +17,12 @@ import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.server.Server
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import skuber.LabelSelector
-
 import java.io.File
 import java.net.InetSocketAddress
 import java.util
+
+import com.ing.baker.runtime.model.InteractionInstance
+
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
@@ -56,7 +57,7 @@ object Main extends IOApp with LazyLogging {
 
     val pollInterval = Duration.fromNanos(config.getDuration("baker.recipe-poll-interval").toNanos)
 
-    val interactions: List[InteractionInstanceF[IO]] = {
+    val interactions: List[InteractionInstance[IO]] = {
       if (configurationClasses.size() == 0) {
         logger.info("No interactions configured, probably interaction-configuration-classes config parameter is empty")
       }
@@ -70,13 +71,13 @@ object Main extends IOApp with LazyLogging {
         val interactions = interactionsAsJavaMap
           .asScala
           .values
-          .map(InteractionInstanceF.unsafeFrom[IO])
+          .map(InteractionInstance.unsafeFrom[IO])
           .toList
         logger.info(s"Loaded ${interactions.size} interactions from $configurationClass: ${interactions.sortBy(_.name).map(_.name).mkString(",")}")
         interactions
       } toList).flatten
     }
-    val localInteractions = LocalInteractions(interactions)
+    val interactionManager = CachedInteractionManager(interactions)
 
     logger.info("Starting Akka Baker...")
 
@@ -94,7 +95,7 @@ object Main extends IOApp with LazyLogging {
         interactionDiscovery <- InteractionDiscovery.resource(
           interactionHttpClient,
           skuber.k8sInit,
-          localInteractions,
+          interactionManager,
           bakerConfig.getIntList("interactions.localhost-ports").asScala.map(_.toInt).toList,
           noneIfEmpty(bakerConfig.getString("interactions.pod-label-selector"))
             .map(_.split("="))

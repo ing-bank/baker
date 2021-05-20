@@ -6,16 +6,21 @@ import cats.implicits._
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
-import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceF}
+import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
 import com.ing.baker.types.Type
 
 
-trait InteractionsF[F[_]] {
+/**
+  * The InteractionManager is responsible for keeping and calling al InteractionInstances.
+  * The other components of Baker will not call InteractionInstances and will always go through the InteractionManager.
+  * @tparam F
+  */
+trait InteractionManager[F[_]] {
 
 
-  def listAll: F[List[InteractionInstanceF[F]]]
+  def listAll: F[List[InteractionInstance[F]]]
 
-  def findFor(transition: InteractionTransition)(implicit sync: Sync[F]): F[Option[InteractionInstanceF[F]]] =
+  def findFor(transition: InteractionTransition)(implicit sync: Sync[F]): F[Option[InteractionInstance[F]]] =
     listAll.flatMap(all => sync.delay(all.find(compatible(transition, _))))
 
   def existsFor(interaction: InteractionTransition)(implicit sync: Sync[F]): F[Boolean] = findFor(interaction).map(_.nonEmpty)
@@ -27,7 +32,7 @@ trait InteractionsF[F[_]] {
         case None => effect.raiseError(new FatalInteractionException(s"No implementation available for interaction ${interaction.interactionName}"))
       }
 
-  protected def compatible(transition: InteractionTransition, implementation: InteractionInstanceF[F]): Boolean = {
+  protected def compatible(transition: InteractionTransition, implementation: InteractionInstance[F]): Boolean = {
     val interactionNameMatches: Boolean =
       transition.originalInteractionName == implementation.name
     val inputSizeMatches: Boolean =
@@ -119,7 +124,7 @@ trait InteractionsF[F[_]] {
     }
   }
 
-  def incompatibilityReason(transition: InteractionTransition, implementation: InteractionInstanceF[F]): Option[InteractionIncompatible] =
+  def incompatibilityReason(transition: InteractionTransition, implementation: InteractionInstance[F]): Option[InteractionIncompatible] =
     if (implementation.input.size != transition.requiredIngredients.size)
       Some(InteractionMatchInputSizeFailed(transition.interactionName, transition.requiredIngredients.size, implementation.input.size))
     else if(implementation.output.isDefined && implementation.output.get.size > transition.originalEvents.size)

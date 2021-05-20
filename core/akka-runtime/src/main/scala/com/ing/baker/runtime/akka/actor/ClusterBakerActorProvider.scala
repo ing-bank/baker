@@ -19,7 +19,7 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_index._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
-import com.ing.baker.runtime.model.InteractionsF
+import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.runtime.{RecipeManager, RecipeManagerActorImpl, RecipeManagerImpl}
 import com.typesafe.scalalogging.LazyLogging
@@ -98,7 +98,7 @@ class ClusterBakerActorProvider(
   }
 
 
-  override def createProcessIndexActor(interactionManager: InteractionsF[IO],
+  override def createProcessIndexActor(interactionManager: InteractionManager[IO],
                                        recipeManager: RecipeManager)(implicit actorSystem: ActorSystem): ActorRef = {
     val roles = Cluster(actorSystem).selfRoles
     ClusterSharding(actorSystem).start(

@@ -3,10 +3,10 @@ package com.ing.bakery.baker
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.akka.internal.LocalInteractions
+import com.ing.baker.runtime.akka.internal.CachedInteractionManager
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceDescriptor, InteractionInstanceF, InteractionInstanceInput}
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceDescriptor, InteractionInstanceInput}
 import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.types.{ByteArray, CharArray, ListType, RecordField, RecordType}
 import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
@@ -27,6 +27,7 @@ import java.net.InetSocketAddress
 import java.util.UUID
 
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
+import com.ing.baker.runtime.model.InteractionInstance
 
 import scala.concurrent.Future
 
@@ -63,7 +64,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
   def awaitForEmptyServiceDiscovery(context: Context): IO[Assertion] =
     awaitForServiceDiscoveryState(context)(_ shouldBe List.empty)
 
-  def awaitForServiceDiscoveryState(context: Context)(f: List[InteractionInstanceF[IO]] => Assertion): IO[Assertion] =
+  def awaitForServiceDiscoveryState(context: Context)(f: List[InteractionInstance[IO]] => Assertion): IO[Assertion] =
     eventually(
       context.interactions.listAll.map(f)
     )
@@ -417,7 +418,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       k8s: KubernetesClient = skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system)
       httpClient <- BlazeClientBuilder[IO](executionContext).resource
       interactionDiscovery <-
-        InteractionDiscovery.resource(httpClient, k8s, LocalInteractions(),
+        InteractionDiscovery.resource(httpClient, k8s, CachedInteractionManager(),
           List.empty, Some( LabelSelector(LabelSelector.IsEqualRequirement("scope","webshop"))))(contextShift, timer, system)
 
       eventListener = new EventListener()

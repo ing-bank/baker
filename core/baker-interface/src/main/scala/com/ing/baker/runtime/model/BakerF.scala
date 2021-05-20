@@ -44,7 +44,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
 
   override type RecipeInstanceStateType = RecipeInstanceState
 
-  override type InteractionInstanceType = InteractionInstanceF[F]
+  override type InteractionInstanceType = InteractionInstance[F]
 
   override type InteractionInstanceDescriptorType = InteractionInstanceDescriptor
 

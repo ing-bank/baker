@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import cats.effect.{ContextShift, IO}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.runtime.akka.AkkaBaker
-import com.ing.baker.runtime.akka.internal.LocalInteractions
+import com.ing.baker.runtime.akka.internal.CachedInteractionManager
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import org.mockito.Mockito
 import org.mockito.Mockito._
@@ -65,7 +65,7 @@ class WebshopRecipeSpec extends AsyncFlatSpec with Matchers  {
 
     val reserveItemsInstance: InteractionInstance =
       InteractionInstance.unsafeFrom(new ReserveItemsMock)
-    val baker: Baker = AkkaBaker.localDefault(system, LocalInteractions(reserveItemsInstance))
+    val baker: Baker = AkkaBaker.localDefault(system, CachedInteractionManager(reserveItemsInstance))
 
     val compiled = RecipeCompiler.compileRecipe(SimpleWebshopRecipe.recipe)
     val recipeInstanceId: String = UUID.randomUUID().toString
@@ -106,7 +106,7 @@ class WebshopRecipeSpec extends AsyncFlatSpec with Matchers  {
 
     val reserveItemsInstance: InteractionInstance =
       InteractionInstance.unsafeFrom(mockedReserveItems)
-    val baker: Baker = AkkaBaker.localDefault(system, LocalInteractions.apply(reserveItemsInstance))
+    val baker: Baker = AkkaBaker.localDefault(system, CachedInteractionManager.apply(reserveItemsInstance))
 
     val compiled = RecipeCompiler.compileRecipe(SimpleWebshopRecipe.recipe)
     val recipeInstanceId: String = UUID.randomUUID().toString
