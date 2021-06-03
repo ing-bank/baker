@@ -69,7 +69,7 @@ trait InteractionManager[F[_]] {
     transitionIngredients.forall(transitionIngredient =>
       implementationIngredients.exists(implementationIngredient =>
         transitionIngredient.name == implementationIngredient._1 &&
-        transitionIngredient.`type` == implementationIngredient._2
+        transitionIngredient.`type`.isAssignableFrom(implementationIngredient._2)
       ))
   }
 
