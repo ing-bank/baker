@@ -42,7 +42,7 @@ trait InteractionManager[F[_]] {
         transition.requiredIngredients.exists(descriptor => {
           //We cannot use the name of the interaction input since we do not store the original input name.
           //This means it will not bind on renamed ingredients.
-          ingredient.`type`.isAssignableFrom(descriptor.`type`)
+          descriptor.`type`.isAssignableFrom(ingredient.`type`)
         }
       )})
 
