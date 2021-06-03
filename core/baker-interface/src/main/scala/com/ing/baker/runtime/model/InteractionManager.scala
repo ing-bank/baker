@@ -17,6 +17,12 @@ import com.ing.baker.types.Type
   */
 trait InteractionManager[F[_]] {
 
+  /**
+    * If this is set to true it will also allow fur supersets of the output types to be given by the implementations
+    * This can be helpful in case an ENUM type or similar is extended upon and you know these new values will not be given.
+    * If this new value is given from the implementation this will result in te runtime error and a technical failure of the interaction.
+    */
+  val allowSupersetForOutputTypes: Boolean = false
 
   def listAll: F[List[InteractionInstance[F]]]
 
@@ -69,10 +75,10 @@ trait InteractionManager[F[_]] {
     transitionIngredients.forall(transitionIngredient =>
       implementationIngredients.exists(implementationIngredient =>
         transitionIngredient.name == implementationIngredient._1 &&
-        transitionIngredient.`type`.isAssignableFrom(implementationIngredient._2)
+          (transitionIngredient.`type`.isAssignableFrom(implementationIngredient._2) ||
+            allowSupersetForOutputTypes && implementationIngredient._2.isAssignableFrom(transitionIngredient.`type`))
       ))
   }
-
 
   sealed trait InteractionIncompatible
   case object NameNotFound extends InteractionIncompatible

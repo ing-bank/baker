@@ -18,8 +18,14 @@ object CachedInteractionManager {
   def apply(interactionInstance: scaladsl.InteractionInstance)(implicit cs: ContextShift[IO]) =
     new CachedInteractionManager(List(fromFuture(interactionInstance)))
 
+  def apply(interactionInstance: scaladsl.InteractionInstance, allowSupersetForOutputTypes: Boolean)(implicit cs: ContextShift[IO]) =
+    new CachedInteractionManager(List(fromFuture(interactionInstance)), allowSupersetForOutputTypes: Boolean)
+
   def apply(interactionInstances: List[scaladsl.InteractionInstance])(implicit cs: ContextShift[IO]) =
     new CachedInteractionManager(interactionInstances.map(fromFuture))
+
+  def apply(interactionInstances: List[scaladsl.InteractionInstance], allowSupersetForOutputTypes: Boolean)(implicit cs: ContextShift[IO]) =
+    new CachedInteractionManager(interactionInstances.map(fromFuture), allowSupersetForOutputTypes)
 
   private def fromFuture(i: scaladsl.InteractionInstance)(implicit cs: ContextShift[IO]): model.InteractionInstance[IO] = {
     model.InteractionInstance.build(
@@ -41,9 +47,16 @@ object CachedInteractionManager {
       .asScala
       .map {
         case javaInteraction: com.ing.baker.runtime.javadsl.InteractionInstance => fromFuture(javaInteraction.asScala)
-        case other => model.InteractionInstance.unsafeFrom[IO](other)
-      }     .toList
+        case other => model.InteractionInstance.unsafeFrom[IO](other)}.toList
     )
+
+  def fromJava(interactions: java.util.List[AnyRef], allowSupersetForOutputTypes: Boolean)(implicit cs: ContextShift[IO]) =
+    new CachedInteractionManager(interactions
+      .asScala
+      .map {
+        case javaInteraction: com.ing.baker.runtime.javadsl.InteractionInstance => fromFuture(javaInteraction.asScala)
+        case other => model.InteractionInstance.unsafeFrom[IO](other)}.toList
+    ,allowSupersetForOutputTypes)
 
 }
 
@@ -69,9 +82,14 @@ trait CachingTransitionLookups {
 
 /**
   * The CachedInteractionManager is a InteractionManagerF[IO] with an interaction cache to ensure findCompatible is not called every execution
-  * @param availableImplementations
+  *
+  * @param availableImplementations    All the implemntations to be managed by this InteractionManager
+  * @param allowSupersetForOutputTypes If this is set to true it will also allow fur supersets of the output types to be given by the implementations
+  *                                    This can be helpful in case an ENUM type or similar is extended upon and you know these new values will not be given.
+  *                                    If this new value is given from the implementation this will result in te runtime error and a technical failure of the interaction.
   */
-class CachedInteractionManager(val availableImplementations: List[model.InteractionInstance[IO]]) extends InteractionManager[IO] with CachingTransitionLookups {
+class CachedInteractionManager(val availableImplementations: List[model.InteractionInstance[IO]],
+                               override val allowSupersetForOutputTypes: Boolean = false) extends InteractionManager[IO] with CachingTransitionLookups {
 
   override def listAll: IO[List[model.InteractionInstance[IO]]] = IO(availableImplementations)
 

@@ -114,7 +114,6 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         found.output shouldBe interactionImplementation.output
       }
 
-
       "an interaction implementation is available with output defined and a subset of the enum" in {
         val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
@@ -130,6 +129,27 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
           Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", EnumType(Set("A", "B", "C")))))))
 
         val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
+        found.name shouldBe interactionImplementation.name
+        found.input shouldBe interactionImplementation.input
+        found.output shouldBe interactionImplementation.output
+      }
+
+      "an interaction implementation is available with output defined and a superset of the enum with allowSupersetForOutputTypes true" in {
+        val interactionImplementation = mock[InteractionInstance]
+        when(interactionImplementation.name).thenReturn("InteractionName")
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
+        when(interactionImplementation.output).thenReturn(None)
+        when(interactionImplementation.output).thenReturn(Some(Map("outputEvent"-> Map("outputIngredient" -> EnumType(Set("A", "B", "C"))))))
+
+        val interactionTransition = mock[InteractionTransition]
+        when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
+        val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
+        when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
+        when(interactionTransition.originalEvents).thenReturn(
+          Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", EnumType(Set("A", "B")))))))
+
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation), allowSupersetForOutputTypes = true)
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation.name
         found.input shouldBe interactionImplementation.input
