@@ -39,8 +39,14 @@ object CachedInteractionManager {
   def apply(interactionInstance: model.InteractionInstance[IO]) =
     new CachedInteractionManager(List(interactionInstance))
 
+  def apply(interactionInstance: model.InteractionInstance[IO], allowSupersetForOutputTypes: Boolean) =
+    new CachedInteractionManager(List(interactionInstance), allowSupersetForOutputTypes)
+
   def apply(interactionInstances: List[model.InteractionInstance[IO]]) =
     new CachedInteractionManager(interactionInstances)
+
+ def apply(interactionInstances: List[model.InteractionInstance[IO]], allowSupersetForOutputTypes: Boolean) =
+    new CachedInteractionManager(interactionInstances, allowSupersetForOutputTypes)
 
   def fromJava(interactions: java.util.List[AnyRef])(implicit cs: ContextShift[IO]) =
     new CachedInteractionManager(interactions
@@ -96,7 +102,7 @@ class CachedInteractionManager(val availableImplementations: List[model.Interact
   def combine(other: CachedInteractionManager): IO[CachedInteractionManager] = for {
     otherImplementations <- other.listAll
     theseImplementations <- listAll
-  } yield CachedInteractionManager(theseImplementations ++ otherImplementations)
+  } yield CachedInteractionManager(theseImplementations ++ otherImplementations, allowSupersetForOutputTypes)
 
 }
 

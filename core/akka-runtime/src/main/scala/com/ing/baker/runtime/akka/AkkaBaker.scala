@@ -20,6 +20,7 @@ import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.{RecipeManager, javadsl, scaladsl}
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
+import net.ceedubs.ficus.Ficus._
 import com.typesafe.scalalogging.LazyLogging
 
 import java.util.{List => JavaList}
@@ -50,7 +51,7 @@ object AkkaBaker {
 
   def java(config: Config, actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
     new javadsl.Baker(apply(config, actorSystem,
-      CachedInteractionManager.fromJava(interactions)(IO.contextShift(actorSystem.getDispatcher))))
+      CachedInteractionManager.fromJava(interactions, config.getOrElse[Boolean]("interaction-manager.allowSupersetForOutputTypes", false))(IO.contextShift(actorSystem.getDispatcher))))
 
   def javaLocalDefault(actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
     new javadsl.Baker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem,

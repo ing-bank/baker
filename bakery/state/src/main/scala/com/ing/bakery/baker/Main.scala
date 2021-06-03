@@ -46,6 +46,8 @@ object Main extends IOApp with LazyLogging {
     val production = bakerConfig.getBoolean("production-safe-mode")
     val loggingEnabled = bakerConfig.getBoolean("api-logging-enabled")
 
+    val allowSupersetForOutputTypes= bakerConfig.getOrElse[Boolean]("interaction-manager.allowSupersetForOutputTypes", false)
+
     if (production && loggingEnabled) {
       logger.error("Logging of API is enabled, but not allowed in production - stopping JVM")
       System.exit(1)
@@ -77,7 +79,7 @@ object Main extends IOApp with LazyLogging {
         interactions
       } toList).flatten
     }
-    val interactionManager = CachedInteractionManager(interactions)
+    val interactionManager = CachedInteractionManager(interactions, allowSupersetForOutputTypes)
 
     logger.info("Starting Akka Baker...")
 
