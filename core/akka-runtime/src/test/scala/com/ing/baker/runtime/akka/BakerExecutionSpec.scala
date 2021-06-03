@@ -627,6 +627,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ = Thread.sleep(100) //Added a 100 wait before veryfing needed due to the asyn nature of calling event listeners.
         _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), argThat(new RuntimeEventMatcher(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))))
         _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), argThat(new RuntimeEventMatcher(EventInstance.unsafeFrom(InteractionOneSuccessful(interactionOneIngredientValue)))))
       } yield succeed

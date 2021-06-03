@@ -5,7 +5,7 @@ import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
 import com.ing.baker.runtime.scaladsl.{InteractionInstance, InteractionInstanceInput}
 import com.ing.baker.types
-import com.ing.baker.types.{Int16, Int32, Type}
+import com.ing.baker.types.{EnumType, Int16, Int32, Type}
 import org.mockito.Mockito.when
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -26,6 +26,24 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
+        when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
+
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
+        found.name shouldBe interactionImplementation.name
+        found.input shouldBe interactionImplementation.input
+        found.output shouldBe interactionImplementation.output
+      }
+
+      "an interaction implementation is available with input subset of Enum" in {
+        val interactionImplementation = mock[InteractionInstance]
+        when(interactionImplementation.name).thenReturn("InteractionName")
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty,  EnumType(Set("A")))))
+        when(interactionImplementation.output).thenReturn(None)
+
+        val interactionTransition = mock[InteractionTransition]
+        when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
+        val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName",  EnumType(Set("A", "B")))
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
         val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
@@ -67,6 +85,71 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", Int32), IngredientDescriptor("outputIngredient2", Int16)))))
 
         val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
+        found.name shouldBe interactionImplementation.name
+        found.input shouldBe interactionImplementation.input
+        found.output shouldBe interactionImplementation.output
+      }
+
+      "an interaction implementation is available with output defined and a subset of the give output events" in {
+        val interactionImplementation = mock[InteractionInstance]
+        when(interactionImplementation.name).thenReturn("InteractionName")
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
+        when(interactionImplementation.output).thenReturn(None)
+        when(interactionImplementation.output).thenReturn(Some(Map("outputEvent"-> Map("outputIngredient" -> Int32, "outputIngredient2" -> Int16))))
+
+        val interactionTransition = mock[InteractionTransition]
+        when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
+        val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
+        when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
+        when(interactionTransition.originalEvents).thenReturn(
+          Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", Int32), IngredientDescriptor("outputIngredient2", Int16))),
+            EventDescriptor("outputEvent2", Seq(IngredientDescriptor("outputIngredient", Int32), IngredientDescriptor("outputIngredient2", Int16)))
+          ))
+
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
+        found.name shouldBe interactionImplementation.name
+        found.input shouldBe interactionImplementation.input
+        found.output shouldBe interactionImplementation.output
+      }
+
+      "an interaction implementation is available with output defined and a subset of the enum" in {
+        val interactionImplementation = mock[InteractionInstance]
+        when(interactionImplementation.name).thenReturn("InteractionName")
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
+        when(interactionImplementation.output).thenReturn(None)
+        when(interactionImplementation.output).thenReturn(Some(Map("outputEvent"-> Map("outputIngredient" -> EnumType(Set("A", "B"))))))
+
+        val interactionTransition = mock[InteractionTransition]
+        when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
+        val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
+        when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
+        when(interactionTransition.originalEvents).thenReturn(
+          Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", EnumType(Set("A", "B", "C")))))))
+
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
+        found.name shouldBe interactionImplementation.name
+        found.input shouldBe interactionImplementation.input
+        found.output shouldBe interactionImplementation.output
+      }
+
+      "an interaction implementation is available with output defined and a superset of the enum with allowSupersetForOutputTypes true" in {
+        val interactionImplementation = mock[InteractionInstance]
+        when(interactionImplementation.name).thenReturn("InteractionName")
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
+        when(interactionImplementation.output).thenReturn(None)
+        when(interactionImplementation.output).thenReturn(Some(Map("outputEvent"-> Map("outputIngredient" -> EnumType(Set("A", "B", "C"))))))
+
+        val interactionTransition = mock[InteractionTransition]
+        when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
+        val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
+        when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
+        when(interactionTransition.originalEvents).thenReturn(
+          Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", EnumType(Set("A", "B")))))))
+
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation), allowSupersetForOutputTypes = true)
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation.name
         found.input shouldBe interactionImplementation.input
@@ -212,13 +295,64 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
         when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
-        when(interactionImplementation.output).thenReturn(Some(Map("outputEvent"-> Map("outputIngredient" -> Int16, "outputIngredient2" -> Int16))))
+        when(interactionImplementation.output).thenReturn(Some(Map("outputEvent"-> Map("outputIngredient" -> Int32, "outputIngredient2" -> Int16))))
 
         val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
-        when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", Int32), IngredientDescriptor("outputIngredient2", Int16)))))
+        when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", Int16), IngredientDescriptor("outputIngredient2", Int16)))))
+
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
+      }
+
+      "an interaction implementation has a wrong output event enum" in {
+        val interactionImplementation = mock[InteractionInstance]
+        when(interactionImplementation.name).thenReturn("InteractionName")
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
+        when(interactionImplementation.output).thenReturn(Some(Map("outputEvent"-> Map("outputIngredient" -> EnumType(Set("A", "B"))))))
+
+        val interactionTransition = mock[InteractionTransition]
+        when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
+        val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
+        when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
+        when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", EnumType(Set("A", "C")))))))
+
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
+      }
+
+      "an interaction implementation has a wrong output event with extra values for the enum" in {
+        val interactionImplementation = mock[InteractionInstance]
+        when(interactionImplementation.name).thenReturn("InteractionName")
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
+        when(interactionImplementation.output).thenReturn(Some(Map("outputEvent"-> Map("outputIngredient" -> EnumType(Set("A", "B", "C"))))))
+
+        val interactionTransition = mock[InteractionTransition]
+        when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
+        val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
+        when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
+        when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", EnumType(Set("A", "B")))))))
+
+        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
+      }
+
+      "an interaction implementation has a extra output event defined" in {
+        val interactionImplementation = mock[InteractionInstance]
+        when(interactionImplementation.name).thenReturn("InteractionName")
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty, types.Int32)))
+        when(interactionImplementation.output).thenReturn(
+          Some(Map(
+            "outputEvent"-> Map("outputIngredient" -> EnumType(Set("A", "B", "C"))),
+            "outputEvent2"-> Map("outputIngredient" -> EnumType(Set("A", "B", "C"))))))
+
+        val interactionTransition = mock[InteractionTransition]
+        when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
+        val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
+        when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
+        when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", EnumType(Set("A", "C")))))))
 
         val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
