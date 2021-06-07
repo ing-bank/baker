@@ -121,7 +121,8 @@ object InteractionDiscovery extends LazyLogging {
       samePodInteractions <- extractSamePodInteractions(interactionHttpClient, localhostPorts)
       discovery = new InteractionDiscovery(
         samePodInteractions ++ sameJvmInteractions,
-        interactionHttpClient
+        interactionHttpClient,
+        interactionManager.allowSupersetForOutputTypes
       )
       killSwitch <- IO {
         if (podLabelSelector.isDefined) watchSource.toMat(updateSink(discovery))(Keep.left).run()
@@ -138,7 +139,8 @@ object InteractionDiscovery extends LazyLogging {
 }
 
 final class InteractionDiscovery(val availableInteractions: List[InteractionInstance[IO]],
-                                 interactionHttpClient: Client[IO])
+                                 interactionHttpClient: Client[IO],
+                                 override val allowSupersetForOutputTypes: Boolean)
                                 (implicit sync: Sync[IO]) extends InteractionManager[IO] with CachingTransitionLookups with LazyLogging {
 
   import InteractionDiscovery._
@@ -175,5 +177,4 @@ final class InteractionDiscovery(val availableInteractions: List[InteractionInst
         IO(logger.error(s"Event type ERROR on service watch for service ${event._object}"))
     }
   }) getOrElse IO.unit
-
 }

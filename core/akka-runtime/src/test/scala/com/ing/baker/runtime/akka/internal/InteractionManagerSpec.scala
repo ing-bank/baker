@@ -38,12 +38,12 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
       "an interaction implementation is available with input subset of Enum" in {
         val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
-        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty,  EnumType(Set("A")))))
+        when(interactionImplementation.input).thenReturn(Seq(InteractionInstanceInput(Option.empty,  EnumType(Set("A", "B")))))
         when(interactionImplementation.output).thenReturn(None)
 
         val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
-        val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName",  EnumType(Set("A", "B")))
+        val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName",  EnumType(Set("A")))
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
         val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
