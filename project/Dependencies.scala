@@ -131,8 +131,8 @@ object Dependencies {
 
   val snakeYaml = "org.yaml" % "snakeyaml" % "1.28"
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.4"
-  val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.68"
-  val bouncyCastleBcpkix ="org.bouncycastle" % "bcpkix-jdk15on" % "1.68"
+  val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.69"
+  val bouncyCastleBcpkix ="org.bouncycastle" % "bcpkix-jdk15on" % "1.69"
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) = modules.map(m => m % scope)
 
