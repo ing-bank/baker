@@ -57,6 +57,8 @@ object Main extends IOApp with LazyLogging {
 
     val eventSinkSettings = bakerConfig.getConfig("event-sink")
 
+    val recipeCacheSettings = bakerConfig.getConfig("recipe-cache")
+
     val pollInterval = Duration.fromNanos(config.getDuration("baker.recipe-poll-interval").toNanos)
 
     val interactions: List[InteractionInstance[IO]] = {
@@ -85,7 +87,7 @@ object Main extends IOApp with LazyLogging {
 
     val remoteInteractionCallContext: ExecutionContext = system.dispatchers.lookup("akka.actor.remote-interaction-dispatcher")
 
-    val mainResource: Resource[IO, (Server[IO], AkkaBaker)] =
+    val mainResource: Resource[IO, (Server[IO], AkkaBaker, RecipeCache)] =
       for {
         _ <- Watcher.resource(config, system)
         _ <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
@@ -112,7 +114,8 @@ object Main extends IOApp with LazyLogging {
         )(system))
 
         _ <- Resource.eval(eventSink.attach(baker))
-        _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(configPath, baker))
+        recipeCache <- RecipeCache.resource(recipeCacheSettings)
+        _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(configPath, recipeCache, baker))
         _ <- Resource.eval(IO.async[Unit] { callback =>
           //If using local Baker the registerOnMemberUp is never called, should onl be used during local testing.
           if (bakerConfig.getString("actor.provider") == "local")
@@ -131,13 +134,13 @@ object Main extends IOApp with LazyLogging {
         bakerService <- BakerService.resource(baker,
           InetSocketAddress.createUnresolved("0.0.0.0", apiPort),
           apiUrlPrefix, dashboardPath, interactionDiscovery, loggingEnabled)
-      } yield (bakerService, baker)
+      } yield (bakerService, baker, recipeCache)
 
     mainResource.use {
-      case (s, baker) => {
+      case (s, baker, recipeCache) => {
         logger.info(s"Bakery started at ${s.address}/${s.baseUri}, enabling the readiness in Akka management")
         BakerReadinessCheck.enable()
-        RecipeLoader.pollRecipesUpdates(configPath, baker, pollInterval)
+        RecipeLoader.pollRecipesUpdates(configPath, recipeCache, baker, pollInterval)
       }
     }.as(ExitCode.Success)
   }

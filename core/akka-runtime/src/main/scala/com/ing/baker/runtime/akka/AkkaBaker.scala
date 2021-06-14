@@ -15,7 +15,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
 import com.ing.baker.runtime.akka.internal.CachedInteractionManager
 import com.ing.baker.runtime.common.BakerException._
-import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.common.{RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.{RecipeManager, javadsl, scaladsl}
 import com.ing.baker.types.Value
@@ -83,19 +83,20 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
-  override def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] = {
-
-    if (config.bakerValidationSettings.allowAddingRecipeWithoutRequiringInstances) {
-      addToManager(compiledRecipe, timeCreated)
+  override def addRecipe(recipeRecord: RecipeRecord): Future[String] = {
+    val recipe = recipeRecord.recipe
+    val updated = recipeRecord.updated
+    if (recipeRecord.onlyInCache || config.bakerValidationSettings.allowAddingRecipeWithoutRequiringInstances) {
+      addToManager(recipe, updated)
     } else {
       // check if every interaction has an implementation
-      getImplementationErrors(compiledRecipe).flatMap { implementationErrors =>
+      getImplementationErrors(recipe).flatMap { implementationErrors =>
         if (implementationErrors.nonEmpty) {
           Future.failed(ImplementationsException(implementationErrors.mkString(", ")))
-        } else if (compiledRecipe.validationErrors.nonEmpty) {
-          Future.failed(RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
+        } else if (recipe.validationErrors.nonEmpty) {
+          Future.failed(RecipeValidationException(recipe.validationErrors.mkString(", ")))
         } else {
-          addToManager(compiledRecipe, timeCreated)
+          addToManager(recipe, updated)
         }
       }
     }

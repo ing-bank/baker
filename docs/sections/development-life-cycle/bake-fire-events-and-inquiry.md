@@ -41,7 +41,7 @@ to block and do normal synchronous/blocking programming._
 
     val program: Future[Unit] = for {
       _ <- baker.addInteractionInstance(WebshopInstancesReflection.reserveItemsInstance)
-      recipeId <- baker.addRecipe(compiledRecipe)
+      recipeId <- baker.addRecipe(RecipeRecord.of(compiledRecipe))
     } yield ()
 
     ```
@@ -68,7 +68,7 @@ to block and do normal synchronous/blocking programming._
             CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
             CompletableFuture<String> asyncRecipeId = baker.addInteractionInstance(reserveItemsInstance)
-                .thenCompose(ignore -> baker.addRecipe(compiledRecipe));
+                .thenCompose(ignore -> baker.addRecipe(RecipeRecord.of(compiledRecipe)));
 
             // Blocks, not recommended but useful for testing or trying things out
             String recipeId = asyncRecipeId.join();
@@ -83,7 +83,7 @@ which will hold the state of your process, listen to `EventInstances`, execute y
 `IngredientInstances` are available and handle any failure state. 
 
 `RecipeInstances` can be created by choosing a `CompiledRecipe` by using the `recipeId` yielded by the 
-`Baker.addRecipe(compiledRecipe)` API, and by providing a `recipeInstanceId` of your choosing; you will use this last id
+`Baker.addRecipe(RecipeRecord.of(compiledRecipe))` API, and by providing a `recipeInstanceId` of your choosing; you will use this last id
 to reference and interact with the created `RecipeInstance`. Use the `Baker.bake(recipeId, recipeInstanceId)` API for 
 creating a `RecipeInstance`.
 
@@ -114,7 +114,7 @@ for more on this please refer to the [configuration section](../../development-l
 
     val program: Future[Unit] = for {
       _ <- baker.addInteractionInstance(WebshopInstancesReflection.reserveItemsInstance)
-      recipeId <- baker.addRecipe(compiledRecipe)
+      recipeId <- baker.addRecipe(RecipeRecord.of(compiledRecipe))
       _ <- baker.bake(recipeId, "first-instance-id")
     } yield ()
 
@@ -147,7 +147,7 @@ for more on this please refer to the [configuration section](../../development-l
             CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
             CompletableFuture<BoxedUnit> asyncRecipeId = baker.addInteractionInstance(reserveItemsInstance)
-                .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
+                .thenCompose(ignore -> baker.addRecipe(RecipeRecord.of(compiledRecipe)))
                 .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId));
         }
     }
@@ -203,7 +203,7 @@ to the moment the `onEventName` was fired.
 
     val program: Future[Unit] = for {
       _ <- baker.addInteractionInstance(WebshopInstancesReflection.reserveItemsInstance)
-      recipeId <- baker.addRecipe(compiledRecipe)
+      recipeId <- baker.addRecipe(RecipeRecord.of(compiledRecipe))
       _ <- baker.bake(recipeId, "first-instance-id")
       firstOrderPlaced: EventInstance =
         EventInstance.unsafeFrom(WebshopRecipeReflection.OrderPlaced("order-uuid", List("item1", "item2")))
@@ -249,7 +249,7 @@ to the moment the `onEventName` was fired.
 
             String recipeInstanceId = "first-instance-id";
             CompletableFuture<List<String>> result = baker.addInteractionInstance(reserveItemsInstance)
-                .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
+                .thenCompose(ignore -> baker.addRecipe(RecipeRecord.of(compiledRecipe)))
                 .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
                 .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
                 .thenApply(EventResult::events);

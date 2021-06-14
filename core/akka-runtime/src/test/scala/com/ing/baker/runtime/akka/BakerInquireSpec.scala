@@ -1,10 +1,12 @@
 package com.ing.baker.runtime.akka
 
-import akka.persistence.inmemory.extension.{ InMemoryJournalStorage, StorageExtension }
+import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.testkit.TestProbe
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe.getRecipe
+import com.ing.baker.runtime.common.RecipeRecord
+
 import scala.language.postfixOps
 
 class BakerInquireSpec extends BakerRuntimeTestBase {
@@ -33,7 +35,7 @@ class BakerInquireSpec extends BakerRuntimeTestBase {
     "return all recipes if asked" in {
       for {
         (baker, recipeId) <- setupBakerWithRecipe("returnAllRecipes", false)
-        recipeId2 <- baker.addRecipe(RecipeCompiler.compileRecipe(getRecipe("returnAllRecipes2")))
+        recipeId2 <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(getRecipe("returnAllRecipes2"))))
         recipes <- baker.getAllRecipes
         _ = recipes.size shouldBe 2
         _ = recipes(recipeId).compiledRecipe.name shouldBe "returnAllRecipes"
@@ -52,7 +54,7 @@ class BakerInquireSpec extends BakerRuntimeTestBase {
     "return no errors of all recipes if none contain errors if asked" in {
       for {
         (baker, recipeId) <- setupBakerWithRecipe("returnHealthAllRecipe", false)
-        recipeId2 <- baker.addRecipe(RecipeCompiler.compileRecipe(getRecipe("returnHealthAllRecipe2")))
+        recipeId2 <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(getRecipe("returnHealthAllRecipe2"))))
         recipeInformations <- baker.getAllRecipes
         _ = recipeInformations.size shouldBe 2
         _ = recipeInformations.get(recipeId)

@@ -4,6 +4,7 @@ import cats.effect.{ConcurrentEffect, IO}
 import cats.implicits._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.Recipe
+import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.ScalaDSLRuntime._
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -24,7 +25,7 @@ trait BakerModelSpecSetupTests[F[_]] {
       for {
         baker <- context.setupBakerWithNoRecipe(mockImplementations)
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful("foobar")))
-        recipeId <- baker.addRecipe(simpleRecipe, System.currentTimeMillis())
+        recipeId <- baker.addRecipe(RecipeRecord.of(simpleRecipe))
         recipeInstanceId = java.util.UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, initialEvent.instance("initialIngredient"))
@@ -49,7 +50,7 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withSensoryEvent(initialEvent)
       for {
         baker <- context.setupBakerWithNoRecipe(List(InteractionInstance.unsafeFrom(new InteractionOneSimple())))
-        _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), System.currentTimeMillis())
+        _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
       } yield succeed
     }
 
@@ -59,7 +60,7 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withSensoryEvent(initialEvent)
       for {
         baker <- context.setupBakerWithNoRecipe(List((InteractionInstance.unsafeFrom(new InteractionOneFieldName()))))
-        _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
       } yield succeed
     }
 
@@ -70,7 +71,7 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withSensoryEvent(initialEvent)
       for {
         baker <- context.buildBaker(List(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
-        _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
       } yield succeed
     }
 
@@ -80,7 +81,7 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withSensoryEvent(initialEvent)
       for {
         baker <- context.buildBaker(List(InteractionInstance.unsafeFrom(mock[ComplexIngredientInteraction])))
-        _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
       } yield succeed
     }
 
@@ -92,7 +93,7 @@ trait BakerModelSpecSetupTests[F[_]] {
 
       for {
         baker <- context.buildBaker(mockImplementations)
-        _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).attempt.map {
+        _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe))).attempt.map {
           case Left(e) => e should have('message("Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction"))
           case Right(_) => fail("Adding a recipe should fail")
         }
@@ -107,7 +108,7 @@ trait BakerModelSpecSetupTests[F[_]] {
 
       for {
         baker <- context.buildBaker(List.empty)
-        _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).attempt.map {
+        _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe))).attempt.map {
           case Left(e) => e should have('message("No compatible implementation provided for interaction: InteractionOne: List(NameNotFound)"))
           case Right(_) => fail("Adding a recipe should fail")
         }
@@ -122,7 +123,7 @@ trait BakerModelSpecSetupTests[F[_]] {
 
       for {
         baker <- context.buildBaker(List(InteractionInstance.unsafeFrom(new InteractionOneWrongApply())))
-        _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).attempt.map {
+        _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe))).attempt.map {
           case Left(e) => e should have('message("No compatible implementation provided for interaction: InteractionOne: List(InteractionOne input size differs: transition expects 2, implementation provides 1)"))
           case Right(_) => fail("Adding an interaction should fail")
         }

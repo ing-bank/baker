@@ -5,6 +5,7 @@ import com.datastax.oss.driver.shaded.guava.common.collect.ImmutableList;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.runtime.akka.AkkaBaker;
+import com.ing.baker.runtime.common.RecipeRecord;
 import com.ing.baker.runtime.javadsl.*;
 import com.typesafe.config.ConfigFactory;
 
@@ -40,7 +41,7 @@ public class JMain {
         baker.registerBakerEventListener((BakerEvent event) -> System.out.println(event));
 
         String recipeInstanceId = "first-instance-id";
-        CompletableFuture<List<String>> result = baker.addRecipe(compiledRecipe)
+        CompletableFuture<List<String>> result = baker.addRecipe(RecipeRecord.of(compiledRecipe))
             .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
             .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
             .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))

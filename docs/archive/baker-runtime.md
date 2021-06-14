@@ -98,13 +98,13 @@ Once you have compiled your recipe you can add it to Baker.
 === "Scala"
 
     ```scala 
-    baker.addRecipe(compiledRecipe)
+    baker.addRecipe(RecipeRecord.of(compiledRecipe))
     ```
     
 === "Java"
 
     ```java 
-    baker.addRecipe(compiledRecipe);
+    baker.addRecipe(RecipeRecord.of(compiledRecipe));
     ```
 
 ## Putting it all together
@@ -126,7 +126,7 @@ JBaker baker = new JBaker();
 baker.addInteractionInstances(validateOrderImpl, manufactureGoodsImpl);
 
 // Add the Compiled Recipe
-String recipeId = baker.addRecipe(compiledRecipe);
+String recipeId = baker.addRecipe(RecipeRecord.of(compiledRecipe));
 ```
 
 Baker is now ready to create an instance for the recipe and execute it.

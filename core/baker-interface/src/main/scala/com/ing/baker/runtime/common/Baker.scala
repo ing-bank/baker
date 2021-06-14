@@ -34,25 +34,7 @@ trait Baker[F[_]] extends LanguageApi {
 
   type RecipeMetadataType <: RecipeEventMetadata { type Language <: self.Language }
 
-  /**
-    * Adds a recipe to baker and returns a recipeId for the recipe.
-    *
-    * This function is idempotent, if the same (equal) recipe was added earlier this will return the same recipeId
-    *
-    * @param compiledRecipe The compiled recipe.
-    * @return A recipeId
-    */
-  def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): F[String]
-
-  /**
-    * Adds a recipe to baker and returns a recipeId for the recipe.
-    *
-    * This function is idempotent, if the same (equal) recipe was added earlier this will return the same recipeId
-    *
-    * @param compiledRecipe The compiled recipe.
-    * @return A recipeId
-    */
-  def addRecipe(compiledRecipe: CompiledRecipe): F[String] = addRecipe(compiledRecipe, System.currentTimeMillis())
+  def addRecipe(recipe: RecipeRecord): F[String]
 
   /**
     * Returns the recipe information for the given RecipeId
@@ -345,4 +327,16 @@ trait Baker[F[_]] extends LanguageApi {
     * @return
     */
   def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): F[Unit]
+}
+
+case class RecipeRecord(
+                         recipeId: String,
+                         name: String,
+                         updated: Long,
+                         recipe: CompiledRecipe,
+                         onlyInCache: Boolean
+                       )
+object RecipeRecord {
+  def of(recipe: CompiledRecipe, updated: Long = System.currentTimeMillis(), fromCache: Boolean = false) =
+    RecipeRecord(recipe.recipeId, recipe.name, updated, recipe, fromCache)
 }
