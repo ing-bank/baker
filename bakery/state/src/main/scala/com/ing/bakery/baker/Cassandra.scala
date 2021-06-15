@@ -10,8 +10,6 @@ import scala.concurrent.ExecutionContext
 
 /**
   * This trait allows to implement custom Cassandra session providers, shared between multiple elements that need cassandra persistence.
-  *
-  * @tparam
   */
 trait Cassandra {
   def session[F[_]]: F[CqlSession]
