@@ -22,19 +22,19 @@ object RecipeCache extends LazyLogging {
 
     Resource.eval({
       maybeCassandra map { cassandra =>
-      val providerClass = settings.getString("provider-class")
-      if (providerClass.isEmpty) {
-        logger.info("No provider class specified: recipe cache disabled")
+      val clazz = settings.getString("class")
+      if (clazz.isEmpty) {
+        logger.info("No class specified: recipe cache disabled")
         IO(NoCache)
       } else {
-        cassandra.session[IO] flatMap { session =>
-          IO(Try(Class.forName(providerClass).getDeclaredConstructor(classOf[CqlSession])
-            .newInstance().asInstanceOf[RecipeCache]) match {
+        cassandra.session flatMap { session =>
+          IO(Try(Class.forName(clazz).getDeclaredConstructor(classOf[CqlSession])
+            .newInstance(session).asInstanceOf[RecipeCache]) match {
             case Success(cache: RecipeCache) =>
-              logger.info(s"Using recipe cache implementation $providerClass")
+              logger.info(s"Using recipe cache implementation $clazz")
               cache
             case Success(_) =>
-              logger.warn(s"Recipe cache provider class $providerClass must extend ${RecipeCache.getClass.getCanonicalName}")
+              logger.warn(s"Recipe cache provider class $clazz must extend ${RecipeCache.getClass.getCanonicalName}")
               NoCache
             case Failure(exception) =>
               logger.error("Error initialising Kafka sink", exception)
