@@ -70,28 +70,28 @@ object RecipeLoader extends LazyLogging {
 
     for {
       files <- recipeFiles(path)
-      recipes <- files.traverse {
-        f => fromInputStream(f.toPath)
-      }
+      recipes <- files.traverse(f => fromFile(f.toPath))
     } yield recipes.map { case (recipe, updated) =>
       RecipeRecord(recipe.name, recipe.recipeId, updated, recipe, onlyInCache = false)
     }
   }
 
+  def fromFile(f: Path): IO[(CompiledRecipe, Long)] = {
+    for {
+      recipe <- fromBytes(inputStreamToBytes(Files.newInputStream(f)))
+      updated <- IO(Files.readAttributes(f, classOf[BasicFileAttributes]).lastModifiedTime().toMillis)
+    } yield (recipe, updated)
+  }
+
   private def inputStreamToBytes(is: InputStream): Array[Byte] =
     Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray
 
-  def fromInputStream(path: Path): IO[(CompiledRecipe, Long)] = {
+  def fromBytes(rawBytes: Array[Byte]): IO[CompiledRecipe] = {
     for {
-      rawBytes <- IO(inputStreamToBytes(Files.newInputStream(path)))
       decodedBytes <- IO.fromTry(decode(rawBytes))
       payload <- IO.fromTry(unzip(decodedBytes))
       protoRecipe <- IO.fromTry(protobuf.CompiledRecipe.validate(payload))
       recipe <- IO.fromTry(ProtoMap.ctxFromProto(protoRecipe))
-    } yield {
-      val attr = Files.readAttributes(path, classOf[BasicFileAttributes])
-      val millis: Long = attr.lastModifiedTime().toMillis
-      (recipe, millis)
-    }
+    } yield recipe
   }
 }
