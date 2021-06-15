@@ -46,7 +46,7 @@ object Main extends IOApp with LazyLogging {
     val production = bakerConfig.getBoolean("production-safe-mode")
     val loggingEnabled = bakerConfig.getBoolean("api-logging-enabled")
 
-    val allowSupersetForOutputTypes= bakerConfig.getOrElse[Boolean]("interaction-manager.allowSupersetForOutputTypes", false)
+    val allowSupersetForOutputTypes= bakerConfig.getOrElse[Boolean]("interaction-manager.allow-superset-for-output-types", false)
 
     if (production && loggingEnabled) {
       logger.error("Logging of API is enabled, but not allowed in production - stopping JVM")
@@ -54,10 +54,6 @@ object Main extends IOApp with LazyLogging {
     }
 
     val configurationClasses = bakerConfig.getStringList("interactions.local-configuration-classes")
-
-    val eventSinkSettings = bakerConfig.getConfig("event-sink")
-
-    val recipeCacheSettings = bakerConfig.getConfig("recipe-cache")
 
     val pollInterval = Duration.fromNanos(config.getDuration("baker.recipe-poll-interval").toNanos)
 
@@ -89,13 +85,13 @@ object Main extends IOApp with LazyLogging {
 
     val mainResource: Resource[IO, (Server[IO], AkkaBaker, RecipeCache)] =
       for {
-        _ <- Watcher.resource(config, system)
+        maybeCassandra <- Cassandra.resource(config, system)
+        _ <- Watcher.resource(config, system, maybeCassandra)
         _ <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
         interactionHttpClient <- BlazeClientBuilder[IO](remoteInteractionCallContext, None) // todo SSL context
           .withCheckEndpointAuthentication(false)
           .resource
-        eventSink <- EventSink.resource(eventSinkSettings)
-
+        eventSink <- EventSink.resource(bakerConfig.getConfig("event-sink"))
         interactionDiscovery <- InteractionDiscovery.resource(
           interactionHttpClient,
           skuber.k8sInit,
@@ -114,7 +110,7 @@ object Main extends IOApp with LazyLogging {
         )(system))
 
         _ <- Resource.eval(eventSink.attach(baker))
-        recipeCache <- RecipeCache.resource(recipeCacheSettings)
+        recipeCache <- RecipeCache.resource(bakerConfig.getConfig("recipe-cache"), system, maybeCassandra)
         _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(configPath, recipeCache, baker))
         _ <- Resource.eval(IO.async[Unit] { callback =>
           //If using local Baker the registerOnMemberUp is never called, should onl be used during local testing.

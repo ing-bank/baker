@@ -51,7 +51,7 @@ object AkkaBaker {
 
   def java(config: Config, actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
     new javadsl.Baker(apply(config, actorSystem,
-      CachedInteractionManager.fromJava(interactions, config.getOrElse[Boolean]("baker.interaction-manager.allowSupersetForOutputTypes", false))(IO.contextShift(actorSystem.getDispatcher))))
+      CachedInteractionManager.fromJava(interactions, config.getOrElse[Boolean]("baker.interaction-manager.allow-superset-for-output-types", false))(IO.contextShift(actorSystem.getDispatcher))))
 
   def javaLocalDefault(actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
     new javadsl.Baker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem,
