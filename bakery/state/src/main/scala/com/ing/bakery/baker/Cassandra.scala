@@ -6,13 +6,13 @@ import com.datastax.oss.driver.api.core.CqlSession
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * This trait allows to implement custom Cassandra session providers, shared between multiple elements that need cassandra persistence.
   */
 trait Cassandra {
-  def session(implicit cs: ContextShift[IO]): IO[CqlSession]
+  def session: Future[CqlSession]
 }
 
 object Cassandra extends LazyLogging {
@@ -23,7 +23,10 @@ object Cassandra extends LazyLogging {
         val provider = config.getString("baker.cassandra.class")
         if (provider != "") {
           val configPath = config.getString("baker.cassandra.config-path")
-          Some(Class.forName(provider).getDeclaredConstructor(classOf[ActorSystem], classOf[Config]).newInstance(system, config.getConfig(configPath))
+          Some(Class
+            .forName(provider)
+            .getDeclaredConstructor(classOf[ActorSystem], classOf[Config], classOf[ExecutionContext])
+            .newInstance(system, config.getConfig(configPath), ec)
             .asInstanceOf[Cassandra])
         } else None
       }

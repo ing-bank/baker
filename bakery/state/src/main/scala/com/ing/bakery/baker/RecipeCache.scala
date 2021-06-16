@@ -11,7 +11,9 @@ import scala.util.{Failure, Success, Try}
 
 trait RecipeCache {
   def init: IO[Unit] = IO.unit
+
   def merge(recipes: List[RecipeRecord]): IO[List[RecipeRecord]] = IO(recipes)
+
   def close(): Unit = ()
 }
 
@@ -28,24 +30,23 @@ object RecipeCache extends LazyLogging {
           logger.info("No class specified: recipe cache disabled")
           IO(NoCache)
         } else {
-          cassandra.session flatMap { session =>
-            for {
-              cache <- IO(
-                Try(Class.forName(clazz).getDeclaredConstructor(classOf[Config], classOf[CqlSession])
-                  .newInstance(config, session).asInstanceOf[RecipeCache]) match {
-                  case Success(cache: RecipeCache) =>
-                    logger.info(s"Using recipe cache implementation $clazz")
-                    cache
-                  case Success(_) =>
-                    logger.warn(s"Recipe cache provider class $clazz must extend ${RecipeCache.getClass.getCanonicalName}")
-                    NoCache
-                  case Failure(exception) =>
-                    logger.error("Error initialising Kafka sink", exception)
-                    NoCache
-                })
-              _ <- cache.init
-            } yield cache
-          }
+          for {
+            session <- IO.fromFuture(IO(cassandra.session))
+            cache <- IO(
+              Try(Class.forName(clazz).getDeclaredConstructor(classOf[Config], classOf[CqlSession])
+                .newInstance(config, session).asInstanceOf[RecipeCache]) match {
+                case Success(cache: RecipeCache) =>
+                  logger.info(s"Using recipe cache implementation $clazz")
+                  cache
+                case Success(_) =>
+                  logger.warn(s"Recipe cache provider class $clazz must extend ${RecipeCache.getClass.getCanonicalName}")
+                  NoCache
+                case Failure(exception) =>
+                  logger.error("Error initialising Kafka sink", exception)
+                  NoCache
+              })
+            _ <- cache.init
+          } yield cache
         }
       }
     } getOrElse IO(NoCache))
