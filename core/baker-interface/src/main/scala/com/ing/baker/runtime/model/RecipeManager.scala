@@ -4,6 +4,7 @@ import cats.effect.{Effect, Timer}
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.BakerException.{ImplementationsException, NoSuchRecipeException, RecipeValidationException}
+import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.{RecipeAdded, RecipeInformation}
 
 import scala.concurrent.duration
@@ -12,9 +13,9 @@ trait RecipeManager[F[_]] {
 
   protected def store(compiledRecipe: CompiledRecipe, timestamp: Long): F[Unit]
 
-  protected def fetchAll: F[Map[String, (CompiledRecipe, Long)]]
+  protected def fetchAll: F[Map[String, RecipeRecord]]
 
-  protected def fetch(recipeId: String): F[Option[(CompiledRecipe, Long)]]
+  protected def fetch(recipeId: String): F[Option[RecipeRecord]]
 
   def addRecipe(compiledRecipe: CompiledRecipe, allowAddingRecipeWithoutRequiringInstances: Boolean)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[String] =
     for {
@@ -37,18 +38,18 @@ trait RecipeManager[F[_]] {
 
   def getRecipe(recipeId: String)(implicit components: BakerComponents[F], effect: Effect[F]): F[RecipeInformation] =
     fetch(recipeId).flatMap[RecipeInformation] {
-      case Some((compiledRecipe, timestamp)) =>
-        getImplementationErrors(compiledRecipe).map(
-          RecipeInformation(compiledRecipe, timestamp, _))
+      case Some(r: RecipeRecord) =>
+        getImplementationErrors(r.recipe).map( errors =>
+          RecipeInformation(r.recipe, r.updated, errors, r.onlyInCache))
       case None =>
         effect.raiseError(NoSuchRecipeException(recipeId))
     }
 
   def getAllRecipes(implicit components: BakerComponents[F], effect: Effect[F]): F[Map[String, RecipeInformation]] =
     fetchAll.flatMap(_.toList
-      .traverse { case (recipeId, (compiledRecipe, timestamp)) =>
-        getImplementationErrors(compiledRecipe)
-          .map(errors => recipeId -> RecipeInformation(compiledRecipe, timestamp, errors))
+      .traverse { case (recipeId, r) =>
+        getImplementationErrors(r.recipe)
+          .map(errors => recipeId -> RecipeInformation(r.recipe, r.updated, errors, r.onlyInCache))
       }
       .map(_.toMap))
 

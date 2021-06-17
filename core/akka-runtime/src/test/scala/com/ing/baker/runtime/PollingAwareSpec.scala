@@ -1,6 +1,7 @@
 package com.ing.baker.runtime
 
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.common.RecipeRecord
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AsyncWordSpecLike
@@ -18,19 +19,19 @@ class PollingAwareSpec extends AsyncWordSpecLike
   private[runtime] class RecipeManagerImpl(implicit val ex: ExecutionContext) extends RecipeManager {
     var count: Int = 0
 
-    val state:TrieMap[String, (CompiledRecipe, Long)] = TrieMap.empty
+    val state:TrieMap[String, RecipeRecord] = TrieMap.empty
 
-    override def put(compiledRecipe: CompiledRecipe, createdTime: Long): Future[String] = {
+    override def put(recipeRecord: RecipeRecord): Future[String] = {
       count = count + 1
-      state.+=((compiledRecipe.recipeId, (compiledRecipe, createdTime)))
-      Future.successful(compiledRecipe.recipeId)
+      state.+=((recipeRecord.recipeId, recipeRecord))
+      Future.successful(recipeRecord.recipeId)
     }
 
-    override def get(recipeId: String): Future[Option[(CompiledRecipe, Long)]] = {
+    override def get(recipeId: String): Future[Option[RecipeRecord]] = {
       Future.successful(state.get(recipeId))
     }
 
-    override def all: Future[Seq[(CompiledRecipe, Long)]] = {
+    override def all: Future[Seq[RecipeRecord]] = {
       Future.successful(state.values.toSeq)
     }
   }
@@ -45,11 +46,11 @@ class PollingAwareSpec extends AsyncWordSpecLike
 
       val sameTime = System.currentTimeMillis()
       for {
-        _ <- manager.put(recipe, sameTime) // the first call
-        _ <- manager.put(recipe, sameTime) // ignored: same as first
-        _ <- manager.put(recipe, sameTime) // ignored: it even earlier
-        _ <- manager.put(recipe2, sameTime) // added: new Recipe
-        _ <- manager.put(recipe2, sameTime + 1000) // update: because time in future
+        _ <- manager.put(RecipeRecord.of(recipe, updated = sameTime)) // the first call
+        _ <- manager.put(RecipeRecord.of(recipe, updated = sameTime)) // ignored: same as first
+        _ <- manager.put(RecipeRecord.of(recipe, updated = sameTime)) // ignored: it even earlier
+        _ <- manager.put(RecipeRecord.of(recipe2, updated = sameTime)) // added: new Recipe
+        _ <- manager.put(RecipeRecord.of(recipe2, updated = sameTime + 1000)) // update: because time in future
       } yield {
         manager.count mustEqual(2)
       }

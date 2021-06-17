@@ -103,7 +103,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   }
 
   private def addToManager(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] =
-    recipeManager.put(compiledRecipe, timeCreated)
+    recipeManager.put(RecipeRecord.of(compiledRecipe, updated = timeCreated))
 
   private def getImplementationErrors(compiledRecipe: CompiledRecipe): Future[Set[String]] = {
     compiledRecipe.interactionTransitions.toList
@@ -123,8 +123,8 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   override def getRecipe(recipeId: String): Future[RecipeInformation] = {
     // here we ask the RecipeManager actor to return us the recipe for the given id
     recipeManager.get(recipeId).flatMap {
-      case Some((compiledRecipe, timestamp)) =>
-        getImplementationErrors(compiledRecipe).map(RecipeInformation(compiledRecipe, timestamp, _))
+      case Some(r: RecipeRecord) =>
+        getImplementationErrors(r.recipe).map(errors => RecipeInformation(r.recipe, r.updated, errors, r.onlyInCache ))
       case None =>
         Future.failed(NoSuchRecipeException(recipeId))
     }
@@ -143,8 +143,8 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     recipeManager.all
       .flatMap(
         _.toList
-          .traverse(ri => getImplementationErrors(ri._1)
-            .map(errors => ri._1.recipeId -> RecipeInformation(ri._1, ri._2, errors))
+          .traverse(ri => getImplementationErrors(ri.recipe)
+            .map(errors => ri.recipeId -> RecipeInformation(ri.recipe, ri.updated, errors, ri.onlyInCache))
           ).map(_.toMap)
       )
   }
