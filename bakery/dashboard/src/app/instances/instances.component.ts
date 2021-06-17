@@ -5,6 +5,7 @@ import {
   OnInit,
   ViewChild
 } from '@angular/core';
+import {ActivatedRoute, Router} from "@angular/router";
 import {EventRecord} from "../bakery.api";
 import {BakeryService} from "../bakery.service";
 import {graphviz}  from 'd3-graphviz';
@@ -19,17 +20,26 @@ export class InstancesComponent implements OnInit {
 
   constructor(private top: ElementRef,
               private bakeryService: BakeryService,
-              private renderer:Renderer2)  { }
+              private renderer:Renderer2,
+              private route: ActivatedRoute,
+              private router: Router) { }
 
   @ViewChild('instanceGraph', { static: false }) instanceGraph: ElementRef;
 
-  ngOnInit(): void { }
+  ngOnInit(): void {
+    if (this.route.snapshot.url.length > 1) {
+      this.loadInstance(this.route.snapshot.url[1].path)
+    }
+  }
   instanceEvents: EventRecord[];
   instanceIngredients: string[];
   displayedInstanceId: string;
 
   instanceChanged(): void {
-    const instanceId = this.instanceId;
+    this.router.navigateByUrl("/instances/" + this.instanceId);
+  }
+
+  loadInstance(instanceId: string): void {
     this.bakeryService.getInstance(instanceId).subscribe( instance => {
         const childElements = this.instanceGraph.nativeElement.children;
         for (let child of childElements) {
@@ -46,11 +56,10 @@ export class InstancesComponent implements OnInit {
 
           this.bakeryService.getInstanceVisual(instanceId).subscribe(v =>
             { graphviz('#graph')
-              .renderDot(v).scale(0.3); }
+            .renderDot(v).scale(0.3); }
           );
         }
       }
     );
-
   }
 }

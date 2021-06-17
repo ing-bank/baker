@@ -12,8 +12,8 @@ const routes: Routes = [
   { path: 'recipes', component: RecipesComponent },
   { path: 'recipes/:recipeId', component: RecipesComponent },
   { path: 'interactions', component: InteractionsComponent },
-  { path: 'interactions/:recipeInstanceid', component: InteractionsComponent },
   { path: 'instances', component: InstancesComponent },
+  { path: 'instances/:recipeInstanceId', component: InstancesComponent },
   { path: '**', component: NotFoundComponent },
 ];
 
