@@ -32,7 +32,6 @@ export class RecipesComponent implements OnInit {
   ngOnInit(): void {
     this.bakeryService.getRecipes().subscribe( recipes => this.recipes = recipes);
     if (this.route.snapshot.url.length > 1) {
-      console.log("RecipeId:" + this.route.snapshot.url[1].path);
       this.loadRecipe(this.route.snapshot.url[1].path)
     }
   }
