@@ -72,7 +72,7 @@ object RecipeLoader extends LazyLogging {
       files <- recipeFiles(path)
       recipes <- files.traverse(f => fromFile(f.toPath))
     } yield recipes.map { case (recipe, updated) =>
-      RecipeRecord(recipe.name, recipe.recipeId, updated, recipe, onlyInCache = false)
+      RecipeRecord.of(recipe, updated)
     }
   }
 

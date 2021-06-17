@@ -337,6 +337,6 @@ case class RecipeRecord(
                          onlyInCache: Boolean
                        )
 object RecipeRecord {
-  def of(recipe: CompiledRecipe, updated: Long = System.currentTimeMillis(), fromCache: Boolean = false) =
-    RecipeRecord(recipe.recipeId, recipe.name, updated, recipe, fromCache)
+  def of(recipe: CompiledRecipe, updated: Long = System.currentTimeMillis(), onlyInCache: Boolean = false) =
+    RecipeRecord(recipe.recipeId, recipe.name, updated, recipe, onlyInCache)
 }
