@@ -11,7 +11,6 @@ import io.circe.syntax._
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.serialization.StringSerializer
 
-import scala.compat.java8.FutureConverters._
 import java.util.Properties
 import scala.concurrent.Promise
 import scala.util.control.NonFatal
@@ -38,13 +37,13 @@ class KafkaEventSink(config: Config) extends EventSink with LazyLogging {
 
   private val producer = {
     val props = new Properties
-    props.put("bootstrap.servers", config.getString("bootstrap-servers"))
+    props.put("bootstrap.servers", config.getString("baker.event-sink.bootstrap-servers"))
     new KafkaProducer(
       props, new StringSerializer(), new StringSerializer(),
     )
   }
 
-  private val topic = config.getString("topic")
+  private val topic = config.getString("baker.event-sink.topic")
 
   private def recordOf(eventInstance: EventInstance): EventRecord =
     EventRecord(eventInstance.name, None, "")

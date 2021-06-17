@@ -91,7 +91,7 @@ object Main extends IOApp with LazyLogging {
         interactionHttpClient <- BlazeClientBuilder[IO](remoteInteractionCallContext, None) // todo SSL context
           .withCheckEndpointAuthentication(false)
           .resource
-        eventSink <- EventSink.resource(bakerConfig.getConfig("event-sink"))
+        eventSink <- EventSink.resource(config)
         interactionDiscovery <- InteractionDiscovery.resource(
           interactionHttpClient,
           skuber.k8sInit,
@@ -110,7 +110,7 @@ object Main extends IOApp with LazyLogging {
         )(system))
 
         _ <- Resource.eval(eventSink.attach(baker))
-        recipeCache <- RecipeCache.resource(bakerConfig.getConfig("recipe-cache"), system, maybeCassandra)
+        recipeCache <- RecipeCache.resource(config, system, maybeCassandra)
         _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(configPath, recipeCache, baker))
         _ <- Resource.eval(IO.async[Unit] { callback =>
           //If using local Baker the registerOnMemberUp is never called, should onl be used during local testing.
