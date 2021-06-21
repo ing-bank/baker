@@ -6,13 +6,16 @@ export interface Recipes {
 export interface RecipeBody {
   compiledRecipe:    Recipe;
   recipeCreatedTime: number;
+  onlyInCache:       boolean;
   errors:            string[];
 }
 
 export interface Recipe {
-  name:             string;
-  recipeId:         string;
-  validationErrors: string[];
+  name:              string;
+  recipeId:          string;
+  recipeCreatedTime: string;
+  onlyInCache:       boolean;
+  errors:            string[];
 }
 
 export interface DigraphResponse {
