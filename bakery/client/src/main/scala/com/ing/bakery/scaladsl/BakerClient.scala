@@ -2,7 +2,7 @@ package com.ing.bakery.scaladsl
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
-import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
+import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, EventResolutions, InteractionInstanceDescriptor, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
@@ -93,7 +93,7 @@ final class BakerClient( client: Client[IO],
 
   implicit val eventInstanceResultEntityEncoder: EntityEncoder[IO, EventInstance] = jsonEncoderOf[IO, EventInstance]
 
-  override def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] =
+  override def addRecipe(recipe: RecipeRecord): Future[String] =
     Future.failed(new NotImplementedError("Adding recipe via HTTP API is not supported"))
 
   private def parse[A](result: BakerResult)(implicit decoder: Decoder[A]): Either[Exception, A] = {

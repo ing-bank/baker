@@ -3,6 +3,7 @@ package com.ing.baker.runtime.model
 import cats.implicits._
 import cats.effect.ConcurrentEffect
 import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.EventInstance
 
 import java.util.UUID
@@ -23,7 +24,7 @@ trait BakerModelSpecEnquireTests[F[_]] { self: BakerModelSpec[F] =>
       for {
         bakerWithRecipe <- context.setupBakerWithRecipe("returnAllRecipes", appendUUIDToTheRecipeName = false)
         (baker, recipeId) = bakerWithRecipe
-        recipeId2 <- baker.addRecipe(RecipeCompiler.compileRecipe(getRecipe("returnAllRecipes2")), System.currentTimeMillis())
+        recipeId2 <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(getRecipe("returnAllRecipes2"))))
         recipes <- baker.getAllRecipes
         _ = recipes.size shouldBe 2
         _ = recipes(recipeId).compiledRecipe.name shouldBe "returnAllRecipes"
@@ -44,7 +45,7 @@ trait BakerModelSpecEnquireTests[F[_]] { self: BakerModelSpec[F] =>
       for {
         bakerWithRecipe <- context.setupBakerWithRecipe("returnHealthAllRecipe", appendUUIDToTheRecipeName = false)
         (baker, recipeId) = bakerWithRecipe
-        recipeId2 <- baker.addRecipe(RecipeCompiler.compileRecipe(getRecipe("returnHealthAllRecipe2")), System.currentTimeMillis())
+        recipeId2 <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(getRecipe("returnHealthAllRecipe2"))))
         recipeInformations <- baker.getAllRecipes
         _ = recipeInformations.size shouldBe 2
         _ = recipeInformations.get(recipeId)

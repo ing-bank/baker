@@ -15,7 +15,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
 import com.ing.baker.runtime.akka.internal.CachedInteractionManager
 import com.ing.baker.runtime.common.BakerException._
-import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.common.{RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.{RecipeManager, javadsl, scaladsl}
 import com.ing.baker.types.Value
@@ -51,7 +51,7 @@ object AkkaBaker {
 
   def java(config: Config, actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
     new javadsl.Baker(apply(config, actorSystem,
-      CachedInteractionManager.fromJava(interactions, config.getOrElse[Boolean]("baker.interaction-manager.allowSupersetForOutputTypes", false))(IO.contextShift(actorSystem.getDispatcher))))
+      CachedInteractionManager.fromJava(interactions, config.getOrElse[Boolean]("baker.interaction-manager.allow-superset-for-output-types", false))(IO.contextShift(actorSystem.getDispatcher))))
 
   def javaLocalDefault(actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
     new javadsl.Baker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem,
@@ -83,26 +83,27 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
-  override def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] = {
-
-    if (config.bakerValidationSettings.allowAddingRecipeWithoutRequiringInstances) {
-      addToManager(compiledRecipe, timeCreated)
+  override def addRecipe(recipeRecord: RecipeRecord): Future[String] = {
+    val recipe = recipeRecord.recipe
+    val updated = recipeRecord.updated
+    if (recipeRecord.onlyInCache || config.bakerValidationSettings.allowAddingRecipeWithoutRequiringInstances) {
+      addToManager(recipe, updated)
     } else {
       // check if every interaction has an implementation
-      getImplementationErrors(compiledRecipe).flatMap { implementationErrors =>
+      getImplementationErrors(recipe).flatMap { implementationErrors =>
         if (implementationErrors.nonEmpty) {
           Future.failed(ImplementationsException(implementationErrors.mkString(", ")))
-        } else if (compiledRecipe.validationErrors.nonEmpty) {
-          Future.failed(RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
+        } else if (recipe.validationErrors.nonEmpty) {
+          Future.failed(RecipeValidationException(recipe.validationErrors.mkString(", ")))
         } else {
-          addToManager(compiledRecipe, timeCreated)
+          addToManager(recipe, updated)
         }
       }
     }
   }
 
   private def addToManager(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] =
-    recipeManager.put(compiledRecipe, timeCreated)
+    recipeManager.put(RecipeRecord.of(compiledRecipe, updated = timeCreated))
 
   private def getImplementationErrors(compiledRecipe: CompiledRecipe): Future[Set[String]] = {
     compiledRecipe.interactionTransitions.toList
@@ -122,8 +123,8 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   override def getRecipe(recipeId: String): Future[RecipeInformation] = {
     // here we ask the RecipeManager actor to return us the recipe for the given id
     recipeManager.get(recipeId).flatMap {
-      case Some((compiledRecipe, timestamp)) =>
-        getImplementationErrors(compiledRecipe).map(RecipeInformation(compiledRecipe, timestamp, _))
+      case Some(r: RecipeRecord) =>
+        getImplementationErrors(r.recipe).map(errors => RecipeInformation(r.recipe, r.updated, errors, r.onlyInCache ))
       case None =>
         Future.failed(NoSuchRecipeException(recipeId))
     }
@@ -142,8 +143,8 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     recipeManager.all
       .flatMap(
         _.toList
-          .traverse(ri => getImplementationErrors(ri._1)
-            .map(errors => ri._1.recipeId -> RecipeInformation(ri._1, ri._2, errors))
+          .traverse(ri => getImplementationErrors(ri.recipe)
+            .map(errors => ri.recipeId -> RecipeInformation(ri.recipe, ri.updated, errors, ri.onlyInCache))
           ).map(_.toMap)
       )
   }

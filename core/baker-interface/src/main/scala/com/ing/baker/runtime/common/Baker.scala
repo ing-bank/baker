@@ -42,7 +42,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
-  def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): F[String]
+  def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): F[String] = addRecipe(RecipeRecord.of(compiledRecipe, updated = timeCreated))
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -53,6 +53,13 @@ trait Baker[F[_]] extends LanguageApi {
     * @return A recipeId
     */
   def addRecipe(compiledRecipe: CompiledRecipe): F[String] = addRecipe(compiledRecipe, System.currentTimeMillis())
+
+  /**
+    * Adds recipe as a record
+    * @param recipe
+    * @return
+    */
+  def addRecipe(recipe: RecipeRecord): F[String]
 
   /**
     * Returns the recipe information for the given RecipeId
@@ -345,4 +352,16 @@ trait Baker[F[_]] extends LanguageApi {
     * @return
     */
   def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): F[Unit]
+}
+
+case class RecipeRecord(
+                         recipeId: String,
+                         name: String,
+                         updated: Long,
+                         recipe: CompiledRecipe,
+                         onlyInCache: Boolean
+                       )
+object RecipeRecord {
+  def of(recipe: CompiledRecipe, updated: Long = System.currentTimeMillis(), onlyInCache: Boolean = false) =
+    RecipeRecord(recipe.recipeId, recipe.name, updated, recipe, onlyInCache)
 }

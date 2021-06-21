@@ -22,6 +22,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
 import com.ing.baker.runtime.akka.{namedCachedThreadPool, _}
+import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
@@ -104,11 +105,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   def updateCache() = {
     // TODO this is a synchronous ask on an actor whichcreateProcessActor is considered bad practice, alternative?
-    val futureResult: Future[Seq[(CompiledRecipe, Long)]] = recipeManager.all
-    val allRecipes: Seq[(CompiledRecipe, Long)] = Await.result(futureResult, updateCacheTimeout)
-    recipeCache ++= allRecipes.map {
-      case (recipe, timestamp) => recipe.recipeId -> (recipe, timestamp)
-    }
+    val futureResult: Future[Seq[RecipeRecord]] = recipeManager.all
+    val allRecipes: Seq[RecipeRecord] = Await.result(futureResult, updateCacheTimeout)
+    recipeCache ++= allRecipes.map { r => r.recipeId -> (r.recipe, r.updated) }
   }
 
   def getRecipeWithTimeStamp(recipeId: String): Option[(CompiledRecipe, Long)] =

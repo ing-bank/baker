@@ -37,7 +37,7 @@ class WatcherSpec extends AnyFunSuite with Matchers with Eventually {
             |}
             |""".stripMargin)) })((system: ActorSystem) => IO.fromFuture(IO {
         system.terminate().flatMap(_ => system.whenTerminated) })(contextShift).void)
-      _ <- Watcher.resource(config, system)
+      _ <- Watcher.resource(config, system, None)
 
     } yield ())
 

@@ -229,9 +229,9 @@ into a [visualziation](visualization.md).
     CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
     ```
 
-## baker.addRecipe(compiledRecipe)
+## baker.addRecipe(RecipeRecord.of(compiledRecipe))
 
-Once `Recipes` have been transformed into `CompiledRecipes` they must be added to a baker runtime. The `baker.addRecipe(compiledRecipe)`
+Once `Recipes` have been transformed into `CompiledRecipes` they must be added to a baker runtime. The `baker.addRecipe(RecipeRecord.of(compiledRecipe))`
 API will do so and return an id that you can use to reference the added recipe later on.
 
 _Note: Before doing this, baker requires you to add all related `InteractionInstances` to the runtime, this is because baker 
@@ -240,13 +240,13 @@ does validation to ensure that every recipe is runnable from the previously adde
 === "Java"
 
     ```scala
-    val recipeId Future[String] = baker.addRecipe(compiledRecipe)
+    val recipeId Future[String] = baker.addRecipe(RecipeRecord.of(compiledRecipe))
     ```
 
 === "Java"
 
     ```java
-    CompletableFuture<String> recipeId = baker.addRecipe(compiledRecipe);
+    CompletableFuture<String> recipeId = baker.addRecipe(RecipeRecord.of(compiledRecipe));
     ```
 
 ## baker.getAllRecipes()
@@ -290,7 +290,7 @@ except it comes in a `CompletableFuture` that will help you handle async program
     ```scala
     val program: Future[Unit] = for {
       _ <- baker.addInteractionInstance(interactionInstances)
-      recipeId <- baker.addRecipe(compiledRecipe)
+      recipeId <- baker.addRecipe(RecipeRecord.of(compiledRecipe))
       recipeInstanceId = "my-id"
       _ <- baker.bake(recipeId, recipeInstanceId)
     } yield ()
@@ -301,7 +301,7 @@ except it comes in a `CompletableFuture` that will help you handle async program
     ```java
     String recipeInstanceId = "my-id";
     CompletableFuture<BoxedUnit> result = baker.addInteractionInstace(reserveItemsInstance)
-        .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
+        .thenCompose(ignore -> baker.addRecipe(RecipeRecord.of(compiledRecipe)))
         .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId));
     ```
 

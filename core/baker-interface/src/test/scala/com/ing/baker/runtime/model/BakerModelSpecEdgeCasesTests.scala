@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.model
 
 import java.util.{Optional, UUID}
-
 import cats.effect.ConcurrentEffect
 import cats.implicits._
 import com.ing.baker.compiler.RecipeCompiler
@@ -15,6 +14,7 @@ import org.mockito.invocation.InvocationOnMock
 import scala.reflect.ClassTag
 import scala.concurrent.duration._
 import cats.implicits._
+import com.ing.baker.runtime.common.RecipeRecord
 
 trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
 
@@ -34,7 +34,7 @@ trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
         (baker, _) = bakerAndRecipeId
 
         compiledRecipe = RecipeCompiler.compileRecipe(recipe)
-        recipeId <- baker.addRecipe(compiledRecipe)
+        recipeId <- baker.addRecipe(RecipeRecord.of(compiledRecipe))
 
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)

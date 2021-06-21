@@ -4,11 +4,12 @@ import cats.effect.{ConcurrentEffect, IO, Resource, Sync}
 import cats.implicits._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.Recipe
+import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.bakery.utils.BakeryFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfter, ConfigMap}
-import java.util.UUID
 
+import java.util.UUID
 import scala.reflect.ClassTag
 
 abstract class BakerModelSpec[F[_]]
@@ -48,7 +49,7 @@ abstract class BakerModelSpec[F[_]]
     def setupBakerWithRecipe(recipe: Recipe, implementations: List[InteractionInstance[F]])(implicit effect: Sync[F]): F[(BakerF[F], String)] = {
       for {
         baker <- buildBaker(implementations)
-        recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), System.currentTimeMillis())
+        recipeId <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
       } yield (baker, recipeId)
     }
 

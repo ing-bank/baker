@@ -14,6 +14,7 @@ message RecipeInformation {
     optional CompiledRecipe compiledRecipe = 1;
     optional int64 recipeCreatedTime = 2;
     repeated string errors = 3;
+    optional bool onlyInCache = 4;
 }
 
 // wrapper object for 'any' data

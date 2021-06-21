@@ -8,6 +8,7 @@ import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.protobuf
+import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.runtime.serialization.ProtoMap
 import com.typesafe.scalalogging.LazyLogging
@@ -19,20 +20,21 @@ import scala.concurrent.duration.FiniteDuration
 
 object RecipeLoader extends LazyLogging {
 
-  def pollRecipesUpdates(path: String, baker: Baker, duration: FiniteDuration)
+  def pollRecipesUpdates(path: String, recipeCache: RecipeCache, baker: Baker, duration: FiniteDuration)
                         (implicit timer: Timer[IO], cs: ContextShift[IO]): IO[Unit] = {
-    def pollRecipes: IO[Unit] = loadRecipesIntoBaker(path, baker) >> IO.sleep(duration) >> IO.suspend(pollRecipes)
+    def pollRecipes: IO[Unit] = loadRecipesIntoBaker(path, recipeCache, baker) >> IO.sleep(duration) >> IO.suspend(pollRecipes)
 
     pollRecipes
   }
 
-  def loadRecipesIntoBaker(path: String, baker: Baker)(implicit cs: ContextShift[IO]): IO[Unit] =
+  def loadRecipesIntoBaker(path: String, recipeCache: RecipeCache, baker: Baker)(implicit cs: ContextShift[IO]): IO[Unit] =
     for {
-      recipes <- RecipeLoader.loadRecipes(path)
+      newRecipes <- RecipeLoader.loadRecipes(path)
+      recipes <- recipeCache.merge(newRecipes)
       _ <- IO{ if (recipes.isEmpty) logger.error(s"No recipes found in the recipe directory ($path), probably misconfiguration?")
-          else logger.debug(s"Recipes loaded: ${recipes.map(_._1.name)}") }
-      _ <- recipes.traverse { case (recipe, time) =>
-        IO.fromFuture(IO(baker.addRecipe(recipe, time)))
+          else logger.debug(s"Recipes loaded: ${recipes.map(_.name)}") }
+      _ <- recipes.traverse { record =>
+        IO.fromFuture(IO(baker.addRecipe(record)))
       }
     } yield ()
 
@@ -51,7 +53,7 @@ object RecipeLoader extends LazyLogging {
       bytes
   }
 
-  private[baker] def loadRecipes(path: String): IO[List[(CompiledRecipe, Long)]] = {
+  private[baker] def loadRecipes(path: String): IO[List[RecipeRecord]] = {
 
     def recipeFiles(path: String): IO[List[File]] = IO {
       val d = new File(path)
@@ -68,26 +70,28 @@ object RecipeLoader extends LazyLogging {
 
     for {
       files <- recipeFiles(path)
-      recipes <- files.traverse {
-        f => fromInputStream(f.toPath)
-      }
-    } yield recipes
+      recipes <- files.traverse(f => fromFile(f.toPath))
+    } yield recipes.map { case (recipe, updated) =>
+      RecipeRecord.of(recipe, updated)
+    }
+  }
+
+  def fromFile(f: Path): IO[(CompiledRecipe, Long)] = {
+    for {
+      recipe <- fromBytes(inputStreamToBytes(Files.newInputStream(f)))
+      updated <- IO(Files.readAttributes(f, classOf[BasicFileAttributes]).lastModifiedTime().toMillis)
+    } yield (recipe, updated)
   }
 
   private def inputStreamToBytes(is: InputStream): Array[Byte] =
     Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray
 
-  def fromInputStream(path: Path): IO[(CompiledRecipe, Long)] = {
+  def fromBytes(rawBytes: Array[Byte]): IO[CompiledRecipe] = {
     for {
-      rawBytes <- IO(inputStreamToBytes(Files.newInputStream(path)))
       decodedBytes <- IO.fromTry(decode(rawBytes))
       payload <- IO.fromTry(unzip(decodedBytes))
       protoRecipe <- IO.fromTry(protobuf.CompiledRecipe.validate(payload))
       recipe <- IO.fromTry(ProtoMap.ctxFromProto(protoRecipe))
-    } yield {
-      val attr = Files.readAttributes(path, classOf[BasicFileAttributes])
-      val millis: Long = attr.lastModifiedTime().toMillis
-      (recipe, millis)
-    }
+    } yield recipe
   }
 }

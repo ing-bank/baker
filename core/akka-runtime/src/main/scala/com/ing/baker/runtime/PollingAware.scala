@@ -1,6 +1,7 @@
 package com.ing.baker.runtime
 
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.common.RecipeRecord
 import com.typesafe.scalalogging.LazyLogging
 import shapeless.Lazy
 
@@ -10,14 +11,14 @@ trait PollingAware extends RecipeManager with LazyLogging {
 
   implicit def ex: ExecutionContext
 
-  abstract override def put(compiledRecipe: CompiledRecipe, createdTime: Long): Future[String] = {
-    this.get(compiledRecipe.recipeId).flatMap {
-      maybe =>
-        if (maybe.isEmpty || (maybe.isDefined && maybe.get._2 < createdTime)) {
-          logger.info(s"Adding/updating recipe ${compiledRecipe.name} : ${compiledRecipe.recipeId}")
-          super.put(compiledRecipe, createdTime)
+  abstract override def put(recipeRecord: RecipeRecord): Future[String] = {
+    this.get(recipeRecord.recipeId).flatMap {
+      maybeInCache =>
+        if (maybeInCache.isEmpty || (maybeInCache.isDefined && maybeInCache.get.updated < recipeRecord.updated)) {
+          logger.info(s"${if (maybeInCache.isEmpty) "Adding" else "Updating"} recipe ${recipeRecord.name} : ${recipeRecord.recipeId}")
+          super.put(recipeRecord)
         } else {
-          Future.successful(compiledRecipe.recipeId)
+          Future.successful(recipeRecord.recipeId)
         }
     }
   }

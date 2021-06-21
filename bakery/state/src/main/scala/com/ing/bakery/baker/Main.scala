@@ -46,7 +46,7 @@ object Main extends IOApp with LazyLogging {
     val production = bakerConfig.getBoolean("production-safe-mode")
     val loggingEnabled = bakerConfig.getBoolean("api-logging-enabled")
 
-    val allowSupersetForOutputTypes= bakerConfig.getOrElse[Boolean]("interaction-manager.allowSupersetForOutputTypes", false)
+    val allowSupersetForOutputTypes= bakerConfig.getOrElse[Boolean]("interaction-manager.allow-superset-for-output-types", false)
 
     if (production && loggingEnabled) {
       logger.error("Logging of API is enabled, but not allowed in production - stopping JVM")
@@ -54,8 +54,6 @@ object Main extends IOApp with LazyLogging {
     }
 
     val configurationClasses = bakerConfig.getStringList("interactions.local-configuration-classes")
-
-    val eventSinkSettings = bakerConfig.getConfig("event-sink")
 
     val pollInterval = Duration.fromNanos(config.getDuration("baker.recipe-poll-interval").toNanos)
 
@@ -85,15 +83,15 @@ object Main extends IOApp with LazyLogging {
 
     val remoteInteractionCallContext: ExecutionContext = system.dispatchers.lookup("akka.actor.remote-interaction-dispatcher")
 
-    val mainResource: Resource[IO, (Server[IO], AkkaBaker)] =
+    val mainResource: Resource[IO, (Server[IO], AkkaBaker, RecipeCache)] =
       for {
-        _ <- Watcher.resource(config, system)
+        maybeCassandra <- Cassandra.resource(config, system)
+        _ <- Watcher.resource(config, system, maybeCassandra)
         _ <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
         interactionHttpClient <- BlazeClientBuilder[IO](remoteInteractionCallContext, None) // todo SSL context
           .withCheckEndpointAuthentication(false)
           .resource
-        eventSink <- EventSink.resource(eventSinkSettings)
-
+        eventSink <- EventSink.resource(config)
         interactionDiscovery <- InteractionDiscovery.resource(
           interactionHttpClient,
           skuber.k8sInit,
@@ -112,7 +110,8 @@ object Main extends IOApp with LazyLogging {
         )(system))
 
         _ <- Resource.eval(eventSink.attach(baker))
-        _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(configPath, baker))
+        recipeCache <- RecipeCache.resource(config, system, maybeCassandra)
+        _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(configPath, recipeCache, baker))
         _ <- Resource.eval(IO.async[Unit] { callback =>
           //If using local Baker the registerOnMemberUp is never called, should onl be used during local testing.
           if (bakerConfig.getString("actor.provider") == "local")
@@ -131,13 +130,13 @@ object Main extends IOApp with LazyLogging {
         bakerService <- BakerService.resource(baker,
           InetSocketAddress.createUnresolved("0.0.0.0", apiPort),
           apiUrlPrefix, dashboardPath, interactionDiscovery, loggingEnabled)
-      } yield (bakerService, baker)
+      } yield (bakerService, baker, recipeCache)
 
     mainResource.use {
-      case (s, baker) => {
+      case (s, baker, recipeCache) => {
         logger.info(s"Bakery started at ${s.address}/${s.baseUri}, enabling the readiness in Akka management")
         BakerReadinessCheck.enable()
-        RecipeLoader.pollRecipesUpdates(configPath, baker, pollInterval)
+        RecipeLoader.pollRecipesUpdates(configPath, recipeCache, baker, pollInterval)
       }
     }.as(ExitCode.Success)
   }

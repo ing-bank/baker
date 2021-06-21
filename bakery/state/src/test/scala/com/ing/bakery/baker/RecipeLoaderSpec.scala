@@ -48,8 +48,8 @@ class RecipeLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll 
 
   test("Recipes for tests are OK") {
     (for {
-      r1 <- RecipeLoader.fromInputStream(Paths.get(getClass.getResource("/recipes/ItemReservation.recipe").toURI))
-      r2 <- RecipeLoader.fromInputStream(Paths.get(getClass.getResource("/recipes/ItemReservationBlocking.recipe").toURI))
+      r1 <- RecipeLoader.fromFile(Paths.get(getClass.getResource("/recipes/ItemReservation.recipe").toURI))
+      r2 <- RecipeLoader.fromFile(Paths.get(getClass.getResource("/recipes/ItemReservationBlocking.recipe").toURI))
     } yield {
       assert(r1._1.name == "ItemReservation.recipe")
       assert(r2._1.name == "ItemReservation.recipe")
@@ -66,7 +66,7 @@ class RecipeLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll 
 
   test("GZipped then Base64ed recipe could be loaded") {
     (for {
-      recipe <- RecipeLoader.fromInputStream(gzippedBase64RecipeFile.toPath)
+      recipe <- RecipeLoader.fromFile(gzippedBase64RecipeFile.toPath)
     } yield {
       assert(recipe._1.name == "Webshop")
       ()
@@ -75,7 +75,7 @@ class RecipeLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll 
 
   test("GZipped recipe could be loaded") {
     (for {
-      recipe <- RecipeLoader.fromInputStream(gzippedRecipeFile.toPath)
+      recipe <- RecipeLoader.fromFile(gzippedRecipeFile.toPath)
     } yield {
       assert(recipe._1.name == "Webshop")
       ()
@@ -84,7 +84,7 @@ class RecipeLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll 
 
   test("Plain Base64ed recipe could be loaded") {
     (for {
-      recipe <- RecipeLoader.fromInputStream(plainBase64RecipeFile.toPath)
+      recipe <- RecipeLoader.fromFile(plainBase64RecipeFile.toPath)
     } yield {
       assert(recipe._1.name == "Webshop")
       ()
@@ -93,7 +93,7 @@ class RecipeLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll 
 
   test("Plain recipe could be loaded") {
     (for {
-      recipe <- RecipeLoader.fromInputStream(plainRecipeFile.toPath)
+      recipe <- RecipeLoader.fromFile(plainRecipeFile.toPath)
     } yield {
       assert(recipe._1.name == "Webshop")
       ()

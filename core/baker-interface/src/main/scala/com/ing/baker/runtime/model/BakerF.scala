@@ -8,7 +8,7 @@ import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
-import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.common.{RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
 import com.ing.baker.runtime.scaladsl.{Baker => DeprecatedBaker, _}
 import com.ing.baker.types.Value
@@ -66,8 +66,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
-  override def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): F[String] =
-    components.recipeManager.addRecipe(compiledRecipe, config.allowAddingRecipeWithoutRequiringInstances)
+  override def addRecipe(recipeRecord: RecipeRecord): F[String] =
+    components.recipeManager.addRecipe(recipeRecord.recipe, recipeRecord.onlyInCache || config.allowAddingRecipeWithoutRequiringInstances)
       .timeout(config.addRecipeTimeout)
 
   /**
@@ -352,8 +352,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     new BakerF[G] {
       override val config: BakerF.Config =
         self.config
-      override def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): G[String] =
-        mapK(self.addRecipe(compiledRecipe, timeCreated))
+      override def addRecipe(recipeRecord: RecipeRecord): G[String] =
+        mapK(self.addRecipe(recipeRecord))
       override def getRecipe(recipeId: String): G[RecipeInformation] =
         mapK(self.getRecipe(recipeId))
       override def getRecipeVisual(recipeId: String, style: RecipeVisualStyle): G[String] =
@@ -405,8 +405,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
 
   def asDeprecatedFutureImplementation(mapK: F ~> Future, comapK: Future ~> F): DeprecatedBaker =
     new DeprecatedBaker {
-      override def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] =
-        mapK(self.addRecipe(compiledRecipe, timeCreated))
+      override def addRecipe(recipeRecord: RecipeRecord): Future[String] =
+        mapK(self.addRecipe(recipeRecord))
       override def getRecipe(recipeId: String): Future[RecipeInformation] =
         mapK(self.getRecipe(recipeId))
       override def getRecipeVisual(recipeId: String, style: RecipeVisualStyle): Future[String] =

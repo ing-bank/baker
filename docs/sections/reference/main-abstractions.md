@@ -528,7 +528,7 @@ the `Interaction`
 
     val program: Future[Unit] = for {
         _ <- baker.addInteractionInstance(WebshopInstances.ReserveItemsInstance)
-        recipeId <- baker.addRecipe(compiledRecipe)
+        recipeId <- baker.addRecipe(RecipeRecord.of(compiledRecipe))
         _ <- baker.bake(recipeId, "first-instance-id")
         firstOrderPlaced: EventInstance =
             EventInstance.unsafeFrom(WebshopRecipeReflection.OrderPlaced("order-uuid", List("item1", "item2")))
@@ -569,7 +569,7 @@ the `Interaction`
 
     String recipeInstanceId = "first-instance-id";
     CompletableFuture<List<String>> result = baker.addInteractionInstance(reserveItemsInstance)
-        .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
+        .thenCompose(ignore -> baker.addRecipe(RecipeRecord.of(compiledRecipe)))
         .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
         .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
         .thenApply(EventResult::events);

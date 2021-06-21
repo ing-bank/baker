@@ -4,6 +4,7 @@ import akka.actor.ActorSystem;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.runtime.akka.AkkaBaker;
+import com.ing.baker.runtime.common.RecipeRecord;
 import com.ing.baker.runtime.javadsl.Baker;
 import com.ing.baker.runtime.javadsl.EventInstance;
 import com.ing.baker.runtime.javadsl.EventMoment;
@@ -71,7 +72,7 @@ public class JWebshopRecipeTests {
             Baker baker = AkkaBaker.javaLocalDefault(actorSystem, Collections.singletonList(reserveItemsInstance));
 
             String recipeInstanceId = UUID.randomUUID().toString();
-            CompletableFuture<List<String>> result = baker.addRecipe(compiledRecipe)
+            CompletableFuture<List<String>> result = baker.addRecipe(RecipeRecord.of(compiledRecipe))
                     .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
                     .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
                     .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))
@@ -115,7 +116,7 @@ public class JWebshopRecipeTests {
                     new JWebshopRecipe.ReserveItems.ItemsReserved(items));
 
             String recipeInstanceId = "first-instance-id";
-            CompletableFuture<List<String>> result = baker.addRecipe(compiledRecipe)
+            CompletableFuture<List<String>> result = baker.addRecipe(RecipeRecord.of(compiledRecipe))
                     .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
                     .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
                     .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))

@@ -249,7 +249,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val baker = AkkaBaker(config, ActorSystem.apply("remoteTest", config), CachedInteractionManager(mockImplementations))
 
       for {
-        recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        recipeId <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
@@ -581,7 +581,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
 
       for {
-        recipeId <- baker.addRecipe(compiledRecipe)
+        recipeId <- baker.addRecipe(RecipeRecord.of(compiledRecipe))
 
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
@@ -1156,7 +1156,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       val first = (for {
         baker1 <- setupBakerWithNoRecipe()(system1)
-        recipeId <- baker1.addRecipe(compiledRecipe)
+        recipeId <- baker1.addRecipe(RecipeRecord.of(compiledRecipe))
         _ <- baker1.bake(recipeId, recipeInstanceId)
         _ <- baker1.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ <- baker1.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(SecondEvent()))
@@ -1171,10 +1171,10 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         val system2 = ActorSystem("persistenceTest2", localLevelDBConfig("persistenceTest2"))
         (for {
           baker2 <- setupBakerWithNoRecipe()(system2)
-          recipeId <- baker2.addRecipe(compiledRecipe)
+          recipeId <- baker2.addRecipe(RecipeRecord.of(compiledRecipe))
           state <- baker2.getRecipeInstanceState(recipeInstanceId)
           recipe <- baker2.getRecipe(recipeId)
-          recipeId0 <- baker2.addRecipe(compiledRecipe)
+          recipeId0 <- baker2.addRecipe(RecipeRecord.of(compiledRecipe))
         } yield {
           state.ingredients shouldBe finalState
           recipe.compiledRecipe shouldBe compiledRecipe
