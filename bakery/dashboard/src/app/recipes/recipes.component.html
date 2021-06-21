@@ -1,6 +1,6 @@
 <mat-selection-list [multiple]="false" [ngModel]="selectedRecipe" (selectionChange)="recipeChanged($event)">
   <mat-list-option *ngFor="let recipe of recipes" [value]="recipe">
-    <span>{{recipe.recipeId}}: {{recipe.name}}</span> <div>{{ recipe.validationErrors }}</div>
+    <span>{{recipe.recipeId}}: {{recipe.name}}; updated {{ recipe.recipeCreatedTime }}, only in cache {{ recipe.onlyInCache }} </span> <div>{{ recipe.errors }}</div>
   </mat-list-option>
 </mat-selection-list>
 

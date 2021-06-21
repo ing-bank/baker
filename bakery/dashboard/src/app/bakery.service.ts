@@ -29,8 +29,13 @@ export class BakeryService {
   getRecipes(): Observable<Recipe[]> {
     return this.http.get<Recipes>(this.baseUrl + '/app/recipes')
       .pipe(map(recipes => {
-        return Object.values(recipes.body).map(r => r.compiledRecipe);
-      }));
+        return Object.values(recipes.body).map(r =>  { const row: Recipe = { name: r.compiledRecipe.name,
+                                                       recipeId: r.compiledRecipe.recipeId,
+                                                       recipeCreatedTime: new Date(r.recipeCreatedTime).toISOString(),
+                                                       onlyInCache: r.onlyInCache,
+                                                       errors: r.compiledRecipe.errors };
+                                                        return row;} );
+        }));
     };
 
   getRecipeVisual(recipeId: string): Observable<string> {
