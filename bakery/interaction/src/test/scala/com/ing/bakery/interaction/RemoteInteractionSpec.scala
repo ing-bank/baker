@@ -1,12 +1,12 @@
 package com.ing.bakery.interaction
 
 import java.net.InetSocketAddress
-
 import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.serialization.{InteractionExecution => I}
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance, InteractionInstanceInput}
 import com.ing.baker.types.{CharArray, Int64, PrimitiveValue}
 import com.ing.bakery.testing.BakeryFunSpec
+import org.http4s.blaze.pipeline.Command
 import org.scalatest.ConfigMap
 import org.scalatest.compatible.Assertion
 
@@ -128,7 +128,7 @@ class RemoteInteractionSpec extends BakeryFunSpec {
         val result: IO[Option[String]] = client.runInteraction(implementation0.shaBase64, Seq(ingredient0, ingredient1))
           .map(_ => None)
           .handleErrorWith {
-            case e: java.net.ConnectException => IO.pure(Some("connection error"))
+            case _: java.net.ConnectException | Command.EOF  => IO.pure(Some("connection error"))
             case e => IO.raiseError(e)
           }
         result.map(result => assert(result === Some("connection error")))
