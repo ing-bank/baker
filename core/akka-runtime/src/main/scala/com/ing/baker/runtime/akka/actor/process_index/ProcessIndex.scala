@@ -119,17 +119,18 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     }
 
   def getCompiledRecipe(recipeId: String): Option[CompiledRecipe] =
-    getRecipeWithTimeStamp(recipeId).map { case (recipe, _) => recipe }
+    getRecipeWithTimeStamp(recipeId).fold[Option[CompiledRecipe]] {
+      log.warning(s"No recipe found for $recipeId")
+      None } {
+      case (recipe, _) => Some(recipe)
+      case _ => None
+    }
 
-  def getOrCreateProcessActor(recipeInstanceId: String): ActorRef =
-    context.child(recipeInstanceId).getOrElse(createProcessActor(recipeInstanceId))
+  def getOrCreateProcessActor(recipeInstanceId: String): Option[ActorRef] =
+    context.child(recipeInstanceId).orElse(createProcessActor(recipeInstanceId))
 
-  def createProcessActor(recipeInstanceId: String): ActorRef = {
-    val recipeId = index(recipeInstanceId).recipeId
-    val compiledRecipe: CompiledRecipe =
-      getCompiledRecipe(recipeId).getOrElse(throw new IllegalStateException(s"No recipe with recipe id '$recipeId' exists"))
-    createProcessActor(recipeInstanceId, compiledRecipe)
-  }
+  def createProcessActor(recipeInstanceId: String): Option[ActorRef] =
+      getCompiledRecipe(index(recipeInstanceId).recipeId).map(createProcessActor(recipeInstanceId, _))
 
   // creates a ProcessInstanceActor, does not do any validation
   def createProcessActor(recipeInstanceId: String, compiledRecipe: CompiledRecipe): ActorRef = {
@@ -165,7 +166,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       case None =>
         persist(ActorActivated(recipeInstanceId)) { _ =>
           val actor = createProcessActor(recipeInstanceId)
-          fn(actor)
+          if (actor.isEmpty) {
+            log.warning(s"Can't create actor for instance $recipeInstanceId")
+          }
+          actor.foreach(fn)
         }
       case Some(actorRef) => fn(actorRef)
     }
@@ -191,7 +195,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       if (toBeDeleted.nonEmpty)
         log.debug(s"Deleting recipe instance: {}", toBeDeleted.mkString(","))
 
-      toBeDeleted.foreach(meta => getOrCreateProcessActor(meta.recipeInstanceId) ! Stop(delete = true))
+      toBeDeleted.foreach(meta => getOrCreateProcessActor(meta.recipeInstanceId).foreach(_ ! Stop(delete = true)))
 
     case Terminated(actorRef) =>
       val recipeInstanceId = actorRef.path.name
@@ -314,8 +318,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
             reject(FireSensoryEventRejection.RecipeInstanceDeleted(recipeInstanceId))
           case None =>
             async { callback =>
-              persist(ActorActivated(recipeInstanceId)) { _ =>
-                callback(Right(createProcessActor(recipeInstanceId) -> index(recipeInstanceId)))
+              createProcessActor(recipeInstanceId).foreach { actor =>
+                persist(ActorActivated(recipeInstanceId)) { _ =>
+                  callback(Right(actor -> index (recipeInstanceId)))
+                }
               }
             }
         }
