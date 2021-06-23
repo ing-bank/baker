@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.akka.internal
 
-import cats.effect.concurrent.Ref
-import cats.effect.{ContextShift, IO, Sync}
+import cats.effect.{IO, Sync}
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.scaladsl
@@ -10,24 +9,25 @@ import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
 import scala.compat.java8.FunctionConverters._
+import cats.effect.Ref
 
 object CachedInteractionManager {
 
   def apply() = new CachedInteractionManager(List.empty)
 
-  def apply(interactionInstance: scaladsl.InteractionInstance)(implicit cs: ContextShift[IO]) =
+  def apply(interactionInstance: scaladsl.InteractionInstance) =
     new CachedInteractionManager(List(fromFuture(interactionInstance)))
 
-  def apply(interactionInstance: scaladsl.InteractionInstance, allowSupersetForOutputTypes: Boolean)(implicit cs: ContextShift[IO]) =
+  def apply(interactionInstance: scaladsl.InteractionInstance, allowSupersetForOutputTypes: Boolean) =
     new CachedInteractionManager(List(fromFuture(interactionInstance)), allowSupersetForOutputTypes: Boolean)
 
-  def apply(interactionInstances: List[scaladsl.InteractionInstance])(implicit cs: ContextShift[IO]) =
+  def apply(interactionInstances: List[scaladsl.InteractionInstance]) =
     new CachedInteractionManager(interactionInstances.map(fromFuture))
 
-  def apply(interactionInstances: List[scaladsl.InteractionInstance], allowSupersetForOutputTypes: Boolean)(implicit cs: ContextShift[IO]) =
+  def apply(interactionInstances: List[scaladsl.InteractionInstance], allowSupersetForOutputTypes: Boolean) =
     new CachedInteractionManager(interactionInstances.map(fromFuture), allowSupersetForOutputTypes)
 
-  private def fromFuture(i: scaladsl.InteractionInstance)(implicit cs: ContextShift[IO]): model.InteractionInstance[IO] = {
+  private def fromFuture(i: scaladsl.InteractionInstance): model.InteractionInstance[IO] = {
     model.InteractionInstance.build(
       _name = i.name,
       _input = i.input,
@@ -48,7 +48,7 @@ object CachedInteractionManager {
  def apply(interactionInstances: List[model.InteractionInstance[IO]], allowSupersetForOutputTypes: Boolean) =
     new CachedInteractionManager(interactionInstances, allowSupersetForOutputTypes)
 
-  def fromJava(interactions: java.util.List[AnyRef])(implicit cs: ContextShift[IO]) =
+  def fromJava(interactions: java.util.List[AnyRef]) =
     new CachedInteractionManager(interactions
       .asScala
       .map {
@@ -56,7 +56,7 @@ object CachedInteractionManager {
         case other => model.InteractionInstance.unsafeFrom[IO](other)}.toList
     )
 
-  def fromJava(interactions: java.util.List[AnyRef], allowSupersetForOutputTypes: Boolean)(implicit cs: ContextShift[IO]) =
+  def fromJava(interactions: java.util.List[AnyRef], allowSupersetForOutputTypes: Boolean) =
     new CachedInteractionManager(interactions
       .asScala
       .map {
