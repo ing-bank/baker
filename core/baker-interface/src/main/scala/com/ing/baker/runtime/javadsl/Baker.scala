@@ -4,13 +4,14 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 import java.util.function.{BiConsumer, Consumer}
+
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.common.{RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
-
 import javax.annotation.Nonnull
+
 import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
@@ -49,11 +50,32 @@ class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker
     *
     * This function is idempotent, if the same (equal) recipe was added earlier this will return the same recipeId.
     *
-    * @param compiledRecipe The compiled recipe.
+    * @param recipeRecord The RecipeRecord recipe.
     * @return A recipe identifier.
     */
   def addRecipe(@Nonnull recipeRecord: RecipeRecord): CompletableFuture[String] =
     toCompletableFuture(baker.addRecipe(recipeRecord))
+
+
+  /**
+    * Adds a recipe to baker and returns a recipeId for the recipe.
+    *
+    * This function is idempotent, if the same (equal) recipe was added earlier this will return the same recipeId
+    *
+    * @param compiledRecipe The compiled recipe.
+    * @return A recipeId
+    */
+  override def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): CompletableFuture[String] = addRecipe(RecipeRecord.of(compiledRecipe, updated = timeCreated))
+
+  /**
+    * Adds a recipe to baker and returns a recipeId for the recipe.
+    *
+    * This function is idempotent, if the same (equal) recipe was added earlier this will return the same recipeId
+    *
+    * @param compiledRecipe The compiled recipe.
+    * @return A recipeId
+    */
+  override def addRecipe(compiledRecipe: CompiledRecipe): CompletableFuture[String] = addRecipe(compiledRecipe, System.currentTimeMillis())
 
   /**
     * Attempts to gracefully shutdown the baker system.
