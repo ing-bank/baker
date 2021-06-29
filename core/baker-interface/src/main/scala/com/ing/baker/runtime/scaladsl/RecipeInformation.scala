@@ -10,8 +10,8 @@ case class RecipeInformation(
                               compiledRecipe: CompiledRecipe,
                               recipeCreatedTime: Long,
                               errors: Set[String],
-                              onlyInCache: Boolean) extends common.RecipeInformation with ScalaApi {
+                              validate: Boolean) extends common.RecipeInformation with ScalaApi {
 
   def asJava: javadsl.RecipeInformation =
-    javadsl.RecipeInformation(compiledRecipe, recipeCreatedTime, errors.asJava, onlyInCache)
+    javadsl.RecipeInformation(compiledRecipe, recipeCreatedTime, errors.asJava, validate)
 }

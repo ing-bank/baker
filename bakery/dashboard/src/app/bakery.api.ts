@@ -6,7 +6,7 @@ export interface Recipes {
 export interface RecipeBody {
   compiledRecipe:    Recipe;
   recipeCreatedTime: number;
-  onlyInCache:       boolean;
+  doN:       boolean;
   errors:            string[];
 }
 
@@ -14,7 +14,7 @@ export interface Recipe {
   name:              string;
   recipeId:          string;
   recipeCreatedTime: string;
-  onlyInCache:       boolean;
+  doNotValidate:       boolean;
   errors:            string[];
 }
 

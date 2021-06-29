@@ -32,7 +32,7 @@ export class BakeryService {
         return Object.values(recipes.body).map(r =>  { const row: Recipe = { name: r.compiledRecipe.name,
                                                        recipeId: r.compiledRecipe.recipeId,
                                                        recipeCreatedTime: new Date(r.recipeCreatedTime).toISOString(),
-                                                       onlyInCache: r.onlyInCache,
+                                                       doNotValidate: r.doNotValidate,
                                                        errors: r.compiledRecipe.errors };
                                                         return row;} );
         }));

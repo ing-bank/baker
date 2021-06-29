@@ -102,7 +102,7 @@ public class BakerTest {
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
         Baker jBaker = AkkaBaker.java(config, actorSystem);
 
-        jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false)).get();
+        jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), true)).get();
     }
 
     @Test
