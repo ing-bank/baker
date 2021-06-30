@@ -9,7 +9,7 @@ trait RecipeInformation extends LanguageApi {
 
   val recipeCreatedTime: Long
 
-  val onlyInCache: Boolean
+  val validate: Boolean
 
   val errors: language.Set[String]
 

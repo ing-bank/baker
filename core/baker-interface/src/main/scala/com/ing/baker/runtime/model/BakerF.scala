@@ -67,7 +67,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     * @return A recipeId
     */
   override def addRecipe(recipeRecord: RecipeRecord): F[String] =
-    components.recipeManager.addRecipe(recipeRecord.recipe, recipeRecord.onlyInCache || config.allowAddingRecipeWithoutRequiringInstances)
+    components.recipeManager.addRecipe(recipeRecord.recipe, !recipeRecord.validate || config.allowAddingRecipeWithoutRequiringInstances)
       .timeout(config.addRecipeTimeout)
 
   /**
