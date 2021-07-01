@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.internal
 import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Sync}
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.model.InteractionManager
+import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.baker.runtime.scaladsl
 import com.ing.baker.runtime.model
 import java.util.concurrent.ConcurrentHashMap
@@ -97,12 +97,13 @@ trait CachingTransitionLookups {
 class CachedInteractionManager(val availableImplementations: List[model.InteractionInstance[IO]],
                                override val allowSupersetForOutputTypes: Boolean = false) extends InteractionManager[IO] with CachingTransitionLookups {
 
-  override def listAll: IO[List[model.InteractionInstance[IO]]] = IO(availableImplementations)
+  val defaultInteractions: List[InteractionInstance[IO]] = com.ing.baker.runtime.akka.defaultinteractions.getDefaultInteractions()
+
+  override def listAll: IO[List[model.InteractionInstance[IO]]] = IO(availableImplementations ++ defaultInteractions)
 
   def combine(other: CachedInteractionManager): IO[CachedInteractionManager] = for {
     otherImplementations <- other.listAll
     theseImplementations <- listAll
   } yield CachedInteractionManager(theseImplementations ++ otherImplementations, allowSupersetForOutputTypes)
-
 }
 
