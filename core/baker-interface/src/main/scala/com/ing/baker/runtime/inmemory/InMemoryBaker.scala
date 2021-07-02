@@ -5,7 +5,7 @@ import java.util.{List => JavaList}
 
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
 import cats.~>
-import com.ing.baker.runtime.javadsl
+import com.ing.baker.runtime.{defaultinteractions, javadsl}
 import com.ing.baker.runtime.model.{BakerComponents, BakerF, InteractionInstance}
 
 import scala.collection.JavaConverters._
@@ -18,7 +18,7 @@ object InMemoryBaker {
     recipeInstanceManager <- InMemoryRecipeInstanceManager.build
     recipeManager <- InMemoryRecipeManager.build
     eventStream <- InMemoryEventStream.build
-    interactions <- InMemoryInteractionManager.build(implementations ++ defaultinteractions.getDefaultInteractions())
+    interactions <- InMemoryInteractionManager.build(implementations ++ defaultinteractions.getDefaultInteractions)
   } yield buildWith(BakerComponents[IO](interactions, recipeInstanceManager, recipeManager, eventStream), config)
 
   def buildWith(components: BakerComponents[IO],

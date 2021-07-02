@@ -1,8 +1,8 @@
-package com.ing.baker.runtime.inmemory
+package com.ing.baker.runtime
 
 import cats.effect.IO
 import com.ing.baker.runtime.model.InteractionInstance
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 
 package object defaultinteractions {
   def getDefaultInteractions(): List[InteractionInstance[IO]] = {

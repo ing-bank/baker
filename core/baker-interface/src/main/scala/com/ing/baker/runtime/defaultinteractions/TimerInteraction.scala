@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.inmemory.defaultinteractions
+package com.ing.baker.runtime.defaultinteractions
 
 import cats.effect.{IO, Timer}
 

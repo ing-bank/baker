@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.akka.defaultinteractions
+package com.ing.baker.runtime.defaultinteractions
 
 import java.time.Duration
 import java.util.concurrent.TimeUnit
