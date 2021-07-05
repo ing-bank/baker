@@ -41,7 +41,7 @@ trait RecipeManager[F[_]] {
     fetch(recipeId).flatMap[RecipeInformation] {
       case Some(r: RecipeRecord) =>
         getImplementationErrors(r.recipe).map( errors =>
-          RecipeInformation(r.recipe, r.updated, errors, r.onlyInCache))
+          RecipeInformation(r.recipe, r.updated, errors, r.validate))
       case None =>
         effect.raiseError(NoSuchRecipeException(recipeId))
     }
@@ -50,7 +50,7 @@ trait RecipeManager[F[_]] {
     fetchAll.flatMap(_.toList
       .traverse { case (recipeId, r) =>
         getImplementationErrors(r.recipe)
-          .map(errors => recipeId -> RecipeInformation(r.recipe, r.updated, errors, r.onlyInCache))
+          .map(errors => recipeId -> RecipeInformation(r.recipe, r.updated, errors, r.validate))
       }
       .map(_.toMap))
 

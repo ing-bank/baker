@@ -57,10 +57,9 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
     IO.fromFuture(IO(f))
 
   def awaitForInteractionDiscovery(context: Context): IO[Assertion] =
-    awaitForServiceDiscoveryState(context)(_.map(_.name) shouldBe List("ReserveItems"))
-
+    awaitForServiceDiscoveryState(context)(_.map(_.name) shouldBe List("TimerInteraction", "TimerInteraction", "ReserveItems"))
   def awaitForEmptyServiceDiscovery(context: Context): IO[Assertion] =
-    awaitForServiceDiscoveryState(context)(_ shouldBe List.empty)
+    awaitForServiceDiscoveryState(context)(_.map(_.name) shouldBe List("TimerInteraction", "TimerInteraction"))
 
   def awaitForServiceDiscoveryState(context: Context)(f: List[InteractionInstance[IO]] => Assertion): IO[Assertion] =
     eventually(

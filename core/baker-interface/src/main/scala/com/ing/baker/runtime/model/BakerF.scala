@@ -5,7 +5,7 @@ import cats.effect.ConcurrentEffect
 import cats.implicits._
 import cats.~>
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
-import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle, RecipeVisualizer}
+import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.common.{RecipeRecord, SensoryEventStatus}
@@ -64,11 +64,11 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     *
     * This function is idempotent, if the same (equal) recipe was added earlier this will return the same recipeId
     *
-    * @param compiledRecipe The compiled recipe.
+    * @param recipeRecord The RecipeRecord of the recipe
     * @return A recipeId
     */
   override def addRecipe(recipeRecord: RecipeRecord): F[String] =
-    components.recipeManager.addRecipe(recipeRecord.recipe, recipeRecord.onlyInCache || config.allowAddingRecipeWithoutRequiringInstances)
+    components.recipeManager.addRecipe(recipeRecord.recipe, !recipeRecord.validate || config.allowAddingRecipeWithoutRequiringInstances)
       .timeout(config.addRecipeTimeout)
 
   /**

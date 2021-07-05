@@ -5,7 +5,7 @@ import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
 import com.ing.baker.runtime.scaladsl.{InteractionInstance, InteractionInstanceInput}
 import com.ing.baker.types
-import com.ing.baker.types.{EnumType, Int16, Int32, Type}
+import com.ing.baker.types.{EnumType, Int16, Int32, RecordType, Type}
 import org.mockito.Mockito.when
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -17,6 +17,31 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
   implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
   "getImplementation" should {
     "return Some" when {
+      "an default interaction is request" in {
+        val interactionManager: CachedInteractionManager = CachedInteractionManager()
+
+        val timerInteractionTransition = mock[InteractionTransition]
+        when(timerInteractionTransition.originalInteractionName).thenReturn("TimerInteraction")
+        val timerInteractionTransitionID: IngredientDescriptor = IngredientDescriptor("WaitTime", types.RecordType(
+          Seq(
+            types.RecordField("length", types.Int64),
+            types.RecordField("unit", types.EnumType(Set("MINUTES","NANOSECONDS","MILLISECONDS","DAYS","MICROSECONDS","SECONDS","HOURS"))))))
+        when(timerInteractionTransition.requiredIngredients).thenReturn(Seq(timerInteractionTransitionID))
+        val found = interactionManager.findFor(timerInteractionTransition).unsafeRunSync().get
+        found.name shouldBe "TimerInteraction"
+
+
+        val timerInteractionTransitionJava = mock[InteractionTransition]
+        when(timerInteractionTransitionJava.originalInteractionName).thenReturn("TimerInteraction")
+        val timerInteractionTransitionJavaID: IngredientDescriptor = IngredientDescriptor("WaitTime", types.RecordType(
+          Seq(
+            types.RecordField("seconds", types.Int64),
+            types.RecordField("nanos", types.Int32))))
+        when(timerInteractionTransitionJava.requiredIngredients).thenReturn(Seq(timerInteractionTransitionJavaID))
+        val found2 = interactionManager.findFor(timerInteractionTransitionJava).unsafeRunSync().get
+        found2.name shouldBe "TimerInteraction"
+      }
+
       "an interaction implementation is available" in {
         val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
