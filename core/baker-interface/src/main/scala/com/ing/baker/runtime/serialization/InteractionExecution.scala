@@ -41,7 +41,7 @@ object InteractionExecution {
   case class Failure(reason: FailureReason) extends Result
 
   sealed trait FailureReason
-  case class InteractionError(message: String)  extends FailureReason
+  case class InteractionError(interactionName: String, message: String)  extends FailureReason
   case object NoInstanceFound extends FailureReason
   case object Timeout extends FailureReason
   case object BadIngredients extends FailureReason

@@ -47,7 +47,8 @@ class RemoteInteraction(mock: ClientAndServer) {
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody(I.ExecutionResult(Left(I.Failure(I.InteractionError(e.getMessage)))).asJson.toString)
+        .withBody(I.ExecutionResult(Left(I.Failure(I.InteractionError("interaction",
+          e.getMessage)))).asJson.toString)
     )
   }
 
