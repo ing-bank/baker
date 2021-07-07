@@ -5,6 +5,7 @@ import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.scaladsl.{IngredientInstance, InteractionInstance}
 import com.ing.baker.runtime.serialization.{InteractionExecution => I}
 import com.ing.bakery.metrics.MetricService
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import io.circe.syntax._
 import io.prometheus.client.CollectorRegistry
@@ -70,7 +71,7 @@ object RemoteInteractionService {
 }
 
 final class RemoteInteractionService(interactions: List[InteractionInstance],
-                                     apiLoggingEnabled: Boolean = false)(implicit timer: Temporal[IO], cs: ContextShift[IO]) {
+                                     apiLoggingEnabled: Boolean = false)(implicit timer: Timer[IO], cs: ContextShift[IO]) extends LazyLogging {
 
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
   import com.ing.baker.runtime.serialization.JsonCodec._
@@ -96,7 +97,12 @@ final class RemoteInteractionService(interactions: List[InteractionInstance],
               case Right(value) =>
                 Ok(I.ExecutionResult(Right(I.Success(value))))
               case Left(e) =>
-                Ok(I.ExecutionResult(Left(I.Failure(I.InteractionError(e.getMessage)))))
+                logger.error(s"Interaction ${interaction.name} failed with an exception: ${e.getMessage}", e)
+                Ok(I.ExecutionResult(
+                  Left(I.Failure(I.InteractionError(
+                    interactionName = interaction.name,
+                    message = Option(e.getMessage).getOrElse("NullPointerException"))
+                  ))))
             }
           case None =>
             Ok(I.ExecutionResult(Left(I.Failure(I.NoInstanceFound))))
