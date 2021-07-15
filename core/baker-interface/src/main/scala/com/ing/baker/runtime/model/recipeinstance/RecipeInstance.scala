@@ -1,8 +1,7 @@
 package com.ing.baker.runtime.model.recipeinstance
 
 import cats.data.EitherT
-import cats.effect.concurrent.Ref
-import cats.effect.{ConcurrentEffect, Effect, IO, Sync, Timer}
+import cats.effect.{ConcurrentEffect, Effect, IO, Sync}
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -13,13 +12,14 @@ import com.typesafe.scalalogging.LazyLogging
 import fs2.Stream
 
 import scala.concurrent.duration._
+import cats.effect.{ Ref, Temporal }
 
 object RecipeInstance {
 
   case class Config(idleTTL: Option[FiniteDuration] = Some(5.seconds),
                     ingredientsFilter: Seq[String] = Seq.empty)
 
-  def empty[F[_]](recipe: CompiledRecipe, recipeInstanceId: String, settings: Config)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[RecipeInstance[F]] =
+  def empty[F[_]](recipe: CompiledRecipe, recipeInstanceId: String, settings: Config)(implicit components: BakerComponents[F], effect: Effect[F], timer: Temporal[F]): F[RecipeInstance[F]] =
     for {
       timestamp <- timer.clock.realTime(MILLISECONDS)
       state <- Ref.of[F, RecipeInstanceState](RecipeInstanceState.empty(recipeInstanceId, recipe, timestamp))
@@ -32,7 +32,7 @@ object RecipeInstance {
 
 case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance.Config, state: Ref[F, RecipeInstanceState]) extends LazyLogging {
 
-  def fireEventStream(input: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, Stream[F, EventInstance]] =
+  def fireEventStream(input: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Temporal[F]): EitherT[F, FireSensoryEventRejection, Stream[F, EventInstance]] =
     for {
       currentTime <- EitherT.liftF(timer.clock.realTime(MILLISECONDS))
       currentState <- EitherT.liftF(state.get)
@@ -47,7 +47,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
     } yield baseCase(initialExecution)
       .collect { case Some(output) => output.filterNot(config.ingredientsFilter) }
 
-  def stopRetryingInteraction(interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] =
+  def stopRetryingInteraction(interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Temporal[F]): F[Unit] =
     for {
       transitionExecution <- getInteractionTransitionExecution(interactionName)
       _ <- state.update(_
@@ -55,7 +55,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
         .recordFailedExecution(transitionExecution, ExceptionStrategyOutcome.BlockTransition))
     } yield ()
 
-  def retryBlockedInteraction(interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): Stream[F, EventInstance] =
+  def retryBlockedInteraction(interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Temporal[F]): Stream[F, EventInstance] =
     Stream.force {
       for {
         transitionExecution <- getInteractionTransitionExecution(interactionName)
@@ -63,7 +63,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
     }
       .collect { case Some(output) => output }
 
-  def resolveBlockedInteraction(interactionName: String, eventInstance: EventInstance)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): Stream[F, EventInstance] =
+  def resolveBlockedInteraction(interactionName: String, eventInstance: EventInstance)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Temporal[F]): Stream[F, EventInstance] =
     Stream.force {
       for {
         transitionExecution <- getInteractionTransitionExecution(interactionName)
@@ -73,7 +73,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
       .collect { case Some(output) => output }
 
   /** The "base case" is the very 1st step in the stream of executing transitions that create EventInstances  */
-  private def baseCase(transitionExecution: TransitionExecution)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): Stream[F, Option[EventInstance]] =
+  private def baseCase(transitionExecution: TransitionExecution)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Temporal[F]): Stream[F, Option[EventInstance]] =
     for {
       _ <- Stream.eval(state.update(_.addExecution(transitionExecution)))
       outcome <- Stream.eval(transitionExecution.execute)
@@ -83,7 +83,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
   /** The "induction step" is the "repeating" 2nd, 3rd... nth step in the stream of executing transitions that create
     * EventInstances, notice the recursion when there exist enabled transitions, which are outcome of executing this step
     */
-  private def inductionStep(finishedExecution: TransitionExecution, outcome: TransitionExecution.Outcome)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): Stream[F, Option[EventInstance]] =
+  private def inductionStep(finishedExecution: TransitionExecution, outcome: TransitionExecution.Outcome)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Temporal[F]): Stream[F, Option[EventInstance]] =
     for {
       outputAndEnabledExecutions <- Stream.eval(handleExecutionOutcome(finishedExecution)(outcome))
       (first, enabledExecutions) = outputAndEnabledExecutions
@@ -93,7 +93,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
       }
     } yield next
 
-  private def handleExecutionOutcome(finishedExecution: TransitionExecution)(outcome: TransitionExecution.Outcome)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[(Option[EventInstance], Set[TransitionExecution])] =
+  private def handleExecutionOutcome(finishedExecution: TransitionExecution)(outcome: TransitionExecution.Outcome)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Temporal[F]): F[(Option[EventInstance], Set[TransitionExecution])] =
     outcome match {
 
       case Right(output) =>
@@ -129,7 +129,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
         } yield finalOutcome
     }
 
-  private def scheduleIdleStop(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[Unit] = {
+  private def scheduleIdleStop(implicit components: BakerComponents[F], effect: Effect[F], timer: Temporal[F]): F[Unit] = {
 
     def schedule: F[Unit] =
       state.get.flatMap { currentState =>

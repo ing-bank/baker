@@ -1,7 +1,6 @@
 package com.ing.bakery.common
 
-import cats.effect.concurrent.Ref
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.scaladsl.BakerResult
 import com.ing.bakery.scaladsl.{BakerClient, EndpointConfig}
 import org.http4s.Method.GET
@@ -29,6 +28,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success, Try}
+import cats.effect.Temporal
 
 
 class FailoverUtilsSpec extends FixtureAsyncFunSpec   {
@@ -38,7 +38,7 @@ class FailoverUtilsSpec extends FixtureAsyncFunSpec   {
   implicit val contextShift: ContextShift[IO] =
     IO.contextShift(ec)
 
-  implicit val timer: Timer[IO] =
+  implicit val timer: Temporal[IO] =
     IO.timer(ec)
   import com.ing.baker.runtime.serialization.JsonDecoders._
   implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]

@@ -3,7 +3,7 @@ package com.ing.bakery.javadsl
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors.newCachedThreadPool
 import java.util.{Collections, Optional, List => JList}
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
 import com.ing.baker.runtime.javadsl.{Baker => JavaBaker}
 import com.ing.bakery.common.TLSConfig
 import com.ing.bakery.scaladsl
@@ -15,6 +15,7 @@ import scala.collection.JavaConverters._
 import scala.compat.java8.FunctionConverters._
 import scala.compat.java8.FutureConverters
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
+import cats.effect.Temporal
 
 
 object BakerClient {
@@ -42,7 +43,7 @@ object BakerClient {
 
     implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
     implicit val contextShift: ContextShift[IO] = IO.contextShift(ec)
-    implicit val timer: Timer[IO] = IO.timer(ec)
+    implicit val timer: Temporal[IO] = IO.timer(ec)
 
     val future = BlazeClientBuilder[IO](
       executionContext = connectionPool,

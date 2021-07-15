@@ -2,12 +2,13 @@ package com.ing.bakery.interaction
 
 import java.net.InetSocketAddress
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.ExecutionContext
+import cats.effect.Temporal
 
 object RemoteInteractionLoader extends LazyLogging {
 
@@ -30,7 +31,7 @@ object RemoteInteractionLoader extends LazyLogging {
 
     implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
     implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
-    implicit val timer: Timer[IO] = IO.timer(executionContext)
+    implicit val timer: Temporal[IO] = IO.timer(executionContext)
 
     RemoteInteractionService.resource(implementations, address, tlsConfig, apiLoggingEnabled, interactionPerTypeMetricsEnabled, metricsPort)
       .use(_ => {

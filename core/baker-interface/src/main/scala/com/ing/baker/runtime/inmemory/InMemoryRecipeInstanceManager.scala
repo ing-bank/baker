@@ -1,22 +1,22 @@
 package com.ing.baker.runtime.inmemory
 
-import cats.effect.concurrent.Ref
-import cats.effect.{IO, Timer}
+import cats.effect.IO
 import cats.implicits._
 import com.ing.baker.runtime.model.RecipeInstanceManager.RecipeInstanceStatus
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
 import com.ing.baker.runtime.model.{BakerComponents, RecipeInstanceManager}
 import com.ing.baker.runtime.scaladsl.RecipeInstanceMetadata
+import cats.effect.{ Ref, Temporal }
 
 object InMemoryRecipeInstanceManager {
 
   type Store = Map[String, RecipeInstanceStatus[IO]]
 
-  def build(implicit timer: Timer[IO]): IO[InMemoryRecipeInstanceManager] =
+  def build(implicit timer: Temporal[IO]): IO[InMemoryRecipeInstanceManager] =
     Ref.of[IO, Store](Map.empty).map(new InMemoryRecipeInstanceManager(_))
 }
 
-final class InMemoryRecipeInstanceManager(inmem: Ref[IO, InMemoryRecipeInstanceManager.Store])(implicit timer: Timer[IO]) extends RecipeInstanceManager[IO] {
+final class InMemoryRecipeInstanceManager(inmem: Ref[IO, InMemoryRecipeInstanceManager.Store])(implicit timer: Temporal[IO]) extends RecipeInstanceManager[IO] {
 
   override def fetch(recipeInstanceId: String): IO[Option[RecipeInstanceStatus[IO]]] =
     inmem.get.map(_.get(recipeInstanceId))
