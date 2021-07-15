@@ -18,6 +18,7 @@ import org.http4s.server.blaze._
 import org.http4s.server.{Router, Server}
 import org.http4s.server.middleware.{Logger, Metrics}
 
+import java.lang.reflect.InvocationTargetException
 import scala.concurrent.ExecutionContext
 import cats.effect.Temporal
 
@@ -97,11 +98,15 @@ final class RemoteInteractionService(interactions: List[InteractionInstance],
               case Right(value) =>
                 Ok(I.ExecutionResult(Right(I.Success(value))))
               case Left(e) =>
-                logger.error(s"Interaction ${interaction.name} failed with an exception: ${e.getMessage}", e)
+                val rootCause = e match {
+                  case _: InvocationTargetException if Option(e.getCause).isDefined => e.getCause
+                  case _ => e
+                }
+                logger.error(s"Interaction ${interaction.name} failed with an exception: ${rootCause.getMessage}", rootCause)
                 Ok(I.ExecutionResult(
                   Left(I.Failure(I.InteractionError(
                     interactionName = interaction.name,
-                    message = Option(e.getMessage).getOrElse("NullPointerException"))
+                    message = Option(rootCause.getMessage).getOrElse("NullPointerException"))
                   ))))
             }
           case None =>

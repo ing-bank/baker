@@ -1,10 +1,9 @@
 package com.ing.bakery.interaction
 
-import cats.effect.{IO, Resource}
+import cats.effect.{ContextShift, IO, Resource, Timer}
+import com.ing.baker.runtime.common.RemoteInteractionExecutionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceDescriptor}
 import com.ing.baker.runtime.serialization.InteractionExecution
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -52,7 +51,7 @@ final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit 
         case InteractionExecution.ExecutionResult(Right(success)) =>
           IO.pure(success.result)
         case InteractionExecution.ExecutionResult(Left(error)) =>
-          IO.raiseError(new RuntimeException(s"Remote interaction execution failed; reason: ${error.reason}"))
+          IO.raiseError(new RemoteInteractionExecutionException(error.reason.toString))
       }
   }
 }
