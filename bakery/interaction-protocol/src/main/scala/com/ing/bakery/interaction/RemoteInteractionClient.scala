@@ -1,6 +1,6 @@
 package com.ing.bakery.interaction
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.common.RemoteInteractionExecutionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceDescriptor}
 import com.ing.baker.runtime.serialization.InteractionExecution
@@ -12,6 +12,7 @@ import org.http4s.dsl.io._
 import org.http4s.{Uri, _}
 
 import scala.concurrent.ExecutionContext
+import cats.effect.Temporal
 
 object RemoteInteractionClient {
 
@@ -19,14 +20,14 @@ object RemoteInteractionClient {
   /** use method `use` of the Resource, the client will be acquired and shut down automatically each time
    * the resulting `IO` is run, each time using the common connection pool.
    */
-  def resource(hostname: Uri, pool: ExecutionContext, tlsConfig: Option[BakeryHttp.TLSConfig])(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, RemoteInteractionClient] =
+  def resource(hostname: Uri, pool: ExecutionContext, tlsConfig: Option[BakeryHttp.TLSConfig])(implicit timer: Temporal[IO]): Resource[IO, RemoteInteractionClient] =
     BlazeClientBuilder[IO](pool, tlsConfig.map(BakeryHttp.loadSSLContext))
       .withCheckEndpointAuthentication(false)
       .resource
       .map(new RemoteInteractionClient(_, hostname))
 }
 
-final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
+final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit cs: ContextShift[IO], timer: Temporal[IO]) {
 
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
   import com.ing.baker.runtime.serialization.JsonCodec._

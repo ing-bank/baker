@@ -1,6 +1,6 @@
 package com.ing.bakery.metrics
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
 import io.prometheus.client.exporter.common.TextFormat
 import io.prometheus.client.hotspot._
@@ -16,6 +16,7 @@ import java.io.CharArrayWriter
 import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext
 import scala.io.Source
+import cats.effect.Temporal
 
 object MetricService extends LazyLogging {
 
@@ -31,7 +32,7 @@ object MetricService extends LazyLogging {
 
   def register(collector: Collector): Unit = registry.register(collector)
 
-  def resource(socketAddress: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+  def resource(socketAddress: InetSocketAddress)(implicit timer: Temporal[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
     val encoder = EntityEncoder.stringEncoder
 
     def fromPrometheus: String = {

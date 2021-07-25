@@ -4,8 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source}
 import akka.stream.{KillSwitch, KillSwitches, RestartSettings, UniqueKillSwitch}
 import akka.{Done, NotUsed}
-import cats.effect.concurrent.Ref
-import cats.effect.{ContextShift, IO, Resource, Sync, Timer}
+import cats.effect.{IO, Resource, Sync}
 import cats.implicits._
 import com.ing.baker.runtime.akka.internal.{CachedInteractionManager, CachingTransitionLookups}
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
@@ -22,11 +21,12 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import cats.effect.{ Ref, Temporal }
 
 object InteractionDiscovery extends LazyLogging {
 
   def extractSamePodInteractions(httpClient: Client[IO], localhostPorts: List[Int])
-                                (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[List[InteractionInstance[IO]]] = {
+                                (implicit timer: Temporal[IO]): IO[List[InteractionInstance[IO]]] = {
     localhostPorts.map(port =>
       extractInteractions(httpClient,
         Uri.unsafeFromString(s"http://localhost:$port")
@@ -37,17 +37,17 @@ object InteractionDiscovery extends LazyLogging {
   }
 
   def extractInterfacesFromDeployedInteraction(httpClient: Client[IO], deployedService: Service, port: Int)
-                                              (implicit contextShift: ContextShift[IO], timer: Timer[IO])
+                                              (implicit timer: Temporal[IO])
   : IO[List[InteractionInstance[IO]]] = {
     val protocol = /*if(interactionClientTLS.isDefined) "https" else */ "http"
     extractInteractions(httpClient, Uri.unsafeFromString(s"$protocol://${deployedService.name}:$port/"))
   }
 
   private def extractInteractions(httpClient: Client[IO], address: Uri)
-                                (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[List[InteractionInstance[IO]]] = {
+                                (implicit timer: Temporal[IO]): IO[List[InteractionInstance[IO]]] = {
     val client = new RemoteInteractionClient(httpClient, address)
 
-    def within[A](giveUpAfter: FiniteDuration, retries: Int)(f: IO[A])(implicit timer: Timer[IO]): IO[A] = {
+    def within[A](giveUpAfter: FiniteDuration, retries: Int)(f: IO[A])(implicit timer: Temporal[IO]): IO[A] = {
       def attempt(count: Int, times: FiniteDuration): IO[A] = {
         if (count < 1) f else f.attempt.flatMap {
           case Left(e) =>
@@ -86,7 +86,7 @@ object InteractionDiscovery extends LazyLogging {
                k8s: => KubernetesClient,
                interactionManager: CachedInteractionManager,
                localhostPorts: List[Int],
-               podLabelSelector: Option[LabelSelector])(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem): Resource[IO, InteractionDiscovery] = {
+               podLabelSelector: Option[LabelSelector])(implicit timer: Temporal[IO], actorSystem: ActorSystem): Resource[IO, InteractionDiscovery] = {
 
     def watchSource: Source[K8SWatchEvent[Service], UniqueKillSwitch] = {
       val watchFilter: ListOptions = ListOptions(labelSelector = podLabelSelector)
@@ -158,7 +158,7 @@ final class InteractionDiscovery(val availableInteractions: List[InteractionInst
     d <- discovered
   } yield availableInteractions ++ d.values().asScala.flatten
 
-  def update(event: K8SWatchEvent[Service])(implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[Any] = (for {
+  def update(event: K8SWatchEvent[Service])(implicit timer: Temporal[IO]): IO[Any] = (for {
     spec <- event._object.spec
     port <- spec.ports.find(_.name == "interactions")
   } yield {
