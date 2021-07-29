@@ -126,7 +126,8 @@ lazy val `baker-interface` = project.in(file("core/baker-interface"))
       fs2Core,
       fs2Io,
       scalaJava8Compat,
-      javaxInject
+      javaxInject,
+      guava
     ) ++ providedDeps(findbugs) ++ testDeps(
       scalaTest,
       scalaCheckPlusMockito,
