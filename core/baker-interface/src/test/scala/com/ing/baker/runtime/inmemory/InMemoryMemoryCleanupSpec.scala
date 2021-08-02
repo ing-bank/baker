@@ -16,14 +16,14 @@ import scala.concurrent.duration._
 
 class InMemoryMemoryCleanupSpec extends AnyFunSpec with Matchers {
   describe("InMemoryRecipeInstanceManager") {
-    describe("should find a process in the timeout") {
+    it("should find a process in the timeout") {
       implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
       implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
       val recipeInstanceId = UUID.randomUUID().toString
 
       val result: IO[RecipeInstanceState] = for {
-        baker <- InMemoryBaker.build(BakerF.Config(retentionPeriodCheckInterval = 100.milliseconds, allowAddingRecipeWithoutRequiringInstances = true), List.empty)
+        baker <- InMemoryBaker.build(BakerF.Config(idleTimeout = 100.milliseconds, allowAddingRecipeWithoutRequiringInstances = true), List.empty)
         recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(TestRecipe.getRecipe("InMemory")))
         _ <- baker.bake(recipeId, recipeInstanceId)
         result <- baker.getRecipeInstanceState(recipeInstanceId)
@@ -31,14 +31,14 @@ class InMemoryMemoryCleanupSpec extends AnyFunSpec with Matchers {
       result.unsafeRunSync()
     }
 
-    describe("should delete a process after the timeout") {
+    it("should delete a process after the timeout") {
       implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
       implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
       val recipeInstanceId = UUID.randomUUID().toString
 
       val result: IO[RecipeInstanceState] = for {
-        baker <- InMemoryBaker.build(BakerF.Config(retentionPeriodCheckInterval = 100.milliseconds, allowAddingRecipeWithoutRequiringInstances = true), List.empty)
+        baker <- InMemoryBaker.build(BakerF.Config(idleTimeout = 100.milliseconds, allowAddingRecipeWithoutRequiringInstances = true), List.empty)
         recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(TestRecipe.getRecipe("InMemory")))
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.getRecipeInstanceState(recipeInstanceId)

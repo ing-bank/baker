@@ -24,6 +24,7 @@ object BakerF {
 
   case class Config(allowAddingRecipeWithoutRequiringInstances: Boolean = false,
                     recipeInstanceConfig: RecipeInstance.Config = RecipeInstance.Config(),
+                    idleTimeout: FiniteDuration = 60 seconds,
                     retentionPeriodCheckInterval: FiniteDuration = 10.seconds,
                     bakeTimeout: FiniteDuration = 10.seconds,
                     processEventTimeout: FiniteDuration = 10.seconds,
