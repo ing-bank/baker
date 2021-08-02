@@ -15,7 +15,7 @@ object InMemoryBaker {
 
   def build(config: BakerF.Config = BakerF.Config(),
             implementations: List[InteractionInstance[IO]])(implicit timer: Timer[IO], cs: ContextShift[IO]): IO[BakerF[IO]] = for {
-    recipeInstanceManager <- InMemoryRecipeInstanceManager.build(config.retentionPeriodCheckInterval)
+    recipeInstanceManager <- InMemoryRecipeInstanceManager.build(config.idleTimeout)
     recipeManager <- InMemoryRecipeManager.build
     eventStream <- InMemoryEventStream.build
     interactions <- InMemoryInteractionManager.build(implementations ++ defaultinteractions.getDefaultInteractions)
