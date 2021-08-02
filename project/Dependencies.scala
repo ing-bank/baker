@@ -134,6 +134,8 @@ object Dependencies {
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.69"
   val bouncyCastleBcpkix ="org.bouncycastle" % "bcpkix-jdk15on" % "1.69"
 
+  val guava = "com.google.guava" % "guava" % "10.0.1"
+
   def scopeDeps(scope: String, modules: Seq[ModuleID]) = modules.map(m => m % scope)
 
   def compileDeps(modules: ModuleID*) = modules.toSeq
