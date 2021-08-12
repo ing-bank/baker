@@ -6,10 +6,11 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.BakerException.{ImplementationsException, NoSuchRecipeException, RecipeValidationException}
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.{RecipeAdded, RecipeInformation}
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.duration
 
-trait RecipeManager[F[_]] {
+trait RecipeManager[F[_]] extends LazyLogging {
 
   protected def store(compiledRecipe: CompiledRecipe, timestamp: Long): F[Unit]
 
@@ -17,10 +18,13 @@ trait RecipeManager[F[_]] {
 
   protected def fetch(recipeId: String): F[Option[RecipeRecord]]
 
-  def addRecipe(compiledRecipe: CompiledRecipe, allowAddingRecipeWithoutRequiringInstances: Boolean)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[String] =
+  def addRecipe(compiledRecipe: CompiledRecipe, suppressImplementationErrors: Boolean)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[String] =
     for {
       implementationErrors <-
-        if (allowAddingRecipeWithoutRequiringInstances) effect.pure(List.empty)
+        if (suppressImplementationErrors) effect.delay {
+          logger.info(s"Recipe implementation errors are ignored for ${compiledRecipe.name}:${compiledRecipe.recipeId}")
+          List.empty
+        }
         else getImplementationErrors(compiledRecipe)
       _ <-
         if (implementationErrors.nonEmpty)
