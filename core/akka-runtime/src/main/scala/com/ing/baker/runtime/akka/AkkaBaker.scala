@@ -354,6 +354,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       .ask(GetProcessState(recipeInstanceId))(Timeout.durationToTimeout(config.timeouts.defaultInquireTimeout))
       .flatMap {
         case instance: InstanceState => Future.successful(instance.state.asInstanceOf[RecipeInstanceState])
+        case Uninitialized(id) => Future.failed(NoSuchProcessException(id))
         case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
         case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
       }

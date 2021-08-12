@@ -128,7 +128,8 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     case Stop(_) ⇒
       context.stop(context.self)
 
-    case _: Command ⇒
+    case c: Command ⇒
+      log.warning(s"Received unexpected command in uninitialized state: ${c.getClass.getName}")
       sender() ! Uninitialized(recipeInstanceId)
       context.stop(context.self)
 
