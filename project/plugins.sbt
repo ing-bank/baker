@@ -6,7 +6,7 @@ addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.13")
 
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.8.2")
 
-addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.7")
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.8")
 
 addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "3.1.3")
 
