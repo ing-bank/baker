@@ -9,6 +9,7 @@ import com.ing.baker.runtime.akka._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.BlockTransition
 import com.ing.baker.runtime.akka.actor.process_instance.internal.{ExceptionStrategy, Instance, Job}
+import com.ing.baker.runtime.common.RemoteInteractionExecutionException
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -72,10 +73,12 @@ trait ProcessInstanceRuntime[P, T, S, E] extends LazyLogging {
    */
   def jobExecutor(topology: PetriNet[P, T])(implicit transitionIdentifier: Identifiable[T], placeIdentifier: Identifiable[P]): Job[P, T, S] ⇒ IO[TransitionEvent] = {
 
-    def exceptionStackTrace(e: Throwable): String = {
-      val sw = new StringWriter()
-      e.printStackTrace(new PrintWriter(sw))
-      sw.toString
+    def exceptionStackTrace(e: Throwable): String = e match {
+      case _: RemoteInteractionExecutionException => e.getMessage
+      case _ =>
+        val sw = new StringWriter()
+        e.printStackTrace(new PrintWriter(sw))
+        sw.toString
     }
 
     job ⇒ {

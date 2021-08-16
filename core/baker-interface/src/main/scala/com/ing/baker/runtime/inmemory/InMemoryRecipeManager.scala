@@ -1,13 +1,10 @@
 package com.ing.baker.runtime.inmemory
 
-import cats.effect.{IO, Timer}
 import cats.effect.concurrent.Ref
+import cats.effect.{IO, Timer}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.RecipeRecord
-import com.ing.baker.runtime.model.{BakerComponents, RecipeManager}
-import com.ing.baker.runtime.scaladsl.RecipeAdded
-
-import scala.concurrent.duration
+import com.ing.baker.runtime.model.RecipeManager
 
 object InMemoryRecipeManager {
 

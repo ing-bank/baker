@@ -1,10 +1,10 @@
 package com.ing.bakery.interaction
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
+import com.ing.baker.runtime.common.RemoteInteractionExecutionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceDescriptor}
 import com.ing.baker.runtime.serialization.InteractionExecution
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import com.ing.bakery.metrics.MetricService
 import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -37,6 +37,9 @@ final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit 
   implicit val executeRequestEntityEncoder: EntityEncoder[IO, List[IngredientInstance]] = jsonEncoderOf[IO, List[IngredientInstance]]
   implicit val executeResponseEntityDecoder: EntityDecoder[IO, InteractionExecution.ExecutionResult] = jsonOf[IO, InteractionExecution.ExecutionResult]
 
+  private lazy val interactionSuccessCounter = MetricService.counter("bakery_interaction_success", "Successful interaction calls")
+  private lazy val interactionFailureCounter = MetricService.counter("bakery_interaction_failure", "Failed interaction calls")
+
   def interface: IO[List[InteractionExecution.Descriptor]] =
     client.expect[List[InteractionExecution.Descriptor]]( GET(
       hostname / "api" / "bakery" / "interactions"
@@ -49,9 +52,15 @@ final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit 
     client.expect[InteractionExecution.ExecutionResult](request)
       .flatMap {
         case InteractionExecution.ExecutionResult(Right(success)) =>
-          IO.pure(success.result)
+          IO {
+            interactionSuccessCounter.inc()
+            success.result
+          }
         case InteractionExecution.ExecutionResult(Left(error)) =>
-          IO.raiseError(new RuntimeException(s"Remote interaction execution failed; reason: ${error.reason}"))
+          IO.raiseError {
+            interactionFailureCounter.inc()
+            new RemoteInteractionExecutionException(error.reason.toString)
+          }
       }
   }
 }

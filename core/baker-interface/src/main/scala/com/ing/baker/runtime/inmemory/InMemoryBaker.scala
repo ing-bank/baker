@@ -1,24 +1,24 @@
 package com.ing.baker.runtime.inmemory
 
+import java.util
+import java.util.{List => JavaList}
+
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
 import cats.~>
+import com.ing.baker.runtime.{defaultinteractions, javadsl}
 import com.ing.baker.runtime.model.{BakerComponents, BakerF, InteractionInstance}
-import java.util
-
-import scala.concurrent._
-import java.util.{List => JavaList}
-import com.ing.baker.runtime.javadsl
 
 import scala.collection.JavaConverters._
+import scala.concurrent._
 
 object InMemoryBaker {
 
   def build(config: BakerF.Config = BakerF.Config(),
             implementations: List[InteractionInstance[IO]])(implicit timer: Timer[IO], cs: ContextShift[IO]): IO[BakerF[IO]] = for {
-    recipeInstanceManager <- InMemoryRecipeInstanceManager.build
+    recipeInstanceManager <- InMemoryRecipeInstanceManager.build(config.idleTimeout)
     recipeManager <- InMemoryRecipeManager.build
     eventStream <- InMemoryEventStream.build
-    interactions <- InMemoryInteractionManager.build(implementations)
+    interactions <- InMemoryInteractionManager.build(implementations ++ defaultinteractions.getDefaultInteractions)
   } yield buildWith(BakerComponents[IO](interactions, recipeInstanceManager, recipeManager, eventStream), config)
 
   def buildWith(components: BakerComponents[IO],

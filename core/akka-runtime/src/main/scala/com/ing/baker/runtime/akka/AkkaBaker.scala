@@ -86,7 +86,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   override def addRecipe(recipeRecord: RecipeRecord): Future[String] = {
     val recipe = recipeRecord.recipe
     val updated = recipeRecord.updated
-    if (recipeRecord.onlyInCache || config.bakerValidationSettings.allowAddingRecipeWithoutRequiringInstances) {
+    if (!recipeRecord.validate || config.bakerValidationSettings.allowAddingRecipeWithoutRequiringInstances) {
       addToManager(recipe, updated)
     } else {
       // check if every interaction has an implementation
@@ -124,7 +124,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     // here we ask the RecipeManager actor to return us the recipe for the given id
     recipeManager.get(recipeId).flatMap {
       case Some(r: RecipeRecord) =>
-        getImplementationErrors(r.recipe).map(errors => RecipeInformation(r.recipe, r.updated, errors, r.onlyInCache ))
+        getImplementationErrors(r.recipe).map(errors => RecipeInformation(r.recipe, r.updated, errors, r.validate ))
       case None =>
         Future.failed(NoSuchRecipeException(recipeId))
     }
@@ -144,7 +144,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       .flatMap(
         _.toList
           .traverse(ri => getImplementationErrors(ri.recipe)
-            .map(errors => ri.recipeId -> RecipeInformation(ri.recipe, ri.updated, errors, ri.onlyInCache))
+            .map(errors => ri.recipeId -> RecipeInformation(ri.recipe, ri.updated, errors, ri.validate))
           ).map(_.toMap)
       )
   }
@@ -354,6 +354,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       .ask(GetProcessState(recipeInstanceId))(Timeout.durationToTimeout(config.timeouts.defaultInquireTimeout))
       .flatMap {
         case instance: InstanceState => Future.successful(instance.state.asInstanceOf[RecipeInstanceState])
+        case Uninitialized(id) => Future.failed(NoSuchProcessException(id))
         case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
         case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
       }
