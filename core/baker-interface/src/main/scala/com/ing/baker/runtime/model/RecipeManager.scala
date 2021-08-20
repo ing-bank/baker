@@ -25,12 +25,15 @@ trait RecipeManager[F[_]] extends LazyLogging {
           logger.info(s"Recipe implementation errors are ignored for ${compiledRecipe.name}:${compiledRecipe.recipeId}")
           List.empty
         }
-        else getImplementationErrors(compiledRecipe)
+        else {
+          logger.info(s"Recipe ${compiledRecipe.name}:${compiledRecipe.recipeId} is validated for compatibility with interactions")
+          getImplementationErrors(compiledRecipe)
+        }
       _ <-
         if (implementationErrors.nonEmpty)
-          effect.raiseError(ImplementationsException(implementationErrors.mkString(", ")))
+          effect.raiseError(ImplementationsException(s"Recipe ${compiledRecipe.name}:${compiledRecipe.recipeId} has implementation errors: ${implementationErrors.mkString(", ")}"))
         else if (compiledRecipe.validationErrors.nonEmpty)
-          effect.raiseError(RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
+          effect.raiseError(RecipeValidationException(s"Recipe ${compiledRecipe.name}:${compiledRecipe.recipeId} has validation errors: ${compiledRecipe.validationErrors.mkString(", ")}"))
         else
           for {
             timestamp <- timer.clock.realTime(duration.MILLISECONDS)

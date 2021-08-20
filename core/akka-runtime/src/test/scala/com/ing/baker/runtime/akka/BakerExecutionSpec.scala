@@ -333,8 +333,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           recipeInstanceId,
           EventInstance("sensory-event", Map("ingredient-0" -> PrimitiveValue(42))),
           onEvent = "interaction-2-happened")
-        _ = completed.eventNames shouldBe
-          Seq("sensory-event", "interaction-1-happened", "interaction-2-happened")
+        _ = completed.eventNames.toSet shouldBe
+          Set("sensory-event", "interaction-1-happened", "interaction-2-happened")
         _ = completed.ingredients shouldBe
           Map("ingredient-0" -> PrimitiveValue(42),
             "ingredient-1" -> PrimitiveValue("data1"),

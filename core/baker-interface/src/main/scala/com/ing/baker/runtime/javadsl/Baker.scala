@@ -65,7 +65,7 @@ class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
-  override def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): CompletableFuture[String] = addRecipe(RecipeRecord.of(compiledRecipe, updated = timeCreated))
+  override def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long, validate: Boolean): CompletableFuture[String] = addRecipe(RecipeRecord.of(compiledRecipe, updated = timeCreated, validate = validate))
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -75,7 +75,7 @@ class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
-  override def addRecipe(compiledRecipe: CompiledRecipe): CompletableFuture[String] = addRecipe(compiledRecipe, System.currentTimeMillis())
+  override def addRecipe(compiledRecipe: CompiledRecipe, validate: Boolean): CompletableFuture[String] = addRecipe(compiledRecipe, System.currentTimeMillis(), validate)
 
   /**
     * Attempts to gracefully shutdown the baker system.
