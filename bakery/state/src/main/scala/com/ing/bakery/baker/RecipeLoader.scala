@@ -80,10 +80,7 @@ object RecipeLoader extends LazyLogging {
     for {
       recipe <- fromBytes(inputStreamToBytes(Files.newInputStream(f)))
       updated <- IO(Files.readAttributes(f, classOf[BasicFileAttributes]).lastModifiedTime().toMillis)
-    } yield {
-      logger.info(s"${f.toFile.getName} -> ${recipe.name}:${recipe.recipeId}")
-      (recipe, updated)
-    }
+    } yield (recipe, updated)
   }
 
   private def inputStreamToBytes(is: InputStream): Array[Byte] =
