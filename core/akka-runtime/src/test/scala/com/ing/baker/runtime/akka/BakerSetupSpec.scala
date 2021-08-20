@@ -122,7 +122,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         recoverToExceptionIf[RecipeValidationException] {
           baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
-        }.map(_ should have('message("Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction")))
+        }.map(_ should have('message("Recipe NonProvidedIngredient:68b775e508fc6877 has validation errors: Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction")))
       }
 
       "a recipe does not provide an implementation for an interaction" in {
@@ -135,7 +135,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         recoverToExceptionIf[ImplementationsException] {
           baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
-        }.map(_ should have('message("No compatible implementation provided for interaction: InteractionOne: List(NameNotFound)")))
+        }.map(_ should have('message("Recipe MissingImplementation:dc3970efc8837e64 has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(NameNotFound)")))
       }
 
       "a recipe provides an implementation for an interaction and does not comply to the Interaction" in {
@@ -148,7 +148,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         recoverToExceptionIf[ImplementationsException] {
           baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
-        }.map(_ should have('message("No compatible implementation provided for interaction: InteractionOne: List(InteractionOne input size differs: transition expects 2, implementation provides 1)")))
+        }.map(_ should have('message("Recipe WrongImplementation:8e2745de0bb0bde5 has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(InteractionOne input size differs: transition expects 2, implementation provides 1)")))
       }
     }
   }

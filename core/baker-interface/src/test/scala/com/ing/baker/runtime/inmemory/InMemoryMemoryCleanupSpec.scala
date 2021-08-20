@@ -24,7 +24,7 @@ class InMemoryMemoryCleanupSpec extends AnyFunSpec with Matchers {
 
       val result: IO[RecipeInstanceState] = for {
         baker <- InMemoryBaker.build(BakerF.Config(idleTimeout = 100.milliseconds, allowAddingRecipeWithoutRequiringInstances = true), List.empty)
-        recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(TestRecipe.getRecipe("InMemory")))
+        recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(TestRecipe.getRecipe("InMemory")), validate = false)
         _ <- baker.bake(recipeId, recipeInstanceId)
         result <- baker.getRecipeInstanceState(recipeInstanceId)
       } yield (result)
@@ -39,7 +39,7 @@ class InMemoryMemoryCleanupSpec extends AnyFunSpec with Matchers {
 
       val result: IO[RecipeInstanceState] = for {
         baker <- InMemoryBaker.build(BakerF.Config(idleTimeout = 100.milliseconds, allowAddingRecipeWithoutRequiringInstances = true), List.empty)
-        recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(TestRecipe.getRecipe("InMemory")))
+        recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(TestRecipe.getRecipe("InMemory")), validate = false)
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.getRecipeInstanceState(recipeInstanceId)
         _ <- IO.sleep(110.milliseconds)
