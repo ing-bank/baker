@@ -68,8 +68,8 @@ object Dependencies {
   val graphvizJava = "guru.nidi" % "graphviz-java" % "0.18.1"
 
   val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.11.0"
-  val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.16.1"
-  val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.1.4"
+  val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.15.0"
+  val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.1.5"
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.11.2"
@@ -133,6 +133,8 @@ object Dependencies {
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.4"
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.69"
   val bouncyCastleBcpkix ="org.bouncycastle" % "bcpkix-jdk15on" % "1.69"
+
+  val guava = "com.google.guava" % "guava" % "30.1.1-jre"
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) = modules.map(m => m % scope)
 

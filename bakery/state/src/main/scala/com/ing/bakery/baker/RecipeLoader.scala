@@ -31,7 +31,7 @@ object RecipeLoader extends LazyLogging {
     for {
       newRecipes <- RecipeLoader.loadRecipes(path)
       recipes <- recipeCache.merge(newRecipes)
-      _ <- IO{ if (recipes.isEmpty) logger.error(s"No recipes found in the recipe directory ($path), probably misconfiguration?")
+      _ <- IO{ if (recipes.isEmpty) logger.warn(s"No recipes found in the recipe directory $path or cache")
           else logger.debug(s"Recipes loaded: ${recipes.map(_.name)}") }
       _ <- recipes.traverse { record =>
         IO.fromFuture(IO(baker.addRecipe(record)))
@@ -80,7 +80,10 @@ object RecipeLoader extends LazyLogging {
     for {
       recipe <- fromBytes(inputStreamToBytes(Files.newInputStream(f)))
       updated <- IO(Files.readAttributes(f, classOf[BasicFileAttributes]).lastModifiedTime().toMillis)
-    } yield (recipe, updated)
+    } yield {
+      logger.info(s"${f.toFile.getName} -> ${recipe.name}:${recipe.recipeId}")
+      (recipe, updated)
+    }
   }
 
   private def inputStreamToBytes(is: InputStream): Array[Byte] =

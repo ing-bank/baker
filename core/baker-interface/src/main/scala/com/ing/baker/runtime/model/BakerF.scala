@@ -24,6 +24,7 @@ object BakerF {
 
   case class Config(allowAddingRecipeWithoutRequiringInstances: Boolean = false,
                     recipeInstanceConfig: RecipeInstance.Config = RecipeInstance.Config(),
+                    idleTimeout: FiniteDuration = 60 seconds,
                     retentionPeriodCheckInterval: FiniteDuration = 10.seconds,
                     bakeTimeout: FiniteDuration = 10.seconds,
                     processEventTimeout: FiniteDuration = 10.seconds,
@@ -67,7 +68,9 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     * @return A recipeId
     */
   override def addRecipe(recipeRecord: RecipeRecord): F[String] =
-    components.recipeManager.addRecipe(recipeRecord.recipe, !recipeRecord.validate || config.allowAddingRecipeWithoutRequiringInstances)
+    components
+      .recipeManager
+      .addRecipe(recipeRecord.recipe, !recipeRecord.validate || config.allowAddingRecipeWithoutRequiringInstances)
       .timeout(config.addRecipeTimeout)
 
   /**

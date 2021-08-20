@@ -8,6 +8,7 @@ import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.testkit.{TestDuration, TestKit, TestProbe}
+import cats.effect.IO
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe._
@@ -332,8 +333,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           recipeInstanceId,
           EventInstance("sensory-event", Map("ingredient-0" -> PrimitiveValue(42))),
           onEvent = "interaction-2-happened")
-        _ = completed.eventNames shouldBe
-          Seq("sensory-event", "interaction-1-happened", "interaction-2-happened")
+        _ = completed.eventNames.toSet shouldBe
+          Set("sensory-event", "interaction-1-happened", "interaction-2-happened")
         _ = completed.ingredients shouldBe
           Map("ingredient-0" -> PrimitiveValue(42),
             "ingredient-1" -> PrimitiveValue("data1"),
@@ -759,6 +760,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient")))
+        _ <- baker.getEventNames(recipeInstanceId)
         _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, "initialIngredient")
         _ = verify(testInteractionTwoMock).apply("initialIngredient")
       } yield succeed
