@@ -108,6 +108,21 @@ object ProcessIndexProto {
         } yield ActorActivated(recipeInstanceId)
     }
 
+  implicit def processIndexSnapShotProto: ProtoMap[ProcessIndexSnapShot, protobuf.ProcessIndexSnapShot] =
+    new ProtoMap[ProcessIndexSnapShot, protobuf.ProcessIndexSnapShot] {
+
+      val companion = protobuf.ProcessIndexSnapShot
+
+      override def toProto(processIndexSnapShot: ProcessIndexSnapShot): protobuf.ProcessIndexSnapShot =
+        protobuf.ProcessIndexSnapShot(processIndexSnapShot.index.map(entry => entry._1 -> ctxToProto(entry._2)))
+
+      override def fromProto(message: protobuf.ProcessIndexSnapShot): Try[ProcessIndexSnapShot] = {
+        Try {
+          ProcessIndexSnapShot(message.index.map(entry => entry._1 -> ctxFromProto(entry._2).get))
+        }
+      }
+    }
+
   implicit def actorMetadataProto: ProtoMap[ActorMetadata, protobuf.ActorMetaData] =
     new ProtoMap[ActorMetadata, protobuf.ActorMetaData] {
 

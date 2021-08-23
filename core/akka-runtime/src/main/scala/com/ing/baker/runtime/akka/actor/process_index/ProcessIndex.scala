@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.actor.process_index
 import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, Terminated}
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.ask
-import akka.persistence.{PersistentActor, RecoveryCompleted}
+import akka.persistence.{PersistentActor, RecoveryCompleted, SaveSnapshotFailure, SaveSnapshotSuccess, SnapshotOffer}
 import akka.sensors.actor.PersistentActorMetrics
 import cats.data.{EitherT, OptionT}
 import cats.effect.IO
@@ -78,6 +78,9 @@ object ProcessIndex {
 
   // when an actor is created
   case class ActorCreated(recipeId: String, recipeInstanceId: String, createdDateTime: Long) extends BakerSerializable
+
+  // Used for creating a snapshot of the index.
+  case class ProcessIndexSnapShot(index: Map[String, ActorMetadata])extends BakerSerializable
 
   private val bakerExecutionContext: ExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
 }
@@ -164,7 +167,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       case None if !index.contains(recipeInstanceId) => sender() ! NoSuchProcess(recipeInstanceId)
       case None if index(recipeInstanceId).isDeleted => sender() ! ProcessDeleted(recipeInstanceId)
       case None =>
-        persist(ActorActivated(recipeInstanceId)) { _ =>
+        persistWithSnapshot(ActorActivated(recipeInstanceId)) { _ =>
           val actor = createProcessActor(recipeInstanceId)
           if (actor.isEmpty) {
             log.warning(s"Can't create actor for instance $recipeInstanceId")
@@ -186,7 +189,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   }
 
   override def receiveCommand: Receive = {
-
+    case SaveSnapshotSuccess(_) => log.debug("Snapshot saved")
+    case SaveSnapshotFailure(_, _) => log.error("Saving snapshot failed")
     case GetIndex =>
       sender() ! Index(index.values.filter(_.processStatus == Active).toSeq)
 
@@ -209,13 +213,13 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
       index.get(recipeInstanceId) match {
         case Some(meta) if shouldDelete(meta) =>
-          persist(ActorDeleted(recipeInstanceId)) { _ =>
+          persistWithSnapshot(ActorDeleted(recipeInstanceId)) { _ =>
             index.update(recipeInstanceId, meta.copy(processStatus = Deleted))
           }
         case Some(meta) if meta.isDeleted =>
           log.logWithMDC(Logging.WarningLevel, s"Received Terminated message for already deleted recipe instance: ${meta.recipeInstanceId}", mdc)
         case Some(_) =>
-          persist(ActorPassivated(recipeInstanceId)) { _ => }
+          persistWithSnapshot(ActorPassivated(recipeInstanceId)) { _ => }
         case None =>
           log.logWithMDC(Logging.WarningLevel, s"Received Terminated message for non indexed actor: $actorRef", mdc)
       }
@@ -231,7 +235,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
               val createdTime = System.currentTimeMillis()
 
               // this persists the fact that we created a process instance
-              persist(ActorCreated(recipeId, recipeInstanceId, createdTime)) { _ =>
+              persistWithSnapshot(ActorCreated(recipeId, recipeInstanceId, createdTime)) { _ =>
 
                 // after that we actually create the ProcessInstance actor
                 val processState = RecipeInstanceState(recipeInstanceId, Map.empty[String, Value], List.empty)
@@ -319,7 +323,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           case None =>
             async { callback =>
               createProcessActor(recipeInstanceId).foreach { actor =>
-                persist(ActorActivated(recipeInstanceId)) { _ =>
+                persistWithSnapshot(ActorActivated(recipeInstanceId)) { _ =>
                   callback(Right(actor -> index (recipeInstanceId)))
                 }
               }
@@ -446,6 +450,19 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   private val actorsToBeCreated: mutable.Set[String] = mutable.Set.empty
 
   override def receiveRecover: Receive = {
+    case SnapshotOffer(_, offer: SnapshotOffer) =>
+      offer.snapshot match {
+        case processIndexSnapShot: ProcessIndexSnapShot =>
+          index.clear()
+          actorsToBeCreated.clear()
+          index ++= processIndexSnapShot.index
+          actorsToBeCreated ++= index.filter(process => process._2.processStatus == Active ).keys
+        case _ =>
+          val message = "could not load snapshot because snapshot was not of type ProcessIndexSnapShot"
+          log.error(message)
+          throw new IllegalArgumentException(message)
+      }
+
     case ActorCreated(recipeId, recipeInstanceId, createdTime) =>
       index += recipeInstanceId -> ActorMetadata(recipeId, recipeInstanceId, createdTime, Active)
       actorsToBeCreated += recipeInstanceId
@@ -464,6 +481,16 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
     case RecoveryCompleted =>
       actorsToBeCreated.foreach(id => createProcessActor(id))
+  }
+
+  //TODO read this from an config instead of hardcorded
+  val snapShotInterval = 1000
+
+  def persistWithSnapshot[A](event: A)(handler: A => Unit): Unit = {
+    persist(event)(handler)
+    if (lastSequenceNr % snapShotInterval == 0 && lastSequenceNr != 0) {
+      saveSnapshot(ProcessIndexSnapShot(index.toMap))
+    }
   }
 
   override def persistenceId: String = self.path.name
