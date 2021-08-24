@@ -190,7 +190,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   override def receiveCommand: Receive = {
     case SaveSnapshotSuccess(_) => log.debug("Snapshot saved")
+
     case SaveSnapshotFailure(_, _) => log.error("Saving snapshot failed")
+
     case GetIndex =>
       sender() ! Index(index.values.filter(_.processStatus == Active).toSeq)
 
@@ -450,19 +452,15 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   private val actorsToBeCreated: mutable.Set[String] = mutable.Set.empty
 
   override def receiveRecover: Receive = {
-    case SnapshotOffer(_, offer: SnapshotOffer) =>
-      offer.snapshot match {
-        case processIndexSnapShot: ProcessIndexSnapShot =>
+    case SnapshotOffer(_, processIndexSnapShot: ProcessIndexSnapShot) =>
           index.clear()
           actorsToBeCreated.clear()
           index ++= processIndexSnapShot.index
           actorsToBeCreated ++= index.filter(process => process._2.processStatus == Active ).keys
-        case _ =>
+    case SnapshotOffer(_, _) =>
           val message = "could not load snapshot because snapshot was not of type ProcessIndexSnapShot"
           log.error(message)
           throw new IllegalArgumentException(message)
-      }
-
     case ActorCreated(recipeId, recipeInstanceId, createdTime) =>
       index += recipeInstanceId -> ActorMetadata(recipeId, recipeInstanceId, createdTime, Active)
       actorsToBeCreated += recipeInstanceId
@@ -484,7 +482,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   }
 
   //TODO read this from an config instead of hardcorded
-  val snapShotInterval = 1000
+  val snapShotInterval = 1
 
   def persistWithSnapshot[A](event: A)(handler: A => Unit): Unit = {
     persist(event)(handler)
