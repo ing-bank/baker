@@ -482,7 +482,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   }
 
   //TODO read this from an config instead of hardcorded
-  val snapShotInterval = 1
+  val snapShotInterval = 100
 
   def persistWithSnapshot[A](event: A)(handler: A => Unit): Unit = {
     persist(event)(handler)
