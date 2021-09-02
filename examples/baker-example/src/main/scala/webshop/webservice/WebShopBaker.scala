@@ -1,10 +1,10 @@
 package webshop.webservice
 
 import java.util.UUID
-
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import org.log4s.{Logger, getLogger}
 import webshop.webservice.CheckoutFlowIngredients.{Item, OrderId, PaymentInformation, ShippingAddress}
@@ -22,7 +22,7 @@ object WebShopBaker {
     implicit val cs = IO.contextShift(ec)
 
     IO.fromFuture(IO(for {
-      checkoutRecipeId <- baker.addRecipe(checkoutFlowCompiledRecipe)
+      checkoutRecipeId <- baker.addRecipe(RecipeRecord.of(checkoutFlowCompiledRecipe))
       _ = println(Console.GREEN + "V3 Checkout Recipe ID :: " + checkoutRecipeId + Console.RESET)
       _ <- baker.registerEventListener((name, event) => {
         logger.info(s"$name => ${event.providedIngredients}")

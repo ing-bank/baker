@@ -16,7 +16,7 @@ class TestWatcher extends Watcher {
     TestWatcher.triggered = true
   }
 
-  override def resource(config: Config, system: ActorSystem, callbackEnable: () => Unit): Resource[IO, Unit] = {
+  override def resource(config: Config, system: ActorSystem, cassandra: Option[Cassandra], callbackEnable: () => Unit): Resource[IO, Unit] = {
     implicit val timer: Timer[IO] = IO.timer(system.dispatcher)
     Resource.eval(IO{
       TestWatcher.started = true

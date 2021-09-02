@@ -6,8 +6,8 @@ import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.runtime.akka.AkkaBaker;
-import com.ing.baker.runtime.akka.internal.LocalInteractions;
 import com.ing.baker.runtime.common.BakerException;
+import com.ing.baker.runtime.common.RecipeRecord;
 import com.ing.baker.runtime.common.SensoryEventStatus;
 import com.ing.baker.runtime.javadsl.*;
 import com.ing.baker.types.Converters;
@@ -59,7 +59,7 @@ public class BakerTest {
 
         String recipeInstanceId = UUID.randomUUID().toString();
         Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
-        java.util.Map<String, Value> ingredients = jBaker.addRecipe(compiledRecipe)
+        java.util.Map<String, Value> ingredients = jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false))
                 .thenCompose(recipeId -> {
                     assertEquals(compiledRecipe.getValidationErrors().size(), 0);
                     return jBaker.bake(recipeId, recipeInstanceId);
@@ -82,7 +82,7 @@ public class BakerTest {
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
 
         Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
-        String recipeId = jBaker.addRecipe(compiledRecipe).get();
+        String recipeId = jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false)).get();
 
         String requestId = UUID.randomUUID().toString();
         jBaker.bake(recipeId, requestId).get();
@@ -102,7 +102,7 @@ public class BakerTest {
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
         Baker jBaker = AkkaBaker.java(config, actorSystem);
 
-        jBaker.addRecipe(compiledRecipe).get();
+        jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), true)).get();
     }
 
     @Test
@@ -115,7 +115,7 @@ public class BakerTest {
 
         // Setup recipe
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
-        String recipeId = jBaker.addRecipe(compiledRecipe).get();
+        String recipeId = jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false)).get();
         EventInstance eventOne = EventInstance.from(new JavaCompiledRecipeTest.EventOne());
         assertEquals(eventOne.getName(), "EventOne");
         assertTrue(eventOne.getProvidedIngredients().isEmpty());

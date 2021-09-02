@@ -55,6 +55,8 @@ object BakerTypedProtobufSerializer {
         .register("ProcessIndex.ActorPassivated"),
       forType[ProcessIndex.ActorActivated]
         .register("ProcessIndex.ActorActivated"),
+      forType[ProcessIndex.ProcessIndexSnapShot]
+        .register("ProcessIndex.ProcessIndexSnapShot"),
       forType[ProcessIndex.ActorMetadata]
         .register("ProcessIndex.ActorMetadata"),
       forType[ProcessIndexProtocol.GetIndex.type]

@@ -7,9 +7,8 @@ import akka.{Done, NotUsed}
 import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Sync, Timer}
 import cats.implicits._
-import com.ing.baker.runtime.akka.internal.{CachingTransitionLookups, LocalInteractions}
-import com.ing.baker.runtime.model.InteractionsF
-import com.ing.baker.runtime.scaladsl.InteractionInstanceF
+import com.ing.baker.runtime.akka.internal.{CachedInteractionManager, CachingTransitionLookups}
+import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.bakery.interaction.RemoteInteractionClient
 import com.typesafe.scalalogging.LazyLogging
 import org.http4s.Uri
@@ -17,9 +16,9 @@ import org.http4s.client.Client
 import skuber._
 import skuber.api.client.{EventType, KubernetesClient}
 import skuber.json.format._
-
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
+
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -27,7 +26,7 @@ import scala.concurrent.duration._
 object InteractionDiscovery extends LazyLogging {
 
   def extractSamePodInteractions(httpClient: Client[IO], localhostPorts: List[Int])
-                                (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[List[InteractionInstanceF[IO]]] = {
+                                (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[List[InteractionInstance[IO]]] = {
     localhostPorts.map(port =>
       extractInteractions(httpClient,
         Uri.unsafeFromString(s"http://localhost:$port")
@@ -39,13 +38,13 @@ object InteractionDiscovery extends LazyLogging {
 
   def extractInterfacesFromDeployedInteraction(httpClient: Client[IO], deployedService: Service, port: Int)
                                               (implicit contextShift: ContextShift[IO], timer: Timer[IO])
-  : IO[List[InteractionInstanceF[IO]]] = {
+  : IO[List[InteractionInstance[IO]]] = {
     val protocol = /*if(interactionClientTLS.isDefined) "https" else */ "http"
     extractInteractions(httpClient, Uri.unsafeFromString(s"$protocol://${deployedService.name}:$port/"))
   }
 
   private def extractInteractions(httpClient: Client[IO], address: Uri)
-                                (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[List[InteractionInstanceF[IO]]] = {
+                                (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[List[InteractionInstance[IO]]] = {
     val client = new RemoteInteractionClient(httpClient, address)
 
     def within[A](giveUpAfter: FiniteDuration, retries: Int)(f: IO[A])(implicit timer: Timer[IO]): IO[A] = {
@@ -72,7 +71,7 @@ object InteractionDiscovery extends LazyLogging {
         assert(interfaces.nonEmpty)
         logger.info(s"Loaded ${interfaces.size} interactions: ${interfaces.map(_.name).mkString(",")}")
         interfaces.map(interaction => {
-          InteractionInstanceF.build[IO](
+          InteractionInstance.build[IO](
             _name = interaction.name,
             _input = interaction.input,
             _output = interaction.output,
@@ -85,7 +84,7 @@ object InteractionDiscovery extends LazyLogging {
 
   def resource(interactionHttpClient: Client[IO],
                k8s: => KubernetesClient,
-               localInteractions: LocalInteractions,
+               interactionManager: CachedInteractionManager,
                localhostPorts: List[Int],
                podLabelSelector: Option[LabelSelector])(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem): Resource[IO, InteractionDiscovery] = {
 
@@ -118,11 +117,12 @@ object InteractionDiscovery extends LazyLogging {
     }
 
     Resource.make(for {
-      sameJvmInteractions <- localInteractions.listAll
+      sameJvmInteractions <- interactionManager.listAll
       samePodInteractions <- extractSamePodInteractions(interactionHttpClient, localhostPorts)
       discovery = new InteractionDiscovery(
         samePodInteractions ++ sameJvmInteractions,
-        interactionHttpClient
+        interactionHttpClient,
+        interactionManager.allowSupersetForOutputTypes
       )
       killSwitch <- IO {
         if (podLabelSelector.isDefined) watchSource.toMat(updateSink(discovery))(Keep.left).run()
@@ -138,12 +138,13 @@ object InteractionDiscovery extends LazyLogging {
   }
 }
 
-final class InteractionDiscovery(val availableInteractions: List[InteractionInstanceF[IO]],
-                                  interactionHttpClient: Client[IO])
-                                (implicit sync: Sync[IO]) extends InteractionsF[IO] with CachingTransitionLookups with LazyLogging {
+final class InteractionDiscovery(val availableInteractions: List[InteractionInstance[IO]],
+                                 interactionHttpClient: Client[IO],
+                                 override val allowSupersetForOutputTypes: Boolean)
+                                (implicit sync: Sync[IO]) extends InteractionManager[IO] with CachingTransitionLookups with LazyLogging {
 
   import InteractionDiscovery._
-  type DiscoveredInteractions = ConcurrentHashMap[String, List[InteractionInstanceF[IO]]]
+  type DiscoveredInteractions = ConcurrentHashMap[String, List[InteractionInstance[IO]]]
 
   private val discoveredInteractions: IO[Ref[IO, DiscoveredInteractions]] =
     Ref.of[IO, DiscoveredInteractions](new DiscoveredInteractions)
@@ -153,7 +154,7 @@ final class InteractionDiscovery(val availableInteractions: List[InteractionInst
       discovered <- discoveredRef.get
     } yield discovered
 
-  def listAll: IO[List[InteractionInstanceF[IO]]] = for {
+  def listAll: IO[List[InteractionInstance[IO]]] = for {
     d <- discovered
   } yield availableInteractions ++ d.values().asScala.flatten
 
@@ -176,5 +177,4 @@ final class InteractionDiscovery(val availableInteractions: List[InteractionInst
         IO(logger.error(s"Event type ERROR on service watch for service ${event._object}"))
     }
   }) getOrElse IO.unit
-
 }

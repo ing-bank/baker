@@ -8,7 +8,7 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{GetIndex, Index}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor
-import com.ing.baker.runtime.model.InteractionsF
+import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.runtime.{RecipeManager, RecipeManagerActorImpl, RecipeManagerImpl}
 
@@ -24,7 +24,7 @@ class LocalBakerActorProvider(
                                recipeManagerType: RecipeManagerType
                              ) extends BakerActorProvider {
 
-  override def createProcessIndexActor(interactionManager: InteractionsF[IO], recipeManager: RecipeManager)(
+  override def createProcessIndexActor(interactionManager: InteractionManager[IO], recipeManager: RecipeManager)(
     implicit actorSystem: ActorSystem): ActorRef = {
     actorSystem.actorOf(
       ProcessIndex.props(

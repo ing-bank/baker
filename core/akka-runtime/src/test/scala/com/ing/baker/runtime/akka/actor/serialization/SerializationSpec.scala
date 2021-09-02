@@ -84,6 +84,8 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
 
   checkFor[ProcessIndex.ActorMetadata].run
 
+  checkFor[ProcessIndex.ProcessIndexSnapShot].run
+
   test("ProcessIndexProtocol.GetIndex typed serialization") {
     val m = ProcessIndexProtocol.GetIndex
     val serialized = serializer.toBinary(m)
@@ -455,6 +457,9 @@ object SerializationSpec {
 
     implicit val actorDeletedGen: Gen[ActorDeleted] =
       identifierGen.map(ActorDeleted)
+
+    implicit val processIndexSnapShotGen: Gen[ProcessIndexSnapShot] =
+      Gen.mapOf(GenUtil.tuple(identifierGen, actorMetadataGen)).map(ProcessIndexSnapShot)
 
     implicit val resolveBlockedInteractionGen: Gen[ResolveBlockedInteraction] =
       for {

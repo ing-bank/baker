@@ -42,7 +42,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
-  def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): F[String]
+  def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long, validate: Boolean): F[String] = addRecipe(RecipeRecord.of(compiledRecipe, updated = timeCreated, validate = validate))
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -52,7 +52,14 @@ trait Baker[F[_]] extends LanguageApi {
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
-  def addRecipe(compiledRecipe: CompiledRecipe): F[String] = addRecipe(compiledRecipe, System.currentTimeMillis())
+  def addRecipe(compiledRecipe: CompiledRecipe, validate: Boolean): F[String] = addRecipe(compiledRecipe, System.currentTimeMillis(), validate)
+
+  /**
+    * Adds recipe as a record
+    * @param recipe
+    * @return
+    */
+  def addRecipe(recipe: RecipeRecord): F[String]
 
   /**
     * Returns the recipe information for the given RecipeId
@@ -345,4 +352,16 @@ trait Baker[F[_]] extends LanguageApi {
     * @return
     */
   def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): F[Unit]
+}
+
+case class RecipeRecord(
+                         recipeId: String,
+                         name: String,
+                         updated: Long,
+                         recipe: CompiledRecipe,
+                         validate: Boolean
+                       )
+object RecipeRecord {
+  def of(recipe: CompiledRecipe, updated: Long = System.currentTimeMillis(), validate: Boolean = true) =
+    RecipeRecord(recipe.recipeId, recipe.name, updated, recipe, validate)
 }

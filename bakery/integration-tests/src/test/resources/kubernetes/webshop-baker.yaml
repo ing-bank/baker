@@ -114,7 +114,7 @@ data:
     baker {
       recipe-poll-interval: 5 seconds
       event-sink {
-        provider-class: "com.ing.bakery.baker.KafkaEventSink",
+        class: "com.ing.bakery.baker.KafkaEventSink",
         bootstrap-servers: "kafka-event-sink:9092",
         topic: "events"
       }

@@ -7,7 +7,7 @@ import java.util.function.{BiConsumer, Consumer}
 
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
-import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.common.{RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
 import javax.annotation.Nonnull
@@ -50,11 +50,32 @@ class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker
     *
     * This function is idempotent, if the same (equal) recipe was added earlier this will return the same recipeId.
     *
-    * @param compiledRecipe The compiled recipe.
+    * @param recipeRecord The RecipeRecord recipe.
     * @return A recipe identifier.
     */
-  def addRecipe(@Nonnull compiledRecipe: CompiledRecipe, timeCreated: Long): CompletableFuture[String] =
-    toCompletableFuture(baker.addRecipe(compiledRecipe, timeCreated))
+  def addRecipe(@Nonnull recipeRecord: RecipeRecord): CompletableFuture[String] =
+    toCompletableFuture(baker.addRecipe(recipeRecord))
+
+
+  /**
+    * Adds a recipe to baker and returns a recipeId for the recipe.
+    *
+    * This function is idempotent, if the same (equal) recipe was added earlier this will return the same recipeId
+    *
+    * @param compiledRecipe The compiled recipe.
+    * @return A recipeId
+    */
+  override def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long, validate: Boolean): CompletableFuture[String] = addRecipe(RecipeRecord.of(compiledRecipe, updated = timeCreated, validate = validate))
+
+  /**
+    * Adds a recipe to baker and returns a recipeId for the recipe.
+    *
+    * This function is idempotent, if the same (equal) recipe was added earlier this will return the same recipeId
+    *
+    * @param compiledRecipe The compiled recipe.
+    * @return A recipeId
+    */
+  override def addRecipe(compiledRecipe: CompiledRecipe, validate: Boolean): CompletableFuture[String] = addRecipe(compiledRecipe, System.currentTimeMillis(), validate)
 
   /**
     * Attempts to gracefully shutdown the baker system.
@@ -71,17 +92,6 @@ class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker
   def bake(@Nonnull recipeId: String, @Nonnull recipeInstanceId: String): CompletableFuture[Unit] =
     toCompletableFuture(baker.bake(recipeId, recipeInstanceId))
 
-
-  /**
-    * Adds a recipe to baker and returns a recipeId for the recipe.
-    *
-    * This function is idempotent, if the same (equal) recipe was added earlier this will return the same recipeId.
-    *
-    * @param compiledRecipe The compiled recipe.
-    * @return A recipe identifier.
-    */
-  override def addRecipe(@Nonnull compiledRecipe: CompiledRecipe): CompletableFuture[String] =
-    toCompletableFuture(baker.addRecipe(compiledRecipe))
 
   def fireEventAndResolveWhenReceived(@Nonnull recipeInstanceId: String, @Nonnull event: EventInstance, @Nonnull correlationId: String): CompletableFuture[SensoryEventStatus] =
     fireEventAndResolveWhenReceived(recipeInstanceId, event, Optional.of(correlationId))

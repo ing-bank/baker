@@ -23,7 +23,7 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
 
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
-  scalaVersion := "2.12.12",
+  scalaVersion := "2.12.14",
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
   javacOptions := Seq("-source", "1.8", "-target", "1.8"),
@@ -126,7 +126,8 @@ lazy val `baker-interface` = project.in(file("core/baker-interface"))
       fs2Core,
       fs2Io,
       scalaJava8Compat,
-      javaxInject
+      javaxInject,
+      guava
     ) ++ providedDeps(findbugs) ++ testDeps(
       scalaTest,
       scalaCheckPlusMockito,

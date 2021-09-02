@@ -13,7 +13,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceRuntime
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.internal.RecipeRuntime._
-import com.ing.baker.runtime.model.InteractionsF
+import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.MDC
@@ -119,7 +119,7 @@ object RecipeRuntime {
   }
 }
 
-class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionsF[IO], eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime[Place, Transition, RecipeInstanceState, EventInstance] {
+class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager[IO], eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime[Place, Transition, RecipeInstanceState, EventInstance] {
 
   protected implicit lazy val contextShift: ContextShift[IO] = IO.contextShift(ec)
   /**

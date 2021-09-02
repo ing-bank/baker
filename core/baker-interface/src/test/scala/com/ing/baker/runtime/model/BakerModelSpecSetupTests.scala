@@ -4,8 +4,8 @@ import cats.effect.{ConcurrentEffect, IO}
 import cats.implicits._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.Recipe
-import com.ing.baker.runtime.model.ScalaDSLRuntime._
-import com.ing.baker.runtime.scaladsl.InteractionInstanceF
+import com.ing.baker.runtime.common.RecipeRecord
+import com.ing.baker.runtime.scaladsl.ScalaDSLRuntime._
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 
@@ -25,7 +25,7 @@ trait BakerModelSpecSetupTests[F[_]] {
       for {
         baker <- context.setupBakerWithNoRecipe(mockImplementations)
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful("foobar")))
-        recipeId <- baker.addRecipe(simpleRecipe, System.currentTimeMillis())
+        recipeId <- baker.addRecipe(RecipeRecord.of(simpleRecipe))
         recipeInstanceId = java.util.UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, initialEvent.instance("initialIngredient"))
@@ -49,8 +49,8 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withInteraction(interactionOne.withName("interactionOneRenamed"))
         .withSensoryEvent(initialEvent)
       for {
-        baker <- context.setupBakerWithNoRecipe(List(InteractionInstanceF.unsafeFrom(new InteractionOneSimple())))
-        _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), System.currentTimeMillis())
+        baker <- context.setupBakerWithNoRecipe(List(InteractionInstance.unsafeFrom(new InteractionOneSimple())))
+        _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
       } yield succeed
     }
 
@@ -59,8 +59,8 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withInteraction(interactionOne)
         .withSensoryEvent(initialEvent)
       for {
-        baker <- context.setupBakerWithNoRecipe(List((InteractionInstanceF.unsafeFrom(new InteractionOneFieldName()))))
-        _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        baker <- context.setupBakerWithNoRecipe(List((InteractionInstance.unsafeFrom(new InteractionOneFieldName()))))
+        _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
       } yield succeed
     }
 
@@ -70,8 +70,8 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withInteraction(interactionOne)
         .withSensoryEvent(initialEvent)
       for {
-        baker <- context.buildBaker(List(InteractionInstanceF.unsafeFrom(new InteractionOneInterfaceImplementation())))
-        _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        baker <- context.buildBaker(List(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
+        _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
       } yield succeed
     }
 
@@ -80,8 +80,8 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withInteraction(interactionWithAComplexIngredient)
         .withSensoryEvent(initialEvent)
       for {
-        baker <- context.buildBaker(List(InteractionInstanceF.unsafeFrom(mock[ComplexIngredientInteraction])))
-        _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        baker <- context.buildBaker(List(InteractionInstance.unsafeFrom(mock[ComplexIngredientInteraction])))
+        _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
       } yield succeed
     }
 
@@ -93,8 +93,8 @@ trait BakerModelSpecSetupTests[F[_]] {
 
       for {
         baker <- context.buildBaker(mockImplementations)
-        _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).attempt.map {
-          case Left(e) => e should have('message("Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction"))
+        _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe))).attempt.map {
+          case Left(e) => e should have('message("Recipe NonProvidedIngredient:68b775e508fc6877 has validation errors: Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction"))
           case Right(_) => fail("Adding a recipe should fail")
         }
       } yield succeed
@@ -108,8 +108,8 @@ trait BakerModelSpecSetupTests[F[_]] {
 
       for {
         baker <- context.buildBaker(List.empty)
-        _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).attempt.map {
-          case Left(e) => e should have('message("No compatible implementation provided for interaction: InteractionOne: List(NameNotFound)"))
+        _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe))).attempt.map {
+          case Left(e) => e should have('message("Recipe MissingImplementation:dc3970efc8837e64 has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(NameNotFound)"))
           case Right(_) => fail("Adding a recipe should fail")
         }
       } yield succeed
@@ -122,9 +122,9 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withSensoryEvent(initialEvent)
 
       for {
-        baker <- context.buildBaker(List(InteractionInstanceF.unsafeFrom(new InteractionOneWrongApply())))
-        _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).attempt.map {
-          case Left(e) => e should have('message("No compatible implementation provided for interaction: InteractionOne: List(InteractionOne input size differs: transition expects 2, implementation provides 1)"))
+        baker <- context.buildBaker(List(InteractionInstance.unsafeFrom(new InteractionOneWrongApply())))
+        _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe))).attempt.map {
+          case Left(e) => e should have('message("Recipe WrongImplementation:8e2745de0bb0bde5 has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(InteractionOne input size differs: transition expects 2, implementation provides 1)"))
           case Right(_) => fail("Adding an interaction should fail")
         }
       } yield succeed

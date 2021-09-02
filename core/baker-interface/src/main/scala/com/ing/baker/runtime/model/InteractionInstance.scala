@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.scaladsl
+package com.ing.baker.runtime.model
 
 import java.lang.reflect
 import java.lang.reflect.{Method, Parameter}
@@ -11,6 +11,7 @@ import cats.implicits._
 import cats.{Applicative, ~>}
 import com.ing.baker.recipe.annotations.{FiresEvent, RequiresIngredient}
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
+import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
 import com.ing.baker.runtime.{common, javadsl}
 import com.ing.baker.types.{Converters, Type}
 
@@ -19,7 +20,7 @@ import scala.concurrent.Future
 import scala.reflect.ClassTag
 import scala.util.Try
 
-abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] with ScalaApi { self =>
+abstract class InteractionInstance[F[_]] extends common.InteractionInstance[F] with ScalaApi { self =>
 
   val run: Seq[IngredientInstance] => F[Option[EventInstance]]
 
@@ -40,8 +41,8 @@ abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] 
     new String(base64)
   }
 
-  def translate[G[_]](mapK: F ~> G): InteractionInstanceF[G] =
-    new InteractionInstanceF[G] {
+  def translate[G[_]](mapK: F ~> G): InteractionInstance[G] =
+    new InteractionInstance[G] {
       override val run: Seq[IngredientInstance] => G[Option[EventInstance]] =
         (i: Seq[IngredientInstance]) => mapK(self.run(i))
       override val name: String =
@@ -52,52 +53,34 @@ abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] 
         self.output
     }
 
-  def asJava(converter: F ~> CompletableFuture): javadsl.InteractionInstance =
-    new javadsl.InteractionInstance {
-      override val name: String =
-        self.name
-      override val input: util.List[javadsl.InteractionInstanceInput] =
-        self.input.map(input => input.asJava).asJava
-      override val output: Optional[util.Map[String, util.Map[String, Type]]] =
-        self.output match {
-          case Some(out) => Optional.of(out.mapValues(_.asJava).asJava)
-          case None => Optional.empty[util.Map[String, util.Map[String, Type]]]()
-        }
-      override def execute(input: util.List[javadsl.IngredientInstance]): CompletableFuture[Optional[javadsl.EventInstance]] =
-        converter(self.run(input.asScala.map(_.asScala)))
-          .thenApply(
-            _.fold(Optional.empty[javadsl.EventInstance]())(
-            e => Optional.of(e.asJava)))
-    }
-
-  def asDeprecatedFutureImplementation(transform: F ~> Future): InteractionInstance = {
+  def asDeprecatedFutureImplementation(transform: F ~> Future): com.ing.baker.runtime.scaladsl.InteractionInstance = {
     val transformedRun = (in: Seq[IngredientInstance]) => transform(run(in))
-    InteractionInstance(
+    com.ing.baker.runtime.scaladsl.InteractionInstance(
       name = name, input = input, run = transformedRun, output = output)
   }
 }
 
-object InteractionInstanceF {
+object InteractionInstance {
 
   type Constructor[F[_]] = (
     String,
     Seq[Type],
     Seq[IngredientInstance] => F[Option[EventInstance]],
-    Option[Map[String, Map[String, Type]]]) => InteractionInstanceF[F]
+    Option[Map[String, Map[String, Type]]]) => InteractionInstance[F]
 
-  def build[F[_]](_name: String, _input: Seq[InteractionInstanceInput], _run: Seq[IngredientInstance] => F[Option[EventInstance]], _output: Option[Map[String, Map[String, Type]]] = None): InteractionInstanceF[F] =
-    new InteractionInstanceF[F] {
+  def build[F[_]](_name: String, _input: Seq[InteractionInstanceInput], _run: Seq[IngredientInstance] => F[Option[EventInstance]], _output: Option[Map[String, Map[String, Type]]] = None): InteractionInstance[F] =
+    new InteractionInstance[F] {
       override val name: String = _name
       override val input: Seq[InteractionInstanceInput] = _input
       override val run: Seq[IngredientInstance] => F[Option[EventInstance]] = _run
       override val output: Option[Map[String, Map[String, Type]]] = _output
     }
 
-  def unsafeFromList[F[_]](implementations: List[AnyRef])(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): List[InteractionInstanceF[F]] = {
+  def unsafeFromList[F[_]](implementations: List[AnyRef])(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): List[InteractionInstance[F]] = {
     implementations.map(unsafeFrom[F](_))
   }
 
-  def unsafeFrom[F[_]](implementation: AnyRef)(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): InteractionInstanceF[F] = {
+  def unsafeFrom[F[_]](implementation: AnyRef)(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): InteractionInstance[F] = {
     val method: Method = {
       val unmockedClass = common.unmock(implementation.getClass)
       unmockedClass.getMethods.count(_.getName == "apply") match {

@@ -5,7 +5,7 @@ import akka.cluster.Cluster
 import cats.effect.concurrent.Ref
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.baker.runtime.akka.AkkaBaker
-import com.ing.baker.runtime.akka.internal.LocalInteractions
+import com.ing.baker.runtime.akka.internal.CachedInteractionManager
 import com.ing.baker.runtime.scaladsl._
 import com.typesafe.config.ConfigFactory
 import org.http4s.server.blaze.BlazeServerBuilder
@@ -25,7 +25,7 @@ object Main extends IOApp {
       for {
         actorSystem <- IO { ActorSystem("CheckoutService") }
         config <- IO { ConfigFactory.load() }
-        baker <- IO { AkkaBaker(config, actorSystem, LocalInteractions(List(
+        baker <- IO { AkkaBaker(config, actorSystem, CachedInteractionManager(List(
           InteractionInstance.unsafeFrom(new ReserveItemsInstance()),
           InteractionInstance.unsafeFrom(new MakePaymentInstance()),
           InteractionInstance.unsafeFrom(new ShipItemsInstance())

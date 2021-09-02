@@ -5,6 +5,7 @@ import _root_.akka.testkit.{TestKit, TestProbe}
 import _root_.akka.util.Timeout
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
+import com.ing.baker.runtime.common.RecipeRecord
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpecLike
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
@@ -35,7 +36,7 @@ class RecipeManagerActorImplSpec extends TestKit(ActorSystem("MySpec"))
       val manager = new RecipeManagerActorImpl(actor.ref, settings)
       val recipe = mock[CompiledRecipe]
 
-      val eventualString = manager.put(recipe, System.currentTimeMillis())
+      val eventualString = manager.put(RecipeRecord.of(recipe, System.currentTimeMillis()))
       actor.expectMsg(AddRecipe(recipe))
       val id = UUID.randomUUID().toString
 
@@ -66,7 +67,7 @@ class RecipeManagerActorImplSpec extends TestKit(ActorSystem("MySpec"))
 
       for {
         _ <- eventualNotFound.map(_ shouldBe(None))
-        _ <- eventualFound.map(_.get._1.shouldBe(compiledRecipe))
+        _ <- eventualFound.map(_.get.recipe.shouldBe(compiledRecipe))
       } yield succeed
     }
 
@@ -82,7 +83,7 @@ class RecipeManagerActorImplSpec extends TestKit(ActorSystem("MySpec"))
       val timestamp = 42l
 
       actor.reply(AllRecipes(Seq(RecipeInformation(recipe, timestamp))))
-      eventualString.map(_ shouldBe Seq((recipe, timestamp)))
+      eventualString.map(_ shouldBe Seq(RecipeRecord.of(recipe, timestamp)))
     }
   }
 }

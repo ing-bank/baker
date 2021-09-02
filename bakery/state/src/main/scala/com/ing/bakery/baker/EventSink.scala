@@ -11,7 +11,6 @@ import io.circe.syntax._
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.serialization.StringSerializer
 
-import scala.compat.java8.FutureConverters._
 import java.util.Properties
 import scala.concurrent.Promise
 import scala.util.control.NonFatal
@@ -38,13 +37,13 @@ class KafkaEventSink(config: Config) extends EventSink with LazyLogging {
 
   private val producer = {
     val props = new Properties
-    props.put("bootstrap.servers", config.getString("bootstrap-servers"))
+    props.put("bootstrap.servers", config.getString("baker.event-sink.bootstrap-servers"))
     new KafkaProducer(
       props, new StringSerializer(), new StringSerializer(),
     )
   }
 
-  private val topic = config.getString("topic")
+  private val topic = config.getString("baker.event-sink.topic")
 
   private def recordOf(eventInstance: EventInstance): EventRecord =
     EventRecord(eventInstance.name, None, "")
@@ -109,17 +108,17 @@ object EventSink extends LazyLogging {
     }
   }
 
-  def resource(settings: Config)(implicit contextShift: ContextShift[IO], timer: Timer[IO]): Resource[IO, EventSink] = {
+  def resource(config: Config)(implicit contextShift: ContextShift[IO], timer: Timer[IO]): Resource[IO, EventSink] = {
 
     Resource.make({
-      val providerClass = settings.getString("provider-class")
+      val providerClass = config.getString("baker.event-sink.class")
       if (providerClass.isEmpty) {
-        logger.info("No provider class specified: Kafka event sink disabled")
+        logger.info("No class specified: Kafka event sink disabled")
         NoSink
       } else {
-        Try(Class.forName(providerClass).getDeclaredConstructor(classOf[com.typesafe.config.Config]).newInstance(settings)) match {
+        Try(Class.forName(providerClass).getDeclaredConstructor(classOf[com.typesafe.config.Config]).newInstance(config)) match {
           case Success(sink: EventSink) =>
-            logger.info(s"Using sink implementation $providerClass")
+            logger.info(s"Using sink provider implementation $providerClass")
             IO(sink)
           case Success(_) => {
             logger.warn(s"Sink provider class $providerClass must extend ${EventSink.getClass.getCanonicalName}")

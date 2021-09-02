@@ -8,13 +8,14 @@ import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.testkit.{TestDuration, TestKit, TestProbe}
+import cats.effect.IO
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
-import com.ing.baker.runtime.akka.internal.LocalInteractions
+import com.ing.baker.runtime.akka.internal.CachedInteractionManager
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance, InteractionInstanceInput, RecipeEventMetadata}
@@ -75,7 +76,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         exception <- Future.successful {
           intercept[IllegalArgumentException] {
-            AkkaBaker(config, setupActorSystem, LocalInteractions())
+            AkkaBaker(config, setupActorSystem, CachedInteractionManager())
           }
         }
         _ <- setupActorSystem.terminate()
@@ -98,7 +99,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val setupActorSystem = ActorSystem("setup-actor-system", config)
       for {
         exception <- Future.successful {
-          intercept[MalformedURLException](AkkaBaker(config, setupActorSystem, LocalInteractions()))
+          intercept[MalformedURLException](AkkaBaker(config, setupActorSystem, CachedInteractionManager()))
         }
         _ <- setupActorSystem.terminate()
       } yield assert(exception.getMessage contains "wrong-address")
@@ -119,7 +120,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val setupActorSystem = ActorSystem("setup-actor-system", config)
       for {
         exception <- Future.successful {
-          intercept[IllegalArgumentException](AkkaBaker(config, setupActorSystem, LocalInteractions()))
+          intercept[IllegalArgumentException](AkkaBaker(config, setupActorSystem, CachedInteractionManager()))
         }
         _ <- setupActorSystem.terminate()
       } yield assert(exception.getMessage contains "No default service discovery implementation configured in `akka.discovery.method`")
@@ -246,10 +247,10 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           |}
         """.stripMargin).withFallback(ConfigFactory.load())
 
-      val baker = AkkaBaker(config, ActorSystem.apply("remoteTest", config), LocalInteractions(mockImplementations))
+      val baker = AkkaBaker(config, ActorSystem.apply("remoteTest", config), CachedInteractionManager(mockImplementations))
 
       for {
-        recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        recipeId <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
@@ -332,8 +333,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           recipeInstanceId,
           EventInstance("sensory-event", Map("ingredient-0" -> PrimitiveValue(42))),
           onEvent = "interaction-2-happened")
-        _ = completed.eventNames shouldBe
-          Seq("sensory-event", "interaction-1-happened", "interaction-2-happened")
+        _ = completed.eventNames.toSet shouldBe
+          Set("sensory-event", "interaction-1-happened", "interaction-2-happened")
         _ = completed.ingredients shouldBe
           Map("ingredient-0" -> PrimitiveValue(42),
             "ingredient-1" -> PrimitiveValue("data1"),
@@ -577,11 +578,11 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
               .withPredefinedIngredients(("missingJavaOptional", ingredientValue)))
           .withSensoryEvent(initialEvent)
 
-      val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, LocalInteractions(mockImplementations))
+      val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachedInteractionManager(mockImplementations))
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
 
       for {
-        recipeId <- baker.addRecipe(compiledRecipe)
+        recipeId <- baker.addRecipe(RecipeRecord.of(compiledRecipe))
 
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
@@ -627,6 +628,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ = Thread.sleep(100) //Added a 100 wait before veryfing needed due to the asyn nature of calling event listeners.
         _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), argThat(new RuntimeEventMatcher(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))))
         _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), argThat(new RuntimeEventMatcher(EventInstance.unsafeFrom(InteractionOneSuccessful(interactionOneIngredientValue)))))
       } yield succeed
@@ -758,6 +760,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient")))
+        _ <- baker.getEventNames(recipeInstanceId)
         _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, "initialIngredient")
         _ = verify(testInteractionTwoMock).apply("initialIngredient")
       } yield succeed
@@ -1155,7 +1158,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       val first = (for {
         baker1 <- setupBakerWithNoRecipe()(system1)
-        recipeId <- baker1.addRecipe(compiledRecipe)
+        recipeId <- baker1.addRecipe(RecipeRecord.of(compiledRecipe))
         _ <- baker1.bake(recipeId, recipeInstanceId)
         _ <- baker1.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ <- baker1.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(SecondEvent()))
@@ -1170,10 +1173,10 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         val system2 = ActorSystem("persistenceTest2", localLevelDBConfig("persistenceTest2"))
         (for {
           baker2 <- setupBakerWithNoRecipe()(system2)
-          recipeId <- baker2.addRecipe(compiledRecipe)
+          recipeId <- baker2.addRecipe(RecipeRecord.of(compiledRecipe))
           state <- baker2.getRecipeInstanceState(recipeInstanceId)
           recipe <- baker2.getRecipe(recipeId)
-          recipeId0 <- baker2.addRecipe(compiledRecipe)
+          recipeId0 <- baker2.addRecipe(RecipeRecord.of(compiledRecipe))
         } yield {
           state.ingredients shouldBe finalState
           recipe.compiledRecipe shouldBe compiledRecipe

@@ -7,7 +7,7 @@ import cats.implicits._
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, ProcessAlreadyExistsException, ProcessDeletedException}
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceF, InteractionInstanceInput, RecipeEventMetadata}
+import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceInput, RecipeEventMetadata}
 import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
 import org.mockito.Matchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
@@ -145,19 +145,19 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
           .withSensoryEvent(sensoryEvent)
 
       val interactionInstances = List(
-        InteractionInstanceF.build[F](
+        InteractionInstance.build[F](
           _name = "Interaction1",
           _input = Seq(InteractionInstanceInput(Option.empty, Int32)),
           _output = None,
           _run = _ => effect.pure(Some(EventInstance("interaction-1-happened", Map("ingredient-1" -> PrimitiveValue("data1")))))
         ),
-        InteractionInstanceF.build[F](
+        InteractionInstance.build[F](
           _name = "Interaction2",
           _input = Seq(InteractionInstanceInput(Option.empty, CharArray)),
           _output = None,
           _run = _ => effect.pure(Some(EventInstance("interaction-2-happened", Map("ingredient-2" -> PrimitiveValue("data2")))))
         ),
-        InteractionInstanceF.build[F](
+        InteractionInstance.build[F](
           _name = "Interaction3",
           _input = Seq(InteractionInstanceInput(Option.empty, CharArray)),
           _output = None,
@@ -174,8 +174,8 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
           recipeInstanceId,
           EventInstance("sensory-event", Map("ingredient-0" -> PrimitiveValue(42))),
           onEvent = "interaction-2-happened")
-        _ = completed.eventNames shouldBe
-          Seq("sensory-event", "interaction-1-happened", "interaction-2-happened")
+        _ = completed.eventNames.toSet shouldBe
+          Set("sensory-event", "interaction-1-happened", "interaction-2-happened")
         _ = completed.ingredients shouldBe
           Map("ingredient-0" -> PrimitiveValue(42),
             "ingredient-1" -> PrimitiveValue("data1"),

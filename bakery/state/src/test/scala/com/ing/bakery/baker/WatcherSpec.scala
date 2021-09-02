@@ -2,7 +2,7 @@ package com.ing.bakery.baker
 
 import akka.actor.ActorSystem
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import com.ing.baker.runtime.akka.internal.LocalInteractions
+import com.ing.baker.runtime.akka.internal.CachedInteractionManager
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.bakery.mocks.EventListener
 import com.ing.bakery.testing.BakeryFunSpec
@@ -37,7 +37,7 @@ class WatcherSpec extends AnyFunSuite with Matchers with Eventually {
             |}
             |""".stripMargin)) })((system: ActorSystem) => IO.fromFuture(IO {
         system.terminate().flatMap(_ => system.whenTerminated) })(contextShift).void)
-      _ <- Watcher.resource(config, system)
+      _ <- Watcher.resource(config, system, None)
 
     } yield ())
 

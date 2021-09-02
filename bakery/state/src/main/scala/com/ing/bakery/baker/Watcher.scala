@@ -17,16 +17,16 @@ class WatcherReadinessCheck extends (() => Future[Boolean]) {
 
 object Watcher {
 
-  def resource(config: Config, system: ActorSystem)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Unit] = {
+  def resource(config: Config, system: ActorSystem, cassandra: Option[Cassandra])(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Unit] = {
 
     val watcher = config.getString("baker.watcher.class")
 
     if (watcher != "") {
       Class.forName(watcher).getDeclaredConstructor().newInstance() match {
         case w: Watcher =>
-          w.resource(config, system, () => WatcherReadinessCheck.enable())
+          w.resource(config, system, cassandra, () => WatcherReadinessCheck.enable())
         case _ =>
-          throw new IllegalArgumentException(s"Class $watcher defined in bakery.proxy-filter must extend com.ing.bakery.baker.Watcher")
+          throw new IllegalArgumentException(s"Class $watcher must extend com.ing.bakery.baker.Watcher")
       }
     } else Resource.eval(IO(WatcherReadinessCheck.enable()))
   }
@@ -34,6 +34,6 @@ object Watcher {
 
 
 trait Watcher {
-  def resource(config: Config, system: ActorSystem, callbackEnable: () => Unit): Resource[IO, Unit]
+  def resource(config: Config, system: ActorSystem, cassandra: Option[Cassandra], callbackEnable: () => Unit): Resource[IO, Unit]
   def trigger(): Unit
 }

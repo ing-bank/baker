@@ -91,7 +91,7 @@ that will resolve when a sensory event has completely finished affecting the sta
 
       for {
         _ <- baker.addInteractionInstace(reserveItemsInstance)
-        recipeId <- baker.addRecipe(compiled)
+        recipeId <- baker.addRecipe(RecipeRecord.of(compiled))
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(
           recipeInstanceId, orderPlaced)
@@ -141,7 +141,7 @@ that will resolve when a sensory event has completely finished affecting the sta
 
         String recipeInstanceId = "first-instance-id";
         CompletableFuture<List<String>> result = baker.addInteractionInstace(reserveItemsInstance)
-                .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
+                .thenCompose(ignore -> baker.addRecipe(RecipeRecord.of(compiledRecipe)))
                 .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
                 .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
                 .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))
@@ -204,7 +204,7 @@ semantics of Mockito, like verifying that the interaction instance was called, o
 
       for {
         _ <- baker.addInteractionInstace(reserveItemsInstance)
-        recipeId <- baker.addRecipe(compiled)
+        recipeId <- baker.addRecipe(RecipeRecord.of(compiled))
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(
           recipeInstanceId, orderPlaced)
@@ -258,7 +258,7 @@ semantics of Mockito, like verifying that the interaction instance was called, o
 
         String recipeInstanceId = "first-instance-id";
         CompletableFuture<List<String>> result = baker.addInteractionInstace(reserveItemsInstance)
-                .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
+                .thenCompose(ignore -> baker.addRecipe(RecipeRecord.of(compiledRecipe)))
                 .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
                 .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
                 .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))

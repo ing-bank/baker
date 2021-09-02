@@ -13,13 +13,14 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
-import com.ing.baker.runtime.akka.internal.LocalInteractions
+import com.ing.baker.runtime.akka.internal.CachedInteractionManager
 import com.ing.baker.runtime.common.BakerException._
-import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.common.{RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.{RecipeManager, javadsl, scaladsl}
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
+import net.ceedubs.ficus.Ficus._
 import com.typesafe.scalalogging.LazyLogging
 
 import java.util.{List => JavaList}
@@ -30,31 +31,31 @@ import scala.util.Try
 
 object AkkaBaker {
 
-  def apply(config: Config, actorSystem: ActorSystem, interactions: LocalInteractions): scaladsl.Baker =
+  def apply(config: Config, actorSystem: ActorSystem, interactions: CachedInteractionManager): scaladsl.Baker =
     new AkkaBaker(AkkaBakerConfig.from(config, actorSystem, interactions))
 
   def withConfig(config: AkkaBakerConfig): AkkaBaker =
     new AkkaBaker(config)
 
-  def localDefault(actorSystem: ActorSystem, interactions: LocalInteractions): scaladsl.Baker =
+  def localDefault(actorSystem: ActorSystem, interactions: CachedInteractionManager): scaladsl.Baker =
     new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem, interactions))
 
-  def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem, interactions: LocalInteractions): scaladsl.Baker =
+  def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem, interactions: CachedInteractionManager): scaladsl.Baker =
     new AkkaBaker(AkkaBakerConfig.clusterDefault(seedNodes, actorSystem, interactions))
 
   def javaWithConfig(config: AkkaBakerConfig): javadsl.Baker =
     new javadsl.Baker(withConfig(config))
 
   def java(config: Config, actorSystem: ActorSystem): javadsl.Baker =
-    new javadsl.Baker(apply(config, actorSystem, LocalInteractions()))
+    new javadsl.Baker(apply(config, actorSystem, CachedInteractionManager()))
 
   def java(config: Config, actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
     new javadsl.Baker(apply(config, actorSystem,
-      LocalInteractions.fromJava(interactions)(IO.contextShift(actorSystem.getDispatcher))))
+      CachedInteractionManager.fromJava(interactions, config.getOrElse[Boolean]("baker.interaction-manager.allow-superset-for-output-types", false))(IO.contextShift(actorSystem.getDispatcher))))
 
   def javaLocalDefault(actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
     new javadsl.Baker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem,
-      LocalInteractions.fromJava(interactions)(IO.contextShift(actorSystem.getDispatcher)))))
+      CachedInteractionManager.fromJava(interactions)(IO.contextShift(actorSystem.getDispatcher)))))
 
   def javaOther(baker: scaladsl.Baker): javadsl.Baker =
     new javadsl.Baker(baker)
@@ -82,26 +83,28 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
-  override def addRecipe(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] = {
-
-    if (config.bakerValidationSettings.allowAddingRecipeWithoutRequiringInstances) {
-      addToManager(compiledRecipe, timeCreated)
+  override def addRecipe(recipeRecord: RecipeRecord): Future[String] = {
+    val recipe = recipeRecord.recipe
+    val updated = recipeRecord.updated
+    if (!recipeRecord.validate || config.bakerValidationSettings.allowAddingRecipeWithoutRequiringInstances) {
+      logger.info(s"Recipe implementation errors are ignored for ${recipe.name}:${recipe.recipeId}")
+      addToManager(recipe, updated)
     } else {
-      // check if every interaction has an implementation
-      getImplementationErrors(compiledRecipe).flatMap { implementationErrors =>
+      logger.info(s"Recipe ${recipe.name}:${recipe.recipeId} is validated for compatibility with interactions")
+      getImplementationErrors(recipe).flatMap { implementationErrors =>
         if (implementationErrors.nonEmpty) {
-          Future.failed(ImplementationsException(implementationErrors.mkString(", ")))
-        } else if (compiledRecipe.validationErrors.nonEmpty) {
-          Future.failed(RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
+          Future.failed(ImplementationsException(s"Recipe ${recipe.name}:${recipe.recipeId} has implementation errors: ${implementationErrors.mkString(", ")}"))
+        } else if (recipe.validationErrors.nonEmpty) {
+          Future.failed(RecipeValidationException(s"Recipe ${recipe.name}:${recipe.recipeId} has validation errors: ${recipe.validationErrors.mkString(", ")}"))
         } else {
-          addToManager(compiledRecipe, timeCreated)
+          addToManager(recipe, updated)
         }
       }
     }
   }
 
   private def addToManager(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] =
-    recipeManager.put(compiledRecipe, timeCreated)
+    recipeManager.put(RecipeRecord.of(compiledRecipe, updated = timeCreated))
 
   private def getImplementationErrors(compiledRecipe: CompiledRecipe): Future[Set[String]] = {
     compiledRecipe.interactionTransitions.toList
@@ -121,8 +124,8 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   override def getRecipe(recipeId: String): Future[RecipeInformation] = {
     // here we ask the RecipeManager actor to return us the recipe for the given id
     recipeManager.get(recipeId).flatMap {
-      case Some((compiledRecipe, timestamp)) =>
-        getImplementationErrors(compiledRecipe).map(RecipeInformation(compiledRecipe, timestamp, _))
+      case Some(r: RecipeRecord) =>
+        getImplementationErrors(r.recipe).map(errors => RecipeInformation(r.recipe, r.updated, errors, r.validate ))
       case None =>
         Future.failed(NoSuchRecipeException(recipeId))
     }
@@ -141,8 +144,8 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     recipeManager.all
       .flatMap(
         _.toList
-          .traverse(ri => getImplementationErrors(ri._1)
-            .map(errors => ri._1.recipeId -> RecipeInformation(ri._1, ri._2, errors))
+          .traverse(ri => getImplementationErrors(ri.recipe)
+            .map(errors => ri.recipeId -> RecipeInformation(ri.recipe, ri.updated, errors, ri.validate))
           ).map(_.toMap)
       )
   }
@@ -352,6 +355,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       .ask(GetProcessState(recipeInstanceId))(Timeout.durationToTimeout(config.timeouts.defaultInquireTimeout))
       .flatMap {
         case instance: InstanceState => Future.successful(instance.state.asInstanceOf[RecipeInstanceState])
+        case Uninitialized(id) => Future.failed(NoSuchProcessException(id))
         case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
         case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
       }

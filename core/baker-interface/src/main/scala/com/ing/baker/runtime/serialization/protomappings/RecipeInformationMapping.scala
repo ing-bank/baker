@@ -20,5 +20,5 @@ class RecipeInformationMapping extends ProtoMap[RecipeInformation, proto.RecipeI
       compiledRecipeProto <- versioned(message.compiledRecipe, "compiledRecipe")
       compiledRecipe <- ctxFromProto(compiledRecipeProto)
       recipeCreatedTime <- versioned(message.recipeCreatedTime, "recipeCreatedTime")
-    } yield RecipeInformation(compiledRecipe, recipeCreatedTime, message.errors.toSet)
+    } yield RecipeInformation(compiledRecipe, recipeCreatedTime, message.errors.toSet, validate = true)
 }

@@ -3,16 +3,17 @@ package com.ing.bakery.baker
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.akka.internal.LocalInteractions
+import com.ing.baker.runtime.akka.internal.CachedInteractionManager
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
-import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceDescriptor, InteractionInstanceF, InteractionInstanceInput}
-import com.ing.baker.runtime.serialization.InteractionExecution
+import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
+import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus}
+import com.ing.baker.runtime.model.InteractionInstance
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceDescriptor, InteractionInstanceInput}
 import com.ing.baker.types.{ByteArray, CharArray, ListType, RecordField, RecordType}
 import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
-import com.ing.bakery.recipe.Events.{ItemsReserved, OrderHadUnavailableItems, OrderPlaced}
+import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
-import com.ing.bakery.recipe.ItemReservationRecipe
+import com.ing.bakery.recipe.{ItemReservationRecipe, SimpleRecipe}
 import com.ing.bakery.scaladsl.BakerClient
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
@@ -23,11 +24,9 @@ import org.scalatest.compatible.Assertion
 import org.scalatest.matchers.should.Matchers
 import skuber.LabelSelector
 import skuber.api.client.KubernetesClient
+
 import java.net.InetSocketAddress
 import java.util.UUID
-
-import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
-
 import scala.concurrent.Future
 
 class StateRuntimeSpec extends BakeryFunSpec with Matchers {
@@ -58,12 +57,11 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
     IO.fromFuture(IO(f))
 
   def awaitForInteractionDiscovery(context: Context): IO[Assertion] =
-    awaitForServiceDiscoveryState(context)(_.map(_.name) shouldBe List("ReserveItems"))
-
+    awaitForServiceDiscoveryState(context)(_.map(_.name) shouldBe List("TimerInteraction", "TimerInteraction", "ReserveItems"))
   def awaitForEmptyServiceDiscovery(context: Context): IO[Assertion] =
-    awaitForServiceDiscoveryState(context)(_ shouldBe List.empty)
+    awaitForServiceDiscoveryState(context)(_.map(_.name) shouldBe List("TimerInteraction", "TimerInteraction"))
 
-  def awaitForServiceDiscoveryState(context: Context)(f: List[InteractionInstanceF[IO]] => Assertion): IO[Assertion] =
+  def awaitForServiceDiscoveryState(context: Context)(f: List[InteractionInstance[IO]] => Assertion): IO[Assertion] =
     eventually(
       context.interactions.listAll.map(f)
     )
@@ -122,6 +120,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         )
         noSuchRecipeError shouldBe Some(BakerException.NoSuchRecipeException("nonexistent"))
         allRecipes.get(recipeId).map(_.compiledRecipe.name) shouldBe Some(recipe.name)
+        allRecipes.get(SimpleRecipe.compiledRecipe.recipeId).map(_.compiledRecipe.name) shouldBe Some("Simple")
       }
     }
 
@@ -417,9 +416,13 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       k8s: KubernetesClient = skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system)
       httpClient <- BlazeClientBuilder[IO](executionContext).resource
       interactionDiscovery <-
-        InteractionDiscovery.resource(httpClient, k8s, LocalInteractions(),
+        InteractionDiscovery.resource(httpClient, k8s, CachedInteractionManager(),
           List.empty, Some( LabelSelector(LabelSelector.IsEqualRequirement("scope","webshop"))))(contextShift, timer, system)
-
+      recipeAddingCache = new RecipeCache {
+        override def merge(recipes: List[RecipeRecord]): IO[List[RecipeRecord]] =
+          IO(RecipeRecord.of(SimpleRecipe.compiledRecipe) ::
+            recipes.filter(_.recipeId != SimpleRecipe.compiledRecipe.recipeId))
+      }
       eventListener = new EventListener()
       baker = AkkaBaker
         .withConfig(AkkaBakerConfig.localDefault(system).copy(
@@ -429,7 +432,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         )
 
       _ <- Resource.eval(eventListener.eventSink.attach(baker))
-      _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, baker))
+      _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, recipeAddingCache, baker))
 
       server <- BakerService.resource(baker, InetSocketAddress.createUnresolved("127.0.0.1", 0), "/api/bakery", "/opt/docker/dashboard",
         interactionDiscovery, loggingEnabled = true)

@@ -10,7 +10,8 @@ import com.typesafe.config.ConfigFactory
 
 import java.util.UUID
 import com.ing.baker.runtime.akka.AkkaBaker
-import com.ing.baker.runtime.akka.internal.LocalInteractions
+import com.ing.baker.runtime.akka.internal.CachedInteractionManager
+import com.ing.baker.runtime.common.RecipeRecord
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -68,10 +69,10 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
       val implementations =
         List(validateOrderImpl, manufactureGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
 
-      val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, LocalInteractions(implementations))
+      val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachedInteractionManager(implementations))
 
       for {
-        recipeId <- baker.addRecipe(compiledRecipe)
+        recipeId <- baker.addRecipe(RecipeRecord.of(compiledRecipe))
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, orderPlaced.instance(testOrder))
