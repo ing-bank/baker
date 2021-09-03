@@ -15,8 +15,14 @@ case class BakerEventsFlow private(private val events: Set[String]) {
   @varargs def removeClass(events: Class[_]*): BakerEventsFlow =
     remove(events.map(_.getSimpleName): _*)
 
+  def remove(events: BakerEventsFlow): BakerEventsFlow =
+    remove(events.events.toArray: _*)
+
   @varargs def add(events: String*): BakerEventsFlow =
     new BakerEventsFlow(this.events ++ events)
+
+  def add(events: BakerEventsFlow): BakerEventsFlow =
+    add(events.events.toArray: _*)
 
   // TODO just use "add" method name
   @varargs def addClass(events: Class[_]*): BakerEventsFlow =

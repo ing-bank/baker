@@ -31,4 +31,13 @@ public class BakerEventsFlowTest {
         Assert.assertEquals(BakerEventsFlow.of(), BakerEventsFlow.of());
         Assert.assertEquals(BakerEventsFlow.of(), BakerEventsFlow.of("a").remove("a"));
     }
+
+    @Test
+    public void testMultipleBakerFlows() {
+        BakerEventsFlow firstFlow = BakerEventsFlow.of("a", "b", "c");
+        BakerEventsFlow secondFlow = BakerEventsFlow.of("d", "e", "f");
+        Assert.assertEquals(firstFlow.add(secondFlow), BakerEventsFlow.of("a", "b", "c", "d", "e", "f"));
+        Assert.assertEquals(firstFlow.add(secondFlow), secondFlow.add(firstFlow));
+        Assert.assertEquals(firstFlow.remove(BakerEventsFlow.of("b", "c")), BakerEventsFlow.of("a"));
+    }
 }
