@@ -1,12 +1,11 @@
 package com.ing.baker.test.scaladsl
 
 import java.util.UUID
-
 import akka.actor.ActorSystem
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.test.recipe.WebshopBaker._
-import com.ing.baker.test.recipe.WebshopRecipe
+import com.ing.baker.test.recipe.{WebshopBaker, WebshopRecipe}
 import com.ing.baker.test.recipe.WebshopRecipe.{ItemsReserved, OrderPlaced}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Assertions
@@ -46,7 +45,7 @@ class BakerAssertTest extends AnyFlatSpec with Matchers {
     }
 
   "BakerAssert object" should "be created" in {
-    val baker = AkkaBaker(ConfigFactory.load, ActorSystem.apply("test"))
+    val baker = WebshopBaker.baker;
     BakerAssert.apply(baker, "someProcessId")
   }
 

@@ -584,7 +584,7 @@ lazy val `sbt-bakery-docker-generate` = project.in(file("docker/sbt-bakery-docke
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .dependsOn(`bakery-interaction`, `bakery-interaction-spring`)
 
-lazy val `baker-test` = project.in(file("baker-test"))
+lazy val `baker-test` = project.in(file("core/baker-test"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
   .settings(
