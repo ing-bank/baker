@@ -22,5 +22,5 @@ object WebshopBaker {
     CachedInteractionManager(InteractionInstance.unsafeFrom(new ReserveItemsInteraction)))
 
   val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
-  val recipeId: String = Await.result(baker.addRecipe(compiledRecipe, validate = true), 1 seconds)
+  val recipeId: String = Await.result(baker.addRecipe(compiledRecipe, validate = true), 10 seconds)
 }

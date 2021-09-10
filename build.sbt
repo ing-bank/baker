@@ -592,5 +592,5 @@ lazy val `baker-test` = project.in(file("core/baker-test"))
     libraryDependencies ++= compileDeps(
       slf4jApi
     ) ++ testDeps(scalaTest, logback, "io.altoo" %% "akka-kryo-serialization" % "1.1.5", "junit" % "junit" % "4.13")
-  ).dependsOn(`baker-akka-runtime`, `baker-recipe-compiler` % "test->compile")
+  ).dependsOn(`baker-interface`, testScope(`baker-akka-runtime`), testScope(`baker-recipe-compiler`))
 

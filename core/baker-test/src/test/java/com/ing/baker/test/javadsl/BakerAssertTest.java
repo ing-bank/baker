@@ -9,6 +9,7 @@ import com.ing.baker.runtime.javadsl.InteractionInstance;
 import com.ing.baker.test.javadsl.recipe.OrderPlaced;
 import com.ing.baker.test.javadsl.recipe.ReserveItemsImpl;
 import com.ing.baker.test.javadsl.recipe.WebshopRecipe;
+import com.ing.baker.types.Value;
 import com.typesafe.config.ConfigFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -29,9 +30,9 @@ public class BakerAssertTest {
     static {
         try {
             recipeId = baker.addRecipe(RecipeCompiler.compileRecipe(WebshopRecipe.RECIPE), true)
-                    .get(1, TimeUnit.SECONDS);
+                    .get(10, TimeUnit.SECONDS);
         } catch (Exception e) {
-            throw new AssertionError("");
+            throw new AssertionError(e);
         }
     }
 
@@ -102,11 +103,10 @@ public class BakerAssertTest {
     }
 
     // FIXME why "value.as(String.class)" does not compile here????
-//    @Test
-//    public void testAssertIngredientCustom() {
-//        fireSensoryEvent("order-2");
-//        bakerAssert
-//                .waitFor(WebshopRecipe.HAPPY_FLOW)
-//                .assertIngredient("orderId").is(val -> Assert.assertEquals("order-2", val.as(String.class)));
-//    }
+    @Test
+    public void testAssertIngredientCustom() {
+        bakerAssert
+                .waitFor(WebshopRecipe.HAPPY_FLOW)
+                .assertIngredient("orderId").is(val -> Assert.assertEquals("order-1", ((Value)val).as(String.class)));
+    }
 }

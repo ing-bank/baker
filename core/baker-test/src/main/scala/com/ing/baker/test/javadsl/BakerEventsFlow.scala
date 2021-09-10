@@ -2,10 +2,8 @@ package com.ing.baker.test.javadsl
 
 import java.util
 import scala.annotation.varargs
-import scala.collection.JavaConverters
-import scala.reflect.ClassTag;
+import scala.collection.JavaConverters;
 
-// TODO try to leave the same method names
 case class BakerEventsFlow private(private val events: Set[String]) {
 
   @varargs def remove(events: String*): BakerEventsFlow =
