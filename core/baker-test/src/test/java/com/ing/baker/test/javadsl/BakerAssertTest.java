@@ -10,6 +10,7 @@ import com.ing.baker.test.javadsl.recipe.OrderPlaced;
 import com.ing.baker.test.javadsl.recipe.ReserveItemsImpl;
 import com.ing.baker.test.javadsl.recipe.WebshopRecipe;
 import com.typesafe.config.ConfigFactory;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -62,10 +63,43 @@ public class BakerAssertTest {
     }
 
     @Test
-    public void testAnotherHappy() {
+    public void testHappyFail() {
+        fireSensoryEvent("order-1");
+        boolean failed = false;
+        try {
+            bakerAssert
+                    .waitFor(WebshopRecipe.HAPPY_FLOW)
+                    .assertEventsFlow(WebshopRecipe.HAPPY_FLOW.removeClass(OrderPlaced.class));
+        } catch (AssertionError e) {
+            // expected
+            failed = true;
+        }
+        Assert.assertTrue(failed);
+    }
+
+    @Test
+    public void testAssertIngredientIsEqual() {
         fireSensoryEvent("order-2");
         bakerAssert
                 .waitFor(WebshopRecipe.HAPPY_FLOW)
-                .assertEventsFlow(WebshopRecipe.HAPPY_FLOW);
+                .assertIngredient("orderId").isEqual("order-2");
     }
+
+    @Test
+    public void testAssertIngredientIsNull() {
+        fireSensoryEvent("order-2");
+        bakerAssert
+                .waitFor(WebshopRecipe.HAPPY_FLOW)
+                .assertIngredient("not-existing").isNull();
+    }
+
+//    @Test
+//    public void testAssertIngredientCustom() {
+//        fireSensoryEvent("order-2");
+//        bakerAssert
+//                .waitFor(WebshopRecipe.HAPPY_FLOW)
+//                .assertIngredient("orderId").is(val -> Assert.assertEquals("order-2", val.as(String.class)));
+//    }
+
+
 }

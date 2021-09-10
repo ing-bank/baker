@@ -2,6 +2,8 @@ package com.ing.baker.test.common
 
 import com.ing.baker.types.Value
 
+import java.util.function.Consumer
+
 class IngredientAssert[Flow](
                               private val bakerAssert: BakerAssert[Flow],
                               private val value: Value,
@@ -17,8 +19,13 @@ class IngredientAssert[Flow](
   def isEqual[T](v: T): BakerAssert[Flow] =
     is(value => assert(value.equalsObject(v), s"""expect value $value to equal to "$v""""))
 
-  def is(assertion: Value => Unit): BakerAssert[Flow] = {
-    logInfoOnError(assertion(value))
+//  def is(assertion: Value => Unit): BakerAssert[Flow] = {
+//    logInfoOnError(assertion(value))
+//    bakerAssert
+//  }
+
+  def is(assertion: Consumer[Value]): BakerAssert[Flow] = {
+    logInfoOnError(assertion.accept(value))
     bakerAssert
   }
 }
