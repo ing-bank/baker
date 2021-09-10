@@ -1,15 +1,15 @@
 package com.ing.baker.test.common
 
-import com.ing.baker.test.scaladsl.Predicate
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
 import scala.language.postfixOps
 
 final class AsyncMessages[T] {
 
+  type Predicate = T => Boolean
+
   @volatile var messages: Set[T] = Set.empty
-  @volatile var mapping: Map[Predicate[T], Promise[T]] = Map.empty
+  @volatile var mapping: Map[Predicate, Promise[T]] = Map.empty
 
   def put(msg: T): Unit =
     this.synchronized {
@@ -24,15 +24,15 @@ final class AsyncMessages[T] {
         })
     }
 
-  def contains(filter: Predicate[T]): Boolean =
+  def contains(filter: Predicate): Boolean =
     messages.exists(filter)
 
-  def get(filters: Predicate[T]*): Future[Iterable[T]] =
+  def get(filters: Predicate*): Future[Iterable[T]] =
     this.synchronized {
       if (filters.forall(messages.exists(_))) {
         Future.apply(filters.flatMap(messages.filter).toSet)
       } else {
-        val mappings: Map[Predicate[T], Promise[T]] = filters.map(filter => filter -> Promise[T])
+        val mappings: Map[Predicate, Promise[T]] = filters.map(filter => filter -> Promise[T])
           .groupBy(_._1)
           .mapValues {
             case Seq((_, p)) => p

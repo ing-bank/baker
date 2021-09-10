@@ -1,11 +1,10 @@
 package com.ing.baker.test.common
 
 import java.util
-
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.test.scaladsl.BakerEventsFlow
 import com.ing.baker.test.{javadsl, scaladsl}
-import com.ing.baker.types.Value
+import com.ing.baker.types.{NullValue, Value}
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -40,15 +39,7 @@ trait BakerAssert[Flow] extends LazyLogging {
       case Success(_) => // nothing
       case Failure(_) => {
         val actualFlow = this.getActualFlow
-        val dif1 = expectedFlow --- actualFlow
-        val dif2 = actualFlow --- expectedFlow
-        throw new AssertionError(s"""
-             |${Console.RED   }Timeout waiting for the events flow:
-             |${Console.YELLOW}    actual: $actualFlow
-             |${Console.GREEN }  expected: $expectedFlow
-             |${Console.RED   }difference: ${if(dif1.events.nonEmpty) s"++ $dif1"}
-             |${Console.RED   }            ${if(dif2.events.nonEmpty) s"-- $dif2"}
-             |""".stripMargin)
+        throw new AssertionError(errorMsg("Timeout waiting for the events flow", expectedFlow, actualFlow))
       }
     }
     this
@@ -60,17 +51,13 @@ trait BakerAssert[Flow] extends LazyLogging {
     val expectedFlow = toScalaEventsFlow(flow)
     val actualFlow = this.getActualFlow
     logInfoOnError(assert(expectedFlow == actualFlow,
-      s"""
-         |Events are not equal:
-         |     actual: ${actualFlow}
-         |   expected: ${expectedFlow}
-         | difference: ${(expectedFlow --- actualFlow) ::: (actualFlow --- expectedFlow)}
-         |""".stripMargin))
+      errorMsg("Events are not equal", expectedFlow, actualFlow)))
     this
   }
 
   def assertIngredient(name: String): IngredientAssert[Flow] = {
-    val value: Value = await(baker.getIngredients(recipeInstanceId))(name)
+    val map = await(baker.getIngredients(recipeInstanceId))
+    val value: Value = if (map.contains(name)) map(name) else NullValue
     new IngredientAssert[Flow](this, value, assertion => logInfoOnError(assertion))
   }
 
@@ -109,7 +96,7 @@ trait BakerAssert[Flow] extends LazyLogging {
       case jf: javadsl.BakerEventsFlow =>
         val events: util.Set[String] = jf.getEvents
         val array = events.toArray(Array.empty[String])
-        scaladsl.BakerEventsFlow(array:_*)
+        scaladsl.BakerEventsFlow(array: _*)
       case _ => throw new AssertionError(s"Unknown flow implementation: $flow")
     }
 
@@ -122,5 +109,17 @@ trait BakerAssert[Flow] extends LazyLogging {
       logIngredients()
       logVisualState()
       throw f
+  }
+
+  private def errorMsg(msg: String, expectedFlow: BakerEventsFlow, actualFlow: BakerEventsFlow): String = {
+    val dif1 = expectedFlow --- actualFlow
+    val dif2 = actualFlow --- expectedFlow
+    s"""
+       |${Console.RED}$msg:
+       |${Console.YELLOW}    actual: $actualFlow
+       |${Console.GREEN}  expected: $expectedFlow
+       |${Console.RED}difference: ${if (dif1.events.nonEmpty) s"++ $dif1"}
+       |${Console.RED}            ${if (dif2.events.nonEmpty) s"-- $dif2"}
+       |""".stripMargin
   }
 }

@@ -25,9 +25,9 @@ class BlockingMessageQueueTest extends AnyFlatSpec with Matchers {
   private val msg1 = "bla"
   private val msg2 = "bla bla"
 
-  private def isMsg1: Predicate[String] = msg => msg == msg1
+  private def isMsg1:String => Boolean = msg => msg == msg1
 
-  private def isMsg2: Predicate[String] = msg => msg == msg2
+  private def isMsg2:String => Boolean = msg => msg == msg2
 
   "WaitingMessageQueue" should "work with one message added before" in {
     val queue = new AsyncMessages[String]
