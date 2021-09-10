@@ -38,33 +38,31 @@ public class BakerAssertTest {
     }
 
     private BakerAssert bakerAssert;
-    private String recipeInstanceId;
 
     @Before
     public void init() throws ExecutionException, InterruptedException, TimeoutException {
-        recipeInstanceId = UUID.randomUUID().toString();
+        String recipeInstanceId = UUID.randomUUID().toString();
 
         baker.bake(recipeId, recipeInstanceId);
 
         bakerAssert = BakerAssert.of(baker, recipeInstanceId);
-    }
 
-    private void fireSensoryEvent(String orderId) {
-        baker.fireEvent(recipeInstanceId, EventInstance.from(new OrderPlaced(orderId,
+        baker.fireEvent(recipeInstanceId, EventInstance.from(new OrderPlaced("order-1",
                 Arrays.asList("item-1", "item-2", "item-3"))));
     }
 
     @Test
     public void testHappy() throws Exception {
-        fireSensoryEvent("order-1");
         bakerAssert
                 .waitFor(WebshopRecipe.HAPPY_FLOW)
+                .logEventNames()
+                .logIngredients()
+                .logVisualState()
                 .assertEventsFlow(WebshopRecipe.HAPPY_FLOW);
     }
 
     @Test
     public void testHappyFail() {
-        fireSensoryEvent("order-1");
         boolean failed = false;
         try {
             bakerAssert
@@ -79,20 +77,33 @@ public class BakerAssertTest {
 
     @Test
     public void testAssertIngredientIsEqual() {
-        fireSensoryEvent("order-2");
         bakerAssert
                 .waitFor(WebshopRecipe.HAPPY_FLOW)
-                .assertIngredient("orderId").isEqual("order-2");
+                .assertIngredient("orderId").isEqual("order-1");
+    }
+
+    @Test
+    public void testAssertIngredientIsEqualFail() {
+        boolean failed = false;
+        try {
+            bakerAssert
+                    .waitFor(WebshopRecipe.HAPPY_FLOW)
+                    .assertIngredient("orderId").isEqual("order-2");
+        } catch (AssertionError e) {
+            // expected
+            failed = true;
+        }
+        Assert.assertTrue(failed);
     }
 
     @Test
     public void testAssertIngredientIsNull() {
-        fireSensoryEvent("order-2");
         bakerAssert
                 .waitFor(WebshopRecipe.HAPPY_FLOW)
                 .assertIngredient("not-existing").isNull();
     }
 
+    // FIXME why "value.as(String.class)" does not compile here????
 //    @Test
 //    public void testAssertIngredientCustom() {
 //        fireSensoryEvent("order-2");
@@ -100,6 +111,4 @@ public class BakerAssertTest {
 //                .waitFor(WebshopRecipe.HAPPY_FLOW)
 //                .assertIngredient("orderId").is(val -> Assert.assertEquals("order-2", val.as(String.class)));
 //    }
-
-
 }

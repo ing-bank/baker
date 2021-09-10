@@ -19,6 +19,7 @@ class IngredientAssert[Flow](
   def isEqual[T](v: T): BakerAssert[Flow] =
     is(value => assert(value.equalsObject(v), s"""expect value $value to equal to "$v""""))
 
+  // TODO scaladsl ? or combine the next 2 methods?
 //  def is(assertion: Value => Unit): BakerAssert[Flow] = {
 //    logInfoOnError(assertion(value))
 //    bakerAssert
