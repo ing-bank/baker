@@ -1,18 +1,15 @@
 package com.ing.baker.test.scaladsl
 
-import java.util.UUID
-import akka.actor.ActorSystem
-import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.test.recipe.WebshopBaker._
-import com.ing.baker.test.recipe.{WebshopBaker, WebshopRecipe}
 import com.ing.baker.test.recipe.WebshopRecipe.{ItemsReserved, OrderPlaced}
-import com.typesafe.config.ConfigFactory
+import com.ing.baker.test.recipe.{WebshopBaker, WebshopRecipe}
 import org.scalatest.Assertions
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.slf4j.LoggerFactory
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Try}

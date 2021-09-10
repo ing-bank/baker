@@ -15,7 +15,6 @@ import scala.util.{Failure, Success, Try}
 
 
 object BakerAssert {
-//  type EventsFlow = (scaladsl.BakerEventsFlow |∨| javadsl.BakerEventsFlow);
   val DEFAULT_TIMEOUT: Duration = 10 seconds
 }
 
@@ -36,7 +35,22 @@ trait BakerAssert[Flow] extends LazyLogging {
   // async
 
   def waitFor(flow: Flow): BakerAssert[Flow] = {
-    bakerAsync.waitFor(recipeInstanceId, toScalaEventsFlow(flow))
+    val expectedFlow = toScalaEventsFlow(flow)
+    Try(bakerAsync.waitFor(recipeInstanceId, expectedFlow)) match {
+      case Success(_) => // nothing
+      case Failure(_) => {
+        val actualFlow = this.getActualFlow
+        val dif1 = expectedFlow --- actualFlow
+        val dif2 = actualFlow --- expectedFlow
+        throw new AssertionError(s"""
+             |${Console.RED   }Timeout waiting for the events flow:
+             |${Console.YELLOW}    actual: $actualFlow
+             |${Console.GREEN }  expected: $expectedFlow
+             |${Console.RED   }difference: ${if(dif1.events.nonEmpty) s"++ $dif1"}
+             |${Console.RED   }            ${if(dif2.events.nonEmpty) s"-- $dif2"}
+             |""".stripMargin)
+      }
+    }
     this
   }
 
@@ -44,8 +58,7 @@ trait BakerAssert[Flow] extends LazyLogging {
 
   def assertEventsFlow(flow: Flow): BakerAssert[Flow] = {
     val expectedFlow = toScalaEventsFlow(flow)
-    val actualFlow = await(baker.getEvents(recipeInstanceId)
-      .map(events => BakerEventsFlow.apply(events.map(_.name).toSet)))
+    val actualFlow = this.getActualFlow
     logInfoOnError(assert(expectedFlow == actualFlow,
       s"""
          |Events are not equal:
@@ -87,6 +100,9 @@ trait BakerAssert[Flow] extends LazyLogging {
 
   // private helper functions
 
+  private def getActualFlow = await(baker.getEvents(recipeInstanceId)
+    .map(events => BakerEventsFlow.apply(events.map(_.name).toSet)))
+
   private def toScalaEventsFlow(flow: Flow): scaladsl.BakerEventsFlow =
     flow match {
       case sf: scaladsl.BakerEventsFlow => sf
@@ -94,6 +110,7 @@ trait BakerAssert[Flow] extends LazyLogging {
         val events: util.Set[String] = jf.getEvents
         val array = events.toArray(Array.empty[String])
         scaladsl.BakerEventsFlow(array:_*)
+      case _ => throw new AssertionError(s"Unknown flow implementation: $flow")
     }
 
   private def await[T](fn: Awaitable[T]): T = Await.result(fn, timeout)

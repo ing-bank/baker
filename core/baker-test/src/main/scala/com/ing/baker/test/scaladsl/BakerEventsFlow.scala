@@ -12,6 +12,8 @@ case class BakerEventsFlow(events: Set[String]) {
   def --(event: Class[_]): BakerEventsFlow = this -- event.getSimpleName
 
   def ---(otherFlow: BakerEventsFlow): BakerEventsFlow = BakerEventsFlow(events.diff(otherFlow.events))
+
+  override def toString: String = events.mkString(", ")
 }
 
 object EmptyFlow extends BakerEventsFlow(Set.empty)
