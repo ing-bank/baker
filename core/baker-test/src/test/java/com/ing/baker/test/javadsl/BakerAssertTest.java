@@ -17,9 +17,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class BakerAssertTest {
 
@@ -40,7 +38,7 @@ public class BakerAssertTest {
     private BakerAssert bakerAssert;
 
     @Before
-    public void init() throws ExecutionException, InterruptedException, TimeoutException {
+    public void init() {
         String recipeInstanceId = UUID.randomUUID().toString();
 
         baker.bake(recipeId, recipeInstanceId);
