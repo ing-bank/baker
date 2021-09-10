@@ -51,7 +51,7 @@ public class BakerAssertTest {
     }
 
     @Test
-    public void testHappy() throws Exception {
+    public void testHappy() {
         bakerAssert
                 .waitFor(WebshopRecipe.HAPPY_FLOW)
                 .logEventNames()
