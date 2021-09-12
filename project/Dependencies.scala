@@ -61,7 +61,7 @@ object Dependencies {
 
   val levelDBJni = "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
 
-  val ficusConfig = "com.iheart" %% "ficus" % "1.5.0"
+  val ficusConfig = "com.iheart" %% "ficus" % "1.5.1"
 
   val scalaGraph = "org.scala-graph" %% "graph-core" % "1.13.1"
   val scalaGraphDot = "org.scala-graph" %% "graph-dot" % "1.13.0"
