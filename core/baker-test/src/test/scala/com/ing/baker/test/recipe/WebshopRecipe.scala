@@ -1,7 +1,7 @@
 package com.ing.baker.test.recipe
 
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
-import com.ing.baker.test.scaladsl.{BakerEventsFlow, EmptyFlow}
+import com.ing.baker.test.{EmptyFlow, EventsFlow}
 
 import scala.language.postfixOps
 
@@ -33,7 +33,7 @@ object WebshopRecipe {
     .withInteractions(
       ReserveItems)
 
-  val happyFlow: BakerEventsFlow =
+  val happyFlow: EventsFlow =
     classOf[OrderPlaced] ::
       classOf[ItemsReserved] ::
       EmptyFlow

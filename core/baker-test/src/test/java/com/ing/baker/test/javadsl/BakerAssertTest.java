@@ -6,10 +6,10 @@ import com.ing.baker.runtime.akka.AkkaBaker;
 import com.ing.baker.runtime.javadsl.Baker;
 import com.ing.baker.runtime.javadsl.EventInstance;
 import com.ing.baker.runtime.javadsl.InteractionInstance;
+import com.ing.baker.test.BakerAssert;
 import com.ing.baker.test.javadsl.recipe.OrderPlaced;
 import com.ing.baker.test.javadsl.recipe.ReserveItemsImpl;
 import com.ing.baker.test.javadsl.recipe.WebshopRecipe;
-import com.ing.baker.types.Value;
 import com.typesafe.config.ConfigFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -46,8 +46,8 @@ public class BakerAssertTest {
 
         bakerAssert = BakerAssert.of(baker, recipeInstanceId);
 
-        baker.fireEvent(recipeInstanceId, EventInstance.from(new OrderPlaced("order-1",
-                Arrays.asList("item-1", "item-2", "item-3"))));
+        baker.fireEvent(recipeInstanceId,
+                EventInstance.from(new OrderPlaced("order-1", Arrays.asList("item-1", "item-2", "item-3"))));
     }
 
     @Test
@@ -60,18 +60,12 @@ public class BakerAssertTest {
                 .assertEventsFlow(WebshopRecipe.HAPPY_FLOW);
     }
 
-    @Test
+    @Test(expected = AssertionError.class)
     public void testHappyFail() {
-        boolean failed = false;
-        try {
-            bakerAssert
-                    .waitFor(WebshopRecipe.HAPPY_FLOW)
-                    .assertEventsFlow(WebshopRecipe.HAPPY_FLOW.removeClass(OrderPlaced.class));
-        } catch (AssertionError e) {
-            // expected
-            failed = true;
-        }
-        Assert.assertTrue(failed);
+
+        bakerAssert
+                .waitFor(WebshopRecipe.HAPPY_FLOW)
+                .assertEventsFlow(WebshopRecipe.HAPPY_FLOW.remove(OrderPlaced.class));
     }
 
     @Test
@@ -81,32 +75,24 @@ public class BakerAssertTest {
                 .assertIngredient("orderId").isEqual("order-1");
     }
 
-    @Test
+    @Test(expected = AssertionError.class)
     public void testAssertIngredientIsEqualFail() {
-        boolean failed = false;
-        try {
-            bakerAssert
-                    .waitFor(WebshopRecipe.HAPPY_FLOW)
-                    .assertIngredient("orderId").isEqual("order-2");
-        } catch (AssertionError e) {
-            // expected
-            failed = true;
-        }
-        Assert.assertTrue(failed);
-    }
-
-    @Test
-    public void testAssertIngredientIsNull() {
         bakerAssert
                 .waitFor(WebshopRecipe.HAPPY_FLOW)
-                .assertIngredient("not-existing").isNull();
+                .assertIngredient("orderId").isEqual("order-2");
     }
 
-    // FIXME why "value.as(String.class)" does not compile here????
+    @Test
+    public void testAssertIngredientIsAbsent() {
+        bakerAssert
+                .waitFor(WebshopRecipe.HAPPY_FLOW)
+                .assertIngredient("not-existing").isAbsent();
+    }
+
     @Test
     public void testAssertIngredientCustom() {
         bakerAssert
                 .waitFor(WebshopRecipe.HAPPY_FLOW)
-                .assertIngredient("orderId").is(val -> Assert.assertEquals("order-1", ((Value)val).as(String.class)));
+                .assertIngredient("orderId").is(val -> Assert.assertEquals("order-1", val.as(String.class)));
     }
 }
