@@ -1,7 +1,7 @@
 package com.ing.baker.test.scaladsl
 
 import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.test.BakerAssert
+import com.ing.baker.test.RecipeAssert
 import com.ing.baker.test.recipe.WebshopBaker._
 import com.ing.baker.test.recipe.WebshopRecipe.{ItemsReserved, OrderPlaced}
 import com.ing.baker.test.recipe.{WebshopBaker, WebshopRecipe}
@@ -15,9 +15,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Try}
 
-class BakerAssertTest extends AnyFlatSpec with Matchers with StrictLogging {
+class RecipeAssertTest extends AnyFlatSpec with Matchers with StrictLogging {
 
-  private def createBakerAssert(async: Boolean = false): BakerAssert = {
+  private def createBakerAssert(async: Boolean = false): RecipeAssert = {
     val recipeInstanceId = UUID.randomUUID().toString
     val sensoryEvent = EventInstance.unsafeFrom(OrderPlaced("order-1", "item-1" :: Nil))
 
@@ -31,7 +31,7 @@ class BakerAssertTest extends AnyFlatSpec with Matchers with StrictLogging {
       baker.fireEvent(recipeInstanceId, sensoryEvent)
     }
 
-    BakerAssert(baker, recipeInstanceId)
+    RecipeAssert(baker, recipeInstanceId)
   }
 
   private def assertFail[T](assertion: => T): Unit = Try(assertion) match {
@@ -41,7 +41,7 @@ class BakerAssertTest extends AnyFlatSpec with Matchers with StrictLogging {
 
   "BakerAssert object" should "be created" in {
     val baker = WebshopBaker.baker
-    BakerAssert.apply(baker, "someProcessId")
+    RecipeAssert.apply(baker, "someProcessId")
   }
 
   "assertEventsFlow" should "work with happy flow" in {

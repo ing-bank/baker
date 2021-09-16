@@ -11,7 +11,7 @@ import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 
-class BakerAssert(private val baker: Baker, recipeInstanceId: String, timeout: Duration) extends LazyLogging {
+class RecipeAssert(private val baker: Baker, private val recipeInstanceId: String, private val timeout: Duration) extends LazyLogging {
   self =>
 
   // initialization
@@ -20,9 +20,9 @@ class BakerAssert(private val baker: Baker, recipeInstanceId: String, timeout: D
 
   // async
 
-  def waitFor(expected: EventsFlow): BakerAssert = Try(bakerAsync.waitFor(recipeInstanceId, expected.events, timeout)) match {
+  def waitFor(expected: EventsFlow): RecipeAssert = await(bakerAsync.waitFor(recipeInstanceId, expected.events)) match {
     case Success(_) => this
-    case Failure(_) => await {
+    case Failure(_) => verify {
       this.getActualFlow.map(actual =>
         throw new AssertionError(errorMsg("Timeout waiting for the events flow", expected, actual)))
     }
@@ -30,53 +30,46 @@ class BakerAssert(private val baker: Baker, recipeInstanceId: String, timeout: D
 
   // assertions
 
-  def assertEventsFlow(expected: EventsFlow): BakerAssert = await {
-    this.getActualFlow.map(actual =>
-      assertWithLogging(assert(expected == actual, errorMsg("Events are not equal", expected, actual))))
+  def assertEventsFlow(expected: EventsFlow): RecipeAssert = verify {
+    this.getActualFlow.map(actual => assert(expected == actual, errorMsg("Events are not equal", expected, actual)))
   }
 
-  def assertIngredient(name: String): IngredientAssert = Await.result({
-    baker.getIngredients(recipeInstanceId).map { ingredients =>
-      val value = if (ingredients.contains(name)) ingredients(name) else null
-      new IngredientAssert(Option(value))
-    }
-  }, timeout)
+  def assertIngredient(name: String): IngredientAssert = new IngredientAssert(name)
 
   // logging
 
-  def logIngredients(): BakerAssert = await {
+  def logIngredients(): RecipeAssert = verify {
     baker.getIngredients(recipeInstanceId).map(ingredients => logger.info(s"Ingredients: $ingredients"))
   }
 
-  def logEventNames(): BakerAssert = await {
-    baker.getEventNames(recipeInstanceId).map(names => logger.info(s"Event Names: $names"))
+  def logEventNames(): RecipeAssert = verify {
+    baker.getEventNames(recipeInstanceId).map(names => logger.info(s"Event names: $names"))
   }
 
-  def logVisualState(): BakerAssert = await {
-    baker.getVisualState(recipeInstanceId).map(visualState => logger.info(s"VisualState: $visualState"))
+  def logVisualState(): RecipeAssert = verify {
+    baker.getVisualState(recipeInstanceId).map(state => logger.info(s"Visual state: $state"))
+  }
+
+  def logCurrentState(): RecipeAssert = {
+    logEventNames()
+    logIngredients()
+    logVisualState()
   }
 
   // private helper functions
 
-  private def await(future: Future[_]): BakerAssert = {
-    Try(Await.result(future, timeout)) match {
-      case Success(_) =>
-      case Failure(exception) => throw exception.getCause
-    }
-    this
+  private def await[T](future: Future[T]): Try[T] =
+    Try(Await.result(future, timeout))
+
+  private def verify(future: Future[_]): RecipeAssert = await(future) match {
+    case Success(_) => this
+    case Failure(exception) =>
+      logCurrentState()
+      throw exception.getCause
   }
 
   private def getActualFlow: Future[EventsFlow] =
     baker.getEvents(recipeInstanceId).map(events => EventsFlow(events.map(_.name).toSet))
-
-  private def assertWithLogging[T](assert: => T): BakerAssert = Try(assert) match {
-    case Success(_) => this
-    case Failure(throwable) =>
-      logEventNames()
-      logIngredients()
-      logVisualState()
-      throw throwable
-  }
 
   private def errorMsg(msg: String, expected: EventsFlow, actual: EventsFlow): String = {
     val dif1 = expected --- actual
@@ -92,32 +85,33 @@ class BakerAssert(private val baker: Baker, recipeInstanceId: String, timeout: D
 
   // ingredient assert
 
-  class IngredientAssert(actual: Option[Value]) {
+  class IngredientAssert(name: String) {
 
-    def isNull: BakerAssert =
+    def isNull: RecipeAssert =
       is(value => assert(value.isNull, s"expect value '$value' to be null"))
 
-    def isAbsent: BakerAssert =
+    def isAbsent: RecipeAssert =
       is(value => assert(value == null, s"expect value to be absent"))
 
-    def isEqual(expected: Any): BakerAssert =
+    def isEqual(expected: Any): RecipeAssert =
       is(value => assert(value.equalsObject(expected), s"expect value '$value' to be equal to '$expected'"))
 
-    def is(assertion: Consumer[Value]): BakerAssert =
-      assertWithLogging(assertion.accept(actual.orNull))
+    def is(assertion: Consumer[Value]): RecipeAssert = verify {
+      baker.getIngredients(recipeInstanceId).map(ingredients => assertion.accept(ingredients.getOrElse(name, null)))
+    }
   }
 }
 
-object BakerAssert {
+object RecipeAssert {
   val DEFAULT_TIMEOUT: Duration = 10 seconds
 
   def apply(baker: Baker, recipeInstanceId: String, timeout: Duration = DEFAULT_TIMEOUT) =
-    new BakerAssert(baker, recipeInstanceId, timeout)
+    new RecipeAssert(baker, recipeInstanceId, timeout)
 
-  def of(baker: javadsl.Baker, recipeInstanceId: String): BakerAssert =
+  def of(baker: javadsl.Baker, recipeInstanceId: String): RecipeAssert =
     apply(baker, recipeInstanceId)
 
-  def of(baker: javadsl.Baker, recipeInstanceId: String, timeout: java.time.Duration): BakerAssert =
+  def of(baker: javadsl.Baker, recipeInstanceId: String, timeout: java.time.Duration): RecipeAssert =
     apply(baker, recipeInstanceId, timeout)
 
   private implicit def toScala(duration: java.time.Duration): Duration =

@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class EventsFlowTest {
+
     @Test
     public void testClassVsString() {
         Assert.assertEquals(EventsFlow.of("Object"), EventsFlow.ofClasses(Object.class));
