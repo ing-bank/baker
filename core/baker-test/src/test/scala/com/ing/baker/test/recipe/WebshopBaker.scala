@@ -18,7 +18,7 @@ object WebshopBaker {
   implicit val cs: ContextShift[IO] = IO.contextShift(global)
   implicit val timer: Timer[IO] = IO.timer(global)
 
-  val baker: Baker = AkkaBaker(ConfigFactory.load, ActorSystem.apply("test"),
+  val baker: Baker = AkkaBaker(ConfigFactory.load, ActorSystem.apply("for-scala-tests"),
     CachedInteractionManager(InteractionInstance.unsafeFrom(new ReserveItemsInteraction)))
 
   val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)

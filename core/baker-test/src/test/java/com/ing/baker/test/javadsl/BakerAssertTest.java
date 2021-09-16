@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 public class BakerAssertTest {
 
-    private static final Baker baker = AkkaBaker.java(ConfigFactory.defaultApplication(), ActorSystem.apply("test"),
+    private static final Baker baker = AkkaBaker.java(ConfigFactory.defaultApplication(), ActorSystem.apply("for-java-tests"),
             Collections.singletonList(InteractionInstance.from(new ReserveItemsImpl())));
 
     private static final String recipeId;
