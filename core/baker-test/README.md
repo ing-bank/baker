@@ -3,7 +3,7 @@
 This repository contains some tools to make it easier to test your baker processes.
 
 * [EventsFlow](#EventsFlow)
-* [BakerAssert](#BakerAssert)
+* [RecipeAssert](#RecipeAssert)
     - [Assert Events](#Assert Events)
     - [Assert Ingredients](#Assert Ingredients)
     - [Logging](#Logging)
@@ -43,21 +43,21 @@ You can combine classes and strings in the event flows:
 You can compare them and the order does not matter:
 
 ```java
-   BakerEventsFlow.of("EventOne", "EventTwo").equals(BakerEventsFlow.of("EventTwo", "EventOne")); // true   
+   EventsFlow.of("EventOne", "EventTwo").equals(EventsFlow.of("EventTwo", "EventOne")); // true   
 ```
 
 While comparing it does not matter if it is a class or a string:
 
 ```java
-   BakerEventsFlow.of(EventOne.class).equals(BakerEventsFlow.of("EventOne")); // true   
+   EventsFlow.of(EventOne.class).equals(EventsFlow.of("EventOne")); // true   
 ```
 
-## BakerAssert
+## RecipeAssert
 
 To create baker assert instance you have to provide a baker instance and a process id:
 
 ```java
-    BakerAssert bakerAssert = BakerAssert.of(baker, uuid)
+    RecipeAssert recipeAssert = RecipeAssert.of(baker, uuid)
 ```
 
 ### Assert Events
@@ -65,7 +65,7 @@ To create baker assert instance you have to provide a baker instance and a proce
 You can assert if event flow for this process id is exactly the same as expected:
 
 ```java
-    bakerAssert.assertEventsFlow(LEFT);
+    recipeAssert.assertEventsFlow(LEFT);
 ```
 
 If it is not the same you will get a clear error message of what is the difference:
@@ -77,19 +77,19 @@ If it is not the same you will get a clear error message of what is the differen
 You can also assert flows with classes:
 
 ```java
-    bakerAssert.assertEventsFlow(FirstEventClass.class, SecondEventClass.class);
+    recipeAssert.assertEventsFlow(FirstEventClass.class, SecondEventClass.class);
 ```
 
 or with strings:
 
 ```java
-    bakerAssert.assertEventsFlow("FirstEventClass", "SecondEventClass");
+    recipeAssert.assertEventsFlow("FirstEventClass", "SecondEventClass");
 ```
 
 You can also assert if some event or a set of events happen.
 
 ```java
-    bakerAssert.assertEventsHappened(FirstEventClass.class, SecondEventClass.class);
+    recipeAssert.assertEventsHappened(FirstEventClass.class, SecondEventClass.class);
 ```
 
 In this case it does not check for the exact flow but whether the expected events exist in the flow.
@@ -97,19 +97,19 @@ In this case it does not check for the exact flow but whether the expected event
 The same can be done using strings:
 
 ```java
-    bakerAssert.assertEventsHappened("FirstEventClass", "SecondEventClass");
+    recipeAssert.assertEventsHappened("FirstEventClass", "SecondEventClass");
 ```
 
 You can also assert if some event or a set of events did not happen:
 
 ```java
-    bakerAssert.assertEventsNotHappened(FirstEventClass.class, SecondEventClass.class);
+    recipeAssert.assertEventsNotHappened(FirstEventClass.class, SecondEventClass.class);
 ```
 
 The same can be done using strings:
 
 ```java
-    bakerAssert.assertEventsNotHappened("FirstEventClass", "SecondEventClass");
+    recipeAssert.assertEventsNotHappened("FirstEventClass", "SecondEventClass");
 ```
 
 ### Assert Ingredients
@@ -119,25 +119,25 @@ You can assert ingredient values.
 You can assert if it is equal to expected value:
 
 ```java
-    bakerAssert.assertIngredient(TestRecipe.TestSensoryEvent.class, "direction").isEqual(TestRecipe.Direction.LEFT);
+    recipeAssert.assertIngredient(TestRecipe.TestSensoryEvent.class, "direction").isEqual(TestRecipe.Direction.LEFT);
 ```
 
 You can assert if it is null:
 
 ```java
-    bakerAssert.assertIngredient(TestRecipe.TestSensoryEvent.class, "direction").isNull();
+    recipeAssert.assertIngredient(TestRecipe.TestSensoryEvent.class, "direction").isNull();
 ```
 
 or if it is not null:
 
 ```java
-    bakerAssert.assertIngredient(TestRecipe.TestSensoryEvent.class, "direction").notNull();
+    recipeAssert.assertIngredient(TestRecipe.TestSensoryEvent.class, "direction").notNull();
 ```
 
 If it is not enough there is a possibility to inject custom check:
 
 ```java
-    bakerAssert.assertIngredient("someList").customAssert(val -> Assert.assertEquals(2, val.asList(String.class).size()));
+    recipeAssert.assertIngredient("someList").customAssert(val -> Assert.assertEquals(2, val.asList(String.class).size()));
 ```
 
 ### Logging
@@ -145,27 +145,27 @@ If it is not enough there is a possibility to inject custom check:
 You can print events with ingredients:
 
 ```java
-    bakerAssert.printEvents();
+    recipeAssert.printEvents();
 ```
 
 or just event names:
 
 ```java
-    bakerAssert.printEventNames();
+    recipeAssert.printEventNames();
 ```
 
 You can print diagram:
 
 ```java
-    bakerAssert.printDiagram();
+    recipeAssert.printDiagram();
 ```
 
 ### Chaining
 
-BakerAssert is chainable:
+RecipeAssert is chainable:
 
 ```java
-    BakerAssert.of(baker, uuid)
+    RecipeAssert.of(baker, uuid)
             .printEvents()
             .printDiagram()
             .assertEventsFlow(LEFT)

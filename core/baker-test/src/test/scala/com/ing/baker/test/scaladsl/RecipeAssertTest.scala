@@ -3,8 +3,8 @@ package com.ing.baker.test.scaladsl
 import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.test.RecipeAssert
 import com.ing.baker.test.recipe.WebshopBaker._
+import com.ing.baker.test.recipe.WebshopRecipe
 import com.ing.baker.test.recipe.WebshopRecipe.{ItemsReserved, OrderPlaced}
-import com.ing.baker.test.recipe.{WebshopBaker, WebshopRecipe}
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.Assertions
 import org.scalatest.flatspec.AnyFlatSpec
@@ -39,8 +39,7 @@ class RecipeAssertTest extends AnyFlatSpec with Matchers with StrictLogging {
     case default => fail(s"assertion error is expected but got $default")
   }
 
-  "BakerAssert object" should "be created" in {
-    val baker = WebshopBaker.baker
+  "RecipeAssert object" should "be created" in {
     RecipeAssert.apply(baker, "someProcessId")
   }
 

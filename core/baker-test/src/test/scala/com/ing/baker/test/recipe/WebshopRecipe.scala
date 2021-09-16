@@ -28,10 +28,8 @@ object WebshopRecipe {
   )
 
   val recipe: Recipe = Recipe("Webshop")
-    .withSensoryEvents(
-      Event[OrderPlaced])
-    .withInteractions(
-      ReserveItems)
+    .withSensoryEvents(Event[OrderPlaced])
+    .withInteractions(ReserveItems)
 
   val happyFlow: EventsFlow =
     classOf[OrderPlaced] ::

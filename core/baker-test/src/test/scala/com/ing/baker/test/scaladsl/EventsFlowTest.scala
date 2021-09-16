@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 
 class EventsFlowTest extends AnyFlatSpec with Matchers {
 
-  "BakerEventsFlow object" should "be created" in {
+  "EventsFlow object" should "be created" in {
     val flow = "a" :: "B" :: "C" :: EmptyFlow
     val anotherFlow = "D" :: EmptyFlow
     val d = flow ::: anotherFlow
@@ -16,13 +16,13 @@ class EventsFlowTest extends AnyFlatSpec with Matchers {
     assertResult(EventsFlow("a"))(flow --- ("B" :: "C" :: EmptyFlow))
   }
 
-  "BakerEventsFlow object" should "be tested for equals" in {
+  "EventsFlow object" should "be tested for equals" in {
     val expected = "Object" :: "EventsFlow" :: "bla" :: EmptyFlow
     val actual = classOf[Object] :: classOf[EventsFlow] :: "bla" :: EmptyFlow
     assertResult(expected)(actual)
   }
 
-  "BakerEventsFlow object" should "be tested for equals and order should not matter" in {
+  "EventsFlow object" should "be tested for equals and order should not matter" in {
     val expected = "Object" :: "EventsFlow" :: "bla" :: EmptyFlow
     val actual = "bla" :: classOf[EventsFlow] :: classOf[Object] :: "bla" :: EmptyFlow
     assertResult(expected)(actual)
