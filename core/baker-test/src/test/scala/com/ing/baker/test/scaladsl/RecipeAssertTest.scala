@@ -24,7 +24,7 @@ class RecipeAssertTest extends AnyFlatSpec with Matchers with StrictLogging {
     baker.bake(recipeId, recipeInstanceId)
     if (async) {
       Future {
-        Thread.sleep(1000)
+        Thread.sleep(500)
         baker.fireEvent(recipeInstanceId, sensoryEvent)
       }
     } else {
