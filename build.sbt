@@ -578,7 +578,7 @@ lazy val `sbt-bakery-docker-generate` = project.in(file("docker/sbt-bakery-docke
       Seq(file)
     }.taskValue,
     addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.6.0"),
-    addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.3.9")
+    addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.4.0")
   )
   .enablePlugins(SbtPlugin)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
