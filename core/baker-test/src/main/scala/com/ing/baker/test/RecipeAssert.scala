@@ -12,7 +12,6 @@ import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 
 class RecipeAssert(private val baker: Baker, private val recipeInstanceId: String, private val timeout: Duration) extends LazyLogging {
-  self =>
 
   // initialization
 
