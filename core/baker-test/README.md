@@ -3,12 +3,28 @@
 This repository contains some tools to make it easier to test your baker processes. Our goal was to make it easy to work
 using both `java` and `scala`.
 
+**java:**
+
+```java
+  BakerAssert.of(baker, recipeInstanceId)
+        .waitFor(EventsFlow.of(SensoryEvent.class, InteractionSucceeded.class))
+        .assertIngredient("testIngredient").isEqual("foo")
+```
+
+**scala:**
+
+```scala
+  BakerAssert(baker, recipeInstanceId)
+        .waitFor(classOf[SensoryEvent] :: classOf[InteractionSucceeded] :: EmptyFlow)
+        .assertIngredient("testIngredient").isEqual("foo")
+```
+
 This library has the following features:
 
 * [EventsFlow](#EventsFlow)
 * [RecipeAssert](#RecipeAssert)
-    - [Assert Events](#Assert Events)
-    - [Assert Ingredients](#Assert Ingredients)
+    - [Assert Events Flow](#assert-events-flow)
+    - [Assert Ingredients](#assert-ingredients)
     - [Logging](#Logging)
     - [Chaining](#Chaining)
     - [Async](#Async)
@@ -24,7 +40,7 @@ You can create events flows from classes:
 **java:**
 
 ```java
-    EventsFlow flow=EventsFlow.of(
+    EventsFlow flow = EventsFlow.of(
         SomeSensoryEvent.class,
         InteractionSucceeded.class
     );
@@ -33,7 +49,8 @@ You can create events flows from classes:
 **scala:**
 
 ```scala
-   val flow: EventsFlow = classOf[SomeSensoryEvent] :: classOf[InteractionSucceeded] :: EmptyFlow
+   val flow: EventsFlow = 
+      classOf[SomeSensoryEvent] :: classOf[InteractionSucceeded] :: EmptyFlow
 ```
 
 You can create new event flows from other event flows:
@@ -41,7 +58,7 @@ You can create new event flows from other event flows:
 **java:**
 
 ```java
-    EventsFlow anotherFlow=flow
+    EventsFlow anotherFlow = flow
         .remove(SomeSensoryEvent.class)
         .add(AnotherSensoryEvent.class);
 ```
@@ -49,7 +66,8 @@ You can create new event flows from other event flows:
 **scala:**
 
 ```scala
-    val anotherFlow: EventsFlow = flow -- classOf[SomeSensoryEvent] ++ classOf[AnotherSensoryEvent]
+    val anotherFlow: EventsFlow = 
+      flow -- classOf[SomeSensoryEvent] ++ classOf[AnotherSensoryEvent]
 ```
 
 ### EventsFlow possibilities
@@ -59,7 +77,7 @@ You can combine classes, strings and another flows in the event flows:
 **java:**
 
 ```java
-    EventsFlow unhappyFlow=happyFlow
+    EventsFlow unhappyFlow = happyFlow
         .remove(InteractionSucceeded.class)
         .add("InteractionExhausted")
         .add(someErrorFlow);
@@ -68,7 +86,8 @@ You can combine classes, strings and another flows in the event flows:
 **scala:**
 
 ```scala
-    val unhappyFlow: EventsFlow = happyFlow -- classOf[InteractionSucceeded] ++ "InteractionExhausted" +++ someErrorFlow
+    val unhappyFlow: EventsFlow = 
+        happyFlow -- classOf[InteractionSucceeded] ++ "InteractionExhausted" +++ someErrorFlow
 ``` 
 
 ### EventsFlow comparison
@@ -98,67 +117,39 @@ While comparing it does not matter if it is a class or a string:
 **scala:**
 
 ```scala
-   classOf[EventOne] :: EmptyFlow == "EventOne" :: EmptyFlow; // true   
+   classOf[EventOne] :: EmptyFlow == "EventOne" :: EmptyFlow // true   
 ```
 
 ## RecipeAssert
 
-To create baker assert instance you have to provide a baker instance and a process id:
+To create a recipe assert instance you have to provide a baker instance and a recipe instance id:
 
+**java:**
 ```java
-    RecipeAssert recipeAssert=RecipeAssert.of(baker,uuid)
+    RecipeAssert recipeAssert = RecipeAssert.of(baker, recipeInstanceId);
 ```
 
-### Assert Events
+**scala:**
+```scala
+  val recipeAssert: RecipeAssert = RecipeAssert(baker, recipeInstanceId);
+```
 
-You can assert if event flow for this process id is exactly the same as expected:
+### Assert Events Flow
+
+You can assert if events flow for this process is exactly the same as expected:
 
 ```java
-    recipeAssert.assertEventsFlow(LEFT);
+    recipeAssert.assertEventsFlow(happyFlow);
 ```
 
 If it is not the same you will get a clear error message of what is the difference:
 
 ```text
-// FIXME
-```
-
-You can also assert flows with classes:
-
-```java
-    recipeAssert.assertEventsFlow(FirstEventClass.class,SecondEventClass.class);
-```
-
-or with strings:
-
-```java
-    recipeAssert.assertEventsFlow("FirstEventClass","SecondEventClass");
-```
-
-You can also assert if some event or a set of events happen.
-
-```java
-    recipeAssert.assertEventsHappened(FirstEventClass.class,SecondEventClass.class);
-```
-
-In this case it does not check for the exact flow but whether the expected events exist in the flow.
-
-The same can be done using strings:
-
-```java
-    recipeAssert.assertEventsHappened("FirstEventClass","SecondEventClass");
-```
-
-You can also assert if some event or a set of events did not happen:
-
-```java
-    recipeAssert.assertEventsNotHappened(FirstEventClass.class,SecondEventClass.class);
-```
-
-The same can be done using strings:
-
-```java
-    recipeAssert.assertEventsNotHappened("FirstEventClass","SecondEventClass");
+Events are not equal:
+    actual: OrderPlaced, ItemsReserved
+  expected: OrderPlaced, ItemsNotReserved
+difference: ++ ItemsNotReserved
+            -- ItemsReserved
 ```
 
 ### Assert Ingredients
