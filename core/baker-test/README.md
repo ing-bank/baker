@@ -1,8 +1,8 @@
 # Baker Test
 
-This library contains tooling to simplify the testing of the baker based logic, 
-especially when asynchronous recipe execution is involved. 
-The goal was to make it easy to work with both `java` and `scala`.
+This library contains the tooling to help with the testing of the baker-based logic.
+The usage of this library makes the test code concise and readable in both `java` and `scala`.
+It also simplifies the testing of the cases when asynchronous recipe execution is involved.
 
 **java:**
 
