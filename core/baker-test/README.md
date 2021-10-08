@@ -35,7 +35,7 @@ This library has the following features:
 
 ## EventsFlow
 
-`EventsFlow` is made to simplify the work with events within Baker while testing. `EventsFlow` is immutable.
+`EventsFlow` is made to simplify the work with events within baker while testing. `EventsFlow` is immutable.
 
 ### Create EventsFlow
 
