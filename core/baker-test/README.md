@@ -1,6 +1,6 @@
 # Baker Test
 
-This repository contains some tools to simplify the test process of the baker based logic. 
+This library contains some tools to simplify the test process of the baker based logic. 
 Our goal was to make it easy to work using both `java` and `scala`.
 
 **java:**
