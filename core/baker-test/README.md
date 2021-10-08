@@ -158,11 +158,11 @@ difference: ++ ItemsNotReserved
 
 ### Assert Ingredients
 
-!!Provides a simple way to assert ingredient values.
+There are multiple methods to assert ingredient values available.
 
 #### isEqual
 
-!!Asserts if the ingredient value is equal to the expected value:
+`isEqual` asserts if the ingredient value is equal to the expected value:
 
 **java/scala:**
 ```java
@@ -173,7 +173,7 @@ difference: ++ ItemsNotReserved
 
 #### isNull
 
-Asserts if the ingredient exists and has `null` value:
+`isNull` asserts if the ingredient exists and has `null` value:
 
 **java:**
 ```java
@@ -190,7 +190,7 @@ Asserts if the ingredient exists and has `null` value:
 
 #### isAbsent
 
-Asserts if the ingredient is not a part of the recipe:
+`isAbsent` asserts if the ingredient is not a part of the recipe:
 
 **java:**
 ```java
@@ -224,35 +224,35 @@ Custom ingredient asserts are also possible:
 
 ### Logging
 
-!!Logs ingredients (with values) of the recipe instance:
+`logIngredients` logs ingredients (with values) of the recipe instance:
 
 **java/scala:**
 ```java
     recipeAssert.logIngredients();
 ```
 
-!ogs events names fired for the recipe instance:
+`logEventNames` logs names of the events fired for the recipe instance:
 
 **java/scala:**
 ```java
     recipeAssert.logEventNames();
 ```
 
-!Logs the visual state of the recipe instance in [dot language](https://graphviz.org/doc/info/lang.html):
+`logVisualState` logs the visual state of the recipe instance in [dot language](https://graphviz.org/doc/info/lang.html):
 
 **java/scala:**
 ```java
     recipeAssert.logVisualState();
 ```
 
-Logs all the information available for the recipe instance:
+`logCurrentState` logs all the information available for the recipe instance:
 
 **java/scala:**
 ```java
     recipeAssert.logCurrentState();
 ```
 
-The current state is logged when any of the assertions fails. 
+Also, the current state is logged when any of the assertions fails. 
 
 ### Async
 
@@ -266,7 +266,7 @@ Therefore, the blocking method was implemented:
     // otherwise timeout occurs and an assertion error is thrown
 ```
 
-The default timeout is 10 seconds and it can be configured on the `RecipeAssert` construction:
+The default timeout is 10 seconds, and it can be configured on the `RecipeAssert` construction:
 
 **java:**
 ```java
