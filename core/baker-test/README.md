@@ -1,7 +1,8 @@
 # Baker Test
 
-This library contains some tools to simplify the test process of the baker based logic. 
-Our goal was to make it easy to work using both `java` and `scala`.
+This library contains tooling to simplify the testing of the baker based logic, 
+especially when asynchronous recipe execution is involved. 
+The goal was to make it easy to work with both `java` and `scala`.
 
 **java:**
 
@@ -35,11 +36,11 @@ This library has the following features:
 
 ## EventsFlow
 
-`EventsFlow` is made to simplify the work with events within baker while testing. `EventsFlow` is immutable.
+`EventsFlow` is made to simplify the work with the baker events while testing. `EventsFlow` is immutable.
 
 ### Create EventsFlow
 
-You can create events flows from classes:
+It is possible to create a new events flow from events classes:
 
 **java:**
 
@@ -57,7 +58,7 @@ You can create events flows from classes:
       classOf[SomeSensoryEvent] :: classOf[InteractionSucceeded] :: EmptyFlow
 ```
 
-You can create new event flows from other event flows:
+Or a new events flow can be created from existing one:
 
 **java:**
 
@@ -74,9 +75,7 @@ You can create new event flows from other event flows:
       flow -- classOf[SomeSensoryEvent] ++ classOf[AnotherSensoryEvent]
 ```
 
-### EventsFlow possibilities
-
-You can combine classes, strings and other event flows:
+It is also possible to combine classes, strings and other events flows:
 
 **java:**
 
@@ -96,7 +95,7 @@ You can combine classes, strings and other event flows:
 
 ### EventsFlow comparison
 
-You can compare event flows and the order of the events within event flows does not matter:
+Events flows are compared ignoring the order of the events:
 
 **java:**
 
@@ -110,7 +109,7 @@ You can compare event flows and the order of the events within event flows does 
    "EventOne" :: "EventTwo" :: EmptyFlow == "EventTwo" :: "EventOne" :: EmptyFlow // true   
 ```
 
-While comparing event flows it does not matter if an event is provided as a class or as a string:
+While comparing events flows it does not matter if an event is provided as a class or as a string:
 
 **java:**
 
@@ -126,7 +125,7 @@ While comparing event flows it does not matter if an event is provided as a clas
 
 ## RecipeAssert
 
-To create a recipe assert instance you have to provide a baker instance and a recipe instance id:
+To create a recipe assert instance a baker instance and a recipe instance id are required:
 
 **java:**
 ```java
@@ -140,14 +139,14 @@ To create a recipe assert instance you have to provide a baker instance and a re
 
 ### Assert Events Flow
 
-You can assert if an events flow for this process is exactly the same as expected:
+There is a way to assert if the events flow for this recipe instance is exactly the same as expected:
 
 **java/scala:**
 ```java
     recipeAssert.assertEventsFlow(happyFlow);
 ```
 
-If it is not the same you will get a clear error message of what is the difference:
+If it is not the same a clear error message of what is the difference is provided:
 
 ```text
 Events are not equal:
@@ -159,11 +158,11 @@ difference: ++ ItemsNotReserved
 
 ### Assert Ingredients
 
-You can assert ingredient values.
+!!Provides a simple way to assert ingredient values.
 
 #### isEqual
 
-You can assert if an ingredient is equal to an expected value:
+!!Asserts if the ingredient value is equal to the expected value:
 
 **java/scala:**
 ```java
@@ -174,8 +173,7 @@ You can assert if an ingredient is equal to an expected value:
 
 #### isNull
 
-You can assert if an ingredient is `null` 
-(it will assert that the ingredient is an existing ingredient and is equal to `null`):
+Asserts if the ingredient exists and has `null` value:
 
 **java:**
 ```java
@@ -192,7 +190,7 @@ You can assert if an ingredient is `null`
 
 #### isAbsent
 
-You can assert if an ingredient is not part of the recipe:
+Asserts if the ingredient is not a part of the recipe:
 
 **java:**
 ```java
@@ -209,7 +207,7 @@ You can assert if an ingredient is not part of the recipe:
 
 #### Custom Ingredient Assert
 
-There is also a possibility to inject a custom ingredient assert:
+Custom ingredient asserts are also possible:
 
 **java:**
 ```java
@@ -226,49 +224,49 @@ There is also a possibility to inject a custom ingredient assert:
 
 ### Logging
 
-You can log ingredients of the recipe instance (with values):
+!!Logs ingredients (with values) of the recipe instance:
 
 **java/scala:**
 ```java
     recipeAssert.logIngredients();
 ```
 
-You can log event names that where used in this recipe instance:
+!ogs events names fired for the recipe instance:
 
 **java/scala:**
 ```java
     recipeAssert.logEventNames();
 ```
 
-You can log the visual state of the recipe in [dot language](https://graphviz.org/doc/info/lang.html):
+!Logs the visual state of the recipe instance in [dot language](https://graphviz.org/doc/info/lang.html):
 
 **java/scala:**
 ```java
     recipeAssert.logVisualState();
 ```
 
-You can log all the information available for the recipe instance using the following method:
+Logs all the information available for the recipe instance:
 
 **java/scala:**
 ```java
     recipeAssert.logCurrentState();
 ```
 
-The current state is logged when any of the assertions is failed. 
+The current state is logged when any of the assertions fails. 
 
 ### Async
 
-Quite a common example is to wait for a baker process to be finished.
-Therefore the blocking method was implemented:
+Quite a common task is to wait for a baker process to finish or specific event to fire.
+Therefore, the blocking method was implemented:
 
 **java/scala:**
 ```java
     recipeAssert.waitFor(happyFlow);
     // on this line all the events within happyFlow have happened
-    // otherwise an assertion error is thrown and the test has failed
+    // otherwise timeout occurs and an assertion error is thrown
 ```
 
-By default the timeout is 10 seconds. You can configure it during the `RecipeAssert` construction:
+The default timeout is 10 seconds and it can be configured on the `RecipeAssert` construction:
 
 **java:**
 ```java
