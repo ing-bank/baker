@@ -10,65 +10,102 @@ import scala.collection.JavaConverters;
 import scala.collection.mutable.Buffer;
 
 import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
 public class RecipeAssertTest {
 
-    private String recipeInstanceId;
-
-    @Before
-    public void init() {
-        recipeInstanceId = UUID.randomUUID().toString();
+    private RecipeAssert createRecipeAssert(int delayInSeconds) {
+        String recipeInstanceId = UUID.randomUUID().toString();
         WebshopBaker.javaBaker().bake(WebshopBaker.recipeId(), recipeInstanceId);
         Buffer<String> items = JavaConverters.asScalaBuffer(Arrays.asList("item-1", "item-2", "item-3"));
-        WebshopBaker.javaBaker().fireEvent(recipeInstanceId,
-                EventInstance.from(new WebshopRecipe.OrderPlaced("order-1", items.toList())));
+
+        if (delayInSeconds > 0) {
+            new Timer().schedule(
+                    new TimerTask() {
+                        @Override
+                        public void run() {
+                            WebshopBaker.javaBaker().fireEvent(recipeInstanceId,
+                                    EventInstance.from(new WebshopRecipe.OrderPlaced("order-1", items.toList())));
+                        }
+                    },
+                    delayInSeconds * 1000L
+            );
+        } else {
+            WebshopBaker.javaBaker().fireEvent(recipeInstanceId,
+                    EventInstance.from(new WebshopRecipe.OrderPlaced("order-1", items.toList())));
+        }
+
+        return RecipeAssert.of(WebshopBaker.javaBaker(), recipeInstanceId);
+    }
+
+    private RecipeAssert createRecipeAssert() {
+        return createRecipeAssert(0);
     }
 
     @Test
     public void testHappy() {
-        RecipeAssert.of(WebshopBaker.javaBaker(), recipeInstanceId)
+        createRecipeAssert()
                 .waitFor(WebshopRecipe.happyFlow())
-                .logEventNames()
-                .logIngredients()
-                .logVisualState()
+                .assertEventsFlow(WebshopRecipe.happyFlow());
+    }
+
+    @Test
+    public void testHappyAfterDelay() {
+        createRecipeAssert(2)
+                .waitFor(WebshopRecipe.happyFlow())
                 .assertEventsFlow(WebshopRecipe.happyFlow());
     }
 
     @Test(expected = AssertionError.class)
-    public void testHappyFail() {
-        RecipeAssert.of(WebshopBaker.javaBaker(), recipeInstanceId)
+    public void testFailWithIncorrectEvents() {
+        createRecipeAssert()
                 .waitFor(WebshopRecipe.happyFlow())
                 .assertEventsFlow(WebshopRecipe.happyFlow().remove(WebshopRecipe.OrderPlaced.class));
     }
 
     @Test
     public void testAssertIngredientIsEqual() {
-        RecipeAssert.of(WebshopBaker.javaBaker(), recipeInstanceId)
+        createRecipeAssert()
                 .waitFor(WebshopRecipe.happyFlow())
                 .assertIngredient("orderId").isEqual("order-1");
     }
 
     @Test(expected = AssertionError.class)
     public void testAssertIngredientIsEqualFail() {
-        RecipeAssert.of(WebshopBaker.javaBaker(), recipeInstanceId)
+        createRecipeAssert()
                 .waitFor(WebshopRecipe.happyFlow())
                 .assertIngredient("orderId").isEqual("order-2");
     }
 
     @Test
     public void testAssertIngredientIsAbsent() {
-        RecipeAssert.of(WebshopBaker.javaBaker(), recipeInstanceId)
+        createRecipeAssert()
                 .waitFor(WebshopRecipe.happyFlow())
                 .assertIngredient("not-existing").isAbsent();
     }
 
+    @Test(expected = AssertionError.class)
+    public void testAssertIngredientIsNull() {
+        createRecipeAssert()
+                .waitFor(WebshopRecipe.happyFlow())
+                .assertIngredient("orderId").isNull();
+    }
+
     @Test
     public void testAssertIngredientCustom() {
-        RecipeAssert.of(WebshopBaker.javaBaker(), recipeInstanceId)
+        createRecipeAssert()
                 .waitFor(WebshopRecipe.happyFlow())
                 .assertIngredient("orderId").is(value -> assertEquals("order-1", value.as(String.class)));
+    }
+
+    @Test(expected = AssertionError.class)
+    public void testAssertIngredientCustomFail() {
+        createRecipeAssert()
+                .waitFor(WebshopRecipe.happyFlow())
+                .assertIngredient("orderId").is(value -> assertEquals("order-2", value.as(String.class)));
     }
 }
