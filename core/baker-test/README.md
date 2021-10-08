@@ -1,7 +1,7 @@
 # Baker Test
 
-This repository contains some tools to make it easier to test your baker processes. Our goal was to make it easy to work
-using both `java` and `scala`.
+This repository contains some tools to simplify the test process of baker based logic. 
+Our goal was to make it easy to work using both `java` and `scala`.
 
 **java:**
 
@@ -35,7 +35,7 @@ This library has the following features:
 
 ## EventsFlow
 
-EventsFlow is made to simplify the work with events within Baker while testing. EventFlow is immutable.
+`EventsFlow` is made to simplify the work with events within Baker while testing. `EventsFlow` is immutable.
 
 ### Create EventsFlow
 
@@ -174,7 +174,8 @@ You can assert if an ingredient is equal to expected value:
 
 #### isNull
 
-You can assert if an ingredient is null (existing ingredient but is equal null):
+You can assert if an ingredient is `null` 
+(it will assert that the ingredient is an existing ingredient and is equal to `null`):
 
 **java:**
 ```java
@@ -208,7 +209,7 @@ You can assert if an ingredient is not part of the recipe:
 
 #### Custom Ingredient Assert
 
-There is also a possibility to inject custom assert:
+There is also a possibility to inject custom ingredient assert:
 
 **java:**
 ```java
@@ -232,26 +233,28 @@ You can log ingredients of the recipe instance (with values):
     recipeAssert.logIngredients();
 ```
 
-You can log event names that where use in this recipe instance:
+You can log event names that where used in this recipe instance:
 
 **java/scala:**
 ```java
     recipeAssert.logEventNames();
 ```
 
-You log the visual state of the recipe in [dot language](https://graphviz.org/doc/info/lang.html):
+You can log the visual state of the recipe in [dot language](https://graphviz.org/doc/info/lang.html):
 
 **java/scala:**
 ```java
     recipeAssert.logVisualState();
 ```
 
-You can log all the information available using the following method:
+You can log all the information available for the recipe instance using the following method:
 
 **java/scala:**
 ```java
     recipeAssert.logCurrentState();
 ```
+
+The current state is logged when any of the assert is failed. 
 
 ### Async
 
@@ -261,6 +264,8 @@ Therefore a blocking method was implemented:
 **java/scala:**
 ```java
     recipeAssert.waitFor(happyFlow);
+    // on this line all the events within happyFlow have happened
+    // otherwise an assertion error is thrown and the test has failed
 ```
 
 By default the timeout is 10 seconds. You can configure it during `RecipeAssert` construction:
