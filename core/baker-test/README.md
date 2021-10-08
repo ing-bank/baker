@@ -25,9 +25,13 @@ This library has the following features:
 * [RecipeAssert](#RecipeAssert)
     - [Assert Events Flow](#assert-events-flow)
     - [Assert Ingredients](#assert-ingredients)
+      - [isEqual](#isequal)
+      - [isNull](#isnull)
+      - [isAbsent](#isabsent)
+      - [Custom Ingredient Assert](#custom-ingredient-assert)
     - [Logging](#Logging)
-    - [Chaining](#Chaining)
     - [Async](#Async)
+    - [Chaining](#Chaining)
 
 ## EventsFlow
 
@@ -138,6 +142,7 @@ To create a recipe assert instance you have to provide a baker instance and a re
 
 You can assert if events flow for this process is exactly the same as expected:
 
+**java/scala:**
 ```java
     recipeAssert.assertEventsFlow(happyFlow);
 ```
@@ -156,66 +161,138 @@ difference: ++ ItemsNotReserved
 
 You can assert ingredient values.
 
-You can assert if it is equal to expected value:
+#### isEqual
 
+You can assert if an ingredient is equal to expected value:
+
+**java/scala:**
 ```java
-    recipeAssert.assertIngredient(TestRecipe.TestSensoryEvent.class,"direction").isEqual(TestRecipe.Direction.LEFT);
+    recipeAssert
+        .assertIngredient("ingredientName")
+        .isEqual(ingredientValue);
 ```
 
-You can assert if it is null:
+#### isNull
 
+You can assert if an ingredient is null (existing ingredient but is equal null):
+
+**java:**
 ```java
-    recipeAssert.assertIngredient(TestRecipe.TestSensoryEvent.class,"direction").isNull();
+    recipeAssert
+        .assertIngredient("direction")
+        .isNull();
+```
+**scala:**
+```scala
+    recipeAssert
+        .assertIngredient("direction")
+        .isNull
 ```
 
-or if it is not null:
+#### isAbsent
 
+You can assert if an ingredient is not part of the recipe:
+
+**java:**
 ```java
-    recipeAssert.assertIngredient(TestRecipe.TestSensoryEvent.class,"direction").notNull();
+    recipeAssert
+        .assertIngredient("not-existing")
+        .isAbsent();
+```
+**scala:**
+```scala
+    recipeAssert
+        .assertIngredient("not-existing")
+        .isAbsent
 ```
 
-If it is not enough there is a possibility to inject custom check:
+#### Custom Ingredient Assert
 
+There is also a possibility to inject custom assert:
+
+**java:**
 ```java
-    recipeAssert.assertIngredient("someList").customAssert(val->Assert.assertEquals(2,val.asList(String.class).size()));
+    recipeAssert
+        .assertIngredient("someListOfStrings")
+        .is(val -> Assert.assertEquals(2, val.asList(String.class).size()));
+```
+**scala:**
+```scala
+    recipeAssert
+        .assertIngredient("someListOfStrings")
+        .is(value => Assertions.assert(value.asList(classOf[String]).size == 2));
 ```
 
 ### Logging
 
-You can print events with ingredients:
+You can log ingredients of the recipe instance (with values):
 
+**java/scala:**
 ```java
-    recipeAssert.printEvents();
+    recipeAssert.logIngredients();
 ```
 
-or just event names:
+You can log event names that where use in this recipe instance:
 
+**java/scala:**
 ```java
-    recipeAssert.printEventNames();
+    recipeAssert.logEventNames();
 ```
 
-You can print diagram:
+You log the visual state of the recipe in [dot language](https://graphviz.org/doc/info/lang.html):
 
+**java/scala:**
 ```java
-    recipeAssert.printDiagram();
+    recipeAssert.logVisualState();
 ```
 
-### Chaining
+You can log all the information available using the following method:
 
-RecipeAssert is chainable:
-
+**java/scala:**
 ```java
-    RecipeAssert.of(baker,uuid)
-        .printEvents()
-        .printDiagram()
-        .assertEventsFlow(LEFT)
-        .assertIngredient(TestRecipe.TestSensoryEvent.class,"direction")
-        .isEqual(TestRecipe.Direction.LEFT);
+    recipeAssert.logCurrentState();
 ```
 
 ### Async
 
 Quite a common example is to wait for the baker process to be finished.
+Therefore a blocking method was implemented:
 
-// TODO finish 
+**java/scala:**
+```java
+    recipeAssert.waitFor(happyFlow);
+```
 
+By default the timeout is 10 seconds. You can configure it during `RecipeAssert` construction:
+
+**java:**
+```java
+    RecipeAssert.of(baker, recipeInstanceId, Duration.ofSeconds(20));
+```
+
+**scala:**
+```scala
+    RecipeAssert(baker, recipeInstanceId, 20 seconds)
+```
+
+### Chaining
+
+`RecipeAssert` is chainable:
+
+**java:**
+```java
+    RecipeAssert.of(baker, recipeInstanceId)
+        .waitFor(happyFlow)
+        .assertEventsFlow(happyFlow)
+        .assertIngredient("ingredientA").isEqual(ingredientValueA)
+        .assertIngredient("ingredientB").isEqual(ingredientValueB);
+```
+
+**scala:**
+```scala
+    RecipeAssert(baker, recipeInstanceId)
+        .waitFor(happyFlow)
+        .assertEventsFlow(happyFlow)
+        .assertIngredient("ingredientA").isEqual(ingredientValueA)
+        .assertIngredient("ingredientB").isEqual(ingredientValueB)
+```
