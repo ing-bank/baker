@@ -1,6 +1,6 @@
 # Baker Test
 
-This repository contains some tools to simplify the test process of baker based logic. 
+This repository contains some tools to simplify the test process of the baker based logic. 
 Our goal was to make it easy to work using both `java` and `scala`.
 
 **java:**
@@ -76,7 +76,7 @@ You can create new event flows from other event flows:
 
 ### EventsFlow possibilities
 
-You can combine classes, strings and another flows in the event flows:
+You can combine classes, strings and other event flows:
 
 **java:**
 
@@ -96,7 +96,7 @@ You can combine classes, strings and another flows in the event flows:
 
 ### EventsFlow comparison
 
-You can compare them and the order does not matter:
+You can compare event flows and the order of the events within event flows does not matter:
 
 **java:**
 
@@ -110,7 +110,7 @@ You can compare them and the order does not matter:
    "EventOne" :: "EventTwo" :: EmptyFlow == "EventTwo" :: "EventOne" :: EmptyFlow // true   
 ```
 
-While comparing it does not matter if it is a class or a string:
+While comparing event flows it does not matter if an event is provided as a class or as a string:
 
 **java:**
 
@@ -140,7 +140,7 @@ To create a recipe assert instance you have to provide a baker instance and a re
 
 ### Assert Events Flow
 
-You can assert if events flow for this process is exactly the same as expected:
+You can assert if an events flow for this process is exactly the same as expected:
 
 **java/scala:**
 ```java
@@ -163,7 +163,7 @@ You can assert ingredient values.
 
 #### isEqual
 
-You can assert if an ingredient is equal to expected value:
+You can assert if an ingredient is equal to an expected value:
 
 **java/scala:**
 ```java
@@ -209,7 +209,7 @@ You can assert if an ingredient is not part of the recipe:
 
 #### Custom Ingredient Assert
 
-There is also a possibility to inject custom ingredient assert:
+There is also a possibility to inject a custom ingredient assert:
 
 **java:**
 ```java
@@ -254,12 +254,12 @@ You can log all the information available for the recipe instance using the foll
     recipeAssert.logCurrentState();
 ```
 
-The current state is logged when any of the assert is failed. 
+The current state is logged when any of the assertions is failed. 
 
 ### Async
 
-Quite a common example is to wait for the baker process to be finished.
-Therefore a blocking method was implemented:
+Quite a common example is to wait for a baker process to be finished.
+Therefore the blocking method was implemented:
 
 **java/scala:**
 ```java
@@ -268,7 +268,7 @@ Therefore a blocking method was implemented:
     // otherwise an assertion error is thrown and the test has failed
 ```
 
-By default the timeout is 10 seconds. You can configure it during `RecipeAssert` construction:
+By default the timeout is 10 seconds. You can configure it during the `RecipeAssert` construction:
 
 **java:**
 ```java
