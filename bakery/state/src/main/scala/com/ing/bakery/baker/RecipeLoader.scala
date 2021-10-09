@@ -22,7 +22,7 @@ object RecipeLoader extends LazyLogging {
 
   def pollRecipesUpdates(path: String, recipeCache: RecipeCache, baker: Baker, duration: FiniteDuration)
                         (implicit timer: Timer[IO], cs: ContextShift[IO]): IO[Unit] = {
-    def pollRecipes: IO[Unit] = loadRecipesIntoBaker(path, recipeCache, baker) >> IO.sleep(duration) >> IO.suspend(pollRecipes)
+    def pollRecipes: IO[Unit] = loadRecipesIntoBaker(path, recipeCache, baker) >> IO.sleep(duration) >> IO.defer(pollRecipes)
 
     pollRecipes
   }

@@ -1,14 +1,14 @@
 package com.ing.bakery.scaladsl
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
+import com.ing.baker.il.RecipeVisualStyle
 import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, EventResolutions, InteractionInstanceDescriptor, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.types.Value
 import com.ing.bakery.common.FailoverUtils._
-import com.ing.bakery.common.{FailoverState, FailoverUtils, TLSConfig}
+import com.ing.bakery.common.{FailoverState, TLSConfig}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import org.http4s.Method._
