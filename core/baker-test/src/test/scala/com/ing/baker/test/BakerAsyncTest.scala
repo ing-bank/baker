@@ -7,7 +7,7 @@ import com.ing.baker.test.recipe.{WebshopBaker, WebshopRecipe}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.util.UUID
+import java.util.{Timer, TimerTask, UUID}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -42,10 +42,9 @@ class BakerAsyncTest extends AnyFlatSpec with Matchers {
     if (delay.toMillis == 0) {
       baker.fireEvent(recipeInstanceId, sensoryEvent)
     } else {
-      Future {
-        Thread.sleep(delay.toMillis)
-        baker.fireEvent(recipeInstanceId, sensoryEvent)
-      }
+      new Timer().schedule(new TimerTask {
+        override def run(): Unit = baker.fireEvent(recipeInstanceId, sensoryEvent)
+      }, delay.toMillis)
     }
 
     new BakerAsync(WebshopBaker.baker)

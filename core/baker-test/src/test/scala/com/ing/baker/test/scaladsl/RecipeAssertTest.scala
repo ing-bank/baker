@@ -10,9 +10,7 @@ import org.scalatest.Assertions
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.util.UUID
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import java.util.{Timer, TimerTask, UUID}
 import scala.util.{Failure, Try}
 
 class RecipeAssertTest extends AnyFlatSpec with Matchers with StrictLogging {
@@ -23,10 +21,9 @@ class RecipeAssertTest extends AnyFlatSpec with Matchers with StrictLogging {
 
     baker.bake(recipeId, recipeInstanceId)
     if (async) {
-      Future {
-        Thread.sleep(500)
-        baker.fireEvent(recipeInstanceId, sensoryEvent)
-      }
+      new Timer().schedule(new TimerTask {
+        override def run(): Unit = baker.fireEvent(recipeInstanceId, sensoryEvent)
+      }, 500)
     } else {
       baker.fireEvent(recipeInstanceId, sensoryEvent)
     }
