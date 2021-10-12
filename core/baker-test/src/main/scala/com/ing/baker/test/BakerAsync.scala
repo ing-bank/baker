@@ -19,7 +19,7 @@ class BakerAsync(private val baker: Baker) {
     */
   def waitFor(recipeInstanceId: String, events: Set[String]): Future[Unit] = for {
     check <- checkEvents(recipeInstanceId, events)
-    _ <- if (check) Future.successful(()) else Future(Thread.sleep(100))
+    _ <- if (check) Future.successful(()) else Future(Thread.`yield`())
     next <- if (check) Future.successful(()) else waitFor(recipeInstanceId, events)
   } yield next
 
