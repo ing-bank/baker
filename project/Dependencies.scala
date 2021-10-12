@@ -10,7 +10,7 @@ object Dependencies {
   val http4sVersion = "0.21.24"
   val fs2Version = "2.5.6"
   val circeVersion = "0.14.0"
-  val mockitoScalaVersion = "1.16.37"
+  val mockitoScalaVersion = "1.16.46"
   val catsEffectVersion = "2.5.1"
   val catsCoreVersion = "2.6.1"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
