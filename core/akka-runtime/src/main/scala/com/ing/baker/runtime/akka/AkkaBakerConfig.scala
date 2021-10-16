@@ -5,7 +5,7 @@ import cats.data.NonEmptyList
 import cats.effect.IO
 import com.ing.baker.runtime.akka.AkkaBakerConfig.BakerValidationSettings
 import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider}
-import com.ing.baker.runtime.akka.internal.CachedInteractionManager
+import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.config.Config
@@ -76,10 +76,10 @@ object AkkaBakerConfig extends LazyLogging {
   }
 
   def localDefault(actorSystem: ActorSystem): AkkaBakerConfig = {
-    localDefault(actorSystem, CachedInteractionManager())
+    localDefault(actorSystem, CachingInteractionManager())
   }
 
-  def localDefault(actorSystem: ActorSystem, interactions: CachedInteractionManager): AkkaBakerConfig = {
+  def localDefault(actorSystem: ActorSystem, interactions: CachingInteractionManager): AkkaBakerConfig = {
     val defaultTimeouts = Timeouts.default
 
     val localProvider =
@@ -102,7 +102,7 @@ object AkkaBakerConfig extends LazyLogging {
 
   def clusterDefault(seedNodes: NonEmptyList[Address],
                      actorSystem: ActorSystem,
-                     interactions: CachedInteractionManager): AkkaBakerConfig = {
+                     interactions: CachingInteractionManager): AkkaBakerConfig = {
     val defaultTimeouts = Timeouts.default
 
     val clusterProvider =
@@ -126,7 +126,7 @@ object AkkaBakerConfig extends LazyLogging {
     )(actorSystem)
   }
 
-  def from(config: Config, actorSystem: ActorSystem, interactions: CachedInteractionManager): AkkaBakerConfig = {
+  def from(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager): AkkaBakerConfig = {
     if (!config.getAs[Boolean]("baker.config-file-included").getOrElse(false))
       throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
 

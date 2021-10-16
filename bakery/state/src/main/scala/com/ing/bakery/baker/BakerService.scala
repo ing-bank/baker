@@ -35,7 +35,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object BakerService {
 
-  def resource(baker: Baker, hostname: InetSocketAddress, apiUrlPrefix: String, dashboardPath: String, interactions: InteractionManager[IO], loggingEnabled: Boolean)
+  def resource(baker: Baker, hostname: InetSocketAddress, apiUrlPrefix: String, dashboardPath: String, loggingEnabled: Boolean)
               (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
 
     val bakeryRequestClassifier: Request[IO] => Option[String] = { request =>
@@ -75,7 +75,7 @@ object BakerService {
                 def index(request: Request[IO]) = dashboardFile(request, "index.html").getOrElseF(NotFound())
 
                 Router(
-                  apiUrlPrefix -> Metrics[IO](metrics, classifierF = bakeryRequestClassifier)(routes(baker, interactions)),
+                  apiUrlPrefix -> Metrics[IO](metrics, classifierF = bakeryRequestClassifier)(routes(baker)),
                   "/" -> HttpRoutes.of[IO] {
                     case request =>
                       if (dashboardPath.isEmpty) NotFound()
@@ -86,11 +86,11 @@ object BakerService {
     } yield server
   }
 
-  def routes(baker: Baker, interactionManager: InteractionManager[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] =
-    new BakerService(baker, interactionManager).routes
+  def routes(baker: Baker)(implicit cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] =
+    new BakerService(baker).routes
 }
 
-final class BakerService private(baker: Baker, interactionManager: InteractionManager[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
+final class BakerService private(baker: Baker)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
 
   object CorrelationId extends OptionalQueryParamDecoderMatcher[String]("correlationId")
 

@@ -3,11 +3,11 @@ package com.ing.bakery.baker
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.akka.internal.CachedInteractionManager
+import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus}
-import com.ing.baker.runtime.model.InteractionInstance
+import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceDescriptor, InteractionInstanceInput}
 import com.ing.baker.types.{ByteArray, CharArray, ListType, RecordField, RecordType}
 import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
@@ -17,6 +17,7 @@ import com.ing.bakery.recipe.{ItemReservationRecipe, SimpleRecipe}
 import com.ing.bakery.scaladsl.BakerClient
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
+import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.mockserver.integration.ClientAndServer
 import org.scalatest.ConfigMap
@@ -44,7 +45,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
   val OrderPlacedEvent: EventInstance =
     EventInstance.unsafeFrom(
       OrderPlaced(OrderId("order-1"), List(Item("item-1"))
-    ))
+      ))
 
   val ItemsReservedEvent: EventInstance =
     EventInstance.unsafeFrom(
@@ -58,6 +59,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
 
   def awaitForInteractionDiscovery(context: Context): IO[Assertion] =
     awaitForServiceDiscoveryState(context)(_.map(_.name) shouldBe List("TimerInteraction", "TimerInteraction", "ReserveItems"))
+
   def awaitForEmptyServiceDiscovery(context: Context): IO[Assertion] =
     awaitForServiceDiscoveryState(context)(_.map(_.name) shouldBe List("TimerInteraction", "TimerInteraction"))
 
@@ -109,9 +111,9 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         recipeInformation.compiledRecipe.name shouldBe recipe.name
         interactionInformation shouldBe Some(
           InteractionInstanceDescriptor("ReserveItems",
-          Seq(InteractionInstanceInput(Option.apply("orderId"), RecordType(Seq(RecordField("orderId", CharArray)))),
-            InteractionInstanceInput(Option.apply("items"), ListType(RecordType(Seq(RecordField("itemId", CharArray)))))
-          ), Some(Map(
+            Seq(InteractionInstanceInput(Option.apply("orderId"), RecordType(Seq(RecordField("orderId", CharArray)))),
+              InteractionInstanceInput(Option.apply("items"), ListType(RecordType(Seq(RecordField("itemId", CharArray)))))
+            ), Some(Map(
               "OrderHadUnavailableItems" -> Map("unavailableItems" -> ListType(RecordType(Seq(RecordField("itemId", CharArray))))),
               "ItemsReserved" -> Map("reservedItems" -> RecordType(Seq(RecordField("items",
                 ListType(RecordType(Seq(RecordField("itemId", CharArray))))), RecordField("data", ByteArray))))
@@ -133,7 +135,9 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         state <- io(context.client.getRecipeInstanceState(recipeInstanceId))
-        _ <- eventually { context.eventListener.verifyNoEventsArrived }
+        _ <- eventually {
+          context.eventListener.verifyNoEventsArrived
+        }
       } yield {
         state.recipeInstanceId shouldBe recipeInstanceId
       }
@@ -219,7 +223,9 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         result <- io(context.client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent))
         serverState <- io(context.client.getRecipeInstanceState(recipeInstanceId))
-        _ <- eventually { context.eventListener.verifyEventsReceived(2) }
+        _ <- eventually {
+          context.eventListener.verifyEventsReceived(2)
+        }
       } yield {
         result.eventNames shouldBe Seq("OrderPlaced", "ItemsReserved")
         serverState.events.map(_.name) shouldBe Seq("OrderPlaced", "ItemsReserved")
@@ -260,7 +266,9 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
             serverState <- io(context.client.getRecipeInstanceState(recipeInstanceId))
           } yield serverState.events.map(_.name) shouldBe Seq("OrderPlaced", "ItemsReserved")
         }
-        _ <-  eventually {  context.eventListener.verifyEventsReceived(2) }
+        _ <- eventually {
+          context.eventListener.verifyEventsReceived(2)
+        }
       } yield result.eventNames shouldBe Seq("OrderPlaced")
     }
 
@@ -302,41 +310,45 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         _ <- io(context.client.retryInteraction(recipeInstanceId, "ReserveItems"))
         state2 <- io(context.client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name)))
-        _ <- eventually {  context.eventListener.verifyEventsReceived(2) }
+        _ <- eventually {
+          context.eventListener.verifyEventsReceived(2)
+        }
       } yield {
         state1 should contain("OrderPlaced")
-        state1 should not contain("ItemsReserved")
+        state1 should not contain ("ItemsReserved")
         state2 should contain("OrderPlaced")
         state2 should contain("ItemsReserved")
       }
     }
 
     test("Baker.resolveInteraction") { context =>
-        val recipeInstanceId: String = UUID.randomUUID().toString
-        val resolutionEvent = EventInstance.unsafeFrom(
-          ItemsReserved(reservedItems = ReservedItems(items = List(Item("resolution-item")), data = Array.empty))
-        )
-        for {
-          _ <- context.remoteInteraction.respondsWithInterfaces()
-          _ <- context.kubeApiServer.deployInteraction()
-          _ <- awaitForInteractionDiscovery(context)
-          _ <- io(context.client.bake(recipeIdBlocking, recipeInstanceId))
-          _ <- context.remoteInteraction.processesWithFailure(new RuntimeException("functional failure"))
-          _ <- io(context.client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent))
-          state1 <- io(context.client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name)))
-          _ <- io(context.client.resolveInteraction(recipeInstanceId, "ReserveItems", resolutionEvent))
-          state2data <- io(context.client.getRecipeInstanceState(recipeInstanceId))
-          state2 = state2data.events.map(_.name)
-          eventState = state2data.ingredients.get("reservedItems").map(_.as[ReservedItems].items.head.itemId)
-          // TODO Currently the event listener receives the OrderPlaced... shouldn't also receive the resolved event?
-          _ <-  eventually {  context.eventListener.verifyEventsReceived(1) }
-        } yield {
-          state1 should contain("OrderPlaced")
-          state1 should not contain("ItemsReserved")
-          state2 should contain("OrderPlaced")
-          state2 should contain("ItemsReserved")
-          eventState shouldBe Some("resolution-item")
+      val recipeInstanceId: String = UUID.randomUUID().toString
+      val resolutionEvent = EventInstance.unsafeFrom(
+        ItemsReserved(reservedItems = ReservedItems(items = List(Item("resolution-item")), data = Array.empty))
+      )
+      for {
+        _ <- context.remoteInteraction.respondsWithInterfaces()
+        _ <- context.kubeApiServer.deployInteraction()
+        _ <- awaitForInteractionDiscovery(context)
+        _ <- io(context.client.bake(recipeIdBlocking, recipeInstanceId))
+        _ <- context.remoteInteraction.processesWithFailure(new RuntimeException("functional failure"))
+        _ <- io(context.client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent))
+        state1 <- io(context.client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name)))
+        _ <- io(context.client.resolveInteraction(recipeInstanceId, "ReserveItems", resolutionEvent))
+        state2data <- io(context.client.getRecipeInstanceState(recipeInstanceId))
+        state2 = state2data.events.map(_.name)
+        eventState = state2data.ingredients.get("reservedItems").map(_.as[ReservedItems].items.head.itemId)
+        // TODO Currently the event listener receives the OrderPlaced... shouldn't also receive the resolved event?
+        _ <- eventually {
+          context.eventListener.verifyEventsReceived(1)
         }
+      } yield {
+        state1 should contain("OrderPlaced")
+        state1 should not contain ("ItemsReserved")
+        state2 should contain("OrderPlaced")
+        state2 should contain("ItemsReserved")
+        eventState shouldBe Some("resolution-item")
+      }
     }
 
     test("Baker.stopRetryingInteraction") { context =>
@@ -352,23 +364,25 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         _ <- io(context.client.stopRetryingInteraction(recipeInstanceId, "ReserveItems"))
         state2data <- io(context.client.getRecipeInstanceState(recipeInstanceId))
         state2 = state2data.events.map(_.name)
-        _ <-  eventually {  context.eventListener.verifyEventsReceived(1) }
+        _ <- eventually {
+          context.eventListener.verifyEventsReceived(1)
+        }
       } yield {
         state1 should contain("OrderPlaced")
-        state1 should not contain("ItemsReserved")
+        state1 should not contain ("ItemsReserved")
         state2 should contain("OrderPlaced")
-        state2 should not contain("ItemsReserved")
+        state2 should not contain ("ItemsReserved")
       }
     }
   }
 
   case class Context(
-    client: Baker,
-    remoteInteraction: RemoteInteraction,
-    interactions: InteractionDiscovery,
-    eventListener: EventListener,
-    kubeApiServer: KubeApiServer
-  )
+                      client: Baker,
+                      remoteInteraction: RemoteInteraction,
+                      interactions: InteractionManager[IO],
+                      eventListener: EventListener,
+                      kubeApiServer: KubeApiServer
+                    )
 
   /** Represents the "sealed resources context" that each test can use. */
   type TestContext = Context
@@ -377,14 +391,14 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
   type TestArguments = Unit
 
   /** Creates a `Resource` which allocates and liberates the expensive resources each test can use.
-   * For example web servers, network connection, database mocks.
-   *
-   * The objective of this function is to provide "sealed resources context" to each test, that means context
-   * that other tests simply cannot touch.
-   *
-   * @param testArguments arguments built by the `argumentsBuilder` function.
-   * @return the resources each test can use
-   */
+    * For example web servers, network connection, database mocks.
+    *
+    * The objective of this function is to provide "sealed resources context" to each test, that means context
+    * that other tests simply cannot touch.
+    *
+    * @param testArguments arguments built by the `argumentsBuilder` function.
+    * @return the resources each test can use
+    */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
 
     def getResourceDirectoryPathSafe: String = {
@@ -394,6 +408,16 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       else safePath
     }
 
+    val config = ConfigFactory.parseString(
+      """
+        |akka {
+        |  stdout-loglevel = "OFF"
+        |  loglevel = "OFF"
+        |}
+        |baker.interactions.pod-label-selector = "scope=webshop"
+        |baker.interactions.path = "/api/bakery/interactions"
+        |""".stripMargin)
+
     for {
       // Mock server
       mockServer <- Resource.make(IO(ClientAndServer.startClientAndServer(0)))(s => IO(s.stop()))
@@ -402,22 +426,19 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       _ <- Resource.eval(kubeApiServer.noNewInteractions()) // Initial setup so that the service discovery component has something to query to immediately
 
       makeActorSystem = IO {
-        ActorSystem(UUID.randomUUID().toString, ConfigFactory.parseString(
-          """
-            |akka {
-            |  stdout-loglevel = "OFF"
-            |  loglevel = "OFF"
-            |}
-            |""".stripMargin)) }
-      stopActorSystem = (system: ActorSystem) => IO.fromFuture(IO {
-        system.terminate().flatMap(_ => system.whenTerminated) }).void
-      system <- Resource.make(makeActorSystem)(stopActorSystem)
 
-      k8s: KubernetesClient = skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system)
+        ActorSystem(UUID.randomUUID().toString, config)
+      }
+      stopActorSystem = (system: ActorSystem) => IO.fromFuture(IO {
+        system.terminate().flatMap(_ => system.whenTerminated)
+      }).void
+      system <- Resource.make(makeActorSystem)(stopActorSystem)
       httpClient <- BlazeClientBuilder[IO](executionContext).resource
-      interactionDiscovery <-
-        InteractionDiscovery.resource(httpClient, k8s, CachedInteractionManager(),
-          List.empty, Some( LabelSelector(LabelSelector.IsEqualRequirement("scope","webshop"))))(contextShift, timer, system)
+      k8sInteractions <- new K8sInteractions(config, system,
+        httpClient, skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system)) {
+      }.resource
+      interactions <-
+        InteractionRegistry.resource(k8sInteractions)
       recipeAddingCache = new RecipeCache {
         override def merge(recipes: List[RecipeRecord]): IO[List[RecipeRecord]] =
           IO(RecipeRecord.of(SimpleRecipe.compiledRecipe) ::
@@ -426,7 +447,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       eventListener = new EventListener()
       baker = AkkaBaker
         .withConfig(AkkaBakerConfig.localDefault(system).copy(
-          interactions = interactionDiscovery,
+          interactions = interactions,
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings(
             allowAddingRecipeWithoutRequiringInstances = true))(system)
         )
@@ -434,24 +455,23 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       _ <- Resource.eval(eventListener.eventSink.attach(baker))
       _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, recipeAddingCache, baker))
 
-      server <- BakerService.resource(baker, InetSocketAddress.createUnresolved("127.0.0.1", 0), "/api/bakery", "/opt/docker/dashboard",
-        interactionDiscovery, loggingEnabled = true)
+      server <- BakerService.resource(baker, InetSocketAddress.createUnresolved("127.0.0.1", 0), "/api/bakery", "/opt/docker/dashboard", loggingEnabled = true)
       client <- BakerClient.resource(server.baseUri, "/api/bakery", executionContext)
 
     } yield Context(
       client,
       remoteInteraction,
-      interactionDiscovery,
+      interactions,
       eventListener,
       kubeApiServer
     )
   }
 
   /** Refines the `ConfigMap` populated with the -Dkey=value arguments coming from the "sbt testOnly" command.
-   *
-   * @param config map populated with the -Dkey=value arguments.
-   * @return the data structure used by the `contextBuilder` function.
-   */
+    *
+    * @param config map populated with the -Dkey=value arguments.
+    * @return the data structure used by the `contextBuilder` function.
+    */
   def argumentsBuilder(config: ConfigMap): TestArguments = ()
 
 }

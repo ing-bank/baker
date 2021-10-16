@@ -119,7 +119,7 @@ data:
         topic: "events"
       }
       interactions {
-        local-configuration-classes = []
+        class = "com.ing.bakery.baker.KubernetesInteractionRegistry"
         localhost-ports = [ 8081 ]
         pod-label-selector = "bakery=webshop"
       }

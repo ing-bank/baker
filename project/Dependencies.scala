@@ -14,7 +14,6 @@ object Dependencies {
   val catsEffectVersion = "2.5.4"
   val catsCoreVersion = "2.6.1"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "5.3.10"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
     .exclude("com.typesafe.akka", "akka-actor")
@@ -122,9 +121,6 @@ object Dependencies {
   val scalaCheckPlusMockito = "org.scalatestplus" %% "scalatestplus-mockito" % "1.0.0-M2"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
 
-
-  val springContext = "org.springframework" % "spring-context" % springVersion
-  val springCore = "org.springframework" % "spring-core" % springVersion
 
   val snakeYaml = "org.yaml" % "snakeyaml" % "1.29"
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.0"

@@ -13,7 +13,7 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
-import com.ing.baker.runtime.akka.internal.CachedInteractionManager
+import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.{RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl._
@@ -31,31 +31,31 @@ import scala.util.Try
 
 object AkkaBaker {
 
-  def apply(config: Config, actorSystem: ActorSystem, interactions: CachedInteractionManager): scaladsl.Baker =
+  def apply(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
     new AkkaBaker(AkkaBakerConfig.from(config, actorSystem, interactions))
 
   def withConfig(config: AkkaBakerConfig): AkkaBaker =
     new AkkaBaker(config)
 
-  def localDefault(actorSystem: ActorSystem, interactions: CachedInteractionManager): scaladsl.Baker =
+  def localDefault(actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
     new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem, interactions))
 
-  def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem, interactions: CachedInteractionManager): scaladsl.Baker =
+  def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
     new AkkaBaker(AkkaBakerConfig.clusterDefault(seedNodes, actorSystem, interactions))
 
   def javaWithConfig(config: AkkaBakerConfig): javadsl.Baker =
     new javadsl.Baker(withConfig(config))
 
   def java(config: Config, actorSystem: ActorSystem): javadsl.Baker =
-    new javadsl.Baker(apply(config, actorSystem, CachedInteractionManager()))
+    new javadsl.Baker(apply(config, actorSystem, CachingInteractionManager()))
 
   def java(config: Config, actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
     new javadsl.Baker(apply(config, actorSystem,
-      CachedInteractionManager.fromJava(interactions, config.getOrElse[Boolean]("baker.interaction-manager.allow-superset-for-output-types", false))(IO.contextShift(actorSystem.getDispatcher))))
+      CachingInteractionManager.fromJava(interactions, config.getOrElse[Boolean]("baker.interactions.allow-superset-for-output-types", false))))
 
   def javaLocalDefault(actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
     new javadsl.Baker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem,
-      CachedInteractionManager.fromJava(interactions)(IO.contextShift(actorSystem.getDispatcher)))))
+      CachingInteractionManager.fromJava(interactions))))
 
   def javaOther(baker: scaladsl.Baker): javadsl.Baker =
     new javadsl.Baker(baker)

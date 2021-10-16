@@ -27,7 +27,7 @@ object RemoteInteractionClient {
       .map(new RemoteInteractionClient(_, hostname))
 }
 
-final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
+final class RemoteInteractionClient(client: Client[IO], uri: Uri)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
 
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
   import com.ing.baker.runtime.serialization.JsonCodec._
@@ -41,14 +41,12 @@ final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit 
   private lazy val interactionFailureCounter = MetricService.counter("bakery_interaction_failure", "Failed interaction calls")
 
   def interface: IO[List[InteractionExecution.Descriptor]] =
-    client.expect[List[InteractionExecution.Descriptor]]( GET(
-      hostname / "api" / "bakery" / "interactions"
-    ))
+    client.expect[List[InteractionExecution.Descriptor]](GET(uri))
 
   def runInteraction(interactionId: String, input: Seq[IngredientInstance]): IO[Option[EventInstance]] = {
     val request = POST(
       input.toList,
-      hostname / "api" / "bakery" / "interactions" / interactionId / "execute")
+      uri / interactionId / "execute")
     client.expect[InteractionExecution.ExecutionResult](request)
       .flatMap {
         case InteractionExecution.ExecutionResult(Right(success)) =>

@@ -328,8 +328,6 @@ lazy val `bakery-state` = project.in(file("bakery/state"))
       http4sDsl,
       http4sCirce,
       http4sServer,
-      springCore,
-      springContext,
       kafkaClient,
       skuber
     ) ++ testDeps(
@@ -377,33 +375,10 @@ lazy val `bakery-interaction` = project.in(file("bakery/interaction"))
   )
   .dependsOn(`bakery-interaction-protocol`, `baker-interface`)
 
-lazy val `bakery-interaction-spring` = project.in(file("bakery/interaction-spring"))
-  .settings(defaultModuleSettings)
-  .settings(
-    moduleName := "bakery-interaction-spring",
-    libraryDependencies ++= Seq(
-      slf4jApi,
-      http4s,
-      http4sDsl,
-      http4sServer,
-      http4sCirce,
-      circe,
-      catsEffect,
-      catsCore,
-      springCore,
-      springContext,
-      scalaLogging
-    ) ++ testDeps(
-      scalaTest,
-      logback
-    )
-  )
-  .dependsOn(`bakery-interaction`, `baker-recipe-dsl`)
-
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .aggregate(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
-    `bakery-client`, `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
+    `bakery-client`, `bakery-state`, `bakery-interaction`, `bakery-interaction-protocol`,
     `sbt-bakery-docker-generate`,
     `baker-interface`, `bakery-dashboard`, `baker-annotations`)
 
@@ -514,8 +489,6 @@ lazy val `interaction-example-reserve-items` = project.in(file("examples/bakery-
       compileDeps(
         logback,
         catsEffect,
-        springCore,
-        springContext
       ) ++ testDeps(
         scalaTest,
         scalaCheck
@@ -582,4 +555,4 @@ lazy val `sbt-bakery-docker-generate` = project.in(file("docker/sbt-bakery-docke
   )
   .enablePlugins(SbtPlugin)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
-  .dependsOn(`bakery-interaction`, `bakery-interaction-spring`)
+  .dependsOn(`bakery-interaction`)
