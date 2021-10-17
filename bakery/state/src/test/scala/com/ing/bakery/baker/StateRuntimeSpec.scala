@@ -9,7 +9,7 @@ import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceDescriptor, InteractionInstanceInput}
-import com.ing.baker.types._
+import com.ing.baker.types.{ByteArray, CharArray, ListType, RecordField, RecordType}
 import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
 import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
