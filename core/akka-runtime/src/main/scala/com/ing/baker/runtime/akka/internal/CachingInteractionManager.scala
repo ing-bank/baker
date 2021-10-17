@@ -102,7 +102,7 @@ trait CachingTransitionLookups {
   */
 trait CachingInteractionManager extends InteractionManager[IO] with CachingTransitionLookups
 
-trait DiscoveringInteractionManager extends CachingInteractionManager {
+trait DynamicInteractionManager extends CachingInteractionManager {
 
   type DiscoveredInteractions = ConcurrentHashMap[String, List[InteractionInstance[IO]]]
 
@@ -120,7 +120,6 @@ trait DiscoveringInteractionManager extends CachingInteractionManager {
     discovered <- discoveredRef.get
   } yield discovered
 
-  def resource: Resource[IO, DiscoveringInteractionManager]
-
+  def resource: Resource[IO, DynamicInteractionManager]
 
 }

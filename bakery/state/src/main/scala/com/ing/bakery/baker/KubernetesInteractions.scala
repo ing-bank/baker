@@ -1,12 +1,12 @@
 package com.ing.bakery.baker
 
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source}
+import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source, TcpIdleTimeoutException}
 import akka.stream.{KillSwitch, KillSwitches, Materializer, RestartSettings, UniqueKillSwitch}
 import akka.{Done, NotUsed}
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits.catsSyntaxApplicativeError
-import com.ing.baker.runtime.akka.internal.DiscoveringInteractionManager
+import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
 import com.ing.baker.runtime.model.InteractionInstance
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -19,19 +19,22 @@ import skuber.{K8SWatchEvent, LabelSelector, ListOptions, Service}
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
-class K8sInteractions(config: Config,
-                      system: ActorSystem,
-                      val client: Client[IO],
-                      kubernetes: KubernetesClient)
-  extends DiscoveringInteractionManager with RemoteInteractionDiscovery with LazyLogging {
+class KubernetesInteractions(config: Config,
+                             system: ActorSystem,
+                             val client: Client[IO],
+                             kubernetes: KubernetesClient)
+  extends DynamicInteractionManager
+    with RemoteInteractionDiscovery
+    with LazyLogging {
+
   private implicit val contextShift: ContextShift[IO] = IO.contextShift(system.dispatcher)
   private implicit val timer: Timer[IO] = IO.timer(system.dispatcher)
+
   private val path = config.getString("baker.interactions.api-url-prefix")
 
-  override def resource: Resource[IO, DiscoveringInteractionManager] = {
+  override def resource: Resource[IO, DynamicInteractionManager] = {
 
     def noneIfEmpty(str: String) = if (str.isEmpty) None else Some(str)
-
 
     val podLabelSelector = noneIfEmpty(config.getString("baker.interactions.pod-label-selector"))
       .map(_.split("="))
@@ -43,14 +46,18 @@ class K8sInteractions(config: Config,
 
       // todo how do we ensure that connection on the long poll is not dead?
       def source: Source[K8SWatchEvent[Service], NotUsed] =
-        kubernetes.watchWithOptions[Service](watchFilter, bufsize = Int.MaxValue).mapMaterializedValue(_ => NotUsed)
+        kubernetes
+          .watchWithOptions[Service](watchFilter, bufsize = Int.MaxValue)
+          .mapMaterializedValue(_ => NotUsed)
 
       RestartSource.withBackoff(RestartSettings(
         minBackoff = 3.seconds,
         maxBackoff = 30.seconds,
         randomFactor = 0.2, // adds 20% "noise" to vary the intervals slightly
       )) { () =>
-        source.mapError { case e =>
+        source.mapError {
+          case e: TcpIdleTimeoutException  => e // expected to happen
+          case e =>
           logger.error("Interaction discovery watch stream error: " + e.getMessage, e)
           e
         }
@@ -59,6 +66,7 @@ class K8sInteractions(config: Config,
 
     def updateSink: Sink[K8SWatchEvent[Service], Future[Done]] = {
       Sink.foreach[K8SWatchEvent[Service]] { event =>
+        logger.info(s"Interaction service ${event._type} @ ${event._object.name}")
         update(event).recover { case e =>
           logger.error("Failure when updating the services in the ConfigMap Discovery component", e)
         }.unsafeToFuture()
@@ -67,9 +75,13 @@ class K8sInteractions(config: Config,
 
     Resource.make(for {
       killSwitch <- IO {
-        if (podLabelSelector.isDefined) watchSource.toMat(updateSink)(Keep.left).run()(Materializer.matFromSystem(system))
-        else {
-          logger.info("Pod selector not specified, watching interactions not enabled")
+        if (podLabelSelector.isDefined) {
+          logger.info(s"Watching interaction services: ${podLabelSelector.getOrElse("")}")
+          watchSource
+            .toMat(updateSink)(Keep.left)
+            .run()(Materializer.matFromSystem(system))
+        } else {
+          logger.info("Pod selector not specified, watching interaction services not enabled")
           new KillSwitch {
             override def shutdown(): Unit = ()
             override def abort(ex: Throwable): Unit = ()
@@ -105,26 +117,3 @@ class K8sInteractions(config: Config,
     extractInteractions(httpClient, Uri.unsafeFromString(s"http://${deployedService.name}:$port$path"))
 
 }
-
-
-/*
-
-
-object InteractionDiscovery extends LazyLogging {
-
-  def extractSamePodInteractions(httpClient: Client[IO], localhostPorts: List[Int])
-                                (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[List[InteractionInstance[IO]]] = {
-    localhostPorts.map(port =>
-      extractInteractions(httpClient,
-        Uri.unsafeFromString(s"http://localhost:$port")
-      )
-    )
-      .sequence
-      .map(_.flatten)
-  }
-
-
-
-}
-
-*/

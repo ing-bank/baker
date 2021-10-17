@@ -22,7 +22,7 @@ trait RecipeManager[F[_]] extends LazyLogging {
     for {
       implementationErrors <-
         if (suppressImplementationErrors) effect.delay {
-          logger.info(s"Recipe implementation errors are ignored for ${compiledRecipe.name}:${compiledRecipe.recipeId}")
+          logger.debug(s"Recipe implementation errors are ignored for ${compiledRecipe.name}:${compiledRecipe.recipeId}")
           List.empty
         }
         else {

@@ -1,9 +1,9 @@
 package com.ing.bakery.baker
 
 import akka.actor.ActorSystem
-import cats.effect.concurrent.Ref
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Resource, Timer}
 import cats.syntax.traverse._
+import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.bakery.interaction.RemoteInteractionClient
 import com.typesafe.config.Config
@@ -11,6 +11,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
+import scalax.collection.ChainingOps
 
 import java.io.IOException
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
@@ -23,7 +24,8 @@ object InteractionRegistry extends LazyLogging {
       config.getString("baker.interactions.class")
     } toOption)
       .map(Class.forName)
-      .getOrElse(classOf[DefaultInteractionRegistry])
+      .getOrElse(classOf[BaseInteractionRegistry])
+      .tap(c => logger.info(s"Interaction registry: ${c.getName}"))
       .getDeclaredConstructor(classOf[Config], classOf[ActorSystem])
       .newInstance(config, actorSystem)
       .asInstanceOf[InteractionRegistry]
@@ -32,51 +34,55 @@ object InteractionRegistry extends LazyLogging {
 
 
 trait InteractionRegistry extends InteractionManager[IO] {
-
   def resource: Resource[IO, InteractionRegistry]
-
   def interactionManagers: IO[List[InteractionManager[IO]]]
-
 }
 
 trait TraversingInteractionRegistry extends InteractionRegistry {
-
   override def listAll: IO[List[InteractionInstance[IO]]] =
     interactionManagers.flatMap(_.traverse(_.listAll).map(_.flatten))
-
 }
 
 
-class DefaultInteractionRegistry(config: Config, actorSystem: ActorSystem) extends TraversingInteractionRegistry with LazyLogging {
+class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
+  extends TraversingInteractionRegistry
+   with LazyLogging {
 
-  private val managers: IO[Ref[IO, List[InteractionManager[IO]]]] =
-    Ref.of[IO, List[InteractionManager[IO]]](List.empty)
+  implicit val cs: ContextShift[IO] = IO.contextShift(actorSystem.dispatcher)
+  implicit val effect: ConcurrentEffect[IO] = IO.ioConcurrentEffect
 
-  override def interactionManagers: IO[List[InteractionManager[IO]]] = for {
-    managersRef <- managers
-    managers <- managersRef.get
-  } yield managers
+  protected def remoteHttpInteractionManagers(client: Client[IO]): List[Resource[IO, DynamicInteractionManager]] =
+      List(
+        new KubernetesInteractions(config, actorSystem, client,  skuber.k8sInit(actorSystem)).resource,
+        new LocalhostInteractions(config, actorSystem, client).resource
+      )
+
+  protected var managers: List[InteractionManager[IO]] = List.empty[InteractionManager[IO]]
+
+  override def interactionManagers: IO[List[InteractionManager[IO]]] = IO.pure(managers)
 
   override def resource: Resource[IO, InteractionRegistry] = {
-    implicit val cs: ContextShift[IO] = IO.contextShift(actorSystem.dispatcher)
-    implicit val effect: ConcurrentEffect[IO] = IO.ioConcurrentEffect
     for {
       client <- BlazeClientBuilder[IO](actorSystem.dispatcher).resource
-      managersRef <- Resource.eval(managers)
-      _ <- Resource.eval(managersRef.set(List(
-        new LocalhostInteractions(config, actorSystem, client),
-        new K8sInteractions(config, actorSystem, client, skuber.k8sInit(actorSystem))
-      )))
-    } yield this
+      ms <- // Resource.eval(
+        remoteHttpInteractionManagers(client).head
+//          .foldLeft(
+//          IO(List.empty[DynamicInteractionManager])
+//        )((prev, next) => prev.flatMap(ms => next.use(m => IO(m :: ms)))))
+      // )
+    } yield {
+      managers = List(ms)
+      logger.info(s"Interaction registry has been initialised with ${managers.map(_.getClass.getName).mkString(",")}")
+      this
+    }
   }
-
 }
 
 trait RemoteInteractionDiscovery extends LazyLogging {
 
-  def extractInteractions(client: Client[IO], address: Uri)
+  def extractInteractions(client: Client[IO], uri: Uri)
                          (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[List[InteractionInstance[IO]]] = {
-    val remoteInteractionClient = new RemoteInteractionClient(client, address)
+    val remoteInteractionClient = new RemoteInteractionClient(client, uri)
 
     def within[A](giveUpAfter: FiniteDuration, retries: Int)(f: IO[A])(implicit timer: Timer[IO]): IO[A] = {
       def attempt(count: Int, times: FiniteDuration): IO[A] = {
@@ -84,9 +90,9 @@ trait RemoteInteractionDiscovery extends LazyLogging {
           case Left(e) =>
             e match {
               case _: IOException =>
-                logger.info(s"Can't connect to interactions @ ${address.toString}, the container may still be starting...")
+                logger.info(s"Can't connect to interactions @ ${uri.toString}, the container may still be starting...")
               case _ =>
-                logger.error(s"Failed to list interactions @ ${address.toString}", e)
+                logger.error(s"Failed to list interactions @ ${uri.toString}", e)
             }
             IO.sleep(times) *> attempt(count - 1, times)
           case Right(a) => IO(a)
@@ -98,7 +104,7 @@ trait RemoteInteractionDiscovery extends LazyLogging {
 
     within(giveUpAfter = 10 minutes, retries = 40) {
       // check every 15 seconds for interfaces for 10 minutes
-      logger.info(s"Extracting interactions @ ${address.toString}")
+      logger.info(s"Extracting interactions @ ${uri.toString}")
       remoteInteractionClient.interface.map { interfaces =>
         assert(interfaces.nonEmpty)
         logger.info(s"Loaded ${interfaces.size} interactions: ${interfaces.map(_.name).mkString(",")}")

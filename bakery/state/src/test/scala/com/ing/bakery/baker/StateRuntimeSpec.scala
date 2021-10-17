@@ -3,13 +3,13 @@ package com.ing.bakery.baker
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.akka.internal.CachingInteractionManager
+import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceDescriptor, InteractionInstanceInput}
-import com.ing.baker.types.{ByteArray, CharArray, ListType, RecordField, RecordType}
+import com.ing.baker.types._
 import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
 import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
@@ -23,8 +23,6 @@ import org.mockserver.integration.ClientAndServer
 import org.scalatest.ConfigMap
 import org.scalatest.compatible.Assertion
 import org.scalatest.matchers.should.Matchers
-import skuber.LabelSelector
-import skuber.api.client.KubernetesClient
 
 import java.net.InetSocketAddress
 import java.util.UUID
@@ -431,14 +429,12 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       }).void
       system <- Resource.make(makeActorSystem)(stopActorSystem)
       httpClient <- BlazeClientBuilder[IO](executionContext).resource
-      k8sInteractions <- new K8sInteractions(config, system,
-        httpClient, skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system)) {
+      interactions <- new BaseInteractionRegistry(config, system) {
+        override protected def remoteHttpInteractionManagers(client: Client[IO]): List[Resource[IO, DynamicInteractionManager]] =
+          List(new KubernetesInteractions(config, system,
+            httpClient, skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system)) {
+          }.resource)
       }.resource
-      interactions <-
-        new TraversingInteractionRegistry{
-          override def resource: Resource[IO, InteractionRegistry] = Resource.eval(IO.pure(this))
-          override def interactionManagers: IO[List[InteractionManager[IO]]] = IO.pure(List(k8sInteractions))
-        }.resource
       recipeAddingCache = new RecipeCache {
         override def merge(recipes: List[RecipeRecord]): IO[List[RecipeRecord]] =
           IO(RecipeRecord.of(SimpleRecipe.compiledRecipe) ::
