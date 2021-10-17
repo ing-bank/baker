@@ -26,7 +26,7 @@ class K8sInteractions(config: Config,
   extends DiscoveringInteractionManager with RemoteInteractionDiscovery with LazyLogging {
   private implicit val contextShift: ContextShift[IO] = IO.contextShift(system.dispatcher)
   private implicit val timer: Timer[IO] = IO.timer(system.dispatcher)
-  private val path = config.getString("baker.interactions.path")
+  private val path = config.getString("baker.interactions.api-url-prefix")
 
   override def resource: Resource[IO, DiscoveringInteractionManager] = {
 

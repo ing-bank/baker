@@ -415,7 +415,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         |  loglevel = "OFF"
         |}
         |baker.interactions.pod-label-selector = "scope=webshop"
-        |baker.interactions.path = "/api/bakery/interactions"
+        |baker.interactions.api-url-prefix = "/api/bakery/interactions"
         |""".stripMargin)
 
     for {
@@ -425,10 +425,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       kubeApiServer = new KubeApiServer(mockServer)
       _ <- Resource.eval(kubeApiServer.noNewInteractions()) // Initial setup so that the service discovery component has something to query to immediately
 
-      makeActorSystem = IO {
-
-        ActorSystem(UUID.randomUUID().toString, config)
-      }
+      makeActorSystem = IO { ActorSystem(UUID.randomUUID().toString, config) }
       stopActorSystem = (system: ActorSystem) => IO.fromFuture(IO {
         system.terminate().flatMap(_ => system.whenTerminated)
       }).void
@@ -438,7 +435,10 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         httpClient, skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system)) {
       }.resource
       interactions <-
-        InteractionRegistry.resource(k8sInteractions)
+        new TraversingInteractionRegistry{
+          override def resource: Resource[IO, InteractionRegistry] = Resource.eval(IO.pure(this))
+          override def interactionManagers: IO[List[InteractionManager[IO]]] = IO.pure(List(k8sInteractions))
+        }.resource
       recipeAddingCache = new RecipeCache {
         override def merge(recipes: List[RecipeRecord]): IO[List[RecipeRecord]] =
           IO(RecipeRecord.of(SimpleRecipe.compiledRecipe) ::

@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.scaladsl
 
 import cats.arrow.FunctionK
-import cats.~>
 import com.ing.baker.runtime.model
 import com.ing.baker.types.Type
 

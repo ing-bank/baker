@@ -103,6 +103,7 @@ trait CachingTransitionLookups {
 trait CachingInteractionManager extends InteractionManager[IO] with CachingTransitionLookups
 
 trait DiscoveringInteractionManager extends CachingInteractionManager {
+
   type DiscoveredInteractions = ConcurrentHashMap[String, List[InteractionInstance[IO]]]
 
   def bundledIntreactions: List[InteractionInstance[IO]] = defaultinteractions.all

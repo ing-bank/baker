@@ -17,6 +17,8 @@ import com.typesafe.config.ConfigFactory
   */
 trait InteractionManager[F[_]] {
 
+  protected def noneIfEmpty(str: String) = if (str.isEmpty) None else Some(str)
+
   /**
     * If this is set to true it will also allow fur supersets of the output types to be given by the implementations
     * This can be helpful in case an ENUM type or similar is extended upon and you know these new values will not be given.

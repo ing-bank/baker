@@ -1,7 +1,8 @@
 package com.ing.bakery.baker
 
 import akka.actor.ActorSystem
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.concurrent.Ref
+import cats.effect.{ConcurrentEffect, ContextShift, IO, Resource, Timer}
 import cats.syntax.traverse._
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.bakery.interaction.RemoteInteractionClient
@@ -9,6 +10,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.http4s.Uri
 import org.http4s.client.Client
+import org.http4s.client.blaze.BlazeClientBuilder
 
 import java.io.IOException
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
@@ -16,42 +18,57 @@ import scala.util.Try
 
 object InteractionRegistry extends LazyLogging {
 
-  def resource(managers: InteractionManager[IO]*): Resource[IO, InteractionManager[IO]] =
-    Resource.eval[IO, InteractionManager[IO]] {
-      IO {
-        new TraversingInteractionRegistry {
-          override def interactionManagers: List[InteractionManager[IO]] = managers.toList
-        }
-      }
-  }
-
-  def resource(config: Config, actorSystem: ActorSystem): Resource[IO, InteractionManager[IO]] =
-    Resource.eval[IO, InteractionManager[IO]] {
-      IO {
-        val interactionsClass = Try{
-          config.getString("baker.interactions.class")
-        } getOrElse("com.ing.bakery.baker.LocalInteractions")
-        if (interactionsClass != "") {
-          Class
-            .forName(interactionsClass)
-            .getDeclaredConstructor(classOf[Config], classOf[ActorSystem])
-            .newInstance(config, actorSystem)
-            .asInstanceOf[InteractionManager[IO]]
-        } else throw new IllegalArgumentException(s"Class $interactionsClass must extend com.ing.baker.runtime.model.InteractionManager")
-      }
-    }
+  def resource(config: Config, actorSystem: ActorSystem): Resource[IO, InteractionRegistry] =
+    (Try {
+      config.getString("baker.interactions.class")
+    } toOption)
+      .map(Class.forName)
+      .getOrElse(classOf[DefaultInteractionRegistry])
+      .getDeclaredConstructor(classOf[Config], classOf[ActorSystem])
+      .newInstance(config, actorSystem)
+      .asInstanceOf[InteractionRegistry]
+      .resource
 }
 
-trait TraversingInteractionRegistry extends InteractionManager[IO] {
 
-  def interactionManagers: List[InteractionManager[IO]]
+trait InteractionRegistry extends InteractionManager[IO] {
 
-  // allow, if just one allows
-  override lazy val allowSupersetForOutputTypes: Boolean =
-    interactionManagers.exists(_.allowSupersetForOutputTypes)
+  def resource: Resource[IO, InteractionRegistry]
+
+  def interactionManagers: IO[List[InteractionManager[IO]]]
+
+}
+
+trait TraversingInteractionRegistry extends InteractionRegistry {
 
   override def listAll: IO[List[InteractionInstance[IO]]] =
-    interactionManagers.traverse(_.listAll).map(_.flatten)
+    interactionManagers.flatMap(_.traverse(_.listAll).map(_.flatten))
+
+}
+
+
+class DefaultInteractionRegistry(config: Config, actorSystem: ActorSystem) extends TraversingInteractionRegistry with LazyLogging {
+
+  private val managers: IO[Ref[IO, List[InteractionManager[IO]]]] =
+    Ref.of[IO, List[InteractionManager[IO]]](List.empty)
+
+  override def interactionManagers: IO[List[InteractionManager[IO]]] = for {
+    managersRef <- managers
+    managers <- managersRef.get
+  } yield managers
+
+  override def resource: Resource[IO, InteractionRegistry] = {
+    implicit val cs: ContextShift[IO] = IO.contextShift(actorSystem.dispatcher)
+    implicit val effect: ConcurrentEffect[IO] = IO.ioConcurrentEffect
+    for {
+      client <- BlazeClientBuilder[IO](actorSystem.dispatcher).resource
+      managersRef <- Resource.eval(managers)
+      _ <- Resource.eval(managersRef.set(List(
+        new LocalhostInteractions(config, actorSystem, client),
+        new K8sInteractions(config, actorSystem, client, skuber.k8sInit(actorSystem))
+      )))
+    } yield this
+  }
 
 }
 
@@ -75,6 +92,7 @@ trait RemoteInteractionDiscovery extends LazyLogging {
           case Right(a) => IO(a)
         }
       }
+
       attempt(retries, giveUpAfter / retries)
     }
 

@@ -27,8 +27,9 @@ object RemoteInteractionService {
                address: InetSocketAddress,
                tlsConfig: Option[BakeryHttp.TLSConfig],
                apiLoggingEnabled: Boolean = false,
-               interactionPerTypeMetricsEnabled: Boolean = false,
-               metricsPort: Int = 9096)(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] = {
+               interactionPerTypeMetricsEnabled: Boolean = true,
+               metricsPort: Int = 9096,
+               apiUrlPrefix: String = "/api/bakery/interactions")(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] = {
 
     val idToNameMap = interactions.map(i => URLEncoder.encode(i.shaBase64, "UTF-8").take(8) -> i.name ).toMap
 
@@ -54,7 +55,7 @@ object RemoteInteractionService {
             logHeaders = apiLoggingEnabled,
             logBody = apiLoggingEnabled,
             logAction = if (apiLoggingEnabled) Some( (x: String) => IO(println(x))) else None
-          )(Router("/api/bakery" -> Metrics[IO](metrics,
+          )(Router(apiUrlPrefix -> Metrics[IO](metrics,
             classifierF = interactionRequestClassifier)(service.routes)) orNotFound)
         )
       server <- (tls match {
@@ -70,8 +71,7 @@ object RemoteInteractionService {
   }
 }
 
-final class RemoteInteractionService(interactions: List[InteractionInstance],
-                                     apiLoggingEnabled: Boolean = false)(implicit timer: Timer[IO], cs: ContextShift[IO]) extends LazyLogging {
+final class RemoteInteractionService(interactions: List[InteractionInstance])(implicit timer: Timer[IO], cs: ContextShift[IO]) extends LazyLogging {
 
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
   import com.ing.baker.runtime.serialization.JsonCodec._
@@ -86,9 +86,9 @@ final class RemoteInteractionService(interactions: List[InteractionInstance],
 
   def routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
 
-    case GET -> Root / "interactions" => Ok(Interactions)
+    case GET -> Root => Ok(Interactions)
 
-    case req@POST -> Root /  "interactions" / id / "execute" =>
+    case req@POST -> Root / id / "execute" =>
       for {
         request <- req.as[List[IngredientInstance]]
         response <- interactions.find(_.shaBase64 == id) match {
