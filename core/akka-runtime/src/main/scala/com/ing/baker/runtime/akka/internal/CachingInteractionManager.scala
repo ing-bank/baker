@@ -93,24 +93,24 @@ trait CachingTransitionLookups {
 }
 
 /**
-  * The CachedInteractionManager is a InteractionManagerF[IO] with an interaction cache to ensure findCompatible is not called every execution
-  *
-  * @param availableImplementations    All the implemntations to be managed by this InteractionManager
-  * @param allowSupersetForOutputTypes If this is set to true it will also allow fur supersets of the output types to be given by the implementations
-  *                                    This can be helpful in case an ENUM type or similar is extended upon and you know these new values will not be given.
-  *                                    If this new value is given from the implementation this will result in te runtime error and a technical failure of the interaction.
+  * The CachedInteractionManager is a InteractionManagerF[IO] with an interaction cache
+  * to ensure findCompatible is not called every execution
   */
 trait CachingInteractionManager extends InteractionManager[IO] with CachingTransitionLookups
 
+/**
+  * Interaction manager that runs some sort of discovery process.
+  * Set of interactions may change over time.
+  */
 trait DynamicInteractionManager extends CachingInteractionManager {
 
   type DiscoveredInteractions = ConcurrentHashMap[String, List[InteractionInstance[IO]]]
 
-  def bundledIntreactions: List[InteractionInstance[IO]] = defaultinteractions.all
+  def bundledInteractions: List[InteractionInstance[IO]] = defaultinteractions.all
 
   def listAll: IO[List[InteractionInstance[IO]]] = for {
     d <- discovered
-  } yield bundledIntreactions ++ d.values().asScala.flatten.toList
+  } yield bundledInteractions ++ d.values().asScala.flatten.toList
 
   private val discoveredInteractions: IO[Ref[IO, DiscoveredInteractions]] =
     Ref.of[IO, DiscoveredInteractions](new DiscoveredInteractions)

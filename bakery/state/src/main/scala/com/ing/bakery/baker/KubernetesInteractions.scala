@@ -19,6 +19,9 @@ import skuber.{K8SWatchEvent, LabelSelector, ListOptions, Service}
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
+/**
+  * Discovers interactions in the same namespace using Kubernetes pod lookup.
+  */
 class KubernetesInteractions(config: Config,
                              system: ActorSystem,
                              val client: Client[IO],
@@ -30,7 +33,7 @@ class KubernetesInteractions(config: Config,
   private implicit val contextShift: ContextShift[IO] = IO.contextShift(system.dispatcher)
   private implicit val timer: Timer[IO] = IO.timer(system.dispatcher)
 
-  private val path = config.getString("baker.interactions.api-url-prefix")
+  private val apiUrlPrefix = config.getString("baker.interactions.api-url-prefix")
 
   override def resource: Resource[IO, DynamicInteractionManager] = {
 
@@ -98,7 +101,7 @@ class KubernetesInteractions(config: Config,
     event._type match {
 
       case EventType.ADDED | EventType.MODIFIED => for {
-        interfaces <- extractInterfacesFromDeployedInteraction(client, event._object, port.port, path)
+        interfaces <- extractInterfacesFromDeployedInteraction(client, event._object, port.port, apiUrlPrefix)
         d <- discovered
       } yield d.put(event._object.name, interfaces)
 

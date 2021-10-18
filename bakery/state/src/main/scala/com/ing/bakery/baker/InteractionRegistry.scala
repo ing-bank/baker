@@ -33,46 +33,58 @@ object InteractionRegistry extends LazyLogging {
 }
 
 
+/**
+  * Registry of interactions, bundles together several interaction managers that provide actual interactions.
+  * It also implements InteractionManager[IO] interface, thus for Baker it won't matter if it talks to
+  * a single interaction manager or to a registry.
+  */
 trait InteractionRegistry extends InteractionManager[IO] {
   def resource: Resource[IO, InteractionRegistry]
+
   def interactionManagers: IO[List[InteractionManager[IO]]]
 }
 
+/**
+  * Bundles together interactions of all available interaction managers
+  */
 trait TraversingInteractionRegistry extends InteractionRegistry {
   override def listAll: IO[List[InteractionInstance[IO]]] =
     interactionManagers.flatMap(_.traverse(_.listAll).map(_.flatten))
 }
 
-
+/**
+  * Base implementation of interaction registry
+  */
 class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
   extends TraversingInteractionRegistry
-   with LazyLogging {
+    with LazyLogging {
 
   implicit val cs: ContextShift[IO] = IO.contextShift(actorSystem.dispatcher)
   implicit val effect: ConcurrentEffect[IO] = IO.ioConcurrentEffect
 
   protected def remoteHttpInteractionManagers(client: Client[IO]): List[Resource[IO, DynamicInteractionManager]] =
-      List(
-        new KubernetesInteractions(config, actorSystem, client,  skuber.k8sInit(actorSystem)).resource,
-        new LocalhostInteractions(config, actorSystem, client).resource
-      )
+    List(
+      new KubernetesInteractions(config, actorSystem, client, skuber.k8sInit(actorSystem)).resource,
+      new LocalhostInteractions(config, actorSystem, client).resource
+    )
 
   protected var managers: List[InteractionManager[IO]] = List.empty[InteractionManager[IO]]
 
   override def interactionManagers: IO[List[InteractionManager[IO]]] = IO.pure(managers)
 
+  private def flattenResources[T](resources: List[Resource[IO, T]], result: List[T] = Nil): Resource[IO, List[T]] =
+    resources match {
+      case m :: ms => m.flatMap(t => flattenResources(ms, t :: result))
+      case Nil => Resource.eval(IO.pure(result))
+    }
+
   override def resource: Resource[IO, InteractionRegistry] = {
     for {
       client <- BlazeClientBuilder[IO](actorSystem.dispatcher).resource
-      ms <- // Resource.eval(
-        remoteHttpInteractionManagers(client).head
-//          .foldLeft(
-//          IO(List.empty[DynamicInteractionManager])
-//        )((prev, next) => prev.flatMap(ms => next.use(m => IO(m :: ms)))))
-      // )
+      ms <- flattenResources(remoteHttpInteractionManagers(client))
     } yield {
-      managers = List(ms)
-      logger.info(s"Interaction registry has been initialised with ${managers.map(_.getClass.getName).mkString(",")}")
+      managers = ms
+      logger.info(s"Initialised interaction registry with managers: ${managers.map(_.getClass.getName).mkString(",")}")
       this
     }
   }

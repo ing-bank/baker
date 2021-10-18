@@ -211,24 +211,6 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       } yield status shouldBe SensoryEventStatus.Received
     }
 
-    test("Baker.fireEventAndResolveWhenCompleted") { context =>
-      val recipeInstanceId: String = UUID.randomUUID().toString
-      for {
-        _ <- context.remoteInteraction.respondsWithInterfaces()
-        _ <- context.kubeApiServer.deployInteraction()
-        _ <- awaitForInteractionDiscovery(context)
-        _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
-        _ <- io(context.client.bake(recipeId, recipeInstanceId))
-        result <- io(context.client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent))
-        serverState <- io(context.client.getRecipeInstanceState(recipeInstanceId))
-        _ <- eventually {
-          context.eventListener.verifyEventsReceived(2)
-        }
-      } yield {
-        result.eventNames shouldBe Seq("OrderPlaced", "ItemsReserved")
-        serverState.events.map(_.name) shouldBe Seq("OrderPlaced", "ItemsReserved")
-      }
-    }
 
     test("Baker.fireEventAndResolveWhenCompleted (fails with IllegalEventException)") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
@@ -374,6 +356,26 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
     }
   }
 
+  test("Baker.fireEventAndResolveWhenCompleted") { context =>
+    val recipeInstanceId: String = UUID.randomUUID().toString
+    for {
+      _ <- context.remoteInteraction.respondsWithInterfaces()
+      _ <- context.kubeApiServer.deployInteraction()
+      _ <- awaitForInteractionDiscovery(context)
+      _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
+      _ <- io(context.client.bake(recipeId, recipeInstanceId))
+      result <- io(context.client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent))
+      serverState <- io(context.client.getRecipeInstanceState(recipeInstanceId))
+      _ <- eventually {
+        context.eventListener.verifyEventsReceived(2)
+      }
+    } yield {
+      serverState.events.map(_.name) shouldBe Seq("OrderPlaced", "ItemsReserved")
+      result.eventNames shouldBe Seq("OrderPlaced", "ItemsReserved")
+    }
+  }
+
+
   case class Context(
                       client: Baker,
                       remoteInteraction: RemoteInteraction,
@@ -428,11 +430,10 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         system.terminate().flatMap(_ => system.whenTerminated)
       }).void
       system <- Resource.make(makeActorSystem)(stopActorSystem)
-      httpClient <- BlazeClientBuilder[IO](executionContext).resource
       interactions <- new BaseInteractionRegistry(config, system) {
         override protected def remoteHttpInteractionManagers(client: Client[IO]): List[Resource[IO, DynamicInteractionManager]] =
           List(new KubernetesInteractions(config, system,
-            httpClient, skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system)) {
+            client, skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system)) {
           }.resource)
       }.resource
       recipeAddingCache = new RecipeCache {

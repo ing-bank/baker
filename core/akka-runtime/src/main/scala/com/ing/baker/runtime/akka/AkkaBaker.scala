@@ -87,10 +87,10 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     val recipe = recipeRecord.recipe
     val updated = recipeRecord.updated
     if (!recipeRecord.validate || config.bakerValidationSettings.allowAddingRecipeWithoutRequiringInstances) {
-      logger.info(s"Recipe implementation errors are ignored for ${recipe.name}:${recipe.recipeId}")
+      logger.debug(s"Recipe implementation errors are ignored for ${recipe.name}:${recipe.recipeId}")
       addToManager(recipe, updated)
     } else {
-      logger.info(s"Recipe ${recipe.name}:${recipe.recipeId} is validated for compatibility with interactions")
+      logger.debug(s"Recipe ${recipe.name}:${recipe.recipeId} is validated for compatibility with interactions")
       getImplementationErrors(recipe).flatMap { implementationErrors =>
         if (implementationErrors.nonEmpty) {
           Future.failed(ImplementationsException(s"Recipe ${recipe.name}:${recipe.recipeId} has implementation errors: ${implementationErrors.mkString(", ")}"))

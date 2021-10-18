@@ -26,7 +26,7 @@ trait RecipeManager[F[_]] extends LazyLogging {
           List.empty
         }
         else {
-          logger.info(s"Recipe ${compiledRecipe.name}:${compiledRecipe.recipeId} is validated for compatibility with interactions")
+          logger.debug(s"Recipe ${compiledRecipe.name}:${compiledRecipe.recipeId} is validated for compatibility with interactions")
           getImplementationErrors(compiledRecipe)
         }
       _ <-

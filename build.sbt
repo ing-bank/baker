@@ -16,7 +16,7 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
       "project interaction-example-make-payment-and-ship-items" ::
       "buildInteractionDockerImage --image-name=interaction-make-payment-and-ship-items --publish=local --interaction=webshop.webservice.MakePaymentInstance --interaction=webshop.webservice.ShipItemsInstance" ::
       "project interaction-example-reserve-items" ::
-      "buildInteractionDockerImage --image-name=interaction-example-reserve-items --publish=local --interaction=webshop.webservice.ReserveItemsInstance" ::
+      "buildInteractionDockerImage --image-name=interaction-example-reserve-items --publish=local --interaction=webshop.webservice.ReserveItemsConfiguration --springEnabled=true" ::
       "project bakery-integration-tests" ::
       state
 })
@@ -375,10 +375,33 @@ lazy val `bakery-interaction` = project.in(file("bakery/interaction"))
   )
   .dependsOn(`bakery-interaction-protocol`, `baker-interface`)
 
+lazy val `bakery-interaction-spring` = project.in(file("bakery/interaction-spring"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "bakery-interaction-spring",
+    libraryDependencies ++= Seq(
+      slf4jApi,
+      http4s,
+      http4sDsl,
+      http4sServer,
+      http4sCirce,
+      circe,
+      catsEffect,
+      catsCore,
+      springCore,
+      springContext,
+      scalaLogging
+    ) ++ testDeps(
+      scalaTest,
+      logback
+    )
+  )
+  .dependsOn(`bakery-interaction`, `baker-recipe-dsl`)
+
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .aggregate(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
-    `bakery-client`, `bakery-state`, `bakery-interaction`, `bakery-interaction-protocol`,
+    `bakery-client`, `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
     `sbt-bakery-docker-generate`,
     `baker-interface`, `bakery-dashboard`, `baker-annotations`)
 
@@ -489,6 +512,8 @@ lazy val `interaction-example-reserve-items` = project.in(file("examples/bakery-
       compileDeps(
         logback,
         catsEffect,
+        springCore,
+        springContext
       ) ++ testDeps(
         scalaTest,
         scalaCheck
@@ -555,4 +580,4 @@ lazy val `sbt-bakery-docker-generate` = project.in(file("docker/sbt-bakery-docke
   )
   .enablePlugins(SbtPlugin)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
-  .dependsOn(`bakery-interaction`)
+  .dependsOn(`bakery-interaction`, `bakery-interaction-spring`)
