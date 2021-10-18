@@ -5,6 +5,7 @@ import com.ing.baker.runtime.common.RemoteInteractionExecutionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
 import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.bakery.metrics.MetricService
+import io.prometheus.client.Counter
 import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -16,8 +17,8 @@ import scala.concurrent.ExecutionContext
 
 object RemoteInteractionClient {
 
-  lazy val InteractionSuccessCounter = MetricService.counter("bakery_interaction_success", "Successful interaction calls")
-  lazy val InteractionFailureCounter = MetricService.counter("bakery_interaction_failure", "Failed interaction calls")
+  lazy val InteractionSuccessCounter: Counter = MetricService.counter("bakery_interaction_success", "Successful interaction calls")
+  lazy val InteractionFailureCounter: Counter = MetricService.counter("bakery_interaction_failure", "Failed interaction calls")
 
   /** use method `use` of the Resource, the client will be acquired and shut down automatically each time
    * the resulting `IO` is run, each time using the common connection pool.
@@ -30,7 +31,7 @@ object RemoteInteractionClient {
 }
 
 final class RemoteInteractionClient(client: Client[IO], uri: Uri)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
-
+  import RemoteInteractionClient._
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
   import com.ing.baker.runtime.serialization.JsonCodec._
 
@@ -38,9 +39,6 @@ final class RemoteInteractionClient(client: Client[IO], uri: Uri)(implicit cs: C
 
   implicit val executeRequestEntityEncoder: EntityEncoder[IO, List[IngredientInstance]] = jsonEncoderOf[IO, List[IngredientInstance]]
   implicit val executeResponseEntityDecoder: EntityDecoder[IO, InteractionExecution.ExecutionResult] = jsonOf[IO, InteractionExecution.ExecutionResult]
-
-  private lazy val interactionSuccessCounter = MetricService.counter("bakery_interaction_success", "Successful interaction calls")
-  private lazy val interactionFailureCounter = MetricService.counter("bakery_interaction_failure", "Failed interaction calls")
 
   def interface: IO[List[InteractionExecution.Descriptor]] =
     client.expect[List[InteractionExecution.Descriptor]](GET(uri))
@@ -53,12 +51,12 @@ final class RemoteInteractionClient(client: Client[IO], uri: Uri)(implicit cs: C
       .flatMap {
         case InteractionExecution.ExecutionResult(Right(success)) =>
           IO {
-            interactionSuccessCounter.inc()
+            InteractionSuccessCounter.inc()
             success.result
           }
         case InteractionExecution.ExecutionResult(Left(error)) =>
           IO.raiseError {
-            interactionFailureCounter.inc()
+            InteractionFailureCounter.inc()
             new RemoteInteractionExecutionException(error.reason.toString)
           }
       }
