@@ -16,6 +16,8 @@ import scala.concurrent.ExecutionContext
 
 object RemoteInteractionClient {
 
+  lazy val InteractionSuccessCounter = MetricService.counter("bakery_interaction_success", "Successful interaction calls")
+  lazy val InteractionFailureCounter = MetricService.counter("bakery_interaction_failure", "Failed interaction calls")
 
   /** use method `use` of the Resource, the client will be acquired and shut down automatically each time
    * the resulting `IO` is run, each time using the common connection pool.
