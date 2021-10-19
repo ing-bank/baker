@@ -133,6 +133,7 @@ val g = Parser.read(getRecipeVisualization)
 Graphviz.fromGraph(g).render(Format.SVG).toString
 ```
 
+
 Preview the results:
 
 ```

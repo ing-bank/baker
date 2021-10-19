@@ -12,6 +12,8 @@ object InMemoryInteractionManager {
 
 final class InMemoryInteractionManager(implementations: List[InteractionInstance[IO]]) extends InteractionManager[IO] {
 
+  override val allowSupersetForOutputTypes: Boolean = false
+
   override def listAll: IO[List[InteractionInstance[IO]]] = IO(implementations)
 
 }

@@ -7,7 +7,6 @@ import akka.{Done, NotUsed}
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits.catsSyntaxApplicativeError
 import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
-import com.ing.baker.runtime.model.InteractionInstance
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.http4s.Uri

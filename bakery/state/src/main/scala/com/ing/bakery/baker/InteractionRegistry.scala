@@ -92,6 +92,9 @@ class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
   }
 }
 
+/**
+  * Method for resilient/retrying discovery of remote interactions
+  */
 trait RemoteInteractionDiscovery extends LazyLogging {
 
   def extractInteractions(client: Client[IO], uri: Uri)
