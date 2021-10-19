@@ -30,6 +30,8 @@ object Events {
 
   case class ItemsReserved(reservedItems: Ingredients.ReservedItems) extends ReserveItemsOutput
 
+  case class ItemsReservationCanceled(reservedItems: Ingredients.ReservedItems) extends ReserveItemsOutput
+
 }
 
 object Interactions {
@@ -44,6 +46,22 @@ object Interactions {
     inputIngredients = Seq(
       Ingredient[Ingredients.OrderId]("orderId"),
       Ingredient[List[Ingredients.Item]]("items")
+    ),
+    output = Seq(
+      Event[OrderHadUnavailableItems],
+      Event[ItemsReserved]
+    )
+  )
+
+  trait CancelReserveItems {
+
+    def apply(orderId: Ingredients.OrderId, items: List[Ingredients.Item]): Future[ReserveItemsOutput]
+  }
+
+  def CancelReserveItemsInteraction: Interaction = Interaction(
+    name = "CancelReserveItems",
+    inputIngredients = Seq(
+      Ingredient[Ingredients.OrderId]("orderId")
     ),
     output = Seq(
       Event[OrderHadUnavailableItems],

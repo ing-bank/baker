@@ -4,6 +4,7 @@ import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.runtime.common.RemoteInteractionExecutionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
 import com.ing.baker.runtime.serialization.InteractionExecution
+import com.ing.baker.runtime.serialization.InteractionExecution._
 import com.ing.bakery.metrics.MetricService
 import io.prometheus.client.Counter
 import org.http4s.circe._
@@ -35,10 +36,10 @@ final class RemoteInteractionClient(client: Client[IO], uri: Uri)(implicit cs: C
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
   import com.ing.baker.runtime.serialization.JsonCodec._
 
-  implicit val interactionEntityDecoder: EntityDecoder[IO, List[InteractionExecution.Descriptor]] = jsonOf[IO, List[InteractionExecution.Descriptor]]
+  implicit val interactionEntityDecoder: EntityDecoder[IO, List[Descriptor]] = jsonOf[IO, List[Descriptor]]
 
   implicit val executeRequestEntityEncoder: EntityEncoder[IO, List[IngredientInstance]] = jsonEncoderOf[IO, List[IngredientInstance]]
-  implicit val executeResponseEntityDecoder: EntityDecoder[IO, InteractionExecution.ExecutionResult] = jsonOf[IO, InteractionExecution.ExecutionResult]
+  implicit val executeResponseEntityDecoder: EntityDecoder[IO, ExecutionResult] = jsonOf[IO, ExecutionResult]
 
   def interface: IO[List[InteractionExecution.Descriptor]] =
     client.expect[List[InteractionExecution.Descriptor]](GET(uri))
@@ -47,7 +48,7 @@ final class RemoteInteractionClient(client: Client[IO], uri: Uri)(implicit cs: C
     val request = POST(
       input.toList,
       uri / interactionId / "execute")
-    client.expect[InteractionExecution.ExecutionResult](request)
+    client.expect[ExecutionResult](request)
       .flatMap {
         case InteractionExecution.ExecutionResult(Right(success)) =>
           IO {

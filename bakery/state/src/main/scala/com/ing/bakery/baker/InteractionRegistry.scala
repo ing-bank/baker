@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Resource, Timer}
 import cats.syntax.traverse._
 import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
+import com.ing.baker.runtime.defaultinteractions
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.bakery.interaction.RemoteInteractionClient
 import com.typesafe.config.Config
@@ -12,6 +13,7 @@ import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import scalax.collection.ChainingOps
+import skuber.api.client.KubernetesClient
 
 import java.io.IOException
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
@@ -49,7 +51,9 @@ trait InteractionRegistry extends InteractionManager[IO] {
   */
 trait TraversingInteractionRegistry extends InteractionRegistry {
   override def listAll: IO[List[InteractionInstance[IO]]] =
-    interactionManagers.flatMap(_.traverse(_.listAll).map(_.flatten))
+    interactionManagers
+      .flatMap(_.traverse(_.listAll).map(_.flatten))
+      .flatMap(managed => IO.pure(defaultinteractions.all ++ managed))
 }
 
 /**
@@ -62,31 +66,29 @@ class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
   implicit val cs: ContextShift[IO] = IO.contextShift(actorSystem.dispatcher)
   implicit val effect: ConcurrentEffect[IO] = IO.ioConcurrentEffect
 
-  protected def remoteHttpInteractionManagers(client: Client[IO]): List[Resource[IO, DynamicInteractionManager]] =
-    List(
-      new KubernetesInteractions(config, actorSystem, client, skuber.k8sInit(actorSystem)).resource,
-      new LocalhostInteractions(config, actorSystem, client).resource
-    )
-
+  // variable state, but changed only once when the resource is started
   protected var managers: List[InteractionManager[IO]] = List.empty[InteractionManager[IO]]
 
   override def interactionManagers: IO[List[InteractionManager[IO]]] = IO.pure(managers)
 
-  private def flattenResources[T](resources: List[Resource[IO, T]], result: List[T] = Nil): Resource[IO, List[T]] =
-    resources match {
-      case m :: ms => m.flatMap(t => flattenResources(ms, t :: result))
-      case Nil => Resource.eval(IO.pure(result))
-    }
-
   override def resource: Resource[IO, InteractionRegistry] = {
     for {
       client <- BlazeClientBuilder[IO](actorSystem.dispatcher).resource
-      ms <- flattenResources(remoteHttpInteractionManagers(client))
+      interactionManagers <- interactionManagersResource(client)
     } yield {
-      managers = ms
+      managers = interactionManagers
       logger.info(s"Initialised interaction registry with managers: ${managers.map(_.getClass.getName).mkString(",")}")
       this
     }
+  }
+
+  protected def interactionManagersResource(client: Client[IO],
+                                            kubernetesClient: KubernetesClient = skuber.k8sInit(actorSystem))
+  : Resource[IO, List[InteractionManager[IO]]] = for {
+    localhost <- new LocalhostInteractions(config, actorSystem, client).resource
+    kubernetes <- new KubernetesInteractions(config, actorSystem, client, kubernetesClient).resource
+  } yield {
+    List(localhost, kubernetes)
   }
 }
 
@@ -116,10 +118,12 @@ trait RemoteInteractionDiscovery extends LazyLogging {
 
     within(giveUpAfter = 10 minutes, retries = 40) {
       // check every 15 seconds for interfaces for 10 minutes
-      logger.info(s"Extracting interactions @ ${uri.toString}")
-      remoteInteractionClient.interface.map { interfaces =>
-        assert(interfaces.nonEmpty)
-        logger.info(s"Loaded ${interfaces.size} interactions: ${interfaces.map(_.name).mkString(",")}")
+      logger.info(s"Extracting interactions @ ${uri.toString}...")
+      remoteInteractionClient.interface.map { interfaces =>  {
+        if (interfaces.nonEmpty)
+          logger.info(s"${uri.toString} provides ${interfaces.size} interactions: ${interfaces.map(_.name).mkString(",")}")
+        else
+          logger.warn(s"${uri.toString} provides no interactions")
         interfaces.map(interaction => {
           InteractionInstance.build[IO](
             _name = interaction.name,
@@ -128,7 +132,7 @@ trait RemoteInteractionDiscovery extends LazyLogging {
             _run = input => remoteInteractionClient.runInteraction(interaction.id, input),
           )
         })
-      }
+      }}
     }
   }
 

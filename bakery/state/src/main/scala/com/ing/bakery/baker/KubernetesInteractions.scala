@@ -33,21 +33,19 @@ class KubernetesInteractions(config: Config,
   private implicit val contextShift: ContextShift[IO] = IO.contextShift(system.dispatcher)
   private implicit val timer: Timer[IO] = IO.timer(system.dispatcher)
 
-  private val apiUrlPrefix = config.getString("baker.interactions.api-url-prefix")
+  private val apiUrlPrefix = config.getString("baker.interactions.kubernetes.api-url-prefix")
 
   override def resource: Resource[IO, DynamicInteractionManager] = {
 
     def noneIfEmpty(str: String) = if (str.isEmpty) None else Some(str)
 
-    val podLabelSelector = noneIfEmpty(config.getString("baker.interactions.pod-label-selector"))
+    val podLabelSelector = noneIfEmpty(config.getString("baker.interactions.kubernetes.pod-label-selector"))
       .map(_.split("="))
       .map { kv => LabelSelector(LabelSelector.IsEqualRequirement(kv(0), kv(1))) }
 
     def watchSource: Source[K8SWatchEvent[Service], UniqueKillSwitch] = {
       val watchFilter: ListOptions = ListOptions(labelSelector = podLabelSelector)
-      /*, timeoutSeconds = Some(45)*/ // Note, we decided to go for long connections against renewing every 45 seconds due an issue with OpenShift 3.11 not being able to respond to calls with resourceVersion as supposed to be
 
-      // todo how do we ensure that connection on the long poll is not dead?
       def source: Source[K8SWatchEvent[Service], NotUsed] =
         kubernetes
           .watchWithOptions[Service](watchFilter, bufsize = Int.MaxValue)
@@ -101,7 +99,9 @@ class KubernetesInteractions(config: Config,
     event._type match {
 
       case EventType.ADDED | EventType.MODIFIED => for {
-        interfaces <- extractInterfacesFromDeployedInteraction(client, event._object, port.port, apiUrlPrefix)
+
+        interfaces <- extractInteractions(client,
+          Uri.unsafeFromString(s"http://${event._object.name}:${port.port}$apiUrlPrefix"))
         d <- discovered
       } yield d.put(event._object.name, interfaces)
 
@@ -114,9 +114,6 @@ class KubernetesInteractions(config: Config,
     }
   }) getOrElse IO.unit
 
-  def extractInterfacesFromDeployedInteraction(httpClient: Client[IO], deployedService: Service, port: Int, path: String)
-                                              (implicit contextShift: ContextShift[IO], timer: Timer[IO])
-  : IO[List[InteractionInstance[IO]]] =
-    extractInteractions(httpClient, Uri.unsafeFromString(s"http://${deployedService.name}:$port$path"))
+
 
 }

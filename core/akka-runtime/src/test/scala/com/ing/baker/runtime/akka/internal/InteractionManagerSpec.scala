@@ -5,11 +5,12 @@ import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
 import com.ing.baker.runtime.scaladsl.{InteractionInstance, InteractionInstanceInput}
 import com.ing.baker.types
-import com.ing.baker.types.{EnumType, Int16, Int32, RecordType, Type}
+import com.ing.baker.types.{EnumType, Int16, Int32, Type}
 import org.mockito.Mockito.when
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
+import com.ing.baker.runtime.{defaultinteractions, model}
 
 import scala.concurrent.ExecutionContext
 
@@ -18,7 +19,9 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
   "getImplementation" should {
     "return Some" when {
       "an default interaction is request" in {
-        val interactionManager: CachingInteractionManager = CachingInteractionManager()
+        val interactionManager: CachingInteractionManager = new CachingInteractionManager() {
+          override def listAll: IO[List[model.InteractionInstance[IO]]] = IO.pure(defaultinteractions.all)
+        }
 
         val timerInteractionTransition = mock[InteractionTransition]
         when(timerInteractionTransition.originalInteractionName).thenReturn("TimerInteraction")
@@ -29,7 +32,6 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         when(timerInteractionTransition.requiredIngredients).thenReturn(Seq(timerInteractionTransitionID))
         val found = interactionManager.findFor(timerInteractionTransition).unsafeRunSync().get
         found.name shouldBe "TimerInteraction"
-
 
         val timerInteractionTransitionJava = mock[InteractionTransition]
         when(timerInteractionTransitionJava.originalInteractionName).thenReturn("TimerInteraction")
