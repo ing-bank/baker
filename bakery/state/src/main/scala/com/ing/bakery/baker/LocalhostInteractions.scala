@@ -16,10 +16,10 @@ class LocalhostInteractions(config: Config,
                             val client: Client[IO],
                             port: Option[Int] = None)
   extends DynamicInteractionManager with RemoteInteractionDiscovery with LazyLogging {
-  private implicit val contextShift: ContextShift[IO] = IO.contextShift(system.dispatcher)
-  private implicit val timer: Timer[IO] = IO.timer(system.dispatcher)
-  private val apiUrlPrefix = config.getString("baker.interactions.localhost.api-url-prefix")
-  private val localhostPort: Int = port.getOrElse(config.getInt("baker.interactions.localhost.port"))
+  protected implicit val contextShift: ContextShift[IO] = IO.contextShift(system.dispatcher)
+  protected implicit val timer: Timer[IO] = IO.timer(system.dispatcher)
+  protected val apiUrlPrefix = config.getString("baker.interactions.localhost.api-url-prefix")
+  protected val localhostPort: Int = port.getOrElse(config.getInt("baker.interactions.localhost.port"))
 
   override def resource: Resource[IO, DynamicInteractionManager] = Resource.eval {
     for {
