@@ -82,11 +82,10 @@ class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
     }
   }
 
-  protected def interactionManagersResource(client: Client[IO],
-                                            kubernetesClient: KubernetesClient = skuber.k8sInit(actorSystem))
+  protected def interactionManagersResource(client: Client[IO])
   : Resource[IO, List[InteractionManager[IO]]] = for {
     localhost <- new LocalhostInteractions(config, actorSystem, client).resource
-    kubernetes <- new KubernetesInteractions(config, actorSystem, client, kubernetesClient).resource
+    kubernetes <- new KubernetesInteractions(config, actorSystem, client).resource
   } yield {
     List(localhost, kubernetes)
   }

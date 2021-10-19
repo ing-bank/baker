@@ -24,7 +24,7 @@ import scala.concurrent.duration.DurationInt
 class KubernetesInteractions(config: Config,
                              system: ActorSystem,
                              val client: Client[IO],
-                             kubernetes: KubernetesClient)
+                             kubernetesClient: Option[KubernetesClient] = None)
   extends DynamicInteractionManager
     with RemoteInteractionDiscovery
     with LazyLogging {
@@ -33,10 +33,11 @@ class KubernetesInteractions(config: Config,
   private implicit val timer: Timer[IO] = IO.timer(system.dispatcher)
 
   private val apiUrlPrefix = config.getString("baker.interactions.kubernetes.api-url-prefix")
+  private val kubernetes = kubernetesClient.getOrElse(skuber.k8sInit(config)(system))
 
   override def resource: Resource[IO, DynamicInteractionManager] = {
 
-    def noneIfEmpty(str: String) = if (str.isEmpty) None else Some(str)
+    def noneIfEmpty(str: String): Option[String] = if (str.isEmpty) None else Some(str)
 
     val podLabelSelector = noneIfEmpty(config.getString("baker.interactions.kubernetes.pod-label-selector"))
       .map(_.split("="))

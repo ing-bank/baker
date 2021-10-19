@@ -32,12 +32,12 @@ object TestInteractionRegistry {
 
 class TestInteractionRegistry(config: Config, system: ActorSystem) extends BaseInteractionRegistry(config, system) {
     import TestInteractionRegistry._
-    override protected def interactionManagersResource(client: Client[IO], kubernetesClient: KubernetesClient): Resource[IO, List[InteractionManager[IO]]] =
+    override protected def interactionManagersResource(client: Client[IO]): Resource[IO, List[InteractionManager[IO]]] =
       for {
         localhost <- new LocalhostInteractions(config, system, client, Some(mockServerLocalhost.getLocalPort)).resource
         kubernetes <- new KubernetesInteractions(
           config, system, client,
-          skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServerKubernetes.getLocalPort))(system)
+          Some(skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServerKubernetes.getLocalPort))(system))
         ).resource
       } yield List(kubernetes, localhost)
 
