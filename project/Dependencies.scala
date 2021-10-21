@@ -14,7 +14,7 @@ object Dependencies {
   val catsEffectVersion = "2.5.1"
   val catsCoreVersion = "2.6.1"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "5.3.8"
+  val springVersion = "5.3.12"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
     .exclude("com.typesafe.akka", "akka-actor")
