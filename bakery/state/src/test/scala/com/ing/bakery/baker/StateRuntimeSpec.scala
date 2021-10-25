@@ -71,6 +71,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
     test("Adding a recipe directly") { context =>
       for {
         allRecipesBefore <- io(context.client.getAllRecipes)
+        _ <- io(context.client.addRecipe(recipe, true))
         _ <- io(context.client.addRecipe(otherRecipe, true))
         allRecipesAfter <- io(context.client.getAllRecipes)
       } yield {
