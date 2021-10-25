@@ -57,6 +57,8 @@ object CompiledRecipe {
 /**
   * A Compiled recipe.
   */
+case class EncodedRecipe(recipe: String)
+
 case class CompiledRecipe(name: String,
                           recipeId: String,
                           petriNet: RecipePetriNet,

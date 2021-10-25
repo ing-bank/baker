@@ -3,6 +3,7 @@ package com.ing.bakery.baker
 import cats.data.OptionT
 import cats.effect.{Blocker, ContextShift, IO, Resource, Sync, Timer}
 import cats.implicits._
+import com.ing.baker.il.EncodedRecipe
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 import com.ing.baker.runtime.model.InteractionManager
@@ -30,6 +31,7 @@ import org.slf4j.LoggerFactory
 
 import java.io.File
 import java.net.InetSocketAddress
+import java.nio.charset.Charset
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -104,6 +106,8 @@ final class BakerService private(baker: Baker)(implicit cs: ContextShift[IO], ti
 
   private object InteractionName extends RegExpValidator("[A-Za-z0-9_]+")
 
+  implicit val recipeDecoder: EntityDecoder[IO, EncodedRecipe] = jsonOf[IO, EncodedRecipe]
+
   implicit val eventInstanceDecoder: EntityDecoder[IO, EventInstance] = jsonOf[IO, EventInstance]
   implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
   implicit val interactionEntityEncoder: EntityEncoder[IO, InteractionExecution.Descriptor] = jsonEncoderOf[IO, InteractionExecution.Descriptor]
@@ -129,6 +133,13 @@ final class BakerService private(baker: Baker)(implicit cs: ContextShift[IO], ti
       case GET -> Root / "interactions" => callBaker(baker.getAllInteractions)
 
       case GET -> Root / "interactions" / InteractionName(name) => callBaker(baker.getInteraction(name))
+
+      case req@POST -> Root / "recipes" =>
+        for {
+          encodedRecipe <- req.as[EncodedRecipe]
+          recipe <- RecipeLoader.fromBytes(encodedRecipe.recipe.getBytes(Charset.forName("UTF-8")))
+          result <- callBaker(baker.addRecipe(recipe, validate = true))
+        } yield result
 
       case GET -> Root / "recipes" => callBaker(baker.getAllRecipes)
 

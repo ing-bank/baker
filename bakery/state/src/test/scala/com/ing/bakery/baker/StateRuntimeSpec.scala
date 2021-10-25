@@ -12,7 +12,7 @@ import com.ing.baker.types.{ByteArray, CharArray, ListType, RecordField, RecordT
 import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
 import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
-import com.ing.bakery.recipe.{ItemReservationRecipe, SimpleRecipe}
+import com.ing.bakery.recipe.{ItemReservationRecipe, SimpleRecipe, SimpleRecipe2}
 import com.ing.bakery.scaladsl.BakerClient
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
@@ -29,6 +29,9 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
 
   val recipe: CompiledRecipe =
     ItemReservationRecipe.compiledRecipe
+
+  val otherRecipe: CompiledRecipe =
+    SimpleRecipe2.compiledRecipe
 
   val recipeId: String = recipe.recipeId
 
@@ -64,6 +67,17 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
     )
 
   describe("Service Discovery") {
+
+    test("Adding a recipe directly") { context =>
+      for {
+        allRecipesBefore <- io(context.client.getAllRecipes)
+        _ <- io(context.client.addRecipe(otherRecipe, true))
+        allRecipesAfter <- io(context.client.getAllRecipes)
+      } yield {
+        allRecipesBefore.values.map(_.compiledRecipe.name).toSet shouldBe Set("ItemReservation.recipe", "Simple")
+        allRecipesAfter.values.map(_.compiledRecipe.name).toSet  shouldBe Set("ItemReservation.recipe", "Simple", "Simple2")
+      }
+    }
 
     test("Simple interaction discovery") { context =>
       for {
