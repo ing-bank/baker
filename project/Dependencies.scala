@@ -14,7 +14,7 @@ object Dependencies {
   val catsEffectVersion = "2.5.4"
   val catsCoreVersion = "2.6.1"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "5.3.8"
+  val springVersion = "5.3.12"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
     .exclude("com.typesafe.akka", "akka-actor")
@@ -69,7 +69,7 @@ object Dependencies {
 
   val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.12.0"
   val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.16.1"
-  val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.2.0"
+  val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.2.1"
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.12.0"
@@ -106,7 +106,7 @@ object Dependencies {
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.18.1"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.19.0"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
 
