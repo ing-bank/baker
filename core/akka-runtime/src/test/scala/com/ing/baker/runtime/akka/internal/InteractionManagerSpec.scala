@@ -5,11 +5,12 @@ import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
 import com.ing.baker.runtime.scaladsl.{InteractionInstance, InteractionInstanceInput}
 import com.ing.baker.types
-import com.ing.baker.types.{EnumType, Int16, Int32, RecordType, Type}
+import com.ing.baker.types.{EnumType, Int16, Int32, Type}
 import org.mockito.Mockito.when
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
+import com.ing.baker.runtime.{defaultinteractions, model}
 
 import scala.concurrent.ExecutionContext
 
@@ -18,7 +19,9 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
   "getImplementation" should {
     "return Some" when {
       "an default interaction is request" in {
-        val interactionManager: CachedInteractionManager = CachedInteractionManager()
+        val interactionManager: CachingInteractionManager = new CachingInteractionManager() {
+          override def listAll: IO[List[model.InteractionInstance[IO]]] = IO.pure(defaultinteractions.all)
+        }
 
         val timerInteractionTransition = mock[InteractionTransition]
         when(timerInteractionTransition.originalInteractionName).thenReturn("TimerInteraction")
@@ -29,7 +32,6 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         when(timerInteractionTransition.requiredIngredients).thenReturn(Seq(timerInteractionTransitionID))
         val found = interactionManager.findFor(timerInteractionTransition).unsafeRunSync().get
         found.name shouldBe "TimerInteraction"
-
 
         val timerInteractionTransitionJava = mock[InteractionTransition]
         when(timerInteractionTransitionJava.originalInteractionName).thenReturn("TimerInteraction")
@@ -53,7 +55,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation))
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation.name
         found.input shouldBe interactionImplementation.input
@@ -71,7 +73,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName",  EnumType(Set("A")))
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation))
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation.name
         found.input shouldBe interactionImplementation.input
@@ -89,7 +91,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation))
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation.name
         found.input shouldBe interactionImplementation.input
@@ -109,7 +111,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
         when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", Int32), IngredientDescriptor("outputIngredient2", Int16)))))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation))
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation.name
         found.input shouldBe interactionImplementation.input
@@ -132,7 +134,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
             EventDescriptor("outputEvent2", Seq(IngredientDescriptor("outputIngredient", Int32), IngredientDescriptor("outputIngredient2", Int16)))
           ))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation))
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation.name
         found.input shouldBe interactionImplementation.input
@@ -153,7 +155,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         when(interactionTransition.originalEvents).thenReturn(
           Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", EnumType(Set("A", "B", "C")))))))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation))
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation.name
         found.input shouldBe interactionImplementation.input
@@ -174,7 +176,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         when(interactionTransition.originalEvents).thenReturn(
           Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", EnumType(Set("A", "B")))))))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation), allowSupersetForOutputTypes = true)
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation), allowSupersetForOutputTypes = true)
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation.name
         found.input shouldBe interactionImplementation.input
@@ -197,7 +199,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation1, interactionImplementation2))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation1, interactionImplementation2))
 
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation1.name
@@ -221,7 +223,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation1, interactionImplementation2))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation1, interactionImplementation2))
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation2.name
         found.input shouldBe interactionImplementation2.input
@@ -245,7 +247,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
         when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq.empty)))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation1, interactionImplementation2))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation1, interactionImplementation2))
         val found = interactionManager.findFor(interactionTransition).unsafeRunSync().get
         found.name shouldBe interactionImplementation2.name
         found.input shouldBe interactionImplementation2.input
@@ -265,7 +267,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
@@ -280,7 +282,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.CharArray)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
@@ -296,7 +298,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
         when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq.empty)))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
@@ -312,7 +314,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
         when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", Int32), IngredientDescriptor("outputIngredient2", Int16)))))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
@@ -328,7 +330,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
         when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", Int16), IngredientDescriptor("outputIngredient2", Int16)))))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
@@ -344,7 +346,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
         when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", EnumType(Set("A", "C")))))))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
@@ -360,7 +362,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
         when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", EnumType(Set("A", "B")))))))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
@@ -379,7 +381,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
         when(interactionTransition.originalEvents).thenReturn(Seq(EventDescriptor("outputEvent", Seq(IngredientDescriptor("outputIngredient", EnumType(Set("A", "C")))))))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
@@ -394,7 +396,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", types.Int32)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
@@ -410,12 +412,12 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
         val ingredientDescriptor2: IngredientDescriptor = IngredientDescriptor("ingredientName2", types.CharArray)
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor, ingredientDescriptor2))
 
-        val interactionManager: CachedInteractionManager = CachedInteractionManager(List(interactionImplementation))
+        val interactionManager: CachingInteractionManager = CachingInteractionManager(List(interactionImplementation))
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None
       }
 
       "empty interaction seq" in {
-        val interactionManager: CachedInteractionManager = CachedInteractionManager()
+        val interactionManager: CachingInteractionManager = CachingInteractionManager()
 
         val interactionTransition: InteractionTransition = mock[InteractionTransition]
         interactionManager.findFor(interactionTransition).unsafeRunSync() shouldBe None

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-npm i
+npm install @angular/cli
+npm install
+npx ng build --prod
 #npm run test
 #npm run lint
-npm run build --prod
 cd dist
 zip -r ../dashboard.zip *

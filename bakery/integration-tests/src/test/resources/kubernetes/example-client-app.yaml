@@ -9,10 +9,11 @@ spec:
     app: client-app
   ports:
     - name: http-api
+      nodePort: 30000
       port: 8082
       targetPort: http-api
       protocol: TCP
-  type: LoadBalancer
+  type: NodePort
 ---
 apiVersion: apps/v1
 kind: Deployment

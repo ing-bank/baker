@@ -30,3 +30,24 @@ object SimpleRecipe {
   val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
 
 }
+
+object SimpleRecipe2 {
+
+  private def recipeBase = Recipe("Simple2")
+    .withSensoryEvents(
+      Event[OrderPlaced])
+    .withInteractions(
+      Interactions.ReserveItemsInteraction)
+
+  def recipe: Recipe =
+    recipeBase.withDefaultFailureStrategy(
+      RetryWithIncrementalBackoff
+        .builder()
+        .withInitialDelay(100.milliseconds)
+        .withUntil(Some(UntilDeadline(24.hours)))
+        .withMaxTimeBetweenRetries(Some(10.minutes))
+        .build())
+
+  val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+
+}

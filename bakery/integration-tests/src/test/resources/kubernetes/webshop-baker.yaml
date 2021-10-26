@@ -119,9 +119,8 @@ data:
         topic: "events"
       }
       interactions {
-        local-configuration-classes = []
-        localhost-ports = [ 8081 ]
-        pod-label-selector = "bakery=webshop"
+        localhost.port = 8081
+        kubernetes.pod-label-selector = "bakery=webshop"
       }
     }
 

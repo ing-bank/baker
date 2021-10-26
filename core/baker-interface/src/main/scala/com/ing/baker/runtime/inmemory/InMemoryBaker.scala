@@ -18,7 +18,7 @@ object InMemoryBaker {
     recipeInstanceManager <- InMemoryRecipeInstanceManager.build(config.idleTimeout)
     recipeManager <- InMemoryRecipeManager.build
     eventStream <- InMemoryEventStream.build
-    interactions <- InMemoryInteractionManager.build(implementations ++ defaultinteractions.getDefaultInteractions)
+    interactions <- InMemoryInteractionManager.build(implementations ++ defaultinteractions.all)
   } yield buildWith(BakerComponents[IO](interactions, recipeInstanceManager, recipeManager, eventStream), config)
 
   def buildWith(components: BakerComponents[IO],
