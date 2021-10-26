@@ -5,7 +5,7 @@ import com.ing.baker.runtime.model.InteractionInstance
 import com.typesafe.config.ConfigFactory
 
 package object defaultinteractions {
-  def getDefaultInteractions(): List[InteractionInstance[IO]] = {
+  def all: List[InteractionInstance[IO]] = {
     val path = "baker.default-interactions.timer.skip"
     val config = ConfigFactory.load()
     val skipWait = config.hasPath(path) && config.getBoolean(path)

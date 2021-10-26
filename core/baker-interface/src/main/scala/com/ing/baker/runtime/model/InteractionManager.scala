@@ -8,7 +8,7 @@ import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
 import com.ing.baker.types.Type
-
+import com.typesafe.config.ConfigFactory
 
 /**
   * The InteractionManager is responsible for keeping and calling al InteractionInstances.
@@ -17,12 +17,16 @@ import com.ing.baker.types.Type
   */
 trait InteractionManager[F[_]] {
 
+  protected def noneIfEmpty(str: String) = if (str.isEmpty) None else Some(str)
+
   /**
     * If this is set to true it will also allow fur supersets of the output types to be given by the implementations
     * This can be helpful in case an ENUM type or similar is extended upon and you know these new values will not be given.
     * If this new value is given from the implementation this will result in te runtime error and a technical failure of the interaction.
     */
-  val allowSupersetForOutputTypes: Boolean
+  def allowSupersetForOutputTypes: Boolean = AllowSupersetForOutputTypes
+  private lazy val AllowSupersetForOutputTypes: Boolean =
+    ConfigFactory.load().getBoolean("baker.interactions.allow-superset-for-output-types")
 
   def listAll: F[List[InteractionInstance[F]]]
 

@@ -1,16 +1,17 @@
 package com.ing.bakery.scaladsl
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
-import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus}
+import com.ing.baker.il.{EncodedRecipe, RecipeVisualStyle}
+import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus, Utils}
 import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, EventResolutions, InteractionInstanceDescriptor, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.types.Value
 import com.ing.bakery.common.FailoverUtils._
-import com.ing.bakery.common.{FailoverState, FailoverUtils, TLSConfig}
+import com.ing.bakery.common.{FailoverState, TLSConfig}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
+import io.circe.generic.semiauto.deriveEncoder
 import org.http4s.Method._
 import org.http4s._
 import org.http4s.circe._
@@ -91,10 +92,17 @@ final class BakerClient( client: Client[IO],
                          filters: Seq[Request[IO] => Request[IO]] = Seq.empty)
                        (implicit ec: ExecutionContext) extends ScalaBaker with LazyLogging {
 
+  implicit val encodedRecipeEncoder = deriveEncoder[EncodedRecipe]
   implicit val eventInstanceResultEntityEncoder: EntityEncoder[IO, EventInstance] = jsonEncoderOf[IO, EventInstance]
+  implicit val encodedRecipeEntityEncoder: EntityEncoder[IO, EncodedRecipe] = jsonEncoderOf[IO, EncodedRecipe]
 
   override def addRecipe(recipe: RecipeRecord): Future[String] =
-    Future.failed(new NotImplementedError("Adding recipe via HTTP API is not supported"))
+    callRemoteBakerService[String]((host, prefix) => POST(EncodedRecipe(
+      new String(java.util.Base64.getEncoder.encode(Utils.recipeToByteArray(recipe.recipe)), "UTF-8")
+    ), root(host, prefix) / "app" / "recipes")).map { r =>
+      logger.info(s"Result of adding a recipe: $r")
+      r
+    }
 
   private def parse[A](result: BakerResult)(implicit decoder: Decoder[A]): Either[Exception, A] = {
     result match {
