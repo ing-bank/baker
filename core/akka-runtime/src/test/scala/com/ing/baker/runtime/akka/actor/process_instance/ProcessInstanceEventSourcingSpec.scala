@@ -3,7 +3,6 @@ package com.ing.baker.runtime.akka.actor.process_instance
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
-import akka.stream.{ActorMaterializer, Materializer}
 import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.TestProbe
 import akka.util.Timeout
@@ -13,12 +12,11 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSou
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceSpec._
 import com.ing.baker.runtime.akka.actor.process_instance.dsl._
-import java.util.UUID
-
 import com.ing.baker.runtime.serialization.Encryption.NoEncryption
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers._
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 

@@ -15,7 +15,7 @@ import org.mockserver.verify.VerificationTimes
 class RemoteInteraction(mock: ClientAndServer) {
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 
-  def respondsWithInterfaces(): IO[Unit] = IO {
+  def respondsWithReserveItems(): IO[Unit] = IO {
     mock.when(
       receivedInquiry,
       Times.exactly(1)
@@ -26,6 +26,20 @@ class RemoteInteraction(mock: ClientAndServer) {
               Interactions.ReserveItemsInteraction.inputIngredients.map(i => InteractionInstanceInput(Some(i.name), i.ingredientType)).toList,
               Some(Interactions.ReserveItemsInteraction.output.map(e => e.name -> e.providedIngredients.map(i => i.name -> i.ingredientType).toMap).toMap))
             ).asJson.toString)
+    )
+  }
+
+  def respondsWithCancelReserveItems(): IO[Unit] = IO {
+    mock.when(
+      receivedInquiry,
+      Times.unlimited()
+    ).respond(
+      response()
+        .withStatusCode(200)
+        .withBody(List(I.Descriptor("localhost", Interactions.CancelReserveItemsInteraction.name,
+          Interactions.CancelReserveItemsInteraction.inputIngredients.map(i => InteractionInstanceInput(Some(i.name), i.ingredientType)).toList,
+          Some(Interactions.CancelReserveItemsInteraction.output.map(e => e.name -> e.providedIngredients.map(i => i.name -> i.ingredientType).toMap).toMap))
+        ).asJson.toString)
     )
   }
 

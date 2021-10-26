@@ -23,7 +23,7 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
 
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
-  scalaVersion := "2.12.14",
+  scalaVersion := "2.12.15",
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
   javacOptions := Seq("-source", "1.8", "-target", "1.8"),
@@ -328,8 +328,6 @@ lazy val `bakery-state` = project.in(file("bakery/state"))
       http4sDsl,
       http4sCirce,
       http4sServer,
-      springCore,
-      springContext,
       kafkaClient,
       skuber
     ) ++ testDeps(
