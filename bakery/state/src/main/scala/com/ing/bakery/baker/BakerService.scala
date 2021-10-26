@@ -1,7 +1,7 @@
 package com.ing.bakery.baker
 
 import cats.data.OptionT
-import cats.effect.{Blocker, ContextShift, IO, Resource, Sync, Timer}
+import cats.effect.{IO, Resource, Sync}
 import cats.implicits._
 import com.ing.baker.il.EncodedRecipe
 import com.ing.baker.runtime.common.BakerException
@@ -34,11 +34,12 @@ import java.net.InetSocketAddress
 import java.nio.charset.Charset
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
+import cats.effect.Temporal
 
 object BakerService {
 
   def resource(baker: Baker, hostname: InetSocketAddress, apiUrlPrefix: String, dashboardPath: String, loggingEnabled: Boolean)
-              (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+              (implicit sync: Sync[IO], timer: Temporal[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
 
     val bakeryRequestClassifier: Request[IO] => Option[String] = { request =>
       val uriPath = request.uri.path
@@ -58,7 +59,7 @@ object BakerService {
 
     for {
       metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_api")
-      blocker <- Blocker[IO]
+      blocker <- Resource.unit[IO]
       server <- BlazeServerBuilder[IO](ec)
         .bindSocketAddress(hostname)
         .withHttpApp(
@@ -88,11 +89,11 @@ object BakerService {
     } yield server
   }
 
-  def routes(baker: Baker)(implicit cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] =
+  def routes(baker: Baker)(implicit timer: Temporal[IO]): HttpRoutes[IO] =
     new BakerService(baker).routes
 }
 
-final class BakerService private(baker: Baker)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
+final class BakerService private(baker: Baker)(implicit cs: ContextShift[IO], timer: Temporal[IO]) extends LazyLogging {
 
   object CorrelationId extends OptionalQueryParamDecoderMatcher[String]("correlationId")
 

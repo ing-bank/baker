@@ -1,7 +1,7 @@
 package com.ing.bakery.interaction
 
 import java.net.{InetSocketAddress, URLEncoder}
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.scaladsl.{IngredientInstance, InteractionInstance}
 import com.ing.baker.runtime.serialization.{InteractionExecution => I}
 import com.ing.bakery.metrics.MetricService
@@ -20,6 +20,7 @@ import org.http4s.server.middleware.{Logger, Metrics}
 
 import java.lang.reflect.InvocationTargetException
 import scala.concurrent.ExecutionContext
+import cats.effect.Temporal
 
 object RemoteInteractionService {
 
@@ -29,7 +30,7 @@ object RemoteInteractionService {
                apiLoggingEnabled: Boolean = false,
                interactionPerTypeMetricsEnabled: Boolean = true,
                metricsPort: Int = 9096,
-               apiUrlPrefix: String = "/api/bakery/interactions")(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] = {
+               apiUrlPrefix: String = "/api/bakery/interactions")(implicit timer: Temporal[IO]): Resource[IO, Server[IO]] = {
 
     val idToNameMap = interactions.map(i => URLEncoder.encode(i.shaBase64, "UTF-8").take(8) -> i.name ).toMap
 
@@ -71,7 +72,7 @@ object RemoteInteractionService {
   }
 }
 
-final class RemoteInteractionService(interactions: List[InteractionInstance])(implicit timer: Timer[IO], cs: ContextShift[IO]) extends LazyLogging {
+final class RemoteInteractionService(interactions: List[InteractionInstance])(implicit timer: Temporal[IO], cs: ContextShift[IO]) extends LazyLogging {
 
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
   import com.ing.baker.runtime.serialization.JsonCodec._

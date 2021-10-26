@@ -1,7 +1,7 @@
 package com.ing.bakery.baker
 
 import akka.actor.ActorSystem
-import cats.effect.{ConcurrentEffect, ContextShift, IO, Resource, Timer}
+import cats.effect.{ConcurrentEffect, IO, Resource}
 import cats.syntax.traverse._
 import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
 import com.ing.baker.runtime.defaultinteractions
@@ -18,6 +18,7 @@ import skuber.api.client.KubernetesClient
 import java.io.IOException
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.Try
+import cats.effect.Temporal
 
 object InteractionRegistry extends LazyLogging {
 
@@ -97,10 +98,10 @@ class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
 trait RemoteInteractionDiscovery extends LazyLogging {
 
   def extractInteractions(client: Client[IO], uri: Uri)
-                         (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[List[InteractionInstance[IO]]] = {
+                         (implicit timer: Temporal[IO]): IO[List[InteractionInstance[IO]]] = {
     val remoteInteractionClient = new RemoteInteractionClient(client, uri)
 
-    def within[A](giveUpAfter: FiniteDuration, retries: Int)(f: IO[A])(implicit timer: Timer[IO]): IO[A] = {
+    def within[A](giveUpAfter: FiniteDuration, retries: Int)(f: IO[A])(implicit timer: Temporal[IO]): IO[A] = {
       def attempt(count: Int, times: FiniteDuration): IO[A] = {
         if (count < 1) f else f.attempt.flatMap {
           case Left(e) =>
