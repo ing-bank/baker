@@ -1,10 +1,10 @@
 package webshop.simple;
 
-import com.ing.baker.recipe.annotations.FiresEvent;
-import com.ing.baker.recipe.annotations.RequiresIngredient;
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder;
-import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.Recipe;
+import webshop.simple.ingredients.Item;
+import webshop.simple.ingredients.PaymentInformation;
+import webshop.simple.ingredients.ShippingAddress;
 
 import java.time.Duration;
 import java.util.List;
@@ -16,54 +16,46 @@ public class JWebshopRecipe {
     public static class OrderPlaced {
 
         public final String orderId;
-        public final List<String> items;
+        public final List<Item> items;
 
-        public OrderPlaced(String orderId, List<String> items) {
+        public OrderPlaced(String orderId, List<Item> items) {
             this.orderId = orderId;
             this.items = items;
         }
     }
 
-    public static class PaymentMade {}
+    public static class PaymentInformationReceived {
+        public final PaymentInformation paymentInformation;
 
-    public interface ReserveItems extends Interaction {
-
-        interface ReserveItemsOutcome {
+        public PaymentInformationReceived(PaymentInformation paymentInformation) {
+            this.paymentInformation = paymentInformation;
         }
+    }
 
-        class OrderHadUnavailableItems implements ReserveItemsOutcome {
+    public static class ShippingAddressReceived {
+        public final ShippingAddress shippingAddress;
 
-            public final List<String> unavailableItems;
-
-            public OrderHadUnavailableItems(List<String> unavailableItems) {
-                this.unavailableItems = unavailableItems;
-            }
+        public ShippingAddressReceived(ShippingAddress shippingAddress) {
+            this.shippingAddress = shippingAddress;
         }
-
-        class ItemsReserved implements ReserveItemsOutcome {
-
-            public final List<String> reservedItems;
-
-            public ItemsReserved(List<String> reservedItems) {
-                this.reservedItems = reservedItems;
-            }
-        }
-
-        @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
-        ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") List<String> items);
     }
 
     public final static Recipe recipe = new Recipe("WebshopRecipe")
         .withSensoryEvents(
             OrderPlaced.class,
-            PaymentMade.class)
+            PaymentInformationReceived.class,
+            ShippingAddressReceived.class
+        )
         .withInteractions(
-            of(ReserveItems.class)
-                .withRequiredEvent(PaymentMade.class))
+            of(MakePayment.class),
+            of(ReserveItems.class),
+            of(ShipItems.class)
+        )
         .withDefaultFailureStrategy(
             new RetryWithIncrementalBackoffBuilder()
                 .withInitialDelay(Duration.ofMillis(100))
                 .withDeadline(Duration.ofHours(24))
                 .withMaxTimeBetweenRetries(Duration.ofMinutes(10))
-                .build());
+                .build()
+        );
 }
