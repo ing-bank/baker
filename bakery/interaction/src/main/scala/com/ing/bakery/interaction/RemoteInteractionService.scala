@@ -29,6 +29,7 @@ object RemoteInteractionService {
                apiLoggingEnabled: Boolean = false,
                interactionPerTypeMetricsEnabled: Boolean = true,
                metricsPort: Int = 9096,
+               metricsEnabled: Boolean = false,
                apiUrlPrefix: String = "/api/bakery/interactions")(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] = {
 
     val idToNameMap = interactions.map(i => URLEncoder.encode(i.shaBase64, "UTF-8").take(8) -> i.name ).toMap
@@ -62,9 +63,9 @@ object RemoteInteractionService {
         case Some((sslConfig, sslParams)) => app.withSslContextAndParameters(sslConfig, sslParams)
         case None => app
       }).resource
-      _ <- MetricService.resource(
-        InetSocketAddress.createUnresolved("0.0.0.0", metricsPort)
-      )(cs, timer, ExecutionContext.global)
+      _ <- if (metricsEnabled)
+        MetricService.resource(InetSocketAddress.createUnresolved("0.0.0.0", metricsPort)
+        )(cs, timer, ExecutionContext.global) else Resource.eval(IO.unit)
 
     } yield server
 
