@@ -6,7 +6,7 @@ import com.ing.baker.runtime.serialization.{InteractionExecution => I}
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance, InteractionInstanceInput}
 import com.ing.baker.types.{CharArray, Int64, PrimitiveValue}
 import com.ing.bakery.testing.BakeryFunSpec
-import org.http4s.Uri
+import org.http4s.{Headers, Uri}
 import org.http4s.blaze.pipeline.Command
 import org.scalatest.ConfigMap
 import org.scalatest.compatible.Assertion
@@ -49,7 +49,7 @@ class RemoteInteractionSpec extends BakeryFunSpec {
       withInteractionInstances = { interaction => runTest =>
         (for {
           server <- RemoteInteractionService.resource(interaction, InetSocketAddress.createUnresolved("127.0.0.1", 0), Some(serviceTLSConfig), apiLoggingEnabled = true)
-          client <- RemoteInteractionClient.resource(Uri.fromString(server.baseUri + "api/bakery/interactions").toOption.get, executionContext, Some(clientTLSConfig))
+          client <- RemoteInteractionClient.resource(Uri.fromString(server.baseUri + "api/bakery/interactions").toOption.get, Headers.empty, executionContext, Some(clientTLSConfig))
         } yield (server, client))
           .use { case (_,c) => {
             runTest(c)
@@ -60,7 +60,7 @@ class RemoteInteractionSpec extends BakeryFunSpec {
         (
           for {
             server <- RemoteInteractionService.resource(interaction, InetSocketAddress.createUnresolved("127.0.0.1", 0), Some(serviceNoTrustTLSConfig), apiLoggingEnabled = true)
-            client <- RemoteInteractionClient.resource(Uri.fromString(server.baseUri + "api/bakery/interactions").toOption.get, executionContext, Some(clientTLSConfig))
+            client <- RemoteInteractionClient.resource(Uri.fromString(server.baseUri + "api/bakery/interactions").toOption.get, Headers.empty, executionContext, Some(clientTLSConfig))
           } yield (server, client))
           .use { case (_,c) =>
             runTest(c)

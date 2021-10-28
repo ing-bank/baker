@@ -3,17 +3,15 @@ package com.ing.bakery.baker
 import akka.actor.ActorSystem
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Resource, Timer}
 import cats.syntax.traverse._
-import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
 import com.ing.baker.runtime.defaultinteractions
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.bakery.interaction.RemoteInteractionClient
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import org.http4s.Uri
+import org.http4s.{Headers, Uri}
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import scalax.collection.ChainingOps
-import skuber.api.client.KubernetesClient
 
 import java.io.IOException
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
@@ -96,9 +94,11 @@ class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
   */
 trait RemoteInteractionDiscovery extends LazyLogging {
 
+  def headers: Headers = Headers.empty
+
   def extractInteractions(client: Client[IO], uri: Uri)
                          (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[List[InteractionInstance[IO]]] = {
-    val remoteInteractionClient = new RemoteInteractionClient(client, uri)
+    val remoteInteractionClient = new RemoteInteractionClient(client, uri, headers)
 
     def within[A](giveUpAfter: FiniteDuration, retries: Int)(f: IO[A])(implicit timer: Timer[IO]): IO[A] = {
       def attempt(count: Int, times: FiniteDuration): IO[A] = {
