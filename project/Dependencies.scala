@@ -29,7 +29,7 @@ object Dependencies {
   val mockitoScala = "org.mockito" %% "mockito-scala" % mockitoScalaVersion
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
   val mockServer = "org.mock-server" % "mockserver-netty" % "5.11.2"
-  val junitInterface = "com.novocode" % "junit-interface" % "0.11"
+  val junitInterface = "com.novocode" % "junit-interface" % "0.13.2"
   val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.8.1"
 
   val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
@@ -72,9 +72,9 @@ object Dependencies {
   val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.2.1"
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
-  val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.12.0"
-  val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.11.2"
-  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.2"
+  val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.12.1"
+  val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.11.3"
+  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.4"
 
   val skuber = "io.skuber" %% "skuber" % "2.6.2"
   val play = "com.typesafe.play" %% "play-json" % "2.9.2"
@@ -106,14 +106,14 @@ object Dependencies {
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.19.0"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.19.1"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
 
   val typeSafeConfig = "com.typesafe" % "config" % "1.4.1"
 
   val objenisis = "org.objenesis" % "objenesis" % "3.2"
-  val jodaTime = "joda-time" % "joda-time" % "2.10.12"
+  val jodaTime = "joda-time" % "joda-time" % "2.10.13"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.32"
   val logback = "ch.qos.logback" % "logback-classic" % "1.2.6"
   val logstash =  "net.logstash.logback" % "logstash-logback-encoder" % "6.4"
