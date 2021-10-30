@@ -103,7 +103,7 @@ class KubernetesInteractions(config: Config,
         remoteInteractions <- extractInteractions(client,
           Uri.unsafeFromString(s"http://${event._object.name}:${port.port}$apiUrlPrefix"))
         d <- discovered
-      } yield d.put(event._object.name, remoteInteractions.interactions)
+      } yield d.put(event._object.name, InteractionBundle(remoteInteractions.startedAt, remoteInteractions.interactions))
 
       case EventType.DELETED => for {
         d <- discovered

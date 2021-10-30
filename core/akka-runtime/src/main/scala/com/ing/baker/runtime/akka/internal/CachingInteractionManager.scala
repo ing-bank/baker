@@ -105,11 +105,12 @@ trait CachingInteractionManager extends InteractionManager[IO] with CachingTrans
   */
 trait DynamicInteractionManager extends CachingInteractionManager {
 
-  type DiscoveredInteractions = ConcurrentHashMap[String, List[InteractionInstance[IO]]]
+  case class InteractionBundle(startedAt: Long, interactions: List[InteractionInstance[IO]])
+  type DiscoveredInteractions = ConcurrentHashMap[String, InteractionBundle]
 
   def listAll: IO[List[InteractionInstance[IO]]] = for {
     d <- discovered
-  } yield d.values().asScala.flatten.toList
+  } yield d.values().asScala.flatMap(_.interactions).toList
 
   private val discoveredInteractions: IO[Ref[IO, DiscoveredInteractions]] =
     Ref.of[IO, DiscoveredInteractions](new DiscoveredInteractions)

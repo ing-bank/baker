@@ -26,7 +26,7 @@ class LocalhostInteractions(config: Config,
       remoteInteractions <- extractInteractions(client, Uri.unsafeFromString(s"http://localhost:$localhostPort$apiUrlPrefix"))
       d <- discovered
         } yield {
-      d.put(port.toString, remoteInteractions.interactions)
+      d.put(port.toString, InteractionBundle(remoteInteractions.startedAt, remoteInteractions.interactions))
       this
     }
   }
