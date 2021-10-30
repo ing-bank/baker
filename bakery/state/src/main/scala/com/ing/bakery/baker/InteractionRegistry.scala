@@ -123,13 +123,10 @@ trait RemoteInteractionDiscovery extends LazyLogging {
 
     within(giveUpAfter = 10 minutes, retries = 40) {
       // check every 15 seconds for interfaces for 10 minutes
-      logger.info(s"Extracting interactions @ ${uri.toString}...")
+      logger.debug(s"Extracting interactions @ ${uri.toString}...")
       remoteInteractionClient.interface.map { response => {
         val interfaces = response.interactions
-        if (interfaces.nonEmpty)
-          logger.info(s"${uri.toString} provides ${interfaces.size} interactions: ${interfaces.map(_.name).mkString(",")}")
-        else
-          logger.warn(s"${uri.toString} provides no interactions")
+        if (interfaces.isEmpty) logger.warn(s"${uri.toString} provides no interactions")
         RemoteInteractions(response.startedAt,
           interfaces.map(interaction => {
             InteractionInstance.build[IO](

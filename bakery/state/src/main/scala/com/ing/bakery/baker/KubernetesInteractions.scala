@@ -57,10 +57,10 @@ class KubernetesInteractions(config: Config,
         randomFactor = 0.2, // adds 20% "noise" to vary the intervals slightly
       )) { () =>
         source.mapError {
-          case e: TcpIdleTimeoutException  => e // expected to happen
+          case e: TcpIdleTimeoutException => e // expected to happen
           case e =>
-          logger.error("Interaction discovery watch stream error: " + e.getMessage, e)
-          e
+            logger.error("Interaction discovery watch stream error: " + e.getMessage, e)
+            e
         }
       }.viaMat(KillSwitches.single)(Keep.right)
     }
@@ -85,6 +85,7 @@ class KubernetesInteractions(config: Config,
           logger.info("Pod selector not specified, watching interaction services not enabled")
           new KillSwitch {
             override def shutdown(): Unit = ()
+
             override def abort(ex: Throwable): Unit = ()
           }
         }
@@ -98,12 +99,15 @@ class KubernetesInteractions(config: Config,
   } yield {
     event._type match {
 
-      case EventType.ADDED | EventType.MODIFIED => for {
-
-        remoteInteractions <- extractInteractions(client,
-          Uri.unsafeFromString(s"http://${event._object.name}:${port.port}$apiUrlPrefix"))
-        d <- discovered
-      } yield d.put(event._object.name, InteractionBundle(remoteInteractions.startedAt, remoteInteractions.interactions))
+      case EventType.ADDED | EventType.MODIFIED =>
+        val url = s"http://${event._object.name}:${port.port}$apiUrlPrefix"
+        for {
+          remoteInteractions <- extractInteractions(client, Uri.unsafeFromString(url))
+          d <- discovered
+        } yield {
+          logger.info(s"${url} provides ${remoteInteractions.interactions.size} interactions: ${remoteInteractions.interactions.map(_.name).mkString(",")}")
+          d.put(event._object.name, InteractionBundle(remoteInteractions.startedAt, remoteInteractions.interactions))
+        }
 
       case EventType.DELETED => for {
         d <- discovered
@@ -113,7 +117,6 @@ class KubernetesInteractions(config: Config,
         IO(logger.error(s"Event type ERROR on service watch for service ${event._object}"))
     }
   }) getOrElse IO.unit
-
 
 
 }

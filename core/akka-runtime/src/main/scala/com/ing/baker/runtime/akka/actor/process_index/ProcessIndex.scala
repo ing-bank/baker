@@ -21,7 +21,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, Proce
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
-import com.ing.baker.runtime.akka.{namedCachedThreadPool, _}
+import com.ing.baker.runtime.akka._
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
