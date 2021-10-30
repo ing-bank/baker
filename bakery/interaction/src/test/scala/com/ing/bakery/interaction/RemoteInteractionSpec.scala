@@ -101,7 +101,7 @@ class RemoteInteractionSpec extends BakeryFunSpec {
       context.withInteractionInstances(List(implementation0, implementation1)) { client =>
         for {
           result <- client.interface
-        } yield assert(result == List(
+        } yield assert(result.interactions == List(
           I.Descriptor(implementation0.shaBase64, implementation0.name, implementation0.input.toList, implementation0.output),
           I.Descriptor(implementation1.shaBase64, implementation1.name, implementation1.input.toList, implementation1.output)
         ))

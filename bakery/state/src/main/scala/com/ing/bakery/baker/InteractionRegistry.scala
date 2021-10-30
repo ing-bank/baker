@@ -89,6 +89,9 @@ class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
   }
 }
 
+case class RemoteInteractions(startedAt: Long,
+                              interactions: List[InteractionInstance[IO]])
+
 /**
   * Method for resilient/retrying discovery of remote interactions
   */
@@ -97,7 +100,7 @@ trait RemoteInteractionDiscovery extends LazyLogging {
   def headers: Headers = Headers.empty
 
   def extractInteractions(client: Client[IO], uri: Uri)
-                         (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[List[InteractionInstance[IO]]] = {
+                         (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[RemoteInteractions] = {
     val remoteInteractionClient = new RemoteInteractionClient(client, uri, headers)
 
     def within[A](giveUpAfter: FiniteDuration, retries: Int)(f: IO[A])(implicit timer: Timer[IO]): IO[A] = {
@@ -121,20 +124,23 @@ trait RemoteInteractionDiscovery extends LazyLogging {
     within(giveUpAfter = 10 minutes, retries = 40) {
       // check every 15 seconds for interfaces for 10 minutes
       logger.info(s"Extracting interactions @ ${uri.toString}...")
-      remoteInteractionClient.interface.map { interfaces =>  {
+      remoteInteractionClient.interface.map { response => {
+        val interfaces = response.interactions
         if (interfaces.nonEmpty)
           logger.info(s"${uri.toString} provides ${interfaces.size} interactions: ${interfaces.map(_.name).mkString(",")}")
         else
           logger.warn(s"${uri.toString} provides no interactions")
-        interfaces.map(interaction => {
-          InteractionInstance.build[IO](
-            _name = interaction.name,
-            _input = interaction.input,
-            _output = interaction.output,
-            _run = input => remoteInteractionClient.runInteraction(interaction.id, input),
-          )
-        })
-      }}
+        RemoteInteractions(response.startedAt,
+          interfaces.map(interaction => {
+            InteractionInstance.build[IO](
+              _name = interaction.name,
+              _input = interaction.input,
+              _output = interaction.output,
+              _run = input => remoteInteractionClient.runInteraction(interaction.id, input),
+            )
+          }))
+      }
+      }
     }
   }
 

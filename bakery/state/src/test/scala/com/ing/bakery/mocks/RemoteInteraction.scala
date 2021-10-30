@@ -22,10 +22,10 @@ class RemoteInteraction(mock: ClientAndServer) {
     ).respond(
       response()
         .withStatusCode(200)
-            .withBody(List(I.Descriptor("localhost", Interactions.ReserveItemsInteraction.name,
+            .withBody(I.Interactions(System.currentTimeMillis, List(I.Descriptor("localhost", Interactions.ReserveItemsInteraction.name,
               Interactions.ReserveItemsInteraction.inputIngredients.map(i => InteractionInstanceInput(Some(i.name), i.ingredientType)).toList,
               Some(Interactions.ReserveItemsInteraction.output.map(e => e.name -> e.providedIngredients.map(i => i.name -> i.ingredientType).toMap).toMap))
-            ).asJson.toString)
+            )).asJson.toString)
     )
   }
 
@@ -36,10 +36,10 @@ class RemoteInteraction(mock: ClientAndServer) {
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody(List(I.Descriptor("localhost", Interactions.CancelReserveItemsInteraction.name,
+        .withBody(I.Interactions(System.currentTimeMillis, List(I.Descriptor("localhost", Interactions.CancelReserveItemsInteraction.name,
           Interactions.CancelReserveItemsInteraction.inputIngredients.map(i => InteractionInstanceInput(Some(i.name), i.ingredientType)).toList,
           Some(Interactions.CancelReserveItemsInteraction.output.map(e => e.name -> e.providedIngredients.map(i => i.name -> i.ingredientType).toMap).toMap))
-        ).asJson.toString)
+        )).asJson.toString)
     )
   }
 

@@ -23,10 +23,10 @@ class LocalhostInteractions(config: Config,
 
   override def resource: Resource[IO, DynamicInteractionManager] = Resource.eval {
     for {
-          interactions <- extractInteractions(client, Uri.unsafeFromString(s"http://localhost:$localhostPort$apiUrlPrefix"))
-          d <- discovered
+      remoteInteractions <- extractInteractions(client, Uri.unsafeFromString(s"http://localhost:$localhostPort$apiUrlPrefix"))
+      d <- discovered
         } yield {
-      d.put(port.toString, interactions)
+      d.put(port.toString, remoteInteractions.interactions)
       this
     }
   }

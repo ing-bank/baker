@@ -3,6 +3,7 @@ package com.ing.bakery.interaction
 import java.net.{InetSocketAddress, URLEncoder}
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.runtime.scaladsl.{IngredientInstance, InteractionInstance}
+import com.ing.baker.runtime.serialization.InteractionExecution.Interactions
 import com.ing.baker.runtime.serialization.{InteractionExecution => I}
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.scalalogging.LazyLogging
@@ -77,17 +78,19 @@ final class RemoteInteractionService(interactions: List[InteractionInstance])(im
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
   import com.ing.baker.runtime.serialization.JsonCodec._
 
-  implicit val interactionEntityEncoder: EntityEncoder[IO, List[I.Descriptor]] = jsonEncoderOf[IO,  List[I.Descriptor]]
+  implicit val interactionEntityEncoder: EntityEncoder[IO, Interactions] = jsonEncoderOf[IO, Interactions]
   implicit val executeRequestEntityDecoder: EntityDecoder[IO, List[IngredientInstance]] = jsonOf[IO, List[IngredientInstance]]
   implicit val executeResponseEntityEncoder: EntityEncoder[IO, I.ExecutionResult] = jsonEncoderOf[IO, I.ExecutionResult]
 
-  private val Interactions: List[I.Descriptor] =
+  private val CurrentInteractions: Interactions =
+    Interactions(System.currentTimeMillis,
     interactions.map(interaction =>
       I.Descriptor(interaction.shaBase64, interaction.name, interaction.input, interaction.output))
+    )
 
   def routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
 
-    case GET -> Root => Ok(Interactions)
+    case GET -> Root => Ok(CurrentInteractions)
 
     case req@POST -> Root / id / "execute" =>
       for {

@@ -35,13 +35,13 @@ final class RemoteInteractionClient(client: Client[IO], uri: Uri, headers: Heade
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
   import com.ing.baker.runtime.serialization.JsonCodec._
 
-  implicit val interactionEntityDecoder: EntityDecoder[IO, List[Descriptor]] = jsonOf[IO, List[Descriptor]]
+  implicit val interactionEntityDecoder: EntityDecoder[IO, Interactions] = jsonOf[IO, Interactions]
 
   implicit val executeRequestEntityEncoder: EntityEncoder[IO, List[IngredientInstance]] = jsonEncoderOf[IO, List[IngredientInstance]]
   implicit val executeResponseEntityDecoder: EntityDecoder[IO, ExecutionResult] = jsonOf[IO, ExecutionResult]
 
-  def interface: IO[List[InteractionExecution.Descriptor]] =
-    client.expect[List[InteractionExecution.Descriptor]](
+  def interface: IO[Interactions] =
+    client.expect[Interactions](
       Request[IO](
         method = GET,
         uri = uri,
