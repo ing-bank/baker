@@ -32,6 +32,5 @@ public interface ReserveItems extends Interaction {
     }
 
     @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
-    ReserveItemsOutcome apply(@RequiresIngredient("orderId") String orderId,
-                              @RequiresIngredient("items") List<Item> items);
+    ReserveItemsOutcome apply(@RequiresIngredient("items") List<Item> items);
 }

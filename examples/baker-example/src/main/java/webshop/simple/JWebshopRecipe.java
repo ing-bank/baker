@@ -10,52 +10,54 @@ import java.time.Duration;
 import java.util.List;
 
 import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
+import static webshop.simple.MakePayment.*;
 
 public class JWebshopRecipe {
 
     public static class OrderPlaced {
 
-        public final String orderId;
         public final List<Item> items;
 
-        public OrderPlaced(String orderId, List<Item> items) {
-            this.orderId = orderId;
+        public OrderPlaced(List<Item> items) {
             this.items = items;
         }
     }
 
     public static class PaymentInformationReceived {
-        public final PaymentInformation paymentInformation;
+        private final PaymentInformation paymentInformation;
 
         public PaymentInformationReceived(PaymentInformation paymentInformation) {
             this.paymentInformation = paymentInformation;
         }
+
+        public PaymentInformation getPaymentInformation() {
+            return paymentInformation;
+        }
     }
 
     public static class ShippingAddressReceived {
-        public final ShippingAddress shippingAddress;
+        private final ShippingAddress shippingAddress;
 
         public ShippingAddressReceived(ShippingAddress shippingAddress) {
             this.shippingAddress = shippingAddress;
         }
+
+        public ShippingAddress getShippingAddress() {
+            return shippingAddress;
+        }
     }
 
-    public final static Recipe recipe = new Recipe("WebshopRecipe")
-        .withSensoryEvents(
-            OrderPlaced.class,
-            PaymentInformationReceived.class,
-            ShippingAddressReceived.class
-        )
+    public final static Recipe recipe =
+    new Recipe("WebshopRecipe")
         .withInteractions(
             of(MakePayment.class),
             of(ReserveItems.class),
             of(ShipItems.class)
+                .withRequiredEvent(PaymentSuccessful.class)
         )
-        .withDefaultFailureStrategy(
-            new RetryWithIncrementalBackoffBuilder()
-                .withInitialDelay(Duration.ofMillis(100))
-                .withDeadline(Duration.ofHours(24))
-                .withMaxTimeBetweenRetries(Duration.ofMinutes(10))
-                .build()
+        .withSensoryEvents(
+            OrderPlaced.class,
+            PaymentInformationReceived.class,
+            ShippingAddressReceived.class
         );
 }

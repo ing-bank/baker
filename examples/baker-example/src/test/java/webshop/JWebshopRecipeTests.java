@@ -1,12 +1,17 @@
 package webshop;
 
+import akka.actor.ActorSystem;
 import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
+import com.ing.baker.runtime.akka.AkkaBaker;
 import com.ing.baker.runtime.inmemory.InMemoryBaker;
 import com.ing.baker.runtime.javadsl.Baker;
 import com.ing.baker.runtime.javadsl.EventInstance;
 import com.ing.baker.runtime.javadsl.EventMoment;
+import com.ing.baker.runtime.javadsl.RecipeInstanceState;
+import com.ing.baker.types.Value;
+import com.typesafe.config.ConfigFactory;
 import org.junit.Test;
 import scala.Console;
 import webshop.simple.*;
@@ -17,6 +22,7 @@ import webshop.simple.ingredients.ShippingAddress;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -45,18 +51,23 @@ public class JWebshopRecipeTests {
         // Compile the recipe
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
-        // Setup the Baker
-        Baker baker = InMemoryBaker.java(ImmutableList.of(
+        List<Object> implementations = ImmutableList.of(
                 new MakePaymentInstance(),
                 new ReserveItemsInstance(),
-                new ShipItemsInstance()));
+                new ShipItemsInstance());
+
+        // Setup the Baker
+        Baker baker = AkkaBaker.java(
+                ConfigFactory.load(),
+                ActorSystem.apply("BakerActorSystem"),
+                implementations);
 
         // Create the sensory events
         List<Item> items = new ArrayList<>(2);
         items.add(new Item("item1"));
         items.add(new Item("item2"));
 
-        EventInstance firstOrderPlaced = EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
+        EventInstance firstOrderPlaced = EventInstance.from(new JWebshopRecipe.OrderPlaced(items));
         EventInstance paymentInformationReceived = EventInstance.from(new JWebshopRecipe.PaymentInformationReceived(new PaymentInformation("Information")));
         EventInstance shippingInformationReceived = EventInstance.from(new JWebshopRecipe.ShippingAddressReceived(new ShippingAddress("Address")));
 
@@ -102,11 +113,11 @@ public class JWebshopRecipeTests {
         items.add(new Item("item1"));
         items.add(new Item("item2"));
 
-        EventInstance firstOrderPlaced = EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
+        EventInstance firstOrderPlaced = EventInstance.from(new JWebshopRecipe.OrderPlaced(items));
         EventInstance paymentInformationReceived = EventInstance.from(new JWebshopRecipe.PaymentInformationReceived(new PaymentInformation("Information")));
         EventInstance shippingInformationReceived = EventInstance.from(new JWebshopRecipe.ShippingAddressReceived(new ShippingAddress("Address")));
 
-        when(reserveItemsMock.apply(anyString(), anyObject())).thenReturn(
+        when(reserveItemsMock.apply(anyObject())).thenReturn(
                 new ReserveItems.ItemsReserved(new ReservedItems(items, new byte[20])));
 
         // Run the complete process

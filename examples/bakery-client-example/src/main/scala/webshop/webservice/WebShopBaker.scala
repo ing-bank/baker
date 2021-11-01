@@ -2,13 +2,12 @@ package webshop.webservice
 
 import java.util.UUID
 
-import cats.effect.{ContextShift, IO, Timer}
-import cats.implicits._
+import cats.effect.{ContextShift, IO}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
 import com.typesafe.scalalogging.LazyLogging
-import webshop.webservice.CheckoutFlowIngredients.{Item, OrderId, PaymentInformation, ShippingAddress}
+import webshop.webservice.CheckoutFlowIngredients.{Item, PaymentInformation, ShippingAddress}
 
 object WebShopBaker {
 
@@ -24,7 +23,7 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit cs: ContextS
   override def createCheckoutOrder(items: List[String]): IO[String] = {
     val orderId: String = UUID.randomUUID().toString
     val event = EventInstance.unsafeFrom(
-      CheckoutFlowEvents.OrderPlaced(OrderId(orderId), items.map(Item)))
+      CheckoutFlowEvents.OrderPlaced(items.map(Item)))
     for {
       _ <- IO.fromFuture(IO(baker.bake(checkoutRecipeId, orderId)))
       status <- IO.fromFuture(IO(baker.fireEventAndResolveWhenReceived(orderId, event)))

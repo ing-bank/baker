@@ -9,7 +9,7 @@ import java.util.Random;
 public class ReserveItemsInstance implements ReserveItems {
 
     @Override
-    public ReserveItems.ReserveItemsOutcome apply(String id, List<Item> items) {
+    public ReserveItems.ReserveItemsOutcome apply(List<Item> items) {
         byte[] b = new byte[20];
         new Random().nextBytes(b);
         return new ReserveItems.ItemsReserved(new ReservedItems(items, b));
