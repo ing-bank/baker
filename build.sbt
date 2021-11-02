@@ -581,3 +581,18 @@ lazy val `sbt-bakery-docker-generate` = project.in(file("docker/sbt-bakery-docke
   .enablePlugins(SbtPlugin)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .dependsOn(`bakery-interaction`, `bakery-interaction-spring`)
+
+lazy val `baker-test` = project.in(file("core/baker-test"))
+  .settings(defaultModuleSettings)
+  .settings(scalaPBSettings)
+  .settings(
+    moduleName := "baker-test",
+    libraryDependencies ++= compileDeps(
+      slf4jApi
+    ) ++ testDeps(scalaTest, logback,
+      "io.altoo" %% "akka-kryo-serialization" % "1.1.5",
+      "junit" % "junit" % "4.13",
+      "org.scalatestplus" %% "junit-4-13" % "3.2.9.0"
+    )
+  ).dependsOn(`baker-interface`, testScope(`baker-akka-runtime`), testScope(`baker-recipe-compiler`))
+
