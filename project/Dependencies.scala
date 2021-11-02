@@ -6,7 +6,7 @@ object Dependencies {
   val akkaVersion = "2.6.16"
   val akkaManagementVersion = "1.1.1"
   val akkaPersistenceCassandraVersion = "1.0.5"
-  val akkaHttpVersion = "10.2.6"
+  val akkaHttpVersion = "10.2.7"
   val http4sVersion = "0.21.31"
   val fs2Version = "2.5.10"
   val circeVersion = "0.14.0"
