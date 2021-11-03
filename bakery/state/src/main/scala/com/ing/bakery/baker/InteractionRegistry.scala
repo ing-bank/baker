@@ -3,7 +3,6 @@ package com.ing.bakery.baker
 import akka.actor.ActorSystem
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Resource, Timer}
 import cats.syntax.traverse._
-import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
 import com.ing.baker.runtime.defaultinteractions
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.bakery.interaction.RemoteInteractionClient
@@ -13,18 +12,14 @@ import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import scalax.collection.ChainingOps
-import skuber.api.client.KubernetesClient
 
 import java.io.IOException
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
-import scala.util.Try
 
 object InteractionRegistry extends LazyLogging {
 
   def resource(config: Config, actorSystem: ActorSystem): Resource[IO, InteractionRegistry] =
-    (Try {
-      config.getString("baker.interactions.class")
-    } toOption)
+    readInteractionClassName(config)
       .map(Class.forName)
       .getOrElse(classOf[BaseInteractionRegistry])
       .tap(c => logger.info(s"Interaction registry: ${c.getName}"))
@@ -32,6 +27,10 @@ object InteractionRegistry extends LazyLogging {
       .newInstance(config, actorSystem)
       .asInstanceOf[InteractionRegistry]
       .resource
+
+  private def readInteractionClassName(config: Config): Option[String] = {
+    Some(config.getString("baker.interactions.class")).filterNot(_.isEmpty)
+  }
 }
 
 
@@ -121,7 +120,7 @@ trait RemoteInteractionDiscovery extends LazyLogging {
     within(giveUpAfter = 10 minutes, retries = 40) {
       // check every 15 seconds for interfaces for 10 minutes
       logger.info(s"Extracting interactions @ ${uri.toString}...")
-      remoteInteractionClient.interface.map { interfaces =>  {
+      remoteInteractionClient.interface.map { interfaces => {
         if (interfaces.nonEmpty)
           logger.info(s"${uri.toString} provides ${interfaces.size} interactions: ${interfaces.map(_.name).mkString(",")}")
         else
@@ -134,7 +133,8 @@ trait RemoteInteractionDiscovery extends LazyLogging {
             _run = input => remoteInteractionClient.runInteraction(interaction.id, input),
           )
         })
-      }}
+      }
+      }
     }
   }
 
