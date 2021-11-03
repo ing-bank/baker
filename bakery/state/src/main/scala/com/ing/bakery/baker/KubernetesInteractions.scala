@@ -104,14 +104,19 @@ class KubernetesInteractions(config: Config,
         for {
           remoteInteractions <- extractInteractions(client, Uri.unsafeFromString(url))
           d <- discovered
+          _ <- clearTransitionCache()
         } yield {
-          logger.info(s"${url} provides ${remoteInteractions.interactions.size} interactions: ${remoteInteractions.interactions.map(_.name).mkString(",")}")
+          logger.info(s"${url} (${event._object.name}) provides ${remoteInteractions.interactions.size} interactions: ${remoteInteractions.interactions.map(_.name).mkString(",")}")
           d.put(event._object.name, InteractionBundle(remoteInteractions.startedAt, remoteInteractions.interactions))
         }
 
       case EventType.DELETED => for {
         d <- discovered
-      } yield d.remove(event._object.name)
+        _ <- clearTransitionCache()
+      } yield {
+        logger.info(s"${event._object.name} interaction service was removed")
+        d.remove(event._object.name)
+      }
 
       case EventType.ERROR =>
         IO(logger.error(s"Event type ERROR on service watch for service ${event._object}"))

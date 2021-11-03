@@ -85,10 +85,19 @@ trait CachingTransitionLookups {
   protected def findCompatible(instances: List[model.InteractionInstance[IO]], interaction: InteractionTransition): model.InteractionInstance[IO] =
     instances.find(implementation => compatible(interaction, implementation)).orNull
 
+  protected def transitionCache: IO[TransitionStorage] = for {
+    cacheRef <- transitionToInteractionCache
+    cache <- cacheRef.get
+  } yield cache
+
+  protected def clearTransitionCache(): IO[Unit] = for {
+    cache <- transitionCache
+    _ = cache.clear()
+  } yield ()
+
   override def findFor(transition: InteractionTransition)(implicit sync: Sync[IO]): IO[Option[model.InteractionInstance[IO]]] =
     for {
-      cacheRef <- transitionToInteractionCache
-      cache <- cacheRef.get
+      cache <- transitionCache
       instances <- self.listAll
     } yield Option(cache.computeIfAbsent(transition, (findCompatible(instances, _)).asJava))
 }
