@@ -35,8 +35,8 @@ object AkkaBaker {
     new AkkaBaker(AkkaBakerConfig.from(config, actorSystem, interactions))
 
   def withConfig(config: AkkaBakerConfig): AkkaBaker =
-    new AkkaBaker(config)
 
+    new AkkaBaker(config)
   def localDefault(actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
     new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem, interactions))
 
