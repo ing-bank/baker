@@ -83,4 +83,5 @@ object JsonEncoders {
   implicit val interactionInstanceDescriptorEncoder: Encoder[InteractionInstanceDescriptor] = deriveEncoder[InteractionInstanceDescriptor]
   implicit val optionalInteractionInstanceDescriptorEncoder: Encoder[Option[InteractionInstanceDescriptor]] = Encoder.encodeOption(interactionInstanceDescriptorEncoder)
 
+  implicit val recipeEnoder: Encoder[EncodedRecipe] = deriveEncoder[EncodedRecipe]
 }

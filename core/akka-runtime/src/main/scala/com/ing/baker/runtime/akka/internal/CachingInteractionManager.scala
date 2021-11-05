@@ -3,6 +3,7 @@ package com.ing.baker.runtime.akka.internal
 import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Sync}
 import com.ing.baker.il.petrinet.InteractionTransition
+import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.baker.runtime.{defaultinteractions, model, scaladsl}
 

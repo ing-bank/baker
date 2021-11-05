@@ -3,7 +3,7 @@ package com.ing.bakery.scaladsl
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.il.RecipeVisualStyle
 import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus, Utils}
-import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, EventResolutions, InteractionInstanceDescriptor, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
+import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EncodedRecipe, EventInstance, EventMoment, EventResolutions, InteractionInstanceDescriptor, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.types.Value
@@ -92,11 +92,14 @@ final class BakerClient( client: Client[IO],
                        (implicit ec: ExecutionContext) extends ScalaBaker with LazyLogging {
 
   implicit val eventInstanceResultEntityEncoder: EntityEncoder[IO, EventInstance] = jsonEncoderOf[IO, EventInstance]
+  implicit val recipeEncoder: EntityEncoder[IO, EncodedRecipe] = jsonEncoderOf[IO, EncodedRecipe]
 
   override def addRecipe(recipe: RecipeRecord): Future[String] =
     callRemoteBakerService[String]((host, prefix) => POST(
-      new String(java.util.Base64.getEncoder.encode(Utils.recipeToByteArray(recipe.recipe)), "UTF-8")
-      , root(host, prefix) / "app" / "recipes")).map { r =>
+      EncodedRecipe(
+        base64 = new String(java.util.Base64.getEncoder.encode(Utils.recipeToByteArray(recipe.recipe)), "UTF-8"),
+        createdAt = recipe.updated),
+      root(host, prefix) / "app" / "recipes")).map { r =>
       logger.info(s"Result of adding a recipe: $r")
       r
     }

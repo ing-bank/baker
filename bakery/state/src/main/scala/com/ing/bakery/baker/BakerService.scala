@@ -5,7 +5,7 @@ import cats.effect.{Blocker, ContextShift, IO, Resource, Sync, Timer}
 import cats.implicits._
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
-import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EventInstance}
+import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance}
 import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 import com.typesafe.scalalogging.LazyLogging
@@ -101,6 +101,8 @@ final class BakerService private(baker: Baker)(implicit cs: ContextShift[IO], ti
 
   private object InteractionName extends RegExpValidator("[A-Za-z0-9_]+")
 
+  implicit val recipeDecoder: EntityDecoder[IO, EncodedRecipe] = jsonOf[IO, EncodedRecipe]
+
   implicit val eventInstanceDecoder: EntityDecoder[IO, EventInstance] = jsonOf[IO, EventInstance]
   implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
   implicit val interactionEntityEncoder: EntityEncoder[IO, InteractionExecution.Descriptor] = jsonEncoderOf[IO, InteractionExecution.Descriptor]
@@ -129,8 +131,8 @@ final class BakerService private(baker: Baker)(implicit cs: ContextShift[IO], ti
 
       case req@POST -> Root / "recipes" =>
         for {
-          encodedRecipe <- req.as[String]
-          recipe <- RecipeLoader.fromBytes(encodedRecipe.getBytes(Charset.forName("UTF-8")))
+          encodedRecipe <- req.as[EncodedRecipe]
+          recipe <- RecipeLoader.fromBytes(encodedRecipe.base64.getBytes(Charset.forName("UTF-8")))
           result <- callBaker(baker.addRecipe(recipe, validate = true))
         } yield result
 
