@@ -4,10 +4,10 @@ import java.net.{InetSocketAddress, URLEncoder}
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.runtime.scaladsl.{IngredientInstance, InteractionInstance}
 import com.ing.baker.runtime.serialization.InteractionExecution.Interactions
+import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs.interactionsCodec
 import com.ing.baker.runtime.serialization.{InteractionExecution => I}
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Json
 import io.circe.syntax._
 import io.prometheus.client.CollectorRegistry
 import org.http4s._
@@ -18,9 +18,15 @@ import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.server.blaze._
 import org.http4s.server.{Router, Server}
 import org.http4s.server.middleware.{Logger, Metrics}
+import io.circe.parser._
 
 import java.lang.reflect.InvocationTargetException
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
+import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
+import com.ing.baker.runtime.serialization.JsonCodec._
+import com.ing.baker.runtime.serialization.JsonEncoders._
+import com.ing.baker.runtime.serialization.JsonDecoders._
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 object RemoteInteractionService {
 
@@ -33,7 +39,7 @@ object RemoteInteractionService {
                metricsEnabled: Boolean = false,
                apiUrlPrefix: String = "/api/bakery/interactions")(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] = {
 
-    val idToNameMap = interactions.map(i => URLEncoder.encode(i.shaBase64, "UTF-8").take(8) -> i.name ).toMap
+    val idToNameMap = interactions.map(i => URLEncoder.encode(i.shaBase64, "UTF-8").take(8) -> i.name).toMap
 
     val tls = tlsConfig.map { tlsConfig =>
       val sslConfig = BakeryHttp.loadSSLContext(tlsConfig)
@@ -44,7 +50,7 @@ object RemoteInteractionService {
     val service = new RemoteInteractionService(interactions)
 
     def interactionRequestClassifier(request: Request[IO]): Option[String] = if (interactionPerTypeMetricsEnabled) {
-      val p = request.pathInfo.split('/')       // ... /interactions/<id>/execute - we take ID part we care most about
+      val p = request.pathInfo.split('/') // ... /interactions/<id>/execute - we take ID part we care most about
       (if (p.length == 4) Some(p(2)) else None).map(v => idToNameMap.getOrElse(v.take(8), "unknown"))
     } else None
 
@@ -56,7 +62,7 @@ object RemoteInteractionService {
           Logger.httpApp(
             logHeaders = apiLoggingEnabled,
             logBody = apiLoggingEnabled,
-            logAction = if (apiLoggingEnabled) Some( (x: String) => IO(println(x))) else None
+            logAction = if (apiLoggingEnabled) Some((x: String) => IO(println(x))) else None
           )(Router(apiUrlPrefix -> Metrics[IO](metrics,
             classifierF = interactionRequestClassifier)(service.routes)) orNotFound)
         )
@@ -73,20 +79,60 @@ object RemoteInteractionService {
   }
 }
 
-final class RemoteInteractionService(interactions: List[InteractionInstance])(implicit timer: Timer[IO], cs: ContextShift[IO]) extends LazyLogging {
+class InteractionExecutor(interactions: List[InteractionInstance])(implicit timer: Timer[IO], cs: ContextShift[IO])
+  extends LazyLogging {
 
-  import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
-  import com.ing.baker.runtime.serialization.JsonCodec._
+  protected val CurrentInteractions: Interactions =
+    Interactions(System.currentTimeMillis,
+      interactions.map(interaction =>
+        I.Descriptor(interaction.shaBase64, interaction.name, interaction.input, interaction.output))
+    )
+
+  private def executionFailure(interactionName: String, message: String): IO[I.ExecutionResult] = IO(I.ExecutionResult(
+    Left(I.Failure(I.InteractionError(
+      interactionName = interactionName,
+      message = Option(message).getOrElse("NullPointerException"))
+    ))))
+
+  def currentInteractionsAsString: String = interactionsCodec(CurrentInteractions).noSpaces
+
+  def executeInteractionAsString(id: String, ingredientsJson: String)(implicit ec: ExecutionContext): Future[String] = ((for {
+    json <- parse(ingredientsJson)
+    ingredients <- json.as[List[IngredientInstance]]
+  } yield {
+    execute(id, ingredients)
+  }) match {
+    case Right(result) => result
+    case Left(error) => executionFailure(id, error.getMessage)
+  }).map(executionResultEncoder.apply)
+    .map(_.noSpaces)
+    .unsafeToFuture()
+
+  protected def execute(id: String, request: List[IngredientInstance]): IO[I.ExecutionResult] = {
+    interactions.find(_.shaBase64 == id) match {
+      case Some(interaction) =>
+        IO.fromFuture(IO(interaction.run(request))).attempt.flatMap {
+          case Right(value) => IO(I.ExecutionResult(Right(I.Success(value))))
+          case Left(e) =>
+            val rootCause = e match {
+              case _: InvocationTargetException if Option(e.getCause).isDefined => e.getCause
+              case _ => e
+            }
+            logger.error(s"Interaction ${interaction.name} failed with an exception: ${rootCause.getMessage}", rootCause)
+            executionFailure(interaction.name, rootCause.getMessage)
+        }
+      case None => IO(I.ExecutionResult(Left(I.Failure(I.NoInstanceFound))))
+    }
+  }
+}
+
+final class RemoteInteractionService(interactions: List[InteractionInstance])(implicit timer: Timer[IO], cs: ContextShift[IO])
+  extends InteractionExecutor(interactions)(timer, cs) {
+
 
   implicit val interactionEntityEncoder: EntityEncoder[IO, Interactions] = jsonEncoderOf[IO, Interactions]
   implicit val executeRequestEntityDecoder: EntityDecoder[IO, List[IngredientInstance]] = jsonOf[IO, List[IngredientInstance]]
   implicit val executeResponseEntityEncoder: EntityEncoder[IO, I.ExecutionResult] = jsonEncoderOf[IO, I.ExecutionResult]
-
-  private val CurrentInteractions: Interactions =
-    Interactions(System.currentTimeMillis,
-    interactions.map(interaction =>
-      I.Descriptor(interaction.shaBase64, interaction.name, interaction.input, interaction.output))
-    )
 
   def routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
 
@@ -94,27 +140,11 @@ final class RemoteInteractionService(interactions: List[InteractionInstance])(im
 
     case req@POST -> Root / id / "execute" =>
       for {
-        request <- req.as[List[IngredientInstance]]
-        response <- interactions.find(_.shaBase64 == id) match {
-          case Some(interaction) =>
-            IO.fromFuture(IO(interaction.run(request))).attempt.flatMap {
-              case Right(value) =>
-                Ok(I.ExecutionResult(Right(I.Success(value))))
-              case Left(e) =>
-                val rootCause = e match {
-                  case _: InvocationTargetException if Option(e.getCause).isDefined => e.getCause
-                  case _ => e
-                }
-                logger.error(s"Interaction ${interaction.name} failed with an exception: ${rootCause.getMessage}", rootCause)
-                Ok(I.ExecutionResult(
-                  Left(I.Failure(I.InteractionError(
-                    interactionName = interaction.name,
-                    message = Option(rootCause.getMessage).getOrElse("NullPointerException"))
-                  ))))
-            }
-          case None =>
-            Ok(I.ExecutionResult(Left(I.Failure(I.NoInstanceFound))))
-        }
+        string <- req.as[String]
+        ingredients <- req.as[List[IngredientInstance]]
+        result <- execute(id, ingredients)
+        response <- Ok(result)
       } yield response
   }
+
 }
