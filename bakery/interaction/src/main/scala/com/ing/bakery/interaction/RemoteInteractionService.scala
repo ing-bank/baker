@@ -28,6 +28,8 @@ import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
+import scala.collection.JavaConverters
+
 object RemoteInteractionService {
 
   def resource(interactions: List[InteractionInstance],
@@ -37,7 +39,7 @@ object RemoteInteractionService {
                interactionPerTypeMetricsEnabled: Boolean = true,
                metricsPort: Int = 9096,
                metricsEnabled: Boolean = false,
-               apiUrlPrefix: String = "/api/bakery/interactions")(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] = {
+               apiUrlPrefix: String = "/api/bakery/interactions")(implicit timer: Timer[IO], cs: ContextShift[IO], executionContext: ExecutionContext): Resource[IO, Server[IO]] = {
 
     val idToNameMap = interactions.map(i => URLEncoder.encode(i.shaBase64, "UTF-8").take(8) -> i.name).toMap
 
@@ -79,8 +81,12 @@ object RemoteInteractionService {
   }
 }
 
-class InteractionExecutor(interactions: List[InteractionInstance])(implicit timer: Timer[IO], cs: ContextShift[IO])
-  extends LazyLogging {
+abstract class InteractionExecutor extends LazyLogging {
+
+  def interactions: List[InteractionInstance]
+  def executionContext: ExecutionContext
+  implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
+  implicit val timer: Timer[IO] = IO.timer(executionContext)
 
   protected val CurrentInteractions: Interactions =
     Interactions(System.currentTimeMillis,
@@ -88,25 +94,12 @@ class InteractionExecutor(interactions: List[InteractionInstance])(implicit time
         I.Descriptor(interaction.shaBase64, interaction.name, interaction.input, interaction.output))
     )
 
-  private def executionFailure(interactionName: String, message: String): IO[I.ExecutionResult] = IO(I.ExecutionResult(
+  protected def executionFailure(interactionName: String, message: String): IO[I.ExecutionResult] = IO(I.ExecutionResult(
     Left(I.Failure(I.InteractionError(
       interactionName = interactionName,
       message = Option(message).getOrElse("NullPointerException"))
     ))))
 
-  def currentInteractionsAsString: String = interactionsCodec(CurrentInteractions).noSpaces
-
-  def executeInteractionAsString(id: String, ingredientsJson: String)(implicit ec: ExecutionContext): Future[String] = ((for {
-    json <- parse(ingredientsJson)
-    ingredients <- json.as[List[IngredientInstance]]
-  } yield {
-    execute(id, ingredients)
-  }) match {
-    case Right(result) => result
-    case Left(error) => executionFailure(id, error.getMessage)
-  }).map(executionResultEncoder.apply)
-    .map(_.noSpaces)
-    .unsafeToFuture()
 
   protected def execute(id: String, request: List[IngredientInstance]): IO[I.ExecutionResult] = {
     interactions.find(_.shaBase64 == id) match {
@@ -126,9 +119,29 @@ class InteractionExecutor(interactions: List[InteractionInstance])(implicit time
   }
 }
 
-final class RemoteInteractionService(interactions: List[InteractionInstance])(implicit timer: Timer[IO], cs: ContextShift[IO])
-  extends InteractionExecutor(interactions)(timer, cs) {
+class InteractionExecutorJava(implementations: java.util.List[InteractionInstance],
+                              val executionContext: ExecutionContext)
+  extends InteractionExecutor {
 
+  val interactions = JavaConverters.collectionAsScalaIterable(implementations).toList
+
+  def list: String = interactionsCodec(CurrentInteractions).noSpaces
+
+  def run(id: String, ingredientsJson: String): Future[String] = ((for {
+    json <- parse(ingredientsJson)
+    ingredients <- json.as[List[IngredientInstance]]
+  } yield {
+    execute(id, ingredients)
+  }) match {
+    case Right(result) => result
+    case Left(error) => executionFailure(id, error.getMessage)
+  }).map(executionResultEncoder.apply)
+    .map(_.noSpaces)
+    .unsafeToFuture()
+}
+
+final class RemoteInteractionService(val interactions: List[InteractionInstance])(implicit val executionContext: ExecutionContext)
+  extends InteractionExecutor {
 
   implicit val interactionEntityEncoder: EntityEncoder[IO, Interactions] = jsonEncoderOf[IO, Interactions]
   implicit val executeRequestEntityDecoder: EntityDecoder[IO, List[IngredientInstance]] = jsonOf[IO, List[IngredientInstance]]
@@ -140,7 +153,6 @@ final class RemoteInteractionService(interactions: List[InteractionInstance])(im
 
     case req@POST -> Root / id / "execute" =>
       for {
-        string <- req.as[String]
         ingredients <- req.as[List[IngredientInstance]]
         result <- execute(id, ingredients)
         response <- Ok(result)
