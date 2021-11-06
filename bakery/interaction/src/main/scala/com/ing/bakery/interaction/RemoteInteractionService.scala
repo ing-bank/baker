@@ -124,8 +124,8 @@ abstract class InteractionExecutor extends LazyLogging {
 class InteractionExecutorJava(implementations: java.util.List[InteractionInstance],
                               val executionContext: ExecutionContext)
   extends InteractionExecutor {
-
-  val interactions = JavaConverters.collectionAsScalaIterable(implementations).toList
+  private lazy val javaInteractions = JavaConverters.collectionAsScalaIterable(implementations).toList
+  def interactions: List[InteractionInstance] = javaInteractions
 
   def list: String = interactionsCodec(CurrentInteractions).noSpaces
 
