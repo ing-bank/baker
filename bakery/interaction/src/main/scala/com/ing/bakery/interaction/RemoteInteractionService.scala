@@ -28,7 +28,9 @@ import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
+import java.util.concurrent.CompletableFuture
 import scala.collection.JavaConverters
+import scala.compat.java8.FutureConverters._
 
 object RemoteInteractionService {
 
@@ -127,7 +129,7 @@ class InteractionExecutorJava(implementations: java.util.List[InteractionInstanc
 
   def list: String = interactionsCodec(CurrentInteractions).noSpaces
 
-  def run(id: String, ingredientsJson: String): Future[String] = ((for {
+  def run(id: String, ingredientsJson: String): CompletableFuture[String] = ((for {
     json <- parse(ingredientsJson)
     ingredients <- json.as[List[IngredientInstance]]
   } yield {
@@ -137,7 +139,7 @@ class InteractionExecutorJava(implementations: java.util.List[InteractionInstanc
     case Left(error) => executionFailure(id, error.getMessage)
   }).map(executionResultEncoder.apply)
     .map(_.noSpaces)
-    .unsafeToFuture()
+    .unsafeToFuture().toJava.toCompletableFuture
 }
 
 final class RemoteInteractionService(val interactions: List[InteractionInstance])(implicit val executionContext: ExecutionContext)
