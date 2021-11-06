@@ -15,14 +15,11 @@ import scalax.collection.ChainingOps
 
 import java.io.IOException
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
-import scala.util.Try
 
 object InteractionRegistry extends LazyLogging {
 
   def resource(config: Config, actorSystem: ActorSystem): Resource[IO, InteractionRegistry] =
-    (Try {
-      config.getString("baker.interactions.class")
-    } toOption)
+    readInteractionClassName(config)
       .map(Class.forName)
       .getOrElse(classOf[BaseInteractionRegistry])
       .tap(c => logger.info(s"Interaction registry: ${c.getName}"))
@@ -30,6 +27,10 @@ object InteractionRegistry extends LazyLogging {
       .newInstance(config, actorSystem)
       .asInstanceOf[InteractionRegistry]
       .resource
+
+  private def readInteractionClassName(config: Config): Option[String] = {
+    Some(config.getString("baker.interactions.class")).filterNot(_.isEmpty)
+  }
 }
 
 

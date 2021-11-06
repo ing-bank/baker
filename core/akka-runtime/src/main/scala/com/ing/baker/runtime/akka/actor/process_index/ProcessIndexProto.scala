@@ -142,7 +142,7 @@ object ProcessIndexProto {
           recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
           createdDateTime <- versioned(message.createdTime, "createdTime")
           isDeleted <- versioned(message.isDeleted, "createdTime")
-          isPassivated = versionedOptional(message.isPassivated, true) /* default us true to avoid OOM bug during recovery for many processes we recover all actors in passivated state */
+          isPassivated = versionedOptional(message.isPassivated, false)
           processStatus = readStatus(isDeleted, isPassivated)
         } yield ActorMetadata(recipeId, recipeInstanceId, createdDateTime, processStatus)
 
