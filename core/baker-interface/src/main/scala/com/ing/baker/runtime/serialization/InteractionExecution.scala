@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.serialization
 
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceInput}
-import com.ing.baker.runtime.serialization.InteractionExecution._
+import com.ing.baker.runtime.serialization.InteractionExecution.{Descriptor, Interactions, ExecutionResult, Failure, FailureReason, Success}
 import com.ing.baker.types.Type
 import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
 import io.circe.{Codec, Decoder, Encoder}
@@ -19,6 +19,8 @@ import io.circe.{Codec, Decoder, Encoder}
 
 object InteractionExecutionJsonCodecs {
   import com.ing.baker.runtime.serialization.JsonCodec._
+  import com.ing.baker.runtime.serialization.JsonDecoders._
+  import com.ing.baker.runtime.serialization.JsonEncoders._
 
   implicit val interactionsCodec: Codec[Interactions] = deriveCodec[Interactions]
   implicit val interactionExecutionDescriptorEncoder: Encoder[Descriptor] = deriveEncoder[Descriptor].mapJsonObject(_.filter(removeNulls))
