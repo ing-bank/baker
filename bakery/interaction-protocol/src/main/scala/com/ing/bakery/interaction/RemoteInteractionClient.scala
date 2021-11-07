@@ -44,7 +44,7 @@ trait RemoteInteractionClient {
   def interfaces: IO[Interactions]
 }
 
-final class DefaultRemoteInteractionClient(
+class DefaultRemoteInteractionClient(
                                             val client: Client[IO],
                                             val uri: Uri,
                                             val headers: Headers)(implicit cs: ContextShift[IO], timer: Timer[IO])
