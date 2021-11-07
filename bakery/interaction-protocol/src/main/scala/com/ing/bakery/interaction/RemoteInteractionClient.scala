@@ -37,9 +37,7 @@ trait RemoteInteractionClient {
   def client: Client[IO]
   def uri: Uri
   def headers: Headers
-  def interactionEntityDecoder: EntityDecoder[IO, Interactions]
-  def executeRequestEntityEncoder: EntityEncoder[IO, List[IngredientInstance]]
-  def executeResponseEntityDecoder: EntityDecoder[IO, ExecutionResult]
+  def entityCodecs: (EntityEncoder[IO, List[IngredientInstance]],  EntityDecoder[IO, ExecutionResult], EntityDecoder[IO, Interactions])
   def execute(interactionId: String, input: Seq[IngredientInstance]): IO[Option[EventInstance]]
   def interfaces: IO[Interactions]
 }
@@ -53,9 +51,12 @@ class BaseRemoteInteractionClient(
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
   import com.ing.baker.runtime.serialization.JsonCodec._
 
-  implicit val interactionEntityDecoder: EntityDecoder[IO, Interactions] = jsonOf[IO, Interactions]
-  implicit val executeRequestEntityEncoder: EntityEncoder[IO, List[IngredientInstance]] = jsonEncoderOf[IO, List[IngredientInstance]]
-  implicit val executeResponseEntityDecoder: EntityDecoder[IO, ExecutionResult] = jsonOf[IO, ExecutionResult]
+  def entityCodecs:(EntityEncoder[IO, List[IngredientInstance]],  EntityDecoder[IO, ExecutionResult], EntityDecoder[IO, Interactions])  =
+    (jsonEncoderOf[IO, List[IngredientInstance]],
+      jsonOf[IO, ExecutionResult],
+      jsonOf[IO, Interactions])
+
+  private implicit lazy val (interactionEntityDecoder, executeRequestEntityEncoder, executeResponseEntityDecoder) = entityCodecs
 
   def interfaces: IO[Interactions] =
     client.expect[Interactions](
