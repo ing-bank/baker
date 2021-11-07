@@ -5,7 +5,7 @@ import cats.effect.{ConcurrentEffect, ContextShift, IO, Resource, Timer}
 import cats.syntax.traverse._
 import com.ing.baker.runtime.defaultinteractions
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
-import com.ing.bakery.interaction.{DefaultRemoteInteractionClient, RemoteInteractionClient}
+import com.ing.bakery.interaction.{BaseRemoteInteractionClient, RemoteInteractionClient}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.http4s.{Headers, Uri}
@@ -100,7 +100,7 @@ trait RemoteInteractionDiscovery extends LazyLogging {
 
   def remoteInteractionClient(client: Client[IO], uri: Uri)
                              (implicit contextShift: ContextShift[IO], timer: Timer[IO]): RemoteInteractionClient =
-    new DefaultRemoteInteractionClient(client, uri, Headers.empty)
+    new BaseRemoteInteractionClient(client, uri, Headers.empty)
 
   def extractInteractions(client: Client[IO], uri: Uri)
                          (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[RemoteInteractions] = {

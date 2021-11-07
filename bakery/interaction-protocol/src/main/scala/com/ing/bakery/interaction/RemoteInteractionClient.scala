@@ -30,7 +30,7 @@ object RemoteInteractionClient {
     BlazeClientBuilder[IO](pool, tlsConfig.map(BakeryHttp.loadSSLContext))
       .withCheckEndpointAuthentication(false)
       .resource
-      .map(new DefaultRemoteInteractionClient(_, uri, headers))
+      .map(new BaseRemoteInteractionClient(_, uri, headers))
 }
 
 trait RemoteInteractionClient {
@@ -44,7 +44,7 @@ trait RemoteInteractionClient {
   def interfaces: IO[Interactions]
 }
 
-class DefaultRemoteInteractionClient(
+class BaseRemoteInteractionClient(
                                             val client: Client[IO],
                                             val uri: Uri,
                                             val headers: Headers)(implicit cs: ContextShift[IO], timer: Timer[IO])
