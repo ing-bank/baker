@@ -5,7 +5,7 @@ import cats.effect.{ConcurrentEffect, ContextShift, IO, Resource, Timer}
 import cats.syntax.traverse._
 import com.ing.baker.runtime.defaultinteractions
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
-import com.ing.bakery.interaction.RemoteInteractionClient
+import com.ing.bakery.interaction.{DefaultRemoteInteractionClient, RemoteInteractionClient}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.http4s.{Headers, Uri}
@@ -98,11 +98,13 @@ case class RemoteInteractions(startedAt: Long,
   */
 trait RemoteInteractionDiscovery extends LazyLogging {
 
-  def headers: Headers = Headers.empty
+  def remoteInteractionClient(client: Client[IO], uri: Uri)
+                             (implicit contextShift: ContextShift[IO], timer: Timer[IO]): RemoteInteractionClient =
+    new DefaultRemoteInteractionClient(client, uri, Headers.empty)
 
   def extractInteractions(client: Client[IO], uri: Uri)
                          (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[RemoteInteractions] = {
-    val remoteInteractionClient = new RemoteInteractionClient(client, uri, headers)
+    val remoteInteractions  = remoteInteractionClient(client, uri)
 
     def within[A](giveUpAfter: FiniteDuration, retries: Int)(f: IO[A])(implicit timer: Timer[IO]): IO[A] = {
       def attempt(count: Int, times: FiniteDuration): IO[A] = {
@@ -125,7 +127,7 @@ trait RemoteInteractionDiscovery extends LazyLogging {
     within(giveUpAfter = 10 minutes, retries = 40) {
       // check every 15 seconds for interfaces for 10 minutes
       logger.debug(s"Extracting interactions @ ${uri.toString}...")
-      remoteInteractionClient.interface.map { response => {
+      remoteInteractions.interfaces.map { response => {
         val interfaces = response.interactions
         if (interfaces.isEmpty) logger.warn(s"${uri.toString} provides no interactions")
         RemoteInteractions(response.startedAt,
@@ -134,7 +136,7 @@ trait RemoteInteractionDiscovery extends LazyLogging {
               _name = interaction.name,
               _input = interaction.input,
               _output = interaction.output,
-              _run = input => remoteInteractionClient.runInteraction(interaction.id, input),
+              _run = input => remoteInteractions.execute(interaction.id, input),
             )
           }))
       }

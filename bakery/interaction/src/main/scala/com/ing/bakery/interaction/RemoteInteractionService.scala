@@ -8,7 +8,6 @@ import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs.intera
 import com.ing.baker.runtime.serialization.{InteractionExecution => I}
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.syntax._
 import io.prometheus.client.CollectorRegistry
 import org.http4s._
 import org.http4s.circe._
@@ -21,12 +20,11 @@ import org.http4s.server.middleware.{Logger, Metrics}
 import io.circe.parser._
 
 import java.lang.reflect.InvocationTargetException
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 import com.ing.baker.runtime.serialization.JsonCodec._
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.runtime.serialization.JsonDecoders._
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 import java.util.concurrent.CompletableFuture
 import scala.collection.JavaConverters

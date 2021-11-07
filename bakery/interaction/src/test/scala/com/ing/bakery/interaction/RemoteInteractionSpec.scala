@@ -100,7 +100,7 @@ class RemoteInteractionSpec extends BakeryFunSpec {
     test("publishes its interface") { context =>
       context.withInteractionInstances(List(implementation0, implementation1)) { client =>
         for {
-          result <- client.interface
+          result <- client.interfaces
         } yield assert(result.interactions == List(
           I.Descriptor(implementation0.shaBase64, implementation0.name, implementation0.input.toList, implementation0.output),
           I.Descriptor(implementation1.shaBase64, implementation1.name, implementation1.input.toList, implementation1.output)
@@ -113,8 +113,8 @@ class RemoteInteractionSpec extends BakeryFunSpec {
         val ingredient0 = IngredientInstance("input0", PrimitiveValue("A"))
         val ingredient1 = IngredientInstance("input1", PrimitiveValue(1))
         for {
-          result0 <- client.runInteraction(implementation0.shaBase64, Seq(ingredient0, ingredient1))
-          result1 <- client.runInteraction(implementation1.shaBase64, Seq(ingredient0, ingredient1))
+          result0 <- client.execute(implementation0.shaBase64, Seq(ingredient0, ingredient1))
+          result1 <- client.execute(implementation1.shaBase64, Seq(ingredient0, ingredient1))
         } yield {
           assert(result0 === Some(result("A", 1)))
           assert(result1 === Some(result("A!", 2)))
@@ -126,7 +126,7 @@ class RemoteInteractionSpec extends BakeryFunSpec {
       context.withNoTrustClient(List(implementation0)) { client =>
         val ingredient0 = IngredientInstance("input0", PrimitiveValue("A"))
         val ingredient1 = IngredientInstance("input1", PrimitiveValue(1))
-        val result: IO[Option[String]] = client.runInteraction(implementation0.shaBase64, Seq(ingredient0, ingredient1))
+        val result: IO[Option[String]] = client.execute(implementation0.shaBase64, Seq(ingredient0, ingredient1))
           .map(_ => None)
           .handleErrorWith {
             case _: java.net.ConnectException | Command.EOF  => IO.pure(Some("connection error"))
