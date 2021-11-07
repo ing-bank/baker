@@ -27,7 +27,7 @@ object InteractionExecutionJsonCodecs {
   implicit val successCodec: Codec[Success] = deriveCodec[Success]
   implicit val failureCodec: Codec[Failure] = deriveCodec[Failure]
   implicit val eitherFailureOrSuccessCodec: Codec[Either[Failure, Success]] = deriveCodec[Either[Failure, Success]]
-  implicit val executionResultEncoder: Codec[ExecutionResult] = deriveCodec[ExecutionResult]
+  implicit val executionResultCodec: Codec[ExecutionResult] = deriveCodec[ExecutionResult]
 }
 
 object InteractionExecution {

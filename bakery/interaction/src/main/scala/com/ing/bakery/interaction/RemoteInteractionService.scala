@@ -135,7 +135,7 @@ class InteractionExecutorJava(implementations: java.util.List[InteractionInstanc
   }) match {
     case Right(result) => result
     case Left(error) => executionFailure(id, error.getMessage)
-  }).map(executionResultEncoder.apply)
+  }).map(executionResultCodec.apply)
     .map(_.noSpaces)
     .unsafeToFuture().toJava.toCompletableFuture
 }
