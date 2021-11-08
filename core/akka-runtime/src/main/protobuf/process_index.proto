@@ -20,6 +20,7 @@ message ActorMetaData {
     optional string recipeInstanceId = 2;
     optional int64 createdTime = 3;
     optional bool isDeleted = 4;
+    optional bool isPassivated = 5;
 }
 
 message ActorCreated {

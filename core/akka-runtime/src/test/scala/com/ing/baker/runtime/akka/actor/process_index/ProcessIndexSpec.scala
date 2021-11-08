@@ -1,12 +1,12 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorRef, ActorSystem, Kill, PoisonPill, Props}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.ing.baker.il.petrinet.{EventTransition, Place, RecipePetriNet, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
 import com.ing.baker.petrinet.api.{Marking, PetriNet}
 import com.ing.baker.runtime.RecipeManager
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.CheckForProcessesToBeDeleted
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.{ActorMetadata, CheckForProcessesToBeDeleted}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.NotifyWhenReceived
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
@@ -26,15 +26,19 @@ import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatestplus.mockito.MockitoSugar
 import scalax.collection.immutable.Graph
+import akka.pattern.ask
+import akka.util.Timeout
 
 import java.util.UUID
-import scala.concurrent.Future
+import java.util.concurrent.TimeUnit
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
 object ProcessIndexSpec {
   val config: Config = ConfigFactory.parseString(
     """
       |akka.actor.allow-java-serialization = off
+      |baker.actor.snapshot-interval = 1
       |akka.persistence.journal.plugin = "inmemory-journal"
       |akka.persistence.snapshot-store.plugin = "inmemory-snapshot-store"
       |akka.test.timefactor = 3.0
@@ -89,6 +93,42 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
       petriNetActorProbe.expectMsg(initializeMsg)
+    }
+
+    "passivation" in {
+      val duration = 5.seconds
+
+      implicit val timeout = Timeout(duration)
+
+      val recipeInstanceId = UUID.randomUUID().toString
+
+      // Create empty actor, because test probe overrides actor's name
+      val petriNetActorProbe: ActorRef = system.actorOf(Props(new Actor {
+        override def receive: Receive = {
+          case _ =>
+        }
+      }), recipeInstanceId)
+
+      val actorIndex: ActorRef = createActorIndex(petriNetActorProbe, recipeManager)
+      actorIndex ! CreateProcess(recipeId, recipeInstanceId)
+
+      eventually{
+        val result = Await.result((actorIndex ? (GetIndex)).mapTo[Index], duration)
+        result.entries.size shouldBe 1
+      }
+
+      petriNetActorProbe ! PoisonPill
+
+      eventually{
+        val result = Await.result((actorIndex ? (GetIndex)).mapTo[Index], duration)
+        result.entries.size shouldBe 0
+      }
+
+      actorIndex ! PoisonPill
+
+      val afterSnapshotRead: ActorRef = createActorIndex(petriNetActorProbe, recipeManager)
+      val result = Await.result((afterSnapshotRead ? (GetIndex)).mapTo[Index], duration)
+      result.entries.size shouldBe 0
     }
 
     "not create the PetriNetInstance actor if already created" in {
@@ -291,7 +331,10 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       interactionManager = CachingInteractionManager(),
       recipeManager = recipeManager,
       Seq.empty) {
-      override def createProcessActor(id: String, compiledRecipe: CompiledRecipe) = petriNetActorRef
+      override def createProcessActor(id: String, compiledRecipe: CompiledRecipe) = {
+        context.watch(petriNetActorRef)
+        petriNetActorRef
+      }
     })
     system.actorOf(props, s"actorIndex-${UUID.randomUUID().toString}")
   }

@@ -1,7 +1,5 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor.{ActorRef, ActorRefProvider}
 import cats.instances.list._
 import cats.instances.try_._
@@ -9,13 +7,14 @@ import cats.syntax.traverse._
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{NotifyBoth, NotifyOnEvent, NotifyWhenCompleted, NotifyWhenReceived}
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{ProcessEventReceivedResponse, _}
-import com.ing.baker.runtime.akka.actor.process_index.protobuf.ActorRefId
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
+import com.ing.baker.runtime.akka.actor.process_index.protobuf.{ActorMetaData, ActorRefId}
 import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
-import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
-import com.ing.baker.runtime.serialization.protomappings.SensoryEventStatusMappingHelper
 import com.ing.baker.runtime.serialization.ProtoMap
+import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned, versionedOptional}
+import com.ing.baker.runtime.serialization.protomappings.SensoryEventStatusMappingHelper
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}
 
@@ -27,13 +26,13 @@ object ProcessIndexProto {
       val companion = protobuf.ActorRefId
 
       override def toProto(a: ActorRef): protobuf.ActorRefId =
-      protobuf.ActorRefId(Some(akka.serialization.Serialization.serializedActorPath(a)))
+        protobuf.ActorRefId(Some(akka.serialization.Serialization.serializedActorPath(a)))
 
       override def fromProto(message: ActorRefId): Try[ActorRef] =
-      for {
-        identifier <- versioned(message.identifier, "identifier")
-        actorRef <- Try(ev0.resolveActorRef(identifier))
-      } yield actorRef
+        for {
+          identifier <- versioned(message.identifier, "identifier")
+          actorRef <- Try(ev0.resolveActorRef(identifier))
+        } yield actorRef
     }
 
   implicit def getShardIndexProto: ProtoMap[GetShardIndex, protobuf.GetShardIndex] =
@@ -133,7 +132,8 @@ object ProcessIndexProto {
           Some(a.recipeId),
           Some(a.recipeInstanceId),
           Some(a.createdDateTime),
-          Some(a.processStatus == ProcessIndex.Deleted)
+          Some(a.processStatus == ProcessIndex.Deleted),
+          Some(a.processStatus == ProcessIndex.Passivated)
         )
 
       def fromProto(message: protobuf.ActorMetaData): Try[ActorMetadata] =
@@ -142,8 +142,15 @@ object ProcessIndexProto {
           recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
           createdDateTime <- versioned(message.createdTime, "createdTime")
           isDeleted <- versioned(message.isDeleted, "createdTime")
-          processStatus = if (isDeleted) ProcessIndex.Deleted else ProcessIndex.Active
+          isPassivated = versionedOptional(message.isPassivated, false)
+          processStatus = readStatus(isDeleted, isPassivated)
         } yield ActorMetadata(recipeId, recipeInstanceId, createdDateTime, processStatus)
+
+      private def readStatus(isDeleted: Boolean, isPassivated: Boolean): ProcessStatus = {
+        if (isDeleted) ProcessIndex.Deleted
+        else if (isPassivated) ProcessIndex.Passivated
+        else ProcessIndex.Active
+      }
     }
 
   implicit def getIndexProto: ProtoMap[GetIndex.type, protobuf.GetIndex] =

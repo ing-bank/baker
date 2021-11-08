@@ -1,7 +1,5 @@
 package com.ing.baker.runtime.serialization
 
-import java.util.Base64
-
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl._
@@ -9,6 +7,7 @@ import com.ing.baker.runtime.serialization.protomappings._
 import com.ing.baker.{il, types}
 import scalapb.GeneratedMessageCompanion
 
+import java.util.Base64
 import scala.util.{Success, Try}
 
 trait ProtoMap[A, P <: scalapb.GeneratedMessage] {
@@ -41,6 +40,8 @@ object ProtoMap {
 
   def versioned[A](a: Option[A], name: String): Try[A] =
     Try(a.getOrElse(throw new IllegalStateException(s"Missing field '$name' from protobuf message, probably we received a different version of the message")))
+
+  def versionedOptional[A](a: Option[A], default: A): A = a.getOrElse(default)
 
   type AnyRefMapping = ProtoMap[AnyRef, protobuf.SerializedData]
 
