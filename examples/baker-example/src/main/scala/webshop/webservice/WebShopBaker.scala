@@ -7,7 +7,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import org.log4s.{Logger, getLogger}
-import webshop.webservice.CheckoutFlowIngredients.{Item, OrderId, PaymentInformation, ShippingAddress}
+import webshop.webservice.CheckoutFlowIngredients.{Item, PaymentInformation, ShippingAddress}
 
 import scala.concurrent.ExecutionContext
 
@@ -40,7 +40,7 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
     IO.fromFuture(IO {
       val orderId: String = UUID.randomUUID().toString
       val event = EventInstance.unsafeFrom(
-        CheckoutFlowEvents.OrderPlaced(OrderId(orderId), items.map(Item)))
+        CheckoutFlowEvents.OrderPlaced(items.map(Item)))
       for {
         _ <- baker.bake(checkoutRecipeId, orderId)
         status <- baker.fireEventAndResolveWhenReceived(orderId, event)

@@ -1,26 +1,31 @@
 package webshop;
 
 import akka.actor.ActorSystem;
+import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.runtime.akka.AkkaBaker;
-import com.ing.baker.runtime.common.RecipeRecord;
+import com.ing.baker.runtime.inmemory.InMemoryBaker;
 import com.ing.baker.runtime.javadsl.Baker;
 import com.ing.baker.runtime.javadsl.EventInstance;
 import com.ing.baker.runtime.javadsl.EventMoment;
-import com.ing.baker.runtime.javadsl.InteractionInstance;
+import com.ing.baker.runtime.javadsl.RecipeInstanceState;
+import com.ing.baker.types.Value;
+import com.typesafe.config.ConfigFactory;
 import org.junit.Test;
 import scala.Console;
-import scala.concurrent.Await;
-import webshop.simple.JWebshopRecipe;
+import webshop.simple.*;
+import webshop.simple.ingredients.Item;
+import webshop.simple.ingredients.PaymentInformation;
+import webshop.simple.ingredients.ReservedItems;
+import webshop.simple.ingredients.ShippingAddress;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
@@ -41,97 +46,97 @@ public class JWebshopRecipeTests {
         System.out.println(visualization + Console.RESET());
     }
 
-    static public class HappyFlowReserveItems implements JWebshopRecipe.ReserveItems {
+    @Test
+    public void shouldRunSimpleInstance() throws ExecutionException, InterruptedException {
+        // Compile the recipe
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
-        @Override
-        public ReserveItemsOutcome apply(String id, List<String> items) {
-            return new ItemsReserved(items);
-        }
+        List<Object> implementations = ImmutableList.of(
+                new MakePaymentInstance(),
+                new ReserveItemsInstance(),
+                new ShipItemsInstance());
+
+        // Setup the Baker
+        Baker baker = AkkaBaker.java(
+                ConfigFactory.load(),
+                ActorSystem.apply("BakerActorSystem"),
+                implementations);
+
+        // Create the sensory events
+        List<Item> items = new ArrayList<>(2);
+        items.add(new Item("item1"));
+        items.add(new Item("item2"));
+
+        EventInstance firstOrderPlaced = EventInstance.from(new JWebshopRecipe.OrderPlaced(items));
+        EventInstance paymentInformationReceived = EventInstance.from(new JWebshopRecipe.PaymentInformationReceived(new PaymentInformation("Information")));
+        EventInstance shippingInformationReceived = EventInstance.from(new JWebshopRecipe.ShippingAddressReceived(new ShippingAddress("Address")));
+
+
+        // Run the complete process
+        String recipeInstanceId = UUID.randomUUID().toString();
+        CompletableFuture<List<String>> result = baker.addRecipe(compiledRecipe, true)
+                .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
+                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
+                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentInformationReceived))
+                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, shippingInformationReceived))
+                .thenCompose(ignore -> baker.getRecipeInstanceState(recipeInstanceId))
+                .thenApply(x -> x.events().stream().map(EventMoment::getName).collect(Collectors.toList()));
+
+        // Wait for the results
+        List<String> blockedResult = result.get();
+
+        // Validate the results
+        assert (blockedResult.contains("OrderPlaced") &&
+                blockedResult.contains("PaymentInformationReceived") &&
+                blockedResult.contains("ShippingAddressReceived") &&
+                blockedResult.contains("ShippingConfirmed"));
     }
 
     @Test
-    public void shouldRunSimpleInstance() throws ExecutionException, InterruptedException, TimeoutException {
-        ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-        try {
+    public void shouldRunSimpleInstanceMockitoSample() throws InterruptedException, TimeoutException, ExecutionException {
+        // Compile the recipe
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
-            List<String> items = new ArrayList<>(2);
-            items.add("item1");
-            items.add("item2");
+        // Setup mock
+        ReserveItems reserveItemsMock =
+                mock(ReserveItems.class);
 
-            EventInstance firstOrderPlaced =
-                    EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
-            EventInstance paymentMade =
-                    EventInstance.from(new JWebshopRecipe.PaymentMade());
+        // Setup the Baker
+        Baker baker = InMemoryBaker.java(ImmutableList.of(
+                new MakePaymentInstance(),
+                reserveItemsMock,
+                new ShipItemsInstance()));
 
-            InteractionInstance reserveItemsInstance =
-                    InteractionInstance.from(new HappyFlowReserveItems());
 
-            CompiledRecipe compiledRecipe =
-                    RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+        // Create the sensory events
+        List<Item> items = new ArrayList<>(2);
+        items.add(new Item("item1"));
+        items.add(new Item("item2"));
 
-            Baker baker = AkkaBaker.javaLocalDefault(actorSystem, Collections.singletonList(reserveItemsInstance));
+        EventInstance firstOrderPlaced = EventInstance.from(new JWebshopRecipe.OrderPlaced(items));
+        EventInstance paymentInformationReceived = EventInstance.from(new JWebshopRecipe.PaymentInformationReceived(new PaymentInformation("Information")));
+        EventInstance shippingInformationReceived = EventInstance.from(new JWebshopRecipe.ShippingAddressReceived(new ShippingAddress("Address")));
 
-            String recipeInstanceId = UUID.randomUUID().toString();
-            CompletableFuture<List<String>> result = baker.addRecipe(RecipeRecord.of(compiledRecipe))
-                    .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
-                    .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
-                    .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))
-                    .thenCompose(ignore -> baker.getRecipeInstanceState(recipeInstanceId))
-                    .thenApply(x -> x.events().stream().map(EventMoment::getName).collect(Collectors.toList()));
+        when(reserveItemsMock.apply(anyObject())).thenReturn(
+                new ReserveItems.ItemsReserved(new ReservedItems(items, new byte[20])));
 
-            List<String> blockedResult = result.get();
+        // Run the complete process
+        String recipeInstanceId = UUID.randomUUID().toString();
+        CompletableFuture<List<String>> result = baker.addRecipe(compiledRecipe, true)
+                .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
+                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
+                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentInformationReceived))
+                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, shippingInformationReceived))
+                .thenCompose(ignore -> baker.getRecipeInstanceState(recipeInstanceId))
+                .thenApply(x -> x.events().stream().map(EventMoment::getName).collect(Collectors.toList()));
 
-            assert (blockedResult.contains("OrderPlaced") && blockedResult.contains("PaymentMade") && blockedResult.contains("ItemsReserved"));
-        } finally {
-            Await.result(actorSystem.terminate(), scala.concurrent.duration.Duration.apply(10, TimeUnit.SECONDS));
-        }
-    }
+        // Wait for the results
+        List<String> blockedResult = result.get();
 
-    @Test
-    public void shouldRunSimpleInstanceMockitoSample() throws InterruptedException, TimeoutException {
-        ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-        try {
-            List<String> items = new ArrayList<>(2);
-            items.add("item1");
-            items.add("item2");
-
-            EventInstance firstOrderPlaced =
-                    EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
-            EventInstance paymentMade =
-                    EventInstance.from(new JWebshopRecipe.PaymentMade());
-
-            // The ReserveItems interaction being mocked by Mockito
-            JWebshopRecipe.ReserveItems reserveItemsMock =
-                    mock(JWebshopRecipe.ReserveItems.class);
-            InteractionInstance reserveItemsInstance =
-                    InteractionInstance.from(reserveItemsMock);
-
-            Baker baker = AkkaBaker.javaLocalDefault(actorSystem, Collections.singletonList(reserveItemsInstance));
-
-            CompiledRecipe compiledRecipe =
-                    RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
-
-            // Add input expectations and their returned event instances
-            when(reserveItemsMock.apply("order-uuid", items)).thenReturn(
-                    new JWebshopRecipe.ReserveItems.ItemsReserved(items));
-
-            String recipeInstanceId = "first-instance-id";
-            CompletableFuture<List<String>> result = baker.addRecipe(RecipeRecord.of(compiledRecipe))
-                    .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
-                    .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
-                    .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))
-                    .thenCompose(ignore -> baker.getRecipeInstanceState(recipeInstanceId))
-                    .thenApply(x -> x.events().stream().map(EventMoment::getName).collect(Collectors.toList()));
-
-            List<String> blockedResult = result.join();
-
-            // Verify that the mock was called with the expected data
-            verify(reserveItemsMock).apply("order-uuid", items);
-
-            assert (blockedResult.contains("OrderPlaced") && blockedResult.contains("PaymentMade") && blockedResult.contains("ItemsReserved"));
-        } finally {
-            Await.result(actorSystem.terminate(), scala.concurrent.duration.Duration.apply(10, TimeUnit.SECONDS));
-        }
-
+        // Validate the results
+        assert (blockedResult.contains("OrderPlaced") &&
+                blockedResult.contains("PaymentInformationReceived") &&
+                blockedResult.contains("ShippingAddressReceived") &&
+                blockedResult.contains("ShippingConfirmed"));
     }
 }
