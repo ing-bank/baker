@@ -1,5 +1,7 @@
 package webshop.webservice
 
+import com.ing.baker.recipe.annotations.FiresEvent
+
 import scala.concurrent.Future
 
 case class PaymentInformation(info: String)
@@ -12,5 +14,6 @@ case class PaymentFailed() extends MakePaymentOutput
 
 trait MakePayment {
 
+  @FiresEvent(oneOf = Array(classOf[PaymentSuccessful], classOf[PaymentFailed]))
   def apply(processId: String, items: ReservedItems, payment: PaymentInformation): Future[MakePaymentOutput]
 }
