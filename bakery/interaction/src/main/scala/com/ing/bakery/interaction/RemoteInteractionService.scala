@@ -1,6 +1,7 @@
 package com.ing.bakery.interaction
 
 import java.net.{InetSocketAddress, URLEncoder}
+
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.runtime.scaladsl.{IngredientInstance, InteractionInstance}
 import com.ing.baker.runtime.serialization.InteractionExecution.Interactions
@@ -102,10 +103,15 @@ abstract class InteractionExecutor extends LazyLogging {
 
 
   protected def execute(id: String, request: List[IngredientInstance]): IO[I.ExecutionResult] = {
+    logger.debug(s"Trying to call interaction for Id: $id")
     interactions.find(_.shaBase64 == id) match {
       case Some(interaction) =>
+        logger.info(s"Calling interaction: ${interaction.name}")
         IO.fromFuture(IO(interaction.run(request))).attempt.flatMap {
-          case Right(value) => IO(I.ExecutionResult(Right(I.Success(value))))
+          case Right(value) => {
+            logger.info(s"Interaction ${interaction.name} executed correctly")
+            IO(I.ExecutionResult(Right(I.Success(value))))
+          }
           case Left(e) =>
             val rootCause = e match {
               case _: InvocationTargetException if Option(e.getCause).isDefined => e.getCause
@@ -114,7 +120,9 @@ abstract class InteractionExecutor extends LazyLogging {
             logger.error(s"Interaction ${interaction.name} failed with an exception: ${rootCause.getMessage}", rootCause)
             executionFailure(interaction.name, rootCause.getMessage)
         }
-      case None => IO(I.ExecutionResult(Left(I.Failure(I.NoInstanceFound))))
+      case None =>
+        logger.error(s"No implementation found for execution for id: $id")
+        IO(I.ExecutionResult(Left(I.Failure(I.NoInstanceFound))))
     }
   }
 }
