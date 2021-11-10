@@ -1,10 +1,8 @@
 package com.ing.bakery.interaction
 
 import java.net.{InetSocketAddress, URLEncoder}
-
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.runtime.scaladsl.{IngredientInstance, InteractionInstance}
-import com.ing.baker.runtime.serialization.InteractionExecution.Interactions
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs.interactionsCodec
 import com.ing.baker.runtime.serialization.{InteractionExecution => I}
 import com.ing.bakery.metrics.MetricService
@@ -89,8 +87,8 @@ abstract class InteractionExecutor extends LazyLogging {
   implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
   implicit val timer: Timer[IO] = IO.timer(executionContext)
 
-  protected val CurrentInteractions: Interactions =
-    Interactions(System.currentTimeMillis,
+  protected val CurrentInteractions: I.Interactions =
+    I.Interactions(System.currentTimeMillis,
       interactions.map(interaction =>
         I.Descriptor(interaction.shaBase64, interaction.name, interaction.input, interaction.output))
     )
@@ -102,12 +100,12 @@ abstract class InteractionExecutor extends LazyLogging {
     ))))
 
 
-  protected def execute(id: String, request: List[IngredientInstance]): IO[I.ExecutionResult] = {
-    logger.debug(s"Trying to call interaction for Id: $id")
-    interactions.find(_.shaBase64 == id) match {
+  protected def execute(request: I.ExecutionRequest): IO[I.ExecutionResult] = {
+    logger.debug(s"Trying to execute interaction: ${request.id}")
+    interactions.find(_.shaBase64 == request.id) match {
       case Some(interaction) =>
-        logger.info(s"Calling interaction: ${interaction.name}")
-        IO.fromFuture(IO(interaction.run(request))).attempt.flatMap {
+        logger.info(s"Executing interaction: ${interaction.name}")
+        IO.fromFuture(IO(interaction.run(request.ingredients))).attempt.flatMap {
           case Right(value) => {
             logger.info(s"Interaction ${interaction.name} executed correctly")
             IO(I.ExecutionResult(Right(I.Success(value))))
@@ -121,7 +119,7 @@ abstract class InteractionExecutor extends LazyLogging {
             executionFailure(interaction.name, rootCause.getMessage)
         }
       case None =>
-        logger.error(s"No implementation found for execution for id: $id")
+        logger.error(s"No implementation found for execution for id: ${request.id}")
         IO(I.ExecutionResult(Left(I.Failure(I.NoInstanceFound))))
     }
   }
@@ -135,14 +133,14 @@ class InteractionExecutorJava(implementations: java.util.List[InteractionInstanc
 
   def list: String = interactionsCodec(CurrentInteractions).noSpaces
 
-  def run(id: String, ingredientsJson: String): CompletableFuture[String] = ((for {
-    json <- parse(ingredientsJson)
-    ingredients <- json.as[List[IngredientInstance]]
+  def run(requestJson: String): CompletableFuture[String] = ((for {
+    json <- parse(requestJson)
+    request <- json.as[I.ExecutionRequest]
   } yield {
-    execute(id, ingredients)
+    execute(request)
   }) match {
     case Right(result) => result
-    case Left(error) => executionFailure(id, error.getMessage)
+    case Left(error) => executionFailure("?", error.getMessage)
   }).map(executionResultCodec.apply)
     .map(_.noSpaces)
     .unsafeToFuture().toJava.toCompletableFuture
@@ -151,18 +149,18 @@ class InteractionExecutorJava(implementations: java.util.List[InteractionInstanc
 final class RemoteInteractionService(val interactions: List[InteractionInstance])(implicit val executionContext: ExecutionContext)
   extends InteractionExecutor {
 
-  implicit val interactionEntityEncoder: EntityEncoder[IO, Interactions] = jsonEncoderOf[IO, Interactions]
-  implicit val executeRequestEntityDecoder: EntityDecoder[IO, List[IngredientInstance]] = jsonOf[IO, List[IngredientInstance]]
+  implicit val interactionEntityEncoder: EntityEncoder[IO, I.Interactions] = jsonEncoderOf[IO, I.Interactions]
+  implicit val executeRequestEntityDecoder: EntityDecoder[IO, I.ExecutionRequest] = jsonOf[IO, I.ExecutionRequest]
   implicit val executeResponseEntityEncoder: EntityEncoder[IO, I.ExecutionResult] = jsonEncoderOf[IO, I.ExecutionResult]
 
   def routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
 
     case GET -> Root => Ok(CurrentInteractions)
 
-    case req@POST -> Root / id / "execute" =>
+    case req@POST -> Root =>
       for {
-        ingredients <- req.as[List[IngredientInstance]]
-        result <- execute(id, ingredients)
+        req <- req.as[I.ExecutionRequest]
+        result <- execute(req)
         response <- Ok(result)
       } yield response
   }

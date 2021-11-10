@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.serialization
 
-import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceInput}
-import com.ing.baker.runtime.serialization.InteractionExecution.{Descriptor, Interactions, ExecutionResult, Failure, FailureReason, Success}
+import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
+import com.ing.baker.runtime.serialization.InteractionExecution.{Descriptor, ExecutionRequest, ExecutionResult, Failure, FailureReason, Interactions, Success}
 import com.ing.baker.types.Type
 import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
 import io.circe.{Codec, Decoder, Encoder}
@@ -23,6 +23,7 @@ object InteractionExecutionJsonCodecs {
   import com.ing.baker.runtime.serialization.JsonEncoders._
 
   implicit val interactionsCodec: Codec[Interactions] = deriveCodec[Interactions]
+  implicit val interactionExecutionRequestCodec: Codec[ExecutionRequest] = deriveCodec[ExecutionRequest]
   implicit val interactionExecutionDescriptorEncoder: Encoder[Descriptor] = deriveEncoder[Descriptor].mapJsonObject(_.filter(removeNulls))
   implicit val interactionExecutionDescriptorDecoder: Decoder[Descriptor] = deriveDecoder[Descriptor]
   implicit val failureReasonCodec: Codec[FailureReason] = deriveCodec[FailureReason]
@@ -36,6 +37,7 @@ object InteractionExecution {
 
   case class Interactions(startedAt: Long, interactions: List[Descriptor])
   case class Descriptor(id: String, name: String, input: Seq[InteractionInstanceInput], output: Option[Map[String, Map[String, Type]]])
+  case class ExecutionRequest(id: String, ingredients: List[IngredientInstance])
   case class ExecutionResult(outcome: Either[Failure, Success])
 
   sealed trait Result

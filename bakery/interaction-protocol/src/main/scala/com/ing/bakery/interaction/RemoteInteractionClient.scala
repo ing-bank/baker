@@ -37,7 +37,7 @@ trait RemoteInteractionClient {
   def client: Client[IO]
   def uri: Uri
   def headers: Headers
-  def entityCodecs: (EntityEncoder[IO, List[IngredientInstance]],  EntityDecoder[IO, ExecutionResult], EntityDecoder[IO, Interactions])
+  def entityCodecs: (EntityEncoder[IO, ExecutionRequest],  EntityDecoder[IO, ExecutionResult], EntityDecoder[IO, Interactions])
   def execute(interactionId: String, input: Seq[IngredientInstance]): IO[Option[EventInstance]]
   def interfaces: IO[Interactions]
 }
@@ -51,8 +51,8 @@ class BaseRemoteInteractionClient(
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
   import com.ing.baker.runtime.serialization.JsonCodec._
 
-  def entityCodecs:(EntityEncoder[IO, List[IngredientInstance]],  EntityDecoder[IO, ExecutionResult], EntityDecoder[IO, Interactions])  =
-    (jsonEncoderOf[IO, List[IngredientInstance]],
+  def entityCodecs:(EntityEncoder[IO, ExecutionRequest],  EntityDecoder[IO, ExecutionResult], EntityDecoder[IO, Interactions])  =
+    (jsonEncoderOf[IO, ExecutionRequest],
       jsonOf[IO, ExecutionResult],
       jsonOf[IO, Interactions])
 
@@ -71,9 +71,9 @@ class BaseRemoteInteractionClient(
     client.expect[ExecutionResult](
       Request[IO](
         method = POST,
-        uri = uri / interactionId / "execute",
+        uri = uri,
         headers = headers,
-      ).withEntity(input.toList))
+      ).withEntity(ExecutionRequest(interactionId, input.toList)))
       .flatMap {
         case InteractionExecution.ExecutionResult(Right(success)) =>
           IO {
