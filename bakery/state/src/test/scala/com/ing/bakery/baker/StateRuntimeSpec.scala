@@ -195,7 +195,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
           .map(_ => None)
           .recover { case e => Some(e) })
       } yield {
-        e shouldBe Some(NoSuchProcessException("UNKNOWN"))
+        e shouldBe Some(NoSuchProcessException("nonexistent"))
       }
     }
 
