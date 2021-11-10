@@ -18,11 +18,9 @@ abstract class BakerySmokeTests  extends BakeryFunSpec {
    * @return the data structure used by the `contextBuilder` function.
    */
   def argumentsBuilder(config: ConfigMap): TestArguments = {
-    val clientAppHostname = Uri.unsafeFromString("http://localhost:30000")
+    val clientAppHostname = Uri.unsafeFromString("http://localhost:8082")
     BakeryEnvironment.Arguments(
       clientAppHostname = clientAppHostname
     )
   }
-
-
 }

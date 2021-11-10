@@ -1,17 +1,22 @@
 package webshop.simple
 
+import java.io.{File, FileOutputStream}
 import java.util.UUID
+
 import akka.actor.ActorSystem
 import cats.effect.{ContextShift, IO}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
-import com.ing.baker.runtime.common.RecipeRecord
+import com.ing.baker.runtime.common.{RecipeRecord, Utils}
+import com.ing.baker.runtime.inmemory.InMemoryBaker
+import com.ing.baker.runtime.model.BakerF
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import org.mockito.Mockito
 import org.mockito.Mockito._
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
+import webshop.webservice.CheckoutFlowRecipe
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -96,51 +101,4 @@ class WebshopRecipeSpec extends AsyncFlatSpec with Matchers  {
 
     } yield provided shouldBe items.mkString(", ")
   }
-
-  it should "reserve items in happy conditions (mockito)" in {
-    implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-
-    val system: ActorSystem = ActorSystem("baker-webshop-system")
-    // The ReserveItems interaction being mocked by Mockito
-    val mockedReserveItems: ReserveItems = Mockito.mock(classOf[ReserveItems])
-
-    val reserveItemsInstance: InteractionInstance =
-      InteractionInstance.unsafeFrom(mockedReserveItems)
-    val baker: Baker = AkkaBaker.localDefault(system, CachingInteractionManager.apply(reserveItemsInstance))
-
-    val compiled = RecipeCompiler.compileRecipe(SimpleWebshopRecipe.recipe)
-    val recipeInstanceId: String = UUID.randomUUID().toString
-
-    val orderId: String = "order-id"
-    val items: List[String] = List("item1", "item2")
-
-    val orderPlaced = EventInstance
-      .unsafeFrom(SimpleWebshopRecipeReflection.OrderPlaced(orderId, items))
-    val paymentMade = EventInstance
-      .unsafeFrom(SimpleWebshopRecipeReflection.PaymentMade())
-
-
-    when(mockedReserveItems.apply(orderId, items))
-      .thenReturn(Future.successful(SimpleWebshopRecipeReflection.ItemsReserved(items)))
-
-    for {
-      recipeId <- baker.addRecipe(RecipeRecord.of(compiled))
-      _ <- baker.bake(recipeId, recipeInstanceId)
-      _ <- baker.fireEventAndResolveWhenCompleted(
-        recipeInstanceId, orderPlaced)
-      _ <- baker.fireEventAndResolveWhenCompleted(
-        recipeInstanceId, paymentMade)
-      state <- baker.getRecipeInstanceState(recipeInstanceId)
-      provided = state
-        .ingredients
-        .find(_._1 == "reservedItems")
-        .map(_._2.as[List[String]])
-        .map(_.mkString(", "))
-        .getOrElse("No reserved items")
-
-      // Verify that the mock was called with the expected data
-      _ = verify(mockedReserveItems).apply(orderId, items)
-    } yield provided shouldBe items.mkString(", ")
-  }
-
 }

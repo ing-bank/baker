@@ -9,8 +9,6 @@ import scala.concurrent.Future
 
 object CheckoutFlowIngredients {
 
-  case class OrderId(orderId: String)
-
   case class Item(itemId: String)
 
   case class ReservedItems(items: List[Item], data: Array[Byte])
@@ -25,7 +23,7 @@ object CheckoutFlowIngredients {
 
 object CheckoutFlowEvents {
 
-  case class OrderPlaced(orderId: OrderId, items: List[Item])
+  case class OrderPlaced(items: List[Item])
 
   case class PaymentInformationReceived(paymentInformation: PaymentInformation)
 
@@ -39,7 +37,7 @@ object CheckoutFlowEvents {
 
   sealed trait MakePaymentOutput
 
-  case class PaymentSuccessful(shippingOrder: ShippingOrder) extends MakePaymentOutput
+  case class PaymentSuccessful() extends MakePaymentOutput
 
   case class PaymentFailed() extends MakePaymentOutput
 
@@ -51,13 +49,12 @@ object CheckoutFlowInteractions {
 
   trait ReserveItems {
 
-    def apply(orderId: OrderId, items: List[Item]): Future[ReserveItemsOutput]
+    def apply(items: List[Item]): Future[ReserveItemsOutput]
   }
 
   def ReserveItemsInteraction = Interaction(
     name = "ReserveItems",
     inputIngredients = Seq(
-      Ingredient[OrderId]("orderId"),
       Ingredient[List[Item]]("items")
     ),
     output = Seq(
@@ -76,7 +73,6 @@ object CheckoutFlowInteractions {
     inputIngredients = Seq(
       com.ing.baker.recipe.scaladsl.recipeInstanceId,
       Ingredient[ReservedItems]("reservedItems"),
-      Ingredient[ShippingAddress]("shippingAddress"),
       Ingredient[PaymentInformation]("paymentInformation")
     ),
     output = Seq(
@@ -87,13 +83,14 @@ object CheckoutFlowInteractions {
 
   trait ShipItems {
 
-    def apply(order: ShippingOrder): Future[ShippingConfirmed]
+    def apply(shippingAddress: ShippingAddress, reservedItems: ReservedItems): Future[ShippingConfirmed]
   }
 
   def ShipItemsInteraction = Interaction(
     name = "ShipItems",
     inputIngredients = Seq(
-      Ingredient[ShippingOrder]("shippingOrder")
+      Ingredient[ShippingAddress]("shippingAddress"),
+      Ingredient[ReservedItems]("reservedItems")
     ),
     output = Seq(
       Event[ShippingConfirmed]
@@ -111,5 +108,6 @@ object CheckoutFlowRecipe {
     .withInteractions(
       ReserveItemsInteraction,
       MakePaymentInteraction,
-      ShipItemsInteraction)
+      ShipItemsInteraction
+        .withRequiredEvent(Event[PaymentSuccessful]))
 }
