@@ -111,7 +111,6 @@ final class BakerService private(baker: Baker)(implicit cs: ContextShift[IO], ti
 
   private def callBaker[A](f: => Future[A])(implicit encoder: Encoder[A]): IO[Response[IO]] = {
     IO.fromFuture(IO(f)).attempt.flatMap {
-      case Left(e: NoSuchProcessException) => NotFound(BakerResult(e))
       case Left(e: BakerException) => Ok(BakerResult(e))
       case Left(e) =>
         logger.error(s"Unexpected exception happened when calling Baker", e)
