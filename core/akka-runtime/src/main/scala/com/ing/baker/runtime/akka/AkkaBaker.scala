@@ -35,8 +35,8 @@ object AkkaBaker {
     new AkkaBaker(AkkaBakerConfig.from(config, actorSystem, interactions))
 
   def withConfig(config: AkkaBakerConfig): AkkaBaker =
-    new AkkaBaker(config)
 
+    new AkkaBaker(config)
   def localDefault(actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
     new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem, interactions))
 
@@ -83,25 +83,28 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
-  override def addRecipe(recipeRecord: RecipeRecord): Future[String] = {
-    val recipe = recipeRecord.recipe
-    val updated = recipeRecord.updated
-    if (!recipeRecord.validate || config.bakerValidationSettings.allowAddingRecipeWithoutRequiringInstances) {
-      logger.debug(s"Recipe implementation errors are ignored for ${recipe.name}:${recipe.recipeId}")
-      addToManager(recipe, updated)
-    } else {
-      logger.debug(s"Recipe ${recipe.name}:${recipe.recipeId} is validated for compatibility with interactions")
-      getImplementationErrors(recipe).flatMap { implementationErrors =>
-        if (implementationErrors.nonEmpty) {
-          Future.failed(ImplementationsException(s"Recipe ${recipe.name}:${recipe.recipeId} has implementation errors: ${implementationErrors.mkString(", ")}"))
-        } else if (recipe.validationErrors.nonEmpty) {
-          Future.failed(RecipeValidationException(s"Recipe ${recipe.name}:${recipe.recipeId} has validation errors: ${recipe.validationErrors.mkString(", ")}"))
-        } else {
-          addToManager(recipe, updated)
+  override def addRecipe(recipeRecord: RecipeRecord): Future[String] = for {
+    _ <- config.interactions.recipeAdded(recipeRecord).unsafeToFuture()
+    result <- {
+      val recipe = recipeRecord.recipe
+      val updated = recipeRecord.updated
+      if (!recipeRecord.validate || config.bakerValidationSettings.allowAddingRecipeWithoutRequiringInstances) {
+        logger.debug(s"Recipe implementation errors are ignored for ${recipe.name}:${recipe.recipeId}")
+        addToManager(recipe, updated)
+      } else {
+        logger.debug(s"Recipe ${recipe.name}:${recipe.recipeId} is validated for compatibility with interactions")
+        getImplementationErrors(recipe).flatMap { implementationErrors =>
+          if (implementationErrors.nonEmpty) {
+            Future.failed(ImplementationsException(s"Recipe ${recipe.name}:${recipe.recipeId} has implementation errors: ${implementationErrors.mkString(", ")}"))
+          } else if (recipe.validationErrors.nonEmpty) {
+            Future.failed(RecipeValidationException(s"Recipe ${recipe.name}:${recipe.recipeId} has validation errors: ${recipe.validationErrors.mkString(", ")}"))
+          } else {
+            addToManager(recipe, updated)
+          }
         }
       }
     }
-  }
+  } yield result
 
   private def addToManager(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] =
     recipeManager.put(RecipeRecord.of(compiledRecipe, updated = timeCreated))

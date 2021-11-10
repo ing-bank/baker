@@ -22,11 +22,13 @@ class LocalhostInteractions(config: Config,
   protected def localhostPort: Int = port.getOrElse(config.getInt("baker.interactions.localhost.port"))
 
   override def resource: Resource[IO, DynamicInteractionManager] = Resource.eval {
+    val url = s"http://localhost:$localhostPort$apiUrlPrefix"
     for {
-          interactions <- extractInteractions(client, Uri.unsafeFromString(s"http://localhost:$localhostPort$apiUrlPrefix"))
-          d <- discovered
+      remoteInteractions <- extractInteractions(client, Uri.unsafeFromString(url))
+      d <- discovered
         } yield {
-      d.put(port.toString, interactions)
+      logger.info(s"${url} provides ${remoteInteractions.interactions.size} interactions: ${remoteInteractions.interactions.map(_.name).mkString(",")}")
+      d.put(port.toString, InteractionBundle(remoteInteractions.startedAt, remoteInteractions.interactions))
       this
     }
   }

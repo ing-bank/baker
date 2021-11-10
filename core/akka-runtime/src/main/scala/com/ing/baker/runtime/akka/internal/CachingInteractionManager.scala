@@ -3,6 +3,7 @@ package com.ing.baker.runtime.akka.internal
 import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Sync}
 import com.ing.baker.il.petrinet.InteractionTransition
+import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.baker.runtime.{defaultinteractions, model, scaladsl}
 
@@ -85,10 +86,19 @@ trait CachingTransitionLookups {
   protected def findCompatible(instances: List[model.InteractionInstance[IO]], interaction: InteractionTransition): model.InteractionInstance[IO] =
     instances.find(implementation => compatible(interaction, implementation)).orNull
 
+  protected def transitionCache: IO[TransitionStorage] = for {
+    cacheRef <- transitionToInteractionCache
+    cache <- cacheRef.get
+  } yield cache
+
+  protected def clearTransitionCache(): IO[Unit] = for {
+    cache <- transitionCache
+    _ = cache.clear()
+  } yield ()
+
   override def findFor(transition: InteractionTransition)(implicit sync: Sync[IO]): IO[Option[model.InteractionInstance[IO]]] =
     for {
-      cacheRef <- transitionToInteractionCache
-      cache <- cacheRef.get
+      cache <- transitionCache
       instances <- self.listAll
     } yield Option(cache.computeIfAbsent(transition, (findCompatible(instances, _)).asJava))
 }
@@ -105,11 +115,12 @@ trait CachingInteractionManager extends InteractionManager[IO] with CachingTrans
   */
 trait DynamicInteractionManager extends CachingInteractionManager {
 
-  type DiscoveredInteractions = ConcurrentHashMap[String, List[InteractionInstance[IO]]]
+  case class InteractionBundle(startedAt: Long, interactions: List[InteractionInstance[IO]])
+  type DiscoveredInteractions = ConcurrentHashMap[String, InteractionBundle]
 
   def listAll: IO[List[InteractionInstance[IO]]] = for {
     d <- discovered
-  } yield d.values().asScala.flatten.toList
+  } yield d.values().asScala.flatMap(_.interactions).toList
 
   private val discoveredInteractions: IO[Ref[IO, DiscoveredInteractions]] =
     Ref.of[IO, DiscoveredInteractions](new DiscoveredInteractions)

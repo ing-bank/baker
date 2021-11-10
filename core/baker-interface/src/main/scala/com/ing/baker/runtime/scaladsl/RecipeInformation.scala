@@ -6,6 +6,8 @@ import com.ing.baker.runtime.{common, javadsl}
 
 import scala.collection.JavaConverters._
 
+case class EncodedRecipe(base64: String, createdAt: Long)
+
 case class RecipeInformation(
                               compiledRecipe: CompiledRecipe,
                               recipeCreatedTime: Long,

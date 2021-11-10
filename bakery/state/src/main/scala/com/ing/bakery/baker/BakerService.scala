@@ -3,18 +3,14 @@ package com.ing.bakery.baker
 import cats.data.OptionT
 import cats.effect.{Blocker, ContextShift, IO, Resource, Sync, Timer}
 import cats.implicits._
-import com.ing.baker.il.EncodedRecipe
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
-import com.ing.baker.runtime.model.InteractionManager
-import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EventInstance}
+import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance}
 import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
-import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe._
 import io.circe.generic.auto._
-import io.prometheus.client.CollectorRegistry
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._
@@ -22,10 +18,9 @@ import org.http4s.implicits._
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import io.prometheus.client.CollectorRegistry
-import org.http4s.server.staticcontent._
 import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.server.blaze.BlazeServerBuilder
-import org.http4s.server.middleware.{CORS, CORSConfig, Logger, Metrics}
+import org.http4s.server.middleware.{CORS, Logger, Metrics}
 import org.http4s.server.{Router, Server}
 import org.slf4j.LoggerFactory
 
@@ -116,7 +111,6 @@ final class BakerService private(baker: Baker)(implicit cs: ContextShift[IO], ti
 
   private def callBaker[A](f: => Future[A])(implicit encoder: Encoder[A]): IO[Response[IO]] = {
     IO.fromFuture(IO(f)).attempt.flatMap {
-      case Left(e: NoSuchProcessException) => NotFound(BakerResult(e))
       case Left(e: BakerException) => Ok(BakerResult(e))
       case Left(e) =>
         logger.error(s"Unexpected exception happened when calling Baker", e)
@@ -137,7 +131,7 @@ final class BakerService private(baker: Baker)(implicit cs: ContextShift[IO], ti
       case req@POST -> Root / "recipes" =>
         for {
           encodedRecipe <- req.as[EncodedRecipe]
-          recipe <- RecipeLoader.fromBytes(encodedRecipe.recipe.getBytes(Charset.forName("UTF-8")))
+          recipe <- RecipeLoader.fromBytes(encodedRecipe.base64.getBytes(Charset.forName("UTF-8")))
           result <- callBaker(baker.addRecipe(recipe, validate = true))
         } yield result
 

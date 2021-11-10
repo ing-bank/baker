@@ -72,7 +72,7 @@ object JsonDecoders extends LazyLogging {
     )
   }
 
-  implicit val eventInstanceDecoder: Decoder[EventInstance] = deriveDecoder[EventInstance]
+  implicit val encodedRecipeDecoder: Decoder[EncodedRecipe] = deriveDecoder[EncodedRecipe]
 
   implicit val rejectReasonDecoder: Decoder[RejectReason] = decodeString.map(RejectReason.valueOf)
   implicit val exceptionDecoder: Decoder[ExceptionStrategyOutcome] = deriveDecoder[ExceptionStrategyOutcome]
@@ -88,7 +88,7 @@ object JsonDecoders extends LazyLogging {
       CompiledRecipe(name, recipeId, new PetriNet(Graph.empty), Marking.empty, validationErrors, Option.empty, Option.empty)
     }
   }
-
+  implicit val eventInstanceDecoder: Decoder[EventInstance] = deriveDecoder[EventInstance]
   implicit val bakerEventDecoder: Decoder[BakerEvent] = deriveDecoder[BakerEvent]
   implicit val recipeInformationDecoder: Decoder[RecipeInformation] = deriveDecoder[RecipeInformation]
   implicit val recipeInstanceStateDecoder: Decoder[RecipeInstanceState] = deriveDecoder[RecipeInstanceState]

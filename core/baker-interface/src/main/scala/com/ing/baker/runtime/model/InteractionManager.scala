@@ -5,6 +5,7 @@ import cats.effect.Sync
 import cats.implicits._
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
+import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
 import com.ing.baker.types.Type
@@ -29,6 +30,8 @@ trait InteractionManager[F[_]] {
     ConfigFactory.load().getBoolean("baker.interactions.allow-superset-for-output-types")
 
   def listAll: F[List[InteractionInstance[F]]]
+
+  def recipeAdded(recipeRecord: RecipeRecord)(implicit sync: Sync[F]): F[Unit] = Sync[F].unit
 
   def findFor(transition: InteractionTransition)(implicit sync: Sync[F]): F[Option[InteractionInstance[F]]] =
     listAll.flatMap(all => sync.delay(all.find(compatible(transition, _))))
