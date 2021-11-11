@@ -592,7 +592,7 @@ lazy val `baker-test` = project.in(file("core/baker-test"))
     ) ++ testDeps(scalaTest, logback,
       "io.altoo" %% "akka-kryo-serialization" % "1.1.5",
       "junit" % "junit" % "4.13",
-      "org.scalatestplus" %% "junit-4-13" % "3.2.9.0"
+      "org.scalatestplus" %% "junit-4-13" % "3.2.10.0"
     )
   ).dependsOn(`baker-interface`, testScope(`baker-akka-runtime`), testScope(`baker-recipe-compiler`))
 
