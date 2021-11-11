@@ -5,7 +5,7 @@ import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.AkkaBaker
-import com.ing.baker.runtime.akka.internal.CachedInteractionManager
+import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.javadsl
 import com.ing.baker.runtime.scaladsl.{Baker, InteractionInstance}
 
@@ -20,7 +20,7 @@ object WebshopBaker {
   implicit val timer: Timer[IO] = IO.timer(global)
 
   val baker: Baker = AkkaBaker.localDefault(ActorSystem.apply,
-    CachedInteractionManager(InteractionInstance.unsafeFrom(new ReserveItems)))
+    CachingInteractionManager(InteractionInstance.unsafeFrom(new ReserveItems)))
 
   val javaBaker: javadsl.Baker = AkkaBaker.javaOther(baker)
 

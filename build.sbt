@@ -403,7 +403,7 @@ lazy val baker = project.in(file("."))
   .aggregate(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
     `bakery-client`, `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
     `sbt-bakery-docker-generate`,
-    `baker-interface`, `bakery-dashboard`, `baker-annotations`)
+    `baker-interface`, `bakery-dashboard`, `baker-annotations`, `baker-test`)
 
 lazy val `baker-example` = project
   .in(file("examples/baker-example"))
