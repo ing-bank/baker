@@ -128,8 +128,8 @@ object Dependencies {
 
   val snakeYaml = "org.yaml" % "snakeyaml" % "1.29"
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.0"
-  val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.69"
-  val bouncyCastleBcpkix ="org.bouncycastle" % "bcpkix-jdk15on" % "1.69"
+  val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.70"
+  val bouncyCastleBcpkix ="org.bouncycastle" % "bcpkix-jdk15on" % "1.70"
 
   val guava = "com.google.guava" % "guava" % "31.0.1-jre"
 
