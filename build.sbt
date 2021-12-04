@@ -299,6 +299,15 @@ lazy val `bakery-dashboard` = project.in(file("bakery/dashboard"))
     publishLocal := (publishLocal dependsOn (Universal / packageBin)).value
   )
 
+lazy val `bakery-state-spring` = project.in(file("bakery/state-spring"))
+  .settings(defaultModuleSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+    springCore, springContext, springBootStarter
+    )
+  )
+  .dependsOn(`bakery-state`)
+
 lazy val `bakery-state` = project.in(file("bakery/state"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(defaultModuleSettings)
@@ -401,7 +410,7 @@ lazy val `bakery-interaction-spring` = project.in(file("bakery/interaction-sprin
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .aggregate(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
-    `bakery-client`, `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
+    `bakery-client`, `bakery-state`, `bakery-state-spring`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
     `sbt-bakery-docker-generate`,
     `baker-interface`, `bakery-dashboard`, `baker-annotations`, `baker-test`)
 

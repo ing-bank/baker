@@ -15,6 +15,7 @@ object Dependencies {
   val catsCoreVersion = "2.6.1"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
   val springVersion = "5.3.13"
+  val springBootVersion = "2.6.1"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
     .exclude("com.typesafe.akka", "akka-actor")
@@ -125,6 +126,7 @@ object Dependencies {
 
   val springContext = "org.springframework" % "spring-context" % springVersion
   val springCore = "org.springframework" % "spring-core" % springVersion
+  val springBootStarter = "org.springframework.boot" % "spring-boot-starter" % springBootVersion
 
   val snakeYaml = "org.yaml" % "snakeyaml" % "1.29"
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.0"
