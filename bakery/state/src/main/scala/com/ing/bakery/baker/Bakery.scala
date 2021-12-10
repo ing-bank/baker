@@ -20,7 +20,7 @@ case class Bakery(
 
 object Bakery extends LazyLogging {
 
-  def resource : Resource[IO, Bakery] = {
+  def resource(externalContext: Option[Any] = None) : Resource[IO, Bakery] = {
     val configPath = sys.env.getOrElse("CONFIG_DIRECTORY", "/opt/docker/conf")
     val config = ConfigFactory.load(ConfigFactory.parseFile(new File(s"$configPath/application.conf")))
     val bakerConfig = config.getConfig("baker")
@@ -42,8 +42,9 @@ object Bakery extends LazyLogging {
       _ <- Watcher.resource(config, system, maybeCassandra)
       _ <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
       eventSink <- EventSink.resource(config)
-      interactions <- InteractionRegistry.resource(config, system)
+      interactions <- InteractionRegistry.resource(externalContext, config, system)
       baker = AkkaBaker.withConfig(AkkaBakerConfig(
+        externalContext = externalContext,
         interactions = interactions,
         bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
         timeouts = AkkaBakerConfig.Timeouts.apply(config),
@@ -66,7 +67,12 @@ object Bakery extends LazyLogging {
     } yield Bakery(baker, system.dispatcher, recipeCache)
   }
 
-  lazy val instance: Bakery = resource.use(bakery => IO(bakery)).unsafeRunSync()
+  /**
+    * Create bakery instance as external context
+    * @param externalContext optional external context in which Bakery is running, e.g. Spring context
+    * @return
+    */
+  def instance(externalContext: Option[Any]): Bakery = resource(externalContext).use(bakery => IO(bakery)).unsafeRunSync()
 
 }
 

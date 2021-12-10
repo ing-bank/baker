@@ -300,8 +300,9 @@ lazy val `bakery-dashboard` = project.in(file("bakery/dashboard"))
   )
 
 lazy val `bakery-state-spring` = project.in(file("bakery/state-spring"))
-  .settings(defaultModuleSettings)
+  .settings(defaultModuleSettings ++ noPublishSettings)
   .settings(
+    moduleName := "bakery-state-spring",
     libraryDependencies ++= Seq(
     springCore, springContext, springBootStarter
     )

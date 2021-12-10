@@ -456,7 +456,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       }).void
       system <- Resource.make(makeActorSystem)(stopActorSystem)
       _ <- Resource.eval(remoteInteractionLocalhost.respondsWithCancelReserveItems())
-      interactions <- InteractionRegistry.resource(config, system)
+      interactions <- InteractionRegistry.resource(None, config, system)
 
       recipeAddingCache = new RecipeCache {
         override def merge(recipes: List[RecipeRecord]): IO[List[RecipeRecord]] =

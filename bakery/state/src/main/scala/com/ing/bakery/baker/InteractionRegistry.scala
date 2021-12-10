@@ -18,7 +18,7 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 object InteractionRegistry extends LazyLogging {
 
-  def resource(config: Config, actorSystem: ActorSystem): Resource[IO, InteractionRegistry] =
+  def resource(externalContext: Option[Any], config: Config, actorSystem: ActorSystem): Resource[IO, InteractionRegistry] =
     readInteractionClassName(config)
       .map(Class.forName)
       .getOrElse(classOf[BaseInteractionRegistry])
@@ -26,7 +26,7 @@ object InteractionRegistry extends LazyLogging {
       .getDeclaredConstructor(classOf[Config], classOf[ActorSystem])
       .newInstance(config, actorSystem)
       .asInstanceOf[InteractionRegistry]
-      .resource
+      .resource(externalContext)
 
   private def readInteractionClassName(config: Config): Option[String] = {
     Some(config.getString("baker.interactions.class")).filterNot(_.isEmpty)
@@ -40,8 +40,7 @@ object InteractionRegistry extends LazyLogging {
   * a single interaction manager or to a registry.
   */
 trait InteractionRegistry extends InteractionManager[IO] {
-  def resource: Resource[IO, InteractionRegistry]
-
+  def resource(externalContext: Option[Any]): Resource[IO, InteractionRegistry]
   def interactionManagers: IO[List[InteractionManager[IO]]]
 }
 
@@ -64,13 +63,14 @@ class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
 
   implicit val cs: ContextShift[IO] = IO.contextShift(actorSystem.dispatcher)
   implicit val effect: ConcurrentEffect[IO] = IO.ioConcurrentEffect
+  implicit val timer: Timer[IO] = IO.timer(actorSystem.dispatcher)
 
   // variable state, but changed only once when the resource is started
   protected var managers: List[InteractionManager[IO]] = List.empty[InteractionManager[IO]]
 
   override def interactionManagers: IO[List[InteractionManager[IO]]] = IO.pure(managers)
 
-  override def resource: Resource[IO, InteractionRegistry] = {
+  override def resource(externalContext: Option[Any]): Resource[IO, InteractionRegistry] = {
     for {
       client <- BlazeClientBuilder[IO](actorSystem.dispatcher).resource
       interactionManagers <- interactionManagersResource(client)
@@ -82,29 +82,34 @@ class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
   }
 
   protected def interactionManagersResource(client: Client[IO])
-  : Resource[IO, List[InteractionManager[IO]]] = for {
-    localhost <- new LocalhostInteractions(config, actorSystem, client).resource
-    kubernetes <- new KubernetesInteractions(config, actorSystem, client).resource
-  } yield {
-    List(localhost, kubernetes)
+  : Resource[IO, List[InteractionManager[IO]]] = {
+
+    val interactionClient = new BaseRemoteInteractionClient(client, Headers.empty)
+
+    for {
+      localhost <- new LocalhostInteractions(config, actorSystem, interactionClient).resource
+      kubernetes <- new KubernetesInteractions(config, actorSystem, interactionClient).resource
+    } yield {
+      List(localhost, kubernetes)
+    }
   }
 }
 
 case class RemoteInteractions(startedAt: Long,
                               interactions: List[InteractionInstance[IO]])
 
+//trait RemoteInteractionClient {
+//  def remoteInteractionClient(client: Client[IO], uri: Uri)
+//                             (implicit contextShift: ContextShift[IO], timer: Timer[IO]): RemoteInteractionClient =
+//    new BaseRemoteInteractionClient(client, uri, Headers.empty)
+//}
 /**
   * Method for resilient/retrying discovery of remote interactions
   */
 trait RemoteInteractionDiscovery extends LazyLogging {
 
-  def remoteInteractionClient(client: Client[IO], uri: Uri)
-                             (implicit contextShift: ContextShift[IO], timer: Timer[IO]): RemoteInteractionClient =
-    new BaseRemoteInteractionClient(client, uri, Headers.empty)
-
-  def extractInteractions(client: Client[IO], uri: Uri)
+  def extractInteractions(remoteInteractions: RemoteInteractionClient, uri: Uri)
                          (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[RemoteInteractions] = {
-    val remoteInteractions  = remoteInteractionClient(client, uri)
 
     def within[A](giveUpAfter: FiniteDuration, retries: Int)(f: IO[A])(implicit timer: Timer[IO]): IO[A] = {
       def attempt(count: Int, times: FiniteDuration): IO[A] = {
@@ -127,7 +132,7 @@ trait RemoteInteractionDiscovery extends LazyLogging {
     within(giveUpAfter = 10 minutes, retries = 40) {
       // check every 15 seconds for interfaces for 10 minutes
       logger.debug(s"Extracting interactions @ ${uri.toString}...")
-      remoteInteractions.interfaces.map { response => {
+      remoteInteractions.interfaces(uri).map { response => {
         val interfaces = response.interactions
         if (interfaces.isEmpty) logger.warn(s"${uri.toString} provides no interactions")
         RemoteInteractions(response.startedAt,
@@ -136,7 +141,7 @@ trait RemoteInteractionDiscovery extends LazyLogging {
               _name = interaction.name,
               _input = interaction.input,
               _output = interaction.output,
-              _run = input => remoteInteractions.execute(interaction.id, input),
+              _run = input => remoteInteractions.execute(uri, interaction.id, input),
             )
           }))
       }
