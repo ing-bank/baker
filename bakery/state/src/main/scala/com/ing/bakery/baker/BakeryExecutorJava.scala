@@ -63,7 +63,7 @@ class BakeryExecutorJava(bakery: Bakery) extends LazyLogging {
 
   def instanceGetVisual(recipeInstanceId: String): JFuture[String] = callBakerJava(bakery.baker.getVisualState(recipeInstanceId))
 
-  def instanceBake(recipeInstanceId: String): JFuture[String] = callBakerJava(bakery.baker.getVisualState(recipeInstanceId))
+  def instanceBake(recipeId: String, recipeInstanceId: String): JFuture[String] = callBakerJava(bakery.baker.bake(recipeId, recipeInstanceId))
 
   private def toOption[T](opt: Optional[T]): Option[T] = if (opt.isPresent) Some(opt.get()) else None
 
