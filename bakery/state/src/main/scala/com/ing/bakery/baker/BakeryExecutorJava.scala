@@ -12,7 +12,7 @@ import io.circe.generic.auto._
 
 import java.nio.charset.Charset
 import java.util.Optional
-import java.util.concurrent.{Future => JFuture}
+import java.util.concurrent.{CompletableFuture => JFuture}
 import scala.compat.java8.FutureConverters.FutureOps
 import scala.concurrent.{ExecutionContext, Future}
 
