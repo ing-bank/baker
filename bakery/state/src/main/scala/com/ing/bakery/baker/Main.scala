@@ -1,21 +1,13 @@
 package com.ing.bakery.baker
 
-import akka.actor.ActorSystem
-import akka.cluster.Cluster
-import cats.effect.{ExitCode, IO, IOApp, Resource}
-import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
+import cats.effect.{ExitCode, IO, IOApp}
 import com.ing.bakery.metrics.MetricService
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import io.prometheus.client.CollectorRegistry
-import org.http4s.metrics.prometheus.Prometheus
-import org.http4s.server.Server
 
 import java.io.File
 import java.net.InetSocketAddress
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
-
 
 object Main extends IOApp with LazyLogging {
 
