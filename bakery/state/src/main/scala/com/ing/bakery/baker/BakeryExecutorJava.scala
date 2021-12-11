@@ -12,6 +12,8 @@ import io.circe.generic.auto._
 
 import java.nio.charset.Charset
 import java.util.Optional
+import java.util.concurrent.{Future => JFuture}
+import scala.compat.java8.FutureConverters.FutureOps
 import scala.concurrent.{ExecutionContext, Future}
 
 class BakeryExecutorJava(bakery: Bakery) extends LazyLogging {
@@ -30,60 +32,64 @@ class BakeryExecutorJava(bakery: Bakery) extends LazyLogging {
     }.map(bakerResultEncoder.apply(_).noSpaces)
   }
 
-  def appGetAllInteractions: Future[String] = callBaker(bakery.baker.getAllInteractions)
+  private def callBakerJava[A](f: => Future[A])(implicit encoder: Encoder[A]): JFuture[String] = {
+    callBaker(f)(encoder).toJava.toCompletableFuture
+  }
 
-  def appGetInteraction(interactionName: String): Future[String] = callBaker(bakery.baker.getInteraction(interactionName))
+  def appGetAllInteractions: JFuture[String] = callBakerJava(bakery.baker.getAllInteractions)
 
-  def appAddRecipe(recipe: String): Future[String] = {
+  def appGetInteraction(interactionName: String): JFuture[String] = callBakerJava(bakery.baker.getInteraction(interactionName))
+
+  def appAddRecipe(recipe: String): JFuture[String] = {
     (for {
       json <- parse(recipe).toOption
       encodedRecipe <- json.as[EncodedRecipe].toOption
     } yield RecipeLoader.fromBytes(encodedRecipe.base64.getBytes(Charset.forName("UTF-8"))).unsafeToFuture)
       .map(_.flatMap(recipe => callBaker(bakery.baker.addRecipe(recipe, validate = false))))
       .getOrElse(Future.failed(new IllegalStateException("Error adding recipe")))
-  }
+  }.toJava.toCompletableFuture
 
-  def appGetRecipe(recipeId: String): Future[String] = callBaker(bakery.baker.getRecipe(recipeId))
+  def appGetRecipe(recipeId: String): JFuture[String] = callBakerJava(bakery.baker.getRecipe(recipeId))
 
-  def appGetAllRecipes: Future[String] = callBaker(bakery.baker.getAllRecipes)
+  def appGetAllRecipes: JFuture[String] = callBakerJava(bakery.baker.getAllRecipes)
 
-  def appGetVisualRecipe(recipeId: String): Future[String] = callBaker(bakery.baker.getRecipeVisual(recipeId))
+  def appGetVisualRecipe(recipeId: String): JFuture[String] = callBakerJava(bakery.baker.getRecipeVisual(recipeId))
 
-  def instanceGet(recipeInstanceId: String): Future[String] =  callBaker(bakery.baker.getRecipeInstanceState(recipeInstanceId))
+  def instanceGet(recipeInstanceId: String): JFuture[String] =  callBakerJava(bakery.baker.getRecipeInstanceState(recipeInstanceId))
 
-  def instanceGetEvents(recipeInstanceId: String): Future[String] = callBaker(bakery.baker.getEvents(recipeInstanceId))
+  def instanceGetEvents(recipeInstanceId: String): JFuture[String] = callBakerJava(bakery.baker.getEvents(recipeInstanceId))
 
-  def instanceGetIngredients(recipeInstanceId: String): Future[String] = callBaker(bakery.baker.getIngredients(recipeInstanceId))
+  def instanceGetIngredients(recipeInstanceId: String): JFuture[String] = callBakerJava(bakery.baker.getIngredients(recipeInstanceId))
 
-  def instanceGetVisual(recipeInstanceId: String): Future[String] = callBaker(bakery.baker.getVisualState(recipeInstanceId))
+  def instanceGetVisual(recipeInstanceId: String): JFuture[String] = callBakerJava(bakery.baker.getVisualState(recipeInstanceId))
 
-  def instanceBake(recipeInstanceId: String): Future[String] = callBaker(bakery.baker.getVisualState(recipeInstanceId))
+  def instanceBake(recipeInstanceId: String): JFuture[String] = callBakerJava(bakery.baker.getVisualState(recipeInstanceId))
 
   private def toOption[T](opt: Optional[T]): Option[T] = if (opt.isPresent) Some(opt.get()) else None
 
-  private def parseEventAndExecute[A](eventJson: String, f: EventInstance => Future[A])(implicit encoder: Encoder[A]) =  (for {
+  private def parseEventAndExecute[A](eventJson: String, f: EventInstance => Future[A])(implicit encoder: Encoder[A]): JFuture[String] =  (for {
     json <- parse(eventJson)
     eventInstance <- json.as[EventInstance]
   } yield {
     callBaker(f(eventInstance))
-  }).getOrElse(Future.failed(new IllegalArgumentException("Can't process event")))
+  }).getOrElse(Future.failed(new IllegalArgumentException("Can't process event"))).toJava.toCompletableFuture
 
-  def instanceFireAndResolveWhenReceived(recipeInstanceId: String, eventJson: String, maybeCorrelationId: Optional[String]): Future[String] =
+  def instanceFireAndResolveWhenReceived(recipeInstanceId: String, eventJson: String, maybeCorrelationId: Optional[String]): JFuture[String] =
     parseEventAndExecute(eventJson, bakery.baker.fireEventAndResolveWhenReceived(recipeInstanceId, _, toOption(maybeCorrelationId)))
 
-  def instanceFireAndResolveWhenCompleted(recipeInstanceId: String, eventJson: String, maybeCorrelationId: Optional[String]): Future[String] =
+  def instanceFireAndResolveWhenCompleted(recipeInstanceId: String, eventJson: String, maybeCorrelationId: Optional[String]): JFuture[String] =
     parseEventAndExecute(eventJson, bakery.baker.fireEventAndResolveWhenCompleted(recipeInstanceId, _, toOption(maybeCorrelationId)))
 
-  def instancefireAndResolveOnEvent(recipeInstanceId: String, eventJson: String, event: String, maybeCorrelationId: Optional[String]): Future[String] =
+  def instancefireAndResolveOnEvent(recipeInstanceId: String, eventJson: String, event: String, maybeCorrelationId: Optional[String]): JFuture[String] =
     parseEventAndExecute(eventJson, bakery.baker.fireEventAndResolveOnEvent(recipeInstanceId, _, event, toOption(maybeCorrelationId)))
 
-  def instanceInteractionRetry(recipeInstanceId: String, interactionName: String): Future[String] =
-    callBaker(bakery.baker.retryInteraction(recipeInstanceId, interactionName))
+  def instanceInteractionRetry(recipeInstanceId: String, interactionName: String): JFuture[String] =
+    callBakerJava(bakery.baker.retryInteraction(recipeInstanceId, interactionName))
 
-  def instanceInteractionStopRetrying(recipeInstanceId: String, interactionName: String): Future[String] =
-    callBaker(bakery.baker.stopRetryingInteraction(recipeInstanceId, interactionName))
+  def instanceInteractionStopRetrying(recipeInstanceId: String, interactionName: String): JFuture[String] =
+    callBakerJava(bakery.baker.stopRetryingInteraction(recipeInstanceId, interactionName))
 
-  def instanceInteractionResolve(recipeInstanceId: String, interactionName: String, eventJson: String): Future[String] =
+  def instanceInteractionResolve(recipeInstanceId: String, interactionName: String, eventJson: String): JFuture[String] =
     parseEventAndExecute(eventJson, bakery.baker.resolveInteraction(recipeInstanceId, interactionName, _))
 
 }
