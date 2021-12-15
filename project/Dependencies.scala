@@ -126,7 +126,7 @@ object Dependencies {
   val springContext = "org.springframework" % "spring-context" % springVersion
   val springCore = "org.springframework" % "spring-core" % springVersion
 
-  val snakeYaml = "org.yaml" % "snakeyaml" % "1.29"
+  val snakeYaml = "org.yaml" % "snakeyaml" % "1.30"
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.0"
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.69"
   val bouncyCastleBcpkix ="org.bouncycastle" % "bcpkix-jdk15on" % "1.69"
