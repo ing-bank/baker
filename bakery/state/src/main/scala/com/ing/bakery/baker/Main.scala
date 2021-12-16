@@ -1,6 +1,7 @@
 package com.ing.bakery.baker
 
 import cats.effect.{ExitCode, IO, IOApp}
+import com.ing.bakery.baker.Bakery.instance
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging

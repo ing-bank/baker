@@ -12,6 +12,7 @@ import org.http4s.metrics.prometheus.Prometheus
 
 import java.io.File
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.DurationInt
 
 case class Bakery(
                  baker: Baker,
@@ -72,7 +73,18 @@ object Bakery extends LazyLogging {
     * @param externalContext optional external context in which Bakery is running, e.g. Spring context
     * @return
     */
-  def instance(externalContext: Option[Any]): Bakery = resource(externalContext).use(bakery => IO(bakery)).unsafeRunSync()
+  def instance(externalContext: Option[Any]): Bakery = {
+    var bakery: Option[Bakery] = None
+    implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
+    resource(externalContext).use(b => IO { bakery = Some(b) }).unsafeRunAsyncAndForget()
+
+    def waitUntilBakeryStarts: IO[Bakery] = bakery match {
+      case Some(bakery) => IO.delay(bakery)
+      case None => IO.sleep(1 second) *> IO.defer(waitUntilBakeryStarts)
+    }
+
+    waitUntilBakeryStarts.unsafeRunSync()
+  }
 
 }
 
