@@ -17,7 +17,8 @@ import scala.concurrent.duration.DurationInt
 case class Bakery(
                  baker: Baker,
                  executionContext: ExecutionContext,
-                 recipeCache: RecipeCache)
+                 recipeCache: RecipeCache,
+                 system: ActorSystem)
 
 object Bakery extends LazyLogging {
 
@@ -65,7 +66,7 @@ object Bakery extends LazyLogging {
           }
       })
 
-    } yield Bakery(baker, system.dispatcher, recipeCache)
+    } yield Bakery(baker, system.dispatcher, recipeCache, system)
   }
 
   /**
@@ -80,7 +81,7 @@ object Bakery extends LazyLogging {
 
     def waitUntilBakeryStarts: IO[Bakery] = bakery match {
       case Some(bakery) => IO.delay(bakery)
-      case None => IO.sleep(1 second) *> IO.defer(waitUntilBakeryStarts)
+      case None => IO.sleep(5 seconds) *> IO.defer(waitUntilBakeryStarts)
     }
 
     waitUntilBakeryStarts.unsafeRunSync()
