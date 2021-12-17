@@ -75,16 +75,7 @@ object Bakery extends LazyLogging {
     * @return
     */
   def instance(externalContext: Option[Any]): Bakery = {
-    var bakery: Option[Bakery] = None
-    implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
-    resource(externalContext).use(b => IO { bakery = Some(b) }).unsafeRunAsyncAndForget()
-
-    def waitUntilBakeryStarts: IO[Bakery] = bakery match {
-      case Some(bakery) => IO.delay(bakery)
-      case None => IO.sleep(5 seconds) *> IO.defer(waitUntilBakeryStarts)
-    }
-
-    waitUntilBakeryStarts.unsafeRunSync()
+    resource(externalContext).use(b => IO.pure(b)).unsafeRunSync()
   }
 
 }
