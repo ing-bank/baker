@@ -1,12 +1,13 @@
 package com.ing.bakery.baker
 
 import akka.actor.ActorSystem
-import cats.effect.{Async, ContextShift, IO, Resource, Timer}
+import cats.effect.{Async, IO, Resource}
 import com.datastax.oss.driver.api.core.CqlSession
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.{ExecutionContext, Future}
+import cats.effect.Temporal
 
 /**
   * This trait allows to implement custom Cassandra session providers, shared between multiple elements that need cassandra persistence.
@@ -17,7 +18,7 @@ trait Cassandra {
 
 object Cassandra extends LazyLogging {
 
-  def resource(config: Config, system: ActorSystem)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Option[Cassandra]] =
+  def resource(config: Config, system: ActorSystem)(implicit timer: Temporal[IO], ec: ExecutionContext): Resource[IO, Option[Cassandra]] =
     Resource.eval[IO, Option[Cassandra]] {
       IO {
         val provider = config.getString("baker.cassandra.class")

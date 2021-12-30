@@ -1,6 +1,6 @@
 package com.ing.bakery.interaction
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.common.RemoteInteractionExecutionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
 import com.ing.baker.runtime.serialization.InteractionExecution
@@ -14,6 +14,7 @@ import org.http4s.dsl.io._
 import org.http4s._
 
 import scala.concurrent.ExecutionContext
+import cats.effect.Temporal
 
 object RemoteInteractionClient {
 
@@ -26,7 +27,7 @@ object RemoteInteractionClient {
   def resource(uri: Uri,
                headers: Headers,
                pool: ExecutionContext,
-               tlsConfig: Option[BakeryHttp.TLSConfig])(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, RemoteInteractionClient] =
+               tlsConfig: Option[BakeryHttp.TLSConfig])(implicit timer: Temporal[IO]): Resource[IO, RemoteInteractionClient] =
     BlazeClientBuilder[IO](pool, tlsConfig.map(BakeryHttp.loadSSLContext))
       .withCheckEndpointAuthentication(false)
       .resource
@@ -45,7 +46,7 @@ trait RemoteInteractionClient {
 class BaseRemoteInteractionClient(
                                             val client: Client[IO],
                                             val uri: Uri,
-                                            val headers: Headers)(implicit cs: ContextShift[IO], timer: Timer[IO])
+                                            val headers: Headers)(implicit cs: ContextShift[IO], timer: Temporal[IO])
   extends RemoteInteractionClient {
   import RemoteInteractionClient._
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
