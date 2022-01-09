@@ -1,13 +1,14 @@
 package com.ing.bakery.baker
 
 import akka.actor.ActorSystem
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.datastax.oss.driver.api.core.CqlSession
 import com.ing.baker.runtime.common.RecipeRecord
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.util.{Failure, Success, Try}
+import cats.effect.Temporal
 
 trait RecipeCache {
   def init: IO[Unit] = IO.unit
@@ -21,7 +22,7 @@ object RecipeCache extends LazyLogging {
 
   private lazy val NoCache = new RecipeCache {}
 
-  def resource(config: Config, system: ActorSystem, maybeCassandra: Option[Cassandra])(implicit contextShift: ContextShift[IO], timer: Timer[IO]): Resource[IO, RecipeCache] = {
+  def resource(config: Config, system: ActorSystem, maybeCassandra: Option[Cassandra])(implicit timer: Temporal[IO]): Resource[IO, RecipeCache] = {
 
     Resource.eval({
       maybeCassandra map { cassandra =>

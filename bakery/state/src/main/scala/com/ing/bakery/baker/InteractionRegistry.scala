@@ -1,7 +1,7 @@
 package com.ing.bakery.baker
 
 import akka.actor.ActorSystem
-import cats.effect.{ConcurrentEffect, ContextShift, IO, Resource, Timer}
+import cats.effect.{ConcurrentEffect, IO, Resource}
 import cats.syntax.traverse._
 import com.ing.baker.runtime.defaultinteractions
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
@@ -15,6 +15,7 @@ import scalax.collection.ChainingOps
 
 import java.io.IOException
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import cats.effect.Temporal
 
 object InteractionRegistry extends LazyLogging {
 
@@ -99,14 +100,14 @@ case class RemoteInteractions(startedAt: Long,
 trait RemoteInteractionDiscovery extends LazyLogging {
 
   def remoteInteractionClient(client: Client[IO], uri: Uri)
-                             (implicit contextShift: ContextShift[IO], timer: Timer[IO]): RemoteInteractionClient =
+                             (implicit timer: Temporal[IO]): RemoteInteractionClient =
     new BaseRemoteInteractionClient(client, uri, Headers.empty)
 
   def extractInteractions(client: Client[IO], uri: Uri)
-                         (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[RemoteInteractions] = {
+                         (implicit timer: Temporal[IO]): IO[RemoteInteractions] = {
     val remoteInteractions  = remoteInteractionClient(client, uri)
 
-    def within[A](giveUpAfter: FiniteDuration, retries: Int)(f: IO[A])(implicit timer: Timer[IO]): IO[A] = {
+    def within[A](giveUpAfter: FiniteDuration, retries: Int)(f: IO[A])(implicit timer: Temporal[IO]): IO[A] = {
       def attempt(count: Int, times: FiniteDuration): IO[A] = {
         if (count < 1) f else f.attempt.flatMap {
           case Left(e) =>

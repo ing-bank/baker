@@ -4,7 +4,7 @@ import java.io.{ByteArrayInputStream, File, InputStream}
 import java.nio.file.{Files, Path}
 import java.util.Base64
 import java.util.zip.{GZIPInputStream, ZipException}
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.protobuf
@@ -17,17 +17,18 @@ import scala.util.Try
 import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
 import scala.concurrent.duration.FiniteDuration
+import cats.effect.Temporal
 
 object RecipeLoader extends LazyLogging {
 
   def pollRecipesUpdates(path: String, recipeCache: RecipeCache, baker: Baker, duration: FiniteDuration)
-                        (implicit timer: Timer[IO], cs: ContextShift[IO]): IO[Unit] = {
+                        (implicit timer: Temporal[IO]): IO[Unit] = {
     def pollRecipes: IO[Unit] = loadRecipesIntoBaker(path, recipeCache, baker) >> IO.sleep(duration) >> IO.defer(pollRecipes)
 
     pollRecipes
   }
 
-  def loadRecipesIntoBaker(path: String, recipeCache: RecipeCache, baker: Baker)(implicit cs: ContextShift[IO]): IO[Unit] =
+  def loadRecipesIntoBaker(path: String, recipeCache: RecipeCache, baker: Baker): IO[Unit] =
     for {
       newRecipes <- RecipeLoader.loadRecipes(path)
       recipes <- recipeCache.merge(newRecipes)

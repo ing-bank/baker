@@ -57,7 +57,7 @@ object Main extends IOApp with LazyLogging {
         _ <- Resource.eval(eventSink.attach(baker))
         recipeCache <- RecipeCache.resource(config, system, maybeCassandra)
         _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(configPath, recipeCache, baker))
-        _ <- Resource.eval(IO.async[Unit] { callback =>
+        _ <- Resource.eval(IO.async_[Unit] { callback =>
           //If using local Baker the registerOnMemberUp is never called, should onl be used during local testing.
           if (bakerConfig.getString("actor.provider") == "local")
             callback(Right(()))
