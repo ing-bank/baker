@@ -456,7 +456,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       }).void
       system <- Resource.make(makeActorSystem)(stopActorSystem)
       _ <- Resource.eval(remoteInteractionLocalhost.respondsWithCancelReserveItems())
-      interactions <- InteractionRegistry.resource(config, system)
+      interactions <- InteractionRegistry.resource(None, config, system)
 
       recipeAddingCache = new RecipeCache {
         override def merge(recipes: List[RecipeRecord]): IO[List[RecipeRecord]] =
@@ -474,7 +474,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       _ <- Resource.eval(eventListener.eventSink.attach(baker))
       _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, recipeAddingCache, baker))
 
-      server <- BakerService.resource(baker, InetSocketAddress.createUnresolved("127.0.0.1", 0), "/api/bakery", "/opt/docker/dashboard", loggingEnabled = true)
+      server <- BakerService.resource(baker, executionContext, InetSocketAddress.createUnresolved("127.0.0.1", 0), "/api/bakery", "/opt/docker/dashboard", loggingEnabled = true)
       client <- BakerClient.resource(server.baseUri, "/api/bakery", executionContext)
 
     } yield Context(

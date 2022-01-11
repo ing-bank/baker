@@ -7,6 +7,7 @@ import akka.{Done, NotUsed}
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits.catsSyntaxApplicativeError
 import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
+import com.ing.bakery.interaction.RemoteInteractionClient
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.http4s.Uri
@@ -23,7 +24,7 @@ import scala.concurrent.duration.DurationInt
   */
 class KubernetesInteractions(config: Config,
                              system: ActorSystem,
-                             val client: Client[IO],
+                             val client: RemoteInteractionClient,
                              kubernetesClient: Option[KubernetesClient] = None)
   extends DynamicInteractionManager
     with RemoteInteractionDiscovery

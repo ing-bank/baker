@@ -39,7 +39,7 @@ object MetricService extends LazyLogging {
 
   def register(collector: Collector): Unit = registry.register(collector)
 
-  def resource(socketAddress: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+  def resource(socketAddress: InetSocketAddress, ec: ExecutionContext)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
     val encoder = EntityEncoder.stringEncoder
 
     def fromPrometheus: String = {
