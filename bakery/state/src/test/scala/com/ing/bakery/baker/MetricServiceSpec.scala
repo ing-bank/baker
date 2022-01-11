@@ -25,7 +25,8 @@ class MetricServiceSpec extends AnyFunSuite with Matchers {
     val mainResource  =
       for {
         metricsService <- MetricService.resource(
-          InetSocketAddress.createUnresolved("0.0.0.0", metricsPort)
+          InetSocketAddress.createUnresolved("0.0.0.0", metricsPort),
+          executionContext
         )
         httpClient <- BlazeClientBuilder[IO](executionContext).resource
       } yield (metricsService, httpClient)
