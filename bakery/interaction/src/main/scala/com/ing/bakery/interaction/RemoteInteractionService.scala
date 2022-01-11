@@ -73,8 +73,9 @@ object RemoteInteractionService {
         case None => app
       }).resource
       _ <- if (metricsEnabled)
-        MetricService.resource(InetSocketAddress.createUnresolved("0.0.0.0", metricsPort)
-        )(cs, timer, ExecutionContext.global) else Resource.eval(IO.unit)
+        MetricService
+          .resource(InetSocketAddress.createUnresolved("0.0.0.0", metricsPort), ExecutionContext.global) (cs, timer)
+      else Resource.eval(IO.unit)
 
     } yield server
 

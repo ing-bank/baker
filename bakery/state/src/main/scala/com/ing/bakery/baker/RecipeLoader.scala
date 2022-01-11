@@ -21,9 +21,9 @@ import cats.effect.Temporal
 
 object RecipeLoader extends LazyLogging {
 
-  def pollRecipesUpdates(path: String, recipeCache: RecipeCache, baker: Baker, duration: FiniteDuration)
-                        (implicit timer: Temporal[IO]): IO[Unit] = {
-    def pollRecipes: IO[Unit] = loadRecipesIntoBaker(path, recipeCache, baker) >> IO.sleep(duration) >> IO.defer(pollRecipes)
+  def pollRecipesUpdates(path: String, bakery: Bakery, duration: FiniteDuration)
+                        (implicit timer: Timer[IO], cs: ContextShift[IO]): IO[Unit] = {
+    def pollRecipes: IO[Unit] = loadRecipesIntoBaker(path, bakery.recipeCache, bakery.baker) >> IO.sleep(duration) >> IO.defer(pollRecipes)
 
     pollRecipes
   }
