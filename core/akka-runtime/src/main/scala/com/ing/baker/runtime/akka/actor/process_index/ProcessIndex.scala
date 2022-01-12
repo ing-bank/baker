@@ -27,7 +27,6 @@ import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.Value
-
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -106,8 +105,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   import context.dispatcher
 
   private val snapShotInterval: Int = context.system.settings.config.getInt("baker.actor.snapshot-interval")
-  private val processInquireTimeout: FiniteDuration = context.system.settings.config.getDuration("baker.process-inquire-timeout").toScala
-  private val updateCacheTimeout: FiniteDuration = context.system.settings.config.getDuration("baker.process-index-update-cache-timeout").toScala
+  private val processInquireTimeout: FiniteDuration = Duration.fromNanos(context.system.settings.config.getDuration("baker.process-inquire-timeout").toNanos)
+  private val updateCacheTimeout: FiniteDuration =  Duration.fromNanos(context.system.settings.config.getDuration("baker.process-index-update-cache-timeout").toNanos)
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
   private val recipeCache: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
