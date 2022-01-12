@@ -5,8 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.akka.AkkaBaker;
-import com.ing.baker.runtime.akka.JAkkaBaker;
+import com.ing.baker.runtime.akka.java.AkkaBaker;
 import com.ing.baker.runtime.common.BakerException;
 import com.ing.baker.runtime.common.RecipeRecord;
 import com.ing.baker.runtime.common.SensoryEventStatus;
@@ -59,7 +58,7 @@ public class BakerTest {
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
 
         String recipeInstanceId = UUID.randomUUID().toString();
-        Baker jBaker = JAkkaBaker.apply(config, actorSystem, implementationsList);
+        Baker jBaker = AkkaBaker.apply(config, actorSystem, implementationsList);
         java.util.Map<String, Value> ingredients = jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false))
                 .thenCompose(recipeId -> {
                     assertEquals(compiledRecipe.getValidationErrors().size(), 0);
@@ -82,7 +81,7 @@ public class BakerTest {
 
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
 
-        Baker jBaker = JAkkaBaker.apply(config, actorSystem, implementationsList);
+        Baker jBaker = AkkaBaker.apply(config, actorSystem, implementationsList);
         String recipeId = jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false)).get();
 
         String requestId = UUID.randomUUID().toString();
@@ -101,7 +100,7 @@ public class BakerTest {
 
         exception.expect(ExecutionException.class);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
-        Baker jBaker = JAkkaBaker.apply(config, actorSystem);
+        Baker jBaker = AkkaBaker.apply(config, actorSystem);
 
         jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), true)).get();
     }
@@ -109,7 +108,7 @@ public class BakerTest {
     @Test
     public void shouldExecuteCompleteFlow() throws BakerException, ExecutionException, InterruptedException {
 
-        Baker jBaker = JAkkaBaker.apply(config, actorSystem, implementationsList);
+        Baker jBaker = AkkaBaker.apply(config, actorSystem, implementationsList);
 
         List<BakerEvent> bakerEvents = new LinkedList<>();
         jBaker.registerBakerEventListener(bakerEvents::add);
