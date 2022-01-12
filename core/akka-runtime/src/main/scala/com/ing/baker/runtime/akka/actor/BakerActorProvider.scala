@@ -10,9 +10,9 @@ import scala.concurrent.duration.FiniteDuration
 
 trait BakerActorProvider extends {
 
-  def createProcessIndexActor(interactionManager: InteractionManager[IO], recipeManager: RecipeManager)(implicit actorSystem: ActorSystem) : ActorRef
+  def initialize(implicit system: ActorSystem): Unit
 
-  def createRecipeManager()(implicit actorSystem: ActorSystem) : RecipeManager
+  def createProcessIndexActor(interactionManager: InteractionManager[IO], recipeManager: RecipeManager)(implicit actorSystem: ActorSystem) : ActorRef
 
   def getAllProcessesMetadata(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata]
 }

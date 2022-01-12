@@ -10,7 +10,7 @@ import org.scalatest.wordspec.AsyncWordSpecLike
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatestplus.mockito.MockitoSugar
 
-class RecipeManagerInMemoryImplSpec extends AsyncWordSpecLike
+class DefaultRecipeManagerSpec extends AsyncWordSpecLike
   with Matchers
   with MockitoSugar
   with BeforeAndAfter
@@ -19,7 +19,7 @@ class RecipeManagerInMemoryImplSpec extends AsyncWordSpecLike
   "RecipeManagerImpl" should {
 
     "implement add, get and all" in {
-      val impl = new RecipeManagerInMemoryImpl()
+      val impl = new DefaultRecipeManager()
 
       val eventType = EventDescriptor("Event", Seq.empty)
       val transitions: Set[Transition] = Set(EventTransition(eventType, isSensoryEvent = true, None))

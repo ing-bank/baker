@@ -9,8 +9,10 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import io.prometheus.client.CollectorRegistry
 import org.http4s.metrics.prometheus.Prometheus
-
 import java.io.File
+
+import com.ing.baker.runtime.recipe_manager.{DefaultRecipeManager, RecipeManager}
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 
@@ -46,13 +48,14 @@ object Bakery extends LazyLogging {
       eventSink <- EventSink.resource(config)
       interactions <- InteractionRegistry.resource(externalContext, config, system)
       baker =
-      AkkaBaker.withConfig(
+      AkkaBaker.fromAkkaBakerConfig(
         AkkaBakerConfig(
         externalContext = externalContext,
         interactions = interactions,
+        recipeManager =  DefaultRecipeManager.pollingAware(system.dispatcher),
         bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
         timeouts = AkkaBakerConfig.Timeouts.apply(config),
-        bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)
+        bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config),
       )(system))
       _ <- Resource.eval(eventSink.attach(baker))
       recipeCache <- RecipeCache.resource(config, system, maybeCassandra)
@@ -79,6 +82,5 @@ object Bakery extends LazyLogging {
   def instance(externalContext: Option[Any]): Bakery = {
     resource(externalContext).use(b => IO.pure(b)).unsafeRunSync()
   }
-
 }
 

@@ -465,7 +465,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       }
       eventListener = new EventListener()
       baker = AkkaBaker
-        .withConfig(AkkaBakerConfig.localDefault(system).copy(
+        .fromAkkaBakerConfig(AkkaBakerConfig.localDefault(system).copy(
           interactions = interactions,
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings(
             allowAddingRecipeWithoutRequiringInstances = true))(system)

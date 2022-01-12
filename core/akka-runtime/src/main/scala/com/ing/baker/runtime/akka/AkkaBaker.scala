@@ -4,7 +4,6 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Address, Props}
 import akka.pattern.{FutureRef, ask}
 import akka.util.Timeout
 import cats.data.NonEmptyList
-import cats.effect.IO
 import cats.implicits._
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -16,15 +15,12 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.Rec
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.{RecipeRecord, SensoryEventStatus}
+import com.ing.baker.runtime.recipe_manager.{ActorBasedRecipeManager, DefaultRecipeManager, RecipeManager}
+import com.ing.baker.runtime.scaladsl
 import com.ing.baker.runtime.scaladsl._
-import com.ing.baker.runtime.{javadsl, scaladsl}
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
-import net.ceedubs.ficus.Ficus._
 import com.typesafe.scalalogging.LazyLogging
-import java.util.{List => JavaList}
-
-import com.ing.baker.runtime.recipe_manager.RecipeManager
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -33,10 +29,13 @@ import scala.util.Try
 
 object AkkaBaker {
 
-  def apply(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
-    new AkkaBaker(AkkaBakerConfig.from(config, actorSystem, interactions))
+  def apply(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager, recipeManager: RecipeManager): scaladsl.Baker =
+    new AkkaBaker(AkkaBakerConfig.from(config, actorSystem, interactions, recipeManager))
 
-  def withConfig(config: AkkaBakerConfig): AkkaBaker =
+  def apply(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
+    new AkkaBaker(AkkaBakerConfig.from(config, actorSystem, interactions, determineRecipeManager(config)(actorSystem)))
+
+  def fromAkkaBakerConfig(config: AkkaBakerConfig): AkkaBaker =
     new AkkaBaker(config)
 
   def localDefault(actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
@@ -45,22 +44,12 @@ object AkkaBaker {
   def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
     new AkkaBaker(AkkaBakerConfig.clusterDefault(seedNodes, actorSystem, interactions))
 
-  def javaWithConfig(config: AkkaBakerConfig): javadsl.Baker =
-    new javadsl.Baker(withConfig(config))
-
-  def java(config: Config, actorSystem: ActorSystem): javadsl.Baker =
-    new javadsl.Baker(apply(config, actorSystem, CachingInteractionManager()))
-
-  def java(config: Config, actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
-    new javadsl.Baker(apply(config, actorSystem,
-      CachingInteractionManager.fromJava(interactions, config.getOrElse[Boolean]("baker.interactions.allow-superset-for-output-types", false))))
-
-  def javaLocalDefault(actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
-    new javadsl.Baker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem,
-      CachingInteractionManager.fromJava(interactions))))
-
-  def javaOther(baker: scaladsl.Baker): javadsl.Baker =
-    new javadsl.Baker(baker)
+  //Used for backwards compatability reasons to ensure it works the same as before the RecipeManager was provided
+  private def determineRecipeManager(config: Config)(implicit actorSystem: ActorSystem): RecipeManager = {
+    if (config.hasPath("baker.recipe-manager-type") && config.getString("baker.recipe-manager-type") == "inmemory")
+      DefaultRecipeManager.pollingAware(actorSystem.dispatcher)
+    else ActorBasedRecipeManager.getRecipeManagerActor(actorSystem, config)
+  }
 }
 
 /**
@@ -68,11 +57,12 @@ object AkkaBaker {
   * For each recipe a new instance can be baked, sensory events can be send and state can be inquired upon
   */
 class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker with LazyLogging {
-
   import config.system
 
+  config.bakerActorProvider.initialize(system)
+
   private val recipeManager: RecipeManager =
-    config.bakerActorProvider.createRecipeManager()
+    config.recipeManager
 
   private val processIndexActor: ActorRef =
     config.bakerActorProvider.createProcessIndexActor(config.interactions, recipeManager)
@@ -82,7 +72,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     *
     * This function is idempotent, if the same (equal) recipe was added earlier this will return the same recipeId
     *
-    * @param compiledRecipe The compiled recipe.
+    * @param recipeRecord RecipeRecord of the Recipe.
     * @return A recipeId
     */
   override def addRecipe(recipeRecord: RecipeRecord): Future[String] = for {
