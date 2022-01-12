@@ -4,7 +4,7 @@ import akka.actor.ActorSystem;
 import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.akka.JAkkaBaker;
+import com.ing.baker.runtime.akka.java.AkkaBaker;
 import com.ing.baker.runtime.inmemory.InMemoryBaker;
 import com.ing.baker.runtime.javadsl.Baker;
 import com.ing.baker.runtime.javadsl.EventInstance;
@@ -54,7 +54,7 @@ public class JWebshopRecipeTests {
                 new ShipItemsInstance());
 
         // Setup the Baker
-        Baker baker = JAkkaBaker.apply(
+        Baker baker = AkkaBaker.apply(
                 ConfigFactory.load(),
                 ActorSystem.apply("BakerActorSystem"),
                 implementations);
