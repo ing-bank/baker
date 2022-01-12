@@ -4,13 +4,11 @@ import akka.actor.ActorSystem;
 import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.akka.AkkaBaker;
+import com.ing.baker.runtime.akka.JAkkaBaker;
 import com.ing.baker.runtime.inmemory.InMemoryBaker;
 import com.ing.baker.runtime.javadsl.Baker;
 import com.ing.baker.runtime.javadsl.EventInstance;
 import com.ing.baker.runtime.javadsl.EventMoment;
-import com.ing.baker.runtime.javadsl.RecipeInstanceState;
-import com.ing.baker.types.Value;
 import com.typesafe.config.ConfigFactory;
 import org.junit.Test;
 import scala.Console;
@@ -22,7 +20,6 @@ import webshop.simple.ingredients.ShippingAddress;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -57,7 +54,7 @@ public class JWebshopRecipeTests {
                 new ShipItemsInstance());
 
         // Setup the Baker
-        Baker baker = AkkaBaker.java(
+        Baker baker = JAkkaBaker.apply(
                 ConfigFactory.load(),
                 ActorSystem.apply("BakerActorSystem"),
                 implementations);

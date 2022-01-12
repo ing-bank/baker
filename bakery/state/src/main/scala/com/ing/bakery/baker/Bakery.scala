@@ -1,20 +1,20 @@
 package com.ing.bakery.baker
 
+import java.io.File
+
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
+import com.ing.baker.runtime.model.InteractionManager
+import com.ing.baker.runtime.recipe_manager.{ActorBasedRecipeManager, DefaultRecipeManager, RecipeManager}
 import com.ing.baker.runtime.scaladsl.Baker
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import io.prometheus.client.CollectorRegistry
 import org.http4s.metrics.prometheus.Prometheus
-import java.io.File
-
-import com.ing.baker.runtime.recipe_manager.{DefaultRecipeManager, RecipeManager}
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.DurationInt
 
 case class Bakery(
                  baker: Baker,
@@ -24,7 +24,9 @@ case class Bakery(
 
 object Bakery extends LazyLogging {
 
-  def resource(externalContext: Option[Any] = None) : Resource[IO, Bakery] = {
+  def resource(externalContext: Option[Any] = None,
+               interactionManager: Option[InteractionManager[IO]] = None,
+               recipeManager: Option[RecipeManager] = None) : Resource[IO, Bakery] = {
     val configPath = sys.env.getOrElse("CONFIG_DIRECTORY", "/opt/docker/conf")
     val config = ConfigFactory.load(ConfigFactory.parseFile(new File(s"$configPath/application.conf")))
     val bakerConfig = config.getConfig("baker")
@@ -51,12 +53,11 @@ object Bakery extends LazyLogging {
       AkkaBaker.fromAkkaBakerConfig(
         AkkaBakerConfig(
         externalContext = externalContext,
-        interactions = interactions,
-        recipeManager =  DefaultRecipeManager.pollingAware(system.dispatcher),
+        interactions = interactionManager.getOrElse(interactions),
+        recipeManager =  recipeManager.getOrElse(ActorBasedRecipeManager.getRecipeManagerActor(system, config)),
         bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
         timeouts = AkkaBakerConfig.Timeouts.apply(config),
-        bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config),
-      )(system))
+        bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config))(system))
       _ <- Resource.eval(eventSink.attach(baker))
       recipeCache <- RecipeCache.resource(config, system, maybeCassandra)
       _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(configPath, recipeCache, baker))
