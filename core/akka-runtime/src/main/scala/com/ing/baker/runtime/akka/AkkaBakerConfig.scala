@@ -7,6 +7,7 @@ import com.ing.baker.runtime.akka.AkkaBakerConfig.BakerValidationSettings
 import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider}
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.model.InteractionManager
+import com.ing.baker.runtime.recipe_manager.{ActorBasedRecipeManager, DefaultRecipeManager, RecipeManager}
 import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -19,6 +20,7 @@ case class AkkaBakerConfig(
                             externalContext: Option[Any],
                             bakerActorProvider: BakerActorProvider,
                             interactions: InteractionManager[IO],
+                            recipeManager: RecipeManager,
                             timeouts: AkkaBakerConfig.Timeouts,
                             bakerValidationSettings: BakerValidationSettings
                           )(implicit val system: ActorSystem)
@@ -29,17 +31,6 @@ object AkkaBakerConfig extends LazyLogging {
 
   case class BakerValidationSettings(allowAddingRecipeWithoutRequiringInstances: Boolean)
 
-  case object ActorRecipeManagerType extends RecipeManagerType
-
-  case object InMemoryRecipeManagerType extends RecipeManagerType
-
-  sealed trait RecipeManagerType
-
-  implicit val recipeManagerTypeReader: ValueReader[RecipeManagerType] = (config: Config, path: String) => {
-    if (config.hasPath(path) && config.getString(path) == "inmemory") InMemoryRecipeManagerType
-    else ActorRecipeManagerType
-  }
-
   object BakerValidationSettings {
     def default: BakerValidationSettings = BakerValidationSettings(false)
 
@@ -47,13 +38,11 @@ object AkkaBakerConfig extends LazyLogging {
       BakerValidationSettings(config.getOrElse[Boolean]("baker.allow-adding-recipe-without-requiring-instances", false))
   }
 
-  case class Timeouts(
-                       defaultBakeTimeout: FiniteDuration,
+  case class Timeouts(defaultBakeTimeout: FiniteDuration,
                        defaultProcessEventTimeout: FiniteDuration,
                        defaultInquireTimeout: FiniteDuration,
                        defaultShutdownTimeout: FiniteDuration,
-                       defaultAddRecipeTimeout: FiniteDuration
-                     )
+                       defaultAddRecipeTimeout: FiniteDuration)
 
   object Timeouts {
 
@@ -89,8 +78,7 @@ object AkkaBakerConfig extends LazyLogging {
         ingredientsFilter = List.empty,
         actorIdleTimeout = Some(5.minutes),
         configuredEncryption = Encryption.NoEncryption,
-        timeouts = defaultTimeouts,
-        recipeManagerType = InMemoryRecipeManagerType
+        timeouts = defaultTimeouts
       )
 
     AkkaBakerConfig(
@@ -98,7 +86,8 @@ object AkkaBakerConfig extends LazyLogging {
       timeouts = defaultTimeouts,
       bakerValidationSettings = BakerValidationSettings.default,
       bakerActorProvider = localProvider,
-      interactions = interactions
+      interactions = interactions,
+      recipeManager = DefaultRecipeManager.pollingAware(actorSystem.dispatcher)
     )(actorSystem)
   }
 
@@ -116,8 +105,7 @@ object AkkaBakerConfig extends LazyLogging {
         journalInitializeTimeout = 30.seconds,
         seedNodes = ClusterBakerActorProvider.SeedNodesList(seedNodes),
         configuredEncryption = Encryption.NoEncryption,
-        timeouts = defaultTimeouts,
-        recipeManagerType = ActorRecipeManagerType
+        timeouts = defaultTimeouts
       )
 
     AkkaBakerConfig(
@@ -125,11 +113,12 @@ object AkkaBakerConfig extends LazyLogging {
       timeouts = defaultTimeouts,
       bakerValidationSettings = BakerValidationSettings.default,
       bakerActorProvider = clusterProvider,
-      interactions = interactions
+      interactions = interactions,
+      recipeManager = ActorBasedRecipeManager.clusterBasedRecipeManagerActor(actorSystem, Timeouts.default)
     )(actorSystem)
   }
 
-  def from(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager): AkkaBakerConfig = {
+  def from(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager, recipeManager: RecipeManager): AkkaBakerConfig = {
     if (!config.getAs[Boolean]("baker.config-file-included").getOrElse(false))
       throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
 
@@ -138,7 +127,8 @@ object AkkaBakerConfig extends LazyLogging {
       timeouts = Timeouts.apply(config),
       bakerValidationSettings = BakerValidationSettings.from(config),
       bakerActorProvider = bakerProviderFrom(config),
-      interactions = interactions
+      interactions = interactions,
+      recipeManager = recipeManager
     )(actorSystem)
   }
 
@@ -155,8 +145,7 @@ object AkkaBakerConfig extends LazyLogging {
           ingredientsFilter = config.as[List[String]]("baker.filtered-ingredient-values"),
           actorIdleTimeout = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout"),
           configuredEncryption = encryption,
-          timeouts = Timeouts.default,
-          recipeManagerType = config.as[RecipeManagerType]("baker.recipe-manager-type")
+          Timeouts.apply(config)
         )
       case Some("cluster-sharded") =>
         new ClusterBakerActorProvider(
@@ -173,8 +162,7 @@ object AkkaBakerConfig extends LazyLogging {
           },
           ingredientsFilter = config.as[List[String]]("baker.filtered-ingredient-values"),
           configuredEncryption = encryption,
-          Timeouts.default,
-          recipeManagerType = config.as[RecipeManagerType]("baker.recipe-manager-type")
+          Timeouts.apply(config)
         )
       case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
     }
