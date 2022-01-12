@@ -22,18 +22,14 @@ object RecipeLoader extends LazyLogging {
 
   def pollRecipesUpdates(path: String, bakery: Bakery, duration: FiniteDuration)
                         (implicit timer: Timer[IO], cs: ContextShift[IO]): IO[Unit] = {
-    def pollRecipes: IO[Unit] = loadRecipesIntoBaker(path, bakery.recipeCache, bakery.baker) >> IO.sleep(duration) >> IO.defer(pollRecipes)
-
+    def pollRecipes: IO[Unit] = loadRecipesIntoBaker(path, bakery.baker) >> IO.sleep(duration) >> IO.defer(pollRecipes)
     pollRecipes
   }
 
-  def loadRecipesIntoBaker(path: String, recipeCache: RecipeCache, baker: Baker)(implicit cs: ContextShift[IO]): IO[Unit] =
+  def loadRecipesIntoBaker(path: String, baker: Baker)(implicit cs: ContextShift[IO]): IO[Unit] =
     for {
-      newRecipes <- RecipeLoader.loadRecipes(path)
-      recipes <- recipeCache.merge(newRecipes)
-      _ <- IO{ if (recipes.isEmpty) logger.debug(s"No recipes found in the recipe directory $path or cache")
-          else logger.debug(s"Recipes loaded: ${recipes.map(_.name)}") }
-      _ <- recipes.traverse { record =>
+      recipes <- RecipeLoader.loadRecipes(path)
+      _ <-  recipes.traverse { record =>
         IO.fromFuture(IO(baker.addRecipe(record)))
       }
     } yield ()

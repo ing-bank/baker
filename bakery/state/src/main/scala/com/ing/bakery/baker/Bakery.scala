@@ -19,7 +19,6 @@ import scala.concurrent.ExecutionContext
 case class Bakery(
                  baker: Baker,
                  executionContext: ExecutionContext,
-                 recipeCache: RecipeCache,
                  system: ActorSystem)
 
 object Bakery extends LazyLogging {
@@ -44,8 +43,6 @@ object Bakery extends LazyLogging {
     implicit val cs: ContextShift[IO] = IO.contextShift(executionContext)
     implicit val timer: Timer[IO] = IO.timer(executionContext)
     for {
-      maybeCassandra <- Cassandra.resource(config, system)
-      _ <- Watcher.resource(config, system, maybeCassandra)
       _ <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
       eventSink <- EventSink.resource(config)
       interactions <- InteractionRegistry.resource(externalContext, config, system)
@@ -59,8 +56,6 @@ object Bakery extends LazyLogging {
         timeouts = AkkaBakerConfig.Timeouts.apply(config),
         bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config))(system))
       _ <- Resource.eval(eventSink.attach(baker))
-      recipeCache <- RecipeCache.resource(config, system, maybeCassandra)
-      _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(configPath, recipeCache, baker))
       _ <- Resource.eval(IO.async[Unit] { callback =>
         //If using local Baker the registerOnMemberUp is never called, should onl be used during local testing.
         if (config.getString("baker.actor.provider") == "local")
@@ -72,7 +67,7 @@ object Bakery extends LazyLogging {
           }
       })
 
-    } yield Bakery(baker, system.dispatcher, recipeCache, system)
+    } yield Bakery(baker, system.dispatcher, system)
   }
 
   /**
@@ -80,8 +75,10 @@ object Bakery extends LazyLogging {
     * @param externalContext optional external context in which Bakery is running, e.g. Spring context
     * @return
     */
-  def instance(externalContext: Option[Any]): Bakery = {
-    resource(externalContext).use(b => IO.pure(b)).unsafeRunSync()
+  def instance(externalContext: Option[Any],
+               interactionManager: Option[InteractionManager[IO]] = None,
+               recipeManager: Option[RecipeManager] = None): Bakery = {
+    resource(externalContext, interactionManager, recipeManager).use(b => IO.pure(b)).unsafeRunSync()
   }
 }
 
