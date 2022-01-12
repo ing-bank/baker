@@ -7,6 +7,7 @@ import com.ing.baker.runtime.akka.AkkaBakerConfig.BakerValidationSettings
 import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider}
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.model.InteractionManager
+import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -19,6 +20,7 @@ case class AkkaBakerConfig(
                             externalContext: Option[Any],
                             bakerActorProvider: BakerActorProvider,
                             interactions: InteractionManager[IO],
+//                            recipeManager: RecipeManager,
                             timeouts: AkkaBakerConfig.Timeouts,
                             bakerValidationSettings: BakerValidationSettings
                           )(implicit val system: ActorSystem)

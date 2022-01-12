@@ -1,9 +1,8 @@
-package com.ing.baker.runtime
+package com.ing.baker.runtime.recipe_manager
 
 import _root_.akka.actor.ActorRef
 import _root_.akka.pattern._
 import _root_.akka.util.Timeout
-import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.common.RecipeRecord
 

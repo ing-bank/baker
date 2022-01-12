@@ -17,13 +17,15 @@ import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.{RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl._
-import com.ing.baker.runtime.{RecipeManager, javadsl, scaladsl}
+import com.ing.baker.runtime.{javadsl, scaladsl}
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import com.typesafe.scalalogging.LazyLogging
-
 import java.util.{List => JavaList}
+
+import com.ing.baker.runtime.recipe_manager.RecipeManager
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.postfixOps
@@ -35,8 +37,8 @@ object AkkaBaker {
     new AkkaBaker(AkkaBakerConfig.from(config, actorSystem, interactions))
 
   def withConfig(config: AkkaBakerConfig): AkkaBaker =
-
     new AkkaBaker(config)
+
   def localDefault(actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
     new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem, interactions))
 

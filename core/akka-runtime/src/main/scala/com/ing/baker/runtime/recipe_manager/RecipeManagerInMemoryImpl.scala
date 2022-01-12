@@ -1,11 +1,11 @@
-package com.ing.baker.runtime
-import com.ing.baker.il.CompiledRecipe
+package com.ing.baker.runtime.recipe_manager
+
 import com.ing.baker.runtime.common.RecipeRecord
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 
-private class RecipeManagerImpl(implicit val ex: ExecutionContext) extends RecipeManager {
+private class RecipeManagerInMemoryImpl(implicit val ex: ExecutionContext) extends RecipeManager {
 
   val state:TrieMap[String, RecipeRecord] = TrieMap.empty
 
@@ -24,6 +24,6 @@ private class RecipeManagerImpl(implicit val ex: ExecutionContext) extends Recip
   }
 }
 
-object RecipeManagerImpl {
-  def pollingAware(implicit ex: ExecutionContext): RecipeManager = new RecipeManagerImpl() with PollingAware
+object RecipeManagerInMemoryImpl {
+  def pollingAware(implicit ex: ExecutionContext): RecipeManager = new RecipeManagerInMemoryImpl() with PollingAware
 }

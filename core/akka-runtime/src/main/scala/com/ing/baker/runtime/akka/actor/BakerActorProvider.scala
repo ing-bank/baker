@@ -2,9 +2,9 @@ package com.ing.baker.runtime.akka.actor
 
 import akka.actor.{ActorRef, ActorSystem}
 import cats.effect.IO
-import com.ing.baker.runtime.RecipeManager
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.model.InteractionManager
+import com.ing.baker.runtime.recipe_manager.RecipeManager
 
 import scala.concurrent.duration.FiniteDuration
 

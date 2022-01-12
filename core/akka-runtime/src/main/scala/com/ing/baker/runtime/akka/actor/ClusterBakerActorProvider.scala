@@ -20,8 +20,8 @@ import com.ing.baker.runtime.akka.actor.process_index._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.model.InteractionManager
+import com.ing.baker.runtime.recipe_manager.{RecipeManager, RecipeManagerActorImpl, RecipeManagerInMemoryImpl}
 import com.ing.baker.runtime.serialization.Encryption
-import com.ing.baker.runtime.{RecipeManager, RecipeManagerActorImpl, RecipeManagerImpl}
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.duration._
@@ -119,7 +119,7 @@ class ClusterBakerActorProvider(
     // todo move to a more proper location
     initializeCluster()
     if (recipeManagerType == InMemoryRecipeManagerType) {
-      RecipeManagerImpl.pollingAware(actorSystem.dispatcher)
+      RecipeManagerInMemoryImpl.pollingAware(actorSystem.dispatcher)
     } else {
       createRecipeManagerActor
     }

@@ -9,8 +9,8 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{GetIndex, Index}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor
 import com.ing.baker.runtime.model.InteractionManager
+import com.ing.baker.runtime.recipe_manager.{RecipeManager, RecipeManagerActorImpl, RecipeManagerInMemoryImpl}
 import com.ing.baker.runtime.serialization.Encryption
-import com.ing.baker.runtime.{RecipeManager, RecipeManagerActorImpl, RecipeManagerImpl}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -39,7 +39,7 @@ class LocalBakerActorProvider(
 
   override def createRecipeManager()(implicit actorSystem: ActorSystem): RecipeManager = {
     if (recipeManagerType == InMemoryRecipeManagerType)
-      RecipeManagerImpl.pollingAware(actorSystem.dispatcher)
+      RecipeManagerInMemoryImpl.pollingAware(actorSystem.dispatcher)
     else
       createRecipeManagerActor(actorSystem)
   }

@@ -45,7 +45,9 @@ object Bakery extends LazyLogging {
       _ <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
       eventSink <- EventSink.resource(config)
       interactions <- InteractionRegistry.resource(externalContext, config, system)
-      baker = AkkaBaker.withConfig(AkkaBakerConfig(
+      baker =
+      AkkaBaker.withConfig(
+        AkkaBakerConfig(
         externalContext = externalContext,
         interactions = interactions,
         bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),

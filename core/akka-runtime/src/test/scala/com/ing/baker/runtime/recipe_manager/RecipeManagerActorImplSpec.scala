@@ -1,4 +1,7 @@
-package com.ing.baker.runtime
+package com.ing.baker.runtime.recipe_manager
+
+import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 import _root_.akka.actor.ActorSystem
 import _root_.akka.testkit.{TestKit, TestProbe}
@@ -10,9 +13,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpecLike
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatestplus.mockito.MockitoSugar
-
-import java.util.UUID
-import java.util.concurrent.TimeUnit
 
 class RecipeManagerActorImplSpec extends TestKit(ActorSystem("MySpec"))
   with AsyncWordSpecLike
