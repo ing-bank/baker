@@ -16,7 +16,7 @@ import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
 
-class Baker private[ing](private val baker: scaladsl.Baker) extends common.Baker[CompletableFuture] with JavaApi with AutoCloseable {
+class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableFuture] with JavaApi with AutoCloseable {
 
   override type SensoryEventResultType = SensoryEventResult
 
