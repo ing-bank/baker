@@ -47,7 +47,7 @@ object Bakery extends LazyLogging {
       eventSink <- EventSink.resource(config)
       interactions <- InteractionRegistry.resource(externalContext, config, system)
       baker =
-      AkkaBaker.fromAkkaBakerConfig(
+      AkkaBaker.apply(
         AkkaBakerConfig(
         externalContext = externalContext,
         interactions = interactionManager.getOrElse(interactions),

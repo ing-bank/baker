@@ -1,5 +1,7 @@
 package com.ing.baker.runtime.akka
 
+import java.util.{List => JavaList}
+
 import akka.actor.{Actor, ActorRef, ActorSystem, Address, Props}
 import akka.pattern.{FutureRef, ask}
 import akka.util.Timeout
@@ -16,11 +18,12 @@ import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.{RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.recipe_manager.{ActorBasedRecipeManager, DefaultRecipeManager, RecipeManager}
-import com.ing.baker.runtime.scaladsl
 import com.ing.baker.runtime.scaladsl._
+import com.ing.baker.runtime.{javadsl, scaladsl}
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import net.ceedubs.ficus.Ficus._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -35,7 +38,7 @@ object AkkaBaker {
   def apply(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
     new AkkaBaker(AkkaBakerConfig.from(config, actorSystem, interactions, determineRecipeManager(config)(actorSystem)))
 
-  def fromAkkaBakerConfig(config: AkkaBakerConfig): AkkaBaker =
+  def apply(config: AkkaBakerConfig): AkkaBaker =
     new AkkaBaker(config)
 
   def localDefault(actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
@@ -43,6 +46,19 @@ object AkkaBaker {
 
   def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
     new AkkaBaker(AkkaBakerConfig.clusterDefault(seedNodes, actorSystem, interactions))
+
+  def java(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager, recipeManager: RecipeManager): javadsl.Baker =
+    new javadsl.Baker(com.ing.baker.runtime.akka.AkkaBaker.apply(config, actorSystem, interactions, recipeManager))
+
+  def java(config: Config, actorSystem: ActorSystem): javadsl.Baker =
+    new javadsl.Baker(com.ing.baker.runtime.akka.AkkaBaker.apply(config, actorSystem, CachingInteractionManager(), DefaultRecipeManager.pollingAware(actorSystem.dispatcher)))
+
+  def java(config: Config, actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
+    new javadsl.Baker(com.ing.baker.runtime.akka.AkkaBaker.apply(config, actorSystem,
+      CachingInteractionManager.fromJava(interactions, config.getOrElse[Boolean]("baker.interactions.allow-superset-for-output-types", false))))
+
+  def java(config: AkkaBakerConfig): javadsl.Baker =
+    new javadsl.Baker(com.ing.baker.runtime.akka.AkkaBaker.apply(config))
 
   //Used for backwards compatability reasons to ensure it works the same as before the RecipeManager was provided
   private def determineRecipeManager(config: Config)(implicit actorSystem: ActorSystem): RecipeManager = {

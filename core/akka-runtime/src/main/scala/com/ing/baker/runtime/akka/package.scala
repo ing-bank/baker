@@ -9,7 +9,6 @@ import cats.effect.IO
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 import scala.util.control.NonFatal
-import java.time.{Duration => JDuration}
 
 package object akka {
 
@@ -28,7 +27,7 @@ package object akka {
       }
   }
 
-  implicit class JavaDurationConversions(duration: JDuration) {
+  implicit class JavaDurationConversions(duration: java.time.Duration) {
     def toScala: FiniteDuration = FiniteDuration(duration.toMillis, TimeUnit.MILLISECONDS)
   }
 
