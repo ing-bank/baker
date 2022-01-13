@@ -14,7 +14,7 @@ object Dependencies {
   val catsEffectVersion = "2.5.4"
   val catsCoreVersion = "2.6.1"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "5.3.13"
+  val springVersion = "5.3.15"
   val springBootVersion = "2.6.1"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
