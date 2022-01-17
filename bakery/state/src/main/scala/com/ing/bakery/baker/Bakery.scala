@@ -43,6 +43,8 @@ object Bakery extends LazyLogging {
     implicit val cs: ContextShift[IO] = IO.contextShift(executionContext)
     implicit val timer: Timer[IO] = IO.timer(executionContext)
     for {
+      maybeCassandra <- Cassandra.resource(config, system)
+      _ <- Watcher.resource(config, system, maybeCassandra)
       _ <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
       eventSink <- EventSink.resource(config)
       interactions <- InteractionRegistry.resource(externalContext, config, system)
