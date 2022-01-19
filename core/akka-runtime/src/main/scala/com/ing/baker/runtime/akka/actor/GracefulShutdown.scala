@@ -33,8 +33,8 @@ object GracefulShutdown {
 
         cluster.registerOnMemberRemoved {
           logger.warn("Successfully left the akka cluster, terminating the actor system")
+          Await.result(actorSystem.terminate(), timeout)
           promise.success(true)
-          actorSystem.terminate()
         }
 
         cluster.leave(cluster.selfAddress)
@@ -43,10 +43,10 @@ object GracefulShutdown {
 
       case Success(_) =>
         logger.warn("Not a member of a cluster, terminating the actor system")
-        actorSystem.terminate()
+        Await.result(actorSystem.terminate(), timeout)
       case Failure(exception) =>
         logger.warn("Cluster not available for actor system", exception)
-        actorSystem.terminate()
+        Await.result(actorSystem.terminate(), timeout)
     }
   }
 

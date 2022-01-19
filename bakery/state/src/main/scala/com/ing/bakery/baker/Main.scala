@@ -1,13 +1,13 @@
 package com.ing.bakery.baker
 
+import java.io.File
+import java.net.InetSocketAddress
+
 import cats.effect.{ExitCode, IO, IOApp}
-import com.ing.bakery.baker.Bakery.instance
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 
-import java.io.File
-import java.net.InetSocketAddress
 import scala.concurrent.duration.Duration
 
 object Main extends IOApp with LazyLogging {

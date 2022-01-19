@@ -14,7 +14,8 @@ import javax.annotation.Nonnull
 
 import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
 
 class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableFuture] with JavaApi with AutoCloseable {
 
@@ -42,7 +43,7 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
 
 
   override def close(): Unit = {
-    baker.gracefulShutdown()
+    Await.result(baker.gracefulShutdown(), 10.seconds)
   }
 
   /**

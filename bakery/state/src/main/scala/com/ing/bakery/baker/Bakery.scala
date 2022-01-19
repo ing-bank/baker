@@ -16,8 +16,7 @@ import org.http4s.metrics.prometheus.Prometheus
 
 import scala.concurrent.ExecutionContext
 
-case class Bakery(
-                 baker: Baker,
+case class Bakery(baker: Baker,
                  executionContext: ExecutionContext,
                  system: ActorSystem)
 
@@ -48,8 +47,7 @@ object Bakery extends LazyLogging {
       _ <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
       eventSink <- EventSink.resource(config)
       interactions <- InteractionRegistry.resource(externalContext, config, system)
-      baker =
-      AkkaBaker.apply(
+      baker = AkkaBaker.apply(
         AkkaBakerConfig(
         externalContext = externalContext,
         interactions = interactionManager.getOrElse(interactions),
@@ -57,6 +55,7 @@ object Bakery extends LazyLogging {
         bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
         timeouts = AkkaBakerConfig.Timeouts.apply(config),
         bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config))(system))
+      _ <- Resource.make(IO{baker})(baker => IO.fromFuture(IO(baker.gracefulShutdown)))
       _ <- Resource.eval(eventSink.attach(baker))
       _ <- Resource.eval(IO.async[Unit] { callback =>
         //If using local Baker the registerOnMemberUp is never called, should onl be used during local testing.
@@ -70,17 +69,6 @@ object Bakery extends LazyLogging {
       })
 
     } yield Bakery(baker, system.dispatcher, system)
-  }
-
-  /**
-    * Create bakery instance as external context
-    * @param externalContext optional external context in which Bakery is running, e.g. Spring context
-    * @return
-    */
-  def instance(externalContext: Option[Any],
-               interactionManager: Option[InteractionManager[IO]] = None,
-               recipeManager: Option[RecipeManager] = None): Bakery = {
-    resource(externalContext, interactionManager, recipeManager).use(b => IO.pure(b)).unsafeRunSync()
   }
 }
 
