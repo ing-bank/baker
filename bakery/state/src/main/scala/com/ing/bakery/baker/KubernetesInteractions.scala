@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source, TcpIdleTimeoutException}
 import akka.stream.{KillSwitch, KillSwitches, Materializer, RestartSettings, UniqueKillSwitch}
 import akka.{Done, NotUsed}
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import cats.implicits.catsSyntaxApplicativeError
 import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
 import com.ing.bakery.interaction.RemoteInteractionClient
@@ -18,6 +18,7 @@ import skuber.{K8SWatchEvent, LabelSelector, ListOptions, Service}
 
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
+import cats.effect.Temporal
 
 /**
   * Discovers interactions in the same namespace using Kubernetes pod lookup.
@@ -31,7 +32,7 @@ class KubernetesInteractions(config: Config,
     with LazyLogging {
 
   private implicit val contextShift: ContextShift[IO] = IO.contextShift(system.dispatcher)
-  private implicit val timer: Timer[IO] = IO.timer(system.dispatcher)
+  private implicit val timer: Temporal[IO] = IO.timer(system.dispatcher)
 
   private val apiUrlPrefix = config.getString("baker.interactions.kubernetes.api-url-prefix")
   private val kubernetes = kubernetesClient.getOrElse(skuber.k8sInit(config)(system))
@@ -94,7 +95,7 @@ class KubernetesInteractions(config: Config,
     } yield (this, killSwitch)) { case (_, hook) => IO(hook.shutdown()) }.map(_._1)
   }
 
-  def update(event: K8SWatchEvent[Service])(implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[Any] = (for {
+  def update(event: K8SWatchEvent[Service])(implicit timer: Temporal[IO]): IO[Any] = (for {
     spec <- event._object.spec
     port <- spec.ports.find(_.name == "interactions")
   } yield {
