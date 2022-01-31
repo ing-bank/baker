@@ -22,7 +22,7 @@ object WebshopBaker {
   val baker: Baker = AkkaBaker.localDefault(ActorSystem.apply,
     CachingInteractionManager(InteractionInstance.unsafeFrom(new ReserveItems)))
 
-  val javaBaker: javadsl.Baker = AkkaBaker.javaOther(baker)
+  val javaBaker: javadsl.Baker = new javadsl.Baker(baker)
 
   val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
 

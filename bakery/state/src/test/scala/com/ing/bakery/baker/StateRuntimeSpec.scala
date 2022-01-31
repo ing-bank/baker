@@ -70,13 +70,13 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
 
     test("Adding a recipe directly") { context =>
       for {
-        allRecipesBefore <- io(context.client.getAllRecipes)
         _ <- io(context.client.addRecipe(recipe, true))
+        allRecipesBefore <- io(context.client.getAllRecipes)
         _ <- io(context.client.addRecipe(otherRecipe, true))
         allRecipesAfter <- io(context.client.getAllRecipes)
       } yield {
-        allRecipesBefore.values.map(_.compiledRecipe.name).toSet shouldBe Set("ItemReservation.recipe", "Simple")
-        allRecipesAfter.values.map(_.compiledRecipe.name).toSet  shouldBe Set("ItemReservation.recipe", "Simple", "Simple2")
+        allRecipesBefore.values.map(_.compiledRecipe.name).toSet shouldBe Set("ItemReservation.recipe")
+        allRecipesAfter.values.map(_.compiledRecipe.name).toSet  shouldBe Set("ItemReservation.recipe", "Simple2")
       }
     }
 
@@ -110,6 +110,8 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         _ <- context.remoteInteractionKubernetes.respondsWithReserveItems()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
+        _ <- io(context.client.addRecipe(recipe, true))
+        _ <- io(context.client.addRecipe(SimpleRecipe.compiledRecipe, true))
         recipeInformation <- io(context.client.getRecipe(recipeId))
         interactionInformation <- io(context.client.getInteraction("ReserveItems"))
         noSuchRecipeError <- io(context.client
@@ -456,25 +458,20 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       }).void
       system <- Resource.make(makeActorSystem)(stopActorSystem)
       _ <- Resource.eval(remoteInteractionLocalhost.respondsWithCancelReserveItems())
-      interactions <- InteractionRegistry.resource(config, system)
+      interactions <- InteractionRegistry.resource(None, config, system)
 
-      recipeAddingCache = new RecipeCache {
-        override def merge(recipes: List[RecipeRecord]): IO[List[RecipeRecord]] =
-          IO(RecipeRecord.of(SimpleRecipe.compiledRecipe) ::
-            recipes.filter(_.recipeId != SimpleRecipe.compiledRecipe.recipeId))
-      }
       eventListener = new EventListener()
       baker = AkkaBaker
-        .withConfig(AkkaBakerConfig.localDefault(system).copy(
+        .apply(AkkaBakerConfig.localDefault(system).copy(
           interactions = interactions,
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings(
             allowAddingRecipeWithoutRequiringInstances = true))(system)
         )
 
       _ <- Resource.eval(eventListener.eventSink.attach(baker))
-      _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, recipeAddingCache, baker))
+      _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, baker))
 
-      server <- BakerService.resource(baker, InetSocketAddress.createUnresolved("127.0.0.1", 0), "/api/bakery", "/opt/docker/dashboard", loggingEnabled = true)
+      server <- BakerService.resource(baker, executionContext, InetSocketAddress.createUnresolved("127.0.0.1", 0), "/api/bakery", "/opt/docker/dashboard", loggingEnabled = true)
       client <- BakerClient.resource(server.baseUri, "/api/bakery", executionContext)
 
     } yield Context(

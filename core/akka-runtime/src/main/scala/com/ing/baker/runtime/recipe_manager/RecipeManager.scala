@@ -1,6 +1,5 @@
-package com.ing.baker.runtime
+package com.ing.baker.runtime.recipe_manager
 
-import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.RecipeRecord
 
 import scala.concurrent.Future

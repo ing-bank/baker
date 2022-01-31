@@ -1,7 +1,7 @@
-package com.ing.baker.runtime
+package com.ing.baker.runtime.recipe_manager
 
-import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.il.petrinet.{EventTransition, RecipePetriNet, Transition}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.runtime.common.RecipeRecord
 import org.mockito.Mockito.when
@@ -10,7 +10,7 @@ import org.scalatest.wordspec.AsyncWordSpecLike
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatestplus.mockito.MockitoSugar
 
-class RecipeManagerImplSpec extends AsyncWordSpecLike
+class DefaultRecipeManagerSpec extends AsyncWordSpecLike
   with Matchers
   with MockitoSugar
   with BeforeAndAfter
@@ -19,7 +19,7 @@ class RecipeManagerImplSpec extends AsyncWordSpecLike
   "RecipeManagerImpl" should {
 
     "implement add, get and all" in {
-      val impl = new RecipeManagerImpl()
+      val impl = new DefaultRecipeManager()
 
       val eventType = EventDescriptor("Event", Seq.empty)
       val transitions: Set[Transition] = Set(EventTransition(eventType, isSensoryEvent = true, None))

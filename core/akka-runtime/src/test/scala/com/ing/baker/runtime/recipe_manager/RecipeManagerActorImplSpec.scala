@@ -1,9 +1,13 @@
-package com.ing.baker.runtime
+package com.ing.baker.runtime.recipe_manager
+
+import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 import _root_.akka.actor.ActorSystem
 import _root_.akka.testkit.{TestKit, TestProbe}
 import _root_.akka.util.Timeout
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.akka.AkkaBakerConfig.Timeouts
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.common.RecipeRecord
 import org.scalatest.matchers.should.Matchers
@@ -11,8 +15,7 @@ import org.scalatest.wordspec.AsyncWordSpecLike
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatestplus.mockito.MockitoSugar
 
-import java.util.UUID
-import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 class RecipeManagerActorImplSpec extends TestKit(ActorSystem("MySpec"))
   with AsyncWordSpecLike
@@ -20,8 +23,9 @@ class RecipeManagerActorImplSpec extends TestKit(ActorSystem("MySpec"))
   with MockitoSugar
   with BeforeAndAfter
   with BeforeAndAfterAll {
-  private val timeout: Timeout = Timeout(5, TimeUnit.SECONDS)
-  private val settings: RecipeManagerActorImpl.Settings = RecipeManagerActorImpl.Settings(timeout, timeout)
+  private val timeout: FiniteDuration = FiniteDuration(5, TimeUnit.SECONDS)
+  private val timeouts: Timeouts = new Timeouts(timeout, timeout, timeout ,timeout ,timeout)
+
 
 
   override def afterAll(): Unit = {
@@ -33,7 +37,7 @@ class RecipeManagerActorImplSpec extends TestKit(ActorSystem("MySpec"))
     "implement add" in {
       val actor = TestProbe()
 
-      val manager = new RecipeManagerActorImpl(actor.ref, settings)
+      val manager = new ActorBasedRecipeManager(actor.ref, timeouts)
       val recipe = mock[CompiledRecipe]
 
       val eventualString = manager.put(RecipeRecord.of(recipe, System.currentTimeMillis()))
@@ -47,7 +51,7 @@ class RecipeManagerActorImplSpec extends TestKit(ActorSystem("MySpec"))
     "implement get" in {
       val actor = TestProbe()
 
-      val manager = new RecipeManagerActorImpl(actor.ref, settings)
+      val manager = new ActorBasedRecipeManager(actor.ref, timeouts)
       val recipe = mock[CompiledRecipe]
 
       val id1 = UUID.randomUUID().toString
@@ -74,7 +78,7 @@ class RecipeManagerActorImplSpec extends TestKit(ActorSystem("MySpec"))
     "implement getAll" in {
       val actor = TestProbe()
 
-      val manager = new RecipeManagerActorImpl(actor.ref, settings)
+      val manager = new ActorBasedRecipeManager(actor.ref, timeouts)
       val recipe = mock[CompiledRecipe]
 
       val eventualString = manager.all

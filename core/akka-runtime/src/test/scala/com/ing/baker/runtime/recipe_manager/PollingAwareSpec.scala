@@ -1,10 +1,10 @@
-package com.ing.baker.runtime
+package com.ing.baker.runtime.recipe_manager
 
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.RecipeRecord
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AsyncWordSpecLike
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatestplus.mockito.MockitoSugar
 
 import scala.collection.concurrent.TrieMap

@@ -4,7 +4,6 @@ import cats.data.OptionT
 import cats.effect.{Blocker, ContextShift, IO, Resource, Sync, Timer}
 import cats.implicits._
 import com.ing.baker.runtime.common.BakerException
-import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance}
 import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
@@ -32,8 +31,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object BakerService {
 
-  def resource(baker: Baker, hostname: InetSocketAddress, apiUrlPrefix: String, dashboardPath: String, loggingEnabled: Boolean)
-              (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
+  def resource(baker: Baker, ec: ExecutionContext, hostname: InetSocketAddress, apiUrlPrefix: String, dashboardPath: String, loggingEnabled: Boolean)
+              (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
 
     val bakeryRequestClassifier: Request[IO] => Option[String] = { request =>
       val uriPath = request.uri.path
