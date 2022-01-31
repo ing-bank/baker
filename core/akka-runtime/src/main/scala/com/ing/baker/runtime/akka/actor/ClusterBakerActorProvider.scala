@@ -1,10 +1,9 @@
 package com.ing.baker.runtime.akka.actor
 
-import akka.actor.{ActorRef, ActorSystem, Address, PoisonPill}
+import akka.actor.{ActorRef, ActorSystem, Address}
 import akka.cluster.Cluster
 import akka.cluster.sharding.ShardRegion._
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
-import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
 import akka.util.Timeout
@@ -12,16 +11,14 @@ import cats.data.NonEmptyList
 import cats.effect.IO
 import com.ing.baker.il.sha256HashCode
 import com.ing.baker.runtime.akka.AkkaBakerConfig
-import com.ing.baker.runtime.akka.AkkaBakerConfig.{InMemoryRecipeManagerType, RecipeManagerType}
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_index._
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.model.InteractionManager
+import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.serialization.Encryption
-import com.ing.baker.runtime.{RecipeManager, RecipeManagerActorImpl, RecipeManagerImpl}
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.duration._
@@ -74,10 +71,9 @@ class ClusterBakerActorProvider(
                                  ingredientsFilter: List[String],
                                  configuredEncryption: Encryption,
                                  timeouts: AkkaBakerConfig.Timeouts,
-                                 recipeManagerType: RecipeManagerType
                                ) extends BakerActorProvider with LazyLogging {
 
-  private def initializeCluster()(implicit actorSystem: ActorSystem): Unit = {
+  def initialize(implicit system: ActorSystem): Unit = {
     /**
       * Join cluster after waiting for the persistenceInit actor, otherwise terminate here.
       */
@@ -90,10 +86,10 @@ class ClusterBakerActorProvider(
     logger.info("PersistenceInit actor started successfully, joining cluster seed nodes {}", seedNodes)
     seedNodes match {
       case SeedNodesList(nel) =>
-        Cluster.get(actorSystem).joinSeedNodes(nel.toList)
+        Cluster.get(system).joinSeedNodes(nel.toList)
       case ServiceDiscovery =>
-        AkkaManagement(actorSystem).start()
-        ClusterBootstrap(actorSystem).start()
+        AkkaManagement(system).start()
+        ClusterBootstrap(system).start()
     }
   }
 
@@ -112,45 +108,6 @@ class ClusterBakerActorProvider(
       },
       extractEntityId = ClusterBakerActorProvider.entityIdExtractor(nrOfShards),
       extractShardId = ClusterBakerActorProvider.shardIdExtractor(nrOfShards)
-    )
-  }
-
-  override def createRecipeManager()(implicit actorSystem: ActorSystem): RecipeManager = {
-    // todo move to a more proper location
-    initializeCluster()
-    if (recipeManagerType == InMemoryRecipeManagerType) {
-      RecipeManagerImpl.pollingAware(actorSystem.dispatcher)
-    } else {
-      createRecipeManagerActor
-    }
-  }
-
-  private def createRecipeManagerActor(implicit actorSystem: ActorSystem): RecipeManager = {
-
-    val singletonManagerProps = ClusterSingletonManager.props(
-      RecipeManagerActor.props(),
-      terminationMessage = PoisonPill,
-      settings = ClusterSingletonManagerSettings(actorSystem))
-    val roles = Cluster(actorSystem).selfRoles
-
-    actorSystem.actorOf(props = singletonManagerProps, name = recipeManagerName)
-
-    val singletonProxyProps = ClusterSingletonProxy.props(
-      singletonManagerPath = s"/user/$recipeManagerName",
-      settings = {
-        if (roles.contains("state-node"))
-          ClusterSingletonProxySettings(actorSystem).withRole("state-node")
-        else
-          ClusterSingletonProxySettings(actorSystem)
-      })
-
-    import actorSystem.dispatcher
-
-    RecipeManagerActorImpl.pollingAware(
-      actor = actorSystem.actorOf(props = singletonProxyProps, name = "RecipeManagerProxy"),
-      settings = RecipeManagerActorImpl.Settings(
-        addRecipeTimeout = timeouts.defaultAddRecipeTimeout,
-        inquireTimeout = timeouts.defaultInquireTimeout)
     )
   }
 

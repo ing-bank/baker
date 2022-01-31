@@ -23,28 +23,24 @@ object RemoteInteractionClient {
   /** use method `use` of the Resource, the client will be acquired and shut down automatically each time
    * the resulting `IO` is run, each time using the common connection pool.
    */
-  def resource(uri: Uri,
-               headers: Headers,
+  def resource(headers: Headers,
                pool: ExecutionContext,
                tlsConfig: Option[BakeryHttp.TLSConfig])(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, RemoteInteractionClient] =
     BlazeClientBuilder[IO](pool, tlsConfig.map(BakeryHttp.loadSSLContext))
       .withCheckEndpointAuthentication(false)
       .resource
-      .map(new BaseRemoteInteractionClient(_, uri, headers))
+      .map(new BaseRemoteInteractionClient(_, headers))
 }
 
 trait RemoteInteractionClient {
-  def client: Client[IO]
-  def uri: Uri
   def headers: Headers
   def entityCodecs: (EntityEncoder[IO, ExecutionRequest],  EntityDecoder[IO, ExecutionResult], EntityDecoder[IO, Interactions])
-  def execute(interactionId: String, input: Seq[IngredientInstance]): IO[Option[EventInstance]]
-  def interfaces: IO[Interactions]
+  def execute(uri: Uri, interactionId: String, input: Seq[IngredientInstance]): IO[Option[EventInstance]]
+  def interfaces(uri: Uri): IO[Interactions]
 }
 
 class BaseRemoteInteractionClient(
                                             val client: Client[IO],
-                                            val uri: Uri,
                                             val headers: Headers)(implicit cs: ContextShift[IO], timer: Timer[IO])
   extends RemoteInteractionClient {
   import RemoteInteractionClient._
@@ -58,7 +54,7 @@ class BaseRemoteInteractionClient(
 
   private implicit lazy val (interactionEntityDecoder, executeRequestEntityEncoder, executeResponseEntityDecoder) = entityCodecs
 
-  def interfaces: IO[Interactions] =
+  def interfaces(uri: Uri): IO[Interactions] =
     client.expect[Interactions](
       Request[IO](
         method = GET,
@@ -67,7 +63,7 @@ class BaseRemoteInteractionClient(
       )
     )
 
-  def execute(interactionId: String, input: Seq[IngredientInstance]): IO[Option[EventInstance]] = {
+  def execute(uri: Uri, interactionId: String, input: Seq[IngredientInstance]): IO[Option[EventInstance]] = {
     client.expect[ExecutionResult](
       Request[IO](
         method = POST,

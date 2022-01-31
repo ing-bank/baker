@@ -5,7 +5,6 @@ import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.ing.baker.il.petrinet.{EventTransition, Place, RecipePetriNet, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
 import com.ing.baker.petrinet.api.{Marking, PetriNet}
-import com.ing.baker.runtime.RecipeManager
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.{ActorMetadata, CheckForProcessesToBeDeleted}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.NotifyWhenReceived
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
@@ -28,9 +27,11 @@ import org.scalatestplus.mockito.MockitoSugar
 import scalax.collection.immutable.Graph
 import akka.pattern.ask
 import akka.util.Timeout
-
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+
+import com.ing.baker.runtime.recipe_manager.RecipeManager
+
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
