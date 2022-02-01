@@ -9,7 +9,7 @@ def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = proje
 lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocker")({
   state =>
     "set ThisBuild / version := \"local\"" ::
-     "bakery-state/Docker/publishLocal" ::
+      "bakery-state/Docker/publishLocal" ::
       "bakery-client-example/Docker/publishLocal" ::
       "bakery-kafka-listener-example/Docker/publishLocal" ::
       "project interaction-example-make-payment-and-ship-items" ::
@@ -574,7 +574,7 @@ lazy val `sbt-bakery-docker-generate`: Project = project.in(file("docker/sbt-bak
       IO.write(file, sourceFile)
       Seq(file)
     }.taskValue,
-    addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.6.0"),
+    addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.7"),
     addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.3.9")
   )
   .enablePlugins(SbtPlugin)
@@ -589,9 +589,9 @@ lazy val `baker-test`: Project = project.in(file("core/baker-test"))
     libraryDependencies ++= compileDeps(
       slf4jApi
     ) ++ testDeps(scalaTest, logback,
-      "io.altoo" %% "akka-kryo-serialization" % "1.1.5",
-      "junit" % "junit" % "4.13",
-      "org.scalatestplus" %% "junit-4-13" % "3.2.9.0"
+      "io.altoo" %% "akka-kryo-serialization" % "2.3.0",
+      "junit" % "junit" % "4.13.2",
+      "org.scalatestplus" %% "junit-4-13" % "3.2.11.0"
     )
   ).dependsOn(`baker-interface`, testScope(`baker-akka-runtime`), testScope(`baker-recipe-compiler`))
 
