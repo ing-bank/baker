@@ -1,6 +1,5 @@
 import Dependencies._
 import com.typesafe.sbt.packager.MappingsHelper.directory
-import sbt.Keys._
 import sbt.file
 
 import scala.sys.process.Process
@@ -10,7 +9,7 @@ def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = proje
 lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocker")({
   state =>
     "set ThisBuild / version := \"local\"" ::
-     "bakery-state/Docker/publishLocal" ::
+      "bakery-state/Docker/publishLocal" ::
       "bakery-client-example/Docker/publishLocal" ::
       "bakery-kafka-listener-example/Docker/publishLocal" ::
       "project interaction-example-make-payment-and-ship-items" ::
@@ -21,7 +20,7 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
       state
 })
 
-val commonSettings = Defaults.coreDefaultSettings ++ Seq(
+val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
   scalaVersion := "2.12.15",
   fork := true,
@@ -47,14 +46,14 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     )
 )
 
-val dockerSettings = Seq(
+val dockerSettings: Seq[Setting[_]] = Seq(
   Docker / maintainer := "The Bakery Team",
   dockerBaseImage := "adoptopenjdk/openjdk11",
   dockerUpdateLatest := true, // todo only for master branch
   Docker / version := "local", // used by smoke tests for locally built images
 )
 
-val dependencyOverrideSettings = Seq(
+val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
   libraryDependencies ++= Seq(
     snakeYaml,
     jacksonDatabind,
@@ -74,17 +73,17 @@ val dependencyOverrideSettings = Seq(
   )
 )
 
-lazy val noPublishSettings = Seq(
+lazy val noPublishSettings: Seq[Setting[_]] = Seq(
   publish := {},
   publishLocal := {},
   publishArtifact := false
 )
 
-lazy val defaultModuleSettings = commonSettings ++ dependencyOverrideSettings ++ Publish.settings
+lazy val defaultModuleSettings: Seq[Setting[_]] = commonSettings ++ dependencyOverrideSettings ++ Publish.settings
 
-lazy val scalaPBSettings = Seq(Compile / PB.targets := Seq(scalapb.gen() -> (Compile / sourceManaged).value))
+lazy val scalaPBSettings: Seq[Setting[_]] = Seq(Compile / PB.targets := Seq(scalapb.gen() -> (Compile / sourceManaged).value))
 
-lazy val `baker-types` = project.in(file("core/baker-types"))
+lazy val `baker-types`: Project = project.in(file("core/baker-types"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "baker-types",
@@ -99,7 +98,7 @@ lazy val `baker-types` = project.in(file("core/baker-types"))
     ) ++ testDeps(scalaTest, scalaCheck, scalaCheckPlus)
   )
 
-lazy val `baker-intermediate-language` = project.in(file("core/intermediate-language"))
+lazy val `baker-intermediate-language`: Project = project.in(file("core/intermediate-language"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "baker-intermediate-language",
@@ -112,7 +111,7 @@ lazy val `baker-intermediate-language` = project.in(file("core/intermediate-lang
     ) ++ testDeps(scalaTest, scalaCheck, scalaCheckPlus)
   ).dependsOn(`baker-types`)
 
-lazy val `baker-interface` = project.in(file("core/baker-interface"))
+lazy val `baker-interface`: Project = project.in(file("core/baker-interface"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
   .settings(
@@ -143,7 +142,7 @@ lazy val `baker-interface` = project.in(file("core/baker-interface"))
     testScope(`baker-recipe-compiler`),
     testScope(`baker-types`))
 
-lazy val `baker-akka-runtime` = project.in(file("core/akka-runtime"))
+lazy val `baker-akka-runtime`: Project = project.in(file("core/akka-runtime"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
   .settings(
@@ -196,14 +195,14 @@ lazy val `baker-akka-runtime` = project.in(file("core/akka-runtime"))
   .enablePlugins(MultiJvmPlugin)
   .configs(MultiJvm)
 
-lazy val `baker-annotations` = project.in(file("core/baker-annotations"))
+lazy val `baker-annotations`: Project = project.in(file("core/baker-annotations"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "baker-annotations",
     libraryDependencies ++= compileDeps(javaxInject)
   )
 
-lazy val `baker-recipe-dsl` = project.in(file("core/recipe-dsl"))
+lazy val `baker-recipe-dsl`: Project = project.in(file("core/recipe-dsl"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "baker-recipe-dsl",
@@ -222,7 +221,7 @@ lazy val `baker-recipe-dsl` = project.in(file("core/recipe-dsl"))
         )
   ).dependsOn(`baker-types`, `baker-annotations`)
 
-lazy val `baker-recipe-compiler` = project.in(file("core/recipe-compiler"))
+lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compiler"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "baker-compiler",
@@ -232,7 +231,7 @@ lazy val `baker-recipe-compiler` = project.in(file("core/recipe-compiler"))
   .dependsOn(`baker-recipe-dsl`, `baker-intermediate-language`, testScope(`baker-recipe-dsl`))
 
 
-lazy val `bakery-interaction-protocol` = project.in(file("bakery/interaction-protocol"))
+lazy val `bakery-interaction-protocol`: Project = project.in(file("bakery/interaction-protocol"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
   .settings(
@@ -250,7 +249,7 @@ lazy val `bakery-interaction-protocol` = project.in(file("bakery/interaction-pro
   )
   .dependsOn(`baker-interface`)
 
-lazy val `bakery-client` = project.in(file("bakery/client"))
+lazy val `bakery-client`: Project = project.in(file("bakery/client"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "bakery-client",
@@ -273,7 +272,7 @@ lazy val `bakery-client` = project.in(file("bakery/client"))
 
 val npmBuildTask = taskKey[File]("Dashboard build")
 
-lazy val `bakery-dashboard` = project.in(file("bakery/dashboard"))
+lazy val `bakery-dashboard`: Project = project.in(file("bakery/dashboard"))
   .enablePlugins(UniversalPlugin)
   .settings(defaultModuleSettings)
   .settings(
@@ -299,7 +298,7 @@ lazy val `bakery-dashboard` = project.in(file("bakery/dashboard"))
     publishLocal := (publishLocal dependsOn (Universal / packageBin)).value
   )
 
-lazy val `bakery-state` = project.in(file("bakery/state"))
+lazy val `bakery-state`: Project = project.in(file("bakery/state"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(defaultModuleSettings)
   .settings(
@@ -355,7 +354,7 @@ lazy val `bakery-state` = project.in(file("bakery/state"))
     `bakery-dashboard`
   )
 
-lazy val `bakery-interaction` = project.in(file("bakery/interaction"))
+lazy val `bakery-interaction`: Project = project.in(file("bakery/interaction"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "bakery-interaction",
@@ -375,7 +374,7 @@ lazy val `bakery-interaction` = project.in(file("bakery/interaction"))
   )
   .dependsOn(`bakery-interaction-protocol`, `baker-interface`)
 
-lazy val `bakery-interaction-spring` = project.in(file("bakery/interaction-spring"))
+lazy val `bakery-interaction-spring`: Project = project.in(file("bakery/interaction-spring"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "bakery-interaction-spring",
@@ -398,14 +397,14 @@ lazy val `bakery-interaction-spring` = project.in(file("bakery/interaction-sprin
   )
   .dependsOn(`bakery-interaction`, `baker-recipe-dsl`)
 
-lazy val baker = project.in(file("."))
+lazy val baker: Project = project.in(file("."))
   .settings(defaultModuleSettings)
   .aggregate(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
     `bakery-client`, `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
     `sbt-bakery-docker-generate`,
     `baker-interface`, `bakery-dashboard`, `baker-annotations`, `baker-test`)
 
-lazy val `baker-example` = project
+lazy val `baker-example`: Project = project
   .in(file("examples/baker-example"))
   .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
@@ -441,7 +440,7 @@ lazy val `baker-example` = project
   )
   .dependsOn(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`)
 
-lazy val `bakery-client-example` = project
+lazy val `bakery-client-example`: Project = project
   .in(file("examples/bakery-client-example"))
   .enablePlugins(JavaAppPackaging)
   .settings(defaultModuleSettings)
@@ -471,7 +470,7 @@ lazy val `bakery-client-example` = project
   )
   .dependsOn(`baker-types`, `bakery-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
 
-lazy val `bakery-kafka-listener-example` = project
+lazy val `bakery-kafka-listener-example`: Project = project
   .in(file("examples/bakery-kafka-listener-example"))
   .enablePlugins(JavaAppPackaging)
   .settings(defaultModuleSettings)
@@ -499,7 +498,7 @@ lazy val `bakery-kafka-listener-example` = project
   )
   .dependsOn(`baker-types`, `bakery-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
 
-lazy val `interaction-example-reserve-items` = project.in(file("examples/bakery-interaction-examples/reserve-items"))
+lazy val `interaction-example-reserve-items`: Project = project.in(file("examples/bakery-interaction-examples/reserve-items"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .settings(defaultModuleSettings)
@@ -521,7 +520,7 @@ lazy val `interaction-example-reserve-items` = project.in(file("examples/bakery-
   )
   .dependsOn(`bakery-interaction`, `baker-recipe-dsl`)
 
-lazy val `interaction-example-make-payment-and-ship-items` = project.in(file("examples/bakery-interaction-examples/make-payment-and-ship-items"))
+lazy val `interaction-example-make-payment-and-ship-items`: Project = project.in(file("examples/bakery-interaction-examples/make-payment-and-ship-items"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .settings(defaultModuleSettings)
@@ -542,7 +541,7 @@ lazy val `interaction-example-make-payment-and-ship-items` = project.in(file("ex
   )
   .dependsOn(`bakery-interaction`)
 
-lazy val `bakery-integration-tests` = project.in(file("bakery/integration-tests"))
+lazy val `bakery-integration-tests`: Project = project.in(file("bakery/integration-tests"))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
   .settings(
@@ -564,7 +563,7 @@ lazy val `bakery-integration-tests` = project.in(file("bakery/integration-tests"
     `interaction-example-make-payment-and-ship-items`,
     `interaction-example-reserve-items`)
 
-lazy val `sbt-bakery-docker-generate` = project.in(file("docker/sbt-bakery-docker-generate"))
+lazy val `sbt-bakery-docker-generate`: Project = project.in(file("docker/sbt-bakery-docker-generate"))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings) // docker plugin can't be published, at least not to azure feed
   .settings(
@@ -575,14 +574,14 @@ lazy val `sbt-bakery-docker-generate` = project.in(file("docker/sbt-bakery-docke
       IO.write(file, sourceFile)
       Seq(file)
     }.taskValue,
-    addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.6.0"),
+    addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.7"),
     addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.3.9")
   )
   .enablePlugins(SbtPlugin)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .dependsOn(`bakery-interaction`, `bakery-interaction-spring`)
 
-lazy val `baker-test` = project.in(file("core/baker-test"))
+lazy val `baker-test`: Project = project.in(file("core/baker-test"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
   .settings(
@@ -590,9 +589,9 @@ lazy val `baker-test` = project.in(file("core/baker-test"))
     libraryDependencies ++= compileDeps(
       slf4jApi
     ) ++ testDeps(scalaTest, logback,
-      "io.altoo" %% "akka-kryo-serialization" % "1.1.5",
-      "junit" % "junit" % "4.13",
-      "org.scalatestplus" %% "junit-4-13" % "3.2.9.0"
+      "io.altoo" %% "akka-kryo-serialization" % "2.3.0",
+      "junit" % "junit" % "4.13.2",
+      "org.scalatestplus" %% "junit-4-13" % "3.2.11.0"
     )
   ).dependsOn(`baker-interface`, testScope(`baker-akka-runtime`), testScope(`baker-recipe-compiler`))
 
