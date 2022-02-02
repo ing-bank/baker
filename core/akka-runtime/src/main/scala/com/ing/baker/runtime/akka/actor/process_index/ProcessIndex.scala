@@ -118,18 +118,20 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     context.system.scheduler.scheduleAtFixedRate(interval, interval, context.self, CheckForProcessesToBeDeleted)
   }
 
-  private def updateCache(): recipeCache.type = {
-    // TODO this is a synchronous ask on an actor which createProcessActor is considered bad practice, alternative?
-    val futureResult: Future[Seq[RecipeRecord]] = recipeManager.all
-    val allRecipes: Seq[RecipeRecord] = Await.result(futureResult, updateCacheTimeout)
-    recipeCache ++= allRecipes.map { r => r.recipeId -> (r.recipe, r.updated) }
+  // TODO this is a synchronous ask on an actor which createProcessActor is considered bad practice, alternative?
+  private def getRecipeIdFromManager(recipeId: String): Option[(CompiledRecipe, Long)] = {
+    log.debug("Adding recipe to recipe cache: {}", recipeId)
+    val futureResult: Future[Option[RecipeRecord]] = recipeManager.get(recipeId)
+    val result = Await.result(futureResult, updateCacheTimeout)
+    recipeCache ++= result.map(r => r.recipeId -> (r.recipe, r.updated))
+    log.debug("Added recipe to recipe cache: {}, current size: {}", recipeId, recipeCache.size)
+    result.map(r => r.recipe -> r.updated)
   }
 
   def getRecipeWithTimeStamp(recipeId: String): Option[(CompiledRecipe, Long)] =
     recipeCache.get(recipeId) match {
       case None =>
-        updateCache()
-        recipeCache.get(recipeId)
+        getRecipeIdFromManager(recipeId)
       case other => other
     }
 
