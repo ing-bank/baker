@@ -31,6 +31,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import com.ing.baker.runtime.recipe_manager.RecipeManager
+import org.mockito.Matchers.anyString
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
@@ -74,7 +75,8 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
     val recipe = CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Option.empty)
     val manager = mock[RecipeManager]
 
-    when(manager.all).thenReturn(Future.successful(Seq(RecipeRecord.of(recipe, updated = 0L))))
+//    when(manager.all).thenReturn(Future.successful(Seq(RecipeRecord.of(recipe, updated = 0L))))
+    when(manager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0L))))
     manager
   }
 
@@ -149,7 +151,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val processProbe = TestProbe()
       val recipeManager = mock[RecipeManager]
 
-      when(recipeManager.all).thenReturn(Future.successful(Seq(RecipeRecord.of(
+      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(
         CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty,
           Option.empty, Some(recipeRetentionPeriod)),
         updated = 0l
@@ -180,7 +182,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val recipeManager = mock[RecipeManager]
       val recipe = CompiledRecipe("name", recipeId, petrinetMock, Marking.empty,
         Seq.empty, Option.empty, Option.empty)
-      when(recipeManager.all).thenReturn(Future.successful(Seq(RecipeRecord.of(recipe, updated = 0l))))
+      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0l))))
 
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
 
@@ -226,8 +228,8 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val receivePeriodTimeout = 500.milliseconds
       val petriNetActorProbe = TestProbe("petrinet-probe")
       val recipeManager = mock[RecipeManager]
-      when(recipeManager.all).thenReturn(Future.successful(
-        Seq(RecipeRecord.of(CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty,
+      when(recipeManager.get(anyString())).thenReturn(Future.successful(
+        Some(RecipeRecord.of(CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty,
           Some(receivePeriodTimeout), Option.empty), 0l))))
 
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
@@ -260,15 +262,13 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val recipeManager = mock[RecipeManager]
       val recipe = CompiledRecipe("name", recipeId, petrinetMock, Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty)
 
-      when(recipeManager.all).thenReturn(Future.successful(Seq(RecipeRecord.of(recipe, updated = 0l))))
+      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0l))))
 
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
 
       val recipeInstanceId = UUID.randomUUID().toString
 
       val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeInstanceId, Map.empty[String, Value], List.empty))
-
-
 
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
 
@@ -294,7 +294,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val recipeManager = mock[RecipeManager]
       val recipe = CompiledRecipe("name", recipeId, petrinetMock, Marking.empty, Seq.empty,
         Some(receivePeriodTimeout), Option.empty)
-      when(recipeManager.all).thenReturn(Future.successful(Seq(RecipeRecord.of(recipe, updated = 0l))))
+      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0l))))
 
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
 
