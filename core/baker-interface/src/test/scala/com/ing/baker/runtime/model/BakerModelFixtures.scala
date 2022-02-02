@@ -4,7 +4,7 @@ import cats.Applicative
 import cats.effect.Sync
 import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.types.{Converters, Value}
-import org.mockito.Matchers.anyString
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.{reset, when}
 import org.scalatestplus.mockito.MockitoSugar
 

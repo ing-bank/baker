@@ -20,7 +20,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrat
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.akka.namedCachedThreadPool
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
@@ -531,7 +531,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       // assert that the actor is the same as before termination
       expectMsgPF() { case InstanceState(2, _, _, _) ⇒ }
 
-      verifyZeroInteractions(mockT2)
+      verifyNoMoreInteractions(mockT2)
     }
 
     "Not execute a transition with scheduled retry after being stopped" in new TestSequenceNet {
@@ -576,7 +576,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
         reset(mockFunction)
 
-        verifyZeroInteractions(mockFunction)
+        verifyNoInteractions(mockFunction)
       }
     }
 

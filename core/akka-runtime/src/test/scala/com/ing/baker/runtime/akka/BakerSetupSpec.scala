@@ -11,7 +11,7 @@ import com.ing.baker.runtime.common.BakerException.{ImplementationsException, Re
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.typesafe.config.ConfigFactory
-import org.mockito.Matchers.anyString
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.when
 
 import scala.concurrent.Future

@@ -14,7 +14,7 @@ import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import com.ing.baker.types.{Converters, Value}
 import com.typesafe.config.{Config, ConfigFactory}
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpecLike
