@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
 import akka.actor.ActorRef
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexActor.ActorMetadata
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.scaladsl.{EventInstance, SensoryEventResult}
 import com.ing.baker.runtime.common.{RejectReason, SensoryEventStatus}

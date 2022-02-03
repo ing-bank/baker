@@ -33,7 +33,7 @@ object Dependencies {
   val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
   val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.8.2"
 
-  val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
+  val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion excludeAll(ExclusionRule("org.scala-lang.modules", "scala-java8-compat"))
 
   val akkaStream = "com.typesafe.akka" %% "akka-stream" % akkaVersion
   val akkaProtobuf = "com.typesafe.akka" %% "akka-protobuf" % akkaVersion
@@ -95,6 +95,8 @@ object Dependencies {
   val catsCore = "org.typelevel" %% "cats-core" % catsCoreVersion
   val console4Cats = "dev.profunktor" %% "console4cats" % "0.8.0"
   val catsRetry = "com.github.cb372" %% "cats-retry" % "2.1.1"
+
+  val scaffeine = "com.github.blemale" %% "scaffeine" % "5.1.2"
 
   val jnrConstants = "com.github.jnr" % "jnr-constants" % "0.9.9"
 

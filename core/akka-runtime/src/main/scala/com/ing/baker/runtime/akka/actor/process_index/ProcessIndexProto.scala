@@ -5,7 +5,7 @@ import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.traverse._
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexActor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{NotifyBoth, NotifyOnEvent, NotifyWhenCompleted, NotifyWhenReceived}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_index.protobuf.{ActorMetaData, ActorRefId}
@@ -132,8 +132,8 @@ object ProcessIndexProto {
           Some(a.recipeId),
           Some(a.recipeInstanceId),
           Some(a.createdDateTime),
-          Some(a.processStatus == ProcessIndex.Deleted),
-          Some(a.processStatus == ProcessIndex.Passivated)
+          Some(a.processStatus == ProcessIndexActor.Deleted),
+          Some(a.processStatus == ProcessIndexActor.Passivated)
         )
 
       def fromProto(message: protobuf.ActorMetaData): Try[ActorMetadata] =
@@ -147,9 +147,9 @@ object ProcessIndexProto {
         } yield ActorMetadata(recipeId, recipeInstanceId, createdDateTime, processStatus)
 
       private def readStatus(isDeleted: Boolean, isPassivated: Boolean): ProcessStatus = {
-        if (isDeleted) ProcessIndex.Deleted
-        else if (isPassivated) ProcessIndex.Passivated
-        else ProcessIndex.Active
+        if (isDeleted) ProcessIndexActor.Deleted
+        else if (isPassivated) ProcessIndexActor.Passivated
+        else ProcessIndexActor.Active
       }
     }
 
@@ -176,7 +176,7 @@ object ProcessIndexProto {
             Some(e.recipeId),
             Some(e.recipeInstanceId),
             Some(e.createdDateTime),
-            Some(e.processStatus == ProcessIndex.Deleted)
+            Some(e.processStatus == ProcessIndexActor.Deleted)
           )
         })
 
@@ -188,7 +188,7 @@ object ProcessIndexProto {
               recipeInstanceId <- versioned(e.recipeInstanceId, "RecipeInstanceId")
               createdDateTime <- versioned(e.createdTime, "createdTime")
               isDeleted <- versioned(e.isDeleted, "createdTime")
-              processStatus = if (isDeleted) ProcessIndex.Deleted else ProcessIndex.Active
+              processStatus = if (isDeleted) ProcessIndexActor.Deleted else ProcessIndexActor.Active
             } yield ActorMetadata(recipeId, recipeInstanceId, createdDateTime, processStatus)
           }
         } yield Index(entries)

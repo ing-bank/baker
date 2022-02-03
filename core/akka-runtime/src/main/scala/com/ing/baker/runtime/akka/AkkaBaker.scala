@@ -1,7 +1,5 @@
 package com.ing.baker.runtime.akka
 
-import java.util.{List => JavaList}
-
 import akka.actor.{Actor, ActorRef, ActorSystem, Address, Props}
 import akka.pattern.{FutureRef, ask}
 import akka.util.Timeout
@@ -11,6 +9,7 @@ import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
+import com.ing.baker.runtime.akka.actor.process_index.RecipeCache
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
@@ -25,6 +24,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 
+import java.util.{List => JavaList}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.postfixOps
@@ -73,6 +73,7 @@ object AkkaBaker {
   * For each recipe a new instance can be baked, sensory events can be send and state can be inquired upon
   */
 class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker with LazyLogging {
+
   import config.system
 
   config.bakerActorProvider.initialize(system)
@@ -80,8 +81,11 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   private val recipeManager: RecipeManager =
     config.recipeManager
 
+  private val recipeCache: RecipeCache =
+    new RecipeCache(recipeManager, config.timeouts.updateCacheTimeout, config.recipeCacheSize)
+
   private val processIndexActor: ActorRef =
-    config.bakerActorProvider.createProcessIndexActor(config.interactions, recipeManager)
+    config.bakerActorProvider.createProcessIndexActor(config.interactions, recipeCache)
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -136,7 +140,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     // here we ask the RecipeManager actor to return us the recipe for the given id
     recipeManager.get(recipeId).flatMap {
       case Some(r: RecipeRecord) =>
-        getImplementationErrors(r.recipe).map(errors => RecipeInformation(r.recipe, r.updated, errors, r.validate ))
+        getImplementationErrors(r.recipe).map(errors => RecipeInformation(r.recipe, r.updated, errors, r.validate))
       case None =>
         Future.failed(NoSuchRecipeException(recipeId))
     }

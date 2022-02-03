@@ -12,7 +12,6 @@ import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ValueReader
 
 import scala.concurrent.duration._
 
@@ -22,7 +21,8 @@ case class AkkaBakerConfig(
                             interactions: InteractionManager[IO],
                             recipeManager: RecipeManager,
                             timeouts: AkkaBakerConfig.Timeouts,
-                            bakerValidationSettings: BakerValidationSettings
+                            bakerValidationSettings: BakerValidationSettings,
+                            recipeCacheSize: Int
                           )(implicit val system: ActorSystem)
 
 object AkkaBakerConfig extends LazyLogging {
@@ -39,10 +39,11 @@ object AkkaBakerConfig extends LazyLogging {
   }
 
   case class Timeouts(defaultBakeTimeout: FiniteDuration,
-                       defaultProcessEventTimeout: FiniteDuration,
-                       defaultInquireTimeout: FiniteDuration,
-                       defaultShutdownTimeout: FiniteDuration,
-                       defaultAddRecipeTimeout: FiniteDuration)
+                      defaultProcessEventTimeout: FiniteDuration,
+                      defaultInquireTimeout: FiniteDuration,
+                      defaultShutdownTimeout: FiniteDuration,
+                      defaultAddRecipeTimeout: FiniteDuration,
+                      updateCacheTimeout: FiniteDuration)
 
   object Timeouts {
 
@@ -53,6 +54,7 @@ object AkkaBakerConfig extends LazyLogging {
         defaultInquireTimeout = 10.seconds,
         defaultShutdownTimeout = 30.seconds,
         defaultAddRecipeTimeout = 10.seconds,
+        updateCacheTimeout = 10.seconds
       )
 
     def apply(config: Config): Timeouts =
@@ -61,7 +63,8 @@ object AkkaBakerConfig extends LazyLogging {
         defaultProcessEventTimeout = config.as[FiniteDuration]("baker.process-event-timeout"),
         defaultInquireTimeout = config.as[FiniteDuration]("baker.process-inquire-timeout"),
         defaultShutdownTimeout = config.as[FiniteDuration]("baker.shutdown-timeout"),
-        defaultAddRecipeTimeout = config.as[FiniteDuration]("baker.add-recipe-timeout")
+        defaultAddRecipeTimeout = config.as[FiniteDuration]("baker.add-recipe-timeout"),
+        updateCacheTimeout = config.as[FiniteDuration]("baker.process-index-update-cache-timeout")
       )
   }
 
@@ -87,7 +90,8 @@ object AkkaBakerConfig extends LazyLogging {
       bakerValidationSettings = BakerValidationSettings.default,
       bakerActorProvider = localProvider,
       interactions = interactions,
-      recipeManager = DefaultRecipeManager.pollingAware(actorSystem.dispatcher)
+      recipeManager = DefaultRecipeManager.pollingAware(actorSystem.dispatcher),
+      recipeCacheSize = 10000
     )(actorSystem)
   }
 
@@ -114,7 +118,8 @@ object AkkaBakerConfig extends LazyLogging {
       bakerValidationSettings = BakerValidationSettings.default,
       bakerActorProvider = clusterProvider,
       interactions = interactions,
-      recipeManager = ActorBasedRecipeManager.clusterBasedRecipeManagerActor(actorSystem, Timeouts.default)
+      recipeManager = ActorBasedRecipeManager.clusterBasedRecipeManagerActor(actorSystem, Timeouts.default),
+      recipeCacheSize = 10000
     )(actorSystem)
   }
 
@@ -123,12 +128,13 @@ object AkkaBakerConfig extends LazyLogging {
       throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
 
     AkkaBakerConfig(
-      None,
+      externalContext = None,
       timeouts = Timeouts.apply(config),
       bakerValidationSettings = BakerValidationSettings.from(config),
       bakerActorProvider = bakerProviderFrom(config),
       interactions = interactions,
-      recipeManager = recipeManager
+      recipeManager = recipeManager,
+      recipeCacheSize = config.getInt("baker.recipe-cache-size")
     )(actorSystem)
   }
 

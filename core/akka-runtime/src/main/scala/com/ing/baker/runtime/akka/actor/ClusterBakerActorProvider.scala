@@ -12,7 +12,7 @@ import cats.effect.IO
 import com.ing.baker.il.sha256HashCode
 import com.ing.baker.runtime.akka.AkkaBakerConfig
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider._
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexActor.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_index._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
@@ -95,11 +95,11 @@ class ClusterBakerActorProvider(
 
 
   override def createProcessIndexActor(interactionManager: InteractionManager[IO],
-                                       recipeManager: RecipeManager)(implicit actorSystem: ActorSystem): ActorRef = {
+                                       recipeCache: RecipeCache)(implicit actorSystem: ActorSystem): ActorRef = {
     val roles = Cluster(actorSystem).selfRoles
     ClusterSharding(actorSystem).start(
       typeName = "ProcessIndexActor",
-      entityProps = ProcessIndex.props(actorIdleTimeout, Some(retentionCheckInterval), configuredEncryption, interactionManager, recipeManager, ingredientsFilter),
+      entityProps = ProcessIndexActor.props(recipeCache, actorIdleTimeout, Some(retentionCheckInterval), configuredEncryption, interactionManager, ingredientsFilter),
       settings = {
         if (roles.contains("state-node"))
           ClusterShardingSettings(actorSystem).withRole("state-node")

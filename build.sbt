@@ -69,7 +69,8 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
     snakeYaml,
     jacksonDatabind,
     bouncyCastleBcprov,
-    bouncyCastleBcpkix
+    bouncyCastleBcpkix,
+    scalaJava8Compat
   )
 )
 
@@ -126,7 +127,8 @@ lazy val `baker-interface`: Project = project.in(file("core/baker-interface"))
       fs2Io,
       scalaJava8Compat,
       javaxInject,
-      guava
+      guava,
+      scaffeine
     ) ++ providedDeps(findbugs) ++ testDeps(
       scalaTest,
       scalaCheckPlusMockito,
