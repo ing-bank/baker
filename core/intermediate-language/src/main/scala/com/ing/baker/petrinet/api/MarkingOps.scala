@@ -7,8 +7,7 @@ trait MarkingOps {
    */
   implicit class MarkingFunctions[P](marking: Marking[P]) {
 
-    // Note: extra .map(identity) is a needed to workaround the scala Map serialization bug: https://issues.scala-lang.org/browse/SI-7005
-    def multiplicities: MultiSet[P] = marking.mapValues(_.multisetSize).map(identity)
+    def multiplicities: MultiSet[P] = marking.view.map { case (key, value) => (key, value.multisetSize)}.toMap
 
     def add(p: P, value: Any, count: Int = 1): Marking[P] = {
       val newTokens = marking.getOrElse(p, MultiSet.empty).multisetIncrement(value, count)

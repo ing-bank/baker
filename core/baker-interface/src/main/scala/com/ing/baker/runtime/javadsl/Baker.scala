@@ -238,7 +238,7 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
     * @return A map with all recipes from recipeId -> JRecipeInformation
     */
   def getAllRecipes: CompletableFuture[java.util.Map[String, RecipeInformation]] =
-    FutureConverters.toJava(baker.getAllRecipes).toCompletableFuture.thenApply(_.mapValues(_.asJava).asJava)
+    FutureConverters.toJava(baker.getAllRecipes).toCompletableFuture.thenApply(_.view.map { case (key, value) => (key, value.asJava)}.toMap.asJava)
 
 
   def getInteraction(interactionName: String): CompletableFuture[Optional[InteractionInstanceDescriptorType]] =

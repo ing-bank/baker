@@ -28,6 +28,10 @@ object CompiledRecipe {
       val petriNetId: String = petriNet.places.toList.sortBy(_.id).mkString +
         petriNet.transitions.toList.sortBy(_.id).mkString
 
+      // In scala 2.12, a scala.Seq is implemented as a ArraySeq. In 2.13 it is a Vector. The fix below makes sure the
+      // hash in the recipe id is the same for both scala versions.
+      val petriNetIdWithScala213Fix = petriNetId.replaceAll("Vector\\(", "ArraySeq\\(")
+
       val initMarkingId: String = initialMarking.toList.sortBy {
         case (place, _) => place.id
       }.map {
@@ -39,7 +43,7 @@ object CompiledRecipe {
 
       val recipeString = StringBuilder.newBuilder +
         name +
-        petriNetId +
+        petriNetIdWithScala213Fix +
         initMarkingId +
         validationErrors.mkString +
         eventReceivePeriod.toString + retentionPeriod

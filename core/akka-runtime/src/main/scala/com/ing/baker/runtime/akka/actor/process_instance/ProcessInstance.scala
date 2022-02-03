@@ -89,7 +89,8 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
           filterIngredientValues(state, settings.ingredientsFilter)
         case _ => instance.state
       },
-      instance.jobs.mapValues(mapJobsToProtocol).map(identity))
+      instance.jobs.view.map { case (key, value) => (key, mapJobsToProtocol(value))}.toMap
+    )
   }
 
   private def mapJobsToProtocol(job: internal.Job[P, T, S]): protocol.JobState =

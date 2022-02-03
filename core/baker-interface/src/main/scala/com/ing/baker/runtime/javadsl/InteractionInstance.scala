@@ -41,8 +41,8 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
       })
   }
 
-  private def outputOrNone = {
-    if (output.isPresent) Some(output.get.asScala.toMap.mapValues(_.asScala.toMap)) else None
+  private def outputOrNone: Option[Map[String, Map[String, Type]]] = {
+    if (output.isPresent) Some(output.get.asScala.view.map { case (key, value) => (key, value.asScala.toMap)}.toMap) else None
   }
 
   def asScala: scaladsl.InteractionInstance = {
@@ -85,7 +85,7 @@ object InteractionInstance {
         common.input.map(input => input.asJava).asJava
       override val output: Optional[util.Map[String, util.Map[String, Type]]] =
         common.output match {
-          case Some(out) => Optional.of(out.mapValues(_.asJava).asJava)
+          case Some(out) => Optional.of(out.view.map { case (key, value) => (key, value.asJava)}.toMap.asJava)
           case None => Optional.empty[util.Map[String, util.Map[String, Type]]]()
         }
       override def execute(input: util.List[javadsl.IngredientInstance]): CompletableFuture[Optional[javadsl.EventInstance]] =

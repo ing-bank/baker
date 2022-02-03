@@ -168,7 +168,7 @@ object InteractionInstance {
       val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[FiresEvent]).oneOf()
       outputEventClasses.map(eventClass =>
         eventClass.getSimpleName ->
-          eventClass.getDeclaredFields
+          eventClass.getDeclaredFields.toIndexedSeq
             .filter(field => !field.isSynthetic)
             .map(f => f.getName -> Converters.readJavaType(f.getGenericType)).toMap
       ).toMap

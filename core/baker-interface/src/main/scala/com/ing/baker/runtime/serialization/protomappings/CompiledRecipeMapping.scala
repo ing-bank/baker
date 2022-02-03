@@ -94,10 +94,10 @@ class CompiledRecipeMapping extends ProtoMap[il.CompiledRecipe, protobuf.Compile
             requiredIngredients = t.requiredIngredients.map(ctxToProto(_)),
             interactionName = Option(t.interactionName),
             originalInteractionName = Option(t.originalInteractionName),
-            predefinedParameters = t.predefinedParameters.mapValues(ctxToProto(_)),
+            predefinedParameters = t.predefinedParameters.view.map { case (key, value) => (key, ctxToProto(value))}.toMap,
             maximumInteractionCount = t.maximumInteractionCount,
             failureStrategy = Option(ctxToProto(t.failureStrategy)),
-            eventOutputTransformers = t.eventOutputTransformers.mapValues(ctxToProto(_))
+            eventOutputTransformers = t.eventOutputTransformers.view.map { case (key, value) => (key, ctxToProto(value))}.toMap
           )
 
           protobuf.Node(protobuf.Node.OneofNode.InteractionTransition(pt))
