@@ -64,9 +64,9 @@ private[recipeinstance] case class TransitionExecution(
 
   def isInactive: Boolean =
     state match {
-      case TransitionExecution.State.Failed(_, ExceptionStrategyOutcome.RetryWithDelay(_)) ⇒ false
-      case TransitionExecution.State.Active ⇒ false
-      case _ ⇒ true
+      case TransitionExecution.State.Failed(_, ExceptionStrategyOutcome.RetryWithDelay(_)) => false
+      case TransitionExecution.State.Active => false
+      case _ => true
     }
 
   def isRetrying: Boolean =
@@ -83,7 +83,7 @@ private[recipeinstance] case class TransitionExecution(
 
   def failureCount: Int =
     state match {
-      case e: TransitionExecution.State.Failed ⇒ e.failureCount
+      case e: TransitionExecution.State.Failed => e.failureCount
       case _ => 0
     }
 

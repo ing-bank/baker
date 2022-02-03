@@ -17,11 +17,11 @@ trait MarkingOps {
 
     def |-|(other: Marking[P]): Marking[P] = other.keySet.foldLeft(marking) {
 
-      case (result, place) ⇒
+      case (result, place) =>
 
         marking.get(place) match {
-          case None ⇒ result
-          case Some(tokens) ⇒
+          case None => result
+          case Some(tokens) =>
             val newTokens = tokens.multisetDifference(other(place))
             if (newTokens.isEmpty)
               result - place
@@ -31,10 +31,10 @@ trait MarkingOps {
     }
 
     def |+|(other: Marking[P]): Marking[P] = other.keySet.foldLeft(marking) {
-      case (result, place) ⇒
+      case (result, place) =>
         val newTokens = marking.get(place) match {
-          case None         ⇒ other(place)
-          case Some(tokens) ⇒ tokens.multisetSum(other(place))
+          case None         => other(place)
+          case Some(tokens) => tokens.multisetSum(other(place))
         }
 
         result + (place -> newTokens)
@@ -54,6 +54,6 @@ trait MarkingOps {
     * @return Marking (state of the petrinet) with 'null' token values
     */
   implicit class MultiSetToMarking[P](mset: MultiSet[P]) {
-    def toMarking: Marking[P] = mset.map { case (p, n) ⇒ p -> Map[Any, Int](Tuple2(null, n)) }.toMarking
+    def toMarking: Marking[P] = mset.map { case (p, n) => p -> Map[Any, Int](Tuple2(null, n)) }.toMarking
   }
 }

@@ -22,7 +22,7 @@ case class Instance[P, T, S](
   /**
    * The marking that is already used by running jobs
    */
-  lazy val reservedMarking: Marking[P] = jobs.map { case (id, job) ⇒ job.consume }.reduceOption(_ |+| _).getOrElse(Marking.empty)
+  lazy val reservedMarking: Marking[P] = jobs.map { case (id, job) => job.consume }.reduceOption(_ |+| _).getOrElse(Marking.empty)
 
   /**
    * The marking that is available for new jobs
@@ -38,7 +38,7 @@ case class Instance[P, T, S](
     * Checks whether a transition is blocked by a previous failure.
     */
   def isBlocked(transition: T): Boolean = jobs.values.collectFirst {
-    case Job(_, _, _, `transition`, _, _, Some(ExceptionState(_, _, reason, _))) ⇒
+    case Job(_, _, _, `transition`, _, _, Some(ExceptionState(_, _, reason, _))) =>
       s"Transition '$transition' is blocked because it failed previously with: $reason"
   }.isDefined
 
