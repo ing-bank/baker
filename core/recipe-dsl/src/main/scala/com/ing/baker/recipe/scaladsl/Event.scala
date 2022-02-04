@@ -6,11 +6,13 @@ import com.ing.baker.types.mirror
 import scala.language.experimental.macros
 import scala.reflect.runtime.universe.TypeTag
 
+import scala.collection.immutable.Seq
+
 object Event {
 
   def apply(ingredients: common.Ingredient*) : Event = macro CommonMacros.eventImpl
 
-  def apply(name: String, ingredients: common.Ingredient*) : Event = new Event(name, ingredients, Some(1))
+  def apply(name: String, ingredients: common.Ingredient*) : Event = new Event(name, ingredients.toIndexedSeq, Some(1))
 
   def apply[T : TypeTag]: common.Event = {
     val runtimeClass = mirror.runtimeClass(mirror.typeOf[T])

@@ -14,6 +14,8 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import scalax.collection.immutable.Graph
 
+import scala.collection.immutable.Seq
+
 class JsonEncodersSpec extends AnyFunSpec with Matchers {
   describe("EventCodecs") {
     it("should encode RejectReason enum") {

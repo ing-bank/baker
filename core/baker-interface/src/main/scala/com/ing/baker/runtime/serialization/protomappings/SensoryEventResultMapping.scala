@@ -26,7 +26,7 @@ class SensoryEventResultMapping(implicit valueProto: ProtoMap[Value, protobuf.Va
     for {
       protoStatus <- versioned(message.status, "status")
       status <- SensoryEventStatusMappingHelper.fromProto(protoStatus)
-      events = message.events
+      events = message.events.toIndexedSeq
       ingredients <- message.ingredients.toList.traverse { case (name, value) =>
         ctxFromProto(value).map(name -> _)
       }

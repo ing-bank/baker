@@ -9,6 +9,8 @@ import com.ing.baker.types.mirror
 import scala.language.experimental.macros
 import scala.reflect.runtime.universe.TypeTag
 
+import scala.collection.immutable.Seq
+
 object Interaction {
 
   def apply[T : TypeTag]: common.InteractionDescriptor = {

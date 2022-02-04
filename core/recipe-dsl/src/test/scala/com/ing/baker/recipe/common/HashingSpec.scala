@@ -9,6 +9,8 @@ import org.scalacheck.{Arbitrary, Gen, Test}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 
+import scala.collection.immutable.Seq
+
 class HashingSpec extends AnyFunSuite with Checkers {
 
   val config: Test.Parameters =

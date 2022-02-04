@@ -16,6 +16,7 @@ import com.ing.baker.runtime.{common, javadsl}
 import com.ing.baker.types.{Converters, Type}
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -135,7 +136,7 @@ object InteractionInstance {
     }
 
     def getInputWithAnnotatedNames(method: Method): Seq[InteractionInstanceInput] = {
-      method.getGenericParameterTypes.zip(method.getParameters).map { case (typ: reflect.Type, parameter: Parameter) =>
+      method.getGenericParameterTypes.zip(method.getParameters).map { case (typ: java.lang.reflect.Type, parameter: Parameter) =>
         try {
           if (parameter.isAnnotationPresent(classOf[RequiresIngredient])) {
             val name = parameter.getAnnotationsByType(classOf[RequiresIngredient]).map((requiresIngredient: RequiresIngredient) => {
@@ -152,7 +153,7 @@ object InteractionInstance {
           throw new IllegalArgumentException(s"Unsupported parameter type for interaction implementation '$name'", e)
         }
       }
-    }
+    }.toIndexedSeq
 
     val input: Seq[InteractionInstanceInput] = {
       if(hasInputAnnotations(method)) {
@@ -165,7 +166,7 @@ object InteractionInstance {
     }
 
     def extractOutput(method: Method): Map[String, Map[String, Type]] = {
-      val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[FiresEvent]).oneOf()
+      val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[FiresEvent]).oneOf().toIndexedSeq
       outputEventClasses.map(eventClass =>
         eventClass.getSimpleName ->
           eventClass.getDeclaredFields.toIndexedSeq

@@ -2,6 +2,8 @@ package com.ing.baker.compiler
 
 import com.ing.baker.recipe.common.{Event, Ingredient, InteractionDescriptor, Recipe}
 
+import scala.collection.immutable.Seq
+
 object Assertions {
   private def assertNoDuplicateElementsExist[T](compareIdentifier: T => Any, elements: Set[T]): Unit = elements.foreach { e =>
     (elements - e).find(c => compareIdentifier(c) == compareIdentifier(e)).foreach { c => throw new IllegalStateException(s"Duplicate identifiers found: ${e.getClass.getSimpleName}:$e and ${c.getClass.getSimpleName}:$c") }

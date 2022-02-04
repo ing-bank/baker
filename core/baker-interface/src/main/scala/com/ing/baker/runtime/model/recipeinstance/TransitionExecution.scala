@@ -16,6 +16,7 @@ import com.ing.baker.types.{PrimitiveValue, Value}
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.MDC
 
+import scala.collection.immutable.Seq
 import scala.concurrent.duration.MILLISECONDS
 import scala.util.Random
 

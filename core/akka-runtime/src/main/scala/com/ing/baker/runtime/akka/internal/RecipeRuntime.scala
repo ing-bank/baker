@@ -18,6 +18,7 @@ import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.MDC
 
+import scala.collection.immutable.Seq
 import scala.concurrent.ExecutionContext
 
 object RecipeRuntime {

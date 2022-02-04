@@ -1,5 +1,6 @@
 package com.ing.baker.il
 
+import scala.collection.immutable.Seq
 /**
   * Describes an event.
   *

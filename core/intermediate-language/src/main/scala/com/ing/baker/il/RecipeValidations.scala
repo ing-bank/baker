@@ -3,13 +3,14 @@ package com.ing.baker.il
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.petrinet.api._
 import com.ing.baker.types
+import scala.collection.immutable.Seq
 
 object RecipeValidations {
 
   def validateInteraction(compiledRecipe: CompiledRecipe)(interactionTransition: InteractionTransition): Seq[String] = {
     val interactionWithNoRequirementsValidation : Seq[String] =
       Some(s"Interaction $interactionTransition does not have any requirements (ingredients or preconditions)! This will result in an infinite execution loop.")
-        .filter(_ => compiledRecipe.petriNet.inMarking(interactionTransition).isEmpty).toSeq
+        .filter(_ => compiledRecipe.petriNet.inMarking(interactionTransition).isEmpty).toIndexedSeq
 
     // check if the process id argument type is correct
     val processIdArgumentTypeValidation : Seq[String] =
@@ -36,7 +37,7 @@ object RecipeValidations {
   }
 
   def validateInteractions(compiledRecipe: CompiledRecipe): Seq[String] = {
-    compiledRecipe.interactionTransitions.toSeq.flatMap(validateInteraction(compiledRecipe))
+    compiledRecipe.interactionTransitions.toIndexedSeq.flatMap(validateInteraction(compiledRecipe))
   }
 
 
@@ -44,7 +45,7 @@ object RecipeValidations {
     * Validates that all required ingredients for interactions are provided for and of the correct type.
     */
   def validateInteractionIngredients(compiledRecipe: CompiledRecipe): Seq[String] = {
-    compiledRecipe.interactionTransitions.toSeq.flatMap { t =>
+    compiledRecipe.interactionTransitions.toIndexedSeq.flatMap { t =>
       t.nonProvidedIngredients.flatMap {
         case (IngredientDescriptor(name, expectedType)) =>
           compiledRecipe.allIngredients.find(_.name == name) match {
@@ -70,7 +71,7 @@ object RecipeValidations {
 
     compiledRecipe.interactionTransitions filterNot { interaction =>
       rootNode.isCoverable(compiledRecipe.petriNet.inMarking(interaction))
-    } map (interaction => s"${interaction.interactionName} is not executable") toSeq
+    } map (interaction => s"${interaction.interactionName} is not executable") toIndexedSeq
 
   }
 

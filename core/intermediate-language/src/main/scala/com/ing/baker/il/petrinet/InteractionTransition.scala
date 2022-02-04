@@ -6,6 +6,7 @@ import com.ing.baker.il.{EventOutputTransformer, _}
 import com.ing.baker.types.Value
 import org.slf4j._
 
+import scala.collection.immutable.Seq
 
 /**
   * A transition that represents an Interaction

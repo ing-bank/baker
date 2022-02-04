@@ -15,6 +15,7 @@ import scalax.collection.GraphEdge
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
+import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
@@ -53,9 +54,9 @@ class CompiledRecipeMapping extends ProtoMap[il.CompiledRecipe, protobuf.Compile
         case _ => throw new IllegalStateException("Missing data in persisted ProducedToken")
       })
     } yield message.recipeId.map { recipeId =>
-      il.CompiledRecipe(name, recipeId, petriNet, initialMarking, message.validationErrors, eventReceivePeriod, retentionPeriod)
+      il.CompiledRecipe(name, recipeId, petriNet, initialMarking, message.validationErrors.toIndexedSeq, eventReceivePeriod, retentionPeriod)
     }.getOrElse {
-      il.CompiledRecipe(name, petriNet, initialMarking, message.validationErrors, eventReceivePeriod, retentionPeriod)
+      il.CompiledRecipe(name, petriNet, initialMarking, message.validationErrors.toIndexedSeq, eventReceivePeriod, retentionPeriod)
     }
   }
 
@@ -120,7 +121,7 @@ class CompiledRecipeMapping extends ProtoMap[il.CompiledRecipe, protobuf.Compile
   }
 
   private def protoMarkings(recipe: il.CompiledRecipe): Seq[protobuf.ProducedToken] =
-    recipe.initialMarking.toSeq.flatMap {
+    recipe.initialMarking.toIndexedSeq.flatMap {
       case (place, tokens) => tokens.toSeq.map {
         case (value, count) => protobuf.ProducedToken(
           placeId = Option(place.id),

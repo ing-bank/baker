@@ -12,6 +12,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
 
+import scala.collection.immutable.Seq
+
 class RecipeRuntimeSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
   "The recipe runtime" should {
     "provide a ProcessID ingredient to an interaction if required" in {

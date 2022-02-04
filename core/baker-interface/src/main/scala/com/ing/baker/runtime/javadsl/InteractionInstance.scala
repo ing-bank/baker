@@ -11,6 +11,7 @@ import com.ing.baker.runtime.{common, javadsl, model, scaladsl}
 import com.ing.baker.types.Type
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable.Seq
 import scala.compat.java8.FutureConverters
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.Future
@@ -48,7 +49,7 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
   def asScala: scaladsl.InteractionInstance = {
     scaladsl.InteractionInstance(
       name,
-      input.asScala.map(input => input.asScala),
+      input.asScala.map(input => input.asScala).toIndexedSeq,
       input => wrapExecuteToFuture(input),
       outputOrNone
     )
@@ -57,7 +58,7 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
   def asEffectful(implicit cs: ContextShift[IO]): common.InteractionInstance[IO] = {
     model.InteractionInstance.build(
       name,
-      input.asScala.map(input => input.asScala),
+      input.asScala.map(input => input.asScala).toIndexedSeq,
       input => IO.fromFuture(IO(wrapExecuteToFuture(input)))(cs),
       outputOrNone
     )
@@ -89,7 +90,7 @@ object InteractionInstance {
           case None => Optional.empty[util.Map[String, util.Map[String, Type]]]()
         }
       override def execute(input: util.List[javadsl.IngredientInstance]): CompletableFuture[Optional[javadsl.EventInstance]] =
-        converter(common.run(input.asScala.map(_.asScala)))
+        converter(common.run(input.asScala.map(_.asScala).toIndexedSeq))
           .thenApply(
             _.fold(Optional.empty[javadsl.EventInstance]())(
               e => Optional.of(e.asJava)))
