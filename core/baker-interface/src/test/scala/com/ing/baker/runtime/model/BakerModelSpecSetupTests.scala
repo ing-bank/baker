@@ -6,7 +6,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.ScalaDSLRuntime._
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 
 import scala.concurrent.Future

@@ -4,7 +4,7 @@ import com.ing.baker.runtime.scaladsl.EventInstance
 import org.mockito.ArgumentMatcher
 
 class RuntimeEventMatcher(val left: EventInstance) extends ArgumentMatcher[EventInstance] {
-  override def matches(right: Any): Boolean = {
+  override def matches(right: EventInstance): Boolean = {
     right match {
       case casted: EventInstance =>
         casted.name.equals(left.name) &&

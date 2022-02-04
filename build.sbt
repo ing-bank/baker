@@ -132,7 +132,6 @@ lazy val `baker-interface`: Project = project.in(file("core/baker-interface"))
     ) ++ providedDeps(findbugs) ++ testDeps(
       scalaTest,
       scalaCheckPlusMockito,
-      mockito,
       slf4jApi,
       logback
     )
@@ -184,8 +183,7 @@ lazy val `baker-akka-runtime`: Project = project.in(file("core/akka-runtime"))
         scalaTest,
         scalaCheck,
         scalaCheckPlus,
-        scalaCheckPlusMockito,
-        mockito)
+        scalaCheckPlusMockito)
         ++ providedDeps(findbugs)
   )
   .dependsOn(
@@ -431,8 +429,7 @@ lazy val `baker-example`: Project = project
         scalaTest,
         scalaCheck,
         junitInterface,
-        slf4jApi,
-        mockito
+        slf4jApi
       )
   )
   .settings(dockerSettings)
