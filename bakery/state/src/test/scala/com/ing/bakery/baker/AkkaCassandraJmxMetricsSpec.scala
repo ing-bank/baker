@@ -33,7 +33,7 @@ class AkkaCassandraJmxMetricsSpec extends AnyFreeSpec with LazyLogging with Even
   implicit override val patienceConfig: PatienceConfig =
     PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(5, Millis)))
 
-  val cassandra = {
+  val cassandra: Unit = {
     try {
       startEmbeddedCassandra("cassandra-server.yaml")
     } catch {
@@ -49,7 +49,7 @@ class AkkaCassandraJmxMetricsSpec extends AnyFreeSpec with LazyLogging with Even
     system.terminate()
   }
 
-  def createSession = {
+  def createSession: CqlSession = {
     CqlSession.builder()
       .withLocalDatacenter("datacenter1")
       .addContactPoints(List(InetSocketAddress.createUnresolved(getHost, getNativeTransportPort)).asJavaCollection)

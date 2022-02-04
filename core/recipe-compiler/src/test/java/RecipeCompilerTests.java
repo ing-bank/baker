@@ -1,7 +1,7 @@
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.recipe.javadsl.Recipe;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class RecipeCompilerTests {
 

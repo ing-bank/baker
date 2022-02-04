@@ -7,7 +7,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.RecipeVisualStyle
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.scaladsl.EventInstance
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 
@@ -281,7 +281,7 @@ trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
           "initialIngredient" -> initialIngredientValue,
           "interactionOneIngredient" -> interactionOneIngredientValue)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
-        _ = verifyZeroInteractions(testInteractionOneMock)
+        _ = verifyNoMoreInteractions(testInteractionOneMock)
       } yield succeed
     }
 
