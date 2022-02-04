@@ -114,7 +114,7 @@ public class JWebshopRecipeTests {
         EventInstance paymentInformationReceived = EventInstance.from(new JWebshopRecipe.PaymentInformationReceived(new PaymentInformation("Information")));
         EventInstance shippingInformationReceived = EventInstance.from(new JWebshopRecipe.ShippingAddressReceived(new ShippingAddress("Address")));
 
-        when(reserveItemsMock.apply(anyObject())).thenReturn(
+        when(reserveItemsMock.apply(any())).thenReturn(
                 new ReserveItems.ItemsReserved(new ReservedItems(items, new byte[20])));
 
         // Run the complete process

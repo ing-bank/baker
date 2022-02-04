@@ -4,6 +4,7 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrement
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 
+import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 
 object SimpleWebshopRecipe {
