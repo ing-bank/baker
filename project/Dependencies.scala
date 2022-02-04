@@ -10,7 +10,7 @@ object Dependencies {
   val http4sVersion = "0.21.31"
   val fs2Version = "2.5.10"
   val circeVersion = "0.14.0"
-  val mockitoScalaVersion = "1.16.55"
+  val mockitoScalaVersion = "1.17.0"
   val catsEffectVersion = "2.5.4"
   val catsCoreVersion = "2.7.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
@@ -26,7 +26,6 @@ object Dependencies {
 
   val scalaJava8Compat = "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1" // can't be bumped because akka depends on it
   val scalaTest = "org.scalatest" %% "scalatest" % "3.2.11"
-  val mockito = "org.mockito" % "mockito-all" % "1.10.19"
   val mockitoScala = "org.mockito" %% "mockito-scala" % mockitoScalaVersion
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
   val mockServer = "org.mock-server" % "mockserver-netty" % "5.11.2"
@@ -119,8 +118,8 @@ object Dependencies {
   val logback = "ch.qos.logback" % "logback-classic" % "1.2.10"
   val logstash =  "net.logstash.logback" % "logstash-logback-encoder" % "6.4"
   val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.4"
-  val scalaCheckPlus = "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2"
-  val scalaCheckPlusMockito = "org.scalatestplus" %% "scalatestplus-mockito" % "1.0.0-M2"
+  val scalaCheckPlus = "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0"
+  val scalaCheckPlusMockito = "org.scalatestplus" %% "mockito-3-12" % "3.2.10.0"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
 
 

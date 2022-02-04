@@ -9,7 +9,7 @@ import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.common.BakerException.ProcessDeletedException
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata}
-import org.mockito.Matchers.{eq => mockitoEq, _}
+import org.mockito.ArgumentMatchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 
