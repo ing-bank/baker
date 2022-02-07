@@ -76,7 +76,7 @@ object Dependencies {
   val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.13.0"
   val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.7"
 
-  val skuber = "io.skuber" %% "skuber" % "2.6.3"
+  val skuber = "io.skuber" %% "skuber" % "2.6.4"
   val play = "com.typesafe.play" %% "play-json" % "2.9.2"
 
   val http4s = "org.http4s" %% "http4s-core" % http4sVersion
