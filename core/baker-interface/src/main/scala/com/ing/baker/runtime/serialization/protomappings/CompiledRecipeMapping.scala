@@ -1,9 +1,9 @@
 package com.ing.baker.runtime.serialization.protomappings
 
 import java.util.concurrent.TimeUnit
-
 import cats.implicits._
 import com.ing.baker.il
+import com.ing.baker.il.CompiledRecipe.Scala212CompatibleJava
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
@@ -56,7 +56,7 @@ class CompiledRecipeMapping extends ProtoMap[il.CompiledRecipe, protobuf.Compile
     } yield message.recipeId.map { recipeId =>
       il.CompiledRecipe(name, recipeId, petriNet, initialMarking, message.validationErrors.toIndexedSeq, eventReceivePeriod, retentionPeriod)
     }.getOrElse {
-      il.CompiledRecipe(name, petriNet, initialMarking, message.validationErrors.toIndexedSeq, eventReceivePeriod, retentionPeriod)
+      il.CompiledRecipe.build(name, petriNet, initialMarking, message.validationErrors.toIndexedSeq, eventReceivePeriod, retentionPeriod, Scala212CompatibleJava)
     }
   }
 

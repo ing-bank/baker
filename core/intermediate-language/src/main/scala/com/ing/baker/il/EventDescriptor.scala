@@ -1,5 +1,7 @@
 package com.ing.baker.il
 
+import com.ing.baker.il.petrinet.HasCustomToStringForRecipeId
+
 import scala.collection.immutable.Seq
 /**
   * Describes an event.
@@ -8,19 +10,11 @@ import scala.collection.immutable.Seq
   * @param ingredients The ingredients the event produces.
   */
 case class EventDescriptor(name: String,
-                           ingredients: Seq[IngredientDescriptor]) {
+                           ingredients: Seq[IngredientDescriptor]) extends HasCustomToStringForRecipeId {
 
   // Used in CompiledRecipe to generate the hash. This is a workaround to keep the hash the same.
   // This method mimics the result of toString before ingredients was of type scala.collection.immutable.Seq[IngredientDescriptor].
-  override def toString : String = {
-    val ingredientsString = {
-      if (ingredients.isInstanceOf[List[IngredientDescriptor]])
-        ingredients.mkString(start = "List(", sep = ", ", end = ")")
-      else if (ingredients.isEmpty) "ArrayBuffer()"
-      else ingredients.mkString(start = "ArraySeq(", sep = ", ", end = ")")
-    }
-
-    s"EventDescriptor($name,$ingredientsString)"
-  }
+  override def toStringForRecipeId(recipeIdVariant: CompiledRecipe.RecipeIdVariant): String =
+    s"EventDescriptor($name,${ingredients.toRecipeIdStringTypeB(recipeIdVariant)})"
 
 }

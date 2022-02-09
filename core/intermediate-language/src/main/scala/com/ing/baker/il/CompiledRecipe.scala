@@ -1,5 +1,6 @@
 package com.ing.baker.il
 
+import com.ing.baker.il.CompiledRecipe.{RecipeIdVariant, Scala212CompatibleJava}
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, RecipePetriNet}
 import com.ing.baker.petrinet.api.Marking
 
@@ -9,8 +10,14 @@ import scala.concurrent.duration.FiniteDuration
 
 object CompiledRecipe {
 
-  def apply(name: String, petriNet: RecipePetriNet, initialMarking: Marking[Place], validationErrors: Seq[String],
-            eventReceivePeriod: Option[FiniteDuration], retentionPeriod: Option[FiniteDuration]): CompiledRecipe = {
+  sealed trait RecipeIdVariant
+  sealed trait OldRecipeIdVariant extends RecipeIdVariant
+  case object Scala212CompatibleJava extends OldRecipeIdVariant
+  case object Scala212CompatibleScala extends OldRecipeIdVariant
+  case object Improved extends RecipeIdVariant
+
+  def build(name: String, petriNet: RecipePetriNet, initialMarking: Marking[Place], validationErrors: Seq[String],
+            eventReceivePeriod: Option[FiniteDuration], retentionPeriod: Option[FiniteDuration], oldRecipeIdVariant: OldRecipeIdVariant): CompiledRecipe = {
     /**
       * This calculates a SHA-256 hash for a deterministic string representation of the recipe.
       *
@@ -25,9 +32,9 @@ object CompiledRecipe {
       *
       * For example, there is a 1 in a million change of collision when number of recipes reach 6 million
       */
-    def calculateRecipeId(): String = {
+    def calculateRecipeId(variant: RecipeIdVariant): String = {
       val petriNetId: String = petriNet.places.toList.sortBy(_.id).mkString +
-        petriNet.transitions.toList.sortBy(_.id).mkString
+        petriNet.transitions.toList.sortBy(_.id).mapRecipeIdStrings(variant).mkString
 
       val initMarkingId: String = initialMarking.toList.sortBy {
         case (place, _) => place.id
@@ -50,7 +57,7 @@ object CompiledRecipe {
     }
 
     // the recipe id is a hexadecimal format of the hashcode
-    val recipeId = calculateRecipeId()
+    val recipeId = calculateRecipeId(oldRecipeIdVariant)
     CompiledRecipe(name, recipeId, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
   }
 }

@@ -1,6 +1,7 @@
 package com.ing.baker
 package compiler
 
+import com.ing.baker.il.CompiledRecipe.{OldRecipeIdVariant, Scala212CompatibleJava, Scala212CompatibleScala}
 import com.ing.baker.il.RecipeValidations.postCompileValidations
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
@@ -9,8 +10,8 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common._
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
-import scala.collection.immutable.Seq
 
+import scala.collection.immutable.Seq
 import scala.language.postfixOps
 
 object RecipeCompiler {
@@ -298,13 +299,17 @@ object RecipeCompiler {
 
     val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
 
-    val compiledRecipe = CompiledRecipe(
+    val oldRecipeIdVariant : OldRecipeIdVariant =
+      if (recipe.isInstanceOf[com.ing.baker.recipe.javadsl.Recipe]) Scala212CompatibleJava else Scala212CompatibleScala
+
+    val compiledRecipe = CompiledRecipe.build(
       name = recipe.name,
       petriNet = petriNet,
       initialMarking = initialMarking,
       validationErrors = errors,
       eventReceivePeriod = recipe.eventReceivePeriod,
-      retentionPeriod = recipe.retentionPeriod
+      retentionPeriod = recipe.retentionPeriod,
+      oldRecipeIdVariant = oldRecipeIdVariant,
     )
 
     postCompileValidations(compiledRecipe, validationSettings)
