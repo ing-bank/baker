@@ -20,7 +20,7 @@ import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types
 import com.ing.baker.types.Value
 import com.typesafe.config.{Config, ConfigFactory}
-import org.mockito.Matchers.anyString
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.Eventually
@@ -31,11 +31,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import scalax.collection.immutable.Graph
 
 import java.util.UUID
-import java.util.concurrent.TimeUnit
-
-import com.ing.baker.runtime.recipe_manager.RecipeManager
-import org.mockito.ArgumentMatchers.anyString
-
+import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
 object ProcessIndexActorSpec {
