@@ -70,7 +70,7 @@ package object il {
     def toRecipeIdStringTypeB(variant: RecipeIdVariant) : String =
       toRecipeType(variant,
         emptyNameJava = "ArraySeq", nonEmptyNameJava = "ArraySeq",
-        emptyNameScala = "ArrrayBuffer", nonEmptyNameScala = "ArraySeq")
+        emptyNameScala = "ArrayBuffer", nonEmptyNameScala = "ArraySeq")
   }
 
 }

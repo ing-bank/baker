@@ -4,7 +4,7 @@ import java.util.Optional
 
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.TestRecipe._
-import com.ing.baker.recipe.common
+import com.ing.baker.recipe.{TestRecipeJava, common}
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
 import com.ing.baker.recipe.scaladsl._
@@ -14,7 +14,6 @@ import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
-
 import scala.collection.immutable.Seq
 
 class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
@@ -324,6 +323,14 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
               it.predefinedParameters("missingScalaOption") shouldBe NullValue
               it.predefinedParameters("missingScalaOption2") shouldBe NullValue
             })
+      }
+    }
+
+    "give the correct id" when {
+      "it compiles a java recipe" in {
+        val recipe = TestRecipeJava.getRecipe("id-test-recipe")
+        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        compiledRecipe.recipeId shouldBe "220827c42a75b3f8"
       }
     }
   }
