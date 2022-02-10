@@ -193,9 +193,9 @@ object ProcessInstanceProtocol {
       exceptionState: Option[ExceptionState]) {
 
     def isActive: Boolean = exceptionState match {
-      case Some(ExceptionState(_, _, ExceptionStrategy.RetryWithDelay(_))) ⇒ true
-      case None                                          ⇒ true
-      case _                                             ⇒ false
+      case Some(ExceptionState(_, _, ExceptionStrategy.RetryWithDelay(_))) => true
+      case None                                          => true
+      case _                                             => false
     }
   }
 

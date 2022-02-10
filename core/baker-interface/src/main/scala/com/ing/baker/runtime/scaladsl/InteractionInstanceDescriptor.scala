@@ -6,6 +6,7 @@ import com.ing.baker.runtime.{common, javadsl}
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.types.Type
 
+import scala.collection.immutable.Seq
 import scala.collection.JavaConverters._
 
 case class InteractionInstanceDescriptor(name: String,

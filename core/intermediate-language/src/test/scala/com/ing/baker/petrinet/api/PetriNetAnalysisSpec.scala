@@ -21,7 +21,7 @@ object DSL {
 
   type Transition = Int
 
-  type MarkingLike[T] = T ⇒ SimpleMarking
+  type MarkingLike[T] = T => SimpleMarking
 
   type SimpleMarking = MultiSet[Int]
 
@@ -38,7 +38,7 @@ object DSL {
 
   def |~>[Out: MarkingLike](out: Out): TransitionAdjacency = TransitionAdjacency(Map.empty, implicitly[MarkingLike[Out]].apply(out))
 
-  def seq(n: Int, start: Int = 1): Seq[TransitionAdjacency] = (start to (start + n)).map(i ⇒ i ~|~> (i + 1))
+  def seq(n: Int, start: Int = 1): Seq[TransitionAdjacency] = (start to (start + n)).map(i => i ~|~> (i + 1))
 
   def branch(branchFactor: Int, start: Int = 1): TransitionAdjacency = start ~|~> ((start + 1) to (start + branchFactor))
 
@@ -49,8 +49,8 @@ object DSL {
     else {
       val b = branch(branchFactor, start)
       b.out.keys.foldLeft(Seq(b)) {
-        case (accTree, n) ⇒
-          val subTreeRoot = accTree.flatMap(a ⇒ a.in.keys ++ a.out.keys).max + 1
+        case (accTree, n) =>
+          val subTreeRoot = accTree.flatMap(a => a.in.keys ++ a.out.keys).max + 1
           val subTree = tree(branchFactor, depth - 1, subTreeRoot)
           val connection = n ~|~> subTreeRoot
           accTree ++ subTree :+ connection
@@ -60,9 +60,9 @@ object DSL {
 
   def createPetriNet(adjacencies: TransitionAdjacency*): PetriNet[Place, Transition] = {
     val params: Seq[Arc] = adjacencies.toSeq.zipWithIndex.flatMap {
-      case (a, t) ⇒
-        a.in.map { case (p, weight) ⇒ WLDiEdge[Node, String](Left(p), Right(t + 1))(weight, "") }.toSeq ++
-          a.out.map { case (p, weight) ⇒ WLDiEdge[Node, String](Right(t + 1), Left(p))(weight, "") }.toSeq
+      case (a, t) =>
+        a.in.map { case (p, weight) => WLDiEdge[Node, String](Left(p), Right(t + 1))(weight, "") }.toSeq ++
+          a.out.map { case (p, weight) => WLDiEdge[Node, String](Right(t + 1), Left(p))(weight, "") }.toSeq
     }
 
     new PetriNet(Graph(params: _*))

@@ -18,6 +18,7 @@ import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.MDC
 
+import scala.collection.immutable.Seq
 import scala.concurrent.ExecutionContext
 
 object RecipeRuntime {
@@ -137,8 +138,8 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
     val edge = petriNet.findPTEdge(p, t).map(_.asInstanceOf[Edge]).get
 
     marking.get(p) match {
-      case None ⇒ MultiSet.empty
-      case Some(tokens) ⇒ tokens.filter { case (e, _) ⇒ edge.isAllowed(e) }
+      case None => MultiSet.empty
+      case Some(tokens) => tokens.filter { case (e, _) => edge.isAllowed(e) }
     }
   }
 

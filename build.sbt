@@ -426,6 +426,7 @@ lazy val `baker-example`: Project = project
       ) ++ testDeps(
         scalaTest,
         scalaCheck,
+        mockitoScala,
         junitInterface,
         slf4jApi
       )

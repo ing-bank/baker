@@ -18,6 +18,7 @@ import org.http4s.client.Client
 import org.http4s.client.blaze._
 import org.http4s.client.dsl.io._
 
+import scala.collection.immutable.Seq
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
 

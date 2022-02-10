@@ -20,8 +20,8 @@ object SerializedDataProto {
         val serializer: Serializer = provider.getSerializerFor(obj)
         val bytes = provider.encryption.encrypt(serializer.toBinary(obj))
         val manifest = serializer match {
-          case s: SerializerWithStringManifest ⇒ s.manifest(obj)
-          case _ ⇒ if (obj != null) obj.getClass.getName else ""
+          case s: SerializerWithStringManifest => s.manifest(obj)
+          case _ => if (obj != null) obj.getClass.getName else ""
         }
         protobuf.SerializedData(
           serializerId = Some(serializer.identifier),
@@ -42,8 +42,8 @@ object SerializedDataProto {
           decryptedBytes = provider.encryption.decrypt(bytes.toByteArray)
         } yield
           serializer match {
-            case s: SerializerWithStringManifest ⇒ s.fromBinary(decryptedBytes, manifest)
-            case _ ⇒
+            case s: SerializerWithStringManifest => s.fromBinary(decryptedBytes, manifest)
+            case _ =>
               val optionalClass = Try {
                 Class.forName(manifest)
               }.toOption
