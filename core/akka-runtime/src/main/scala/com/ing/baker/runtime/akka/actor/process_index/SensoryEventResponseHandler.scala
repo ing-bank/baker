@@ -115,9 +115,9 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
   def handleRejections: Receive = {
     case rejection: ProcessInstanceProtocol.TransitionNotEnabled =>
       throw new IllegalArgumentException(s"IMMINENT BUG: $rejection should be transformed into a FiringLimitMet rejection")
-    case rejection: ProcessInstanceProtocol.AlreadyReceived ⇒
+    case rejection: ProcessInstanceProtocol.AlreadyReceived =>
       throw new IllegalArgumentException(s"IMMINENT BUG: $rejection should be transformed into a AlreadyReceived rejection")
-    case rejection: ProcessInstanceProtocol.Uninitialized ⇒
+    case rejection: ProcessInstanceProtocol.Uninitialized =>
       throw new IllegalArgumentException(s"IMMINENT BUG: $rejection should be transformed into a NoSuchProcess rejection")
     case rejection: FireSensoryEventRejection =>
       rejectWith(rejection)
@@ -127,23 +127,23 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
     handleRejections orElse {
       case recipe: CompiledRecipe =>
         context.become(waitForFirstEvent(recipe))
-      case ReceiveTimeout ⇒
+      case ReceiveTimeout =>
         log.debug("Timeout on SensoryEventResponseHandler when expecting a compiled recipe")
         stopActor()
-      case message ⇒
+      case message =>
         log.debug(s"Unexpected message $message on SensoryEventResponseHandler when expecting a compiled recipe")
         stopActor()
     }
 
   def waitForFirstEvent(recipe: CompiledRecipe): Receive =
     handleRejections orElse {
-      case firstEvent: TransitionFired ⇒
+      case firstEvent: TransitionFired =>
         notifyReceive(recipe)
         context.become(streaming(firstEvent.newJobsIds - firstEvent.jobId, List(firstEvent)))
-      case ReceiveTimeout ⇒
+      case ReceiveTimeout =>
         log.debug("Timeout on SensoryEventResponseHandler when expecting the first transition fired event")
         stopActor()
-      case message ⇒
+      case message =>
         log.debug(s"Unexpected message $message on SensoryEventResponseHandler when expecting the first transition fired event")
         stopActor()
     }
@@ -165,16 +165,16 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
 
       case _ =>
         val pf: PartialFunction[Any, Unit] = {
-          case event: TransitionFired ⇒
+          case event: TransitionFired =>
             context.become(streaming(runningJobs ++ event.newJobsIds - event.jobId, event :: cache))
-          case event: TransitionFailed if event.strategy.isRetry && waitForRetries ⇒
+          case event: TransitionFailed if event.strategy.isRetry && waitForRetries =>
             context.become(streaming(runningJobs, event :: cache))
-          case event: TransitionFailed ⇒
+          case event: TransitionFailed =>
             context.become(streaming(runningJobs - event.jobId, event :: cache))
-          case ReceiveTimeout ⇒
+          case ReceiveTimeout =>
             log.debug("Timeout on SensoryEventResponseHandler when streaming")
             stopActor()
-          case message ⇒
+          case message =>
             log.debug(s"Unexpected message $message on SensoryEventResponseHandler when streaming")
             stopActor()
         }

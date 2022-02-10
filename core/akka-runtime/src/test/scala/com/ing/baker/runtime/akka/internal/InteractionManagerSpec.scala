@@ -12,6 +12,7 @@ import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
 import com.ing.baker.runtime.{defaultinteractions, model}
 
+import scala.collection.immutable.Seq
 import scala.concurrent.ExecutionContext
 
 class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoSugar {

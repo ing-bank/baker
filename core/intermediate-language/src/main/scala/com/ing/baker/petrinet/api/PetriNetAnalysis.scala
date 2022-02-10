@@ -8,10 +8,10 @@ object PetriNetAnalysis {
   implicit class WMarkingOps[P](marking: MultiSet[P]) {
     // this checks if marking m 'covers' another
     def >=(other: MultiSet[P]): Boolean = other.forall {
-      case (p, `W`) ⇒ marking.get(p).contains(W)
-      case (p, n) ⇒ marking.get(p) match {
-        case Some(m) ⇒ m >= n || m == W
-        case _       ⇒ false
+      case (p, `W`) => marking.get(p).contains(W)
+      case (p, n) => marking.get(p) match {
+        case Some(m) => m >= n || m == W
+        case _       => false
       }
     }
   }
@@ -19,7 +19,7 @@ object PetriNetAnalysis {
   implicit class PetriNetOps[P, T](petriNet: PetriNet[P, T]) {
     def removeTransitions(transitions: Iterable[T]): PetriNet[P, T] = {
       val graph = transitions.foldLeft(petriNet.innerGraph) {
-        case (acc, t) ⇒ acc.-(Right(t))
+        case (acc, t) => acc.-(Right(t))
       }
       new PetriNet(graph)
     }
@@ -38,10 +38,10 @@ object PetriNetAnalysis {
       if (isNew)
         Some(List(this))
       else
-        children.values.view.map(_.newNode.map(nodes ⇒ this :: nodes)).find(_.isDefined).map(_.get)
+        children.values.view.map(_.newNode.map(nodes => this :: nodes)).find(_.isDefined).map(_.get)
 
     override def toString: String = {
-      val markingString = marking.iterator.map { case (p, n) ⇒ s"$p -> ${if (n == W) 'W' else n}" }.mkString(",")
+      val markingString = marking.iterator.map { case (p, n) => s"$p -> ${if (n == W) 'W' else n}" }.mkString(",")
       s"marking: $markingString, children: $children"
     }
 
@@ -66,9 +66,9 @@ object PetriNetAnalysis {
       val updatedPetriNet = petrinet.removeTransitions(unboundedTransitions)
 
       val unboundedOut = unboundedTransitions.foldLeft(MultiSet.empty[P]) {
-        case (acc, t) ⇒ acc.multisetSum(petrinet.outMarking(t))
+        case (acc, t) => acc.multisetSum(petrinet.outMarking(t))
       }.map {
-        case (p, _) ⇒ p -> W
+        case (p, _) => p -> W
       }
 
       optimize(updatedPetriNet, m0 ++ unboundedOut)
@@ -77,10 +77,10 @@ object PetriNetAnalysis {
 
   def unboundedEnabled[P, T](petrinet: PetriNet[P, T], m0: MultiSet[P]): Iterable[T] = {
 
-    val coldTransitions = petrinet.transitions.filter(t ⇒ petrinet.incomingPlaces(t).isEmpty)
-    val unboundedMarking = m0.filter { case (_, n) ⇒ n == W }
+    val coldTransitions = petrinet.transitions.filter(t => petrinet.incomingPlaces(t).isEmpty)
+    val unboundedMarking = m0.filter { case (_, n) => n == W }
     val enabled = unboundedMarking.keys.map(petrinet.outgoingTransitions).reduceOption(_ ++ _).getOrElse(Set.empty).
-      filter(t ⇒ unboundedMarking >= petrinet.inMarking(t))
+      filter(t => unboundedMarking >= petrinet.inMarking(t))
 
     coldTransitions ++ enabled
   }
@@ -92,13 +92,13 @@ object PetriNetAnalysis {
 
     val (pn, initialMarking) = optimize(petrinet, m0)
 
-    val coldTransitions = petrinet.transitions.filter(t ⇒ petrinet.incomingPlaces(t).isEmpty)
-    val inMarking = pn.transitions.map(t ⇒ t -> petrinet.inMarking(t)).toMap
-    val outMarking = pn.transitions.map(t ⇒ t -> petrinet.outMarking(t)).toMap
+    val coldTransitions = petrinet.transitions.filter(t => petrinet.incomingPlaces(t).isEmpty)
+    val inMarking = pn.transitions.map(t => t -> petrinet.inMarking(t)).toMap
+    val outMarking = pn.transitions.map(t => t -> petrinet.outMarking(t)).toMap
 
     def fire(m0: MultiSet[P], t: T): MultiSet[P] = {
       // unbounded places stay unchanged
-      val (unbounded, bounded) = m0.partition { case (_, n) ⇒ n == W }
+      val (unbounded, bounded) = m0.partition { case (_, n) => n == W }
 
       bounded
         .multisetDifference(inMarking(t))
@@ -108,7 +108,7 @@ object PetriNetAnalysis {
     def enabledTransitions(m0: MultiSet[P]): Iterator[T] = {
 
       val outAdjacent = m0.keys.map(pn.outgoingTransitions).reduceOption(_ ++ _).getOrElse(Set.empty).
-        filter(t ⇒ m0 >= inMarking(t))
+        filter(t => m0 >= inMarking(t))
 
       outAdjacent.iterator
     }
@@ -120,7 +120,7 @@ object PetriNetAnalysis {
 
     // while 'new' markings exist
     while (newNode.isDefined) {
-      newNode.foreach { pathToM ⇒
+      newNode.foreach { pathToM =>
 
         // the new node
         val node = pathToM.last
@@ -133,19 +133,19 @@ object PetriNetAnalysis {
         // there exists no marking equal to m on the path from root to m
         if (!pathToM.dropRight(1).exists(_.marking == M)) {
 
-          enabledTransitions(M).foreach { t ⇒
+          enabledTransitions(M).foreach { t =>
 
             // i. obtain the marking that results from firing t at M
             val postT: MultiSet[P] = fire(M, t)
 
             // ii. if on the path to m there exists a marking that is covered by M1
             val coverableM: Option[MultiSet[P]] =
-              pathToM.map(_.marking).find(M11 ⇒ postT >= M11 && postT != M11)
+              pathToM.map(_.marking).find(M11 => postT >= M11 && postT != M11)
 
-            val M1: MultiSet[P] = coverableM.map { M11 ⇒
+            val M1: MultiSet[P] = coverableM.map { M11 =>
               postT.map {
-                case (p, n) if n > M11.getOrElse(p, 0) ⇒ p -> W
-                case (p, n)                            ⇒ p -> n
+                case (p, n) if n > M11.getOrElse(p, 0) => p -> W
+                case (p, n)                            => p -> n
               }
             }.getOrElse(postT)
 

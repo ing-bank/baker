@@ -28,6 +28,7 @@ import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.slf4j.LoggerFactory
 
+import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps

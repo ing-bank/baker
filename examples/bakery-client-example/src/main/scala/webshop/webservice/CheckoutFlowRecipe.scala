@@ -4,6 +4,7 @@ import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import webshop.webservice.CheckoutFlowEvents._
 import webshop.webservice.CheckoutFlowIngredients._
 import webshop.webservice.CheckoutFlowInteractions._
+import scala.collection.immutable.Seq
 
 import scala.concurrent.Future
 

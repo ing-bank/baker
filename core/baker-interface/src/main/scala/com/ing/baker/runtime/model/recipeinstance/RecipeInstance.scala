@@ -11,6 +11,7 @@ import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, EventReject
 import com.typesafe.scalalogging.LazyLogging
 import fs2.Stream
 
+import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 import cats.effect.{ Ref, Temporal }
 

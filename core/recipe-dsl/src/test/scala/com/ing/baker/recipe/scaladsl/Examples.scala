@@ -1,5 +1,7 @@
 package com.ing.baker.recipe.scaladsl
 
+import scala.collection.immutable.Seq
+
 object Examples {
 
   object webshop {

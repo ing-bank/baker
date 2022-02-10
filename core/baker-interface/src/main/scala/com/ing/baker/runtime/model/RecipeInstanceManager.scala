@@ -12,7 +12,7 @@ import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceMetadata, Re
 import fs2.{Pipe, Stream}
 
 import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
-import cats.effect.{ Deferred, Temporal }
+import scala.collection.immutable.Seq
 
 object RecipeInstanceManager {
 

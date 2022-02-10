@@ -3,6 +3,7 @@ package com.ing.baker.runtime.scaladsl
 import cats.arrow.FunctionK
 import com.ing.baker.runtime.model
 import com.ing.baker.types.Type
+import scala.collection.immutable.Seq
 
 import scala.concurrent.{ExecutionContext, Future}
 

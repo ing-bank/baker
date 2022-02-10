@@ -11,6 +11,7 @@ import com.ing.baker.runtime.{common, javadsl, model, scaladsl}
 import com.ing.baker.types.Type
 
 import scala.collection.JavaConverters._
+import scala.collection.immutable.Seq
 import scala.compat.java8.FutureConverters
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.Future
@@ -41,14 +42,14 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
       })
   }
 
-  private def outputOrNone = {
-    if (output.isPresent) Some(output.get.asScala.toMap.mapValues(_.asScala.toMap)) else None
+  private def outputOrNone: Option[Map[String, Map[String, Type]]] = {
+    if (output.isPresent) Some(output.get.asScala.view.map { case (key, value) => (key, value.asScala.toMap)}.toMap) else None
   }
 
   def asScala: scaladsl.InteractionInstance = {
     scaladsl.InteractionInstance(
       name,
-      input.asScala.map(input => input.asScala),
+      input.asScala.map(input => input.asScala).toIndexedSeq,
       input => wrapExecuteToFuture(input),
       outputOrNone
     )
@@ -57,7 +58,7 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
   def asEffectful: common.InteractionInstance[IO] = {
     model.InteractionInstance.build(
       name,
-      input.asScala.map(input => input.asScala),
+      input.asScala.map(input => input.asScala).toIndexedSeq,
       input => IO.fromFuture(IO(wrapExecuteToFuture(input)))(cs),
       outputOrNone
     )
@@ -85,11 +86,11 @@ object InteractionInstance {
         common.input.map(input => input.asJava).asJava
       override val output: Optional[util.Map[String, util.Map[String, Type]]] =
         common.output match {
-          case Some(out) => Optional.of(out.mapValues(_.asJava).asJava)
+          case Some(out) => Optional.of(out.view.map { case (key, value) => (key, value.asJava)}.toMap.asJava)
           case None => Optional.empty[util.Map[String, util.Map[String, Type]]]()
         }
       override def execute(input: util.List[javadsl.IngredientInstance]): CompletableFuture[Optional[javadsl.EventInstance]] =
-        converter(common.run(input.asScala.map(_.asScala)))
+        converter(common.run(input.asScala.map(_.asScala).toIndexedSeq))
           .thenApply(
             _.fold(Optional.empty[javadsl.EventInstance]())(
               e => Optional.of(e.asJava)))
