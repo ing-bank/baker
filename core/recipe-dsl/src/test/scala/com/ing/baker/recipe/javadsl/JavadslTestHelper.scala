@@ -2,6 +2,8 @@ package com.ing.baker.recipe.javadsl
 
 import com.ing.baker.recipe.{common, scaladsl}
 
+import scala.collection.immutable.Seq
+
 object JavadslTestHelper {
 
   //Ingredients

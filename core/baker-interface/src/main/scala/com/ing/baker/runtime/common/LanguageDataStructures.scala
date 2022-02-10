@@ -21,7 +21,7 @@ object LanguageDataStructures {
 
     type Map[A, B] = scala.collection.immutable.Map[A, B]
 
-    type Seq[A] = scala.collection.Seq[A]
+    type Seq[A] = scala.collection.immutable.Seq[A]
 
     type Set[A] = scala.collection.immutable.Set[A]
 

@@ -24,7 +24,7 @@ class EncryptionPropertiesSpec extends AnyFunSuite with Checkers {
 
   test("(AES|DES)Encryption: decrypt(encrypt(plaintext)) should be plaintext") {
     val property = forAll(keyAndTextGen) {
-      case (encryption: JavaCryptoEncryption, plainText: String) ⇒
+      case (encryption: JavaCryptoEncryption, plainText: String) =>
         val encryptedBytes = encryption.encrypt(plainText.getBytes)
         val decryptedPlainText = new String(encryption.decrypt(encryptedBytes))
 

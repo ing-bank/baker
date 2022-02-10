@@ -66,7 +66,7 @@ class BakerValuesMapping extends ProtoMap[types.Value, protobuf.Value] {
       throw new IllegalStateException(s"Unknown primitive value of type: ${value.getClass}")
 
     case types.RecordValue(entries) =>
-      RecordValue(protobuf.Record(entries.mapValues(toProto)))
+      RecordValue(protobuf.Record(entries.view.map { case (key, value) => (key, toProto(value))}.toMap))
 
     case types.ListValue(entries) =>
       ListValue(protobuf.List(entries.map(toProto)))

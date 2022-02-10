@@ -12,7 +12,7 @@ class PojoModule extends TypeModule {
   override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): Type = {
 
     val pojoClass = getBaseClass(javaType)
-    val fields = pojoClass.getDeclaredFields.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
+    val fields = pojoClass.getDeclaredFields.toIndexedSeq.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
     val ingredients = fields.map(f => RecordField(f.getName, context.readType(f.getGenericType)))
     RecordType(ingredients)
   }
@@ -30,7 +30,7 @@ class PojoModule extends TypeModule {
 
       val pojoInstance = classInstantiator.newInstance()
 
-      val fields = pojoClass.getDeclaredFields.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
+      val fields = pojoClass.getDeclaredFields.toIndexedSeq.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
 
       fields.foreach { f =>
         entries.get(f.getName).foreach { entryValue =>
@@ -53,7 +53,7 @@ class PojoModule extends TypeModule {
   }
 
   override def fromJava(context: TypeAdapter, pojo: Any): Value = {
-    val fields = pojo.getClass.getDeclaredFields.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
+    val fields = pojo.getClass.getDeclaredFields.toIndexedSeq.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
     fields.foreach(_.setAccessible(true))
 
     val entries: Map[String, Value] = fields

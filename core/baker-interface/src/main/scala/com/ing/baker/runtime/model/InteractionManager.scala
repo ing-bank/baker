@@ -10,6 +10,7 @@ import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractio
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
 import com.ing.baker.types.Type
 import com.typesafe.config.ConfigFactory
+import scala.collection.immutable.Seq
 
 /**
   * The InteractionManager is responsible for keeping and calling al InteractionInstances.

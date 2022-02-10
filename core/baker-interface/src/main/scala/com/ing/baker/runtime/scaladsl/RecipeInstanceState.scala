@@ -4,6 +4,7 @@ import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.{common, javadsl}
 import com.ing.baker.types.Value
 
+import scala.collection.immutable.Seq
 import scala.collection.JavaConverters._
 
 /**

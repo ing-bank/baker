@@ -13,6 +13,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 
 import scala.annotation.tailrec
+import scala.collection.immutable.Seq
 import scala.util.Random
 
 class RecipePropertiesSpec extends AnyFunSuite with Checkers {
@@ -128,7 +129,7 @@ object RecipePropertiesSpec {
     //each interaction fires a single event
     val events = sample(interactionOutputGen)
 
-    val interactionDescriptor = Interaction(sample(nameGen), ingredients.toSeq, events)
+    val interactionDescriptor = Interaction(sample(nameGen), ingredients.toIndexedSeq, events)
       .withRequiredEvents(andPreconditionEvents.toList: _*)
       .withRequiredOneOfEvents(orPreconditionEvents.toList: _*)
 

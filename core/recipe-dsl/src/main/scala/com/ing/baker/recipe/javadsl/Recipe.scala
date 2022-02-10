@@ -6,6 +6,7 @@ import scala.annotation.varargs
 import scala.collection.JavaConverters._
 import scala.concurrent.duration
 import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.collection.immutable.Seq
 
 case class Recipe(
                    override val name: String,

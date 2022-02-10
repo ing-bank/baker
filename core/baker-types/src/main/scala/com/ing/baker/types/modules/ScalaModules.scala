@@ -62,7 +62,7 @@ object ScalaModules {
 
         val valueType = getTypeParameter(javaType, 1)
 
-        entries.mapValues { value => context.toJava(value, valueType) }
+        entries.view.map { case (key, value) => (key, context.toJava(value, valueType))}.toMap
     }
 
     def fromJava(context: TypeAdapter, obj: Any): Value = obj match {

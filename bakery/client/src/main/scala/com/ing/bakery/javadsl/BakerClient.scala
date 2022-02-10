@@ -11,6 +11,7 @@ import com.ing.bakery.scaladsl.EndpointConfig
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.{Request, Uri}
 
+import scala.collection.immutable.Seq
 import scala.collection.JavaConverters._
 import scala.compat.java8.FunctionConverters._
 import scala.compat.java8.FutureConverters
@@ -54,7 +55,7 @@ object BakerClient {
           EndpointConfig(hosts.asScala.map(Uri.unsafeFromString).toIndexedSeq, apiUrlPrefix, apiLoggingEnabled),
           if (fallbackHosts.size == 0) None
           else Some(EndpointConfig(fallbackHosts.asScala.map(Uri.unsafeFromString).toIndexedSeq, fallbackApiUrlPrefix, apiLoggingEnabled)),
-          filters = filters.asScala.map(_.asScala))
+          filters = filters.asScala.map(_.asScala).toIndexedSeq)
       }
       .allocated
       .map {

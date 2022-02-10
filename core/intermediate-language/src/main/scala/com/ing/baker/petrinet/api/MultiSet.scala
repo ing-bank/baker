@@ -12,7 +12,7 @@ object MultiSet {
    *
    * Equal elements in the sequence will increase the multiplicity of that element in multi set.
    */
-  def copyOff[T](elements: Iterable[T]): MultiSet[T] = elements.foldLeft(empty[T]) { case (mset, e) ⇒ mset.multisetIncrement(e, 1) }
+  def copyOff[T](elements: Iterable[T]): MultiSet[T] = elements.foldLeft(empty[T]) { case (mset, e) => mset.multisetIncrement(e, 1) }
 
   /**
     * Creates a multiset of the provided elements.

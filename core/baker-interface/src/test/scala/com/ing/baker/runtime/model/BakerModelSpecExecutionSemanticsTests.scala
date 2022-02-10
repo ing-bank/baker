@@ -12,6 +12,7 @@ import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
 import org.mockito.ArgumentMatchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
 
+import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
 

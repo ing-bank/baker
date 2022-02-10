@@ -1,6 +1,7 @@
 package com.ing.baker.recipe.common
 
 import java.util.Objects
+import scala.collection.immutable.Seq
 
 trait Event {
   val name: String

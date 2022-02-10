@@ -6,6 +6,7 @@ import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.{common, javadsl}
 import com.ing.baker.types.{Converters, NullValue, PrimitiveValue, RecordValue, Value}
 
+import scala.collection.immutable.Seq
 import scala.collection.JavaConverters._
 
 case class EventInstance(name: String, providedIngredients: Map[String, Value]) extends common.EventInstance with ScalaApi {

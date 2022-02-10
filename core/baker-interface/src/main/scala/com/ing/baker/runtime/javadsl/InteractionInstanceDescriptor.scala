@@ -27,7 +27,7 @@ case class InteractionInstanceDescriptor(name: String,
   def getOutput(): Optional[util.Map[String, util.Map[String, Type]]] = output
 
   def asScala(): scaladsl.InteractionInstanceDescriptor =
-    scaladsl.InteractionInstanceDescriptor(name, input.asScala.map(_.asScala),
+    scaladsl.InteractionInstanceDescriptor(name, input.asScala.map(_.asScala).toIndexedSeq,
       Option.apply(output.orElse(null)).map(_.asScala.map(e => (e._1, e._2.asScala.toMap)).toMap)
     )
 }
