@@ -53,12 +53,21 @@ val dockerSettings: Seq[Setting[_]] = Seq(
   Docker / version := "local", // used by smoke tests for locally built images
 )
 
+val dependencyOverrideSettingsBouncyCastle: Seq[Setting[_]] = Seq(
+  libraryDependencies ++= Seq(
+    bouncyCastleBcprov,
+    bouncyCastleBcpkix
+  ),
+  dependencyOverrides ++= Seq(
+    bouncyCastleBcprov,
+    bouncyCastleBcpkix
+  )
+)
+
 val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
   libraryDependencies ++= Seq(
     snakeYaml,
     jacksonDatabind,
-    bouncyCastleBcprov,
-    bouncyCastleBcpkix
   ),
   dependencyOverrides ++= Seq(
     catsCore,
@@ -68,8 +77,6 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
     jnrConstants,
     snakeYaml,
     jacksonDatabind,
-    bouncyCastleBcprov,
-    bouncyCastleBcpkix
   )
 )
 
@@ -79,7 +86,8 @@ lazy val noPublishSettings: Seq[Setting[_]] = Seq(
   publishArtifact := false
 )
 
-lazy val defaultModuleSettings: Seq[Setting[_]] = commonSettings ++ dependencyOverrideSettings ++ Publish.settings
+lazy val moduleSettingsWithoutBouncyCastle: Seq[Setting[_]] = commonSettings ++ dependencyOverrideSettings ++ Publish.settings
+lazy val defaultModuleSettings: Seq[Setting[_]] = moduleSettingsWithoutBouncyCastle ++ dependencyOverrideSettingsBouncyCastle
 
 lazy val scalaPBSettings: Seq[Setting[_]] = Seq(Compile / PB.targets := Seq(scalapb.gen() -> (Compile / sourceManaged).value))
 
@@ -298,7 +306,7 @@ lazy val `bakery-dashboard`: Project = project.in(file("bakery/dashboard"))
 
 lazy val `bakery-state`: Project = project.in(file("bakery/state"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
-  .settings(defaultModuleSettings)
+  .settings(moduleSettingsWithoutBouncyCastle)
   .settings(
     Compile / mainClass := Some("com.ing.bakery.baker.Main"),
     dockerExposedPorts ++= Seq(8080),
@@ -340,6 +348,13 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
       cassandraDriverQueryBuilder,
       cassandraDriverMetrics,
       cassandraUnit
+    )
+  )
+  .settings(
+    // Skuber adds bc-fips and bcpkix-fips instead
+    excludeDependencies ++= Seq(
+      ExclusionRule(organization = bouncyCastleBcprov.organization, name = bouncyCastleBcprov.name),
+      ExclusionRule(organization = bouncyCastleBcpkix.organization, name = bouncyCastleBcpkix.name)
     )
   )
   .dependsOn(
