@@ -572,7 +572,7 @@ lazy val `sbt-bakery-docker-generate`: Project = project.in(file("docker/sbt-bak
       IO.write(file, sourceFile)
       Seq(file)
     }.taskValue,
-    addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.7"),
+    addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.8"),
     addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.3.9")
   )
   .enablePlugins(SbtPlugin)
