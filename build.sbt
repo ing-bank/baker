@@ -321,6 +321,7 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
       akkaClusterMetrics,
       akkaDiscovery,
       akkaDiscoveryKube,
+      akkaPki,
       http4s,
       http4sDsl,
       http4sCirce,

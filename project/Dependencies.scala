@@ -48,6 +48,7 @@ object Dependencies {
   val akkaTestKit = "com.typesafe.akka" %% "akka-testkit" % akkaVersion
   val akkaStreamTestKit = "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion
   val akkaMultiNodeTestkit = "com.typesafe.akka" %% "akka-multi-node-testkit" % akkaVersion
+  val akkaPki = "com.typesafe.akka" %% "akka-pki" % akkaVersion
   val akkaHttpSprayJson = "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion
   val akkaManagementHttp = "com.lightbend.akka.management" %% "akka-management-cluster-http" % akkaManagementVersion
   val akkaClusterBoostrap = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
@@ -76,7 +77,7 @@ object Dependencies {
   val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.13.0"
   val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.7"
 
-  val skuber = "io.skuber" %% "skuber" % "2.6.3"
+  val skuber = "io.skuber" %% "skuber" % "2.6.4"
   val play = "com.typesafe.play" %% "play-json" % "2.9.2"
 
   val http4s = "org.http4s" %% "http4s-core" % http4sVersion
