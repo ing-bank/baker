@@ -1,8 +1,8 @@
 package com.ing.bakery.baker
 
 import akka.actor.ActorSystem
+import akka.stream._
 import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source, TcpIdleTimeoutException}
-import akka.stream.{KillSwitch, KillSwitches, Materializer, RestartSettings, UniqueKillSwitch}
 import akka.{Done, NotUsed}
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits.catsSyntaxApplicativeError
@@ -11,7 +11,6 @@ import com.ing.bakery.interaction.RemoteInteractionClient
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.http4s.Uri
-import org.http4s.client.Client
 import skuber.api.client.{EventType, KubernetesClient}
 import skuber.json.format._
 import skuber.{K8SWatchEvent, LabelSelector, ListOptions, Service}
