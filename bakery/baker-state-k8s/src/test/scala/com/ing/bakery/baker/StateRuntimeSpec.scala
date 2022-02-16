@@ -5,11 +5,12 @@ import cats.effect.{IO, Resource}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
-import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus}
+import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceDescriptor, InteractionInstanceInput}
-import com.ing.baker.types.{ByteArray, CharArray, ListType, RecordField, RecordType}
-import com.ing.bakery.mocks.{EventListener, KubeApiServer, RemoteInteraction}
+import com.ing.baker.types._
+import com.ing.bakery.baker.mocks.KubeApiServer
+import com.ing.bakery.mocks.{EventListener, RemoteInteraction}
 import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
 import com.ing.bakery.recipe.{ItemReservationRecipe, SimpleRecipe, SimpleRecipe2}
@@ -50,7 +51,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
     EventInstance.unsafeFrom(
       ItemsReserved(ReservedItems(
         List(Item("item-1")),
-        Array.fill(1)(Byte.MaxValue)
+        Array.fill(1)(scala.Byte.MaxValue)
       )))
 
   def io[A](f: => Future[A]): IO[A] =
@@ -77,7 +78,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         allRecipesAfter <- io(context.client.getAllRecipes)
       } yield {
         allRecipesBefore.values.map(_.compiledRecipe.name).toSet shouldBe Set("ItemReservation.recipe")
-        allRecipesAfter.values.map(_.compiledRecipe.name).toSet  shouldBe Set("ItemReservation.recipe", "Simple2")
+        allRecipesAfter.values.map(_.compiledRecipe.name).toSet shouldBe Set("ItemReservation.recipe", "Simple2")
       }
     }
 
@@ -453,7 +454,9 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       _ = TestInteractionRegistry(mockServerKubernetes, mockServerLocalhost, remoteInteractionKubernetes, remoteInteractionLocalhost, kubeApiServer)
       _ <- Resource.eval(kubeApiServer.noNewInteractions()) // Initial setup so that the service discovery component has something to query to immediately
 
-      makeActorSystem = IO { ActorSystem(UUID.randomUUID().toString, config) }
+      makeActorSystem = IO {
+        ActorSystem(UUID.randomUUID().toString, config)
+      }
       stopActorSystem = (system: ActorSystem) => IO.fromFuture(IO {
         system.terminate().flatMap(_ => system.whenTerminated)
       }).void

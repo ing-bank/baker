@@ -1,8 +1,7 @@
-package com.ing.bakery.mocks
+package com.ing.bakery.baker.mocks
 
 import cats.effect.IO
-import com.ing.baker.runtime.scaladsl.InteractionInstance
-import com.ing.bakery.mocks.WatchEvent.WatchEventType
+import com.ing.bakery.baker.mocks.WatchEvent.WatchEventType
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.matchers.{TimeToLive, Times}
 import org.mockserver.model.HttpRequest.request
