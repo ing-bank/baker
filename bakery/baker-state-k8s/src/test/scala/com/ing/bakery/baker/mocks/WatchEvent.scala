@@ -1,4 +1,4 @@
-package com.ing.bakery.mocks
+package com.ing.bakery.baker.mocks
 
 import play.api.libs.json.Format
 

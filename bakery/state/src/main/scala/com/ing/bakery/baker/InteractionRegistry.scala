@@ -1,16 +1,18 @@
 package com.ing.bakery.baker
 
 import akka.actor.ActorSystem
-import cats.effect.{ConcurrentEffect, IO, Resource}
-import cats.syntax.traverse._
+import cats.Traverse
+import cats.effect.{ConcurrentEffect, ContextShift, IO, Resource, Timer}
+import cats.syntax.all._
+import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
 import com.ing.baker.runtime.defaultinteractions
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.bakery.interaction.{BaseRemoteInteractionClient, RemoteInteractionClient}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import org.http4s.{Headers, Uri}
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.{Headers, Uri}
 import scalax.collection.ChainingOps
 
 import java.io.IOException
@@ -42,6 +44,7 @@ object InteractionRegistry extends LazyLogging {
   */
 trait InteractionRegistry extends InteractionManager[IO] {
   def resource(externalContext: Option[Any]): Resource[IO, InteractionRegistry]
+
   def interactionManagers: IO[List[InteractionManager[IO]]]
 }
 
@@ -82,28 +85,40 @@ class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
     }
   }
 
-  protected def interactionManagersResource(client: Client[IO])
-  : Resource[IO, List[InteractionManager[IO]]] = {
+  protected def interactionManagersResource(client: Client[IO]): Resource[IO, List[InteractionManager[IO]]] = {
 
     val interactionClient = new BaseRemoteInteractionClient(client, Headers.empty)
 
-    for {
-      localhost <- new LocalhostInteractions(config, actorSystem, interactionClient).resource
-      kubernetes <- new KubernetesInteractions(config, actorSystem, interactionClient).resource
-    } yield {
-      List(localhost, kubernetes)
+    def getRemoteInteractions: Option[DynamicInteractionManager] = {
+      val path = "baker.interactions.remote.class"
+
+      def noneIfEmpty(str: String): Option[String] = if (str.isEmpty) None else Some(str)
+
+      if (config.hasPath(path)) noneIfEmpty(config.getString(path)).map {
+        Class.forName(_)
+          .getDeclaredConstructor(classOf[Config], classOf[ActorSystem], classOf[RemoteInteractionClient])
+          .newInstance(config, actorSystem, interactionClient)
+          .asInstanceOf[DynamicInteractionManager]
+      } else {
+        None
+      }
     }
+
+    val local = new LocalhostInteractions(config, actorSystem, interactionClient)
+
+    val lists = getRemoteInteractions
+      .map(r => List(local, r))
+      .getOrElse(List(local))
+      .map(_.resource)
+
+    Traverse[List].sequence(lists)
   }
 }
 
 case class RemoteInteractions(startedAt: Long,
                               interactions: List[InteractionInstance[IO]])
 
-//trait RemoteInteractionClient {
-//  def remoteInteractionClient(client: Client[IO], uri: Uri)
-//                             (implicit contextShift: ContextShift[IO], timer: Timer[IO]): RemoteInteractionClient =
-//    new BaseRemoteInteractionClient(client, uri, Headers.empty)
-//}
+
 /**
   * Method for resilient/retrying discovery of remote interactions
   */
