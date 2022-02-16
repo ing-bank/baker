@@ -3,8 +3,8 @@ package com.ing.baker.runtime.akka.actor
 import akka.actor.{ActorRef, ActorSystem}
 import cats.effect.IO
 import com.ing.baker.runtime.akka.AkkaBakerConfig
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
+import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndexActor, RecipeCache}
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexActor.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{GetIndex, Index}
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
@@ -22,17 +22,16 @@ class LocalBakerActorProvider(
                              ) extends BakerActorProvider {
   override def initialize(implicit system: ActorSystem): Unit = Unit
 
-  override def createProcessIndexActor(interactionManager: InteractionManager[IO], recipeManager: RecipeManager)(
+  override def createProcessIndexActor(interactionManager: InteractionManager[IO], recipeCache: RecipeCache)(
     implicit actorSystem: ActorSystem): ActorRef = {
     actorSystem.actorOf(
-      ProcessIndex.props(
+      ProcessIndexActor.props(
+        recipeCache,
         actorIdleTimeout,
         Some(retentionCheckInterval),
         configuredEncryption,
         interactionManager,
-        recipeManager,
-        ingredientsFilter
-      ))
+        ingredientsFilter))
   }
 
   override def getAllProcessesMetadata(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata] = {

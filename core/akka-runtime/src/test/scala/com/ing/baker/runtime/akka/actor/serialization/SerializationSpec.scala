@@ -10,7 +10,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.petrinet.api.{Id, Marking, MultiSet}
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
-import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
+import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndexActor, ProcessIndexProtocol}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor.RecipeAdded
@@ -74,17 +74,17 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
 
   checkFor[GetShardIndex].run
 
-  checkFor[ProcessIndex.ActorCreated].run
+  checkFor[ProcessIndexActor.ActorCreated].run
 
-  checkFor[ProcessIndex.ActorDeleted].run
+  checkFor[ProcessIndexActor.ActorDeleted].run
 
-  checkFor[ProcessIndex.ActorPassivated].run
+  checkFor[ProcessIndexActor.ActorPassivated].run
 
-  checkFor[ProcessIndex.ActorActivated].run
+  checkFor[ProcessIndexActor.ActorActivated].run
 
-  checkFor[ProcessIndex.ActorMetadata].run
+  checkFor[ProcessIndexActor.ActorMetadata].run
 
-  checkFor[ProcessIndex.ProcessIndexSnapShot].run
+  checkFor[ProcessIndexActor.ProcessIndexSnapShot].run
 
   test("ProcessIndexProtocol.GetIndex typed serialization") {
     val m = ProcessIndexProtocol.GetIndex
@@ -336,7 +336,7 @@ object SerializationSpec {
 
   object ProcessIndex {
 
-    import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
+    import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexActor._
     import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 
     implicit val processStatusGen: Gen[ProcessStatus] = Gen.oneOf(Active, Deleted)

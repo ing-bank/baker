@@ -11,8 +11,9 @@ import cats.instances.future._
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api._
+import com.ing.baker.runtime.akka._
 import com.ing.baker.runtime.akka.actor.Util.logging._
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexActor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
@@ -20,34 +21,31 @@ import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, Proce
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
-import com.ing.baker.runtime.akka._
-import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.model.InteractionManager
-import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.Value
 
 import scala.collection.mutable
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
+object ProcessIndexActor {
 
-object ProcessIndex {
-
-  def props(recipeInstanceIdleTimeout: Option[FiniteDuration],
-            retentionCheckInterval: Option[FiniteDuration],
-            configuredEncryption: Encryption,
-            interactions: InteractionManager[IO],
-            recipeManager: RecipeManager,
-            ingredientsFilter: Seq[String]): Props =
-    Props(new ProcessIndex(
+  def props(
+             recipeCache: RecipeCache,
+             recipeInstanceIdleTimeout: Option[FiniteDuration],
+             retentionCheckInterval: Option[FiniteDuration],
+             configuredEncryption: Encryption,
+             interactions: InteractionManager[IO],
+             ingredientsFilter: Seq[String]): Props =
+    Props(new ProcessIndexActor(
+      recipeCache,
       recipeInstanceIdleTimeout,
       retentionCheckInterval,
       configuredEncryption,
       interactions,
-      recipeManager,
       ingredientsFilter))
 
   sealed trait ProcessStatus
@@ -92,15 +90,18 @@ object ProcessIndex {
   case class ProcessIndexSnapShot(index: Map[String, ActorMetadata]) extends BakerSerializable
 
   private val bakerExecutionContext: ExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
+
+
 }
 
 //noinspection ActorMutableStateInspection
-class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
-                   retentionCheckInterval: Option[FiniteDuration],
-                   configuredEncryption: Encryption,
-                   interactionManager: InteractionManager[IO],
-                   recipeManager: RecipeManager,
-                   ingredientsFilter: Seq[String]) extends PersistentActor with PersistentActorMetrics {
+class ProcessIndexActor(
+                         recipeCache: RecipeCache,
+                         recipeInstanceIdleTimeout: Option[FiniteDuration],
+                         retentionCheckInterval: Option[FiniteDuration],
+                         configuredEncryption: Encryption,
+                         interactionManager: InteractionManager[IO],
+                         ingredientsFilter: Seq[String]) extends PersistentActor with PersistentActorMetrics {
 
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(logSource = this)
 
@@ -108,35 +109,16 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   private val snapShotInterval: Int = context.system.settings.config.getInt("baker.actor.snapshot-interval")
   private val processInquireTimeout: FiniteDuration = context.system.settings.config.getDuration("baker.process-inquire-timeout").toScala
-  private val updateCacheTimeout: FiniteDuration =  context.system.settings.config.getDuration("baker.process-index-update-cache-timeout").toScala
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
-  private val recipeCache: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
 
   // if there is a retention check interval defined we schedule a recurring message
   retentionCheckInterval.foreach { interval =>
     context.system.scheduler.scheduleAtFixedRate(interval, interval, context.self, CheckForProcessesToBeDeleted)
   }
 
-  // TODO this is a synchronous ask on an actor which createProcessActor is considered bad practice, alternative?
-  private def getRecipeIdFromManager(recipeId: String): Option[(CompiledRecipe, Long)] = {
-    log.debug("Adding recipe to recipe cache: {}", recipeId)
-    val futureResult: Future[Option[RecipeRecord]] = recipeManager.get(recipeId)
-    val result = Await.result(futureResult, updateCacheTimeout)
-    recipeCache ++= result.map(r => r.recipeId -> (r.recipe, r.updated))
-    log.debug("Added recipe to recipe cache: {}, current size: {}", recipeId, recipeCache.size)
-    result.map(r => r.recipe -> r.updated)
-  }
-
-  def getRecipeWithTimeStamp(recipeId: String): Option[(CompiledRecipe, Long)] =
-    recipeCache.get(recipeId) match {
-      case None =>
-        getRecipeIdFromManager(recipeId)
-      case other => other
-    }
-
   def getCompiledRecipe(recipeId: String): Option[CompiledRecipe] =
-    getRecipeWithTimeStamp(recipeId).fold[Option[CompiledRecipe]] {
+    recipeCache.getBlocking(recipeId).fold[Option[CompiledRecipe]] {
       log.warning(s"No recipe found for $recipeId")
       None
     } {
@@ -169,11 +151,11 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     processActor
   }
 
-  def shouldDelete(meta: ActorMetadata): Boolean = {
+  private def shouldDelete(meta: ActorMetadata): Boolean = {
     meta.processStatus != Deleted &&
       getCompiledRecipe(meta.recipeId)
         .flatMap(_.retentionPeriod)
-        .exists { p => meta.createdDateTime + p.toMillis < System.currentTimeMillis() }
+        .exists { period => meta.createdDateTime + period.toMillis < System.currentTimeMillis() }
   }
 
   private def withActiveProcess(recipeInstanceId: String)(fn: ActorRef => Unit): Unit = {
@@ -212,6 +194,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
     case CheckForProcessesToBeDeleted =>
       val toBeDeleted = index.values.filter(shouldDelete)
+
       if (toBeDeleted.nonEmpty)
         log.debug(s"Deleting recipe instance: {}", toBeDeleted.mkString(","))
 
@@ -254,6 +237,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
               // this persists the fact that we created a process instance
               persistWithSnapshot(ActorCreated(recipeId, recipeInstanceId, createdTime)) { _ =>
+
 
                 // after that we actually create the ProcessInstance actor
                 val processState = RecipeInstanceState(recipeInstanceId, Map.empty[String, Value], List.empty)
@@ -454,7 +438,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       index.get(recipeInstanceId) match {
         case Some(processMetadata) if processMetadata.isDeleted => sender() ! ProcessDeleted(recipeInstanceId)
         case Some(processMetadata) =>
-          getRecipeWithTimeStamp(processMetadata.recipeId) match {
+          recipeCache.getBlocking(processMetadata.recipeId) match {
             case Some((compiledRecipe, timestamp)) => sender() ! RecipeFound(compiledRecipe, timestamp)
             case None => sender() ! NoSuchProcess(recipeInstanceId)
           }
@@ -487,7 +471,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       updateWithStatus(recipeInstanceId, Deleted)
     case RecoveryCompleted =>
       index
-        .filter(process => process._2.processStatus == Active ).keys
+        .filter(process => process._2.processStatus == Active).keys
         .foreach(id => createProcessActor(id))
   }
 

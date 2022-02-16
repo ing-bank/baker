@@ -4,7 +4,7 @@ import akka.actor.{ActorRefProvider, ExtendedActorSystem}
 import com.ing.baker.il
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
-import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
+import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndexActor, ProcessIndexProtocol}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
@@ -47,17 +47,17 @@ object BakerTypedProtobufSerializer {
     List(
       forType[ClusterBakerActorProvider.GetShardIndex]
         .register("ProcessIndex.GetShardIndex"),
-      forType[ProcessIndex.ActorCreated]
+      forType[ProcessIndexActor.ActorCreated]
         .register("ProcessIndex.ActorCreated"),
-      forType[ProcessIndex.ActorDeleted]
+      forType[ProcessIndexActor.ActorDeleted]
         .register("ProcessIndex.ActorDeleted"),
-      forType[ProcessIndex.ActorPassivated]
+      forType[ProcessIndexActor.ActorPassivated]
         .register("ProcessIndex.ActorPassivated"),
-      forType[ProcessIndex.ActorActivated]
+      forType[ProcessIndexActor.ActorActivated]
         .register("ProcessIndex.ActorActivated"),
-      forType[ProcessIndex.ProcessIndexSnapShot]
+      forType[ProcessIndexActor.ProcessIndexSnapShot]
         .register("ProcessIndex.ProcessIndexSnapShot"),
-      forType[ProcessIndex.ActorMetadata]
+      forType[ProcessIndexActor.ActorMetadata]
         .register("ProcessIndex.ActorMetadata"),
       forType[ProcessIndexProtocol.GetIndex.type]
         .register("ProcessIndexProtocol.GetIndex"),
