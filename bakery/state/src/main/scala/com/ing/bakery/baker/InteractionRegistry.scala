@@ -85,24 +85,25 @@ class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
   : Resource[IO, List[InteractionManager[IO]]] = {
 
     val interactionClient = new BaseRemoteInteractionClient(client, Headers.empty)
+    val localhostInteractions =
+      if(config.getBoolean("baker.interactions.localhost.enabled"))
+        Some(new LocalhostInteractions(config, actorSystem, interactionClient).resource)
+      else None
+    val kubernetesInteractions =
+      if(config.getBoolean("baker.interactions.kubernetes.enabled"))
+        Some(new KubernetesInteractions(config, actorSystem, interactionClient).resource)
+      else None
 
-    for {
-      localhost <- new LocalhostInteractions(config, actorSystem, interactionClient).resource
-      kubernetes <- new KubernetesInteractions(config, actorSystem, interactionClient).resource
-    } yield {
-      List(localhost, kubernetes)
-    }
+
+      List(localhostInteractions, kubernetesInteractions)
+        .collect{ case Some(interactionManagers) => interactionManagers }
+        .sequence
   }
 }
 
 case class RemoteInteractions(startedAt: Long,
                               interactions: List[InteractionInstance[IO]])
 
-//trait RemoteInteractionClient {
-//  def remoteInteractionClient(client: Client[IO], uri: Uri)
-//                             (implicit contextShift: ContextShift[IO], timer: Timer[IO]): RemoteInteractionClient =
-//    new BaseRemoteInteractionClient(client, uri, Headers.empty)
-//}
 /**
   * Method for resilient/retrying discovery of remote interactions
   */
