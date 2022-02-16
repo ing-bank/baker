@@ -24,6 +24,7 @@ import org.scalatest.matchers.should.Matchers
 
 import java.net.InetSocketAddress
 import java.util.UUID
+import scala.collection.immutable.Seq
 import scala.concurrent.Future
 
 class StateRuntimeSpec extends BakeryFunSpec with Matchers {

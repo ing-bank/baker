@@ -4,7 +4,7 @@ import java.util.Optional
 
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.TestRecipe._
-import com.ing.baker.recipe.common
+import com.ing.baker.recipe.{TestRecipeJava, common}
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
 import com.ing.baker.recipe.scaladsl._
@@ -14,6 +14,7 @@ import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
+import scala.collection.immutable.Seq
 
 class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
 
@@ -188,7 +189,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           val invalidInteraction = Interaction(name, Seq.empty, Seq())
           val recipe = Recipe("InteractionNameTest").withInteractions(invalidInteraction).withSensoryEvent(initialEvent)
 
-          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Interaction with a null or empty name found"
+          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)).getMessage.shouldBe("Interaction with a null or empty name found")
         }
       }
 
@@ -198,7 +199,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           val invalidEvent = Event(name)
           val recipe = Recipe("EventNameTest").withSensoryEvent(invalidEvent).withInteraction(interactionOne)
 
-          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Event with a null or empty name found"
+          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)).getMessage.shouldBe("Event with a null or empty name found")
         }
       }
 
@@ -207,7 +208,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           val invalidIngredient = Ingredient[String](name)
           val recipe = Recipe("IngredientNameTest").withSensoryEvent(Event("someEvent", invalidIngredient)).withInteraction(interactionOne)
 
-          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Ingredient with a null or empty name found"
+          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)).getMessage.shouldBe("Ingredient with a null or empty name found")
         }
       }
 
@@ -215,7 +216,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         List("", null) foreach { name =>
           val recipe = Recipe(name)
 
-          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Recipe with a null or empty name found"
+          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)).getMessage.shouldBe("Recipe with a null or empty name found")
         }
       }
     }
@@ -322,6 +323,14 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
               it.predefinedParameters("missingScalaOption") shouldBe NullValue
               it.predefinedParameters("missingScalaOption2") shouldBe NullValue
             })
+      }
+    }
+
+    "give the correct id" when {
+      "it compiles a java recipe" in {
+        val recipe = TestRecipeJava.getRecipe("id-test-recipe")
+        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        compiledRecipe.recipeId shouldBe "220827c42a75b3f8"
       }
     }
   }

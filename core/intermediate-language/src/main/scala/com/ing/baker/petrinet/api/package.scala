@@ -14,7 +14,7 @@ package object api extends MultiSetOps with MarkingOps {
   /**
     * Type alias for something that is identifiable.
     */
-  type Identifiable[T] = T ⇒ Id
+  type Identifiable[T] = T => Id
 
   /**
     * Type alias for a multi set.
@@ -39,7 +39,7 @@ package object api extends MultiSetOps with MarkingOps {
   }
 
   implicit class IdentifiableSeqOps[T : Identifiable](seq: Iterable[T]) {
-    def findById(id: Long): Option[T] = seq.find(e ⇒ implicitly[Identifiable[T]].apply(e) == id)
+    def findById(id: Long): Option[T] = seq.find(e => implicitly[Identifiable[T]].apply(e) == id)
     def getById(id: Long, name: String = "element"): T = findById(id).getOrElse { throw new IllegalStateException(s"No $name found with id: $id") }
   }
 
@@ -53,18 +53,18 @@ package object api extends MultiSetOps with MarkingOps {
     def unmarshall[P : Identifiable](places: Iterable[P]): Marking[P] = translateKeys(marking, (id: Long) => places.getById(id, "place in petrinet"))
   }
 
-  def translateKeys[K1, K2, V](map: Map[K1, V], fn: K1 => K2): Map[K2, V] = map.map { case (key, value) ⇒ fn(key) -> value }
+  def translateKeys[K1, K2, V](map: Map[K1, V], fn: K1 => K2): Map[K2, V] = map.map { case (key, value) => fn(key) -> value }
 
   implicit class PetriNetGraphNodeOps[P, T](val node: PetriNetGraph[P, T]#NodeT) {
 
     def asPlace: P = node.value match {
-      case Left(p) ⇒ p
-      case _       ⇒ throw new IllegalStateException(s"node $node is not a place!")
+      case Left(p) => p
+      case _       => throw new IllegalStateException(s"node $node is not a place!")
     }
 
     def asTransition: T = node.value match {
-      case Right(t) ⇒ t
-      case _        ⇒ throw new IllegalStateException(s"node $node is not a transition!")
+      case Right(t) => t
+      case _        => throw new IllegalStateException(s"node $node is not a transition!")
     }
 
     def incomingNodes: Set[Either[P, T]] = node.incoming.map(_.source.value)

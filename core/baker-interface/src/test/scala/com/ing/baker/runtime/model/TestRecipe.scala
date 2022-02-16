@@ -8,6 +8,7 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl._
 
 import scala.concurrent.duration._
+import scala.collection.immutable.Seq
 
 
 trait TestRecipe[F[_]] {

@@ -6,6 +6,7 @@ import com.ing.baker.types.Type
 import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
 import io.circe.{Codec, Decoder, Encoder}
 
+import scala.collection.immutable.Seq
 
 /**
   * Protocol executed after a match between a QuestMandate and InteractionAgent has been made and after both

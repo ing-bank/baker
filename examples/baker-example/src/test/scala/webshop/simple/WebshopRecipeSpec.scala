@@ -1,23 +1,16 @@
 package webshop.simple
 
-import java.io.{File, FileOutputStream}
-import java.util.UUID
-
 import akka.actor.ActorSystem
 import cats.effect.{ContextShift, IO}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
-import com.ing.baker.runtime.common.{RecipeRecord, Utils}
-import com.ing.baker.runtime.inmemory.InMemoryBaker
-import com.ing.baker.runtime.model.BakerF
+import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
-import org.mockito.Mockito
-import org.mockito.Mockito._
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
-import webshop.webservice.CheckoutFlowRecipe
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class WebshopRecipeSpec extends AsyncFlatSpec with Matchers  {

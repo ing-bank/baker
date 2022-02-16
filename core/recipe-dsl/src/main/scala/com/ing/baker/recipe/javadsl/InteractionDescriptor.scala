@@ -6,6 +6,8 @@ import com.ing.baker.types.Converters
 import scala.annotation.varargs
 import scala.collection.JavaConverters._
 
+import scala.collection.immutable.Seq
+
 case class InteractionDescriptor private(
                           override val originalName: String,
                           override val inputIngredients: Seq[common.Ingredient],

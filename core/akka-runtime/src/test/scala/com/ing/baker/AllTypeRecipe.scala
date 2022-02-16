@@ -5,6 +5,7 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrement
 import com.ing.baker.recipe.scaladsl._
 import org.joda.time.{DateTime, LocalDate, LocalDateTime}
 
+import scala.collection.immutable.Seq
 import scala.concurrent.duration.DurationInt
 
 /** This recipe is meant for testing purposes.

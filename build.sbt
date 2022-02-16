@@ -357,6 +357,7 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
       akkaClusterMetrics,
       akkaDiscovery,
       akkaDiscoveryKube,
+      akkaPki,
       http4s,
       http4sDsl,
       http4sCirce,
@@ -461,6 +462,7 @@ lazy val `baker-example`: Project = project
       ) ++ testDeps(
         scalaTest,
         scalaCheck,
+        mockitoScala,
         junitInterface,
         slf4jApi
       )
