@@ -15,5 +15,5 @@ trait Transition {
   val id: Long
   def label: String
   def isAutomated: Boolean
-  def exceptionStrategy: TransitionExceptionHandler[Place] = (e, n, _) ⇒ BlockTransition
+  def exceptionStrategy: TransitionExceptionHandler[Place] = (e, n, _) => BlockTransition
 }

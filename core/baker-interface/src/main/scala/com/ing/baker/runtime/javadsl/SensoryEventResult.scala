@@ -20,5 +20,5 @@ case class SensoryEventResult(
   def getIngredients: java.util.Map[String, Value] = ingredients
 
   def asScala: scaladsl.SensoryEventResult =
-    scaladsl.SensoryEventResult(sensoryEventStatus, eventNames.asScala, ingredients.asScala.toMap)
+    scaladsl.SensoryEventResult(sensoryEventStatus, eventNames.asScala.toIndexedSeq, ingredients.asScala.toMap)
 }

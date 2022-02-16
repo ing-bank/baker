@@ -10,6 +10,8 @@ import org.scalatest.wordspec.AsyncWordSpecLike
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatestplus.mockito.MockitoSugar
 
+import scala.collection.immutable.Seq
+
 class DefaultRecipeManagerSpec extends AsyncWordSpecLike
   with Matchers
   with MockitoSugar
@@ -37,7 +39,7 @@ class DefaultRecipeManagerSpec extends AsyncWordSpecLike
         check2 <- impl.get(id2)
         all <- impl.all
       } yield {
-        val recipes: Seq[CompiledRecipe] = all.map(_.recipe)
+        val recipes: Seq[CompiledRecipe] = all.map(_.recipe).toIndexedSeq
         (id1 == "1"
           && id2 == "2"
           && check1.get.recipe == recipe1

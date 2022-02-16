@@ -38,7 +38,7 @@ class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") 
 
     "return a source of events for a petriNet instance" in new StateTransitionNet[Unit, Unit] {
 
-      override val eventSourceFunction: Unit ⇒ Unit ⇒ Unit = s ⇒ _ ⇒ s
+      override val eventSourceFunction: Unit => Unit => Unit = s => _ => s
 
       val readJournal = PersistenceQuery(system).readJournalFor[ReadJournal with CurrentEventsByPersistenceIdQuery]("inmemory-read-journal")
 
@@ -55,8 +55,8 @@ class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") 
       instance ! Initialize(p1.markWithN(1), ())
 
       expectMsg(Initialized(p1.markWithN(1), ()))
-      expectMsgPF(timeOut) { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
-      expectMsgPF(timeOut) { case TransitionFired(_, 2, _, _, _, _, _) ⇒ }
+      expectMsgPF(timeOut) { case TransitionFired(_, 1, _, _, _, _, _) => }
+      expectMsgPF(timeOut) { case TransitionFired(_, 2, _, _, _, _, _) => }
 
       ProcessInstanceEventSourcing.eventsForInstance[Place, Transition, Unit, Unit](
         processTypeName = "test",
@@ -64,17 +64,17 @@ class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") 
         topology = petriNet,
         encryption = NoEncryption,
         readJournal = readJournal,
-        eventSourceFn = t ⇒ eventSourceFunction)
+        eventSourceFn = t => eventSourceFunction)
         .map(_._2) // Get the event from the tuple
         .runWith(TestSink.probe)
         .request(3)
         .expectNext(InitializedEvent(marking = p1.markWithN(1).marshall, state = ()))
         .expectNextChainingPF {
-          case TransitionFiredEvent(_, 1, _, _, _, consumed, produced, _) ⇒
+          case TransitionFiredEvent(_, 1, _, _, _, consumed, produced, _) =>
             consumed shouldBe p1.markWithN(1).marshall
             produced shouldBe p2.markWithN(1).marshall
         }.expectNextChainingPF {
-        case TransitionFiredEvent(_, 2, _, _, _, consumed, produced, _) ⇒
+        case TransitionFiredEvent(_, 2, _, _, _, consumed, produced, _) =>
           consumed shouldBe p2.markWithN(1).marshall
           produced shouldBe p3.markWithN(1).marshall
       }

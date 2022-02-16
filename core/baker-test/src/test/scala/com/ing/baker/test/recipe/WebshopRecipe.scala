@@ -3,6 +3,7 @@ package com.ing.baker.test.recipe
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.test.{EmptyFlow, EventsFlow}
 
+import scala.collection.immutable.Seq
 import scala.language.postfixOps
 
 object WebshopRecipe {

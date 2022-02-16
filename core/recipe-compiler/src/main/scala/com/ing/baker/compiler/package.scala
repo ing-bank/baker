@@ -7,6 +7,8 @@ import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionDescriptor
 import com.ing.baker.types._
 
+import scala.collection.immutable.Seq
+
 package object compiler {
 
   def ingredientToCompiledIngredient(ingredient: common.Ingredient): IngredientDescriptor = IngredientDescriptor(ingredient.name, ingredient.ingredientType)

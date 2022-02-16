@@ -11,6 +11,7 @@ import org.http4s.blaze.pipeline.Command
 import org.scalatest.ConfigMap
 import org.scalatest.compatible.Assertion
 
+import scala.collection.immutable.Seq
 import scala.concurrent.Future
 
 class RemoteInteractionSpec extends BakeryFunSpec {

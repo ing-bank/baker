@@ -25,6 +25,7 @@ import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 
 import java.util.{List => JavaList}
+import scala.collection.immutable.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.postfixOps

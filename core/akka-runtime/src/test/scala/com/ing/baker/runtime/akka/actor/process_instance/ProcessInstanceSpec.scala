@@ -40,9 +40,9 @@ case class Removed(n: Int) extends Event
 
 trait TestSequenceNet extends SequenceNet[Set[Int], Event] {
 
-  override val eventSourceFunction: Set[Int] ⇒ Event ⇒ Set[Int] = set ⇒ {
-    case Added(c)   ⇒ set + c
-    case Removed(c) ⇒ set - c
+  override val eventSourceFunction: Set[Int] => Event => Set[Int] = set => {
+    case Added(c)   => set + c
+    case Removed(c) => set - c
   }
 }
 
@@ -95,8 +95,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
     "Respond with an Initialized response after processing an Initialize command" in new TestSequenceNet {
 
       override val sequence = Seq(
-        transition()(_ ⇒ Added(1)),
-        transition()(_ ⇒ Added(2))
+        transition()(_ => Added(1)),
+        transition()(_ => Added(2))
       )
 
       val initialState = Set(1, 2, 3)
@@ -110,8 +110,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
     "Respond with an AlreadyInitialized response after processing an Initialize command for the second time" in new TestSequenceNet {
 
       override val sequence = Seq(
-        transition()(_ ⇒ Added(1)),
-        transition()(_ ⇒ Added(2))
+        transition()(_ => Added(1)),
+        transition()(_ => Added(2))
       )
 
       val initialState = Set(1, 2, 3)
@@ -127,8 +127,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
     "Before being initialized respond with an Uninitialized message and terminate on receiving a GetState command" in new TestSequenceNet {
 
       override val sequence = Seq(
-        transition()(_ ⇒ Added(1)),
-        transition()(_ ⇒ Added(2))
+        transition()(_ => Added(1)),
+        transition()(_ => Added(2))
       )
 
       val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
@@ -142,8 +142,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
     "After being initialized respond with an InstanceState message on receiving a GetState command" in new TestSequenceNet {
 
       override val sequence = Seq(
-        transition()(_ ⇒ Added(1)),
-        transition()(_ ⇒ Added(2))
+        transition()(_ => Added(1)),
+        transition()(_ => Added(2))
       )
 
       val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
@@ -153,14 +153,14 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       expectMsgClass(classOf[Initialized])
 
       actor ! GetState
-      expectMsgPF() { case InstanceState(1, initialMarkingData, `initialState`, _) if initialMarking.marshall == initialMarkingData ⇒ }
+      expectMsgPF() { case InstanceState(1, initialMarkingData, `initialState`, _) if initialMarking.marshall == initialMarkingData => }
     }
 
     "Respond with a TransitionFailed message if a transition failed to fire" in new TestSequenceNet {
 
       override val sequence = Seq(
-        transition()(_ ⇒ throw new RuntimeException("t1 failed!")),
-        transition()(_ ⇒ throw new RuntimeException("t2 failed!"))
+        transition()(_ => throw new RuntimeException("t1 failed!")),
+        transition()(_ => throw new RuntimeException("t2 failed!"))
       )
 
       val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
@@ -178,7 +178,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       val counter = new AtomicInteger(0)
 
       override val sequence = Seq(
-        transition() { _ ⇒
+        transition() { _ =>
           if (counter.getAndIncrement() == 0)
             throw new RuntimeException("t1 failed!")
           else
@@ -209,13 +209,13 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       actor ! OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.RetryWithDelay(0))
 
       // expect that the failure is resolved
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) => }
     }
 
     "Be able to resolve a failed (blocked) transition when requested" in new TestSequenceNet {
 
       override val sequence = Seq(
-        transition() { _ ⇒ throw new RuntimeException("t1 failed!") })
+        transition() { _ => throw new RuntimeException("t1 failed!") })
 
       val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
 
@@ -241,18 +241,18 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       actor ! OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.Continue(place(2).markWithN(1).marshall, Added(2)))
 
       // expect that the failure is resolved
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, Added(2)) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, Added(2)) => }
     }
 
     "Be able to block a retrying transition when requested" in new TestSequenceNet {
 
       val retryHandler: TransitionExceptionHandler[Place] = {
-        case (_, n, _) if n < 3 ⇒ RetryWithDelay(5000)
-        case _                  ⇒ internal.ExceptionStrategy.BlockTransition
+        case (_, n, _) if n < 3 => RetryWithDelay(5000)
+        case _                  => internal.ExceptionStrategy.BlockTransition
       }
 
       override val sequence = Seq(
-        transition(exceptionHandler = retryHandler) { _ ⇒ throw new RuntimeException("Expected test failure") }
+        transition(exceptionHandler = retryHandler) { _ => throw new RuntimeException("Expected test failure") }
       )
 
       val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
@@ -279,7 +279,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       actor ! OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.BlockTransition)
 
       // expect that the failure is resolved
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.BlockTransition) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.BlockTransition) => }
     }
 
     "Respond with a AlreadyReceived rejection message if the given corellation id was received earlier" in new TestSequenceNet {
@@ -287,7 +287,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       val testCorrelationId = "abc"
 
       override val sequence = Seq(
-        transition()(_ ⇒ Added(1))
+        transition()(_ => Added(1))
       )
 
       val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
@@ -300,7 +300,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       actor ! FireTransition(transitionId = 1, input = null, correlationId = Some(testCorrelationId))
 
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) => }
 
       actor ! FireTransition(transitionId = 1, input = null, correlationId = Some(testCorrelationId))
 
@@ -310,8 +310,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
     "Respond with a FiringLimitMet rejection message if a transition is not enabled because of a previous failure" in new TestSequenceNet {
 
       override val sequence = Seq(
-        transition()(_ ⇒ throw new RuntimeException("t1 failed!")),
-        transition()(_ ⇒ Added(2))
+        transition()(_ => throw new RuntimeException("t1 failed!")),
+        transition()(_ => Added(2))
       )
 
       val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
@@ -321,7 +321,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       actor ! FireTransition(transitionId = 1, input = null)
 
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, _) => }
 
       actor ! FireTransition(transitionId = 1, ())
 
@@ -332,8 +332,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
     "Respond with a FiringLimitMet message if a transition is not enabled because of not enough consumable tokens" in new TestSequenceNet {
 
       override val sequence = Seq(
-        transition()(_ ⇒ Added(1)),
-        transition()(_ ⇒ Added(2))
+        transition()(_ => Added(1)),
+        transition()(_ => Added(2))
       )
 
       val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
@@ -351,13 +351,13 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
     "Retry to execute a transition with a delay when the exception strategy indicates so" in new TestSequenceNet {
 
       val retryHandler: TransitionExceptionHandler[Place] = {
-        case (_, n, _) if n < 3 ⇒ RetryWithDelay(dilatedMillis(10 * Math.pow(2, n).toLong))
-        case _                  ⇒ internal.ExceptionStrategy.BlockTransition
+        case (_, n, _) if n < 3 => RetryWithDelay(dilatedMillis(10 * Math.pow(2, n).toLong))
+        case _                  => internal.ExceptionStrategy.BlockTransition
       }
 
       override val sequence = Seq(
-        transition(exceptionHandler = retryHandler) { _ ⇒ throw new RuntimeException("t1 failed") },
-        transition() { _ ⇒ Added(2) }
+        transition(exceptionHandler = retryHandler) { _ => throw new RuntimeException("t1 failed") },
+        transition() { _ => Added(2) }
       )
 
       val id = UUID.randomUUID()
@@ -373,9 +373,9 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       val delay2: Long = dilatedMillis(40)
 
       // expect 3 failure messages
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.RetryWithDelay(delay1)) ⇒ }
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.RetryWithDelay(delay2)) ⇒ }
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.BlockTransition) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.RetryWithDelay(delay1)) => }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.RetryWithDelay(delay2)) => }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.BlockTransition) => }
 
       // attempt to fire t1 explicitly
       actor ! FireTransition(transitionId = 1, input = null)
@@ -387,8 +387,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
     "Be able to restore it's state from persistent storage after termination" in new TestSequenceNet {
 
       override val sequence = Seq(
-        transition()(_ ⇒ Added(1)),
-        transition(automated = true)(_ ⇒ Added(2))
+        transition()(_ => Added(1)),
+        transition(automated = true)(_ => Added(2))
       )
 
       val actorName = UUID.randomUUID().toString
@@ -402,10 +402,10 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       actor ! FireTransition(transitionId = 1, input = null)
 
       // expect the next marking: p2 -> 1
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) => }
 
       // since t2 fires automatically we also expect the next marking: p3 -> 1
-      expectMsgPF() { case TransitionFired(_, 2, _, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 2, _, _, _, _, _) => }
 
       // validate the final state
       val endMarking: Marking[Place] = place(3).markWithN(1)
@@ -429,12 +429,12 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val Delay: Long = dilatedMillis(500)
       val retryHandler: TransitionExceptionHandler[Place] = {
-        case (e, n, _) ⇒ RetryWithDelay(Delay)
+        case (e, n, _) => RetryWithDelay(Delay)
       }
-      val mockFunction = mock[Set[Int] ⇒ Event]
+      val mockFunction = mock[Set[Int] => Event]
 
       override val sequence = Seq(
-        transition()(_ ⇒ Added(1)),
+        transition()(_ => Added(1)),
         transition(automated = true, exceptionHandler = retryHandler)(mockFunction)
       )
 
@@ -448,8 +448,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       actor ! FireTransition(transitionId = 1, input = null)
 
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
-      expectMsgPF() { case TransitionFailed(_, 2, _, _, _, _, protocol.ExceptionStrategy.RetryWithDelay(Delay)) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) => }
+      expectMsgPF() { case TransitionFailed(_, 2, _, _, _, _, protocol.ExceptionStrategy.RetryWithDelay(Delay)) => }
 
       // verify that the mock function was called
       verify(mockFunction).apply(any[Set[Int]])
@@ -474,12 +474,12 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
     "Block a transition if the exception strategy function throws an exception" in new TestSequenceNet {
 
       val faultyExceptionHandler: TransitionExceptionHandler[Place] = {
-        case (_, _, _) ⇒ throw new IllegalStateException("Expected test failure")
+        case (_, _, _) => throw new IllegalStateException("Expected test failure")
       }
 
       override def sequence =
         Seq(
-          transition(exceptionHandler = faultyExceptionHandler)(_ ⇒ throw new IllegalArgumentException("Failed!"))
+          transition(exceptionHandler = faultyExceptionHandler)(_ => throw new IllegalArgumentException("Failed!"))
         )
 
       val actorName = UUID.randomUUID().toString
@@ -491,17 +491,17 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       actor ! FireTransition(transitionId = 1, input = null)
 
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.BlockTransition) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.BlockTransition) => }
     }
 
     "Not re-fire a failed transition with 'Blocked' strategy after being restored from persistent storage" in new TestSequenceNet {
 
       // setup a failing mock function
-      val mockT2 = mock[Set[Int] ⇒ Event]
+      val mockT2 = mock[Set[Int] => Event]
       when(mockT2.apply(any[Set[Int]])).thenThrow(new RuntimeException("t2 mock failed"))
 
       override val sequence = Seq(
-        transition(automated = true)(_ ⇒ Added(1)),
+        transition(automated = true)(_ => Added(1)),
         transition(automated = true)(mockT2)
       )
 
@@ -513,8 +513,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       expectMsgClass(classOf[Initialized])
 
       // expect the next marking: p2 -> 1
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
-      expectMsgPF() { case TransitionFailed(_, 2, _, _, _, _, protocol.ExceptionStrategy.BlockTransition) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) => }
+      expectMsgPF() { case TransitionFailed(_, 2, _, _, _, _, protocol.ExceptionStrategy.BlockTransition) => }
 
       verify(mockT2).apply(any[Set[Int]])
 
@@ -529,7 +529,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       newActor ! GetState
 
       // assert that the actor is the same as before termination
-      expectMsgPF() { case InstanceState(2, _, _, _) ⇒ }
+      expectMsgPF() { case InstanceState(2, _, _, _) => }
 
       verifyNoMoreInteractions(mockT2)
     }
@@ -538,10 +538,10 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val InitialDelay: Long = dilatedMillis(50)
       val retryHandler: TransitionExceptionHandler[Place] = {
-        case (e, n, _) ⇒ RetryWithDelay(InitialDelay)
+        case (e, n, _) => RetryWithDelay(InitialDelay)
       }
 
-      val mockFunction = mock[Set[Int] ⇒ Event]
+      val mockFunction = mock[Set[Int] => Event]
 
       override val sequence = Seq(
         transition(automated = true, exceptionHandler = retryHandler)(mockFunction)
@@ -562,9 +562,9 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.RetryWithDelay(InitialDelay)) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.RetryWithDelay(InitialDelay)) => }
 
-      whenReady(mockPromise.future) { _ ⇒
+      whenReady(mockPromise.future) { _ =>
 
         verify(mockFunction).apply(any[Set[Int]]) // FIXME TRAVIS: sometimes executes 2 times
 
@@ -587,8 +587,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       val customSettings = instanceSettings.copy(idleTTL = Some(ttl))
 
       override val sequence = Seq(
-        transition(automated = false)(_ ⇒ Added(1)),
-        transition(automated = false)(_ ⇒ Added(2))
+        transition(automated = false)(_ => Added(1)),
+        transition(automated = false)(_ => Added(2))
       )
 
       val petriNetActor = createPetriNetActor(processInstanceProps(petriNet, runtime, customSettings), UUID.randomUUID().toString)
@@ -604,14 +604,14 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
     "fire automated transitions in parallel when possible" in new StateTransitionNet[Unit, Unit] {
 
-      override val eventSourceFunction: Unit ⇒ Unit ⇒ Unit = s ⇒ e ⇒ s
+      override val eventSourceFunction: Unit => Unit => Unit = s => e => s
 
       val p1 = Place(id = 1)
       val p2 = Place(id = 2)
 
       val t1 = nullTransition(id = 1, automated = false)
-      val t2 = stateTransition(id = 2, automated = true)(_ ⇒ Thread.sleep(dilatedMillis(500)))
-      val t3 = stateTransition(id = 3, automated = true)(_ ⇒ Thread.sleep(dilatedMillis(500)))
+      val t2 = stateTransition(id = 2, automated = true)(_ => Thread.sleep(dilatedMillis(500)))
+      val t3 = stateTransition(id = 3, automated = true)(_ => Thread.sleep(dilatedMillis(500)))
 
       val petriNet = createPetriNet[Unit](
         t1 ~> p1,
@@ -631,7 +631,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       // fire the first transition manually
       actor ! FireTransition(transitionId = 1, input = null)
 
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) => }
 
       import org.scalatest.concurrent.TimeLimits._
 
@@ -639,8 +639,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
         // expect that the two subsequent transitions are fired automatically and in parallel (in any order)
         expectMsgInAnyOrderPF(
-          { case TransitionFired(_, 2, _, _, _, _, _) ⇒ },
-          { case TransitionFired(_, 3, _, _, _, _, _) ⇒ }
+          { case TransitionFired(_, 2, _, _, _, _, _) => },
+          { case TransitionFired(_, 3, _, _, _, _, _) => }
         )
       }
     }
