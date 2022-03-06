@@ -129,7 +129,7 @@ object Dependencies {
   val springBootStarter = "org.springframework.boot" % "spring-boot-starter" % springBootVersion
 
   val snakeYaml = "org.yaml" % "snakeyaml" % "1.30"
-  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.1"
+  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.2"
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.70"
   val bouncyCastleBcpkix ="org.bouncycastle" % "bcpkix-jdk15on" % "1.70"
 
