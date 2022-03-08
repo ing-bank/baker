@@ -1,8 +1,7 @@
 package com.ing.baker.runtime.model
 
 import cats.data.EitherT
-import cats.effect.concurrent.Deferred
-import cats.effect.{ConcurrentEffect, Effect, Resource, Timer}
+import cats.effect.{ConcurrentEffect, Effect, Resource}
 import cats.implicits._
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common.BakerException.{ProcessAlreadyExistsException, ProcessDeletedException}
@@ -14,6 +13,7 @@ import fs2.{Pipe, Stream}
 
 import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
 import scala.collection.immutable.Seq
+import cats.effect.{ Deferred, Temporal }
 
 object RecipeInstanceManager {
 
@@ -41,7 +41,7 @@ trait RecipeInstanceManager[F[_]] {
 
   def getAllRecipeInstancesMetadata: F[Set[RecipeInstanceMetadata]]
 
-  def startRetentionPeriodStream(interval: FiniteDuration)(implicit effect: Effect[F], timer: Timer[F]): Resource[F, Unit] =
+  def startRetentionPeriodStream(interval: FiniteDuration)(implicit effect: Effect[F], timer: Temporal[F]): Resource[F, Unit] =
     Stream.awakeEvery[F](interval).evalMap { _ =>
       for {
         allRecipeInstances <- fetchAll
@@ -52,7 +52,7 @@ trait RecipeInstanceManager[F[_]] {
       } yield ()
     }.compile.resource.drain
 
-  def bake(recipeId: String, recipeInstanceId: String, config: RecipeInstance.Config)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[Unit] =
+  def bake(recipeId: String, recipeInstanceId: String, config: RecipeInstance.Config)(implicit components: BakerComponents[F], effect: Effect[F], timer: Temporal[F]): F[Unit] =
     for {
       _ <- fetch(recipeInstanceId).flatMap[Unit] {
         case Some(RecipeInstanceStatus.Active(_)) =>
@@ -88,7 +88,7 @@ trait RecipeInstanceManager[F[_]] {
       ingredientNames = currentState.ingredients.keySet
     )
 
-  def fireEventStream(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, Stream[F, EventInstance]] =
+  def fireEventStream(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Temporal[F]): EitherT[F, FireSensoryEventRejection, Stream[F, EventInstance]] =
     EitherT(fetch(recipeInstanceId).map {
       case None =>
         Left(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId))
@@ -98,18 +98,18 @@ trait RecipeInstanceManager[F[_]] {
         Right(recipeInstance)
     }).flatMap(_.fireEventStream(event, correlationId))
 
-  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[SensoryEventStatus] =
+  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Temporal[F]): F[SensoryEventStatus] =
     fireEventStream(recipeInstanceId, event, correlationId)
       .value.flatMap(foldToStatus(_.compile.drain))
 
-  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[SensoryEventResult] = {
+  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Temporal[F]): F[SensoryEventResult] = {
     def awaitForCompletion(stream: Stream[F, EventInstance]): F[SensoryEventResult] =
       stream.through(aggregateResult).compile.lastOrError
     fireEventStream(recipeInstanceId, event, correlationId)
       .value.flatMap(foldToResult(awaitForCompletion))
   }
 
-  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[SensoryEventResult] = {
+  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Temporal[F]): F[SensoryEventResult] = {
     def awaitForEvent(stream: Stream[F, EventInstance]): F[SensoryEventResult] =
       Deferred[F, SensoryEventResult].flatMap { eventDeferred =>
         stream.through(aggregateResult).evalTap(intermediateResult =>
@@ -122,7 +122,7 @@ trait RecipeInstanceManager[F[_]] {
       .value.flatMap(foldToResult(awaitForEvent))
   }
 
-  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[(F[SensoryEventStatus], F[SensoryEventResult])] =
+  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Temporal[F]): F[(F[SensoryEventStatus], F[SensoryEventResult])] =
     fireEventStream(recipeInstanceId, event, correlationId)
       .value.flatMap(outcome =>
         for {
@@ -141,13 +141,13 @@ trait RecipeInstanceManager[F[_]] {
           foldToStatus((_: Unit) => received.get)(outcome.map(_ => ())),
           foldToResult((_: Unit) => completed.get)(outcome.map(_ => ()))))
 
-  def stopRetryingInteraction(recipeInstanceId: String, interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] =
+  def stopRetryingInteraction(recipeInstanceId: String, interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Temporal[F]): F[Unit] =
     getExistent(recipeInstanceId).flatMap(_.stopRetryingInteraction(interactionName))
 
-  def retryBlockedInteraction(recipeInstanceId: String, interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Stream[F, EventInstance]] =
+  def retryBlockedInteraction(recipeInstanceId: String, interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Temporal[F]): F[Stream[F, EventInstance]] =
     getExistent(recipeInstanceId).map(_.retryBlockedInteraction(interactionName))
 
-  def resolveBlockedInteraction(recipeInstanceId: String, interactionName: String, eventInstance: EventInstance)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Stream[F, EventInstance]] =
+  def resolveBlockedInteraction(recipeInstanceId: String, interactionName: String, eventInstance: EventInstance)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Temporal[F]): F[Stream[F, EventInstance]] =
     getExistent(recipeInstanceId).map(_.resolveBlockedInteraction(interactionName, eventInstance))
 
   private def getExistent(recipeInstanceId: String)(implicit effect: Effect[F]): F[RecipeInstance[F]] =
@@ -202,7 +202,7 @@ trait RecipeInstanceManager[F[_]] {
         f(a)
     }
 
-  private def computeShouldDelete(status: RecipeInstanceStatus[F])(implicit effect: Effect[F], timer: Timer[F]): F[Boolean] =
+  private def computeShouldDelete(status: RecipeInstanceStatus[F])(implicit effect: Effect[F], timer: Temporal[F]): F[Boolean] =
     for {
       currentTime <- timer.clock.realTime(MILLISECONDS)
       result <- status match {
