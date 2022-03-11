@@ -623,7 +623,7 @@ lazy val `baker-test`: Project = project.in(file("core/baker-test"))
     libraryDependencies ++= compileDeps(
       slf4jApi
     ) ++ testDeps(scalaTest, logback,
-      "io.altoo" %% "akka-kryo-serialization" % "2.3.0",
+      "io.altoo" %% "akka-kryo-serialization" % "2.4.3",
       "junit" % "junit" % "4.13.2",
       "org.scalatestplus" %% "junit-4-13" % "3.2.11.0"
     )
