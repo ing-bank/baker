@@ -14,17 +14,16 @@ import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.Router
-import org.http4s.blaze.server._
+import org.http4s.server.blaze._
 import org.scalatest.ConfigMap
 
 import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters
 import scala.concurrent.ExecutionContext
-import org.typelevel.ci._
 
 class BakerClientSpec extends BakeryFunSpec {
 
-  case class Context(serverAddress: InetSocketAddress, receivedHeaders: IO[List[Header.Raw]])
+  case class Context(serverAddress: InetSocketAddress, receivedHeaders: IO[List[Header]])
 
   val serviceTLSConfig: TLSConfig =
     TLSConfig(
@@ -52,7 +51,7 @@ class BakerClientSpec extends BakeryFunSpec {
     */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
 
-    def testServer(receivedHeaders: MVar2[IO, List[Header.Raw]]): HttpApp[IO] = {
+    def testServer(receivedHeaders: MVar2[IO, List[Header]]): HttpApp[IO] = {
       implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
       Router("/api/bakery/instances" ->  HttpRoutes.of[IO] {
         case request@GET -> Root =>
@@ -67,7 +66,7 @@ class BakerClientSpec extends BakeryFunSpec {
     val sslParams = sslConfig.getDefaultSSLParameters
     sslParams.setNeedClientAuth(true)
     for {
-      receivedHeaders <- Resource.eval(MVar.empty[IO, List[Header.Raw]])
+      receivedHeaders <- Resource.eval(MVar.empty[IO, List[Header]])
       service <- BlazeServerBuilder[IO](ExecutionContext.global)
         .withSslContextAndParameters(sslConfig, sslParams)
         .bindSocketAddress(InetSocketAddress.createUnresolved("localhost", 0))
@@ -87,7 +86,7 @@ class BakerClientSpec extends BakeryFunSpec {
 
     test("scaladsl - connects with mutual tls and adds headers to requests") { context =>
       val host = Uri.unsafeFromString(s"https://localhost:${context.serverAddress.getPort}/")
-      val testHeader = Header.Raw(ci"X-Test", "Foo")
+      val testHeader = Header("X-Test", "Foo")
       val filter: Request[IO] => Request[IO] = _.putHeaders(testHeader)
       BakerClient.resource(host, "/api/bakery", executionContext, List(filter), Some(clientTLSConfig)).use { client =>
         for {
@@ -116,7 +115,7 @@ class BakerClientSpec extends BakeryFunSpec {
 
     test("javadsl - connects with mutual tls and adds headers to requests") { context =>
       val host = s"https://localhost:${context.serverAddress.getPort}/"
-      val testHeader = Header.Raw(ci"X-Test", "Foo")
+      val testHeader = Header("X-Test", "Foo")
       val filter: java.util.function.Function[Request[IO], Request[IO]] = _.putHeaders(testHeader)
       for {
         client <- IO.fromFuture(IO(FutureConverters.toScala(

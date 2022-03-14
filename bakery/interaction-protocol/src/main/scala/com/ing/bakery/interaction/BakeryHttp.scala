@@ -9,6 +9,7 @@ import com.ing.baker.runtime.serialization.ProtoMap
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import org.http4s.EntityDecoder.collectBinary
 import org.http4s._
+import org.http4s.util.CaseInsensitiveString
 
 import scala.util.{Failure, Success, Try}
 
