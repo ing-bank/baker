@@ -8,7 +8,7 @@ import com.ing.bakery.mocks.EventListener
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
 import org.http4s.Status.Ok
-import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.blaze.client.BlazeClientBuilder
 import org.scalatest.concurrent.Eventually
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.funspec.FixtureAsyncFunSpecLike
