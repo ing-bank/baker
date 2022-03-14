@@ -9,9 +9,10 @@ import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuc
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceInput, RecipeEventMetadata}
 import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
-import org.mockito.Matchers.{eq => mockitoEq, _}
+import org.mockito.ArgumentMatchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
 
+import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
 

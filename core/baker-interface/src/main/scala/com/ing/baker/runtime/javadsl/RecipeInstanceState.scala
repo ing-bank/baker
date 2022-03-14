@@ -52,5 +52,5 @@ case class RecipeInstanceState(
   def getRecipeInstanceId: String = recipeInstanceId
 
   def asScala: scaladsl.RecipeInstanceState =
-    scaladsl.RecipeInstanceState(recipeInstanceId, ingredients.asScala.toMap, events.asScala.map(_.asScala))
+    scaladsl.RecipeInstanceState(recipeInstanceId, ingredients.asScala.toMap, events.asScala.map(_.asScala).toIndexedSeq)
 }

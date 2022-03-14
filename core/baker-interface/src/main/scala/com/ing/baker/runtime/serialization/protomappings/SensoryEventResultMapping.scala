@@ -19,14 +19,14 @@ class SensoryEventResultMapping(implicit valueProto: ProtoMap[Value, protobuf.Va
     protobuf.SensoryEventResult(
       Some(SensoryEventStatusMappingHelper.toProto(a.sensoryEventStatus)),
       a.eventNames,
-      a.ingredients.mapValues(ctxToProto(_))
+      a.ingredients.view.map { case (key, value) => (key, ctxToProto(value))}.toMap
     )
 
   override def fromProto(message: protobuf.SensoryEventResult): Try[SensoryEventResult] =
     for {
       protoStatus <- versioned(message.status, "status")
       status <- SensoryEventStatusMappingHelper.fromProto(protoStatus)
-      events = message.events
+      events = message.events.toIndexedSeq
       ingredients <- message.ingredients.toList.traverse { case (name, value) =>
         ctxFromProto(value).map(name -> _)
       }

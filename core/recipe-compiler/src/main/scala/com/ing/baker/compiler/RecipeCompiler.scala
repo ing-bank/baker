@@ -1,6 +1,7 @@
 package com.ing.baker
 package compiler
 
+import com.ing.baker.il.CompiledRecipe.{OldRecipeIdVariant, Scala212CompatibleJava, Scala212CompatibleScala}
 import com.ing.baker.il.RecipeValidations.postCompileValidations
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
@@ -10,6 +11,7 @@ import com.ing.baker.recipe.common._
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
+import scala.collection.immutable.Seq
 import scala.language.postfixOps
 
 object RecipeCompiler {
@@ -37,7 +39,7 @@ object RecipeCompiler {
 
     //Find the event in available events
 
-    interaction.requiredEvents.toSeq.map { eventName =>
+    interaction.requiredEvents.toIndexedSeq.map { eventName =>
       // a new `Place` generated for each AND events
       val eventPreconditionPlace = createPlace(label = s"$eventName-${interaction.name}", placeType = EventPreconditionPlace)
 
@@ -52,11 +54,11 @@ object RecipeCompiler {
                                            preconditionTransition: String => Option[Transition],
                                            interactionTransition: String => Option[Transition]): (Seq[Arc], Seq[String]) = {
 
-    interaction.requiredOneOfEvents.toSeq.zipWithIndex.map { case (orGroup: Set[String], index: Int) =>
+    interaction.requiredOneOfEvents.toIndexedSeq.zipWithIndex.map { case (orGroup: Set[String], index: Int) =>
       // only one `Place` for all the OR events
       val eventPreconditionPlace = createPlace(label = s"${interaction.name}-or-$index", placeType = EventOrPreconditionPlace)
 
-      orGroup.toSeq.map { eventName =>
+      orGroup.toIndexedSeq.map { eventName =>
         buildEventPreconditionArcs(eventName,
           eventPreconditionPlace,
           preconditionTransition,
@@ -196,7 +198,7 @@ object RecipeCompiler {
     // events provided from outside
     val sensoryEventTransitions: Seq[EventTransition] = recipe.sensoryEvents.map {
       event => EventTransition(eventToCompiledEvent(event), isSensoryEvent = true, event.maxFiringLimit)
-    }.toSeq
+    }.toIndexedSeq
 
     // events provided by other transitions / actions
     val interactionEventTransitions: Seq[EventTransition] = allInteractionTransitions.flatMap { t =>
@@ -267,7 +269,7 @@ object RecipeCompiler {
     val multipleConsumerFacilitatorTransitions: Seq[Transition] =
       ingredientsWithMultipleConsumers.keys
         .map(name => MultiFacilitatorTransition(label = name))
-        .toSeq
+        .toIndexedSeq
 
     val multipleOutputFacilitatorArcs: Seq[Arc] =
       multipleConsumerFacilitatorTransitions.map(t =>
@@ -297,13 +299,17 @@ object RecipeCompiler {
 
     val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
 
-    val compiledRecipe = CompiledRecipe(
+    val oldRecipeIdVariant : OldRecipeIdVariant =
+      if (recipe.isInstanceOf[com.ing.baker.recipe.javadsl.Recipe]) Scala212CompatibleJava else Scala212CompatibleScala
+
+    val compiledRecipe = CompiledRecipe.build(
       name = recipe.name,
       petriNet = petriNet,
       initialMarking = initialMarking,
       validationErrors = errors,
       eventReceivePeriod = recipe.eventReceivePeriod,
-      retentionPeriod = recipe.retentionPeriod
+      retentionPeriod = recipe.retentionPeriod,
+      oldRecipeIdVariant = oldRecipeIdVariant,
     )
 
     postCompileValidations(compiledRecipe, validationSettings)

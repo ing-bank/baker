@@ -99,10 +99,10 @@ trait RecipeInstanceEventValidation { recipeInstance: RecipeInstanceState =>
   private def consumableTokensAreAvailable(transition: Transition): EventValidation[Iterable[Marking[Place]]] = {
     val enabledParams = enabledParameters(availableMarkings)
     enabledParams.get(transition) match {
-      case None ⇒
+      case None =>
         reject(FireSensoryEventRejection.FiringLimitMet(recipeInstance.recipeInstanceId),
           s"Not enough consumable tokens. This might have been caused because the event has already been fired up to the firing limit but the recipe requires more instances of the event, use withSensoryEventNoFiringLimit or increase the amount of firing limit on the recipe if such behaviour is desired")
-      case Some(params) ⇒
+      case Some(params) =>
         accept(params)
     }
   }

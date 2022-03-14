@@ -10,7 +10,7 @@ package object dsl {
   /**
     * An exception handler function associated with a transition.
     */
-  type TransitionExceptionHandler[P] = (Throwable, Int, MultiSet[P]) ⇒ ExceptionStrategy
+  type TransitionExceptionHandler[P] = (Throwable, Int, MultiSet[P]) => ExceptionStrategy
 
   /**
     * Type alias for the node type of the scalax.collection.Graph backing the petri net.
@@ -35,7 +35,7 @@ package object dsl {
   def arc(p: Place, t: Transition, weight: Long): Arc = WLDiEdge[Node, String](Left(p), Right(t))(weight, "")
 
   def requireUniqueElements[T](i: Iterable[T], name: String = "Element"): Unit = {
-    (i foldLeft Set.empty[T]) { (set, e) ⇒
+    (i foldLeft Set.empty[T]) { (set, e) =>
       if (set.contains(e))
         throw new IllegalArgumentException(s"$name '$e' is not unique!")
       else

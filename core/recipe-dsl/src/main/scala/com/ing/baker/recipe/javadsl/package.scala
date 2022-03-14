@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
 import com.ing.baker.types.{Converters, Type}
 
+import scala.collection.immutable.Seq
 import scala.reflect.ClassTag
 
 package object javadsl {
@@ -38,7 +39,7 @@ package object javadsl {
         s"No method named '$interactionMethodName' defined on '${interactionClass.getName}'"))
 
     val inputIngredients: Seq[common.Ingredient] =
-      method.getParameterNames.map(name =>
+      method.getParameterNames.toIndexedSeq.map(name =>
         createIngredient(name,
           parseType(
             method.parameterTypeForName(name).get,
@@ -47,7 +48,7 @@ package object javadsl {
     val output: Seq[common.Event] = {
 
       if (method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
-        val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[annotations.FiresEvent]).oneOf()
+        val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[annotations.FiresEvent]).oneOf().toIndexedSeq
 
         outputEventClasses.foreach {
           eventClass =>

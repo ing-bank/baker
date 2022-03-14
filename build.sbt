@@ -130,7 +130,6 @@ lazy val `baker-interface`: Project = project.in(file("core/baker-interface"))
     ) ++ providedDeps(findbugs) ++ testDeps(
       scalaTest,
       scalaCheckPlusMockito,
-      mockito,
       slf4jApi,
       logback
     )
@@ -182,8 +181,7 @@ lazy val `baker-akka-runtime`: Project = project.in(file("core/akka-runtime"))
         scalaTest,
         scalaCheck,
         scalaCheckPlus,
-        scalaCheckPlusMockito,
-        mockito)
+        scalaCheckPlusMockito)
         ++ providedDeps(findbugs)
   )
   .dependsOn(
@@ -292,11 +290,47 @@ lazy val `bakery-dashboard`: Project = project.in(file("bakery/dashboard"))
     Compile / packageDoc / publishArtifact := false,
     Compile / packageSrc / publishArtifact := false,
     Compile / packageBin / publishArtifact := false,
-    Universal / packageBin  := npmBuildTask.value,
+    Universal / packageBin := npmBuildTask.value,
     addArtifact(Artifact("dashboard", "zip", "zip"), npmBuildTask),
     publish := (publish dependsOn (Universal / packageBin)).value,
     publishLocal := (publishLocal dependsOn (Universal / packageBin)).value
   )
+
+lazy val `bakery-state-k8s`: Project = project.in(file("bakery/baker-state-k8s"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "bakery-state-k8s",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    libraryDependencies ++= Seq(
+      skuber
+    ) ++ testDeps(
+      slf4jApi,
+      logback,
+      scalaTest,
+      mockServer,
+      circe,
+      circeGeneric,
+      akkaInmemoryJournal,
+      cassandraDriverCore,
+      cassandraDriverQueryBuilder,
+      cassandraDriverMetrics,
+      cassandraUnit
+    )
+  )
+  .dependsOn(
+    `baker-akka-runtime`,
+    `bakery-client`,
+    `baker-interface`,
+    `bakery-interaction-protocol`,
+    `baker-recipe-compiler`,
+    `baker-recipe-dsl`,
+    `baker-intermediate-language`,
+    `bakery-dashboard`,
+    `bakery-state` % "compile->compile;test->test"
+  )
+
 
 lazy val `bakery-state`: Project = project.in(file("bakery/state"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
@@ -323,12 +357,12 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
       akkaClusterMetrics,
       akkaDiscovery,
       akkaDiscoveryKube,
+      akkaPki,
       http4s,
       http4sDsl,
       http4sCirce,
       http4sServer,
-      kafkaClient,
-      skuber
+      kafkaClient
     ) ++ testDeps(
       slf4jApi,
       logback,
@@ -401,7 +435,7 @@ lazy val baker: Project = project.in(file("."))
   .settings(defaultModuleSettings)
   .aggregate(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
     `bakery-client`, `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
-    `sbt-bakery-docker-generate`,
+    `sbt-bakery-docker-generate`, `bakery-state-k8s`,
     `baker-interface`, `bakery-dashboard`, `baker-annotations`, `baker-test`)
 
 lazy val `baker-example`: Project = project
@@ -428,9 +462,9 @@ lazy val `baker-example`: Project = project
       ) ++ testDeps(
         scalaTest,
         scalaCheck,
+        mockitoScala,
         junitInterface,
-        slf4jApi,
-        mockito
+        slf4jApi
       )
   )
   .settings(dockerSettings)

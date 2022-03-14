@@ -31,8 +31,9 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import com.ing.baker.runtime.recipe_manager.RecipeManager
-import org.mockito.Matchers.anyString
+import org.mockito.ArgumentMatchers.anyString
 
+import scala.collection.immutable.Seq
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 

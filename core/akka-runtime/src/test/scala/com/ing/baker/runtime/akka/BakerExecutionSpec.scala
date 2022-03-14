@@ -22,12 +22,13 @@ import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance
 import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
 import com.typesafe.config.{Config, ConfigFactory}
 import io.prometheus.client.CollectorRegistry
-import org.mockito.Matchers.{eq => mockitoEq, _}
+import org.mockito.ArgumentMatchers.{any, anyString, argThat, eq => mockitoEq}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.slf4j.LoggerFactory
 
+import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -869,7 +870,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           "initialIngredient" -> initialIngredientValue,
           "interactionOneIngredient" -> interactionOneIngredientValue)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
-        _ = verifyZeroInteractions(testInteractionOneMock)
+        _ = verifyNoMoreInteractions(testInteractionOneMock)
       } yield succeed
     }
 

@@ -29,10 +29,10 @@ object BakerEventsSpec extends LazyLogging {
 
   def expectMsgInAnyOrderPF[Out](testProbe: TestProbe, pfs: PartialFunction[Any, Out]*): Unit = {
     if (pfs.nonEmpty) {
-      val total = pfs.reduce((a, b) ⇒ a.orElse(b))
+      val total = pfs.reduce((a, b) => a.orElse(b))
       testProbe.expectMsgPF() {
-        case msg if total.isDefinedAt(msg) ⇒
-          val index = pfs.indexWhere(pf ⇒ pf.isDefinedAt(msg))
+        case msg if total.isDefinedAt(msg) =>
+          val index = pfs.indexWhere(pf => pf.isDefinedAt(msg))
           pfs(index)(msg)
           expectMsgInAnyOrderPF[Out](testProbe, pfs.take(index) ++ pfs.drop(index + 1): _*)
       }

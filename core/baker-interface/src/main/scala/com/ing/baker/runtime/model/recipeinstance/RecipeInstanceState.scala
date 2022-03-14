@@ -83,7 +83,7 @@ case class RecipeInstanceState(
       }
 
     val enabled  = enabledParameters(availableMarkings)
-    val canFire = enabled.filter { case (transition, _) ⇒
+    val canFire = enabled.filter { case (transition, _) =>
       !hasFailed(transition) && canBeFiredAutomatically(transition)
     }
     val executions = canFire.map {
@@ -129,7 +129,7 @@ case class RecipeInstanceState(
   protected def availableMarkings: Marking[Place] = {
     val reservedMarkings =
       executions
-        .map { case (_, execution) ⇒ execution.consume }
+        .map { case (_, execution) => execution.consume }
         .reduceOption(_ |+| _)
         .getOrElse(Marking.empty)
     marking |-| reservedMarkings
@@ -144,22 +144,22 @@ case class RecipeInstanceState(
     def consumableMarkings(transition: Transition): Iterable[Marking[Place]] = {
       // TODO this is not the most efficient, should break early when consumable tokens < edge weight
       val consumable = recipe.petriNet.inMarking(transition).map {
-        case (place, count) ⇒
+        case (place, count) =>
           val edge = recipe.petriNet.findPTEdge(place, transition).map(_.asInstanceOf[Edge]).get
           val consumableTokens = ofMarking.get(place) match {
-            case None ⇒
+            case None =>
               MultiSet.empty
-            case Some(tokens) ⇒
-              tokens.filter { case (e, _) ⇒ edge.isAllowed(e) }
+            case Some(tokens) =>
+              tokens.filter { case (e, _) => edge.isAllowed(e) }
           }
           (place, count, consumableTokens)
       }
       // check if any any places have an insufficient number of tokens
-      if (consumable.exists { case (_, count, tokens) ⇒ tokens.multisetSize < count })
+      if (consumable.exists { case (_, count, tokens) => tokens.multisetSize < count })
         Seq.empty
       else {
         val consume = consumable.map {
-          case (place, count, tokens) ⇒ place -> MultiSet.copyOff[Any](tokens.allElements.take(count))
+          case (place, count, tokens) => place -> MultiSet.copyOff[Any](tokens.allElements.take(count))
         }.toMarking
         // TODO lazily compute all permutations instead of only providing the first result
         Seq(consume)
@@ -168,6 +168,6 @@ case class RecipeInstanceState(
 
     recipe.petriNet.transitions
       .filter(consumableMarkings(_).nonEmpty)
-      .map(transition ⇒ transition -> consumableMarkings(transition)).toMap
+      .map(transition => transition -> consumableMarkings(transition)).toMap
   }
 }
