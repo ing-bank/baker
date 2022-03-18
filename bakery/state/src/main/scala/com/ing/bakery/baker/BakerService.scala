@@ -18,7 +18,7 @@ import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import io.prometheus.client.CollectorRegistry
 import org.http4s.metrics.prometheus.Prometheus
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.middleware.{CORS, Logger, Metrics}
 import org.http4s.server.{Router, Server}
 import org.slf4j.LoggerFactory
