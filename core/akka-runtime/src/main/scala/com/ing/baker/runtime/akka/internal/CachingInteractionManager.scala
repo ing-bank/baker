@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.akka.internal
 
-import cats.effect.concurrent.Ref
-import cats.effect.{ContextShift, IO, Resource, Sync}
+import cats.effect.{IO, Resource, Sync}
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
@@ -11,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
 import scala.compat.java8.FunctionConverters._
 import scala.concurrent.ExecutionContext
+import cats.effect.Ref
 
 object CachingInteractionManager {
 

@@ -4,7 +4,7 @@ import java.io.File
 
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.{ActorBasedRecipeManager, DefaultRecipeManager, RecipeManager}
@@ -15,6 +15,7 @@ import io.prometheus.client.CollectorRegistry
 import org.http4s.metrics.prometheus.Prometheus
 
 import scala.concurrent.ExecutionContext
+import cats.effect.Temporal
 
 case class Bakery(baker: Baker,
                  executionContext: ExecutionContext,
@@ -40,7 +41,7 @@ object Bakery extends LazyLogging {
     implicit val system: ActorSystem = ActorSystem("baker", config)
     implicit val executionContext: ExecutionContext = system.dispatcher
     implicit val cs: ContextShift[IO] = IO.contextShift(executionContext)
-    implicit val timer: Timer[IO] = IO.timer(executionContext)
+    implicit val timer: Temporal[IO] = IO.timer(executionContext)
     for {
       maybeCassandra <- Cassandra.resource(config, system)
       _ <- Watcher.resource(config, system, maybeCassandra)
@@ -57,7 +58,7 @@ object Bakery extends LazyLogging {
         bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config))(system))
       _ <- Resource.make(IO{baker})(baker => IO.fromFuture(IO(baker.gracefulShutdown)))
       _ <- Resource.eval(eventSink.attach(baker))
-      _ <- Resource.eval(IO.async[Unit] { callback =>
+      _ <- Resource.eval(IO.async_[Unit] { callback =>
         //If using local Baker the registerOnMemberUp is never called, should onl be used during local testing.
         if (config.getString("baker.actor.provider") == "local")
           callback(Right(()))
