@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.akka.actor
 
 import akka.actor.{ActorRef, ActorSystem}
+import akka.pattern.{BackoffOpts, BackoffSupervisor}
 import cats.effect.IO
 import com.ing.baker.runtime.akka.AkkaBakerConfig
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex
@@ -25,14 +26,21 @@ class LocalBakerActorProvider(
   override def createProcessIndexActor(interactionManager: InteractionManager[IO], recipeManager: RecipeManager)(
     implicit actorSystem: ActorSystem): ActorRef = {
     actorSystem.actorOf(
-      ProcessIndex.props(
-        actorIdleTimeout,
-        Some(retentionCheckInterval),
-        configuredEncryption,
-        interactionManager,
-        recipeManager,
-        ingredientsFilter
-      ))
+      BackoffSupervisor.props(
+        BackoffOpts
+          .onStop(
+            ProcessIndex.props(
+              actorIdleTimeout,
+              Some(retentionCheckInterval),
+              configuredEncryption,
+              interactionManager,
+              recipeManager,
+              ingredientsFilter),
+            childName = "ProcessIndexActor",
+            minBackoff = 1 seconds,
+            maxBackoff = 10 seconds,
+            randomFactor = 0))
+      )
   }
 
   override def getAllProcessesMetadata(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata] = {

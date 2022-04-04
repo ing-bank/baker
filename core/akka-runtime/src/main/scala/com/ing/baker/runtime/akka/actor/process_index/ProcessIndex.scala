@@ -2,7 +2,7 @@ package com.ing.baker.runtime.akka.actor.process_index
 
 import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, Terminated}
 import akka.event.{DiagnosticLoggingAdapter, Logging}
-import akka.pattern.ask
+import akka.pattern.{BackoffOpts, BackoffSupervisor, ask}
 import akka.persistence._
 import akka.sensors.actor.PersistentActorMetrics
 import cats.data.{EitherT, OptionT}
@@ -16,7 +16,7 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceRuntime}
+import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol, ProcessInstanceRuntime}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
@@ -156,13 +156,25 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream)
 
     val processActorProps =
-      ProcessInstance.props[Place, Transition, RecipeInstanceState, EventInstance](
-        compiledRecipe.name, compiledRecipe.petriNet, runtime,
-        ProcessInstance.Settings(
-          executionContext = bakerExecutionContext,
-          encryption = configuredEncryption,
-          idleTTL = recipeInstanceIdleTimeout,
-          ingredientsFilter = ingredientsFilter))
+      BackoffSupervisor.props(
+        BackoffOpts.onStop(
+          ProcessInstance.props[Place, Transition, RecipeInstanceState, EventInstance](
+            compiledRecipe.name,
+            compiledRecipe.petriNet,
+            runtime,
+            ProcessInstance.Settings(
+              executionContext = bakerExecutionContext,
+              encryption = configuredEncryption,
+              idleTTL = recipeInstanceIdleTimeout,
+              ingredientsFilter = ingredientsFilter)
+          )
+          ,
+          childName = recipeInstanceId,
+          minBackoff = 1 seconds,
+          maxBackoff = 10 seconds,
+          randomFactor = 0)
+          .withFinalStopMessage(_.isInstanceOf[ProcessInstanceProtocol.Stop])
+      )
 
     val processActor = context.actorOf(props = processActorProps, name = recipeInstanceId)
     context.watch(processActor)

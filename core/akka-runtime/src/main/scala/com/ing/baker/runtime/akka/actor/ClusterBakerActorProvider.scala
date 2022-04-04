@@ -6,6 +6,7 @@ import akka.cluster.sharding.ShardRegion._
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
+import akka.pattern.{BackoffOpts, BackoffSupervisor}
 import akka.util.Timeout
 import cats.data.NonEmptyList
 import cats.effect.IO
@@ -99,7 +100,23 @@ class ClusterBakerActorProvider(
     val roles = Cluster(actorSystem).selfRoles
     ClusterSharding(actorSystem).start(
       typeName = "ProcessIndexActor",
-      entityProps = ProcessIndex.props(actorIdleTimeout, Some(retentionCheckInterval), configuredEncryption, interactionManager, recipeManager, ingredientsFilter),
+      entityProps =
+        BackoffSupervisor.props(
+          BackoffOpts
+            .onStop(
+              ProcessIndex.props(
+                actorIdleTimeout,
+                Some(retentionCheckInterval),
+                configuredEncryption,
+                interactionManager,
+                recipeManager,
+                ingredientsFilter),
+              childName = "ProcessIndexActor",
+              minBackoff = 1 seconds,
+              maxBackoff = 10 seconds,
+              randomFactor = 0)
+//            .withFinalStopMessage(_ == StopMessage)
+        ),
       settings = {
         if (roles.contains("state-node"))
           ClusterShardingSettings(actorSystem).withRole("state-node")
