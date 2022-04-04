@@ -27,6 +27,7 @@ import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.Value
+import com.typesafe.config.Config
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -106,9 +107,16 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   import context.dispatcher
 
-  private val snapShotInterval: Int = context.system.settings.config.getInt("baker.actor.snapshot-interval")
-  private val processInquireTimeout: FiniteDuration = context.system.settings.config.getDuration("baker.process-inquire-timeout").toScala
-  private val updateCacheTimeout: FiniteDuration =  context.system.settings.config.getDuration("baker.process-index-update-cache-timeout").toScala
+  private val config: Config = context.system.settings.config
+
+  private val snapShotInterval: Int = config.getInt("baker.actor.snapshot-interval")
+
+  private val processInquireTimeout: FiniteDuration = config.getDuration("baker.process-inquire-timeout").toScala
+  private val updateCacheTimeout: FiniteDuration =  config.getDuration("baker.process-index-update-cache-timeout").toScala
+
+  private val restartMinBackoff: FiniteDuration =  config.getDuration("baker.process-instance.restart-minBackoff").toScala
+  private val restartMaxBackoff: FiniteDuration =  config.getDuration("baker.process-instance.restart-maxBackoff").toScala
+  private val restartRandomFactor: Double =  config.getDouble("baker.process-instance.restart-randomFactor")
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
   private val recipeCache: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
@@ -170,9 +178,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           )
           ,
           childName = recipeInstanceId,
-          minBackoff = 1 seconds,
-          maxBackoff = 10 seconds,
-          randomFactor = 0)
+          minBackoff = restartMinBackoff,
+          maxBackoff = restartMaxBackoff,
+          randomFactor = restartRandomFactor)
           .withFinalStopMessage(_.isInstanceOf[ProcessInstanceProtocol.Stop])
       )
 

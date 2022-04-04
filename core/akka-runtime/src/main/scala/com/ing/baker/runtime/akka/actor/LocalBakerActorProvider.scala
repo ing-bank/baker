@@ -10,6 +10,8 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{GetI
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.serialization.Encryption
+import com.typesafe.config.Config
+import com.ing.baker.runtime.akka._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -23,8 +25,13 @@ class LocalBakerActorProvider(
                              ) extends BakerActorProvider {
   override def initialize(implicit system: ActorSystem): Unit = Unit
 
-  override def createProcessIndexActor(interactionManager: InteractionManager[IO], recipeManager: RecipeManager)(
+  override def createProcessIndexActor(interactionManager: InteractionManager[IO], recipeManager: RecipeManager, config: Config)(
     implicit actorSystem: ActorSystem): ActorRef = {
+
+    val restartMinBackoff: FiniteDuration =  config.getDuration("baker.process-index.restart-minBackoff").toScala
+    val restartMaxBackoff: FiniteDuration =  config.getDuration("baker.process-index.restart-maxBackoff").toScala
+    val restartRandomFactor: Double =  config.getDouble("baker.process-index.restart-randomFactor")
+
     actorSystem.actorOf(
       BackoffSupervisor.props(
         BackoffOpts
@@ -37,9 +44,9 @@ class LocalBakerActorProvider(
               recipeManager,
               ingredientsFilter),
             childName = "ProcessIndexActor",
-            minBackoff = 1 seconds,
-            maxBackoff = 10 seconds,
-            randomFactor = 0))
+            minBackoff = restartMinBackoff,
+            maxBackoff = restartMaxBackoff,
+            randomFactor = restartRandomFactor))
       )
   }
 
