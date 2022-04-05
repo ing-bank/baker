@@ -4,7 +4,7 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 
-import cats.effect.{ContextShift, IO}
+import cats.effect.IO
 import cats.~>
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.{common, javadsl, model, scaladsl}
@@ -55,7 +55,7 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
     )
   }
 
-  def asEffectful(implicit cs: ContextShift[IO]): common.InteractionInstance[IO] = {
+  def asEffectful: common.InteractionInstance[IO] = {
     model.InteractionInstance.build(
       name,
       input.asScala.map(input => input.asScala).toIndexedSeq,

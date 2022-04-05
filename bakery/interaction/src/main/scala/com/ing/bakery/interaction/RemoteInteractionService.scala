@@ -1,7 +1,7 @@
 package com.ing.bakery.interaction
 
 import java.net.{InetSocketAddress, URLEncoder}
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.scaladsl.{IngredientInstance, InteractionInstance}
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs.interactionsCodec
 import com.ing.baker.runtime.serialization.{InteractionExecution => I}
@@ -28,6 +28,7 @@ import com.ing.baker.runtime.serialization.JsonDecoders._
 import java.util.concurrent.CompletableFuture
 import scala.collection.JavaConverters
 import scala.compat.java8.FutureConverters._
+import cats.effect.Temporal
 
 object RemoteInteractionService {
 
@@ -38,7 +39,7 @@ object RemoteInteractionService {
                interactionPerTypeMetricsEnabled: Boolean = true,
                metricsPort: Int = 9096,
                metricsEnabled: Boolean = false,
-               apiUrlPrefix: String = "/api/bakery/interactions")(implicit timer: Timer[IO], cs: ContextShift[IO], executionContext: ExecutionContext): Resource[IO, Server[IO]] = {
+               apiUrlPrefix: String = "/api/bakery/interactions")(implicit timer: Temporal[IO], executionContext: ExecutionContext): Resource[IO, Server[IO]] = {
 
     val idToNameMap = interactions.map(i => URLEncoder.encode(i.shaBase64, "UTF-8").take(8) -> i.name).toMap
 
@@ -86,7 +87,7 @@ abstract class InteractionExecutor extends LazyLogging {
   def interactions: List[InteractionInstance]
   def executionContext: ExecutionContext
   implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
-  implicit val timer: Timer[IO] = IO.timer(executionContext)
+  implicit val timer: Temporal[IO] = IO.timer(executionContext)
 
   protected val CurrentInteractions: I.Interactions =
     I.Interactions(System.currentTimeMillis,
