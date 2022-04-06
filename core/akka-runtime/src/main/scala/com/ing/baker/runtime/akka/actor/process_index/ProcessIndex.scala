@@ -110,11 +110,11 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
 
   override def preStart(): Unit = {
-    log.info("ProcessIndex started")
+    log.debug("ProcessIndex started")
   }
 
   override def postStop(): Unit = {
-    log.info("ProcessIndex stopped")
+    log.debug("ProcessIndex stopped")
   }
 
   import context.dispatcher
