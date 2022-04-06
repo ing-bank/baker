@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, ReceiveTimeout, Terminated}
+import akka.actor.{ActorRef, ActorSystem, NoSerializationVerificationNeeded, Props, ReceiveTimeout, Terminated}
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.{BackoffOpts, BackoffSupervisor, ask}
@@ -93,6 +93,8 @@ object ProcessIndex {
   // Used for creating a snapshot of the index.
   case class ProcessIndexSnapShot(index: Map[String, ActorMetadata]) extends BakerSerializable
 
+  case object StopProcessIndexShard extends BakerSerializable
+
   private val bakerExecutionContext: ExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
 }
 
@@ -106,7 +108,17 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(logSource = this)
 
+
+  override def preStart(): Unit = {
+    log.info("ProcessIndex started")
+  }
+
+  override def postStop(): Unit = {
+    log.info("ProcessIndex stopped")
+  }
+
   import context.dispatcher
+
 
   private val config: Config = context.system.settings.config
 
@@ -484,6 +496,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     case Passivate(ProcessInstanceProtocol.Stop) =>
       context.stop(sender())
 
+    case StopProcessIndexShard =>
+      log.debug("StopProcessIndexShard received, stopping self")
+      context.stop(self)
+
     case cmd =>
       log.error(s"Unrecognized command $cmd")
   }
@@ -523,4 +539,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   }
 
   override def persistenceId: String = self.path.name
+
+  override def onPersistFailure(cause: Throwable, event: Any, seqNr: Id): Unit = {
+    super.onPersistFailure(cause, event, seqNr)
+    log.debug("Failure of persisting event in ProcessIndex")
+  }
 }

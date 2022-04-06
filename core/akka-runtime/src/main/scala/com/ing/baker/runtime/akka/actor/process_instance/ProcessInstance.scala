@@ -70,6 +70,14 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
 
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
+  override def preStart(): Unit = {
+    log.debug("ProcessInstance started")
+  }
+
+  override def postStop(): Unit = {
+    log.debug("ProcessInstance stopped")
+  }
+
   val recipeInstanceId = context.self.path.name
 
   val executor = runtime.jobExecutor(petriNet)
