@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, Terminated}
+import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, ReceiveTimeout, Terminated}
+import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.{BackoffOpts, BackoffSupervisor, ask}
 import akka.persistence._
@@ -175,8 +176,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
               encryption = configuredEncryption,
               idleTTL = recipeInstanceIdleTimeout,
               ingredientsFilter = ingredientsFilter)
-          )
-          ,
+          ),
           childName = recipeInstanceId,
           minBackoff = restartMinBackoff,
           maxBackoff = restartMaxBackoff,
@@ -480,6 +480,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           }
         case None => sender() ! NoSuchProcess(recipeInstanceId)
       }
+
+    case Passivate(ProcessInstanceProtocol.Stop) =>
+      context.stop(sender())
+
     case cmd =>
       log.error(s"Unrecognized command $cmd")
   }
