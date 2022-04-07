@@ -1,8 +1,9 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, Terminated}
+import akka.actor.{ActorRef, ActorSystem, NoSerializationVerificationNeeded, Props, ReceiveTimeout, Terminated}
+import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.{DiagnosticLoggingAdapter, Logging}
-import akka.pattern.ask
+import akka.pattern.{BackoffOpts, BackoffSupervisor, ask}
 import akka.persistence._
 import akka.sensors.actor.PersistentActorMetrics
 import cats.data.{EitherT, OptionT}
@@ -16,7 +17,7 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceRuntime}
+import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol, ProcessInstanceRuntime}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
@@ -27,6 +28,7 @@ import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.Value
+import com.typesafe.config.Config
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -91,6 +93,8 @@ object ProcessIndex {
   // Used for creating a snapshot of the index.
   case class ProcessIndexSnapShot(index: Map[String, ActorMetadata]) extends BakerSerializable
 
+  case object StopProcessIndexShard extends BakerSerializable
+
   private val bakerExecutionContext: ExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
 }
 
@@ -104,11 +108,28 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(logSource = this)
 
+
+  override def preStart(): Unit = {
+    log.debug("ProcessIndex started")
+  }
+
+  override def postStop(): Unit = {
+    log.debug("ProcessIndex stopped")
+  }
+
   import context.dispatcher
 
-  private val snapShotInterval: Int = context.system.settings.config.getInt("baker.actor.snapshot-interval")
-  private val processInquireTimeout: FiniteDuration = context.system.settings.config.getDuration("baker.process-inquire-timeout").toScala
-  private val updateCacheTimeout: FiniteDuration =  context.system.settings.config.getDuration("baker.process-index-update-cache-timeout").toScala
+
+  private val config: Config = context.system.settings.config
+
+  private val snapShotInterval: Int = config.getInt("baker.actor.snapshot-interval")
+
+  private val processInquireTimeout: FiniteDuration = config.getDuration("baker.process-inquire-timeout").toScala
+  private val updateCacheTimeout: FiniteDuration =  config.getDuration("baker.process-index-update-cache-timeout").toScala
+
+  private val restartMinBackoff: FiniteDuration =  config.getDuration("baker.process-instance.restart-minBackoff").toScala
+  private val restartMaxBackoff: FiniteDuration =  config.getDuration("baker.process-instance.restart-maxBackoff").toScala
+  private val restartRandomFactor: Double =  config.getDouble("baker.process-instance.restart-randomFactor")
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
   private val recipeCache: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
@@ -156,13 +177,24 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream)
 
     val processActorProps =
-      ProcessInstance.props[Place, Transition, RecipeInstanceState, EventInstance](
-        compiledRecipe.name, compiledRecipe.petriNet, runtime,
-        ProcessInstance.Settings(
-          executionContext = bakerExecutionContext,
-          encryption = configuredEncryption,
-          idleTTL = recipeInstanceIdleTimeout,
-          ingredientsFilter = ingredientsFilter))
+      BackoffSupervisor.props(
+        BackoffOpts.onStop(
+          ProcessInstance.props[Place, Transition, RecipeInstanceState, EventInstance](
+            compiledRecipe.name,
+            compiledRecipe.petriNet,
+            runtime,
+            ProcessInstance.Settings(
+              executionContext = bakerExecutionContext,
+              encryption = configuredEncryption,
+              idleTTL = recipeInstanceIdleTimeout,
+              ingredientsFilter = ingredientsFilter)
+          ),
+          childName = recipeInstanceId,
+          minBackoff = restartMinBackoff,
+          maxBackoff = restartMaxBackoff,
+          randomFactor = restartRandomFactor)
+          .withFinalStopMessage(_.isInstanceOf[ProcessInstanceProtocol.Stop])
+      )
 
     val processActor = context.actorOf(props = processActorProps, name = recipeInstanceId)
     context.watch(processActor)
@@ -460,6 +492,14 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           }
         case None => sender() ! NoSuchProcess(recipeInstanceId)
       }
+
+    case Passivate(ProcessInstanceProtocol.Stop) =>
+      context.stop(sender())
+
+    case StopProcessIndexShard =>
+      log.debug("StopProcessIndexShard received, stopping self")
+      context.stop(self)
+
     case cmd =>
       log.error(s"Unrecognized command $cmd")
   }
@@ -499,4 +539,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   }
 
   override def persistenceId: String = self.path.name
+
+  override def onPersistFailure(cause: Throwable, event: Any, seqNr: Id): Unit = {
+    super.onPersistFailure(cause, event, seqNr)
+    log.debug("Failure of persisting event in ProcessIndex")
+  }
 }

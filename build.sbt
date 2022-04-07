@@ -57,6 +57,9 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
   libraryDependencies ++= Seq(
     snakeYaml,
     jacksonDatabind,
+    jacksonCore,
+    jawnParser,
+    nettyHandler,
     bouncyCastleBcprov,
     bouncyCastleBcpkix
   ),
@@ -68,6 +71,9 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
     jnrConstants,
     snakeYaml,
     jacksonDatabind,
+    jacksonCore,
+    jawnParser,
+    nettyHandler,
     bouncyCastleBcprov,
     bouncyCastleBcpkix
   )
@@ -157,6 +163,10 @@ lazy val `baker-akka-runtime`: Project = project.in(file("core/akka-runtime"))
         akkaClusterBoostrap,
         akkaDiscovery,
         akkaInmemoryJournal,
+        akkaActorTyped,
+        akkaClusterTyped,
+        akkaPersistenceTyped,
+        akkaStreamTyped,
         akkaSlf4j,
         ficusConfig,
         catsCore,

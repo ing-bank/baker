@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.actor
 import akka.actor.{ActorRef, ActorSystem, Address}
 import akka.cluster.Cluster
 import akka.cluster.sharding.ShardRegion._
-import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardCoordinator, ShardRegion}
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
 import akka.util.Timeout
@@ -12,13 +12,14 @@ import cats.effect.IO
 import com.ing.baker.il.sha256HashCode
 import com.ing.baker.runtime.akka.AkkaBakerConfig
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider._
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.{ActorMetadata, StopProcessIndexShard}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_index._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.serialization.Encryption
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.duration._
@@ -95,19 +96,35 @@ class ClusterBakerActorProvider(
 
 
   override def createProcessIndexActor(interactionManager: InteractionManager[IO],
-                                       recipeManager: RecipeManager)(implicit actorSystem: ActorSystem): ActorRef = {
+                                       recipeManager: RecipeManager,
+                                       config: Config)(implicit actorSystem: ActorSystem): ActorRef = {
+
     val roles = Cluster(actorSystem).selfRoles
+
+    val clusterShardingSettings: ClusterShardingSettings = {
+      if (roles.contains("state-node"))
+        ClusterShardingSettings(actorSystem).withRole("state-node")
+      else
+        ClusterShardingSettings(actorSystem)
+    }
+
     ClusterSharding(actorSystem).start(
       typeName = "ProcessIndexActor",
-      entityProps = ProcessIndex.props(actorIdleTimeout, Some(retentionCheckInterval), configuredEncryption, interactionManager, recipeManager, ingredientsFilter),
-      settings = {
-        if (roles.contains("state-node"))
-          ClusterShardingSettings(actorSystem).withRole("state-node")
-        else
-          ClusterShardingSettings(actorSystem)
-      },
+      entityProps =
+              ProcessIndex.props(
+                actorIdleTimeout,
+                Some(retentionCheckInterval),
+                configuredEncryption,
+                interactionManager,
+                recipeManager,
+                ingredientsFilter),
+      settings = clusterShardingSettings,
       extractEntityId = ClusterBakerActorProvider.entityIdExtractor(nrOfShards),
-      extractShardId = ClusterBakerActorProvider.shardIdExtractor(nrOfShards)
+      extractShardId = ClusterBakerActorProvider.shardIdExtractor(nrOfShards),
+      allocationStrategy = ShardCoordinator.leastShardAllocationStrategy(
+        clusterShardingSettings.tuningParameters.leastShardAllocationAbsoluteLimit,
+        clusterShardingSettings.tuningParameters.leastShardAllocationRelativeLimit),
+      handOffStopMessage = StopProcessIndexShard
     )
   }
 

@@ -136,7 +136,6 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       watch(actor)
       actor ! GetState
       expectMsgClass(classOf[Uninitialized])
-      expectMsgClass(classOf[Terminated])
     }
 
     "After being initialized respond with an InstanceState message on receiving a GetState command" in new TestSequenceNet {
@@ -598,8 +597,6 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       petriNetActor ! Initialize(initialMarking, null)
       expectMsgClass(classOf[Initialized])
-
-      expectMsgClass(classOf[Terminated])
     }
 
     "fire automated transitions in parallel when possible" in new StateTransitionNet[Unit, Unit] {

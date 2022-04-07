@@ -107,6 +107,8 @@ public class BakerTest {
 
     @Test
     public void shouldExecuteCompleteFlow() throws BakerException, ExecutionException, InterruptedException {
+        actorSystem.terminate();
+        actorSystem = ActorSystem.apply("shouldExecuteCompleteFlow");
 
         Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
 

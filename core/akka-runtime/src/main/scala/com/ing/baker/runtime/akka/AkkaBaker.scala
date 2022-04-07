@@ -82,7 +82,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     config.recipeManager
 
   private val processIndexActor: ActorRef =
-    config.bakerActorProvider.createProcessIndexActor(config.interactions, recipeManager)
+    config.bakerActorProvider.createProcessIndexActor(config.interactions, recipeManager, system.settings.config)
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.

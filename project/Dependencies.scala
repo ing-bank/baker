@@ -3,7 +3,7 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.6.18"
+  val akkaVersion = "2.6.19"
   val akkaManagementVersion = "1.1.3"
   val akkaPersistenceCassandraVersion = "1.0.5"
   val akkaHttpVersion = "10.2.7"
@@ -28,7 +28,7 @@ object Dependencies {
   val scalaTest = "org.scalatest" %% "scalatest" % "3.2.11"
   val mockitoScala = "org.mockito" %% "mockito-scala" % mockitoScalaVersion
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
-  val mockServer = "org.mock-server" % "mockserver-netty" % "5.11.2"
+  val mockServer = "org.mock-server" % "mockserver-netty" % "5.13.2"
   val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
   val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.8.2"
 
@@ -49,6 +49,10 @@ object Dependencies {
   val akkaStreamTestKit = "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion
   val akkaMultiNodeTestkit = "com.typesafe.akka" %% "akka-multi-node-testkit" % akkaVersion
   val akkaPki = "com.typesafe.akka" %% "akka-pki" % akkaVersion
+  val akkaActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
+  val akkaClusterTyped = "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion
+  val akkaPersistenceTyped = "com.typesafe.akka" %% "akka-persistence-typed" % akkaVersion
+  val akkaStreamTyped = "com.typesafe.akka" %% "akka-stream-typed" % akkaVersion
   val akkaHttpSprayJson = "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion
   val akkaManagementHttp = "com.lightbend.akka.management" %% "akka-management-cluster-http" % akkaManagementVersion
   val akkaClusterBoostrap = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
@@ -129,7 +133,12 @@ object Dependencies {
   val springBootStarter = "org.springframework.boot" % "spring-boot-starter" % springBootVersion
 
   val snakeYaml = "org.yaml" % "snakeyaml" % "1.30"
-  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.1"
+
+  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.2.1"
+  val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.13.2"
+  val jawnParser = "org.typelevel" %% "jawn-parser" % "1.3.2"
+  val nettyHandler = "io.netty" % "netty-handler" % "4.1.75.Final"
+
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.70"
   val bouncyCastleBcpkix ="org.bouncycastle" % "bcpkix-jdk15on" % "1.70"
 

@@ -1,10 +1,10 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
 import akka.actor._
+import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import cats.effect.IO
-import cats.syntax.apply._
 import com.ing.baker.il.petrinet.Transition
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
@@ -31,7 +31,7 @@ object ProcessInstance {
                       encryption: Encryption,
                       ingredientsFilter: Seq[String])
 
-  private case class IdleStop(seq: Long) extends NoSerializationVerificationNeeded
+  case class IdleStop(seq: Long) extends NoSerializationVerificationNeeded
 
   def persistenceIdPrefix(processType: String) = s"process-$processType-"
 
@@ -70,6 +70,14 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
 
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
+  override def preStart(): Unit = {
+    log.debug("ProcessInstance started")
+  }
+
+  override def postStop(): Unit = {
+    log.debug("ProcessInstance stopped")
+  }
+
   val recipeInstanceId = context.self.path.name
 
   val executor = runtime.jobExecutor(petriNet)
@@ -105,6 +113,10 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     case internal.ExceptionStrategy.Continue(marking, output) => protocol.ExceptionStrategy.Continue(marking.asInstanceOf[Marking[P]].marshall, output)
   }
 
+  private def stopMe(): Unit = {
+    context.parent ! Passivate(ProcessInstanceProtocol.Stop)
+  }
+
   def uninitialized: Receive = {
     case Initialize(initialMarking, state) =>
 
@@ -127,24 +139,24 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       }
 
     case Stop(_) =>
-      context.stop(context.self)
+      log.info("Stop called in uninitialized")
+      context.stop(self)
 
     case c: Command =>
       log.warning(s"Received unexpected command in uninitialized state: ${c.getClass.getName}")
       sender() ! Uninitialized(recipeInstanceId)
-      context.stop(context.self)
+      stopMe()
 
     case ReceiveTimeout =>
       log.warning(s"${persistenceId}: Receive timeout received in uninitialized state")
-      context.stop(context.self)
+      stopMe()
   }
 
   def waitForDeleteConfirmation(instance: Instance[P, T, S]): Receive = {
     case DeleteMessagesSuccess(toSequenceNr) =>
-
       log.processHistoryDeletionSuccessful(recipeInstanceId, toSequenceNr)
+      context.stop(self)
 
-      context.stop(context.self)
     case DeleteMessagesFailure(cause, toSequenceNr) =>
       log.processHistoryDeletionFailed(recipeInstanceId, toSequenceNr, cause)
       context become running(instance, Map.empty)
@@ -172,18 +184,18 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
         deleteMessages(lastSequenceNr)
         context become waitForDeleteConfirmation(instance)
       } else
-        context.stop(context.self)
+        context.stop(self)
 
     case IdleStop(n) =>
       if (n == instance.sequenceNr && instance.activeJobs.isEmpty) {
         log.idleStop(recipeInstanceId, settings.idleTTL.getOrElse(Duration.Zero))
-        context.stop(context.self)
+        stopMe()
       }
 
     case ReceiveTimeout =>
       if (instance.activeJobs.isEmpty) {
         log.warning(s"Process $persistenceId has been stopped by idle timeout")
-        context.stop(context.self)
+        stopMe()
       } else {
         log.warning("Receive timeout happened but jobs are still active: will wait for another receive timeout")
       }
