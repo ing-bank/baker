@@ -57,6 +57,9 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
   libraryDependencies ++= Seq(
     snakeYaml,
     jacksonDatabind,
+    jacksonCore,
+    jawnParser,
+    nettyHandler,
     bouncyCastleBcprov,
     bouncyCastleBcpkix
   ),
@@ -68,6 +71,9 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
     jnrConstants,
     snakeYaml,
     jacksonDatabind,
+    jacksonCore,
+    jawnParser,
+    nettyHandler,
     bouncyCastleBcprov,
     bouncyCastleBcpkix
   )

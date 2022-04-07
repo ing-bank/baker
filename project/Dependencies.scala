@@ -28,7 +28,7 @@ object Dependencies {
   val scalaTest = "org.scalatest" %% "scalatest" % "3.2.11"
   val mockitoScala = "org.mockito" %% "mockito-scala" % mockitoScalaVersion
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
-  val mockServer = "org.mock-server" % "mockserver-netty" % "5.11.2"
+  val mockServer = "org.mock-server" % "mockserver-netty" % "5.13.2"
   val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
   val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.8.2"
 
@@ -133,7 +133,12 @@ object Dependencies {
   val springBootStarter = "org.springframework.boot" % "spring-boot-starter" % springBootVersion
 
   val snakeYaml = "org.yaml" % "snakeyaml" % "1.30"
-  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.1"
+
+  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.2.1"
+  val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.13.2"
+  val jawnParser = "org.typelevel" %% "jawn-parser" % "1.3.2"
+  val nettyHandler = "io.netty" % "netty-handler" % "4.1.75.Final"
+
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.70"
   val bouncyCastleBcpkix ="org.bouncycastle" % "bcpkix-jdk15on" % "1.70"
 
