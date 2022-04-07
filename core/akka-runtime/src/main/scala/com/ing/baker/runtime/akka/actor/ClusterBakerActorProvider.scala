@@ -3,17 +3,16 @@ package com.ing.baker.runtime.akka.actor
 import akka.actor.{ActorRef, ActorSystem, Address}
 import akka.cluster.Cluster
 import akka.cluster.sharding.ShardRegion._
-import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardCoordinator, ShardRegion}
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
-import akka.pattern.{BackoffOpts, BackoffSupervisor}
 import akka.util.Timeout
 import cats.data.NonEmptyList
 import cats.effect.IO
 import com.ing.baker.il.sha256HashCode
 import com.ing.baker.runtime.akka.AkkaBakerConfig
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider._
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.{ActorMetadata, StopProcessIndexShard}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_index._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
@@ -22,7 +21,6 @@ import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import com.ing.baker.runtime.akka._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, TimeoutException}
@@ -101,17 +99,18 @@ class ClusterBakerActorProvider(
                                        recipeManager: RecipeManager,
                                        config: Config)(implicit actorSystem: ActorSystem): ActorRef = {
 
-    val restartMinBackoff: FiniteDuration =  config.getDuration("baker.process-index.restart-minBackoff").toScala
-    val restartMaxBackoff: FiniteDuration =  config.getDuration("baker.process-index.restart-maxBackoff").toScala
-    val restartRandomFactor: Double =  config.getDouble("baker.process-index.restart-randomFactor")
-
     val roles = Cluster(actorSystem).selfRoles
+
+    val clusterShardingSettings: ClusterShardingSettings = {
+      if (roles.contains("state-node"))
+        ClusterShardingSettings(actorSystem).withRole("state-node")
+      else
+        ClusterShardingSettings(actorSystem)
+    }
+
     ClusterSharding(actorSystem).start(
       typeName = "ProcessIndexActor",
       entityProps =
-        BackoffSupervisor.props(
-          BackoffOpts
-            .onStop(
               ProcessIndex.props(
                 actorIdleTimeout,
                 Some(retentionCheckInterval),
@@ -119,19 +118,13 @@ class ClusterBakerActorProvider(
                 interactionManager,
                 recipeManager,
                 ingredientsFilter),
-              childName = "ProcessIndexActor",
-              minBackoff = restartMinBackoff,
-              maxBackoff = restartMaxBackoff,
-              randomFactor = restartRandomFactor)
-        ),
-      settings = {
-        if (roles.contains("state-node"))
-          ClusterShardingSettings(actorSystem).withRole("state-node")
-        else
-          ClusterShardingSettings(actorSystem)
-      },
+      settings = clusterShardingSettings,
       extractEntityId = ClusterBakerActorProvider.entityIdExtractor(nrOfShards),
-      extractShardId = ClusterBakerActorProvider.shardIdExtractor(nrOfShards)
+      extractShardId = ClusterBakerActorProvider.shardIdExtractor(nrOfShards),
+      allocationStrategy = ShardCoordinator.leastShardAllocationStrategy(
+        clusterShardingSettings.tuningParameters.leastShardAllocationAbsoluteLimit,
+        clusterShardingSettings.tuningParameters.leastShardAllocationRelativeLimit),
+      handOffStopMessage = StopProcessIndexShard
     )
   }
 

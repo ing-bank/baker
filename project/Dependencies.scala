@@ -3,7 +3,7 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.6.18"
+  val akkaVersion = "2.6.19"
   val akkaManagementVersion = "1.1.3"
   val akkaPersistenceCassandraVersion = "1.0.5"
   val akkaHttpVersion = "10.2.7"
@@ -49,6 +49,10 @@ object Dependencies {
   val akkaStreamTestKit = "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion
   val akkaMultiNodeTestkit = "com.typesafe.akka" %% "akka-multi-node-testkit" % akkaVersion
   val akkaPki = "com.typesafe.akka" %% "akka-pki" % akkaVersion
+  val akkaActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
+  val akkaClusterTyped = "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion
+  val akkaPersistenceTyped = "com.typesafe.akka" %% "akka-persistence-typed" % akkaVersion
+  val akkaStreamTyped = "com.typesafe.akka" %% "akka-stream-typed" % akkaVersion
   val akkaHttpSprayJson = "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion
   val akkaManagementHttp = "com.lightbend.akka.management" %% "akka-management-cluster-http" % akkaManagementVersion
   val akkaClusterBoostrap = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
