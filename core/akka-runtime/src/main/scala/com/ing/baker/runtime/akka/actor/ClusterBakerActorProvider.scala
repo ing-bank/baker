@@ -127,8 +127,9 @@ class ClusterBakerActorProvider(
       handOffStopMessage = StopProcessIndexShard
     )
 
-    //Trial
-    startAllIndexShard(index)(actorSystem, FiniteDuration.apply(10, "seconds"))
+    if(config.hasPath("baker.process-index.start-all-shards") && config.getBoolean("baker.process-index.start-all-shards")) {
+      startAllIndexShard(index)(actorSystem, FiniteDuration.apply(10, "seconds"))
+    }
 
     index
   }
