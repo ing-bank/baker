@@ -72,6 +72,7 @@ npm-debug.log
 yarn-error.log
 testem.log
 /typings
+/bakery/dashboard/package.json
 
 # System Files
 .DS_Store
