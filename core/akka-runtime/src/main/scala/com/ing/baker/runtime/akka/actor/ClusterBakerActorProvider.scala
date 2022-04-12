@@ -108,7 +108,7 @@ class ClusterBakerActorProvider(
         ClusterShardingSettings(actorSystem)
     }
 
-    ClusterSharding(actorSystem).start(
+    val index = ClusterSharding(actorSystem).start(
       typeName = "ProcessIndexActor",
       entityProps =
               ProcessIndex.props(
@@ -126,6 +126,27 @@ class ClusterBakerActorProvider(
         clusterShardingSettings.tuningParameters.leastShardAllocationRelativeLimit),
       handOffStopMessage = StopProcessIndexShard
     )
+
+    if(config.hasPath("baker.process-index.start-all-shards") && config.getBoolean("baker.process-index.start-all-shards")) {
+      startAllIndexShard(index)(actorSystem, FiniteDuration.apply(10, "seconds"))
+    }
+
+    index
+  }
+
+  def startAllIndexShard(actor: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[_] = {
+
+    import akka.pattern.ask
+    import system.dispatcher
+    implicit val akkaTimeout: Timeout = timeout
+
+    val futures = (0 until nrOfShards).map {
+      shard => actor.ask(ShardRegion.StartEntity(s"index-$shard"))
+    }
+
+    val collected = Util.collectFuturesWithin(futures, timeout, system.scheduler)
+
+    collected
   }
 
   def getAllProcessesMetadata(actor: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata] = {
@@ -134,7 +155,7 @@ class ClusterBakerActorProvider(
     import system.dispatcher
     implicit val akkaTimeout: Timeout = timeout
 
-    val futures = (0 to nrOfShards).map { shard => actor.ask(GetShardIndex(s"index-$shard")).mapTo[Index].map(_.entries) }
+    val futures = (0 until nrOfShards).map { shard => actor.ask(GetShardIndex(s"index-$shard")).mapTo[Index].map(_.entries) }
     val collected: Seq[ActorMetadata] = Util.collectFuturesWithin(futures, timeout, system.scheduler).flatten
 
     collected
