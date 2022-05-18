@@ -229,7 +229,8 @@ class JavaModulesSpec extends AnyWordSpecLike with Matchers {
       val complexPOJOExampleSeq = Seq(
         RecordField("simplePOJOExample", RecordType(simplePOJOExampleSeq)),
         RecordField("string", types.CharArray),
-        RecordField("boolean", types.Bool))
+        RecordField("boolean", types.Bool),
+        RecordField("upperboundRecord", types.ListType(RecordType(simplePOJOExampleSeq))))
 
       readJavaType[ComplexPOJOExample] shouldBe RecordType(complexPOJOExampleSeq)
     }
