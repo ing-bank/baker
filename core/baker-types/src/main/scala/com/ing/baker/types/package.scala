@@ -1,7 +1,6 @@
 package com.ing.baker
 
-import java.lang.reflect.ParameterizedType
-
+import java.lang.reflect.{ParameterizedType, WildcardType}
 import scala.reflect.runtime.universe
 
 package object types {
@@ -18,11 +17,17 @@ package object types {
   def getBaseClass(javaType: java.lang.reflect.Type): Class[_] = javaType match {
     case c: Class[_] => c
     case t: ParameterizedType => getBaseClass(t.getRawType)
-    case t @ _ => throw new IllegalArgumentException(s"Unsupported type: $javaType")
+    // wildcardType is used for kotlin lists
+    case wildcardType: WildcardType if wildcardType.getUpperBounds.length == 1 && wildcardType.getLowerBounds.isEmpty => getBaseClass(wildcardType.getUpperBounds.head)
+    case _ => throw new IllegalArgumentException(s"Unsupported type: $javaType")
   }
 
   def getTypeParameter(javaType: java.lang.reflect.Type, index: Int): java.lang.reflect.Type = {
-    javaType.asInstanceOf[ParameterizedType].getActualTypeArguments()(index)
+    javaType match {
+      case paremeterizedType : ParameterizedType => paremeterizedType.getActualTypeArguments()(index)
+      case wildcardType : WildcardType if wildcardType.getUpperBounds.length == 1 && wildcardType.getLowerBounds.isEmpty => wildcardType.getUpperBounds.head
+      case _ => throw new IllegalArgumentException(s"Unsupported type: $javaType")
+    }
   }
 
   def isAssignableToBaseClass(javaType: java.lang.reflect.Type, base: Class[_]) = base.isAssignableFrom(getBaseClass(javaType))
