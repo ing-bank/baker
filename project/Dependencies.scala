@@ -125,7 +125,7 @@ object Dependencies {
   val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.4"
   val scalaCheckPlus = "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0"
   val scalaCheckPlusMockito = "org.scalatestplus" %% "mockito-3-12" % "3.2.10.0"
-  val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
+  val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
 
 
   val springContext = "org.springframework" % "spring-context" % springVersion
