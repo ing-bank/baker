@@ -1,13 +1,13 @@
-import {
-  Component,
-} from '@angular/core';
+import {Component} from "@angular/core";
 
 /** @title Bakery DashboardComponent */
 @Component({
-  selector: 'dashboard',
-  templateUrl: 'notfound.component.html',
-  styleUrls: ['notfound.css'],
+    "selector": "dashboard",
+    "styleUrls": ["notfound.css"],
+    "templateUrl": "notfound.component.html"
 })
 export class NotFoundComponent {
-  constructor()  {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    constructor () {
+    }
 }

@@ -1,6 +1,7 @@
 # DashboardComponent
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 11.2.9.
+This project has been tested to work on v16.15.0 (npm v8.5.5).
 
 ## Development server
 
