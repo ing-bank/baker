@@ -1,0 +1,6 @@
+{
+  "/api/bakery": {
+    "target": "http://localhost:8083/api/bakery",
+    "secure": false
+  }
+}
