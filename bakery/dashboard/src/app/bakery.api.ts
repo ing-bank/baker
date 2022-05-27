@@ -1,6 +1,9 @@
-export interface Recipes {
-  result: string;
-  body:   { [key: string]: RecipeBody };
+export interface Recipe {
+  name:              string;
+  recipeId:          string;
+  recipeCreatedTime: string;
+  validate:          boolean;
+  errors:            string[];
 }
 
 export interface RecipeBody {
@@ -10,18 +13,23 @@ export interface RecipeBody {
   errors:            string[];
 }
 
-export interface Recipe {
-  name:              string;
-  recipeId:          string;
-  recipeCreatedTime: string;
-  validate:          boolean;
-  errors:            string[];
+export interface Recipes {
+  result: string;
+  body:   { [key: string]: RecipeBody };
 }
 
 export interface DigraphResponse {
   result: string;
   body: string;
 }
+
+export interface Interaction {
+  id:    string;
+  name:  string;
+  input: JSON[];
+  output?:   { [key: string]: { [key: string]: JSON } };
+}
+
 
 export interface InteractionsResponse {
   result: string;
@@ -44,9 +52,3 @@ export interface InstanceResponse {
   body:   Instance;
 }
 
-export interface Interaction {
-  id:    string;
-  name:  string;
-  input: JSON[];
-  output?:   { [key: string]: { [key: string]: JSON } };
-}

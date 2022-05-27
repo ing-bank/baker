@@ -1,11 +1,18 @@
 # DashboardComponent
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 11.2.9.
-This project has been tested to work on v16.15.0 (npm v8.5.5).
+This project has been tested to work on v18.2.0 (npm v8.9.0).
+
+
+## Prerequisites:
+- Install nvm (node version manager): `brew install nvm`
+- Install node `nvm install node`
+- Install project `npm install`
+- Link angular cli `npm link @angular/cli` (to solve `zsh: command not found: ng`)
 
 ## Development server
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+Run `ng serve --configuration=development` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
 
 ## Code scaffolding
 
