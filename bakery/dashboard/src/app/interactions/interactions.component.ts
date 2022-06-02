@@ -1,50 +1,52 @@
 import {
-  Component,
-  ElementRef,
-  Renderer2,
-  OnInit,
-  ViewChild
-} from '@angular/core';
-import {Interaction, Recipe} from "../bakery.api";
+    Component,
+    ElementRef,
+    OnInit,
+    Renderer2,
+    ViewChild
+} from "@angular/core";
 import {BakeryService} from "../bakery.service";
-import {graphviz}  from 'd3-graphviz';
+import {Interaction} from "../bakery.api";
 import {MatSelectionListChange} from "@angular/material/list";
 
 /** @title Bakery DashboardComponent */
 @Component({
-  selector: 'dashboard',
-  templateUrl: 'interactions.component.html',
-  styleUrls: ['interactions.css'],
+    "selector": "dashboard",
+    "styleUrls": ["interactions.css"],
+    "templateUrl": "interactions.component.html"
 })
 export class InteractionsComponent implements OnInit {
-  interactions: Interaction[];
-  selectedInteraction: Interaction;
+    interactions: Interaction[];
+    selectedInteraction: Interaction;
 
-  selectedInteractionInput(): string {
-    return JSON.stringify(this.selectedInteraction?.input, null, 4);
-  }
+    selectedInteractionInput (): string {
+        return JSON.stringify(this.selectedInteraction?.input, null, 4);
+    }
 
-  selectedInteractionOutput(): string {
-    return JSON.stringify(this.selectedInteraction?.output, null, 4);
-  }
+    selectedInteractionOutput (): string {
+        return JSON.stringify(this.selectedInteraction?.output, null, 4);
+    }
 
-  @ViewChild('interactionView', { static: false }) interactionView: ElementRef;
+    @ViewChild("interactionView", {"static": false}) interactionView: ElementRef;
 
-  constructor(private top: ElementRef,
-              private bakeryService: BakeryService, private renderer:Renderer2)  { }
+    constructor (private top: ElementRef,
+        private bakeryService: BakeryService, private renderer: Renderer2) {
+    }
 
-  ngOnInit(): void {
-    this.getInteractions();
-  }
+    ngOnInit (): void {
+        this.getInteractions();
+    }
 
-  getInteractions(): void {
-    this.bakeryService.getInteractions().subscribe( interactions =>
-      this.interactions = interactions.sort((a, b) => a.name.localeCompare(b.name)));
-  }
+    getInteractions (): void {
+        this.bakeryService.getInteractions().
+            subscribe(interactions => {
+                // eslint-disable-next-line id-length
+                this.interactions = interactions.sort((a, b) => a.name.localeCompare(b.name));
+            });
+    }
 
-  interactionChanged(event: MatSelectionListChange): void {
-    let interaction = <Interaction> event.options[0].value;
-    this.selectedInteraction = interaction;
-  }
+    interactionChanged (event: MatSelectionListChange): void {
+        this.selectedInteraction = <Interaction>event.options[0].value;
+    }
 }
 
