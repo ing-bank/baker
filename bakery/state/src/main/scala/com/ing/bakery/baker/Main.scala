@@ -24,7 +24,7 @@ object Main extends IOApp with LazyLogging {
     val loggingEnabled = bakerConfig.getBoolean("api-logging-enabled")
 
     (for {
-      bakery <- Bakery.resource(None)
+      bakery <- Bakery.resource(Some(config))
       _ <- MetricService.resource(InetSocketAddress.createUnresolved("0.0.0.0", metricsPort), bakery.executionContext)
 
       bakerService <- BakerService.resource(
