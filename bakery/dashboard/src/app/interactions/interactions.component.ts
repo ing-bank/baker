@@ -11,22 +11,12 @@ import {MatSelectionListChange} from "@angular/material/list";
 /** @title Bakery DashboardComponent */
 @Component({
     "selector": "interactions",
-    "styleUrls": ["interactions.css"],
+    "styleUrls": ["interactions.scss"],
     "templateUrl": "interactions.component.html"
 })
 export class InteractionsComponent implements OnInit {
     interactions: Interaction[];
     selectedInteraction: Interaction;
-
-    selectedInteractionInput (): string {
-        return JSON.stringify(this.selectedInteraction?.input, null, 4);
-    }
-
-    selectedInteractionOutput (): string {
-        return JSON.stringify(this.selectedInteraction?.output, null, 4);
-    }
-
-    @ViewChild("interactionView", {"static": false}) interactionView: ElementRef;
 
     constructor (
         private top: ElementRef,
