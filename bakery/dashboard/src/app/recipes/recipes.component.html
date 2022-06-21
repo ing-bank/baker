@@ -1,9 +1,41 @@
-<mat-selection-list [multiple]="false" [ngModel]="selectedRecipe" (selectionChange)="recipeChanged($event)">
-  <mat-list-option *ngFor="let recipe of recipes" [value]="recipe">
-    <span>{{recipe.recipeId}}: {{recipe.name}}; updated {{ recipe.recipeCreatedTime }}, validated {{ recipe.validate }} </span> <div>{{ recipe.errors }}</div>
-  </mat-list-option>
-</mat-selection-list>
+<div class="page-container">
 
-<div #recipeGraph>
+  <table mat-table [dataSource]="recipes" class="mat-elevation-z8">
+    <ng-container matColumnDef="recipeName">
+      <th mat-header-cell *matHeaderCellDef>Recipe name</th>
+      <td mat-cell *matCellDef="let recipe"> {{recipe.name}} </td>
+    </ng-container>
 
+    <ng-container matColumnDef="recipeId">
+      <th mat-header-cell *matHeaderCellDef>Id</th>
+      <td mat-cell *matCellDef="let recipe"> {{recipe.recipeId}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="recipeCreatedTime">
+      <th mat-header-cell *matHeaderCellDef>Last updated at</th>
+      <td mat-cell *matCellDef="let recipe"> {{recipe.recipeCreatedTime}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="validate">
+      <th mat-header-cell *matHeaderCellDef>Is validated</th>
+      <td mat-cell *matCellDef="let recipe"> {{recipe.validate ? 'yes' : 'no' }} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="visualization">
+      <th mat-header-cell *matHeaderCellDef>Visualization</th>
+      <td mat-cell *matCellDef="let recipe"><a [routerLink]="['/recipes', recipe.recipeId]">view</a> </td>
+    </ng-container>
+
+    <ng-container matColumnDef="errors">
+      <th mat-header-cell *matHeaderCellDef>Recipe errors</th>
+      <td mat-cell *matCellDef="let recipe"> {{recipe.errors}} </td>
+    </ng-container>
+
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+  </table>
+
+  <p *ngIf="recipes && !recipes[0]">No recipes added to bakery in this cluster.</p>
 </div>

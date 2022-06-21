@@ -76,15 +76,15 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "bakery-dashboard:build"
+            "browserTarget": "bakery-dashboard:build",
+            "proxyConfig": "src/proxy.conf.json"
           },
           "configurations": {
             "production": {
               "browserTarget": "bakery-dashboard:build:production"
             },
             "development": {
-              "browserTarget": "bakery-dashboard:build:development",
-              "proxyConfig": "src/proxy.conf.json"
+              "browserTarget": "bakery-dashboard:build:development"
             }
           }
         },

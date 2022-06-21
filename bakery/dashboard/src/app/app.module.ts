@@ -20,6 +20,7 @@ import {MatIconModule} from "@angular/material/icon";
 import {MatInputModule} from "@angular/material/input";
 import {MatListModule} from "@angular/material/list";
 import {MatSidenavModule} from "@angular/material/sidenav";
+import {MatTableModule} from "@angular/material/table";
 import {MatToolbarModule} from "@angular/material/toolbar";
 import {OverlayModule} from "@angular/cdk/overlay";
 import {PortalModule} from "@angular/cdk/portal";
@@ -33,6 +34,7 @@ import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {HomeComponent} from "./home/home.component";
 import {InstancesComponent} from "./instances/instances.component";
 import {InteractionsComponent} from "./interactions/interactions.component";
+import {RecipeVisualizeComponent} from "./recipes/visualize/recipe-visualize.component";
 import {RecipesComponent} from "./recipes/recipes.component";
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
@@ -45,7 +47,8 @@ export const initializeApp = (settings: AppSettingsService) => () => settings.lo
         HomeComponent,
         RecipesComponent,
         InteractionsComponent,
-        InstancesComponent
+        InstancesComponent,
+        RecipeVisualizeComponent,
     ],
     "entryComponents": [AppComponent],
     "exports": [
@@ -77,7 +80,8 @@ export const initializeApp = (settings: AppSettingsService) => () => settings.lo
         MatGridListModule,
         MatFormFieldModule,
         MatInputModule,
-        MatDialogModule
+        MatDialogModule,
+        MatTableModule,
     ],
     "providers": [
         AppSettingsService,
