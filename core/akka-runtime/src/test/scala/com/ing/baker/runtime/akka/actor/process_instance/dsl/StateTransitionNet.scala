@@ -30,7 +30,7 @@ trait StateTransitionNet[S, E] {
       t.isAutomated && !instance.isBlocked(t)
   }
 
-  def stateTransition(id: Long = Math.abs(Random.nextLong), label: Option[String] = None, automated: Boolean = false,
+  def stateTransition(id: Long = Math.abs(Random.nextLong()), label: Option[String] = None, automated: Boolean = false,
                       exceptionStrategy: TransitionExceptionHandler[Place] = (_, _, _) => BlockTransition)(fn: S => E): Transition =
     StateTransition(id, label.getOrElse(s"t$id"), automated, exceptionStrategy, (s: S) => IO.pure(fn(s)))
 

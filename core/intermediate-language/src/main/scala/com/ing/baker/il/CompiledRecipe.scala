@@ -1,9 +1,9 @@
 package com.ing.baker.il
 
-import com.ing.baker.il.CompiledRecipe.{RecipeIdVariant, Scala212CompatibleJava}
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, RecipePetriNet}
 import com.ing.baker.petrinet.api.Marking
 
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.FiniteDuration
@@ -32,6 +32,7 @@ object CompiledRecipe {
       *
       * For example, there is a 1 in a million change of collision when number of recipes reach 6 million
       */
+    @nowarn
     def calculateRecipeId(variant: RecipeIdVariant): String = {
       val petriNetId: String = petriNet.places.toList.sortBy(_.id).mkString +
         petriNet.transitions.toList.sortBy(_.id).mapRecipeIdStrings(variant).mkString
@@ -74,10 +75,12 @@ case class CompiledRecipe(name: String,
                           eventReceivePeriod: Option[FiniteDuration],
                           retentionPeriod: Option[FiniteDuration]) {
 
+  @nowarn
   def sensoryEvents: Set[EventDescriptor] = petriNet.transitions.collect {
     case EventTransition(eventDescriptor, true, _) => eventDescriptor
   }
 
+  @nowarn
   def getValidationErrors: java.util.List[String] = validationErrors.toList.asJava
 
   /**
@@ -134,11 +137,13 @@ case class CompiledRecipe(name: String,
 
   val allEvents: Set[EventDescriptor] = sensoryEvents ++ interactionEvents
 
+  @nowarn
   def getAllEvents: java.util.Set[EventDescriptor] = allEvents.asJava
 
   val allIngredients: Set[IngredientDescriptor] = allEvents.flatMap {
     events => events.ingredients
   }
 
+  @nowarn
   def getAllIngredients: java.util.Set[IngredientDescriptor] = allIngredients.asJava
 }

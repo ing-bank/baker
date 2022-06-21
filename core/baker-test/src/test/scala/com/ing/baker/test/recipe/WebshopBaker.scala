@@ -19,7 +19,7 @@ object WebshopBaker {
 
   implicit val timer: Timer[IO] = IO.timer(global)
 
-  val baker: Baker = AkkaBaker.localDefault(ActorSystem.apply,
+  val baker: Baker = AkkaBaker.localDefault(ActorSystem.apply(),
     CachingInteractionManager(InteractionInstance.unsafeFrom(new ReserveItems)))
 
   val javaBaker: javadsl.Baker = new javadsl.Baker(baker)

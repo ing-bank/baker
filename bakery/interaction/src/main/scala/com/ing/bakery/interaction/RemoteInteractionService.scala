@@ -1,12 +1,12 @@
 package com.ing.bakery.interaction
 
-import java.net.{InetSocketAddress, URLEncoder}
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import com.ing.baker.runtime.scaladsl.{IngredientInstance, InteractionInstance}
-import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs.interactionsCodec
+import com.ing.baker.runtime.scaladsl.InteractionInstance
+import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 import com.ing.baker.runtime.serialization.{InteractionExecution => I}
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.parser._
 import io.prometheus.client.CollectorRegistry
 import org.http4s._
 import org.http4s.circe._
@@ -14,20 +14,16 @@ import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.server.blaze._
-import org.http4s.server.{Router, Server}
 import org.http4s.server.middleware.{Logger, Metrics}
-import io.circe.parser._
+import org.http4s.server.{Router, Server}
 
 import java.lang.reflect.InvocationTargetException
-import scala.concurrent.ExecutionContext
-import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
-import com.ing.baker.runtime.serialization.JsonCodec._
-import com.ing.baker.runtime.serialization.JsonEncoders._
-import com.ing.baker.runtime.serialization.JsonDecoders._
-
+import java.net.{InetSocketAddress, URLEncoder}
 import java.util.concurrent.CompletableFuture
+import scala.annotation.nowarn
 import scala.collection.JavaConverters
 import scala.compat.java8.FutureConverters._
+import scala.concurrent.ExecutionContext
 
 object RemoteInteractionService {
 
@@ -129,6 +125,7 @@ abstract class InteractionExecutor extends LazyLogging {
 class InteractionExecutorJava(implementations: java.util.List[InteractionInstance],
                               val executionContext: ExecutionContext)
   extends InteractionExecutor {
+  @nowarn
   private lazy val javaInteractions = JavaConverters.collectionAsScalaIterable(implementations).toList
   def interactions: List[InteractionInstance] = javaInteractions
 

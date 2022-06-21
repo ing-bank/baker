@@ -1,8 +1,8 @@
 package com.ing.baker.types.modules
 
-import java.lang.reflect
-
 import com.ing.baker.types._
+
+import scala.annotation.nowarn
 
 class EnumModule extends TypeModule {
 
@@ -43,6 +43,7 @@ class EnumModule extends TypeModule {
     *
     * @return An instance of the java type.
     */
+  @nowarn
   override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any = {
 
     (value, javaType) match {

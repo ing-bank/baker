@@ -1,14 +1,13 @@
 package com.ing.baker.runtime.model
 
-import java.util.Optional
-
 import cats.Applicative
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl._
 
-import scala.concurrent.duration._
+import java.util.Optional
 import scala.collection.immutable.Seq
+import scala.concurrent.duration._
 
 
 trait TestRecipe[F[_]] {
@@ -324,7 +323,7 @@ trait TestRecipe[F[_]] {
               missingJavaOptional2: Optional[Integer],
               missingScalaOption: Option[String],
               missingScalaOption2: Option[Integer],
-              initialIngredient: String)
+              initialIngredient: String): Unit
   }
 
   def getRecipe(recipeName: String): Recipe =

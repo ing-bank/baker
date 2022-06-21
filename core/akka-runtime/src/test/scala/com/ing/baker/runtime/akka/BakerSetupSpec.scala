@@ -14,10 +14,11 @@ import com.typesafe.config.ConfigFactory
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.when
 
+import scala.annotation.nowarn
 import scala.concurrent.Future
 import scala.language.postfixOps
 
-
+@nowarn
 class BakerSetupSpec extends BakerRuntimeTestBase {
 
   override def actorSystemName = "BakerSetupSpec"

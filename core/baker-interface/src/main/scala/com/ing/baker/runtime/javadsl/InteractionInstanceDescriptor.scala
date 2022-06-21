@@ -1,18 +1,19 @@
 package com.ing.baker.runtime.javadsl
 
-import java.util
-import java.util.Optional
-
-import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
+import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Type
 
+import java.util
+import java.util.Optional
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 case class InteractionInstanceDescriptor(name: String,
                                          input: util.List[InteractionInstanceInput],
                                          output: Optional[util.Map[String, util.Map[String, Type]]] = Optional.empty())
-  extends common.InteractionInstanceDescriptor with JavaApi { self =>
+  extends common.InteractionInstanceDescriptor with JavaApi {
+  self =>
 
   override type Event = EventInstance
 
@@ -26,6 +27,7 @@ case class InteractionInstanceDescriptor(name: String,
 
   def getOutput(): Optional[util.Map[String, util.Map[String, Type]]] = output
 
+  @nowarn
   def asScala(): scaladsl.InteractionInstanceDescriptor =
     scaladsl.InteractionInstanceDescriptor(name, input.asScala.map(_.asScala).toIndexedSeq,
       Option.apply(output.orElse(null)).map(_.asScala.map(e => (e._1, e._2.asScala.toMap)).toMap)

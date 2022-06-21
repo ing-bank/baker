@@ -2,11 +2,11 @@ package com.ing.baker.recipe.javadsl
 
 import com.ing.baker.recipe.common
 
-import scala.annotation.varargs
+import scala.annotation.{nowarn, varargs}
 import scala.collection.JavaConverters._
+import scala.collection.immutable.Seq
 import scala.concurrent.duration
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.collection.immutable.Seq
 
 case class Recipe(
                    override val name: String,
@@ -18,8 +18,10 @@ case class Recipe(
 
   def this(name: String) = this(name, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction(), None, None)
 
+  @nowarn
   def getInteractions: java.util.List[common.InteractionDescriptor] = interactions.asJava
 
+  @nowarn
   def getEvents: java.util.List[common.Event] = sensoryEvents.toList.asJava
 
   /**

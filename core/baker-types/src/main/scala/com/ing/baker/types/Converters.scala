@@ -1,18 +1,21 @@
 package com.ing.baker.types
 
-import com.typesafe.config.{ ConfigFactory, ConfigValue }
+import com.typesafe.config.{ConfigFactory, ConfigValue}
 import com.typesafe.scalalogging.LazyLogging
+
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe.TypeTag
 import scala.util.Try
 
-object Converters extends LazyLogging{
+object Converters extends LazyLogging {
 
 
   private val configPathPrefix: String = "baker.types"
   private val defaultTypeConverter: TypeAdapter = new TypeAdapter(loadDefaultModulesFromConfig())
 
+  @nowarn
   def loadDefaultModulesFromConfig(): Map[Class[_], TypeModule] = {
     ConfigFactory
       .load()

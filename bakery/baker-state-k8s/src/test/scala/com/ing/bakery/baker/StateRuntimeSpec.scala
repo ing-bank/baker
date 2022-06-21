@@ -6,7 +6,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
+import com.ing.baker.runtime.model.{InteractionInstanceF, InteractionManager}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceDescriptor, InteractionInstanceInput}
 import com.ing.baker.types._
 import com.ing.bakery.baker.mocks.KubeApiServer
@@ -63,7 +63,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
   def awaitForEmptyServiceDiscovery(context: Context): IO[Assertion] =
     awaitForServiceDiscoveryState(context)(_.map(_.name) shouldBe List("TimerInteraction", "TimerInteraction", "CancelReserveItems"))
 
-  def awaitForServiceDiscoveryState(context: Context)(f: List[InteractionInstance[IO]] => Assertion): IO[Assertion] =
+  def awaitForServiceDiscoveryState(context: Context)(f: List[InteractionInstanceF[IO]] => Assertion): IO[Assertion] =
     eventually(
       context.interactions.listAll.map(f)
     )

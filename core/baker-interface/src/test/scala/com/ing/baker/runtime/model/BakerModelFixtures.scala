@@ -64,7 +64,7 @@ trait BakerModelFixtures[F[_]] extends TestRecipe[F] with MockitoSugar {
   val testOptionalIngredientInteractionMock: OptionalIngredientInteraction = mock[OptionalIngredientInteraction]
   val testProvidesNothingInteractionMock: ProvidesNothingInteraction = mock[ProvidesNothingInteraction]
 
-  def mockImplementations(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): List[InteractionInstance[F]] =
+  def mockImplementations(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): List[InteractionInstanceF[F]] =
     List(
       testInteractionOneMock,
       testInteractionTwoMock,
@@ -79,7 +79,7 @@ trait BakerModelFixtures[F[_]] extends TestRecipe[F] with MockitoSugar {
       testNonMatchingReturnTypeInteractionMock,
       testSieveInteractionMock,
       testOptionalIngredientInteractionMock,
-      testProvidesNothingInteractionMock).map(InteractionInstance.unsafeFrom[F](_))
+      testProvidesNothingInteractionMock).map(InteractionInstanceF.unsafeFrom[F](_))
 
   protected def setupMockResponse(implicit effect: Sync[F]): F[Unit] = effect.delay {
     when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))

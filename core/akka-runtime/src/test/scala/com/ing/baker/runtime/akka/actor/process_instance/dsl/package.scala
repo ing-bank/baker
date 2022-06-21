@@ -5,6 +5,9 @@ import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrat
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
+import scala.annotation.nowarn
+
+
 package object dsl {
 
   /**
@@ -26,12 +29,15 @@ package object dsl {
     def ~>(p: Place, weight: Long = 1): Arc = arc(t, p, weight)
   }
 
+  @nowarn
   implicit class PlaceDSL(p: Place) {
     def ~>(t: Transition, weight: Long = 1): Arc = arc(p, t, weight)
   }
 
+  @nowarn
   def arc(t: Transition, p: Place, weight: Long): Arc = WLDiEdge[Node, String](Right(t), Left(p))(weight, "")
 
+  @nowarn
   def arc(p: Place, t: Transition, weight: Long): Arc = WLDiEdge[Node, String](Left(p), Right(t))(weight, "")
 
   def requireUniqueElements[T](i: Iterable[T], name: String = "Element"): Unit = {

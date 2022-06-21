@@ -1,9 +1,9 @@
 package com.ing.baker.types.modules
 
-import java.lang.reflect
-import java.lang.reflect.ParameterizedType
-
 import com.ing.baker.types._
+
+import java.lang.reflect.ParameterizedType
+import scala.annotation.nowarn
 
 object ScalaModules {
 
@@ -14,6 +14,7 @@ object ScalaModules {
       ListType(entryType)
     }
 
+    @nowarn
     override  def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type) = value match {
       case NullValue => null
       case ListValue(entries) if isApplicable(javaType) =>
@@ -33,6 +34,7 @@ object ScalaModules {
       ListType(entryType)
     }
 
+    @nowarn
     override  def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type) = value match {
       case NullValue => null
       case ListValue(entries) if isApplicable(javaType) =>
@@ -52,6 +54,7 @@ object ScalaModules {
       MapType(entryType)
     }
 
+    @nowarn
     override  def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type) = value match {
       case NullValue => null
       case RecordValue(entries) if classOf[Map[_,_]].isAssignableFrom(getBaseClass(javaType)) =>
@@ -80,6 +83,7 @@ object ScalaModules {
         OptionType(entryType)
     }
 
+    @nowarn
     override def toJava(context: TypeAdapter, value: Value, javaType: reflect.Type): Any = (value, javaType) match {
       case (_, generic: ParameterizedType) if classOf[Option[_]].isAssignableFrom(getBaseClass(generic.getRawType)) =>
         val optionType = generic.getActualTypeArguments()(0)

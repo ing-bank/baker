@@ -1,9 +1,5 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
-import java.util.UUID
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
-
 import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props, Terminated}
 import akka.testkit.TestDuration
 import akka.util.Timeout
@@ -18,24 +14,29 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceSpec._
 import com.ing.baker.runtime.akka.actor.process_instance.dsl._
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
-import com.ing.baker.runtime.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.akka.namedCachedThreadPool
+import com.ing.baker.runtime.serialization.Encryption.NoEncryption
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Milliseconds, Span}
 import org.scalatestplus.mockito.MockitoSugar
 
+import java.util.UUID
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.Promise
 import scala.concurrent.duration._
 import scala.util.Success
 
 
 sealed trait Event
+
 case class Added(n: Int) extends Event
+
 case class Removed(n: Int) extends Event
 
 trait TestSequenceNet extends SequenceNet[Set[Int], Event] {
@@ -546,7 +547,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition(automated = true, exceptionHandler = retryHandler)(mockFunction)
       )
 
-      val mockPromise = Promise[Boolean]
+      val mockPromise = Promise[Boolean]()
 
       when(mockFunction.apply(any[Set[Int]])).thenAnswer(new Answer[Event] {
         override def answer(invocationOnMock: InvocationOnMock): Event = {

@@ -2,9 +2,9 @@ package com.ing.baker.runtime.akka.actor.process_instance
 
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import com.ing.baker.il.petrinet.Transition
+import com.ing.baker.runtime.akka.actor.Util.logging._
 
 import scala.concurrent.duration._
-import com.ing.baker.runtime.akka.actor.Util.logging._
 
 object ProcessInstanceLogger {
 
@@ -65,7 +65,12 @@ object ProcessInstanceLogger {
       log.logWithMDC(Logging.InfoLevel, msg, mdc)
     }
 
-    def transitionFailed(recipeInstanceId: String, transition: Transition, jobId: Long, timeStarted: Long, timeFailed: Long, failureReason: String) {
+    def transitionFailed(recipeInstanceId: String,
+                         transition: Transition,
+                         jobId: Long,
+                         timeStarted: Long,
+                         timeFailed: Long,
+                         failureReason: String): Unit = {
       val mdc = Map(
         "processEvent" -> "TransitionFailed",
         "processId" -> recipeInstanceId,
@@ -95,7 +100,7 @@ object ProcessInstanceLogger {
       log.logWithMDC(Logging.InfoLevel, msg, mdc)
     }
 
-    def idleStop(recipeInstanceId: String, idleTTL: FiniteDuration) {
+    def idleStop(recipeInstanceId: String, idleTTL: FiniteDuration): Unit = {
       val mdc = Map(
         "recipeInstanceId" -> recipeInstanceId,
         "processId" -> recipeInstanceId,
@@ -105,7 +110,7 @@ object ProcessInstanceLogger {
       log.logWithMDC(Logging.InfoLevel, msg, mdc)
     }
 
-    def fireTransitionRejected(recipeInstanceId: String, transition: Transition, rejectReason: String) {
+    def fireTransitionRejected(recipeInstanceId: String, transition: Transition, rejectReason: String): Unit = {
       val mdc = Map(
         "processEvent" -> "FireTransitionRejected",
         "recipeInstanceEvent" -> "FireInteractionRejected",
@@ -119,7 +124,7 @@ object ProcessInstanceLogger {
       log.logWithMDC(Logging.WarningLevel, msg, mdc)
     }
 
-    def scheduleRetry(recipeInstanceId: String, transition: Transition, delay: Long) {
+    def scheduleRetry(recipeInstanceId: String, transition: Transition, delay: Long): Unit = {
       val mdc = Map(
         "processEvent" -> "TransitionRetry",
         "recipeInstanceEvent" -> "InteractionRetry",

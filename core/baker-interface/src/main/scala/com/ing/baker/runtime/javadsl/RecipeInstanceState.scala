@@ -1,19 +1,19 @@
 package com.ing.baker.runtime.javadsl
 
-import java.util.stream.Collectors
-
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
 
+import java.util.stream.Collectors
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 /**
   * Holds the 'state' of a process instance.
   *
-  * @param recipeInstanceId   The process identifier
-  * @param ingredients The accumulated ingredients
-  * @param events  The events that have occurred so far
+  * @param recipeInstanceId The process identifier
+  * @param ingredients      The accumulated ingredients
+  * @param events           The events that have occurred so far
   */
 case class RecipeInstanceState(
     recipeInstanceId: String,
@@ -51,6 +51,7 @@ case class RecipeInstanceState(
     */
   def getRecipeInstanceId: String = recipeInstanceId
 
+  @nowarn
   def asScala: scaladsl.RecipeInstanceState =
     scaladsl.RecipeInstanceState(recipeInstanceId, ingredients.asScala.toMap, events.asScala.map(_.asScala).toIndexedSeq)
 }
