@@ -2,7 +2,7 @@
   <mat-grid-tile colspan="2">
     <div class="text-inside-grid">
       <cdk-virtual-scroll-viewport class="scroll-viewport" itemSize="50">
-        <mat-selection-list #interactionList [multiple]="false" [ngModel]="selectedInteraction"
+        <mat-selection-list [multiple]="false"
                             (selectionChange)="interactionChanged($event)">
           <mat-list-option *ngFor="let interaction of interactions" [value]="interaction">
             {{interaction.name}}

@@ -2,7 +2,6 @@ import {
     Component,
     ElementRef,
     OnInit,
-    Renderer2,
     ViewChild
 } from "@angular/core";
 import {BakeryService} from "../bakery.service";
@@ -11,7 +10,7 @@ import {MatSelectionListChange} from "@angular/material/list";
 
 /** @title Bakery DashboardComponent */
 @Component({
-    "selector": "dashboard",
+    "selector": "interactions",
     "styleUrls": ["interactions.css"],
     "templateUrl": "interactions.component.html"
 })
@@ -29,8 +28,10 @@ export class InteractionsComponent implements OnInit {
 
     @ViewChild("interactionView", {"static": false}) interactionView: ElementRef;
 
-    constructor (private top: ElementRef,
-        private bakeryService: BakeryService, private renderer: Renderer2) {
+    constructor (
+        private top: ElementRef,
+        private bakeryService: BakeryService
+    ) {
     }
 
     ngOnInit (): void {
