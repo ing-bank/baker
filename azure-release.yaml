@@ -46,7 +46,7 @@ steps:
         git config --global user.name "baker release pipeline"
         git remote set-url origin "https://jacum:${GIT_AUTH_TOKEN}@github.com/ing-bank/baker"
 
-        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "release with-defaults"
+        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "+ release with-defaults"
 
         rm -rf $(pubring.secureFilePath)
         rm -rf $(secring.secureFilePath)
