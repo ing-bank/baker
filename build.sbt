@@ -23,11 +23,9 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
 lazy val scala212 = "2.12.16"
 lazy val scala213 = "2.13.8"
 
-lazy val supportedScalaVersions = List(scala212, scala213)
+lazy val supportedScalaVersions = List(scala213, scala212)
 val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
-  scalaVersion in GlobalScope := scala212,
-  crossScalaVersions := supportedScalaVersions,
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
   javacOptions := Seq("-source", "1.8", "-target", "1.8"),
@@ -90,7 +88,14 @@ lazy val noPublishSettings: Seq[Setting[_]] = Seq(
   publishArtifact := false
 )
 
-lazy val defaultModuleSettings: Seq[Setting[_]] = commonSettings ++ dependencyOverrideSettings ++ Publish.settings
+lazy val crossBuildSettings: Seq[Setting[_]] = Seq(
+  scalaVersion := scala213,
+  crossScalaVersions := supportedScalaVersions
+)
+
+lazy val defaultModuleSettings212: Seq[Setting[_]] = commonSettings ++ dependencyOverrideSettings ++ Publish.settings
+
+lazy val defaultModuleSettings: Seq[Setting[_]] =  crossBuildSettings ++ defaultModuleSettings212
 
 lazy val yPartialUnificationSetting: Seq[Setting[_]] = Seq(
   Compile / scalacOptions ++= {
@@ -463,8 +468,7 @@ lazy val baker: Project = project.in(file("."))
   )
   .aggregate(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
     `bakery-client`, `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
-    `sbt-bakery-docker-generate`, `bakery-state-k8s`,
-    `baker-interface`, `bakery-dashboard`, `baker-annotations`, `baker-test`)
+    `bakery-state-k8s`, `baker-interface`, `bakery-dashboard`, `baker-annotations`, `baker-test`)
 
 lazy val `baker-example`: Project = project
   .in(file("examples/baker-example"))
@@ -616,10 +620,11 @@ lazy val `bakery-integration-tests`: Project = project.in(file("bakery/integrati
     `interaction-example-reserve-items`)
 
 lazy val `sbt-bakery-docker-generate`: Project = project.in(file("docker/sbt-bakery-docker-generate"))
-  .settings(defaultModuleSettings)
+  .settings(scalaVersion := scala212, crossScalaVersions := Nil)
+  .settings(defaultModuleSettings212)
   .settings(noPublishSettings) // docker plugin can't be published, at least not to azure feed
-  .settings(crossScalaVersions := Nil)
   .settings(
+    crossScalaVersions := Nil,
     // workaround to let plugin be used in the same project without publishing it
     Compile / sourceGenerators += Def.task {
       val file = (Compile / sourceManaged).value / "bakery" / "sbt" / "BuildInteractionDockerImageSBTPlugin.scala"
