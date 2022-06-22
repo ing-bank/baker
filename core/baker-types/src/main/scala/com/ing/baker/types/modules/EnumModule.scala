@@ -2,6 +2,8 @@ package com.ing.baker.types.modules
 
 import com.ing.baker.types._
 
+import java.lang.reflect
+
 import scala.annotation.nowarn
 
 class EnumModule extends TypeModule {

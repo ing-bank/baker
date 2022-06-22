@@ -10,6 +10,7 @@ import org.mockito.Mockito._
 
 import scala.annotation.nowarn
 import scala.reflect.ClassTag
+import cats.implicits._
 
 @nowarn
 trait BakerModelSpecSetupTests[F[_]] {

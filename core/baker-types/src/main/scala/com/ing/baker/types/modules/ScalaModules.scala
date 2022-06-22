@@ -4,6 +4,7 @@ import com.ing.baker.types._
 
 import java.lang.reflect.ParameterizedType
 import scala.annotation.nowarn
+import java.lang.reflect
 
 object ScalaModules {
 

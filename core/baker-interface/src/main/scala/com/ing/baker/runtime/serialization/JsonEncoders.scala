@@ -13,6 +13,7 @@ import io.circe.syntax._
 import java.util.Base64
 import scala.annotation.nowarn
 import scala.collection.JavaConverters._
+import com.ing.baker.runtime.serialization.JsonCodec._
 
 object JsonEncoders {
 
