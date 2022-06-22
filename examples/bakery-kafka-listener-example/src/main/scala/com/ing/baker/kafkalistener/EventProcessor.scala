@@ -4,10 +4,10 @@ import com.ing.baker.runtime.common.{BakerEvent, EventInstance}
 
 trait EventProcessor {
 
-  def bakerEvent(event: BakerEvent)
+  def bakerEvent(event: BakerEvent): Unit
 
-  def recipeEvent(event: EventInstance)
+  def recipeEvent(event: EventInstance): Unit
 
-  def parseFailure(serialized: String, error: String)
+  def parseFailure(serialized: String, error: String): Unit
 
 }
