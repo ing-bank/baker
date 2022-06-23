@@ -105,17 +105,17 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     components.interactions
       .listAll
       .map(_.find(_.name == interactionName)
-        .map(i => InteractionInstanceDescriptor(i.name, i.input, i.output)))
+        .map(i => InteractionInstanceDescriptor(i.shaBase64, i.name, i.input, i.output)))
 
 
   override def getAllInteractions: F[Seq[InteractionInstanceDescriptor]] =
     components.interactions.listAll
-      .map(_.map(i => InteractionInstanceDescriptor(i.name, i.input, i.output)))
+      .map(_.map(i => InteractionInstanceDescriptor(i.shaBase64, i.name, i.input, i.output)))
 
   override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): F[Option[EventInstance]] =
     components.interactions
       .listAll
-      .map(interactionsList => interactionsList.find(ii => ii.shaBase64 == interactionId))
+      .map(interactionsList => interactionsList.find(_.shaBase64 == interactionId))
       .flatMap(interactionInstanceOption =>
         effect.fromOption(interactionInstanceOption, ifEmpty =
           BakerException.SingleInteractionExecutionFailedException("No interaction found with specified interaction id"))

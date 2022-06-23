@@ -9,7 +9,8 @@ import com.ing.baker.types.Type
 import scala.collection.immutable.Seq
 import scala.collection.JavaConverters._
 
-case class InteractionInstanceDescriptor(name: String,
+case class InteractionInstanceDescriptor(id : String,
+                                         name: String,
                                          input: Seq[InteractionInstanceInput],
                                          output: Option[Map[String, Map[String, Type]]] = None)
   extends common.InteractionInstanceDescriptor with ScalaApi { self =>
@@ -21,6 +22,6 @@ case class InteractionInstanceDescriptor(name: String,
   override type Input = InteractionInstanceInput
 
   def asJava(): javadsl.InteractionInstanceDescriptor =
-    javadsl.InteractionInstanceDescriptor(name, input.map(_.asJava).asJava, Optional.ofNullable(output.map(_.map(e => (e._1, e._2.asJava)).asJava).orNull))
+    javadsl.InteractionInstanceDescriptor(id, name, input.map(_.asJava).asJava, Optional.ofNullable(output.map(_.map(e => (e._1, e._2.asJava)).asJava).orNull))
 
 }

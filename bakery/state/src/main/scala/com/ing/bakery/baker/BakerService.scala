@@ -105,7 +105,6 @@ final class BakerService private(baker: Baker)(implicit cs: ContextShift[IO], ti
   implicit val eventInstanceDecoder: EntityDecoder[IO, EventInstance] = jsonOf[IO, EventInstance]
   implicit val interactionExecutionRequestDecoder: EntityDecoder[IO, InteractionExecution.ExecutionRequest] = jsonOf[IO, InteractionExecution.ExecutionRequest]
   implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
-  implicit val interactionEntityEncoder: EntityEncoder[IO, InteractionExecution.Descriptor] = jsonEncoderOf[IO, InteractionExecution.Descriptor]
 
   def routes: HttpRoutes[IO] = app <+> instance
 

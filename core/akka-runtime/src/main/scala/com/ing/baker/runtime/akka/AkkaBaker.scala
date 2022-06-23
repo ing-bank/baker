@@ -166,17 +166,17 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   override def getInteraction(interactionName: String): Future[Option[InteractionInstanceDescriptor]] =
     config.interactions.listAll.map(
       _.find(_.name == interactionName)
-        .map(i => InteractionInstanceDescriptor(i.name, i.input, i.output))).unsafeToFuture()
+        .map(i => InteractionInstanceDescriptor(i.shaBase64, i.name, i.input, i.output))).unsafeToFuture()
 
 
   override def getAllInteractions: Future[List[InteractionInstanceDescriptor]] =
     config.interactions.listAll.map(_.map(
-      i => InteractionInstanceDescriptor(i.name, i.input, i.output))).unsafeToFuture()
+      i => InteractionInstanceDescriptor(i.shaBase64, i.name, i.input, i.output))).unsafeToFuture()
 
   override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): Future[Option[EventInstance]] =
     config.interactions
       .listAll
-      .map(interactionsList => interactionsList.find(ii => ii.shaBase64 == interactionId))
+      .map(interactionsList => interactionsList.find(_.shaBase64 == interactionId))
       .flatMap(interactionInstanceOption =>
         cats.effect.IO.fromOption(interactionInstanceOption)(orElse =
           BakerException.SingleInteractionExecutionFailedException("No interaction found with specified interaction id"))
