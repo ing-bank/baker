@@ -1,7 +1,5 @@
 package com.ing.bakery.baker
 
-import java.io.File
-import java.net.InetSocketAddress
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.ConfigFactory
@@ -10,6 +8,8 @@ import org.http4s.client.blaze.BlazeClientBuilder
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
+import java.io.File
+import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext
 
 class MetricServiceSpec extends AnyFunSuite with Matchers {
@@ -31,13 +31,13 @@ class MetricServiceSpec extends AnyFunSuite with Matchers {
         httpClient <- BlazeClientBuilder[IO](executionContext).resource
       } yield (metricsService, httpClient)
 
-      mainResource use {
-        case (_, client) =>
-          client.get(s"http://localhost:$metricsPort") {
-            case Ok(_) => IO.unit
-            case _ =>  IO.raiseError(new IllegalStateException("Not started"))
-          }
-      } unsafeRunSync()
+    mainResource.use {
+      case (_, client) =>
+        client.get(s"http://localhost:$metricsPort") {
+          case Ok(_) => IO.unit
+          case _ => IO.raiseError(new IllegalStateException("Not started"))
+        }
+    }.unsafeRunSync()
 
   }
 

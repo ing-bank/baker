@@ -21,7 +21,7 @@ object RecipeManagerProto {
         protobuf.RecipeAdded(None, Option(ctxToProto(a.compiledRecipe)), Option(a.timeStamp))
 
       def fromProto(message: protobuf.RecipeAdded): Try[RecipeAdded] = {
-        val timestamp = message.timeStamp.getOrElse(0l)
+        val timestamp = message.timeStamp.getOrElse(0L)
         for {
           compiledRecipeProto <- versioned(message.compiledRecipe, "compiledRecipe")
           compiledRecipe <- ctxFromProto(compiledRecipeProto)

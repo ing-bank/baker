@@ -1,19 +1,19 @@
 package com.ing.baker.runtime.serialization
 
-import java.util.Base64
-
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.common.{BakerException, RejectReason, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl._
-import com.ing.baker.runtime.serialization.JsonCodec._
 import com.ing.baker.types
 import io.circe.Encoder._
 import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
 
+import java.util.Base64
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
+import com.ing.baker.runtime.serialization.JsonCodec._
 
 object JsonEncoders {
 
@@ -59,6 +59,8 @@ object JsonEncoders {
   implicit val rejectReasonEncoder: Encoder[RejectReason] = encodeString.contramap(_.toString)
   implicit val exceptionEncoder: Encoder[ExceptionStrategyOutcome] = deriveEncoder[ExceptionStrategyOutcome]
   implicit val throwableEncoder: Encoder[Throwable] = (throwable: Throwable) => Json.obj(("error", Json.fromString(throwable.getMessage)))
+
+  @nowarn
   implicit val compiledRecipeEncoder: Encoder[CompiledRecipe] =
   // TODO: write PetriNet and Marking to json
     (recipe: CompiledRecipe) => Json.obj(

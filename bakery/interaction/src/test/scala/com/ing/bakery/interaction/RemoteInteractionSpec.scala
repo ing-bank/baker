@@ -1,25 +1,26 @@
 package com.ing.bakery.interaction
 
-import java.net.InetSocketAddress
 import cats.effect.{IO, Resource}
-import com.ing.baker.runtime.serialization.{InteractionExecution => I}
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance, InteractionInstanceInput}
+import com.ing.baker.runtime.serialization.{InteractionExecution => I}
 import com.ing.baker.types.{CharArray, Int64, PrimitiveValue}
 import com.ing.bakery.testing.BakeryFunSpec
-import org.http4s.{Headers, Uri}
 import org.http4s.blaze.pipeline.Command
+import org.http4s.{Headers, Uri}
 import org.scalatest.ConfigMap
 import org.scalatest.compatible.Assertion
 
+import java.net.InetSocketAddress
+import scala.annotation.nowarn
 import scala.collection.immutable.Seq
 import scala.concurrent.Future
 
 class RemoteInteractionSpec extends BakeryFunSpec {
 
   case class Context(
-    withInteractionInstances: List[InteractionInstance] => ((RemoteInteractionClient, Uri) => IO[Assertion]) => IO[Assertion],
-    withNoTrustClient: List[InteractionInstance] => ((RemoteInteractionClient, Uri) => IO[Assertion]) => IO[Assertion]
-  )
+                      withInteractionInstances: List[InteractionInstance] => ((RemoteInteractionClient, Uri) => IO[Assertion]) => IO[Assertion],
+                      withNoTrustClient: List[InteractionInstance] => ((RemoteInteractionClient, Uri) => IO[Assertion]) => IO[Assertion]
+                    )
 
   val serviceTLSConfig: BakeryHttp.TLSConfig =
     BakeryHttp.TLSConfig("changeit", "test-certs/interaction.ing-bank.github.io.jks", "JKS")
@@ -45,6 +46,7 @@ class RemoteInteractionSpec extends BakeryFunSpec {
    * @param testArguments arguments built by the `argumentsBuilder` function.
    * @return the resources each test can use
    */
+  @nowarn
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
     Resource.pure[IO, Context](Context(
       withInteractionInstances = { interaction => runTest =>

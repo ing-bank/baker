@@ -2,9 +2,11 @@ package com.ing.baker.il
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import scala.collection.JavaConverters._
 import scalax.collection.io.dot.implicits._
-import scalax.collection.io.dot.{ DotAttr, DotAttrStmt, Elem }
+import scalax.collection.io.dot.{DotAttr, DotAttrStmt, Elem}
+
+import scala.annotation.nowarn
+import scala.collection.JavaConverters._
 
 object RecipeVisualStyle extends LazyLogging {
 
@@ -21,6 +23,7 @@ object RecipeVisualStyle extends LazyLogging {
       configuredStyle
     val styleConfig = visualizationConfig.getConfig(s"styles.$pickedStyle")
 
+    @nowarn
     def readAttributes(keys: String*): List[DotAttr] = {
       val values = keys.foldLeft[Map[String, AnyRef]](Map.empty) {
         case (acc, key) =>

@@ -6,8 +6,11 @@ import com.ing.baker.types._
 import io.circe.parser.decode
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+
+import scala.annotation.nowarn
 import scala.collection.immutable.Seq
 
+@nowarn
 class JsonDecodersSpec extends AnyFunSpec with Matchers {
   describe("EventJsonToScalaDslDecoders") {
     it("should decode value") {

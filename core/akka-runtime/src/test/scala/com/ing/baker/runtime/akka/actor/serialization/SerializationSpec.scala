@@ -1,7 +1,5 @@
 package com.ing.baker.runtime.akka.actor.serialization
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.serialization.SerializationExtension
 import akka.testkit.TestKit
@@ -22,7 +20,7 @@ import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanc
 import com.ing.baker.runtime.serialization.Encryption.{AESEncryption, NoEncryption}
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto}
 import com.ing.baker.types.modules.PrimitiveModuleSpec._
-import com.ing.baker.types.{Value, _}
+import com.ing.baker.types._
 import com.ing.baker.{AllTypeRecipe, types}
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Test.Parameters.defaultVerbose
@@ -30,6 +28,7 @@ import org.scalacheck._
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatestplus.scalacheck.Checkers
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
 import scala.util.Success
@@ -329,7 +328,7 @@ object SerializationSpec {
 
     implicit val recipeAddedGen: Gen[RecipeAdded] =
       for {
-        timestamp <- Gen.chooseNum(0l, 20000l)
+        timestamp <- Gen.chooseNum(0L, 20000L)
         recipe <- recipeGen
       } yield RecipeAdded(recipe, timestamp)
   }
@@ -437,7 +436,7 @@ object SerializationSpec {
 
     implicit val identifierGen: Gen[String] = Gen.alphaNumStr
 
-    implicit val timestampGen: Gen[Long] = Gen.chooseNum(100000l, 1000000l)
+    implicit val timestampGen: Gen[Long] = Gen.chooseNum(100000L, 1000000L)
 
     implicit val getShardIndexGen: Gen[GetShardIndex] =
       identifierGen.map(GetShardIndex)

@@ -1,8 +1,7 @@
 package com.ing.baker.runtime.inmemory
 
 import cats.effect.{IO, Resource}
-import com.ing.baker.runtime.model.{BakerF, BakerModelSpec, InteractionInstance}
-import com.ing.baker.runtime.scaladsl
+import com.ing.baker.runtime.model.{BakerF, BakerModelSpec, InteractionInstanceF}
 
 import scala.concurrent.duration._
 
@@ -16,7 +15,7 @@ class InMemoryBakerSpec extends BakerModelSpec[IO] {
       _ <- Resource.eval(IO.unit)
       baker = InMemoryBaker.java() // for coverage
       _ = baker.gracefulShutdown()
-    } yield Context((interactions: List[InteractionInstance[IO]]) => InMemoryBaker.build(BakerF.Config(
+    } yield Context((interactions: List[InteractionInstanceF[IO]]) => InMemoryBaker.build(BakerF.Config(
       bakeTimeout = 10.seconds,
       processEventTimeout = 10.seconds,
       inquireTimeout = 10.seconds,

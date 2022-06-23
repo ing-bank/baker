@@ -1,21 +1,21 @@
 package com.ing.baker.runtime.javadsl
 
-import java.util
-import java.util.Optional
-import java.util.concurrent.CompletableFuture
-import java.util.function.{BiConsumer, Consumer}
-
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.common.{RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
-import javax.annotation.Nonnull
 
+import java.util
+import java.util.Optional
+import java.util.concurrent.CompletableFuture
+import java.util.function.{BiConsumer, Consumer}
+import javax.annotation.Nonnull
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableFuture] with JavaApi with AutoCloseable {
 
@@ -121,6 +121,7 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
   def fireEventAndResolveWhenReceived(@Nonnull recipeInstanceId: String, @Nonnull event: EventInstance, @Nonnull correlationId: Optional[String]): CompletableFuture[SensoryEventStatus] =
     toCompletableFuture(baker.fireEventAndResolveWhenReceived(recipeInstanceId, event.asScala, Option.apply(correlationId.orElse(null))))
 
+  @nowarn
   def fireEventAndResolveWhenCompleted(@Nonnull recipeInstanceId: String, @Nonnull event: EventInstance, @Nonnull correlationId: Optional[String]): CompletableFuture[SensoryEventResult] =
     toCompletableFuture(baker.fireEventAndResolveWhenCompleted(recipeInstanceId, event.asScala, Option.apply(correlationId.orElse(null)))).thenApply { result =>
       SensoryEventResult(
@@ -130,6 +131,7 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
       )
     }
 
+  @nowarn
   def fireEventAndResolveOnEvent(@Nonnull recipeInstanceId: String, @Nonnull event: EventInstance, @Nonnull onEvent: String, @Nonnull correlationId: Optional[String]): CompletableFuture[SensoryEventResult] =
     toCompletableFuture(baker.fireEventAndResolveOnEvent(recipeInstanceId, event.asScala, onEvent, Option.apply(correlationId.orElse(null)))).thenApply { result =>
       SensoryEventResult(
@@ -139,6 +141,7 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
       )
     }
 
+  @nowarn
   def fireEvent(@Nonnull recipeInstanceId: String, @Nonnull event: EventInstance, @Nonnull correlationId: Optional[String]): EventResolutions = {
     val scalaResult = baker.fireEvent(recipeInstanceId, event.asScala)
     EventResolutions(
@@ -207,6 +210,7 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
     * @param recipeInstanceId The process id.
     * @return The events
     */
+  @nowarn
   def getEvents(@Nonnull recipeInstanceId: String): CompletableFuture[java.util.List[EventMoment]] =
     toCompletableFuture(baker.getEvents(recipeInstanceId)).thenApply(_.map(_.asJava()).asJava)
 
@@ -216,6 +220,7 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
     * @param recipeInstanceId The process id.
     * @return The event names
     */
+  @nowarn
   def getEventNames(@Nonnull recipeInstanceId: String): CompletableFuture[java.util.List[String]] =
     toCompletableFuture(baker.getEventNames(recipeInstanceId)).thenApply(_.asJava)
 
@@ -237,17 +242,18 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
     *
     * @return A map with all recipes from recipeId -> JRecipeInformation
     */
+  @nowarn
   def getAllRecipes: CompletableFuture[java.util.Map[String, RecipeInformation]] =
     FutureConverters.toJava(baker.getAllRecipes).toCompletableFuture.thenApply(_.view.map { case (key, value) => (key, value.asJava)}.toMap.asJava)
 
-
+  @nowarn
   def getInteraction(interactionName: String): CompletableFuture[Optional[InteractionInstanceDescriptorType]] =
     FutureConverters
       .toJava(baker.getInteraction(interactionName))
       .toCompletableFuture
       .thenApply(e => Optional.ofNullable(e.map(_.asJava()).orNull))
 
-
+  @nowarn
   def getAllInteractions: CompletableFuture[java.util.List[InteractionInstanceDescriptorType]] =
     FutureConverters
       .toJava(baker.getAllInteractions)
@@ -264,6 +270,7 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
     *
     * @return An index of all processes
     */
+  @nowarn
   def getAllRecipeInstancesMetadata: CompletableFuture[util.Set[RecipeInstanceMetadata]] =
     FutureConverters
       .toJava(baker.getAllRecipeInstancesMetadata)
@@ -362,9 +369,11 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
   def getVisualState(@Nonnull recipeInstanceId: String, @Nonnull style: RecipeVisualStyle): CompletableFuture[String] =
     toCompletableFuture(baker.getVisualState(recipeInstanceId, style))
 
+  @nowarn
   private def toCompletableFuture[T](@Nonnull scalaFuture: Future[T]): CompletableFuture[T] =
     FutureConverters.toJava(scalaFuture).toCompletableFuture
 
+  @nowarn
   private def toCompletableFutureMap[K, V](@Nonnull scalaFuture: Future[Map[K, V]]): CompletableFuture[java.util.Map[K, V]] =
     FutureConverters.toJava(
       scalaFuture)

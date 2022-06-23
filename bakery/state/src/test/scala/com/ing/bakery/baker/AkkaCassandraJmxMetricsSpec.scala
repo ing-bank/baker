@@ -22,11 +22,13 @@ import java.io.CharArrayWriter
 import java.net.InetSocketAddress
 import java.util.UUID
 import scala.Console.println
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.collection.convert.ImplicitConversions._
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
 
+@nowarn
 class AkkaCassandraJmxMetricsSpec extends AnyFreeSpec with LazyLogging with Eventually with BeforeAndAfterAll {
 
   import TestActors._
