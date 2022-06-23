@@ -31,6 +31,9 @@ object BakerException {
   case class IllegalEventException(reason: String)
     extends BakerException(reason, 7)
 
+  case class SingleInteractionExecutionFailedException(reason: String)
+    extends BakerException(reason, 8)
+
   def encode(bakerException: BakerException): (String, Int) =
     bakerException match {
       case e @ NoSuchProcessException(recipeInstanceId) => (recipeInstanceId, e.enum)
@@ -40,6 +43,7 @@ object BakerException {
       case e @ NoSuchRecipeException(recipeId) => (recipeId, e.enum)
       case e @ ProcessAlreadyExistsException(recipeInstanceId) => (recipeInstanceId, e.enum)
       case e @ IllegalEventException(reason) => (reason, e.enum)
+      case e @ SingleInteractionExecutionFailedException(reason) => (reason, e.enum)
     }
 
   def decode(message: String, enum: Int): Try[BakerException] =
@@ -51,6 +55,7 @@ object BakerException {
       case 5 => Success(NoSuchRecipeException(message))
       case 6 => Success(ProcessAlreadyExistsException(message))
       case 7 => Success(IllegalEventException(message))
+      case 8 => Success(SingleInteractionExecutionFailedException(message))
       case _ => Failure(new IllegalArgumentException(s"No BakerException with enum flag $enum"))
     }
 }
