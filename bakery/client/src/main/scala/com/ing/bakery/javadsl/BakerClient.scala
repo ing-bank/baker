@@ -1,8 +1,5 @@
 package com.ing.bakery.javadsl
 
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Executors.newCachedThreadPool
-import java.util.{Collections, Optional, List => JList}
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.runtime.javadsl.{Baker => JavaBaker}
 import com.ing.bakery.common.TLSConfig
@@ -11,7 +8,10 @@ import com.ing.bakery.scaladsl.EndpointConfig
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.{Request, Uri}
 
-import scala.collection.immutable.Seq
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors.newCachedThreadPool
+import java.util.{Optional, List => JList}
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.compat.java8.FunctionConverters._
 import scala.compat.java8.FutureConverters
@@ -30,6 +30,7 @@ object BakerClient {
    * @param tlsConfig TLS context for connection
    * @return JavaBaker
    */
+  @nowarn
   def build(hosts: JList[String],
             apiUrlPrefix: String,
             fallbackHosts: JList[String],

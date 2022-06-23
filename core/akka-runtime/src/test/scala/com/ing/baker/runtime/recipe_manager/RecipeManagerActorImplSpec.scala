@@ -1,11 +1,7 @@
 package com.ing.baker.runtime.recipe_manager
 
-import java.util.UUID
-import java.util.concurrent.TimeUnit
-
 import _root_.akka.actor.ActorSystem
 import _root_.akka.testkit.{TestKit, TestProbe}
-import _root_.akka.util.Timeout
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.AkkaBakerConfig.Timeouts
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
@@ -15,7 +11,9 @@ import org.scalatest.wordspec.AsyncWordSpecLike
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatestplus.mockito.MockitoSugar
 
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import java.util.UUID
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 
 class RecipeManagerActorImplSpec extends TestKit(ActorSystem("MySpec"))
   with AsyncWordSpecLike
@@ -24,7 +22,7 @@ class RecipeManagerActorImplSpec extends TestKit(ActorSystem("MySpec"))
   with BeforeAndAfter
   with BeforeAndAfterAll {
   private val timeout: FiniteDuration = FiniteDuration(5, TimeUnit.SECONDS)
-  private val timeouts: Timeouts = new Timeouts(timeout, timeout, timeout ,timeout ,timeout)
+  private val timeouts: Timeouts = new Timeouts(timeout, timeout, timeout, timeout, timeout)
 
 
 
@@ -66,7 +64,7 @@ class RecipeManagerActorImplSpec extends TestKit(ActorSystem("MySpec"))
       val eventualFound = manager.get(id2)
       actor.expectMsg(GetRecipe(id2))
       val compiledRecipe = mock[CompiledRecipe]
-      val timestamp = 42l
+      val timestamp = 42L
       actor.reply(RecipeFound(compiledRecipe, timestamp))
 
       for {
@@ -84,7 +82,7 @@ class RecipeManagerActorImplSpec extends TestKit(ActorSystem("MySpec"))
       val eventualString = manager.all
       actor.expectMsg(GetAllRecipes)
 
-      val timestamp = 42l
+      val timestamp = 42L
 
       actor.reply(AllRecipes(Seq(RecipeInformation(recipe, timestamp))))
       eventualString.map(_ shouldBe Seq(RecipeRecord.of(recipe, timestamp)))

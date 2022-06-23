@@ -1,17 +1,16 @@
 package com.ing.baker.runtime.model
 
-import java.util.UUID
-
 import cats.effect.ConcurrentEffect
 import cats.implicits._
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
-import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, ProcessAlreadyExistsException, ProcessDeletedException}
+import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, ProcessAlreadyExistsException}
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceInput, RecipeEventMetadata}
 import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
 import org.mockito.ArgumentMatchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
 
+import java.util.UUID
 import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
@@ -146,19 +145,19 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
           .withSensoryEvent(sensoryEvent)
 
       val interactionInstances = List(
-        InteractionInstance.build[F](
+        InteractionInstanceF.build[F](
           _name = "Interaction1",
           _input = Seq(InteractionInstanceInput(Option.empty, Int32)),
           _output = None,
           _run = _ => effect.pure(Some(EventInstance("interaction-1-happened", Map("ingredient-1" -> PrimitiveValue("data1")))))
         ),
-        InteractionInstance.build[F](
+        InteractionInstanceF.build[F](
           _name = "Interaction2",
           _input = Seq(InteractionInstanceInput(Option.empty, CharArray)),
           _output = None,
           _run = _ => effect.pure(Some(EventInstance("interaction-2-happened", Map("ingredient-2" -> PrimitiveValue("data2")))))
         ),
-        InteractionInstance.build[F](
+        InteractionInstanceF.build[F](
           _name = "Interaction3",
           _input = Seq(InteractionInstanceInput(Option.empty, CharArray)),
           _output = None,

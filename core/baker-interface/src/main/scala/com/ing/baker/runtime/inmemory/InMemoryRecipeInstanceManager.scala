@@ -1,7 +1,5 @@
 package com.ing.baker.runtime.inmemory
 
-import java.util.concurrent.{ConcurrentMap, TimeUnit}
-
 import cats.effect.concurrent.Ref
 import cats.effect.{IO, Timer}
 import cats.implicits._
@@ -11,8 +9,10 @@ import com.ing.baker.runtime.model.RecipeInstanceManager.RecipeInstanceStatus
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
 import com.ing.baker.runtime.model.{BakerComponents, RecipeInstanceManager}
 import com.ing.baker.runtime.scaladsl.RecipeInstanceMetadata
-import scala.collection.JavaConverters._
 
+import java.util.concurrent.{ConcurrentMap, TimeUnit}
+import scala.annotation.nowarn
+import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 
 object InMemoryRecipeInstanceManager {
@@ -43,6 +43,7 @@ final class InMemoryRecipeInstanceManager(inmem: Ref[IO, InMemoryRecipeInstanceM
   override def idleStop(recipeInstanceId: String): IO[Unit] =
     IO.unit
 
+  @nowarn
   override def getAllRecipeInstancesMetadata: IO[Set[RecipeInstanceMetadata]] =
     inmem.get.flatMap(_.asScala.toMap.toList.traverse {
       case (recipeInstanceId, RecipeInstanceStatus.Active(recipeInstance)) =>
@@ -51,6 +52,7 @@ final class InMemoryRecipeInstanceManager(inmem: Ref[IO, InMemoryRecipeInstanceM
         IO.pure(RecipeInstanceMetadata(recipeId, recipeInstanceId, createdOn))
     }).map(_.toSet)
 
+  @nowarn
   override protected def fetchAll: IO[Map[String, RecipeInstanceStatus[IO]]] =
     inmem.get.map(_.asScala.toMap)
 

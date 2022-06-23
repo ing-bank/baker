@@ -10,6 +10,7 @@ import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractio
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
 import com.ing.baker.types.Type
 import com.typesafe.config.ConfigFactory
+
 import scala.collection.immutable.Seq
 
 /**
@@ -30,11 +31,11 @@ trait InteractionManager[F[_]] {
   private lazy val AllowSupersetForOutputTypes: Boolean =
     ConfigFactory.load().getBoolean("baker.interactions.allow-superset-for-output-types")
 
-  def listAll: F[List[InteractionInstance[F]]]
+  def listAll: F[List[InteractionInstanceF[F]]]
 
   def recipeAdded(recipeRecord: RecipeRecord)(implicit sync: Sync[F]): F[Unit] = Sync[F].unit
 
-  def findFor(transition: InteractionTransition)(implicit sync: Sync[F]): F[Option[InteractionInstance[F]]] =
+  def findFor(transition: InteractionTransition)(implicit sync: Sync[F]): F[Option[InteractionInstanceF[F]]] =
     listAll.flatMap(all => sync.delay(all.find(compatible(transition, _))))
 
   def existsFor(interaction: InteractionTransition)(implicit sync: Sync[F]): F[Boolean] = findFor(interaction).map(_.nonEmpty)
@@ -46,22 +47,23 @@ trait InteractionManager[F[_]] {
         case None => effect.raiseError(new FatalInteractionException(s"No implementation available for interaction ${interaction.interactionName}"))
       }
 
-  private def interactionNameMatches(transition: InteractionTransition, implementation: InteractionInstance[F]): Boolean =
+  private def interactionNameMatches(transition: InteractionTransition, implementation: InteractionInstanceF[F]): Boolean =
     transition.originalInteractionName == implementation.name || transition.interactionName == implementation.name
 
-  private def inputSizeMatches(transition: InteractionTransition, implementation: InteractionInstance[F]): Boolean =
+  private def inputSizeMatches(transition: InteractionTransition, implementation: InteractionInstanceF[F]): Boolean =
     implementation.input.size == transition.requiredIngredients.size
 
-  private def inputNamesAndTypesMatches(transition: InteractionTransition, implementation: InteractionInstance[F]): Boolean =
+  private def inputNamesAndTypesMatches(transition: InteractionTransition, implementation: InteractionInstanceF[F]): Boolean =
     transition.requiredIngredients.forall(transitionIngredient => {
-      implementation.input.exists(implementationIngredient =>  {
+      implementation.input.exists(implementationIngredient => {
         //We cannot use the name of the interaction input since we do not store the original input name.
         //This means it will not bind on renamed ingredients.
         implementationIngredient.`type`.isAssignableFrom(transitionIngredient.`type`)
       }
-    )})
+      )
+    })
 
-  private def outputEventNamesAndTypesMatches(transition: InteractionTransition, implementation: InteractionInstance[F]): Boolean = {
+  private def outputEventNamesAndTypesMatches(transition: InteractionTransition, implementation: InteractionInstanceF[F]): Boolean = {
     if (implementation.output.isDefined)
     //For the output it is allowed
       implementation.output.get.size <= transition.originalEvents.size &&
@@ -69,7 +71,7 @@ trait InteractionManager[F[_]] {
     else true //If the implementation output is not defined the output validation should be not done
   }
 
-  protected def compatible(transition: InteractionTransition, implementation: InteractionInstance[F]): Boolean = {
+  protected def compatible(transition: InteractionTransition, implementation: InteractionInstanceF[F]): Boolean = {
     interactionNameMatches(transition, implementation) &&
       inputSizeMatches(transition, implementation) &&
       inputNamesAndTypesMatches(transition, implementation) &&
@@ -145,15 +147,15 @@ trait InteractionManager[F[_]] {
     }
   }
 
-  def incompatibilityReason(transition: InteractionTransition, implementation: InteractionInstance[F]): Option[InteractionIncompatible] =
+  def incompatibilityReason(transition: InteractionTransition, implementation: InteractionInstanceF[F]): Option[InteractionIncompatible] =
     if (!inputSizeMatches(transition, implementation))
       Some(InteractionMatchInputSizeFailed(transition.interactionName, transition.requiredIngredients.size, implementation.input.size))
-    else if(!inputNamesAndTypesMatches(transition, implementation)) {
+    else if (!inputNamesAndTypesMatches(transition, implementation)) {
       val missingTypes = transition.requiredIngredients.flatMap(i => {
         if (implementation.input.map(_.`type`).exists(_.isAssignableFrom(i.`type`))) None else Some(i)
       })
       val extraTypes = implementation.input.flatMap(i => {
-        if(transition.requiredIngredients.map(_.`type`).exists(_.isAssignableFrom(i.`type`))) None else Some(i)
+        if (transition.requiredIngredients.map(_.`type`).exists(_.isAssignableFrom(i.`type`))) None else Some(i)
       })
       Some(InteractionMatchInputFailed(implementation.name, missingTypes, extraTypes))
     }

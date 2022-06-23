@@ -2,13 +2,12 @@ package com.ing.bakery.baker
 
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.{BakerResult, EncodedRecipe, EventInstance}
+import com.ing.baker.runtime.serialization.JsonDecoders._
+import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
-import com.ing.baker.runtime.serialization.JsonEncoders._
-import com.ing.baker.runtime.serialization.JsonDecoders._
-import io.circe.parser.parse
-import io.circe._
 import io.circe.generic.auto._
+import io.circe.parser.parse
 
 import java.nio.charset.Charset
 import java.util.Optional
@@ -44,7 +43,7 @@ class BakeryExecutorJava(bakery: Bakery) extends LazyLogging {
     (for {
       json <- parse(recipe).toOption
       encodedRecipe <- json.as[EncodedRecipe].toOption
-    } yield RecipeLoader.fromBytes(encodedRecipe.base64.getBytes(Charset.forName("UTF-8"))).unsafeToFuture)
+    } yield RecipeLoader.fromBytes(encodedRecipe.base64.getBytes(Charset.forName("UTF-8"))).unsafeToFuture())
       .map(_.flatMap(recipe => callBaker(bakery.baker.addRecipe(recipe, validate = false))))
       .getOrElse(Future.failed(new IllegalStateException("Error adding recipe")))
   }.toJava.toCompletableFuture

@@ -3,13 +3,15 @@ package com.ing.baker.il
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.api._
-import com.typesafe.scalalogging.{ LazyLogging, Logger }
+import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
-import scala.language.higherKinds
 import scalax.collection.Graph
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.io.dot.implicits._
-import scalax.collection.io.dot.{ DotAttr, _ }
+import scalax.collection.io.dot.{DotAttr, _}
+
+import scala.annotation.nowarn
+import scala.language.higherKinds
 
 object RecipeVisualizer {
 
@@ -20,6 +22,7 @@ object RecipeVisualizer {
 
   implicit class RecipePetriNetGraphFns(graph: RecipePetriNetGraph) {
 
+    @nowarn
     def compactNode(node: RecipePetriNetGraph#NodeT): RecipePetriNetGraph = {
 
       // create direct edges from all incoming to outgoing nodes

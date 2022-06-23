@@ -1,18 +1,18 @@
 package com.ing.baker.types.modules
 
-import java.lang
-
 import com.ing.baker.types
 import com.ing.baker.types.Converters
 import com.ing.baker.types.Converters.readJavaType
 import com.ing.baker.types.modules.PrimitiveModuleSpec._
 import org.scalacheck.Gen
-import org.scalacheck.Prop.{propBoolean, forAll}
+import org.scalacheck.Prop.{forAll, propBoolean}
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.scalacheck.Checkers
 
+import java.lang
+import scala.annotation.nowarn
 import scala.reflect.runtime.universe.TypeTag
 
 object PrimitiveModuleSpec {
@@ -63,6 +63,7 @@ class PrimitiveModuleSpec extends AnyWordSpecLike with Matchers with Checkers {
 
       val minSuccessful = 100
 
+      @nowarn
       def checkType[T : TypeTag](gen: Gen[T]) = {
 
         val parsedType = Converters.readJavaType[T]

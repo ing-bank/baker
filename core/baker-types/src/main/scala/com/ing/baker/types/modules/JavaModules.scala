@@ -1,10 +1,10 @@
 package com.ing.baker.types.modules
 
-import java.lang.reflect.ParameterizedType
-import java.util
-
 import com.ing.baker.types._
 
+import java.lang.reflect.ParameterizedType
+import java.util
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 object JavaModules {
@@ -16,6 +16,7 @@ object JavaModules {
       ListType(entryType)
     }
 
+    @nowarn
     override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): util.List[Any] = value match {
       case NullValue => null
       case ListValue(entries) if isApplicable(javaType) =>
@@ -28,6 +29,7 @@ object JavaModules {
         list
     }
 
+    @nowarn
     def fromJava(context: TypeAdapter, obj: Any): Value = obj match {
       case list: java.util.List[_] => ListValue(list.asScala.toList.map(context.fromJava))
     }
@@ -40,6 +42,7 @@ object JavaModules {
       ListType(entryType)
     }
 
+    @nowarn
     override  def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): util.Set[Any] = value match {
       case NullValue => null
       case ListValue(entries) if isApplicable(javaType) =>
@@ -52,6 +55,7 @@ object JavaModules {
         list
     }
 
+    @nowarn
     def fromJava(context: TypeAdapter, obj: Any): Value = obj match {
       case set: java.util.Set[_] => ListValue(set.asScala.toList.map(context.fromJava))
     }
@@ -64,6 +68,7 @@ object JavaModules {
       MapType(entryType)
     }
 
+    @nowarn
     override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): util.Map[String, Any] = value match {
       case NullValue => null
       case RecordValue(entries) if classOf[java.util.Map[_,_]].isAssignableFrom(getBaseClass(javaType)) =>
@@ -81,6 +86,7 @@ object JavaModules {
         javaMap
     }
 
+    @nowarn
     def fromJava(context: TypeAdapter, obj: Any): Value = obj match {
       case map: java.util.Map[_, _] =>
         val entries: Map[String, Value] = map.entrySet().iterator().asScala.map {
@@ -98,6 +104,7 @@ object JavaModules {
         OptionType(entryType)
     }
 
+    @nowarn
     override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any = (value, javaType) match {
       case (_, generic: ParameterizedType) if isAssignableToBaseClass(javaType, classOf[java.util.Optional[_]]) =>
         val optionType = generic.getActualTypeArguments()(0)

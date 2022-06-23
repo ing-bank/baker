@@ -7,6 +7,9 @@ import org.scalacheck._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 
+import scala.annotation.nowarn
+
+@nowarn
 class EncryptionPropertiesSpec extends AnyFunSuite with Checkers {
 
   val desEncryptionGen: Gen[DESEncryption] = for {

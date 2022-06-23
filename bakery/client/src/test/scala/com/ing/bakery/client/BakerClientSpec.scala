@@ -1,26 +1,27 @@
 package com.ing.bakery.client
 
-import java.net.InetSocketAddress
 import cats.effect.concurrent.{MVar, MVar2}
 import cats.effect.{IO, Resource}
+import com.ing.baker.runtime.scaladsl.BakerResult
+import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.bakery.common.{KeystoreConfig, TLSConfig}
 import com.ing.bakery.javadsl
 import com.ing.bakery.scaladsl.{BakerClient, EndpointConfig}
-import com.ing.baker.runtime.scaladsl.BakerResult
-import com.ing.baker.runtime.serialization.JsonEncoders._
-import io.circe.generic.auto._
-import org.http4s.{Header, _}
 import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze._
+import org.http4s._
 import org.scalatest.ConfigMap
 
+import java.net.InetSocketAddress
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters
 import scala.concurrent.ExecutionContext
 
+@nowarn
 class BakerClientSpec extends BakeryFunSpec {
 
   case class Context(serverAddress: InetSocketAddress, receivedHeaders: IO[List[Header]])

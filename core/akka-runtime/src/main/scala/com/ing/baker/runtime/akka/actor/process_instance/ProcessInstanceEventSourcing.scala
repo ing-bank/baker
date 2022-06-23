@@ -1,14 +1,14 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
-import akka.persistence.{PersistentActor, RecoveryCompleted}
-import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.akka.actor.process_instance.internal.{ExceptionState, ExceptionStrategy, Instance, Job}
-import ProcessInstanceEventSourcing._
 import akka.NotUsed
 import akka.actor.{ActorSystem, NoSerializationVerificationNeeded}
 import akka.persistence.query.scaladsl.CurrentEventsByPersistenceIdQuery
+import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.sensors.actor.PersistentActorMetrics
 import akka.stream.scaladsl.Source
+import com.ing.baker.petrinet.api._
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
+import com.ing.baker.runtime.akka.actor.process_instance.internal.{ExceptionState, ExceptionStrategy, Instance, Job}
 import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
 import com.ing.baker.runtime.serialization.Encryption
 
@@ -122,7 +122,7 @@ abstract class ProcessInstanceEventSourcing[P : Identifiable, T : Identifiable, 
 
   private val serializer = new ProcessInstanceSerialization[P, T, S, E](AkkaSerializerProvider(system, encryption))
 
-  def onRecoveryCompleted(state: Instance[P, T, S])
+  def onRecoveryCompleted(state: Instance[P, T, S]): Unit
 
   def persistEvent[O](instance: Instance[P, T, S], e: Event)(fn: Event => O): Unit = {
     val serializedEvent = serializer.serializeEvent(e)(instance)
