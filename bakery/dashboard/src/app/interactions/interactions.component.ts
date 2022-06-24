@@ -2,7 +2,6 @@ import {
     Component,
     ElementRef,
     OnInit,
-    ViewChild
 } from "@angular/core";
 import {BakeryService} from "../bakery.service";
 import {Interaction} from "../bakery.api";

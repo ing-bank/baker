@@ -7,14 +7,14 @@ import {
     ViewChild
 } from "@angular/core";
 import {
-    EventRecord,
-    InstanceIngredientValue,
-    InstanceIngredientValueList,
-    InstanceIngredientValuePrimitive,
-    InstanceIngredientValueRecord,
-    InstanceIngredientValueType
-} from "../bakery.api";
+    ListValue,
+    PrimitiveValue,
+    RecordValue,
+    Value,
+    ValueType
+} from "../baker-value.api";
 import {BakeryService} from "../bakery.service";
+import {EventRecord} from "../bakery.api";
 
 type InstanceIngredient = { name : string, value: string, isSimple: boolean };
 
@@ -92,25 +92,25 @@ export class InstancesComponent implements OnInit {
         });
     }
 
-    simplifyIngredient(ii : InstanceIngredientValue) : unknown {
+    simplifyIngredient(ii : Value) : unknown {
         switch (ii.typ) {
-        case InstanceIngredientValueType.NullValue: return null;
-        case InstanceIngredientValueType.ListValue: return (ii as InstanceIngredientValueList).val.map(this.simplifyIngredient);
-        case InstanceIngredientValueType.RecordValue: {
-            const record = ii as InstanceIngredientValueRecord;
+        case ValueType.NullValue: return null;
+        case ValueType.ListValue: return (ii as ListValue).val.map(this.simplifyIngredient);
+        case ValueType.RecordValue: {
+            const record = ii as RecordValue;
             // eslint-disable-next-line array-element-newline
             return Object.fromEntries(Object.entries(record.val).map(([name, value]) => [
                 name,
                 this.simplifyIngredient(value)
             ]));
         }
-        case InstanceIngredientValueType.PrimitiveValue: return (ii as InstanceIngredientValuePrimitive).val;
+        case ValueType.PrimitiveValue: return (ii as PrimitiveValue).val;
         default: return null;
         }
     }
 
-    isSimple(ii: InstanceIngredientValue) : boolean {
-        return ii.typ === InstanceIngredientValueType.NullValue || ii.typ === InstanceIngredientValueType.PrimitiveValue;
+    isSimple(ii: Value) : boolean {
+        return ii.typ === ValueType.NullValue || ii.typ === ValueType.PrimitiveValue;
     }
 
     toIsoString(linuxTime: number) : string {

@@ -1,3 +1,6 @@
+import {RecordField} from "./baker-types.api";
+import {Value} from "./baker-value.api";
+
 export interface Recipe {
   name:              string;
   recipeId:          string;
@@ -26,10 +29,9 @@ export interface DigraphResponse {
 export interface Interaction {
   id:    string;
   name:  string;
-  input: JSON[];
-  output?:   { [key: string]: { [key: string]: JSON } };
+  input: RecordField[];
+  output?:   { [eventName: string]: RecordField };
 }
-
 
 export interface InteractionsResponse {
   result: string;
@@ -41,38 +43,10 @@ export interface EventRecord {
   occurredOn: number;
 }
 
-// eslint-disable-next-line no-shadow
-export enum InstanceIngredientValueType {
-  NullValue = 0,
-  ListValue = 1,
-  RecordValue = 2,
-  PrimitiveValue = 3,
-}
-
-export type InstanceIngredientValue =
-// eslint-disable-next-line no-use-before-define
-    InstanceIngredientValueNull | InstanceIngredientValueList | InstanceIngredientValueRecord | InstanceIngredientValuePrimitive;
-
-export interface InstanceIngredientValueNull {
-  typ: InstanceIngredientValueType.NullValue;
-}
-export interface InstanceIngredientValueList {
-  typ: InstanceIngredientValueType.ListValue;
-  val: InstanceIngredientValue[];
-}
-export interface InstanceIngredientValueRecord {
-  typ: InstanceIngredientValueType.RecordValue;
-  val: { [key: string]: InstanceIngredientValue };
-}
-export interface InstanceIngredientValuePrimitive {
-  typ: InstanceIngredientValueType.PrimitiveValue;
-  styp: string;
-  val: string | number;
-}
 
 export interface Instance {
   recipeInstanceId: string;
-  ingredients:  { [key: string]: InstanceIngredientValue };
+  ingredients:  { [key: string]: Value };
   events: EventRecord[];
 }
 
@@ -80,4 +54,3 @@ export interface InstanceResponse {
   result: "success" | "error";
   body:   Instance;
 }
-
