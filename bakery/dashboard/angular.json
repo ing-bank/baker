@@ -106,8 +106,10 @@
       }
     }
   },
-  "defaultProject": "bakery-dashboard",
   "cli": {
-    "defaultCollection": "@angular-eslint/schematics"
+    "schematicCollections": [
+      "@angular-eslint/schematics"
+    ],
+    "analytics": "5e1681ee-abca-47e6-b426-b5dc489415b5"
   }
 }
