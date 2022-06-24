@@ -6,13 +6,8 @@ import {
     Renderer2,
     ViewChild
 } from "@angular/core";
-import {
-    ListValue,
-    PrimitiveValue,
-    RecordValue,
-    Value,
-    ValueType
-} from "../baker-value.api";
+import {Value, ValueType} from "../baker-value.api";
+import {BakerConversionService} from "../baker-conversion.service";
 import {BakeryService} from "../bakery.service";
 import {EventRecord} from "../bakery.api";
 
@@ -27,6 +22,7 @@ export class InstancesComponent implements OnInit {
     constructor (
         private top: ElementRef,
         private bakeryService: BakeryService,
+        private bakerConversionService: BakerConversionService,
         private renderer: Renderer2,
         private route: ActivatedRoute,
         private router: Router
@@ -75,7 +71,7 @@ export class InstancesComponent implements OnInit {
                         .map((ingredientName) : InstanceIngredient  => ({
                             "isSimple": this.isSimple(instance.ingredients[ingredientName]),
                             "name": ingredientName,
-                            "value": JSON.stringify(this.simplifyIngredient(instance.ingredients[ingredientName]), null, 4),
+                            "value": JSON.stringify(this.bakerConversionService.valueToJson(instance.ingredients[ingredientName]), null, 4),
                         }));
                 } else {
                     this.failedInstanceId = this.instanceId;
@@ -90,23 +86,6 @@ export class InstancesComponent implements OnInit {
         this.bakeryService.getInstanceVisual(this.instanceId).subscribe(visual => {
             this.visual = visual;
         });
-    }
-
-    simplifyIngredient(ii : Value) : unknown {
-        switch (ii.typ) {
-        case ValueType.NullValue: return null;
-        case ValueType.ListValue: return (ii as ListValue).val.map(this.simplifyIngredient);
-        case ValueType.RecordValue: {
-            const record = ii as RecordValue;
-            // eslint-disable-next-line array-element-newline
-            return Object.fromEntries(Object.entries(record.val).map(([name, value]) => [
-                name,
-                this.simplifyIngredient(value)
-            ]));
-        }
-        case ValueType.PrimitiveValue: return (ii as PrimitiveValue).val;
-        default: return null;
-        }
     }
 
     isSimple(ii: Value) : boolean {
