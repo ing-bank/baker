@@ -1,16 +1,18 @@
 .interactions-list {
   height: 100%;
-  position: absolute;
+  width: 500px;
   left: 5px;
 
   .scroll-viewport {
     height: 100%;
-    width: 500px;
   }
 }
 
-
 interactions-json-view {
   height: 100%;
+  width: 100%;
+}
+
+.mat-form-field {
   width: 100%;
 }
