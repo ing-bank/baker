@@ -1,4 +1,4 @@
-import {Component, ElementRef, OnInit, ViewChild} from "@angular/core";
+import {Component, ElementRef, OnInit} from "@angular/core";
 import {BakeryService} from "../bakery.service";
 import {Recipe} from "../bakery.api";
 
@@ -11,15 +11,17 @@ import {Recipe} from "../bakery.api";
 export class RecipesComponent implements OnInit {
     recipes: Recipe[];
     displayedColumns: string[] = [
+        "recipeCreatedTime",
         "recipeName",
         "recipeId",
-        "recipeCreatedTime",
         "validate",
         "visualization",
         "errors",
     ];
 
-    @ViewChild("recipeGraph", {"static": true}) recipeGraph: ElementRef;
+    selectedRecipeGraph: string | null;
+    selectedRecipeName: string | null;
+    selectedTabIndex: number;
 
     constructor(
         private top: ElementRef,
@@ -29,7 +31,19 @@ export class RecipesComponent implements OnInit {
 
     ngOnInit(): void {
         this.bakeryService.getRecipes().subscribe(recipes => {
-            this.recipes = recipes;
+            this.recipes = recipes.sort((recipeA, recipeB) => recipeA.recipeCreatedTime - recipeB.recipeCreatedTime).reverse();
         });
+    }
+
+    viewRecipe(recipeId: string, recipeName: string): void {
+        this.bakeryService.getRecipeVisual(recipeId).subscribe(visual => {
+            this.selectedRecipeGraph = visual;
+            this.selectedRecipeName = recipeName;
+            this.selectedTabIndex = 1;
+        });
+    }
+
+    toIsoString(linuxTime: number) : string {
+        return new Date(linuxTime).toISOString();
     }
 }

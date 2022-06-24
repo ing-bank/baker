@@ -1,41 +1,48 @@
 <div class="page-container">
+  <mat-tab-group [(selectedIndex)]="selectedTabIndex">
+    <mat-tab label="Recipe list">
+      <table *ngIf="recipes && recipes[0]" mat-table [dataSource]="recipes" class="mat-elevation-z8">
+        <ng-container matColumnDef="recipeCreatedTime">
+          <th mat-header-cell *matHeaderCellDef>Last updated at</th>
+          <td mat-cell *matCellDef="let recipe"> {{toIsoString(recipe.recipeCreatedTime)}} </td>
+        </ng-container>
 
-  <table mat-table [dataSource]="recipes" class="mat-elevation-z8">
-    <ng-container matColumnDef="recipeName">
-      <th mat-header-cell *matHeaderCellDef>Recipe name</th>
-      <td mat-cell *matCellDef="let recipe"> {{recipe.name}} </td>
-    </ng-container>
+        <ng-container matColumnDef="recipeName">
+          <th mat-header-cell *matHeaderCellDef>Recipe name</th>
+          <td mat-cell *matCellDef="let recipe"> {{recipe.name}} </td>
+        </ng-container>
 
-    <ng-container matColumnDef="recipeId">
-      <th mat-header-cell *matHeaderCellDef>Id</th>
-      <td mat-cell *matCellDef="let recipe"> {{recipe.recipeId}} </td>
-    </ng-container>
+        <ng-container matColumnDef="recipeId">
+          <th mat-header-cell *matHeaderCellDef>Id</th>
+          <td mat-cell *matCellDef="let recipe"> {{recipe.recipeId}} </td>
+        </ng-container>
 
-    <ng-container matColumnDef="recipeCreatedTime">
-      <th mat-header-cell *matHeaderCellDef>Last updated at</th>
-      <td mat-cell *matCellDef="let recipe"> {{recipe.recipeCreatedTime}} </td>
-    </ng-container>
+        <ng-container matColumnDef="validate">
+          <th mat-header-cell *matHeaderCellDef>Is validated</th>
+          <td mat-cell *matCellDef="let recipe"> {{recipe.validate ? 'yes' : 'no' }} </td>
+        </ng-container>
 
-    <ng-container matColumnDef="validate">
-      <th mat-header-cell *matHeaderCellDef>Is validated</th>
-      <td mat-cell *matCellDef="let recipe"> {{recipe.validate ? 'yes' : 'no' }} </td>
-    </ng-container>
+        <ng-container matColumnDef="visualization">
+          <th mat-header-cell *matHeaderCellDef>Visualization</th>
+          <td mat-cell *matCellDef="let recipe"><button mat-raised-button color="primary" (click)="viewRecipe(recipe.recipeId, recipe.name)">Visualize</button></td>
+        </ng-container>
 
-    <ng-container matColumnDef="visualization">
-      <th mat-header-cell *matHeaderCellDef>Visualization</th>
-      <td mat-cell *matCellDef="let recipe"><a [routerLink]="['/recipes', recipe.recipeId]">view</a> </td>
-    </ng-container>
-
-    <ng-container matColumnDef="errors">
-      <th mat-header-cell *matHeaderCellDef>Recipe errors</th>
-      <td mat-cell *matCellDef="let recipe"> {{recipe.errors}} </td>
-    </ng-container>
+        <ng-container matColumnDef="errors">
+          <th mat-header-cell *matHeaderCellDef>Recipe errors</th>
+          <td mat-cell *matCellDef="let recipe"> {{recipe.errors}} </td>
+        </ng-container>
 
 
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
 
-  </table>
-
-  <p *ngIf="recipes && !recipes[0]">No recipes added to bakery in this cluster.</p>
+      <p *ngIf="recipes && !recipes[0]">No recipes added to bakery in this cluster.</p>
+    </mat-tab>
+    <mat-tab *ngIf="selectedRecipeGraph" [label]="selectedRecipeName + ' visualization'">
+      <ng-template matTabContent>
+        <visualize-recipe [visual]="selectedRecipeGraph"></visualize-recipe>
+      </ng-template>
+    </mat-tab>
+  </mat-tab-group>
 </div>

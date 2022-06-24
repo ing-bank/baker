@@ -5,7 +5,6 @@ import {InteractionsComponent} from "./interactions/interactions.component";
 import {NgModule} from "@angular/core";
 import {NotFoundComponent} from "./notfound/notfound.component";
 
-import {RecipeVisualizeComponent} from "./recipes/visualize/recipe-visualize.component";
 import {RecipesComponent} from "./recipes/recipes.component";
 
 const routes: Routes = [
@@ -16,10 +15,6 @@ const routes: Routes = [
     {
         "component": RecipesComponent,
         "path": "recipes"
-    },
-    {
-        "component": RecipeVisualizeComponent,
-        "path": "recipes/:recipeId",
     },
     {
         "component": InteractionsComponent,
