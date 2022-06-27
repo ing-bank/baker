@@ -4,10 +4,11 @@ import com.ing.baker.il.EventDescriptor
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.{common, javadsl}
-import com.ing.baker.types.{Converters, NullValue, PrimitiveValue, RecordValue, Value}
+import com.ing.baker.types._
 
-import scala.collection.immutable.Seq
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
+import scala.collection.immutable.Seq
 
 case class EventInstance(name: String, providedIngredients: Map[String, Value]) extends common.EventInstance with ScalaApi {
 
@@ -66,6 +67,7 @@ case class EventInstance(name: String, providedIngredients: Map[String, Value]) 
     }
   }
 
+  @nowarn
   def asJava: javadsl.EventInstance =
     new javadsl.EventInstance(name, providedIngredients.asJava)
 }

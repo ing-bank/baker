@@ -1,7 +1,5 @@
 package com.ing.baker.runtime.akka
 
-import java.util.{List => JavaList}
-
 import akka.actor.{Actor, ActorRef, ActorSystem, Address, Props}
 import akka.pattern.{FutureRef, ask}
 import akka.util.Timeout
@@ -25,6 +23,8 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 
+import java.util.{List => JavaList}
+import scala.annotation.nowarn
 import scala.collection.immutable.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -492,6 +492,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   /**
     * Attempts to gracefully shutdown the baker system.
     */
+  @nowarn
   override def gracefulShutdown: Future[Unit] =
     Future.successful(GracefulShutdown.gracefulShutdownActorSystem(system, config.timeouts.defaultShutdownTimeout))
 }

@@ -1,27 +1,24 @@
 package com.ing.baker.runtime.model
 
-import java.lang.reflect
-import java.lang.reflect.{Method, Parameter}
-import java.security.MessageDigest
-import java.util
-import java.util.concurrent.CompletableFuture
-import java.util.{Base64, Optional}
-
 import cats.implicits._
 import cats.{Applicative, ~>}
 import com.ing.baker.recipe.annotations.{FiresEvent, RequiresIngredient}
+import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
-import com.ing.baker.runtime.{common, javadsl}
 import com.ing.baker.types.{Converters, Type}
 
-import scala.collection.JavaConverters._
+import java.lang.reflect.{Method, Parameter}
+import java.security.MessageDigest
+import java.util.Base64
+import java.util.concurrent.CompletableFuture
 import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 import scala.util.Try
 
-abstract class InteractionInstance[F[_]] extends common.InteractionInstance[F] with ScalaApi { self =>
+abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] with ScalaApi {
+  self =>
 
   val run: Seq[IngredientInstance] => F[Option[EventInstance]]
 
@@ -42,8 +39,8 @@ abstract class InteractionInstance[F[_]] extends common.InteractionInstance[F] w
     new String(base64)
   }
 
-  def translate[G[_]](mapK: F ~> G): InteractionInstance[G] =
-    new InteractionInstance[G] {
+  def translate[G[_]](mapK: F ~> G): InteractionInstanceF[G] =
+    new InteractionInstanceF[G] {
       override val run: Seq[IngredientInstance] => G[Option[EventInstance]] =
         (i: Seq[IngredientInstance]) => mapK(self.run(i))
       override val name: String =
@@ -61,33 +58,33 @@ abstract class InteractionInstance[F[_]] extends common.InteractionInstance[F] w
   }
 }
 
-object InteractionInstance {
+object InteractionInstanceF {
 
   type Constructor[F[_]] = (
     String,
-    Seq[Type],
-    Seq[IngredientInstance] => F[Option[EventInstance]],
-    Option[Map[String, Map[String, Type]]]) => InteractionInstance[F]
+      Seq[Type],
+      Seq[IngredientInstance] => F[Option[EventInstance]],
+      Option[Map[String, Map[String, Type]]]) => InteractionInstanceF[F]
 
-  def build[F[_]](_name: String, _input: Seq[InteractionInstanceInput], _run: Seq[IngredientInstance] => F[Option[EventInstance]], _output: Option[Map[String, Map[String, Type]]] = None): InteractionInstance[F] =
-    new InteractionInstance[F] {
+  def build[F[_]](_name: String, _input: Seq[InteractionInstanceInput], _run: Seq[IngredientInstance] => F[Option[EventInstance]], _output: Option[Map[String, Map[String, Type]]] = None): InteractionInstanceF[F] =
+    new InteractionInstanceF[F] {
       override val name: String = _name
       override val input: Seq[InteractionInstanceInput] = _input
       override val run: Seq[IngredientInstance] => F[Option[EventInstance]] = _run
       override val output: Option[Map[String, Map[String, Type]]] = _output
     }
 
-  def unsafeFromList[F[_]](implementations: List[AnyRef])(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): List[InteractionInstance[F]] = {
+  def unsafeFromList[F[_]](implementations: List[AnyRef])(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): List[InteractionInstanceF[F]] = {
     implementations.map(unsafeFrom[F](_))
   }
 
-  def unsafeFrom[F[_]](implementation: AnyRef)(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): InteractionInstance[F] = {
+  def unsafeFrom[F[_]](implementation: AnyRef)(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): InteractionInstanceF[F] = {
     val method: Method = {
       val unmockedClass = common.unmock(implementation.getClass)
       unmockedClass.getMethods.count(_.getName == "apply") match {
-        case 0          => throw new IllegalArgumentException(s"Implementation ${implementation.getClass.getName} does not have a apply function")
+        case 0 => throw new IllegalArgumentException(s"Implementation ${implementation.getClass.getName} does not have a apply function")
         case n if n > 1 => throw new IllegalArgumentException(s"Implementation ${implementation.getClass.getName} has multiple apply functions")
-        case _          => unmockedClass.getMethods.find(_.getName == "apply").get
+        case _ => unmockedClass.getMethods.find(_.getName == "apply").get
       }
     }
 
@@ -112,7 +109,7 @@ object InteractionInstance {
         case Some(field) if field.getType == classOf[String] =>
           field.setAccessible(true)
           Some(field.get(implementation).asInstanceOf[String])
-        case None => None
+        case _ => None
       }
     }
 

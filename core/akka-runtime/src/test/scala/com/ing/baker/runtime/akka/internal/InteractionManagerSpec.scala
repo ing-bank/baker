@@ -4,13 +4,13 @@ import cats.effect.{ContextShift, IO}
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
 import com.ing.baker.runtime.scaladsl.{InteractionInstance, InteractionInstanceInput}
+import com.ing.baker.runtime.{defaultinteractions, model}
 import com.ing.baker.types
 import com.ing.baker.types.{EnumType, Int16, Int32, Type}
 import org.mockito.Mockito.when
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
-import com.ing.baker.runtime.{defaultinteractions, model}
 
 import scala.collection.immutable.Seq
 import scala.concurrent.ExecutionContext
@@ -21,7 +21,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
     "return Some" when {
       "an default interaction is request" in {
         val interactionManager: CachingInteractionManager = new CachingInteractionManager() {
-          override def listAll: IO[List[model.InteractionInstance[IO]]] = IO.pure(defaultinteractions.all)
+          override def listAll: IO[List[model.InteractionInstanceF[IO]]] = IO.pure(defaultinteractions.all)
         }
 
         val timerInteractionTransition = mock[InteractionTransition]

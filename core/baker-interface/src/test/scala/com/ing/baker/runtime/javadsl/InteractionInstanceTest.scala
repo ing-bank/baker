@@ -1,14 +1,15 @@
 package com.ing.baker.runtime.javadsl
 
-import java.util
-import java.util.Optional
-
 import com.ing.baker.types.CharArray
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
+import java.util
+import java.util.Optional
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
+@nowarn
 class InteractionInstanceTest extends AnyFunSpec with Matchers {
   describe("unsafeFrom") {
     describe("should create an interaction from a class with an apply method") {

@@ -1,7 +1,9 @@
 package com.ing.baker.runtime.common
 
+import scala.annotation.nowarn
 import scala.util.{Failure, Success, Try}
 
+@nowarn
 sealed abstract class BakerException(val message: String = "An exception occurred at Baker", val enum: Int, val cause: Throwable = null)
     extends RuntimeException(message, cause)
 
@@ -34,6 +36,7 @@ object BakerException {
   case class SingleInteractionExecutionFailedException(reason: String)
     extends BakerException(reason, 8)
 
+  @nowarn
   def encode(bakerException: BakerException): (String, Int) =
     bakerException match {
       case e @ NoSuchProcessException(recipeInstanceId) => (recipeInstanceId, e.enum)
@@ -46,6 +49,7 @@ object BakerException {
       case e @ SingleInteractionExecutionFailedException(reason) => (reason, e.enum)
     }
 
+  @nowarn
   def decode(message: String, enum: Int): Try[BakerException] =
     enum match {
       case 1 => Success(NoSuchProcessException(message))

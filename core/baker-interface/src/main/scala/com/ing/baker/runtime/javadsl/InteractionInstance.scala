@@ -1,15 +1,15 @@
 package com.ing.baker.runtime.javadsl
 
-import java.util
-import java.util.Optional
-import java.util.concurrent.CompletableFuture
-
 import cats.effect.{ContextShift, IO}
 import cats.~>
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.{common, javadsl, model, scaladsl}
 import com.ing.baker.types.Type
 
+import java.util
+import java.util.Optional
+import java.util.concurrent.CompletableFuture
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
 import scala.compat.java8.FutureConverters
@@ -33,6 +33,7 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
 
   override def execute(input: util.List[IngredientInstance]): CompletableFuture[Optional[EventInstance]]
 
+  @nowarn
   private def wrapExecuteToFuture(input: Seq[scaladsl.IngredientInstance]): Future[Option[scaladsl.EventInstance]] = {
     FutureConverters.toScala(execute(input.map(_.asJava).asJava)
       .thenApply[Option[scaladsl.EventInstance]] {
@@ -42,10 +43,12 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
       })
   }
 
+  @nowarn
   private def outputOrNone: Option[Map[String, Map[String, Type]]] = {
     if (output.isPresent) Some(output.get.asScala.view.map { case (key, value) => (key, value.asScala.toMap)}.toMap) else None
   }
 
+  @nowarn
   def asScala: scaladsl.InteractionInstance = {
     scaladsl.InteractionInstance(
       name,
@@ -55,8 +58,9 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
     )
   }
 
+  @nowarn
   def asEffectful(implicit cs: ContextShift[IO]): common.InteractionInstance[IO] = {
-    model.InteractionInstance.build(
+    model.InteractionInstanceF.build(
       name,
       input.asScala.map(input => input.asScala).toIndexedSeq,
       input => IO.fromFuture(IO(wrapExecuteToFuture(input)))(cs),
@@ -67,15 +71,17 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
 
 object InteractionInstance {
 
+  @nowarn
   def fromList(implementations: java.util.List[AnyRef]): java.util.List[InteractionInstance] = {
     implementations.asScala.map(from).asJava
   }
 
   def from(implementation: AnyRef): InteractionInstance = {
-    fromModel(model.InteractionInstance.unsafeFrom[IO](implementation))
+    fromModel(model.InteractionInstanceF.unsafeFrom[IO](implementation))
   }
 
-  def fromModel(common: model.InteractionInstance[IO]) : InteractionInstance = {
+  @nowarn
+  def fromModel(common: model.InteractionInstanceF[IO]): InteractionInstance = {
     val converter = new (IO ~> CompletableFuture) {
       def apply[A](fa: IO[A]): CompletableFuture[A] = fa.unsafeToFuture().toJava.toCompletableFuture
     }

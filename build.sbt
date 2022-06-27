@@ -20,9 +20,12 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
       state
 })
 
+lazy val scala212 = "2.12.16"
+lazy val scala213 = "2.13.8"
+
+lazy val supportedScalaVersions = List(scala213, scala212)
 val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
-  scalaVersion := "2.12.15",
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
   javacOptions := Seq("-source", "1.8", "-target", "1.8"),
@@ -75,7 +78,7 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
     jawnParser,
     nettyHandler,
     bouncyCastleBcprov,
-    bouncyCastleBcpkix
+    bouncyCastleBcpkix,
   )
 )
 
@@ -85,7 +88,23 @@ lazy val noPublishSettings: Seq[Setting[_]] = Seq(
   publishArtifact := false
 )
 
-lazy val defaultModuleSettings: Seq[Setting[_]] = commonSettings ++ dependencyOverrideSettings ++ Publish.settings
+lazy val crossBuildSettings: Seq[Setting[_]] = Seq(
+  scalaVersion := scala213,
+  crossScalaVersions := supportedScalaVersions
+)
+
+lazy val defaultModuleSettings212: Seq[Setting[_]] = commonSettings ++ dependencyOverrideSettings ++ Publish.settings
+
+lazy val defaultModuleSettings: Seq[Setting[_]] =  crossBuildSettings ++ defaultModuleSettings212
+
+lazy val yPartialUnificationSetting: Seq[Setting[_]] = Seq(
+  Compile / scalacOptions ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, n)) if n <= 12 => List("-Ypartial-unification")
+      case _ => Nil
+    }
+  }
+)
 
 lazy val scalaPBSettings: Seq[Setting[_]] = Seq(Compile / PB.targets := Seq(scalapb.gen() -> (Compile / sourceManaged).value))
 
@@ -130,7 +149,12 @@ lazy val `baker-interface`: Project = project.in(file("core/baker-interface"))
       catsEffect,
       fs2Core,
       fs2Io,
-      scalaJava8Compat,
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, n)) if n <= 12 =>
+          scalaJava8Compat091
+        case _ =>
+          scalaJava8Compat100
+      },
       javaxInject,
       guava
     ) ++ providedDeps(findbugs) ++ testDeps(
@@ -308,11 +332,9 @@ lazy val `bakery-dashboard`: Project = project.in(file("bakery/dashboard"))
 
 lazy val `bakery-state-k8s`: Project = project.in(file("bakery/baker-state-k8s"))
   .settings(defaultModuleSettings)
+  .settings(yPartialUnificationSetting)
   .settings(
     moduleName := "bakery-state-k8s",
-    scalacOptions ++= Seq(
-      "-Ypartial-unification"
-    ),
     libraryDependencies ++= Seq(
       skuber
     ) ++ testDeps(
@@ -345,6 +367,7 @@ lazy val `bakery-state-k8s`: Project = project.in(file("bakery/baker-state-k8s")
 lazy val `bakery-state`: Project = project.in(file("bakery/state"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(defaultModuleSettings)
+  .settings(yPartialUnificationSetting)
   .settings(
     Compile / mainClass := Some("com.ing.bakery.baker.Main"),
     dockerExposedPorts ++= Seq(8080),
@@ -354,9 +377,6 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
       directory(s"${(`bakery-dashboard` / baseDirectory).value.getAbsolutePath}/dist")
         .map(t => (t._1, t._2.replace("dist", "dashboard"))),
     moduleName := "bakery-state",
-    scalacOptions ++= Seq(
-      "-Ypartial-unification"
-    ),
     libraryDependencies ++= Seq(
       slf4jApi,
       logback,
@@ -443,21 +463,21 @@ lazy val `bakery-interaction-spring`: Project = project.in(file("bakery/interact
 
 lazy val baker: Project = project.in(file("."))
   .settings(defaultModuleSettings)
+  .settings(
+    crossScalaVersions := Nil,
+  )
   .aggregate(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
     `bakery-client`, `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
-    `sbt-bakery-docker-generate`, `bakery-state-k8s`,
-    `baker-interface`, `bakery-dashboard`, `baker-annotations`, `baker-test`)
+    `bakery-state-k8s`, `baker-interface`, `bakery-dashboard`, `baker-annotations`, `baker-test`)
 
 lazy val `baker-example`: Project = project
   .in(file("examples/baker-example"))
   .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
   .settings(noPublishSettings)
+  .settings(yPartialUnificationSetting)
   .settings(
     moduleName := "baker-example",
-    scalacOptions ++= Seq(
-      "-Ypartial-unification"
-    ),
     libraryDependencies ++=
       compileDeps(
         slf4jApi,
@@ -488,11 +508,9 @@ lazy val `bakery-client-example`: Project = project
   .in(file("examples/bakery-client-example"))
   .enablePlugins(JavaAppPackaging)
   .settings(defaultModuleSettings)
+  .settings(yPartialUnificationSetting)
   .settings(
     moduleName := "bakery-client-example",
-    scalacOptions ++= Seq(
-      "-Ypartial-unification"
-    ),
     libraryDependencies ++=
       compileDeps(
         slf4jApi,
@@ -518,11 +536,9 @@ lazy val `bakery-kafka-listener-example`: Project = project
   .in(file("examples/bakery-kafka-listener-example"))
   .enablePlugins(JavaAppPackaging)
   .settings(defaultModuleSettings)
+  .settings(yPartialUnificationSetting)
   .settings(
     moduleName := "bakery-kafka-listener-example",
-    scalacOptions ++= Seq(
-      "-Ypartial-unification"
-    ),
     libraryDependencies ++=
       compileDeps(
         slf4jApi,
@@ -546,11 +562,9 @@ lazy val `interaction-example-reserve-items`: Project = project.in(file("example
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .settings(defaultModuleSettings)
+  .settings(yPartialUnificationSetting)
   .settings(
     moduleName := "interaction-example-reserve-items",
-    scalacOptions ++= Seq(
-      "-Ypartial-unification"
-    ),
     libraryDependencies ++=
       compileDeps(
         logback,
@@ -568,11 +582,9 @@ lazy val `interaction-example-make-payment-and-ship-items`: Project = project.in
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .settings(defaultModuleSettings)
+  .settings(yPartialUnificationSetting)
   .settings(
     moduleName := "interaction-example-make-payment-and-ship-items",
-    scalacOptions ++= Seq(
-      "-Ypartial-unification"
-    ),
     libraryDependencies ++=
       compileDeps(
         logback,
@@ -608,18 +620,20 @@ lazy val `bakery-integration-tests`: Project = project.in(file("bakery/integrati
     `interaction-example-reserve-items`)
 
 lazy val `sbt-bakery-docker-generate`: Project = project.in(file("docker/sbt-bakery-docker-generate"))
-  .settings(defaultModuleSettings)
+  .settings(scalaVersion := scala212, crossScalaVersions := Nil)
+  .settings(defaultModuleSettings212)
   .settings(noPublishSettings) // docker plugin can't be published, at least not to azure feed
   .settings(
+    crossScalaVersions := Nil,
     // workaround to let plugin be used in the same project without publishing it
-    Compile / sourceGenerators  += Def.task {
+    Compile / sourceGenerators += Def.task {
       val file = (Compile / sourceManaged).value / "bakery" / "sbt" / "BuildInteractionDockerImageSBTPlugin.scala"
       val sourceFile = IO.readBytes(baseDirectory.value.getParentFile.getParentFile / "project" / "BuildInteractionDockerImageSBTPlugin.scala")
       IO.write(file, sourceFile)
       Seq(file)
     }.taskValue,
-    addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.7"),
-    addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.3.9")
+    addSbtPlugin(("com.github.sbt" % "sbt-native-packager" % "1.9.9") cross CrossVersion.constant(scala212)),
+    addSbtPlugin(("org.vaslabs.kube" % "sbt-kubeyml" % "0.4.0") cross CrossVersion.constant(scala212))
   )
   .enablePlugins(SbtPlugin)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)

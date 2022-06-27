@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.actor
 import akka.actor.{ActorRef, ActorSystem}
 import akka.pattern.{BackoffOpts, BackoffSupervisor}
 import cats.effect.IO
-import com.ing.baker.runtime.akka.AkkaBakerConfig
+import com.ing.baker.runtime.akka.{AkkaBakerConfig, _}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{GetIndex, Index}
@@ -11,7 +11,6 @@ import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.config.Config
-import com.ing.baker.runtime.akka._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -23,7 +22,7 @@ class LocalBakerActorProvider(
                                configuredEncryption: Encryption,
                                timeouts: AkkaBakerConfig.Timeouts,
                              ) extends BakerActorProvider {
-  override def initialize(implicit system: ActorSystem): Unit = Unit
+  override def initialize(implicit system: ActorSystem): Unit = ()
 
   override def createProcessIndexActor(interactionManager: InteractionManager[IO], recipeManager: RecipeManager, config: Config)(
     implicit actorSystem: ActorSystem): ActorRef = {

@@ -1,9 +1,5 @@
 package com.ing.bakery.baker
 
-import java.io.{ByteArrayInputStream, File, InputStream}
-import java.nio.file.{Files, Path}
-import java.util.Base64
-import java.util.zip.{GZIPInputStream, ZipException}
 import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
@@ -13,16 +9,21 @@ import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.runtime.serialization.ProtoMap
 import com.typesafe.scalalogging.LazyLogging
 
-import scala.util.Try
-import java.nio.file.Files
+import java.io.{ByteArrayInputStream, File, InputStream}
 import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file.{Files, Path}
+import java.util.Base64
+import java.util.zip.{GZIPInputStream, ZipException}
+import scala.annotation.nowarn
 import scala.concurrent.duration.FiniteDuration
+import scala.util.Try
 
 object RecipeLoader extends LazyLogging {
 
   def pollRecipesUpdates(path: String, bakery: Bakery, duration: FiniteDuration)
                         (implicit timer: Timer[IO], cs: ContextShift[IO]): IO[Unit] = {
     def pollRecipes: IO[Unit] = loadRecipesIntoBaker(path, bakery.baker) >> IO.sleep(duration) >> IO.defer(pollRecipes)
+
     pollRecipes
   }
 
@@ -41,6 +42,7 @@ object RecipeLoader extends LazyLogging {
       bytes
   }
 
+  @nowarn
   private[baker] def unzip(bytes: Array[Byte]): Try[Array[Byte]] = Try {
     val inputStream = new GZIPInputStream(new ByteArrayInputStream(bytes))
     Stream.continually(inputStream.read()).takeWhile(_ != -1).map(_.toByte).toArray
@@ -79,6 +81,7 @@ object RecipeLoader extends LazyLogging {
     } yield (recipe, updated)
   }
 
+  @nowarn
   private def inputStreamToBytes(is: InputStream): Array[Byte] =
     Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray
 

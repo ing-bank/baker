@@ -1,8 +1,5 @@
 package com.ing.baker.types.modules
 
-import java.util
-import java.util.Optional
-
 import com.ing.baker.types
 import com.ing.baker.types.Converters._
 import com.ing.baker.types.ConvertersTestData.TestEnum
@@ -11,6 +8,9 @@ import com.ing.baker.types._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
+import java.util
+import java.util.Optional
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 case class PersonCaseClass(name: String, age: Int)
@@ -45,6 +45,7 @@ class JavaModulesSpec extends AnyWordSpecLike with Matchers {
     "c" -> 3
   )
 
+  @nowarn
   val javaMap: util.Map[String, Int] = scalaMap.asJava
 
   "The converters utility" should {

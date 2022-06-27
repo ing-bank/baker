@@ -1,11 +1,13 @@
 package com.ing.bakery.common
 
-import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Timer}
+import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 import com.ing.baker.runtime.scaladsl.BakerResult
-import com.ing.bakery.scaladsl.{BakerClient, EndpointConfig}
+import com.ing.baker.runtime.serialization.JsonEncoders._
+import com.ing.bakery.scaladsl.EndpointConfig
 import org.http4s.Method.GET
 import org.http4s._
+import org.http4s.circe.jsonEncoderOf
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.dsl.io._
@@ -15,22 +17,14 @@ import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.scalatest.funspec.FixtureAsyncFunSpec
 import org.scalatest.{Assertion, FutureOutcome}
-import io.circe.generic.auto._
-import com.ing.baker.runtime.serialization.JsonEncoders._
-import org.http4s.circe.jsonEncoderOf
+
 import java.net.InetSocketAddress
-
-import com.ing.baker.runtime.common.BakerException
-import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
-import com.ing.baker.runtime.serialization.JsonDecoders.bakerResultDecoder
-import com.ing.bakery.common.FailoverUtils.callWithFailOver
-
+import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
-
+@nowarn
 class FailoverUtilsSpec extends FixtureAsyncFunSpec   {
 
   import FailoverUtils._

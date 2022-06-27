@@ -4,6 +4,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.{common, scaladsl}
 
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 case class RecipeInformation(compiledRecipe: CompiledRecipe,
@@ -19,6 +20,7 @@ case class RecipeInformation(compiledRecipe: CompiledRecipe,
 
   def getErrors: java.util.Set[String] = errors
 
+  @nowarn
   def asScala: scaladsl.RecipeInformation =
     scaladsl.RecipeInformation(compiledRecipe, recipeCreatedTime, errors.asScala.toSet, validate)
 }

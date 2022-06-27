@@ -6,7 +6,7 @@ import cats.effect.{ConcurrentEffect, ContextShift, IO, Resource, Timer}
 import cats.syntax.all._
 import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
 import com.ing.baker.runtime.defaultinteractions
-import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
+import com.ing.baker.runtime.model.{InteractionInstanceF, InteractionManager}
 import com.ing.bakery.interaction.{BaseRemoteInteractionClient, RemoteInteractionClient}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -51,7 +51,7 @@ trait InteractionRegistry extends InteractionManager[IO] {
   * Bundles together interactions of all available interaction managers
   */
 trait TraversingInteractionRegistry extends InteractionRegistry {
-  override def listAll: IO[List[InteractionInstance[IO]]] =
+  override def listAll: IO[List[InteractionInstanceF[IO]]] =
     interactionManagers
       .flatMap(_.traverse(_.listAll).map(_.flatten))
       .flatMap(managed => IO.pure(defaultinteractions.all ++ managed))
@@ -115,7 +115,7 @@ class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
 }
 
 case class RemoteInteractions(startedAt: Long,
-                              interactions: List[InteractionInstance[IO]])
+                              interactions: List[InteractionInstanceF[IO]])
 
 
 /**
@@ -152,7 +152,7 @@ trait RemoteInteractionDiscovery extends LazyLogging {
         if (interfaces.isEmpty) logger.warn(s"${uri.toString} provides no interactions")
         RemoteInteractions(response.startedAt,
           interfaces.map(interaction => {
-            InteractionInstance.build[IO](
+            InteractionInstanceF.build[IO](
               _name = interaction.name,
               _input = interaction.input,
               _output = interaction.output,

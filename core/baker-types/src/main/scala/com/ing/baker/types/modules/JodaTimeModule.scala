@@ -3,15 +3,18 @@ package com.ing.baker.types.modules
 import com.ing.baker.types._
 import org.joda.time._
 
+import scala.annotation.nowarn
+
 class JodaTimeModule extends TypeModule {
 
   override def isApplicable(javaType: java.lang.reflect.Type): Boolean =
     isAssignableToBaseClass(javaType, classOf[DateTime]) ||
-    isAssignableToBaseClass(javaType, classOf[LocalDateTime]) ||
-    isAssignableToBaseClass(javaType, classOf[LocalDate])
+      isAssignableToBaseClass(javaType, classOf[LocalDateTime]) ||
+      isAssignableToBaseClass(javaType, classOf[LocalDate])
 
   override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): Type = Date
 
+  @nowarn
   override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any =
     (value, javaType) match {
       case (NullValue, _) => null

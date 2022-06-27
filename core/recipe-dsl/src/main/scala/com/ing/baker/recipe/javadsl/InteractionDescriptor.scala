@@ -3,9 +3,8 @@ package com.ing.baker.recipe.javadsl
 import com.ing.baker.recipe.common
 import com.ing.baker.types.Converters
 
-import scala.annotation.varargs
+import scala.annotation.{nowarn, varargs}
 import scala.collection.JavaConverters._
-
 import scala.collection.immutable.Seq
 
 case class InteractionDescriptor private(
@@ -51,6 +50,7 @@ case class InteractionDescriptor private(
     * @param newRequiredEvents the classes of the event.
     * @return
     */
+  @nowarn
   def withRequiredEvents(newRequiredEvents: java.util.Set[Class[_]]): InteractionDescriptor =
     this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.asScala.map(_.getSimpleName))
 
@@ -81,6 +81,7 @@ case class InteractionDescriptor private(
     * @param newRequiredEvents the names of the events.
     * @return
     */
+  @nowarn
   def withRequiredEventsFromName(newRequiredEvents: java.util.Set[String]): InteractionDescriptor =
     this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.asScala)
 
@@ -172,6 +173,7 @@ case class InteractionDescriptor private(
     * @param newPredefinedIngredients The map containing ingredientName and ingredientValue for ingredients you want to set
     * @return
     */
+  @nowarn
   def withPredefinedIngredients(newPredefinedIngredients: java.util.Map[String, AnyRef]): InteractionDescriptor =
     addPredefinedIngredient(newPredefinedIngredients.asScala.toMap)
 
@@ -196,10 +198,12 @@ case class InteractionDescriptor private(
     * @param newOverriddenIngredients a map containing old and new names for input ingredients
     * @return new InteractionDescriptor with new ingredient names
     */
+  @nowarn
   def renameRequiredIngredients(newOverriddenIngredients: java.util.Map[String, String]): InteractionDescriptor = {
     this.copy(overriddenIngredientNames = overriddenIngredientNames ++ newOverriddenIngredients.asScala.toMap)
   }
 
+  @nowarn
   def withEventTransformation(eventClazz: Class[_],
                               newEventName: String,
                               ingredientRenames: java.util.Map[String, String]): InteractionDescriptor = {

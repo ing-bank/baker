@@ -1,22 +1,26 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Kill, PoisonPill, Props}
+import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props}
+import akka.pattern.ask
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
+import akka.util.Timeout
 import com.ing.baker.il.petrinet.{EventTransition, Place, RecipePetriNet, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
 import com.ing.baker.petrinet.api.{Marking, PetriNet}
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.{ActorMetadata, CheckForProcessesToBeDeleted}
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.CheckForProcessesToBeDeleted
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.NotifyWhenReceived
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.RecipeRecord
+import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types
 import com.ing.baker.types.Value
 import com.typesafe.config.{Config, ConfigFactory}
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.Eventually
@@ -25,17 +29,11 @@ import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatestplus.mockito.MockitoSugar
 import scalax.collection.immutable.Graph
-import akka.pattern.ask
-import akka.util.Timeout
+
 import java.util.UUID
-import java.util.concurrent.TimeUnit
-
-import com.ing.baker.runtime.recipe_manager.RecipeManager
-import org.mockito.ArgumentMatchers.anyString
-
 import scala.collection.immutable.Seq
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 object ProcessIndexSpec {
   val config: Config = ConfigFactory.parseString(
@@ -66,7 +64,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
     Mockito.reset(otherMsg)
   }
 
-  override def afterAll {
+  override def afterAll(): Unit = {
     TestKit.shutdownActorSystem(system)
   }
 
@@ -155,7 +153,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(
         CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty,
           Option.empty, Some(recipeRetentionPeriod)),
-        updated = 0l
+        updated = 0L
       ))))
 
       val actorIndex = createActorIndex(processProbe.ref, recipeManager)
@@ -183,7 +181,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val recipeManager = mock[RecipeManager]
       val recipe = CompiledRecipe("name", recipeId, petrinetMock, Marking.empty,
         Seq.empty, Option.empty, Option.empty)
-      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0l))))
+      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0L))))
 
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
 
@@ -231,7 +229,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val recipeManager = mock[RecipeManager]
       when(recipeManager.get(anyString())).thenReturn(Future.successful(
         Some(RecipeRecord.of(CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty,
-          Some(receivePeriodTimeout), Option.empty), 0l))))
+          Some(receivePeriodTimeout), Option.empty), 0L))))
 
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
 
@@ -263,7 +261,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val recipeManager = mock[RecipeManager]
       val recipe = CompiledRecipe("name", recipeId, petrinetMock, Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty)
 
-      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0l))))
+      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0L))))
 
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
 
@@ -295,7 +293,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val recipeManager = mock[RecipeManager]
       val recipe = CompiledRecipe("name", recipeId, petrinetMock, Marking.empty, Seq.empty,
         Some(receivePeriodTimeout), Option.empty)
-      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0l))))
+      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0L))))
 
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
 

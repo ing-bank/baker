@@ -4,6 +4,7 @@ import com.ing.baker.il.CompiledRecipe.RecipeIdVariant
 import com.ing.baker.il.petrinet.HasCustomToStringForRecipeId
 
 import java.security.MessageDigest
+import scala.annotation.nowarn
 import scala.collection.immutable.Seq
 
 package object il {
@@ -48,6 +49,7 @@ package object il {
               end = ")"
       )
 
+    @nowarn
     private def toRecipeType(variant: RecipeIdVariant,
                      emptyNameJava : String, nonEmptyNameJava: String,
                      emptyNameScala: String, nonEmptyNameScala: String) : String =

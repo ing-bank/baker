@@ -1,10 +1,9 @@
 package com.ing.baker.recipe
 
-import java.util.Optional
-
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl._
 
+import java.util.Optional
 import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -303,7 +302,7 @@ object TestRecipe {
               missingJavaOptional2: Optional[Integer],
               missingScalaOption: Option[String],
               missingScalaOption2: Option[Integer],
-              initialIngredient: String)
+              initialIngredient: String): Unit
   }
 
   def getRecipe(recipeName: String): Recipe =
