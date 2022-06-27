@@ -7,6 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 
 import java.util
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -15,6 +16,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 object Main extends App with LazyLogging{
 
+  @nowarn
   def implementations(configurationClassString: String) : List[InteractionInstance] = {
 
     def forClass(c: String) = {

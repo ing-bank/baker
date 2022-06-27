@@ -1,9 +1,5 @@
 package com.ing.baker.runtime.akka.actor
 
-import java.util.UUID
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.atomic.AtomicInteger
-
 import akka.actor.{ActorLogging, ActorSystem, NoSerializationVerificationNeeded, PoisonPill, Props}
 import akka.event.DiagnosticLoggingAdapter
 import akka.event.Logging.LogLevel
@@ -11,6 +7,10 @@ import akka.pattern.ask
 import akka.persistence.PersistentActor
 import akka.util.Timeout
 
+import java.util.UUID
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.atomic.AtomicInteger
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.concurrent._
 import scala.concurrent.duration.{FiniteDuration, _}
@@ -19,6 +19,7 @@ import scala.util.{Failure, Success}
 object Util {
 
   case object Ping extends NoSerializationVerificationNeeded
+
   case object Pong extends NoSerializationVerificationNeeded
 
   class AwaitPersistenceInit extends PersistentActor with ActorLogging {
@@ -60,6 +61,7 @@ object Util {
     Future.firstCompletedOf(Seq(future, timeoutFuture))
   }
 
+  @nowarn
   def collectFuturesWithin[T, M[X] <: scala.TraversableOnce[X]](futures: M[Future[T]], timeout: FiniteDuration, scheduler: akka.actor.Scheduler)(implicit ec: ExecutionContext): Seq[T] = {
 
     val size = futures.size
@@ -91,6 +93,7 @@ object Util {
 
     implicit class DiagnosticLoggingAdapterFns(log: DiagnosticLoggingAdapter) {
 
+      @nowarn
       def errorWithMDC(msg: String, mdc: Map[String, Any], cause: Throwable) = {
         try {
           log.setMDC(mdc.asJava)
@@ -100,6 +103,7 @@ object Util {
         }
       }
 
+      @nowarn
       def logWithMDC(level: LogLevel, msg: String, mdc: Map[String, Any]) = {
         try {
           log.setMDC(mdc.asJava)

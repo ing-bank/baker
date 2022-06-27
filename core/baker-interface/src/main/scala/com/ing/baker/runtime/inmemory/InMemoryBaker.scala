@@ -1,20 +1,20 @@
 package com.ing.baker.runtime.inmemory
 
-import java.util
-import java.util.{List => JavaList}
-
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
 import cats.~>
+import com.ing.baker.runtime.model.{BakerComponents, BakerF, InteractionInstanceF}
 import com.ing.baker.runtime.{defaultinteractions, javadsl}
-import com.ing.baker.runtime.model.{BakerComponents, BakerF, InteractionInstance}
 
+import java.util
+import java.util.{List => JavaList}
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.concurrent._
 
 object InMemoryBaker {
 
   def build(config: BakerF.Config = BakerF.Config(),
-            implementations: List[InteractionInstance[IO]])(implicit timer: Timer[IO], cs: ContextShift[IO]): IO[BakerF[IO]] = for {
+            implementations: List[InteractionInstanceF[IO]])(implicit timer: Timer[IO], cs: ContextShift[IO]): IO[BakerF[IO]] = for {
     recipeInstanceManager <- InMemoryRecipeInstanceManager.build(config.idleTimeout)
     recipeManager <- InMemoryRecipeManager.build
     eventStream <- InMemoryEventStream.build
@@ -27,10 +27,11 @@ object InMemoryBaker {
     new InMemoryBakerImpl(config)
   }
 
+  @nowarn
   def java(config: BakerF.Config, implementations: JavaList[AnyRef]): javadsl.Baker = {
     implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
     implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-    val bakerF = build(config, implementations.asScala.map(InteractionInstance.unsafeFrom[IO]).toList)
+    val bakerF = build(config, implementations.asScala.map(InteractionInstanceF.unsafeFrom[IO]).toList)
       .unsafeRunSync().asDeprecatedFutureImplementation(
       new (IO ~> Future) {
         def apply[A](fa: IO[A]): Future[A] = fa.unsafeToFuture()

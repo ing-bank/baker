@@ -11,6 +11,7 @@ import com.ing.baker.recipe.common._
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
+import scala.annotation.nowarn
 import scala.collection.immutable.Seq
 import scala.language.postfixOps
 
@@ -22,8 +23,10 @@ object RecipeCompiler {
     }
   }
 
+  @nowarn
   def arc(t: Transition, p: Place, weight: Long): Arc = WLDiEdge[Node, Edge](Right(t), Left(p))(weight, Edge(None))
 
+  @nowarn
   def arc(p: Place, t: Transition, weight: Long, eventFilter: Option[String] = None): Arc = {
     WLDiEdge[Node, Edge](Left(p), Right(t))(weight, Edge(eventFilter))
   }

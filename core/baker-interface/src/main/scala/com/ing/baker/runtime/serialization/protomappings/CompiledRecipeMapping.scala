@@ -1,20 +1,20 @@
 package com.ing.baker.runtime.serialization.protomappings
 
-import java.util.concurrent.TimeUnit
 import cats.implicits._
 import com.ing.baker.il
 import com.ing.baker.il.CompiledRecipe.Scala212CompatibleJava
-import com.ing.baker.petrinet.api._
+import com.ing.baker.il.petrinet.{Node, Place, RecipePetriNet, Transition}
+import com.ing.baker.petrinet.api.{Marking, _}
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
-import com.ing.baker.il.petrinet.{Node, Place, RecipePetriNet, Transition}
-import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.runtime.serialization.{ProtoMap, TokenIdentifier}
 import com.ing.baker.types.Value
 import scalax.collection.GraphEdge
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
+import java.util.concurrent.TimeUnit
+import scala.annotation.nowarn
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
@@ -132,6 +132,7 @@ class CompiledRecipeMapping extends ProtoMap[il.CompiledRecipe, protobuf.Compile
       }
     }
 
+  @nowarn
   def fromProtoGraph(net: protobuf.PetriNet): Try[Graph[Node, WLDiEdge]] = {
     val tryNodes = net.nodes.toList.traverse[Try, Either[Place, Transition]] { n =>
 

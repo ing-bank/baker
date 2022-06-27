@@ -34,7 +34,8 @@ object BakerF {
                     addRecipeTimeout: FiniteDuration = 10.seconds)
 }
 
-abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) extends common.Baker[F] with ScalaApi with LazyLogging { self =>
+abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) extends common.Baker[F] with ScalaApi with LazyLogging {
+  self =>
 
   val config: BakerF.Config
 
@@ -44,9 +45,9 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
 
   override type EventInstanceType = EventInstance
 
-  override type RecipeInstanceStateType = RecipeInstanceState
+  override type InteractionInstanceType = InteractionInstanceF[F]
 
-  override type InteractionInstanceType = InteractionInstance[F]
+  override type RecipeInstanceStateType = RecipeInstanceState
 
   override type InteractionInstanceDescriptorType = InteractionInstanceDescriptor
 

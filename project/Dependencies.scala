@@ -24,7 +24,9 @@ object Dependencies {
     .exclude("com.typesafe.akka", "akka-stream")
     .exclude("com.typesafe.akka", "akka-protobuf")
 
-  val scalaJava8Compat = "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1" // can't be bumped because akka depends on it
+  val scalaJava8Compat100 = "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.0"
+  val scalaJava8Compat091 = "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
+
   val scalaTest = "org.scalatest" %% "scalatest" % "3.2.11"
   val mockitoScala = "org.mockito" %% "mockito-scala" % mockitoScalaVersion
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion

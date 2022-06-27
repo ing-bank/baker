@@ -1,8 +1,5 @@
 package com.ing.bakery.akka.persistence.cassandra
 
-import java.net.InetSocketAddress
-import java.util.UUID
-
 import akka.actor.ActorSystem
 import akka.stream.alpakka.cassandra.{CqlSessionProvider, DefaultSessionProvider, DriverConfigLoaderFromConfig}
 import com.codahale.metrics.MetricRegistry
@@ -12,6 +9,9 @@ import com.datastax.oss.driver.api.core.metadata.{Node, NodeStateListener}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 
+import java.net.InetSocketAddress
+import java.util.UUID
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters.toScala
 import scala.concurrent.{ExecutionContext, Future}
@@ -38,7 +38,7 @@ object Settings {
 
 }
 
-
+@nowarn
 class InstrumentedCassandraSessionProvider(system: ActorSystem,
                                            config: Config) extends DefaultSessionProvider(system, config) with LazyLogging {
 

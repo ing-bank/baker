@@ -7,16 +7,16 @@ import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance}
 import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
+import com.ing.baker.runtime.serialization.JsonDecoders._
+import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe._
 import io.circe.generic.auto._
+import io.prometheus.client.CollectorRegistry
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
-import com.ing.baker.runtime.serialization.JsonEncoders._
-import com.ing.baker.runtime.serialization.JsonDecoders._
-import io.prometheus.client.CollectorRegistry
 import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.{CORS, Logger, Metrics}
@@ -114,7 +114,7 @@ final class BakerService private(baker: Baker)(implicit cs: ContextShift[IO], ti
       case Left(e) =>
         logger.error(s"Unexpected exception happened when calling Baker", e)
         InternalServerError(s"No other exception but BakerExceptions should be thrown here: ${e.getCause}")
-      case Right(Unit) => Ok(BakerResult.Ack)
+      case Right(()) => Ok(BakerResult.Ack)
       case Right(a) => Ok(BakerResult(a))
     }
   }

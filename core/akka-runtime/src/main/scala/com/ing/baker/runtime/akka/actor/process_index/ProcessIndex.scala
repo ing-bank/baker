@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.actor.{ActorRef, ActorSystem, NoSerializationVerificationNeeded, Props, ReceiveTimeout, Terminated}
+import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, Terminated}
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.{BackoffOpts, BackoffSupervisor, ask}
@@ -12,6 +12,7 @@ import cats.instances.future._
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api._
+import com.ing.baker.runtime.akka._
 import com.ing.baker.runtime.akka.actor.Util.logging._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
@@ -21,7 +22,6 @@ import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, Proce
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
-import com.ing.baker.runtime.akka._
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
@@ -331,7 +331,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
       def run(program: ActorRef => FireEventIO[Unit]): Unit = {
         val responseHandler = context.actorOf(
-          SensoryEventResponseHandler(sender, command, ingredientsFilter))
+          SensoryEventResponseHandler(sender(), command, ingredientsFilter))
         program(responseHandler).value.unsafeRunAsync {
           case Left(exception) =>
             throw exception // TODO decide what to do, might never happen, except if we generalize it as a runtime for the actor

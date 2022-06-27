@@ -2,7 +2,7 @@ package com.ing.baker.types
 
 import java.nio.charset.StandardCharsets
 import java.util
-
+import scala.annotation.nowarn
 import scala.reflect.runtime.universe
 import scala.util.Try
 
@@ -184,6 +184,7 @@ case class PrimitiveValue(value: Any) extends Value {
     case other => other.toString
   }
 
+  @nowarn
   override def equals(obj: Any): Boolean = {
     obj match {
       case null => false

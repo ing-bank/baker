@@ -14,7 +14,7 @@ class BakerInquireSpec extends BakerRuntimeTestBase {
   override def actorSystemName = "BakerInquireSpec"
 
   before {
-    resetMocks
+    resetMocks()
     setupMockResponse()
 
     // Clean inmemory-journal before each test

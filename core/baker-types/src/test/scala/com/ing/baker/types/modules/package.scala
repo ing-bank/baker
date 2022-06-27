@@ -1,12 +1,14 @@
 package com.ing.baker.types
 
-import org.scalacheck.Prop.{propBoolean, forAll}
+import org.scalacheck.Prop.{forAll, propBoolean}
 import org.scalacheck.{Gen, Prop}
 
+import scala.annotation.nowarn
 import scala.reflect.runtime.universe.TypeTag
 
 package object modules {
 
+  @nowarn
   def transitivityProperty[T : TypeTag](gen: Gen[T]): Prop = {
 
     val parsedType = Converters.readJavaType[T]

@@ -1,8 +1,10 @@
 package com.ing.baker.runtime.akka.actor
 
 import akka.actor._
-import akka.cluster.sharding.{ ClusterSharding, ShardRegion }
-import com.ing.baker.runtime.akka.actor.GracefulShutdownShardRegions.{ GracefulShutdownSuccessful, GracefulShutdownTimedOut, InitiateGracefulShutdown }
+import akka.cluster.sharding.{ClusterSharding, ShardRegion}
+import com.ing.baker.runtime.akka.actor.GracefulShutdownShardRegions.{GracefulShutdownSuccessful, GracefulShutdownTimedOut, InitiateGracefulShutdown}
+
+import scala.annotation.nowarn
 import scala.collection._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -43,6 +45,7 @@ class GracefulShutdownShardRegions(shardHandOverTimeout: FiniteDuration, typeNam
       context.system.scheduler.scheduleOnce(shardHandOverTimeout, context.self, GracefulShutdownTimedOut)
   }
 
+  @nowarn
   def waitingForTermination(regions: Set[ActorRef], initiator: ActorRef): Receive = {
     case GracefulShutdownTimedOut =>
       GracefulShutdown.logger.warn(s"Graceful shutdown of shard regions timed out after $shardHandOverTimeout")

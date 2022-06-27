@@ -1,12 +1,12 @@
 package com.ing.baker.runtime.javadsl
 
-import java.util
-
-import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.il.EventDescriptor
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
+import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
 
+import java.util
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 case class EventInstance(name: String,
@@ -20,9 +20,11 @@ case class EventInstance(name: String,
   def this(name0: String) =
     this(name0, java.util.Collections.emptyMap[String, Value])
 
+  @nowarn
   def validate(descriptor: EventDescriptor): util.List[String] =
     asScala.validate(descriptor).asJava
 
+  @nowarn
   def asScala: scaladsl.EventInstance =
     scaladsl.EventInstance(name, providedIngredients.asScala.toMap)
 
@@ -39,6 +41,7 @@ object EventInstance {
   /**
     * Transforms an object into a RuntimeEvent if possible.
     */
+  @nowarn
   def from(event: Any): EventInstance =
     event match {
       case runtimeEvent: EventInstance => runtimeEvent

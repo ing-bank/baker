@@ -4,8 +4,9 @@ import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.{common, javadsl}
 import com.ing.baker.types.Value
 
-import scala.collection.immutable.Seq
+import scala.annotation.nowarn
 import scala.collection.JavaConverters._
+import scala.collection.immutable.Seq
 
 /**
   * Holds the 'state' of a process instance.
@@ -24,6 +25,7 @@ case class RecipeInstanceState(
 
   def eventNames: Seq[String] = events.map(_.name)
 
+  @nowarn
   def asJava: javadsl.RecipeInstanceState =
     new javadsl.RecipeInstanceState(recipeInstanceId, ingredients.asJava, events.map(_.asJava()).asJava)
 }
