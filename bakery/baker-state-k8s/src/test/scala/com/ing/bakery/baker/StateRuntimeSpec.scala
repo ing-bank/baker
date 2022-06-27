@@ -124,7 +124,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       } yield {
         recipeInformation.compiledRecipe.name shouldBe recipe.name
         interactionInformation shouldBe Some(
-          InteractionInstanceDescriptor("ReserveItems",
+          InteractionInstanceDescriptor("FuJRnlSfs2HEXORUVDsh1KBI1iFZLEryhJvxsAjM3hs=", "ReserveItems",
             Seq(InteractionInstanceInput(Option.apply("orderId"), RecordType(Seq(RecordField("orderId", CharArray)))),
               InteractionInstanceInput(Option.apply("items"), ListType(RecordType(Seq(RecordField("itemId", CharArray)))))
             ), Some(Map(

@@ -262,9 +262,10 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
       .toCompletableFuture
       .thenApply(_.map(_.asJava()).asJava)
 
+  @nowarn
   def executeSingleInteraction(interactionId: String, ingredients: util.List[IngredientInstanceType]): CompletableFuture[Optional[EventInstanceType]] =
     FutureConverters
-      .toJava(baker.executeSingleInteraction(interactionId, ingredients.asScala.map(_.asScala).to[collection.immutable.Seq]))
+      .toJava(baker.executeSingleInteraction(interactionId, ingredients.asScala.map(_.asScala).toIndexedSeq))
       .toCompletableFuture
       .thenApply(e => Optional.ofNullable(e.map(_.asJava).orNull))
 
