@@ -34,7 +34,7 @@ export class BakeryService {
                     const row: Recipe = {
                         "errors": response.compiledRecipe.errors,
                         "name": response.compiledRecipe.name,
-                        "recipeCreatedTime": new Date(response.recipeCreatedTime).toISOString(),
+                        "recipeCreatedTime": response.recipeCreatedTime,
                         "recipeId": response.compiledRecipe.recipeId,
                         "validate": response.validate
                     };
@@ -52,27 +52,33 @@ export class BakeryService {
             pipe(map(response => Object.values(response.body)));
     }
 
-    getInstance (instanceId: string): Observable<Instance | undefined> {
-        console.log(`instance ${instanceId}`);
+    getInstance (instanceId: string): Observable<Instance | null> {
         return this.http.get<InstanceResponse>(`${this.baseUrl}/instances/${instanceId}`).
             pipe(
-                catchError(this.handleError<InstanceResponse>()),
+                catchError(this.handleError<InstanceResponse>(null)),
                 map(response => {
-                    if (response) {
+                    if (response && response.result === "success") {
                         return response.body;
                     }
-                    return undefined;
-
+                    return null;
                 })
             );
     }
 
-    getInstanceVisual (instanceId: string): Observable<string> {
+    getInstanceVisual (instanceId: string): Observable<string | null> {
         return this.http.get<DigraphResponse>(`${this.baseUrl}/instances/${instanceId}/visual`).
-            pipe(map(response => response.body));
+            pipe(
+                catchError(this.handleError<DigraphResponse>(null)),
+                map(response => {
+                    if (response && response.result === "success") {
+                        return response.body;
+                    }
+                    return null;
+                })
+            );
     }
 
-    private handleError<T> (result?: T) {
+    private handleError<T> (result: T | null) {
         return (error: any): Observable<T> => {
             console.log(`http request failed: ${error.message}`);
             return of(result as T);

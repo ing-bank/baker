@@ -1,31 +1,22 @@
 <mat-grid-list cols="10" rowHeight="100%">
   <mat-grid-tile colspan="2">
-    <div class="text-inside-grid">
+    <div class="interactions-list">
+      <mat-form-field>
+        <mat-label>Interaction name or id</mat-label>
+        <input matInput type="text" name="filterInteractions" [(ngModel)]="interactionFilterString"  (keyup)="updateInteractionFilter()">
+      </mat-form-field>
       <cdk-virtual-scroll-viewport class="scroll-viewport" itemSize="50">
-        <mat-selection-list #interactionList [multiple]="false" [ngModel]="selectedInteraction"
+        <mat-selection-list [multiple]="false"
                             (selectionChange)="interactionChanged($event)">
-          <mat-list-option *ngFor="let interaction of interactions" [value]="interaction">
+          <mat-list-option *ngFor="let interaction of filteredInteractions" [value]="interaction">
             {{interaction.name}}
           </mat-list-option>
         </mat-selection-list>
       </cdk-virtual-scroll-viewport>
     </div>
   </mat-grid-tile>
-  <mat-grid-tile colspan="4">
-    <div class="text-inside-grid">
-      <p>Input</p>
-      <cdk-virtual-scroll-viewport class="scroll-viewport" itemSize="50">
-      <pre class="interactions-interface">{{ selectedInteractionInput() }}</pre>
-      </cdk-virtual-scroll-viewport>
-    </div>
-  </mat-grid-tile>
-  <mat-grid-tile colspan="4">
-    <div class="text-inside-grid">
-      <p>Output</p>
-      <cdk-virtual-scroll-viewport class="scroll-viewport" itemSize="50">
-      <pre class="interactions-interface">{{ selectedInteractionOutput() }}</pre>
-      </cdk-virtual-scroll-viewport>
-    </div>
+  <mat-grid-tile colspan="8">
+    <interactions-json-view [selectedInteraction]="selectedInteraction"></interactions-json-view>
   </mat-grid-tile>
 </mat-grid-list>
 

@@ -1,46 +1,61 @@
-<form #instanceIdForm>
-<mat-form-field class="example-form-field">
-  <mat-label>Instance ID</mat-label>
-  <input matInput type="text" name="instanceId" [(ngModel)]="instanceId" (change)="instanceChanged()">
-  <button mat-button *ngIf="instanceId" matSuffix mat-icon-button aria-label="Clear" (click)="instanceId=''">
-    <mat-icon>close</mat-icon>
-  </button>
-</mat-form-field>
+<form>
+  <mat-form-field>
+    <mat-label>Instance ID</mat-label>
+    <input matInput type="text" name="instanceId" [(ngModel)]="instanceId" (change)="updateInstance($event)">
+  </mat-form-field>
 </form>
 
-<mat-grid-list cols="8" rowHeight="100%">
-  <mat-grid-tile colspan="2">
-    <div class="text-inside-grid">
-      <p>Events</p>
-      <cdk-virtual-scroll-viewport class="scroll-viewport" itemSize="50">
-        <ul>
-          <li *ngFor="let event of instanceEvents" [value]="event">
-            {{event.name}}
-          </li>
-        </ul>
-      </cdk-virtual-scroll-viewport>
-    </div>
-  </mat-grid-tile>
-  <mat-grid-tile colspan="2">
-    <div class="text-inside-grid">
-      <p>Ingredients</p>
-      <cdk-virtual-scroll-viewport class="scroll-viewport" itemSize="50">
-        <ul>
-          <li *ngFor="let ingredient of instanceIngredients" [value]="ingredient">
-            {{ ingredient }}
-          </li>
-        </ul>
-      </cdk-virtual-scroll-viewport>
-    </div>
-  </mat-grid-tile>
+<mat-tab-group *ngIf="displayedInstanceId">
+  <mat-tab label="Events & ingredients">
+    <mat-grid-list cols="2" rowHeight="100%">
+      <mat-grid-tile colspan="1">
+        <div class="text-inside-grid">
+          <p>Events</p>
+          <cdk-virtual-scroll-viewport class="scroll-viewport" itemSize="50">
+            <table mat-table [dataSource]="instanceEvents" class="mat-elevation-z8">
+              <ng-container matColumnDef="timestamp">
+                <th mat-header-cell *matHeaderCellDef>Event name</th>
+                <td mat-cell *matCellDef="let event"> {{event.name}} </td>
+              </ng-container>
 
-  <mat-grid-tile colspan="4">
-    <div class="text-inside-grid">
-      <h3>{{ displayedInstanceId }}</h3>
-      <cdk-virtual-scroll-viewport class="scroll-viewport" itemSize="50">
-        <div #instanceGraph></div>
-      </cdk-virtual-scroll-viewport>
-    </div>
-  </mat-grid-tile>
-</mat-grid-list>
+              <ng-container matColumnDef="eventName">
+                <th mat-header-cell *matHeaderCellDef>Happened at</th>
+                <td mat-cell *matCellDef="let event"> {{toIsoString(event.occurredOn)}} </td>
+              </ng-container>
 
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            </table>
+          </cdk-virtual-scroll-viewport>
+        </div>
+      </mat-grid-tile>
+      <mat-grid-tile colspan="1">
+        <div class="text-inside-grid">
+          <p>Ingredients</p>
+          <cdk-virtual-scroll-viewport class="scroll-viewport" itemSize="50">
+            <mat-accordion>
+              <mat-expansion-panel *ngFor="let ingredient of instanceIngredients" [hideToggle]="ingredient.isSimple">
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    {{ingredient.name}}
+                  </mat-panel-title>
+                  <mat-panel-description *ngIf="ingredient.isSimple">
+                    {{ingredient.value}}
+                  </mat-panel-description>
+                </mat-expansion-panel-header>
+                <pre class="ingredient-value-json" *ngIf="!ingredient.isSimple">{{ingredient.value}}</pre>
+              </mat-expansion-panel>
+            </mat-accordion>
+          </cdk-virtual-scroll-viewport>
+        </div>
+      </mat-grid-tile>
+    </mat-grid-list>
+  </mat-tab>
+  <mat-tab label="Visualization">
+    <ng-template matTabContent>
+      <visualize-recipe [visual]="visual" *ngIf="visual"></visualize-recipe>
+    </ng-template>
+  </mat-tab>
+</mat-tab-group>
+
+<p class="mat-error" *ngIf="failedInstanceId">Could not load instance information with id "{{ failedInstanceId }}".</p>

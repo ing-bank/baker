@@ -30,7 +30,8 @@
               "src/assets"
             ],
             "styles": [
-              "src/styles.scss"
+              "src/styles.scss",
+              "src/custom-theme.scss"
             ],
             "scripts": []
           },
@@ -76,15 +77,15 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "bakery-dashboard:build"
+            "browserTarget": "bakery-dashboard:build",
+            "proxyConfig": "src/proxy.conf.json"
           },
           "configurations": {
             "production": {
               "browserTarget": "bakery-dashboard:build:production"
             },
             "development": {
-              "browserTarget": "bakery-dashboard:build:development",
-              "proxyConfig": "src/proxy.conf.json"
+              "browserTarget": "bakery-dashboard:build:development"
             }
           }
         },
@@ -106,8 +107,10 @@
       }
     }
   },
-  "defaultProject": "bakery-dashboard",
   "cli": {
-    "defaultCollection": "@angular-eslint/schematics"
+    "schematicCollections": [
+      "@angular-eslint/schematics"
+    ],
+    "analytics": "5e1681ee-abca-47e6-b426-b5dc489415b5"
   }
 }
