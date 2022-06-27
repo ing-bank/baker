@@ -1,41 +1,43 @@
 // Mirrors com.ing.baker.types.Type
-export interface InteractionTypeListTypeInner {
+export interface TypeListTypeInner {
     // eslint-disable-next-line no-use-before-define
-    entryType: InteractionType;
+    entryType: Type;
 }
 
-export interface InteractionTypeOptionTypeInner {
+export interface TypeOptionTypeInner {
     // eslint-disable-next-line no-use-before-define
-    entryType: InteractionType;
+    entryType: Type;
 }
 
-export interface InteractionTypeEnumTypeInner {
+export interface TypeEnumTypeInner {
     options: string[];
 }
 
-export interface InteractionTypeRecordTypeInner {
+export interface TypeRecordTypeInner {
     // eslint-disable-next-line no-use-before-define
     fields: RecordField[];
 }
 
-export interface InteractionTypeMapTypeInner {
+export interface TypeMapTypeInner {
     // eslint-disable-next-line no-use-before-define
-    valueType: InteractionType;
+    valueType: Type;
 }
 
-type PrimitiveName = "Bool" | "Byte" | "Char" | "Int16" | "Int32" | "Int64" |
+type PrimitiveTypeName = "Bool" | "Byte" | "Char" | "Int16" | "Int32" | "Int64" |
     "IntBig" | "Float32" | "Float64" | "FloatBig" | "ByteArray" | "CharArray" | "Date"
+type NonPrimitiveTypeName = "ListType" | "OptionType" | "EnumType" | "RecordType" | "MapType"
+export type TypeName = PrimitiveTypeName | NonPrimitiveTypeName
 
 // for example { "CharArray" : {} }
-type InteractionTypePrimitive = Record<PrimitiveName, never>
-type InteractionTypeListType = Record<"ListType", InteractionTypeListTypeInner>
-type InteractionTypeOptionType = Record<"OptionType", InteractionTypeOptionTypeInner>
-type InteractionTypeEnumType = Record<"EnumType", InteractionTypeEnumTypeInner>
-type InteractionRecordType = Record<"RecordType", InteractionTypeRecordTypeInner>
-type InteractionMapType = Record<"MapType", InteractionTypeMapTypeInner>
-type InteractionType =  InteractionTypePrimitive | InteractionTypeListType | InteractionTypeOptionType | InteractionTypeEnumType | InteractionRecordType | InteractionMapType
+type TypePrimitive = Record<PrimitiveTypeName, never>
+type TypeListType = Record<"ListType", TypeListTypeInner>
+type TypeOptionType = Record<"OptionType", TypeOptionTypeInner>
+type TypeEnumType = Record<"EnumType", TypeEnumTypeInner>
+type RecordType = Record<"RecordType", TypeRecordTypeInner>
+type MapType = Record<"MapType", TypeMapTypeInner>
+export type Type =  TypePrimitive | TypeListType | TypeOptionType | TypeEnumType | RecordType | MapType
 
 export interface RecordField {
     name: string;
-    type: InteractionType;
+    type: Type;
 }
