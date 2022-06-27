@@ -145,19 +145,19 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
           .withSensoryEvent(sensoryEvent)
 
       val interactionInstances = List(
-        InteractionInstanceF.build[F](
+        InteractionInstance.build[F](
           _name = "Interaction1",
           _input = Seq(InteractionInstanceInput(Option.empty, Int32)),
           _output = None,
           _run = _ => effect.pure(Some(EventInstance("interaction-1-happened", Map("ingredient-1" -> PrimitiveValue("data1")))))
         ),
-        InteractionInstanceF.build[F](
+        InteractionInstance.build[F](
           _name = "Interaction2",
           _input = Seq(InteractionInstanceInput(Option.empty, CharArray)),
           _output = None,
           _run = _ => effect.pure(Some(EventInstance("interaction-2-happened", Map("ingredient-2" -> PrimitiveValue("data2")))))
         ),
-        InteractionInstanceF.build[F](
+        InteractionInstance.build[F](
           _name = "Interaction3",
           _input = Seq(InteractionInstanceInput(Option.empty, CharArray)),
           _output = None,

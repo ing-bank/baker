@@ -21,7 +21,7 @@ class InteractionManagerSpec extends AnyWordSpecLike with Matchers with MockitoS
     "return Some" when {
       "an default interaction is request" in {
         val interactionManager: CachingInteractionManager = new CachingInteractionManager() {
-          override def listAll: IO[List[model.InteractionInstanceF[IO]]] = IO.pure(defaultinteractions.all)
+          override def listAll: IO[List[model.InteractionInstance[IO]]] = IO.pure(defaultinteractions.all)
         }
 
         val timerInteractionTransition = mock[InteractionTransition]

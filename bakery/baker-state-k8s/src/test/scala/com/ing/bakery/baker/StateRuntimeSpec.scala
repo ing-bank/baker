@@ -6,7 +6,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.model.{InteractionInstanceF, InteractionManager}
+import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceDescriptor, InteractionInstanceInput}
 import com.ing.baker.types._
 import com.ing.bakery.baker.mocks.KubeApiServer
@@ -63,7 +63,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
   def awaitForEmptyServiceDiscovery(context: Context): IO[Assertion] =
     awaitForServiceDiscoveryState(context)(_.map(_.name) shouldBe List("TimerInteraction", "TimerInteraction", "CancelReserveItems"))
 
-  def awaitForServiceDiscoveryState(context: Context)(f: List[InteractionInstanceF[IO]] => Assertion): IO[Assertion] =
+  def awaitForServiceDiscoveryState(context: Context)(f: List[InteractionInstance[IO]] => Assertion): IO[Assertion] =
     eventually(
       context.interactions.listAll.map(f)
     )
@@ -123,17 +123,16 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         allRecipes <- io(context.client.getAllRecipes)
       } yield {
         recipeInformation.compiledRecipe.name shouldBe recipe.name
-        interactionInformation shouldBe Some(
-          InteractionInstanceDescriptor("FuJRnlSfs2HEXORUVDsh1KBI1iFZLEryhJvxsAjM3hs=", "ReserveItems",
-            Seq(InteractionInstanceInput(Option.apply("orderId"), RecordType(Seq(RecordField("orderId", CharArray)))),
-              InteractionInstanceInput(Option.apply("items"), ListType(RecordType(Seq(RecordField("itemId", CharArray)))))
-            ), Some(Map(
-              "OrderHadUnavailableItems" -> Map("unavailableItems" -> ListType(RecordType(Seq(RecordField("itemId", CharArray))))),
-              "ItemsReserved" -> Map("reservedItems" -> RecordType(Seq(RecordField("items",
-                ListType(RecordType(Seq(RecordField("itemId", CharArray))))), RecordField("data", ByteArray))))
-            ))
-          )
+        interactionInformation.get.name shouldBe "ReserveItems"
+        interactionInformation.get.input shouldBe Seq(
+          InteractionInstanceInput(Option.apply("orderId"), RecordType(Seq(RecordField("orderId", CharArray)))),
+          InteractionInstanceInput(Option.apply("items"), ListType(RecordType(Seq(RecordField("itemId", CharArray)))))
         )
+        interactionInformation.get.output shouldBe Some(Map(
+          "OrderHadUnavailableItems" -> Map("unavailableItems" -> ListType(RecordType(Seq(RecordField("itemId", CharArray))))),
+          "ItemsReserved" -> Map("reservedItems" -> RecordType(Seq(RecordField("items",
+            ListType(RecordType(Seq(RecordField("itemId", CharArray))))), RecordField("data", ByteArray))))
+        ))
         noSuchRecipeError shouldBe Some(BakerException.NoSuchRecipeException("nonexistent"))
         allRecipes.get(recipeId).map(_.compiledRecipe.name) shouldBe Some(recipe.name)
         allRecipes.get(SimpleRecipe.compiledRecipe.recipeId).map(_.compiledRecipe.name) shouldBe Some("Simple")
