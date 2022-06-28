@@ -60,7 +60,7 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
 
   @nowarn
   def asEffectful(implicit cs: ContextShift[IO]): common.InteractionInstance[IO] = {
-    model.InteractionInstanceF.build(
+    model.InteractionInstance.build(
       name,
       input.asScala.map(input => input.asScala).toIndexedSeq,
       input => IO.fromFuture(IO(wrapExecuteToFuture(input)))(cs),
@@ -77,11 +77,11 @@ object InteractionInstance {
   }
 
   def from(implementation: AnyRef): InteractionInstance = {
-    fromModel(model.InteractionInstanceF.unsafeFrom[IO](implementation))
+    fromModel(model.InteractionInstance.unsafeFrom[IO](implementation))
   }
 
   @nowarn
-  def fromModel(common: model.InteractionInstanceF[IO]): InteractionInstance = {
+  def fromModel(common: model.InteractionInstance[IO]): InteractionInstance = {
     val converter = new (IO ~> CompletableFuture) {
       def apply[A](fa: IO[A]): CompletableFuture[A] = fa.unsafeToFuture().toJava.toCompletableFuture
     }

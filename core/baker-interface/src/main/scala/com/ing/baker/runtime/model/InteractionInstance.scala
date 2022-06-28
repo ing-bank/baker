@@ -17,7 +17,9 @@ import scala.concurrent.Future
 import scala.reflect.ClassTag
 import scala.util.Try
 
-abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] with ScalaApi {
+import scala.runtime.ScalaRunTime
+
+abstract class InteractionInstance[F[_]] extends common.InteractionInstance[F] with ScalaApi {
   self =>
 
   val run: Seq[IngredientInstance] => F[Option[EventInstance]]
@@ -39,8 +41,8 @@ abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] 
     new String(base64)
   }
 
-  def translate[G[_]](mapK: F ~> G): InteractionInstanceF[G] =
-    new InteractionInstanceF[G] {
+  def translate[G[_]](mapK: F ~> G): InteractionInstance[G] =
+    new InteractionInstance[G] {
       override val run: Seq[IngredientInstance] => G[Option[EventInstance]] =
         (i: Seq[IngredientInstance]) => mapK(self.run(i))
       override val name: String =
@@ -58,27 +60,27 @@ abstract class InteractionInstanceF[F[_]] extends common.InteractionInstance[F] 
   }
 }
 
-object InteractionInstanceF {
+object InteractionInstance {
 
   type Constructor[F[_]] = (
     String,
       Seq[Type],
       Seq[IngredientInstance] => F[Option[EventInstance]],
-      Option[Map[String, Map[String, Type]]]) => InteractionInstanceF[F]
+      Option[Map[String, Map[String, Type]]]) => InteractionInstance[F]
 
-  def build[F[_]](_name: String, _input: Seq[InteractionInstanceInput], _run: Seq[IngredientInstance] => F[Option[EventInstance]], _output: Option[Map[String, Map[String, Type]]] = None): InteractionInstanceF[F] =
-    new InteractionInstanceF[F] {
+  def build[F[_]](_name: String, _input: Seq[InteractionInstanceInput], _run: Seq[IngredientInstance] => F[Option[EventInstance]], _output: Option[Map[String, Map[String, Type]]] = None): InteractionInstance[F] =
+    new InteractionInstance[F] {
       override val name: String = _name
       override val input: Seq[InteractionInstanceInput] = _input
       override val run: Seq[IngredientInstance] => F[Option[EventInstance]] = _run
       override val output: Option[Map[String, Map[String, Type]]] = _output
     }
 
-  def unsafeFromList[F[_]](implementations: List[AnyRef])(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): List[InteractionInstanceF[F]] = {
+  def unsafeFromList[F[_]](implementations: List[AnyRef])(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): List[InteractionInstance[F]] = {
     implementations.map(unsafeFrom[F](_))
   }
 
-  def unsafeFrom[F[_]](implementation: AnyRef)(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): InteractionInstanceF[F] = {
+  def unsafeFrom[F[_]](implementation: AnyRef)(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): InteractionInstance[F] = {
     val method: Method = {
       val unmockedClass = common.unmock(implementation.getClass)
       unmockedClass.getMethods.count(_.getName == "apply") match {

@@ -318,7 +318,6 @@ lazy val `bakery-dashboard`: Project = project.in(file("bakery/dashboard"))
       if(process.exitValue() != 0) throw new Error(s"NPM failed with exit value ${process.exitValue()}")
       file("bakery/dashboard/dashboard.zip")
     },
-    crossPaths := false,
     Compile / doc / sources  := Seq.empty,
     Compile / packageDoc / mappings := Seq(),
     Compile / packageDoc / publishArtifact := false,

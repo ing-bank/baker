@@ -80,24 +80,24 @@ class JsonEncodersSpec extends AnyFunSpec with Matchers {
     }
 
     it("should encode InteractionInstanceDescriptor") {
-      val interactionInstanceDescriptor = InteractionInstanceDescriptor("name", Seq(InteractionInstanceInput(Option.empty, com.ing.baker.types.CharArray)), Option.empty)
-      interactionInstanceDescriptor.asJson.noSpaces shouldEqual """{"name":"name","input":[{"name":null,"type":{"CharArray":{}}}],"output":null}"""
+      val interactionInstanceDescriptor = InteractionInstanceDescriptor("id", "name", Seq(InteractionInstanceInput(Option.empty, com.ing.baker.types.CharArray)), Option.empty)
+      interactionInstanceDescriptor.asJson.noSpaces shouldEqual """{"id":"id","name":"name","input":[{"name":null,"type":{"CharArray":{}}}],"output":null}"""
 
-      val interactionInstanceDescriptor2 = InteractionInstanceDescriptor("name", Seq(InteractionInstanceInput(Option.apply("inputname"), com.ing.baker.types.CharArray)), Option.empty)
-      interactionInstanceDescriptor2.asJson.noSpaces shouldEqual """{"name":"name","input":[{"name":"inputname","type":{"CharArray":{}}}],"output":null}"""
+      val interactionInstanceDescriptor2 = InteractionInstanceDescriptor("id", "name", Seq(InteractionInstanceInput(Option.apply("inputname"), com.ing.baker.types.CharArray)), Option.empty)
+      interactionInstanceDescriptor2.asJson.noSpaces shouldEqual """{"id":"id","name":"name","input":[{"name":"inputname","type":{"CharArray":{}}}],"output":null}"""
 
-      val interactionInstanceDescriptor3 = InteractionInstanceDescriptor("name", Seq(InteractionInstanceInput(Option.apply("inputname"),
+      val interactionInstanceDescriptor3 = InteractionInstanceDescriptor("id", "name", Seq(InteractionInstanceInput(Option.apply("inputname"),
         com.ing.baker.types.CharArray)),
         Option.apply(Map("outputEventName" -> Map("OutputIngredientName"-> com.ing.baker.types.CharArray))))
-      interactionInstanceDescriptor3.asJson.noSpaces shouldEqual """{"name":"name","input":[{"name":"inputname","type":{"CharArray":{}}}],"output":{"outputEventName":{"OutputIngredientName":{"CharArray":{}}}}}"""
+      interactionInstanceDescriptor3.asJson.noSpaces shouldEqual """{"id":"id","name":"name","input":[{"name":"inputname","type":{"CharArray":{}}}],"output":{"outputEventName":{"OutputIngredientName":{"CharArray":{}}}}}"""
 
-      val interactionInstanceDescriptor4 = InteractionInstanceDescriptor("name", Seq(InteractionInstanceInput(Option.apply("inputname"),
+      val interactionInstanceDescriptor4 = InteractionInstanceDescriptor("id", "name", Seq(InteractionInstanceInput(Option.apply("inputname"),
         com.ing.baker.types.CharArray)),
         Option.apply(Map("outputEventName" -> Map("OutputIngredientName"-> com.ing.baker.types.EnumType(Set("A"))))) )
-      interactionInstanceDescriptor4.asJson.noSpaces shouldEqual """{"name":"name","input":[{"name":"inputname","type":{"CharArray":{}}}],"output":{"outputEventName":{"OutputIngredientName":{"EnumType":{"options":["A"]}}}}}"""
+      interactionInstanceDescriptor4.asJson.noSpaces shouldEqual """{"id":"id","name":"name","input":[{"name":"inputname","type":{"CharArray":{}}}],"output":{"outputEventName":{"OutputIngredientName":{"EnumType":{"options":["A"]}}}}}"""
 
-      val interactionInstanceDescriptor5 = InteractionInstanceDescriptor("name", Seq(InteractionInstanceInput(Option.empty, com.ing.baker.types.CharArray)), Some(Map()))
-      interactionInstanceDescriptor5.asJson.noSpaces shouldEqual """{"name":"name","input":[{"name":null,"type":{"CharArray":{}}}],"output":{}}"""
+      val interactionInstanceDescriptor5 = InteractionInstanceDescriptor("id", "name", Seq(InteractionInstanceInput(Option.empty, com.ing.baker.types.CharArray)), Some(Map()))
+      interactionInstanceDescriptor5.asJson.noSpaces shouldEqual """{"id":"id","name":"name","input":[{"name":null,"type":{"CharArray":{}}}],"output":{}}"""
 
     }
   }

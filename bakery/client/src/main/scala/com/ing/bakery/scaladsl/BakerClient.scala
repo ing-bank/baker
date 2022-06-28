@@ -2,8 +2,11 @@ package com.ing.bakery.scaladsl
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.il.RecipeVisualStyle
+import com.ing.baker.runtime.common.BakerException.SingleInteractionExecutionFailedException
 import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus, Utils}
-import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EncodedRecipe, EventInstance, EventMoment, EventResolutions, InteractionInstanceDescriptor, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
+import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EncodedRecipe, EventInstance, EventMoment, EventResolutions, IngredientInstance, InteractionInstanceDescriptor, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
+import com.ing.baker.runtime.serialization.InteractionExecution
+import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.types.Value
@@ -94,6 +97,7 @@ final class BakerClient( client: Client[IO],
 
   implicit val eventInstanceResultEntityEncoder: EntityEncoder[IO, EventInstance] = jsonEncoderOf[IO, EventInstance]
   implicit val recipeEncoder: EntityEncoder[IO, EncodedRecipe] = jsonEncoderOf[IO, EncodedRecipe]
+  implicit val interactionRequestEncoder: EntityEncoder[IO, InteractionExecution.ExecutionRequest] = jsonEncoderOf[IO, InteractionExecution.ExecutionRequest]
 
   override def addRecipe(recipe: RecipeRecord): Future[String] =
     callRemoteBakerService[String]((host, prefix) => POST(
@@ -190,6 +194,15 @@ final class BakerClient( client: Client[IO],
 
   override def getAllInteractions: Future[List[InteractionInstanceDescriptor]] =
     callRemoteBakerService[List[InteractionInstanceDescriptor]]((host, prefix) => GET(root(host, prefix) / "app" / "interactions"))
+
+  override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): Future[Option[EventInstance]] =
+    callRemoteBakerService[InteractionExecution.ExecutionResult]((host, prefix) =>
+      POST(InteractionExecution.ExecutionRequest(interactionId, ingredients.toList), root(host, prefix) / "app" / "interactions" / "execute")).flatMap{ result =>
+        result.outcome match {
+          case Left(InteractionExecution.Failure(reason)) => Future.failed(SingleInteractionExecutionFailedException(reason.toString))
+          case Right(InteractionExecution.Success(value)) => Future.successful(value)
+        }
+      }
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
