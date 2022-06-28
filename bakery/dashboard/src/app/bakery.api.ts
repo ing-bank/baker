@@ -1,7 +1,10 @@
+import {RecordField} from "./baker-types.api";
+import {Value} from "./baker-value.api";
+
 export interface Recipe {
   name:              string;
   recipeId:          string;
-  recipeCreatedTime: string;
+  recipeCreatedTime: number;
   validate:          boolean;
   errors:            string[];
 }
@@ -26,10 +29,9 @@ export interface DigraphResponse {
 export interface Interaction {
   id:    string;
   name:  string;
-  input: JSON[];
-  output?:   { [key: string]: { [key: string]: JSON } };
+  input: RecordField[];
+  output?:   { [eventName: string]: RecordField };
 }
-
 
 export interface InteractionsResponse {
   result: string;
@@ -41,14 +43,14 @@ export interface EventRecord {
   occurredOn: number;
 }
 
+
 export interface Instance {
   recipeInstanceId: string;
-  ingredients:  { [key: string]: JSON };
+  ingredients:  { [key: string]: Value };
   events: EventRecord[];
 }
 
 export interface InstanceResponse {
-  result: string;
+  result: "success" | "error";
   body:   Instance;
 }
-

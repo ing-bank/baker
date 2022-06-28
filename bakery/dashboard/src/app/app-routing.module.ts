@@ -17,10 +17,6 @@ const routes: Routes = [
         "path": "recipes"
     },
     {
-        "component": RecipesComponent,
-        "path": "recipes/:recipeId",
-    },
-    {
         "component": InteractionsComponent,
         "path": "interactions",
     },

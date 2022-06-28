@@ -2,8 +2,6 @@ import {
     Component,
     ElementRef,
     OnInit,
-    Renderer2,
-    ViewChild
 } from "@angular/core";
 import {BakeryService} from "../bakery.service";
 import {Interaction} from "../bakery.api";
@@ -11,26 +9,20 @@ import {MatSelectionListChange} from "@angular/material/list";
 
 /** @title Bakery DashboardComponent */
 @Component({
-    "selector": "dashboard",
-    "styleUrls": ["interactions.css"],
+    "selector": "interactions",
+    "styleUrls": ["interactions.scss"],
     "templateUrl": "interactions.component.html"
 })
 export class InteractionsComponent implements OnInit {
     interactions: Interaction[];
     selectedInteraction: Interaction;
+    interactionFilterString: string | undefined;
+    filteredInteractions: Interaction[];
 
-    selectedInteractionInput (): string {
-        return JSON.stringify(this.selectedInteraction?.input, null, 4);
-    }
-
-    selectedInteractionOutput (): string {
-        return JSON.stringify(this.selectedInteraction?.output, null, 4);
-    }
-
-    @ViewChild("interactionView", {"static": false}) interactionView: ElementRef;
-
-    constructor (private top: ElementRef,
-        private bakeryService: BakeryService, private renderer: Renderer2) {
+    constructor (
+        private top: ElementRef,
+        private bakeryService: BakeryService
+    ) {
     }
 
     ngOnInit (): void {
@@ -42,11 +34,21 @@ export class InteractionsComponent implements OnInit {
             subscribe(interactions => {
                 // eslint-disable-next-line id-length
                 this.interactions = interactions.sort((a, b) => a.name.localeCompare(b.name));
+                this.updateInteractionFilter();
             });
     }
 
     interactionChanged (event: MatSelectionListChange): void {
         this.selectedInteraction = <Interaction>event.options[0].value;
+    }
+
+    updateInteractionFilter(): void {
+        if (!this.interactionFilterString) {
+            this.filteredInteractions = this.interactions;
+        } else {
+            const filterString = this.interactionFilterString.toLowerCase() || "";
+            this.filteredInteractions = this.interactions.filter((interaction) => interaction.name.toLowerCase().includes(filterString) || interaction.id?.toLowerCase()?.includes(filterString));
+        }
     }
 }
 

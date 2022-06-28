@@ -15,11 +15,14 @@ import {HttpClientModule} from "@angular/common/http";
 import {MatButtonModule} from "@angular/material/button";
 import {MatButtonToggleModule} from "@angular/material/button-toggle";
 import {MatDialogModule} from "@angular/material/dialog";
+import {MatExpansionModule} from "@angular/material/expansion";
 import {MatGridListModule} from "@angular/material/grid-list";
 import {MatIconModule} from "@angular/material/icon";
 import {MatInputModule} from "@angular/material/input";
 import {MatListModule} from "@angular/material/list";
 import {MatSidenavModule} from "@angular/material/sidenav";
+import {MatTableModule} from "@angular/material/table";
+import {MatTabsModule} from "@angular/material/tabs";
 import {MatToolbarModule} from "@angular/material/toolbar";
 import {OverlayModule} from "@angular/cdk/overlay";
 import {PortalModule} from "@angular/cdk/portal";
@@ -33,7 +36,9 @@ import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {HomeComponent} from "./home/home.component";
 import {InstancesComponent} from "./instances/instances.component";
 import {InteractionsComponent} from "./interactions/interactions.component";
+import {InteractionsJsonViewComponent} from "./interactions/interactions-json-view/interactions-json-view.component";
 import {RecipesComponent} from "./recipes/recipes.component";
+import {VisualizeRecipeComponent} from "./generic/visualize-recipe/visualize-recipe.component";
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const initializeApp = (settings: AppSettingsService) => () => settings.load();
@@ -45,7 +50,9 @@ export const initializeApp = (settings: AppSettingsService) => () => settings.lo
         HomeComponent,
         RecipesComponent,
         InteractionsComponent,
-        InstancesComponent
+        InstancesComponent,
+        VisualizeRecipeComponent,
+        InteractionsJsonViewComponent,
     ],
     "entryComponents": [AppComponent],
     "exports": [
@@ -77,7 +84,10 @@ export const initializeApp = (settings: AppSettingsService) => () => settings.lo
         MatGridListModule,
         MatFormFieldModule,
         MatInputModule,
-        MatDialogModule
+        MatDialogModule,
+        MatTableModule,
+        MatExpansionModule,
+        MatTabsModule
     ],
     "providers": [
         AppSettingsService,

@@ -1,0 +1,20 @@
+<mat-grid-list cols="2" rowHeight="100%" *ngIf="selectedInteraction">
+    <mat-grid-tile colspan="1">
+        <div class="tile-content">
+            <p>Input</p>
+            <cdk-virtual-scroll-viewport class="scroll-viewport mat-elevation-z8" itemSize="50">
+                <pre class="interactions-interface">{{ selectedInteractionInput() }}</pre>
+            </cdk-virtual-scroll-viewport>
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile colspan="1">
+        <div class="tile-content">
+            <p>Output</p>
+            <cdk-virtual-scroll-viewport class="scroll-viewport mat-elevation-z8" itemSize="50">
+                <pre class="interactions-interface">{{ selectedInteractionOutput() }}</pre>
+            </cdk-virtual-scroll-viewport>
+        </div>
+    </mat-grid-tile>
+</mat-grid-list>
+<p *ngIf="!selectedInteraction">No interaction selected</p>
+
