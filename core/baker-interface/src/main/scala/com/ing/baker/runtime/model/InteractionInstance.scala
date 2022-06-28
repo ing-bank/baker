@@ -35,16 +35,10 @@ abstract class InteractionInstance[F[_]] extends common.InteractionInstance[F] w
 
   def shaBase64: String = {
     val nameBytes: Array[Byte] = name.getBytes("UTF-8")
-    println(nameBytes.mkString("Array(", ", ", ")"))
     val interfaceBytes: Array[Byte] = input.toArray.map(_.hashCode().toByte)
-    println(interfaceBytes.mkString("Array(", ", ", ")"))
     val sha: Array[Byte] = MessageDigest.getInstance("SHA-256").digest(nameBytes ++ interfaceBytes)
-    println(sha.mkString("Array(", ", ", ")"))
     val base64: Array[Byte] = Base64.getEncoder.encode(sha)
-    println(base64.mkString("Array(", ", ", ")"))
-    val temp = new String(base64)
-    println(temp)
-    temp
+    new String(base64)
   }
 
   def translate[G[_]](mapK: F ~> G): InteractionInstance[G] =
