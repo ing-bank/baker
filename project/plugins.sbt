@@ -1,14 +1,14 @@
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "1.0.2")
 
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "1.1.0")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "1.1.1")
 
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.13")
 
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.0-RC2")
 
-addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.10")
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.13")
 
-addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "3.4.0")
+addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "3.4.1")
 
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.1.1")
 
@@ -22,4 +22,4 @@ addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.4.0")
 
 addSbtPlugin("no.arktekk.sbt" % "aether-deploy" % "0.27.0")
 
-libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.35"
+libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.36"
