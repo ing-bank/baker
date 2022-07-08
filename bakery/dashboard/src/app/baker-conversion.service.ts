@@ -12,7 +12,6 @@ import {
     TypeEnumTypeInner,
     TypeListTypeInner,
     TypeMapTypeInner,
-    TypeName,
     TypeOptionTypeInner,
     TypeRecordTypeInner
 } from "./baker-types.api";
@@ -22,6 +21,11 @@ import {NameAndValue} from "./bakery.api";
 @Injectable({"providedIn": "root"})
 export class BakerConversionService {
 
+    /**
+     * ===========================================
+     * Simplify baker value to simple json format.
+     * ===========================================
+     */
     valueToJson(ii : Value) : unknown {
         switch (ii.typ) {
         case ValueType.NullValue: return null;
@@ -39,6 +43,13 @@ export class BakerConversionService {
         }
     }
 
+    /**
+     * ===========================================
+     * Create example ingredients map
+     * input: from type information (from /app/interactions endpoint),
+     * output: example ingredients in simple json format.
+     * ===========================================
+     */
     exampleJsonIngredientsList(ingredients: RecordField[]) : unknown {
         return Object.fromEntries(ingredients.map((ingredient) => [
             ingredient.name,
@@ -46,18 +57,14 @@ export class BakerConversionService {
         ]));
     }
 
-    exampleFromType(type : Type) : unknown {
+    // eslint-disable-next-line max-lines-per-function
+    private exampleFromType(type : Type) : unknown {
         // eslint-disable-next-line prefer-destructuring
         const [
             typeName,
             typeOptions
         ] = Object.entries(type)[0];
 
-        return this.exampleFromTypeName(typeName as TypeName, typeOptions);
-    }
-
-    // eslint-disable-next-line max-lines-per-function
-    exampleFromTypeName(typeName : TypeName, options: unknown) : unknown {
         switch (typeName) {
         case "Bool":
             return "false";
@@ -85,22 +92,22 @@ export class BakerConversionService {
             return "EXAMPLE VALUE";
         case "ListType":
             return [
-                this.exampleFromType((options as TypeListTypeInner).entryType),
-                this.exampleFromType((options as TypeListTypeInner).entryType)
+                this.exampleFromType((typeOptions as TypeListTypeInner).entryType),
+                this.exampleFromType((typeOptions as TypeListTypeInner).entryType)
             ];
         case "OptionType":
-            return this.exampleFromType((options as TypeOptionTypeInner).entryType);
+            return this.exampleFromType((typeOptions as TypeOptionTypeInner).entryType);
         case "EnumType":
-            return (options as TypeEnumTypeInner).options[0];
+            return (typeOptions as TypeEnumTypeInner).options[0];
         case "RecordType": {
-            const recordOptions = options as TypeRecordTypeInner;
+            const recordOptions = typeOptions as TypeRecordTypeInner;
             return Object.fromEntries(recordOptions.fields.map(recordField => [
                 recordField.name,
                 this.exampleFromType(recordField.type)
             ]));
         }
         case "MapType": {
-            const mapOptions = options as TypeMapTypeInner;
+            const mapOptions = typeOptions as TypeMapTypeInner;
             return Object.fromEntries([
                 [
                     "mapKey",
@@ -113,15 +120,25 @@ export class BakerConversionService {
         }
     }
 
+    /**
+     * ===========================================
+     * Create baker Value objects by combining information from:
+     * 1. Ingredient type definitions (from /app/interactions endpoint)
+     * 2. Simplified json containing the actual values.
+     * ===========================================
+     * @returns a list of name/value pairs OR an error message.
+     */
     ingredientsJsonToBakerValues(ingredientTypeDefinitions: RecordField[], ingredientsJson: any) : NameAndValue[] | string {
         const resultArray : NameAndValue[] = [];
 
+        // Loop over the ingredients for this interaction.
         for (const typeDefinition of ingredientTypeDefinitions) {
             const value = ingredientsJson[typeDefinition.name];
             if (value === null || typeof (value) === "undefined") {
                 return `value for ingredient '${typeDefinition.name}' is missing.`;
             }
             const ingredientValueOrError = this.ingredientValueFromTypeAndJsonValue(typeDefinition.type, value, typeDefinition.name);
+            // If parsing an underlying value failed, return that error.
             if (typeof ingredientValueOrError === "string") {
                 return `incorrect ingredient format for ${ingredientValueOrError}`;
             }
@@ -133,72 +150,64 @@ export class BakerConversionService {
         return resultArray;
     }
 
-    ingredientValueFromTypeAndJsonValue(type : Type, value: any, valuePath: string) : Value | string {
+    // eslint-disable-next-line max-lines-per-function,complexity
+    private ingredientValueFromTypeAndJsonValue(type : Type, value: any, valuePath: string) : Value | string {
         // eslint-disable-next-line prefer-destructuring
         const [
             typeName,
             typeOptions
         ] = Object.entries(type)[0];
 
-        const resultOrError =  this.ingredientValueFromTypeNameAndJsonValue(typeName as TypeName, typeOptions, value, valuePath);
-        if (typeof resultOrError === "string") {
-            return `${valuePath}: ${resultOrError}`;
-        }
-        return resultOrError;
-    }
-
-    // eslint-disable-next-line max-lines-per-function,complexity
-    ingredientValueFromTypeNameAndJsonValue(typeName : TypeName, options: unknown, value: any, valuePath: string) : Value | string {
         if (typeName !== "OptionType" && (value === null || typeof value === "undefined")) {
             return `Expected value at ${valuePath} but was null or undefined.`;
         }
 
         switch (typeName) {
         case "Bool":
-            return this.primitiveValue("java.lang.Boolean", value);
+            return BakerConversionService.primitiveValue("java.lang.Boolean", value);
         case "Byte":
-            return this.primitiveValue("java.lang.Byte", value);
+            return BakerConversionService.primitiveValue("java.lang.Byte", value);
         case "Char":
-            return this.primitiveValue("java.lang.Character", value);
+            return BakerConversionService.primitiveValue("java.lang.Character", value);
         case "Int16":
-            return this.primitiveValue("java.lang.Short", value);
+            return BakerConversionService.primitiveValue("java.lang.Short", value);
         case "Int32":
-            return this.primitiveValue("java.lang.Integer", value);
+            return BakerConversionService.primitiveValue("java.lang.Integer", value);
         case "Int64":
-            return this.primitiveValue("java.lang.Long", value);
+            return BakerConversionService.primitiveValue("java.lang.Long", value);
         case "IntBig":
-            return this.primitiveValue("java.math.BigInteger", value);
+            return BakerConversionService.primitiveValue("java.math.BigInteger", value);
         case "Float32":
-            return this.primitiveValue("java.lang.Float", value);
+            return BakerConversionService.primitiveValue("java.lang.Float", value);
         case "Float64":
-            return this.primitiveValue("java.lang.Double", value);
+            return BakerConversionService.primitiveValue("java.lang.Double", value);
         case "FloatBig":
-            return this.primitiveValue("java.math.BigDecimal", value);
+            return BakerConversionService.primitiveValue("java.math.BigDecimal", value);
         case "ByteArray":
-            return this.primitiveValue("ByteArray", value);
+            return BakerConversionService.primitiveValue("ByteArray", value);
         case "CharArray":
-            return this.primitiveValue("java.lang.String", value);
+            return BakerConversionService.primitiveValue("java.lang.String", value);
         case "ListType":
-            return this.listValue(options as TypeListTypeInner, value, valuePath);
+            return this.listValue(typeOptions as TypeListTypeInner, value, valuePath);
         case "OptionType":
-            return this.optionValue(options as TypeOptionTypeInner, value, valuePath);
+            return this.optionValue(typeOptions as TypeOptionTypeInner, value, valuePath);
         case "EnumType": {
-            const opts = (options as TypeEnumTypeInner).options;
+            const opts = (typeOptions as TypeEnumTypeInner).options;
             if (!opts.includes(value)) {
                 return `Expected one of: ${opts}. Was ${value}`;
             }
-            return this.primitiveValue("java.lang.String", value);
+            return BakerConversionService.primitiveValue("java.lang.String", value);
         }
         case "RecordType":
-            return this.recordValue(options as TypeRecordTypeInner, value, valuePath);
+            return this.recordValue(typeOptions as TypeRecordTypeInner, value, valuePath);
         case "MapType":
-            return this.mapValue(options as TypeMapTypeInner, value, valuePath);
+            return this.mapValue(typeOptions as TypeMapTypeInner, value, valuePath);
         default:
             return "Unknown";
         }
     }
 
-    mapValue(mapOptions: TypeMapTypeInner, value: any, valuePath: string): Value | string {
+    private mapValue(mapOptions: TypeMapTypeInner, value: any, valuePath: string): Value | string {
         if (typeof value !== "object" || Array.isArray(value)) {
             return `Expected object at ${value} but wasn't`;
         }
@@ -223,7 +232,7 @@ export class BakerConversionService {
         };
     }
 
-    recordValue(recordOptions: TypeRecordTypeInner, value: any, valuePath: string): Value | string {
+    private recordValue(recordOptions: TypeRecordTypeInner, value: any, valuePath: string): Value | string {
         const valEntries : [string, Value][] = [];
 
         for (const recordField of recordOptions.fields) {
@@ -245,7 +254,7 @@ export class BakerConversionService {
         };
     }
 
-    optionValue(optionTypeOptions: TypeOptionTypeInner, value: any | null | undefined, valuePath: string): Value | string {
+    private optionValue(optionTypeOptions: TypeOptionTypeInner, value: any | null | undefined, valuePath: string): Value | string {
         if (value === null || typeof (value) === "undefined") {
             return {
                 "typ": ValueType.NullValue
@@ -255,7 +264,7 @@ export class BakerConversionService {
         return this.ingredientValueFromTypeAndJsonValue(optionTypeOptions.entryType, value, valuePath);
     }
 
-    listValue(listTypeOptions: TypeListTypeInner, value: any, valuePath: string) : Value | string {
+    private listValue(listTypeOptions: TypeListTypeInner, value: any, valuePath: string) : Value | string {
         if (!Array.isArray(value)) {
             return "expected array, but wasn't.";
         }
@@ -275,7 +284,7 @@ export class BakerConversionService {
         };
     }
 
-    primitiveValue(styp: SubType, val: any) : Value | string {
+    private static primitiveValue(styp: SubType, val: any) : Value | string {
         const valueAsString = `${val}`;
         return {
             styp,
