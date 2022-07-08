@@ -318,7 +318,6 @@ lazy val `bakery-dashboard`: Project = project.in(file("bakery/dashboard"))
       if(process.exitValue() != 0) throw new Error(s"NPM failed with exit value ${process.exitValue()}")
       file("bakery/dashboard/dashboard.zip")
     },
-    crossPaths := false,
     Compile / doc / sources  := Seq.empty,
     Compile / packageDoc / mappings := Seq(),
     Compile / packageDoc / publishArtifact := false,
@@ -647,9 +646,9 @@ lazy val `baker-test`: Project = project.in(file("core/baker-test"))
     libraryDependencies ++= compileDeps(
       slf4jApi
     ) ++ testDeps(scalaTest, logback,
-      "io.altoo" %% "akka-kryo-serialization" % "2.3.0",
+      "io.altoo" %% "akka-kryo-serialization" % "2.4.3",
       "junit" % "junit" % "4.13.2",
-      "org.scalatestplus" %% "junit-4-13" % "3.2.11.0"
+      "org.scalatestplus" %% "junit-4-13" % "3.2.12.0"
     )
   ).dependsOn(`baker-interface`, testScope(`baker-akka-runtime`), testScope(`baker-recipe-compiler`))
 

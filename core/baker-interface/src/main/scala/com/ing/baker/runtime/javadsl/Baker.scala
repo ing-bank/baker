@@ -31,6 +31,8 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
 
   override type InteractionInstanceDescriptorType = InteractionInstanceDescriptor
 
+  override type IngredientInstanceType = IngredientInstance
+
   override type BakerEventType = BakerEvent
 
   override type RecipeInstanceMetadataType = RecipeInstanceMetadata
@@ -259,6 +261,13 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
       .toJava(baker.getAllInteractions)
       .toCompletableFuture
       .thenApply(_.map(_.asJava()).asJava)
+
+  @nowarn
+  def executeSingleInteraction(interactionId: String, ingredients: util.List[IngredientInstanceType]): CompletableFuture[Optional[EventInstanceType]] =
+    FutureConverters
+      .toJava(baker.executeSingleInteraction(interactionId, ingredients.asScala.map(_.asScala).toIndexedSeq))
+      .toCompletableFuture
+      .thenApply(e => Optional.ofNullable(e.map(_.asJava).orNull))
 
   /**
     * Returns an index of all processes.

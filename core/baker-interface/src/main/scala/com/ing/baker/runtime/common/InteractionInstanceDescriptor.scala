@@ -15,6 +15,11 @@ trait InteractionInstanceDescriptor extends LanguageApi { self =>
   type Input <: InteractionInstanceInput { type Language = self.Language }
 
   /**
+    * Id of the interaction, generated based
+    */
+  val id: String
+
+  /**
     * The name of the interaction
     */
   val name: String

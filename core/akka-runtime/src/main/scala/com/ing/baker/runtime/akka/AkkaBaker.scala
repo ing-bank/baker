@@ -14,7 +14,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
-import com.ing.baker.runtime.common.{RecipeRecord, SensoryEventStatus}
+import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.recipe_manager.{ActorBasedRecipeManager, DefaultRecipeManager, RecipeManager}
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.{javadsl, scaladsl}
@@ -166,12 +166,23 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   override def getInteraction(interactionName: String): Future[Option[InteractionInstanceDescriptor]] =
     config.interactions.listAll.map(
       _.find(_.name == interactionName)
-        .map(i => InteractionInstanceDescriptor(i.name, i.input, i.output))).unsafeToFuture()
+        .map(i => InteractionInstanceDescriptor(i.shaBase64, i.name, i.input, i.output))).unsafeToFuture()
 
 
   override def getAllInteractions: Future[List[InteractionInstanceDescriptor]] =
     config.interactions.listAll.map(_.map(
-      i => InteractionInstanceDescriptor(i.name, i.input, i.output))).unsafeToFuture()
+      i => InteractionInstanceDescriptor(i.shaBase64, i.name, i.input, i.output))).unsafeToFuture()
+
+  override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): Future[Option[EventInstance]] =
+    config.interactions
+      .listAll
+      .map(interactionsList => interactionsList.find(_.shaBase64 == interactionId))
+      .flatMap(interactionInstanceOption =>
+        cats.effect.IO.fromOption(interactionInstanceOption)(orElse =
+          BakerException.SingleInteractionExecutionFailedException("No interaction found with specified interaction id"))
+      )
+      .flatMap(interactionInstance => interactionInstance.execute(ingredients))
+      .unsafeToFuture()
 
   /**
     * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier

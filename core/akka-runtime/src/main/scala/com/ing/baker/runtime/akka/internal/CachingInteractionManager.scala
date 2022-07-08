@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.internal
 import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Sync}
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.model.{InteractionInstanceF, InteractionManager}
+import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.baker.runtime.{model, scaladsl}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -14,9 +14,9 @@ import scala.concurrent.ExecutionContext
 
 object CachingInteractionManager {
 
-  private def create(interactionInstances: List[model.InteractionInstanceF[IO]], maybeAllowSupersetForOutputTypes: Option[Boolean] = None): CachingInteractionManager = {
+  private def create(interactionInstances: List[model.InteractionInstance[IO]], maybeAllowSupersetForOutputTypes: Option[Boolean] = None): CachingInteractionManager = {
     new CachingInteractionManager {
-      override def listAll: IO[List[model.InteractionInstanceF[IO]]] = IO.pure(interactionInstances)
+      override def listAll: IO[List[model.InteractionInstance[IO]]] = IO.pure(interactionInstances)
 
       override val allowSupersetForOutputTypes: Boolean =
         maybeAllowSupersetForOutputTypes.getOrElse(super.allowSupersetForOutputTypes)
@@ -37,10 +37,10 @@ object CachingInteractionManager {
   def apply(interactionInstances: List[scaladsl.InteractionInstance], allowSupersetForOutputTypes: Boolean): CachingInteractionManager =
     create(interactionInstances.map(fromFuture),  Some(allowSupersetForOutputTypes))
 
-  private def fromFuture(i: scaladsl.InteractionInstance): model.InteractionInstanceF[IO] = {
+  private def fromFuture(i: scaladsl.InteractionInstance): model.InteractionInstance[IO] = {
     implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
     implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
-    model.InteractionInstanceF.build(
+    model.InteractionInstance.build(
       _name = i.name,
       _input = i.input,
       _run = p => IO.fromFuture(IO(i.run(p))),
@@ -48,10 +48,10 @@ object CachingInteractionManager {
     )
   }
 
-  def apply(interactionInstance: model.InteractionInstanceF[IO]): CachingInteractionManager =
+  def apply(interactionInstance: model.InteractionInstance[IO]): CachingInteractionManager =
     create(List(interactionInstance))
 
-  def apply(interactionInstance: model.InteractionInstanceF[IO], allowSupersetForOutputTypes: Boolean): CachingInteractionManager =
+  def apply(interactionInstance: model.InteractionInstance[IO], allowSupersetForOutputTypes: Boolean): CachingInteractionManager =
     create(List(interactionInstance), Some(allowSupersetForOutputTypes))
 
   @nowarn
@@ -60,7 +60,7 @@ object CachingInteractionManager {
       .asScala
       .map {
         case javaInteraction: com.ing.baker.runtime.javadsl.InteractionInstance => fromFuture(javaInteraction.asScala)
-        case other => model.InteractionInstanceF.unsafeFrom[IO](other)
+        case other => model.InteractionInstance.unsafeFrom[IO](other)
       }.toList
     )
 
@@ -70,7 +70,7 @@ object CachingInteractionManager {
       .asScala
       .map {
         case javaInteraction: com.ing.baker.runtime.javadsl.InteractionInstance => fromFuture(javaInteraction.asScala)
-        case other => model.InteractionInstanceF.unsafeFrom[IO](other)
+        case other => model.InteractionInstance.unsafeFrom[IO](other)
       }.toList
       , Some(allowSupersetForOutputTypes))
 
@@ -80,12 +80,12 @@ object CachingInteractionManager {
 trait CachingTransitionLookups {
   self: InteractionManager[IO] =>
 
-  type TransitionStorage = ConcurrentHashMap[InteractionTransition, model.InteractionInstanceF[IO]]
+  type TransitionStorage = ConcurrentHashMap[InteractionTransition, model.InteractionInstance[IO]]
 
   private val transitionToInteractionCache: IO[Ref[IO, TransitionStorage]] =
     Ref.of[IO, TransitionStorage](new TransitionStorage)
 
-  protected def findCompatible(instances: List[model.InteractionInstanceF[IO]], interaction: InteractionTransition): model.InteractionInstanceF[IO] =
+  protected def findCompatible(instances: List[model.InteractionInstance[IO]], interaction: InteractionTransition): model.InteractionInstance[IO] =
     instances.find(implementation => compatible(interaction, implementation)).orNull
 
   protected def transitionCache: IO[TransitionStorage] = for {
@@ -98,7 +98,7 @@ trait CachingTransitionLookups {
     _ = cache.clear()
   } yield ()
 
-  override def findFor(transition: InteractionTransition)(implicit sync: Sync[IO]): IO[Option[model.InteractionInstanceF[IO]]] =
+  override def findFor(transition: InteractionTransition)(implicit sync: Sync[IO]): IO[Option[model.InteractionInstance[IO]]] =
     for {
       cache <- transitionCache
       instances <- self.listAll
@@ -117,12 +117,12 @@ trait CachingInteractionManager extends InteractionManager[IO] with CachingTrans
   */
 trait DynamicInteractionManager extends CachingInteractionManager {
 
-  case class InteractionBundle(startedAt: Long, interactions: List[InteractionInstanceF[IO]])
+  case class InteractionBundle(startedAt: Long, interactions: List[InteractionInstance[IO]])
 
   type DiscoveredInteractions = ConcurrentHashMap[String, InteractionBundle]
 
   @nowarn
-  def listAll: IO[List[InteractionInstanceF[IO]]] = for {
+  def listAll: IO[List[InteractionInstance[IO]]] = for {
     d <- discovered
   } yield d.values().asScala.flatMap(_.interactions).toList
 

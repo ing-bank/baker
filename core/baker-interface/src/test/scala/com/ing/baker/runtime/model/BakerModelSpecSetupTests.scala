@@ -50,7 +50,7 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withInteraction(interactionOne.withName("interactionOneRenamed"))
         .withSensoryEvent(initialEvent)
       for {
-        baker <- context.setupBakerWithNoRecipe(List(InteractionInstanceF.unsafeFrom(new InteractionOneSimple())))
+        baker <- context.setupBakerWithNoRecipe(List(InteractionInstance.unsafeFrom(new InteractionOneSimple())))
         _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
       } yield succeed
     }
@@ -60,7 +60,7 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withInteraction(interactionOne)
         .withSensoryEvent(initialEvent)
       for {
-        baker <- context.setupBakerWithNoRecipe(List((InteractionInstanceF.unsafeFrom(new InteractionOneFieldName()))))
+        baker <- context.setupBakerWithNoRecipe(List((InteractionInstance.unsafeFrom(new InteractionOneFieldName()))))
         _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
       } yield succeed
     }
@@ -71,7 +71,7 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withInteraction(interactionOne)
         .withSensoryEvent(initialEvent)
       for {
-        baker <- context.buildBaker(List(InteractionInstanceF.unsafeFrom(new InteractionOneInterfaceImplementation())))
+        baker <- context.buildBaker(List(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
         _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
       } yield succeed
     }
@@ -81,7 +81,7 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withInteraction(interactionWithAComplexIngredient)
         .withSensoryEvent(initialEvent)
       for {
-        baker <- context.buildBaker(List(InteractionInstanceF.unsafeFrom(mock[ComplexIngredientInteraction])))
+        baker <- context.buildBaker(List(InteractionInstance.unsafeFrom(mock[ComplexIngredientInteraction])))
         _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
       } yield succeed
     }
@@ -123,7 +123,7 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withSensoryEvent(initialEvent)
 
       for {
-        baker <- context.buildBaker(List(InteractionInstanceF.unsafeFrom(new InteractionOneWrongApply())))
+        baker <- context.buildBaker(List(InteractionInstance.unsafeFrom(new InteractionOneWrongApply())))
         _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe))).attempt.map {
           case Left(e) => e should have('message("Recipe WrongImplementation:8e2745de0bb0bde5 has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(InteractionOne input size differs: transition expects 2, implementation provides 1)"))
           case Right(_) => fail("Adding an interaction should fail")

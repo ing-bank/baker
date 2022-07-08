@@ -24,6 +24,8 @@ trait Baker extends common.Baker[Future] with ScalaApi {
 
   override type InteractionInstanceDescriptorType =  InteractionInstanceDescriptor
 
+  override type IngredientInstanceType = IngredientInstance
+
   override type BakerEventType = BakerEvent
 
   override type RecipeInstanceMetadataType = RecipeInstanceMetadata

@@ -66,28 +66,25 @@ class JsonDecodersSpec extends AnyFunSpec with Matchers {
     }
 
     it("should decode InteractionInstanceDescriptor") {
-      val instance = decode[InteractionInstanceDescriptor]("""{"name":"name","input":[{"name":null,"type":{"CharArray":{}}}],"output":null}""").right.get
-      instance shouldEqual InteractionInstanceDescriptor("name", Seq(InteractionInstanceInput(Option.empty, com.ing.baker.types.CharArray)), Option.empty)
+      val instance = decode[InteractionInstanceDescriptor]("""{"id":"id","name":"name","input":[{"name":null,"type":{"CharArray":{}}}],"output":null}""").right.get
+      instance shouldEqual InteractionInstanceDescriptor("id", "name", Seq(InteractionInstanceInput(Option.empty, com.ing.baker.types.CharArray)), Option.empty)
 
-      val instance2 = decode[InteractionInstanceDescriptor]("""{"name":"name","input":[{"name":"inputname","type":{"CharArray":{}}}],"output":null}""").right.get
-      instance2 shouldEqual InteractionInstanceDescriptor("name", Seq(InteractionInstanceInput(Option.apply("inputname"), com.ing.baker.types.CharArray)), Option.empty)
+      val instance2 = decode[InteractionInstanceDescriptor]("""{"id":"id","name":"name","input":[{"name":"inputname","type":{"CharArray":{}}}],"output":null}""").right.get
+      instance2 shouldEqual InteractionInstanceDescriptor("id", "name", Seq(InteractionInstanceInput(Option.apply("inputname"), com.ing.baker.types.CharArray)), Option.empty)
 
-      val instance3 = decode[InteractionInstanceDescriptor]("""{"name":"name","input":[{"name":"inputname","type":{"CharArray":{}}}],"output":{"outputEventName":{"OutputIngredientName":{"CharArray":{}}}}}""").right.get
-      instance3 shouldEqual InteractionInstanceDescriptor("name", Seq(InteractionInstanceInput(Option.apply("inputname"),
+      val instance3 = decode[InteractionInstanceDescriptor]("""{"id":"id","name":"name","input":[{"name":"inputname","type":{"CharArray":{}}}],"output":{"outputEventName":{"OutputIngredientName":{"CharArray":{}}}}}""").right.get
+      instance3 shouldEqual InteractionInstanceDescriptor("id", "name", Seq(InteractionInstanceInput(Option.apply("inputname"),
         com.ing.baker.types.CharArray)),
         Option.apply(Map("outputEventName" -> Map("OutputIngredientName"-> com.ing.baker.types.CharArray))))
 
-      val instance4 = decode[InteractionInstanceDescriptor]("""{"name":"name","input":[{"name":"inputname","type":{"CharArray":{}}}],"output":{"outputEventName":{"OutputIngredientName":{"EnumType":{"options":["A"]}}}}}""").right.get
-      instance4 shouldEqual InteractionInstanceDescriptor("name", Seq(InteractionInstanceInput(Option.apply("inputname"),
+      val instance4 = decode[InteractionInstanceDescriptor]("""{"id":"id","name":"name","input":[{"name":"inputname","type":{"CharArray":{}}}],"output":{"outputEventName":{"OutputIngredientName":{"EnumType":{"options":["A"]}}}}}""").right.get
+      instance4 shouldEqual InteractionInstanceDescriptor("id", "name", Seq(InteractionInstanceInput(Option.apply("inputname"),
         com.ing.baker.types.CharArray)),
         Option.apply(Map("outputEventName" -> Map("OutputIngredientName"-> com.ing.baker.types.EnumType(Set("A"))))) )
 
-      val instance5 = decode[InteractionInstanceDescriptor]("""{"name":"name","input":[{"name":null,"type":{"CharArray":{}}}]}""").right.get
-      instance5 shouldEqual InteractionInstanceDescriptor("name", Seq(InteractionInstanceInput(Option.empty, com.ing.baker.types.CharArray)), Option.empty)
+      val instance5 = decode[InteractionInstanceDescriptor]("""{"id":"id","name":"name","input":[{"name":null,"type":{"CharArray":{}}}]}""").right.get
+      instance5 shouldEqual InteractionInstanceDescriptor("id", "name", Seq(InteractionInstanceInput(Option.empty, com.ing.baker.types.CharArray)), Option.empty)
 
-      val instance6 = decode[InteractionInstanceDescriptor]("""{"name":"name","input":[{"name":null,"type":{"CharArray":{}}}],"output":[]}""").left
-      print(instance6)
-//      instance6 shouldEqual InteractionInstanceDescriptor("name", Seq(InteractionInstanceInput(Option.empty, com.ing.baker.types.CharArray)), Option.empty)
     }
   }
 }

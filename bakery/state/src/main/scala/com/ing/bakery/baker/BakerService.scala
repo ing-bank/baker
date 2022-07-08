@@ -103,13 +103,16 @@ final class BakerService private(baker: Baker)(implicit cs: ContextShift[IO], ti
   implicit val recipeDecoder: EntityDecoder[IO, EncodedRecipe] = jsonOf[IO, EncodedRecipe]
 
   implicit val eventInstanceDecoder: EntityDecoder[IO, EventInstance] = jsonOf[IO, EventInstance]
+  implicit val interactionExecutionRequestDecoder: EntityDecoder[IO, InteractionExecution.ExecutionRequest] = jsonOf[IO, InteractionExecution.ExecutionRequest]
   implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
-  implicit val interactionEntityEncoder: EntityEncoder[IO, InteractionExecution.Descriptor] = jsonEncoderOf[IO, InteractionExecution.Descriptor]
 
   def routes: HttpRoutes[IO] = app <+> instance
 
-  private def callBaker[A](f: => Future[A])(implicit encoder: Encoder[A]): IO[Response[IO]] = {
-    IO.fromFuture(IO(f)).attempt.flatMap {
+  private def callBaker[A](f: => Future[A])(implicit encoder: Encoder[A]): IO[Response[IO]] =
+    callBakerIO(IO.fromFuture(IO(f)))
+
+  private def callBakerIO[A](io: => IO[A])(implicit encoder: Encoder[A]): IO[Response[IO]] =
+    io.attempt.flatMap {
       case Left(e: BakerException) => Ok(BakerResult(e))
       case Left(e) =>
         logger.error(s"Unexpected exception happened when calling Baker", e)
@@ -117,7 +120,6 @@ final class BakerService private(baker: Baker)(implicit cs: ContextShift[IO], ti
       case Right(()) => Ok(BakerResult.Ack)
       case Right(a) => Ok(BakerResult(a))
     }
-  }
 
   private def app: HttpRoutes[IO] = Router("/app" ->
     HttpRoutes.of[IO] {
@@ -126,6 +128,14 @@ final class BakerService private(baker: Baker)(implicit cs: ContextShift[IO], ti
       case GET -> Root / "interactions" => callBaker(baker.getAllInteractions)
 
       case GET -> Root / "interactions" / InteractionName(name) => callBaker(baker.getInteraction(name))
+
+      case req@POST -> Root / "interactions" / "execute" =>
+        for {
+          executionRequest <- req.as[InteractionExecution.ExecutionRequest]
+          result <- callBakerIO(
+            IO.fromFuture(IO(baker.executeSingleInteraction(executionRequest.id, executionRequest.ingredients)))
+              .map(resultingEventOption => InteractionExecution.ExecutionResult(Right(InteractionExecution.Success(resultingEventOption)))))
+        } yield result
 
       case req@POST -> Root / "recipes" =>
         for {
