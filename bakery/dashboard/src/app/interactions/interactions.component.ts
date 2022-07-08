@@ -10,7 +10,7 @@ import {MatSelectionListChange} from "@angular/material/list";
 /** @title Bakery DashboardComponent */
 @Component({
     "selector": "interactions",
-    "styleUrls": ["interactions.scss"],
+    "styleUrls": ["interactions.css"],
     "templateUrl": "interactions.component.html"
 })
 export class InteractionsComponent implements OnInit {

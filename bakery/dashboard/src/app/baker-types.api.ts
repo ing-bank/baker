@@ -41,3 +41,35 @@ export interface RecordField {
     name: string;
     type: Type;
 }
+
+/**
+ * Some examples of types:
+ * CharArray type:
+ * { "CharArray" : {} }
+ *
+ * Record type:
+ * {
+ *    "RecordType": {
+ *       "fields": [
+ *           {
+ *               "name": "year",
+ *               "type": {
+ *                   "Int32": {}
+ *               }
+ *           },
+ *           {
+ *               "name": "month",
+ *               "type": {
+ *                   "Int16": {}
+ *               }
+ *           },
+ *           {
+ *               "name": "day",
+ *               "type": {
+ *                   "Int16": {}
+ *               }
+ *           }
+ *       ]
+ *   }
+ *
+ */

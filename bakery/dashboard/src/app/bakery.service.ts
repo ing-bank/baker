@@ -1,9 +1,9 @@
 import {
-    DigraphResponse,
+    DigraphResponse, ExecuteInteractionRequest,
     Instance,
     InstanceResponse,
     Interaction,
-    InteractionsResponse,
+    InteractionsResponse, NameAndValue,
     Recipe,
     Recipes
 } from "./bakery.api";
@@ -78,8 +78,18 @@ export class BakeryService {
             );
     }
 
+    executeInteraction(interactionId: string, ingredients: NameAndValue[]): Observable<any> {
+        const request : ExecuteInteractionRequest = {
+            "id": interactionId,
+            ingredients
+        };
+
+        return this.http.post<any>(`${this.baseUrl}/app/interactions/execute`, request);
+    }
+
     private handleError<T> (result: T | null) {
         return (error: any): Observable<T> => {
+            // eslint-disable-next-line no-console
             console.log(`http request failed: ${error.message}`);
             return of(result as T);
         };

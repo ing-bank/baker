@@ -54,3 +54,16 @@ export interface InstanceResponse {
   result: "success" | "error";
   body:   Instance;
 }
+
+
+export interface NameAndValue {
+  name: string;
+  value: Value;
+}
+
+export interface ExecuteInteractionRequest {
+  id: string;
+  ingredients: NameAndValue[];
+}
+
+

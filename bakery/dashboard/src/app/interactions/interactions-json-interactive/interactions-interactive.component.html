@@ -1,0 +1,17 @@
+<mat-grid-list cols="2" rowHeight="100%" *ngIf="selectedInteraction">
+    <mat-grid-tile colspan="1">
+        <div class="tile-content">
+            <label>Input</label>
+            <textarea [(ngModel)]="interactionInput" (keyup)="inputElementChanged()"></textarea>
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile colspan="1">
+        <div class="tile-content">
+            <p>Output</p>
+            <button (click)="execute()">Execute</button>
+            <textarea [(ngModel)]="interactionExecutionOutput"></textarea>
+        </div>
+    </mat-grid-tile>
+</mat-grid-list>
+<p *ngIf="!selectedInteraction">No interaction selected</p>
+

@@ -1,0 +1,22 @@
+.tile-content {
+  height: 100%;
+  width: 100%;
+}
+
+.interactions-interface {
+  font-size: 10px;
+}
+
+.scroll-viewport {
+  left: 4px;
+  height: calc(100% - 55px);
+  width: calc(100% - 4px);
+}
+
+
+textarea {
+  height: 100%;
+  width: 100%;
+  font-family: 'Courier New', monospace;
+  font-size: small;
+}

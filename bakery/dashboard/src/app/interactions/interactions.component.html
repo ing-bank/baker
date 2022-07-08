@@ -16,7 +16,18 @@
     </div>
   </mat-grid-tile>
   <mat-grid-tile colspan="8">
-    <interactions-json-view [selectedInteraction]="selectedInteraction"></interactions-json-view>
+    <mat-tab-group *ngIf="selectedInteraction">
+      <mat-tab label="Interact">
+        <ng-template matTabContent>
+          <interactions-interactive [selectedInteraction]="selectedInteraction"></interactions-interactive>
+        </ng-template>
+      </mat-tab>
+      <mat-tab label="View">
+        <ng-template matTabContent>
+          <interactions-json-view [selectedInteraction]="selectedInteraction"></interactions-json-view>
+        </ng-template>
+      </mat-tab>
+    </mat-tab-group>
   </mat-grid-tile>
 </mat-grid-list>
 

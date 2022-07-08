@@ -2,10 +2,9 @@
   height: 100%;
   width: 500px;
   left: 5px;
-
-  .scroll-viewport {
-    height: 100%;
-  }
+}
+.interactions-list .scroll-viewport {
+  height: 100%;
 }
 
 interactions-json-view {
@@ -15,4 +14,13 @@ interactions-json-view {
 
 .mat-form-field {
   width: 100%;
+}
+
+.mat-tab-group {
+  width: 100%;
+  height: 100%;
+}
+
+/deep/.mat-tab-body-wrapper {
+  height: 100%;
 }
