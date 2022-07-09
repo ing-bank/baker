@@ -76,7 +76,7 @@ object Dependencies {
 
   val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.15.0"
   val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.17.0"
-  val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.2.5"
+  val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.3.0"
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.14.1"
