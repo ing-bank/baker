@@ -1,6 +1,6 @@
 package com.ing.bakery.baker
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.protobuf
@@ -17,17 +17,18 @@ import java.util.zip.{GZIPInputStream, ZipException}
 import scala.annotation.nowarn
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
+import cats.effect.Temporal
 
 object RecipeLoader extends LazyLogging {
 
   def pollRecipesUpdates(path: String, bakery: Bakery, duration: FiniteDuration)
-                        (implicit timer: Timer[IO], cs: ContextShift[IO]): IO[Unit] = {
+                        (implicit timer: Temporal[IO]): IO[Unit] = {
     def pollRecipes: IO[Unit] = loadRecipesIntoBaker(path, bakery.baker) >> IO.sleep(duration) >> IO.defer(pollRecipes)
 
     pollRecipes
   }
 
-  def loadRecipesIntoBaker(path: String, baker: Baker)(implicit cs: ContextShift[IO]): IO[Unit] =
+  def loadRecipesIntoBaker(path: String, baker: Baker): IO[Unit] =
     for {
       recipes <- RecipeLoader.loadRecipes(path)
       _ <-  recipes.traverse { record =>
