@@ -85,7 +85,6 @@ keytool -import -v \
 ##
 
 # Create a self signed certificate & private key to create a root certificate authority.
-rm client.interaction.ing-bank.github.io.jks
 keytool -genkeypair -v \
   -alias interactionclientca \
   -dname "CN=interactionclientca, OU=Bakery, O=Bakery, L=Amsterdam, ST=North Holland, C=Netherlands" \
