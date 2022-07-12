@@ -4,7 +4,7 @@ import cats.data.OptionT
 import cats.effect.{Blocker, ContextShift, IO, Resource, Sync, Timer}
 import cats.implicits._
 import com.ing.baker.runtime.common.BakerException
-import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance}
+import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance, InteractionExecutionResult}
 import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 import com.ing.baker.runtime.serialization.JsonDecoders._
@@ -134,7 +134,7 @@ final class BakerService private(baker: Baker)(implicit cs: ContextShift[IO], ti
           executionRequest <- req.as[InteractionExecution.ExecutionRequest]
           result <- callBakerIO(
             IO.fromFuture(IO(baker.executeSingleInteraction(executionRequest.id, executionRequest.ingredients)))
-              .map(resultingEventOption => InteractionExecution.ExecutionResult(Right(InteractionExecution.Success(resultingEventOption)))))
+              .map(_.toSerializationInteractionExecutionResult))
         } yield result
 
       case req@POST -> Root / "recipes" =>

@@ -43,6 +43,7 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
 
   override type RecipeMetadataType = RecipeEventMetadata
 
+  override type InteractionExecutionResultType = InteractionExecutionResult
 
   override def close(): Unit = {
     Await.result(baker.gracefulShutdown(), 10.seconds)
@@ -263,11 +264,11 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
       .thenApply(_.map(_.asJava()).asJava)
 
   @nowarn
-  def executeSingleInteraction(interactionId: String, ingredients: util.List[IngredientInstanceType]): CompletableFuture[Optional[EventInstanceType]] =
+  def executeSingleInteraction(interactionId: String, ingredients: util.List[IngredientInstanceType]): CompletableFuture[InteractionExecutionResult] =
     FutureConverters
       .toJava(baker.executeSingleInteraction(interactionId, ingredients.asScala.map(_.asScala).toIndexedSeq))
       .toCompletableFuture
-      .thenApply(e => Optional.ofNullable(e.map(_.asJava).orNull))
+      .thenApply(_.asJava)
 
   /**
     * Returns an index of all processes.

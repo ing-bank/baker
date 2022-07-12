@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.serialization
 
-import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
+import com.ing.baker.runtime.common.InteractionExecutionFailureReason
+import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionExecutionResult, InteractionInstanceInput}
 import com.ing.baker.runtime.serialization.InteractionExecution.{Descriptor, ExecutionRequest, ExecutionResult, Failure, FailureReason, Interactions, Success}
 import com.ing.baker.types.Type
 import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
@@ -42,8 +43,19 @@ object InteractionExecution {
   case class ExecutionResult(outcome: Either[Failure, Success])
 
   sealed trait Result
-  case class Success(result: Option[EventInstance]) extends Result
-  case class Failure(reason: FailureReason) extends Result
+  case class Success(result: Option[EventInstance]) extends Result {
+    def toBakerInteractionExecutionSuccess: InteractionExecutionResult.Success =
+      InteractionExecutionResult.Success(result)
+  }
+  case class Failure(reason: FailureReason) extends Result {
+    def toBakerInteractionExecutionFailure: InteractionExecutionResult.Failure = reason match {
+      case InteractionError(interactionName, message) => InteractionExecutionResult.Failure(InteractionExecutionFailureReason.INTERACTION_NOT_FOUND, Some(interactionName), Some(message))
+      case NoInstanceFound => InteractionExecutionResult.Failure(InteractionExecutionFailureReason.INTERACTION_NOT_FOUND, None, None)
+      case Timeout => InteractionExecutionResult.Failure(InteractionExecutionFailureReason.TIMEOUT, None, None)
+      case BadIngredients => InteractionExecutionResult.Failure(InteractionExecutionFailureReason.BAD_INGREDIENTS, None, None)
+    }
+
+  }
 
   sealed trait FailureReason
   case class InteractionError(interactionName: String, message: String)  extends FailureReason

@@ -42,7 +42,8 @@ object AkkaBakerConfig extends LazyLogging {
                        defaultProcessEventTimeout: FiniteDuration,
                        defaultInquireTimeout: FiniteDuration,
                        defaultShutdownTimeout: FiniteDuration,
-                       defaultAddRecipeTimeout: FiniteDuration)
+                       defaultAddRecipeTimeout: FiniteDuration,
+                      defaultExecuteSingleInteractionTimeout: FiniteDuration)
 
   object Timeouts {
 
@@ -53,6 +54,7 @@ object AkkaBakerConfig extends LazyLogging {
         defaultInquireTimeout = 10.seconds,
         defaultShutdownTimeout = 30.seconds,
         defaultAddRecipeTimeout = 10.seconds,
+        defaultExecuteSingleInteractionTimeout = 60.seconds,
       )
 
     def apply(config: Config): Timeouts =
@@ -61,7 +63,8 @@ object AkkaBakerConfig extends LazyLogging {
         defaultProcessEventTimeout = config.as[FiniteDuration]("baker.process-event-timeout"),
         defaultInquireTimeout = config.as[FiniteDuration]("baker.process-inquire-timeout"),
         defaultShutdownTimeout = config.as[FiniteDuration]("baker.shutdown-timeout"),
-        defaultAddRecipeTimeout = config.as[FiniteDuration]("baker.add-recipe-timeout")
+        defaultAddRecipeTimeout = config.as[FiniteDuration]("baker.add-recipe-timeout"),
+        defaultExecuteSingleInteractionTimeout = config.as[FiniteDuration]("baker.execute-single-interaction-timeout"),
       )
   }
 

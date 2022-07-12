@@ -8,7 +8,7 @@ import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
-import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus}
+import com.ing.baker.runtime.common.{InteractionExecutionFailureReason, RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
 import com.ing.baker.runtime.scaladsl.{Baker => DeprecatedBaker, _}
 import com.ing.baker.types.Value
@@ -31,7 +31,9 @@ object BakerF {
                     processEventTimeout: FiniteDuration = 10.seconds,
                     inquireTimeout: FiniteDuration = 10.seconds,
                     shutdownTimeout: FiniteDuration = 10.seconds,
-                    addRecipeTimeout: FiniteDuration = 10.seconds)
+                    addRecipeTimeout: FiniteDuration = 10.seconds,
+                    executeSingleInteractionTimeout: FiniteDuration = 60.seconds,
+                   )
 }
 
 abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) extends common.Baker[F] with ScalaApi with LazyLogging {
@@ -62,6 +64,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
   override type EventMomentType = EventMoment
 
   override type RecipeMetadataType = RecipeEventMetadata
+
+  override type InteractionExecutionResultType = InteractionExecutionResult
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -113,15 +117,26 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     components.interactions.listAll
       .map(_.map(i => InteractionInstanceDescriptor(i.shaBase64, i.name, i.input, i.output)))
 
-  override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): F[Option[EventInstance]] =
+  override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): F[InteractionExecutionResult] =
     components.interactions
       .listAll
       .map(interactionsList => interactionsList.find(_.shaBase64 == interactionId))
-      .flatMap(interactionInstanceOption =>
-        effect.fromOption(interactionInstanceOption, ifEmpty =
-          BakerException.SingleInteractionExecutionFailedException("No interaction found with specified interaction id"))
-      )
-      .flatMap(interactionInstance => interactionInstance.execute(ingredients))
+      .flatMap {
+        case None => effect.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
+          InteractionExecutionFailureReason.INTERACTION_NOT_FOUND, None, None))))
+        case Some(interactionInstance) =>
+          interactionInstance.execute(ingredients)
+            .map(executionSuccess => InteractionExecutionResult(Right(InteractionExecutionResult.Success(executionSuccess))))
+            .recover {
+              case e => InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
+                InteractionExecutionFailureReason.INTERACTION_EXECUTION_ERROR,
+                Some(interactionInstance.name),
+                Some(s"Interaction execution failed. Interaction threw ${e.getClass.getSimpleName} with message ${e.getMessage}."))))
+            }
+            .timeoutTo(config.executeSingleInteractionTimeout, effect.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
+              InteractionExecutionFailureReason.TIMEOUT, Some(interactionInstance.name), None)))))
+      }
+
 
   /**
    * Attempts to gracefully shutdown the baker system.
@@ -381,7 +396,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.getAllInteractions)
       override def getInteraction(interactionName: String): G[Option[InteractionInstanceDescriptor]] =
         mapK(self.getInteraction(interactionName))
-      override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): G[Option[EventInstance]] =
+      override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): G[InteractionExecutionResult] =
         mapK(self.executeSingleInteraction(interactionId, ingredients))
       override def bake(recipeId: String, recipeInstanceId: String): G[Unit] =
         mapK(self.bake(recipeId, recipeInstanceId))
@@ -435,7 +450,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.getAllInteractions)
       override def getInteraction(interactionName: String): Future[Option[InteractionInstanceDescriptor]] =
         mapK(self.getInteraction(interactionName))
-      override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): Future[Option[EventInstance]] =
+      override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): Future[InteractionExecutionResult] =
         mapK(self.executeSingleInteraction(interactionId, ingredients))
       override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] =
         mapK(self.bake(recipeId, recipeInstanceId))
