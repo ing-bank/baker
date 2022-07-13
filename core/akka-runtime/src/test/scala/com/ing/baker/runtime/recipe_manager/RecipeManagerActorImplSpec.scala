@@ -22,7 +22,7 @@ class RecipeManagerActorImplSpec extends TestKit(ActorSystem("MySpec"))
   with BeforeAndAfter
   with BeforeAndAfterAll {
   private val timeout: FiniteDuration = FiniteDuration(5, TimeUnit.SECONDS)
-  private val timeouts: Timeouts = new Timeouts(timeout, timeout, timeout, timeout, timeout)
+  private val timeouts: Timeouts = new Timeouts(timeout, timeout, timeout, timeout, timeout, timeout)
 
 
 

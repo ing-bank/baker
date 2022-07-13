@@ -7,6 +7,7 @@ import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.runtime.akka.AkkaBaker;
 import com.ing.baker.runtime.common.BakerException;
+import com.ing.baker.runtime.common.InteractionExecutionFailureReason;
 import com.ing.baker.runtime.common.RecipeRecord;
 import com.ing.baker.runtime.common.SensoryEventStatus;
 import com.ing.baker.runtime.javadsl.*;
@@ -28,8 +29,9 @@ import static org.junit.Assert.*;
 
 public class BakerTest {
 
+    private InteractionInstance interactionOneInstance = InteractionInstance.from(new JavaCompiledRecipeTest.InteractionOneImpl());
     private java.util.List<Object> implementationsList = ImmutableList.of(
-            InteractionInstance.from(new JavaCompiledRecipeTest.InteractionOneImpl()),
+            interactionOneInstance,
             InteractionInstance.from(new JavaCompiledRecipeTest.InteractionTwo()),
             InteractionInstance.from(new JavaCompiledRecipeTest.InteractionThreeImpl()),
             InteractionInstance.from(new JavaCompiledRecipeTest.SieveImpl()));
@@ -215,5 +217,44 @@ public class BakerTest {
         IngredientInstance ing = new IngredientInstance("ingredient", new PrimitiveValue("this"));
         assertEquals("ingredient", ing.getName());
         assertEquals("this", ing.getValue().as(String.class));
+    }
+
+    @Test
+    public void testExecuteSingleInteractionSuccess() throws BakerException, ExecutionException, InterruptedException {
+        Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
+        List<IngredientInstance> ingredients = new ArrayList<>();
+        ingredients.add(new IngredientInstance("requestId", new PrimitiveValue("requestId")));
+
+        InteractionExecutionResult result = jBaker.executeSingleInteraction(interactionOneInstance.asScala().shaBase64(), ingredients).get();
+        Map<String, Value> expectedIngredients = Map.of("RequestIDStringOne", new PrimitiveValue("requestId"));
+        EventInstance expectedEventInstance = new EventInstance("ProvidesRequestIDStringOne", expectedIngredients);
+        InteractionExecutionResult.Success expectedSuccess = new InteractionExecutionResult.Success(Optional.of(expectedEventInstance));
+        assertEquals(result, new InteractionExecutionResult(
+                Optional.of(expectedSuccess),
+                Optional.empty()));
+    }
+
+    @Test
+    public void testExecuteSingleInteractionNotFound() throws BakerException, ExecutionException, InterruptedException {
+        Baker jBaker = AkkaBaker.java(config, actorSystem);
+
+        InteractionExecutionResult result = jBaker.executeSingleInteraction("doesnotexist", Collections.emptyList()).get();
+        assertEquals(result, new InteractionExecutionResult(
+                Optional.empty(),
+                Optional.of(new InteractionExecutionResult.Failure(InteractionExecutionFailureReason.INTERACTION_NOT_FOUND, Optional.empty(), Optional.empty()))));
+    }
+
+    @Test
+    public void testExecuteSingleInteractionThatFails() throws BakerException, ExecutionException, InterruptedException {
+        InteractionInstance interactionThatThrows = InteractionInstance.from(new JavaCompiledRecipeTest.InteractionThatThrowsImpl());
+        Baker jBaker = AkkaBaker.java(config, actorSystem, List.of(interactionThatThrows));
+        List<IngredientInstance> ingredients = new ArrayList<>();
+        ingredients.add(new IngredientInstance("requestId", new PrimitiveValue("requestId")));
+
+        InteractionExecutionResult result = jBaker.executeSingleInteraction(interactionThatThrows.asScala().shaBase64(), ingredients).get();
+        assertEquals(result, new InteractionExecutionResult(
+                Optional.empty(),
+                Optional.of(new InteractionExecutionResult.Failure(InteractionExecutionFailureReason.INTERACTION_EXECUTION_ERROR,
+                        Optional.of("InteractionThatThrowsImpl"), Optional.of("Interaction execution failed. Interaction threw InvocationTargetException with message null.")))));
     }
 }
