@@ -3,11 +3,10 @@ import {
     Input,
     OnChanges,
     OnInit,
-    SimpleChanges
 } from "@angular/core";
+import {ExecuteInteractionInformation, Interaction} from "../../bakery.api";
 import {BakerConversionService} from "../../baker-conversion.service";
 import {BakeryService} from "../../bakery.service";
-import {Interaction} from "../../bakery.api";
 
 @Component({
     "selector": "interactions-interactive",
@@ -26,7 +25,8 @@ export class InteractionsInteractiveComponent implements OnInit, OnChanges {
 
     interactionInput: string | undefined;
     interactionIngredientsAsValues: any | undefined;
-    interactionExecutionOutput: string | undefined;
+    executions: ExecuteInteractionInformation[] = [];
+    executeButtonDisabled = false;
 
     ngOnInit(): void {
         this.selectedInteractionChanged();
@@ -51,15 +51,30 @@ export class InteractionsInteractiveComponent implements OnInit, OnChanges {
         this.interactionIngredientsAsValues = this.bakerConversionService.ingredientsJsonToBakerValues(this.selectedInteraction.input, interactionInputJson);
     }
 
+    toJson(response : any) : string {
+        return JSON.stringify(response, null, 4);
+    }
+
+    addLeadingZeros(num: number, totalLength: number): string {
+        return String(num).padStart(totalLength, "0");
+    }
+
+    toLocalTimestamp(date : Date) : string {
+        return `${this.addLeadingZeros(date.getHours(), 2)}:${this.addLeadingZeros(date.getMinutes(), 2)}:${this.addLeadingZeros(date.getSeconds(), 2)}.${this.addLeadingZeros(date.getMilliseconds(), 3)}`;
+    }
+
     execute() : void {
         if (typeof this.interactionIngredientsAsValues === "undefined") {
             return;
         }
 
         const interactionIngredientsJson = this.interactionIngredientsAsValues;
+        this.executeButtonDisabled = true;
 
-        this.bakeryService.executeInteraction(this.selectedInteraction.id, interactionIngredientsJson).subscribe(response => {
-            this.interactionExecutionOutput = JSON.stringify(response, null, 4);
+        this.bakeryService.executeInteraction(this.selectedInteraction.id, interactionIngredientsJson).subscribe(executionInformation => {
+            // unshift means prepend.
+            this.executions.unshift(executionInformation);
+            this.executeButtonDisabled = false;
         });
     }
 

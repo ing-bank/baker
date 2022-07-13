@@ -1,16 +1,29 @@
 <mat-grid-list cols="2" rowHeight="100%" *ngIf="selectedInteraction">
     <mat-grid-tile colspan="1">
         <div class="tile-content">
-            <label>Input</label>
+            <button [disabled]="executeButtonDisabled" class="button-execute" color="primary" mat-fab (click)="execute()" aria-label="execute interaction"><mat-icon>play_arrow</mat-icon></button>
             <textarea [(ngModel)]="interactionInput" (keyup)="inputElementChanged()"></textarea>
         </div>
     </mat-grid-tile>
     <mat-grid-tile colspan="1">
-        <div class="tile-content">
-            <p>Output</p>
-            <button (click)="execute()">Execute</button>
-            <textarea [(ngModel)]="interactionExecutionOutput"></textarea>
-        </div>
+        <cdk-virtual-scroll-viewport class="scroll-viewport" itemSize="50">
+            <mat-accordion class="tile-content">
+                <mat-expansion-panel *ngFor="let execution of executions">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>{{toLocalTimestamp(execution.requestSentAt)}}</mat-panel-title>
+                        <mat-panel-description>
+                            <span class="execution-status-error" *ngIf="execution.failureReason">{{execution.failureReason.reason}}</span>
+                            <span class="execution-status-success" *ngIf="execution.successEvent">{{execution.successEvent.name}}</span>
+                            &nbsp;({{execution.durationInMilliseconds}}ms)
+                        </mat-panel-description>
+                    </mat-expansion-panel-header>
+                    <span *ngIf="execution.failureReason?.reason === 'InteractionError'">{{execution.failureReason?.interactionErrorMessage}}</span>
+                    <div *ngIf="execution.successEvent?.providedIngredients">
+                        <pre>{{toJson(execution.successEvent?.providedIngredients)}}</pre>
+                    </div>
+                </mat-expansion-panel>
+            </mat-accordion>
+        </cdk-virtual-scroll-viewport>
     </mat-grid-tile>
 </mat-grid-list>
 <p *ngIf="!selectedInteraction">No interaction selected</p>

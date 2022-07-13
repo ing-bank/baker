@@ -1,17 +1,22 @@
 import {
-    DigraphResponse, ExecuteInteractionRequest,
+    DigraphResponse,
+    ExecuteInteractionInformation,
+    ExecuteInteractionRequest,
+    ExecuteInteractionResponse,
     Instance,
     InstanceResponse,
-    Interaction,
-    InteractionsResponse, NameAndValue,
+    Interaction, InteractionExecutionFailure, InteractionExecutionSuccess,
+    InteractionsResponse,
+    NameAndValue,
     Recipe,
-    Recipes
+    Recipes, SimplifiedEventInstance, SimplifiedFailureReason
 } from "./bakery.api";
 import {HttpClient, HttpHeaders} from "@angular/common/http";
-
 import {Observable, of} from "rxjs";
+
 import {catchError, map} from "rxjs/operators";
 import {AppSettingsService} from "./app.settings";
+import {BakerConversionService} from "./baker-conversion.service";
 
 import {Injectable} from "@angular/core";
 
@@ -24,7 +29,10 @@ export class BakeryService {
         "headers": new HttpHeaders({"Content-Type": "application/json"})
     };
 
-    constructor (private http: HttpClient) {
+    constructor (
+        private http: HttpClient,
+        private bakerConversionService: BakerConversionService
+    ) {
     }
 
     getRecipes (): Observable<Recipe[]> {
@@ -78,13 +86,58 @@ export class BakeryService {
             );
     }
 
-    executeInteraction(interactionId: string, ingredients: NameAndValue[]): Observable<any> {
+    executeInteraction(interactionId: string, ingredients: NameAndValue[]): Observable<ExecuteInteractionInformation> {
         const request : ExecuteInteractionRequest = {
             "id": interactionId,
             ingredients
         };
 
-        return this.http.post<any>(`${this.baseUrl}/app/interactions/execute`, request);
+        const requestSentAt = new Date();
+        return this.http.post<ExecuteInteractionResponse>(`${this.baseUrl}/app/interactions/execute`, request)
+            .pipe(
+                catchError(this.handleError<ExecuteInteractionResponse>(null)),
+                map(response => {
+                    const eii : ExecuteInteractionInformation = {
+                        response,
+                        requestSentAt,
+                        "durationInMilliseconds": new Date().getTime() - requestSentAt.getTime(),
+                        "failureReason": BakeryService.getFailureReason(response),
+                        "successEvent": this.getSuccessEvent(response),
+                    };
+                    return eii;
+                })
+            );
+    }
+
+    private getSuccessEvent(response: ExecuteInteractionResponse) : SimplifiedEventInstance | null {
+        if (Object.keys(response.body.outcome).includes("Right")) {
+            const successOutcome = response.body.outcome as Record<"Right", Record<"value", InteractionExecutionSuccess>>;
+            const eventInstance = successOutcome.Right.value.result;
+            return {
+                "name": eventInstance.name,
+                "providedIngredients":
+                    Object.fromEntries(
+                        Object.entries(eventInstance.providedIngredients)
+                            .map(([key, val]) => [key, this.bakerConversionService.valueToJson(val)])),
+            };
+        }
+        return null;
+    }
+
+    private static getFailureReason(response : ExecuteInteractionResponse) : SimplifiedFailureReason | null {
+        if (Object.keys(response.body.outcome).includes("Left")) {
+            const failureOutcome = response.body.outcome as Record<"Left", Record<"value", InteractionExecutionFailure>>;
+            // eslint-disable-next-line prefer-destructuring
+            const [
+                name,
+                body
+            ] = Object.entries(failureOutcome.Left.value.reason)[0];
+            return {
+                "reason": name,
+                "interactionErrorMessage": body?.message,
+            };
+        }
+        return null;
     }
 
     private handleError<T> (result: T | null) {

@@ -17,12 +17,12 @@
   </mat-grid-tile>
   <mat-grid-tile colspan="8">
     <mat-tab-group *ngIf="selectedInteraction">
-      <mat-tab label="Interact">
+      <mat-tab label="Test">
         <ng-template matTabContent>
           <interactions-interactive [selectedInteraction]="selectedInteraction"></interactions-interactive>
         </ng-template>
       </mat-tab>
-      <mat-tab label="View">
+      <mat-tab label="Interaction definition">
         <ng-template matTabContent>
           <interactions-json-view [selectedInteraction]="selectedInteraction"></interactions-json-view>
         </ng-template>
