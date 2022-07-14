@@ -9,7 +9,7 @@ import {
     InteractionsResponse,
     NameAndValue,
     Recipe,
-    Recipes, SimplifiedEventInstance, SimplifiedFailureReason
+    Recipes, ServiceError, SimplifiedEventInstance, SimplifiedFailureReason
 } from "./bakery.api";
 import {HttpClient, HttpHeaders} from "@angular/common/http";
 import {Observable, of} from "rxjs";
@@ -86,7 +86,7 @@ export class BakeryService {
             );
     }
 
-    executeInteraction(interactionId: string, ingredients: NameAndValue[]): Observable<ExecuteInteractionInformation> {
+    executeInteraction(interactionId: string, ingredients: NameAndValue[]): Observable<ExecuteInteractionInformation | ServiceError> {
         const request : ExecuteInteractionRequest = {
             "id": interactionId,
             ingredients
@@ -95,7 +95,6 @@ export class BakeryService {
         const requestSentAt = new Date();
         return this.http.post<ExecuteInteractionResponse>(`${this.baseUrl}/app/interactions/execute`, request)
             .pipe(
-                catchError(this.handleError<ExecuteInteractionResponse>(null)),
                 map(response => {
                     const eii : ExecuteInteractionInformation = {
                         response,
@@ -105,7 +104,8 @@ export class BakeryService {
                         "successEvent": this.getSuccessEvent(response),
                     };
                     return eii;
-                })
+                }),
+                catchError(this.channelError(requestSentAt)),
             );
     }
 
@@ -138,6 +138,14 @@ export class BakeryService {
             };
         }
         return null;
+    }
+
+    private channelError(requestSentAt: Date) {
+        return (error: any): Observable<ServiceError> => of({
+            requestSentAt,
+            "durationInMilliseconds": new Date().getTime() - requestSentAt.getTime(),
+            error
+        });
     }
 
     private handleError<T> (result: T | null) {

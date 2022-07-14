@@ -4,9 +4,20 @@ import {
     OnChanges,
     OnInit,
 } from "@angular/core";
-import {ExecuteInteractionInformation, Interaction} from "../../bakery.api";
+import {
+    ExecuteInteractionInformation,
+    Interaction,
+    ServiceError
+} from "../../bakery.api";
 import {BakerConversionService} from "../../baker-conversion.service";
 import {BakeryService} from "../../bakery.service";
+
+type SuccessOrServiceError = {
+    "serviceResponse": ExecuteInteractionInformation | null,
+    "serviceError" : ServiceError | null,
+    "requestSentAt" : Date,
+    "durationInMilliseconds": number,
+}
 
 @Component({
     "selector": "interactions-interactive",
@@ -24,9 +35,10 @@ export class InteractionsInteractiveComponent implements OnInit, OnChanges {
     }
 
     interactionInput: string | undefined;
-    interactionIngredientsAsValues: any | undefined;
-    executions: ExecuteInteractionInformation[] = [];
-    executeButtonDisabled = false;
+    interactionIngredientsAsValues: any | null | undefined;
+    executions: SuccessOrServiceError[] = [];
+    serviceCallInProgress = false;
+    inputErrorMessage: string | undefined | null;
 
     ngOnInit(): void {
         this.selectedInteractionChanged();
@@ -47,8 +59,14 @@ export class InteractionsInteractiveComponent implements OnInit, OnChanges {
         if (typeof this.interactionInput !== "string") {
             return;
         }
-        const interactionInputJson = JSON.parse(this.interactionInput);
-        this.interactionIngredientsAsValues = this.bakerConversionService.ingredientsJsonToBakerValues(this.selectedInteraction.input, interactionInputJson);
+        try {
+            const interactionInputJson = JSON.parse(this.interactionInput);
+            this.interactionIngredientsAsValues = this.bakerConversionService.ingredientsJsonToBakerValues(this.selectedInteraction.input, interactionInputJson);
+            this.inputErrorMessage = null;
+        } catch (ex) {
+            this.interactionIngredientsAsValues = null;
+            this.inputErrorMessage = ex;
+        }
     }
 
     toJson(response : any) : string {
@@ -63,18 +81,36 @@ export class InteractionsInteractiveComponent implements OnInit, OnChanges {
         return `${this.addLeadingZeros(date.getHours(), 2)}:${this.addLeadingZeros(date.getMinutes(), 2)}:${this.addLeadingZeros(date.getSeconds(), 2)}.${this.addLeadingZeros(date.getMilliseconds(), 3)}`;
     }
 
+    toSuccessOrServiceError(response: ExecuteInteractionInformation | ServiceError) : SuccessOrServiceError {
+        if (Object.keys(response).includes("error")) {
+            return {
+                "serviceResponse": null,
+                "serviceError": response as ServiceError,
+                "requestSentAt": response.requestSentAt,
+                "durationInMilliseconds": response.durationInMilliseconds,
+            };
+        }
+        return {
+            "serviceResponse": response as ExecuteInteractionInformation,
+            "serviceError": null,
+            "requestSentAt": response.requestSentAt,
+            "durationInMilliseconds": response.durationInMilliseconds,
+        };
+    }
+
     execute() : void {
         if (typeof this.interactionIngredientsAsValues === "undefined") {
             return;
         }
 
         const interactionIngredientsJson = this.interactionIngredientsAsValues;
-        this.executeButtonDisabled = true;
+        this.serviceCallInProgress = true;
 
-        this.bakeryService.executeInteraction(this.selectedInteraction.id, interactionIngredientsJson).subscribe(executionInformation => {
+        this.bakeryService.executeInteraction(this.selectedInteraction.id, interactionIngredientsJson).subscribe(executionInformationOrError => {
+            this.serviceCallInProgress = false;
+
             // unshift means prepend.
-            this.executions.unshift(executionInformation);
-            this.executeButtonDisabled = false;
+            this.executions.unshift(this.toSuccessOrServiceError(executionInformationOrError));
         });
     }
 

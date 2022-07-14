@@ -122,4 +122,8 @@ export interface ExecuteInteractionInformation {
   successEvent: SimplifiedEventInstance | null;
 }
 
-
+export interface ServiceError {
+  requestSentAt: Date;
+  durationInMilliseconds : number;
+  error: any
+}
