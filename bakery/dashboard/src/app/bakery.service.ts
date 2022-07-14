@@ -1,17 +1,22 @@
 import {
     DigraphResponse,
+    ExecuteInteractionInformation,
+    ExecuteInteractionRequest,
+    ExecuteInteractionResponse,
     Instance,
     InstanceResponse,
-    Interaction,
+    Interaction, InteractionExecutionFailure, InteractionExecutionSuccess,
     InteractionsResponse,
+    NameAndValue,
     Recipe,
-    Recipes
+    Recipes, ServiceError, SimplifiedEventInstance, SimplifiedFailureReason
 } from "./bakery.api";
 import {HttpClient, HttpHeaders} from "@angular/common/http";
-
 import {Observable, of} from "rxjs";
+
 import {catchError, map} from "rxjs/operators";
 import {AppSettingsService} from "./app.settings";
+import {BakerConversionService} from "./baker-conversion.service";
 
 import {Injectable} from "@angular/core";
 
@@ -24,7 +29,10 @@ export class BakeryService {
         "headers": new HttpHeaders({"Content-Type": "application/json"})
     };
 
-    constructor (private http: HttpClient) {
+    constructor (
+        private http: HttpClient,
+        private bakerConversionService: BakerConversionService
+    ) {
     }
 
     getRecipes (): Observable<Recipe[]> {
@@ -78,8 +86,71 @@ export class BakeryService {
             );
     }
 
+    executeInteraction(interactionId: string, ingredients: NameAndValue[]): Observable<ExecuteInteractionInformation | ServiceError> {
+        const request : ExecuteInteractionRequest = {
+            "id": interactionId,
+            ingredients
+        };
+
+        const requestSentAt = new Date();
+        return this.http.post<ExecuteInteractionResponse>(`${this.baseUrl}/app/interactions/execute`, request)
+            .pipe(
+                map(response => {
+                    const eii : ExecuteInteractionInformation = {
+                        response,
+                        requestSentAt,
+                        "durationInMilliseconds": new Date().getTime() - requestSentAt.getTime(),
+                        "failureReason": BakeryService.getFailureReason(response),
+                        "successEvent": this.getSuccessEvent(response),
+                    };
+                    return eii;
+                }),
+                catchError(this.channelError(requestSentAt)),
+            );
+    }
+
+    private getSuccessEvent(response: ExecuteInteractionResponse) : SimplifiedEventInstance | null {
+        if (Object.keys(response.body.outcome).includes("Right")) {
+            const successOutcome = response.body.outcome as Record<"Right", Record<"value", InteractionExecutionSuccess>>;
+            const eventInstance = successOutcome.Right.value.result;
+            return {
+                "name": eventInstance.name,
+                "providedIngredients":
+                    Object.fromEntries(
+                        Object.entries(eventInstance.providedIngredients)
+                            .map(([key, val]) => [key, this.bakerConversionService.valueToJson(val)])),
+            };
+        }
+        return null;
+    }
+
+    private static getFailureReason(response : ExecuteInteractionResponse) : SimplifiedFailureReason | null {
+        if (Object.keys(response.body.outcome).includes("Left")) {
+            const failureOutcome = response.body.outcome as Record<"Left", Record<"value", InteractionExecutionFailure>>;
+            // eslint-disable-next-line prefer-destructuring
+            const [
+                name,
+                body
+            ] = Object.entries(failureOutcome.Left.value.reason)[0];
+            return {
+                "reason": name,
+                "interactionErrorMessage": body?.message,
+            };
+        }
+        return null;
+    }
+
+    private channelError(requestSentAt: Date) {
+        return (error: any): Observable<ServiceError> => of({
+            requestSentAt,
+            "durationInMilliseconds": new Date().getTime() - requestSentAt.getTime(),
+            error
+        });
+    }
+
     private handleError<T> (result: T | null) {
         return (error: any): Observable<T> => {
+            // eslint-disable-next-line no-console
             console.log(`http request failed: ${error.message}`);
             return of(result as T);
         };

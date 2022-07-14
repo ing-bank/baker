@@ -8,7 +8,9 @@ export enum ValueType {
 }
 
 export type SubType = "java.lang.String" | "java.lang.Character" | "java.math.BigInteger" |
-    "java.math.BigDecimal" | "scala.math.BigInt" | "scala.math.BigDecimal"
+    "java.math.BigDecimal" | "scala.math.BigInt" | "scala.math.BigDecimal" |
+    "java.lang.Boolean" | "java.lang.Byte" | "java.lang.Short" | "java.lang.Integer" |
+    "java.lang.Long" | "java.lang.Float" | "java.lang.Double" | "ByteArray"
 
 export type Value =
 // eslint-disable-next-line no-use-before-define
@@ -28,7 +30,7 @@ export interface RecordValue {
 export interface PrimitiveValue {
     typ: ValueType.PrimitiveValue;
     styp: SubType;
-    val: string | number;
+    val: string;
 }
 
 

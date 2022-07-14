@@ -3,6 +3,7 @@ import {
     ElementRef,
     OnInit,
 } from "@angular/core";
+import {BakerConversionService} from "../baker-conversion.service";
 import {BakeryService} from "../bakery.service";
 import {Interaction} from "../bakery.api";
 import {MatSelectionListChange} from "@angular/material/list";
@@ -10,7 +11,7 @@ import {MatSelectionListChange} from "@angular/material/list";
 /** @title Bakery DashboardComponent */
 @Component({
     "selector": "interactions",
-    "styleUrls": ["interactions.scss"],
+    "styleUrls": ["interactions.css"],
     "templateUrl": "interactions.component.html"
 })
 export class InteractionsComponent implements OnInit {
@@ -21,7 +22,8 @@ export class InteractionsComponent implements OnInit {
 
     constructor (
         private top: ElementRef,
-        private bakeryService: BakeryService
+        private bakeryService: BakeryService,
+        private bakerConversionService: BakerConversionService,
     ) {
     }
 
@@ -33,7 +35,9 @@ export class InteractionsComponent implements OnInit {
         this.bakeryService.getInteractions().
             subscribe(interactions => {
                 // eslint-disable-next-line id-length
-                this.interactions = interactions.sort((a, b) => a.name.localeCompare(b.name));
+                this.interactions = interactions
+                    .map((interaction) => this.bakerConversionService.nameUnnamedIngredients(interaction))
+                    .sort((ia, ib) => ia.name.localeCompare(ib.name));
                 this.updateInteractionFilter();
             });
     }
