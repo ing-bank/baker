@@ -1,3 +1,4 @@
+import {Interaction, NameAndValue} from "./bakery.api";
 import {
     ListValue,
     PrimitiveValue,
@@ -16,7 +17,6 @@ import {
     TypeRecordTypeInner
 } from "./baker-types.api";
 import {Injectable} from "@angular/core";
-import {NameAndValue} from "./bakery.api";
 
 @Injectable({"providedIn": "root"})
 export class BakerConversionService {
@@ -290,6 +290,24 @@ export class BakerConversionService {
             styp,
             "typ": ValueType.PrimitiveValue,
             "val": valueAsString,
+        };
+    }
+
+    nameUnnamedIngredients(interaction: Interaction) : Interaction {
+        let unnamedFieldNumber = 0;
+
+        return {
+            "id": interaction.id,
+            "name": interaction.name,
+            "input": interaction.input.map((input: RecordField) => {
+                // eslint-disable-next-line no-plusplus
+                const name = input.name || `Unnamed field ${++unnamedFieldNumber}`;
+                return {
+                    name,
+                    "type": input.type
+                };
+            }),
+            "output": interaction.output
         };
     }
 }
