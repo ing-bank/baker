@@ -293,6 +293,14 @@ export class BakerConversionService {
         };
     }
 
+    /**
+     * For GET /app/interactions, the name field of the input ingredient can be null.
+     * (if interaction parameters are not annotated with @RequiresIngredient or interactions are added manually).
+     *
+     * For POST /app/interactions/execute, the name field is required.
+     *
+     * This method replaces the names that are null, with 'Unnamed field #'.
+     */
     nameUnnamedIngredients(interaction: Interaction) : Interaction {
         let unnamedFieldNumber = 0;
 
