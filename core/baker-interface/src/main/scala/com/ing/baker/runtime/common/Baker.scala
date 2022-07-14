@@ -36,6 +36,8 @@ trait Baker[F[_]] extends LanguageApi {
 
   type RecipeMetadataType <: RecipeEventMetadata { type Language <: self.Language }
 
+  type InteractionExecutionResultType <: InteractionExecutionResult { type Language <: self.Language }
+
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
     *
@@ -84,7 +86,7 @@ trait Baker[F[_]] extends LanguageApi {
 
   def getInteraction(interactionName: String): F[language.Option[InteractionInstanceDescriptorType]]
 
-  def executeSingleInteraction(interactionId : String, ingredients : language.Seq[IngredientInstanceType]): F[language.Option[EventInstanceType]]
+  def executeSingleInteraction(interactionId : String, ingredients : language.Seq[IngredientInstanceType]): F[InteractionExecutionResultType]
 
   /**
     * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier

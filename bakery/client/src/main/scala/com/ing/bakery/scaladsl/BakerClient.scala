@@ -4,7 +4,7 @@ import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.il.RecipeVisualStyle
 import com.ing.baker.runtime.common.BakerException.SingleInteractionExecutionFailedException
 import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus, Utils}
-import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EncodedRecipe, EventInstance, EventMoment, EventResolutions, IngredientInstance, InteractionInstanceDescriptor, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
+import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EncodedRecipe, EventInstance, EventMoment, EventResolutions, IngredientInstance, InteractionExecutionResult, InteractionInstanceDescriptor, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
 import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 import com.ing.baker.runtime.serialization.JsonDecoders._
@@ -195,12 +195,12 @@ final class BakerClient( client: Client[IO],
   override def getAllInteractions: Future[List[InteractionInstanceDescriptor]] =
     callRemoteBakerService[List[InteractionInstanceDescriptor]]((host, prefix) => GET(root(host, prefix) / "app" / "interactions"))
 
-  override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): Future[Option[EventInstance]] =
+  override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): Future[InteractionExecutionResult] =
     callRemoteBakerService[InteractionExecution.ExecutionResult]((host, prefix) =>
-      POST(InteractionExecution.ExecutionRequest(interactionId, ingredients.toList), root(host, prefix) / "app" / "interactions" / "execute")).flatMap{ result =>
+      POST(InteractionExecution.ExecutionRequest(interactionId, ingredients.toList), root(host, prefix) / "app" / "interactions" / "execute")).map{ result =>
         result.outcome match {
-          case Left(InteractionExecution.Failure(reason)) => Future.failed(SingleInteractionExecutionFailedException(reason.toString))
-          case Right(InteractionExecution.Success(value)) => Future.successful(value)
+          case Left(failure) => InteractionExecutionResult(Left(failure.toBakerInteractionExecutionFailure))
+          case Right(success) => InteractionExecutionResult(Right(success.toBakerInteractionExecutionSuccess))
         }
       }
 

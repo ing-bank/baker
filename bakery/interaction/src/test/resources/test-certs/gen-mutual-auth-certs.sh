@@ -1,5 +1,7 @@
 export PW=changeit
 
+rm *.jks
+
 ##
 ## Server related certs
 ##

@@ -193,6 +193,13 @@ public class JavaCompiledRecipeTest {
         public String name = InteractionThree.class.getSimpleName();
     }
 
+    public static class InteractionThatThrowsImpl {
+
+        public InteractionTwo.ProvidesRequestIDStringTwo apply(String requestId) {
+            throw new RuntimeException("Throws");
+        }
+    }
+
     public static class RegisterIndividual {
 
         class ProvidesRequestIDStringThree {

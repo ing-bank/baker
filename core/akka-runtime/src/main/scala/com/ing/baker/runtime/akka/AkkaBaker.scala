@@ -14,7 +14,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
-import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus}
+import com.ing.baker.runtime.common.{BakerException, InteractionExecutionFailureReason, RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.recipe_manager.{ActorBasedRecipeManager, DefaultRecipeManager, RecipeManager}
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.{javadsl, scaladsl}
@@ -173,15 +173,28 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     config.interactions.listAll.map(_.map(
       i => InteractionInstanceDescriptor(i.shaBase64, i.name, i.input, i.output))).unsafeToFuture()
 
-  override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): Future[Option[EventInstance]] =
+  override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): Future[InteractionExecutionResult] =
     config.interactions
       .listAll
       .map(interactionsList => interactionsList.find(_.shaBase64 == interactionId))
-      .flatMap(interactionInstanceOption =>
-        cats.effect.IO.fromOption(interactionInstanceOption)(orElse =
-          BakerException.SingleInteractionExecutionFailedException("No interaction found with specified interaction id"))
-      )
-      .flatMap(interactionInstance => interactionInstance.execute(ingredients))
+      .flatMap {
+        case None => cats.effect.IO.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
+          InteractionExecutionFailureReason.INTERACTION_NOT_FOUND, None, None))))
+        case Some(interactionInstance) =>
+          interactionInstance.execute(ingredients)
+            .map(executionSuccess => InteractionExecutionResult(Right(InteractionExecutionResult.Success(executionSuccess))))
+            .recover {
+              case e => InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
+                InteractionExecutionFailureReason.INTERACTION_EXECUTION_ERROR,
+                Some(interactionInstance.name),
+                Some(s"Interaction execution failed. Interaction threw ${e.getClass.getSimpleName} with message ${e.getMessage}."))))
+            }
+            .timeoutTo(duration = config.timeouts.defaultExecuteSingleInteractionTimeout,
+              fallback = cats.effect.IO.pure(
+                InteractionExecutionResult(Left(
+                  InteractionExecutionResult.Failure(InteractionExecutionFailureReason.TIMEOUT, Some(interactionInstance.name), None)))))(
+              timer = cats.effect.IO.timer(config.system.dispatcher), cs = cats.effect.IO.contextShift(config.system.dispatcher))
+      }
       .unsafeToFuture()
 
   /**
