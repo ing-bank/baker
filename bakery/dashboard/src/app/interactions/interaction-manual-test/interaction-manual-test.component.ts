@@ -6,7 +6,7 @@ import {
 } from "@angular/core";
 import {
     ExecuteInteractionInformation,
-    Interaction,
+    Interaction, NameAndValue,
     ServiceError
 } from "../../bakery.api";
 import {BakerConversionService} from "../../baker-conversion.service";
@@ -20,11 +20,11 @@ type SuccessOrServiceError = {
 }
 
 @Component({
-    "selector": "interactions-interactive",
-    "styleUrls": ["./interactions-interactive.component.scss"],
-    "templateUrl": "./interactions-interactive.component.html"
+    "selector": "interaction-manual-test",
+    "styleUrls": ["./interaction-manual-test.component.scss"],
+    "templateUrl": "./interaction-manual-test.component.html"
 })
-export class InteractionsInteractiveComponent implements OnInit, OnChanges {
+export class InteractionManualTestComponent implements OnInit, OnChanges {
 
     @Input() selectedInteraction: Interaction;
 
@@ -35,7 +35,7 @@ export class InteractionsInteractiveComponent implements OnInit, OnChanges {
     }
 
     interactionInput: string | undefined;
-    interactionIngredientsAsValues: any | null | undefined;
+    interactionIngredientsAsValues: NameAndValue[] | null | undefined;
     executions: SuccessOrServiceError[] = [];
     serviceCallInProgress = false;
     inputErrorMessage: string | undefined | null;
@@ -55,14 +55,21 @@ export class InteractionsInteractiveComponent implements OnInit, OnChanges {
         this.inputElementChanged();
     }
 
+    // eslint-disable-next-line max-statements
     inputElementChanged() : void {
         if (typeof this.interactionInput !== "string") {
             return;
         }
         try {
             const interactionInputJson = JSON.parse(this.interactionInput);
-            this.interactionIngredientsAsValues = this.bakerConversionService.ingredientsJsonToBakerValues(this.selectedInteraction.input, interactionInputJson);
-            this.inputErrorMessage = null;
+            const valuesOrError = this.bakerConversionService.ingredientsJsonToBakerValues(this.selectedInteraction.input, interactionInputJson);
+            if (typeof valuesOrError === "string") {
+                this.interactionIngredientsAsValues = null;
+                this.inputErrorMessage = valuesOrError;
+            } else {
+                this.interactionIngredientsAsValues = valuesOrError;
+                this.inputErrorMessage = null;
+            }
         } catch (ex) {
             this.interactionIngredientsAsValues = null;
             this.inputErrorMessage = ex;
@@ -99,11 +106,11 @@ export class InteractionsInteractiveComponent implements OnInit, OnChanges {
     }
 
     execute() : void {
-        if (typeof this.interactionIngredientsAsValues === "undefined") {
+        const interactionIngredientsJson = this.interactionIngredientsAsValues;
+        if (typeof this.interactionIngredientsAsValues === "undefined" || !interactionIngredientsJson) {
             return;
         }
 
-        const interactionIngredientsJson = this.interactionIngredientsAsValues;
         this.serviceCallInProgress = true;
 
         this.bakeryService.executeInteraction(this.selectedInteraction.id, interactionIngredientsJson).subscribe(executionInformationOrError => {

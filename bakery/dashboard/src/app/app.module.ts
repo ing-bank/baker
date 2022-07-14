@@ -36,8 +36,8 @@ import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {HomeComponent} from "./home/home.component";
 import {InstancesComponent} from "./instances/instances.component";
 import {InteractionsComponent} from "./interactions/interactions.component";
-import {InteractionsInteractiveComponent} from "./interactions/interactions-json-interactive/interactions-interactive.component";
-import {InteractionsJsonViewComponent} from "./interactions/interactions-json-view/interactions-json-view.component";
+import {InteractionManualTestComponent} from "./interactions/interaction-manual-test/interaction-manual-test.component";
+import {InteractionDefinitionComponent} from "./interactions/interaction-definition/interaction-definition.component";
 import {RecipesComponent} from "./recipes/recipes.component";
 import {VisualizeRecipeComponent} from "./generic/visualize-recipe/visualize-recipe.component";
 
@@ -53,8 +53,8 @@ export const initializeApp = (settings: AppSettingsService) => () => settings.lo
         InteractionsComponent,
         InstancesComponent,
         VisualizeRecipeComponent,
-        InteractionsInteractiveComponent,
-        InteractionsJsonViewComponent,
+        InteractionManualTestComponent,
+        InteractionDefinitionComponent,
     ],
     "entryComponents": [AppComponent],
     "exports": [

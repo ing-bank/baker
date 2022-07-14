@@ -19,12 +19,12 @@
     <mat-tab-group *ngIf="selectedInteraction">
       <mat-tab label="Test">
         <ng-template matTabContent>
-          <interactions-interactive [selectedInteraction]="selectedInteraction"></interactions-interactive>
+          <interaction-manual-test [selectedInteraction]="selectedInteraction"></interaction-manual-test>
         </ng-template>
       </mat-tab>
       <mat-tab label="Interaction definition">
         <ng-template matTabContent>
-          <interactions-json-view [selectedInteraction]="selectedInteraction"></interactions-json-view>
+          <interaction-definition [selectedInteraction]="selectedInteraction"></interaction-definition>
         </ng-template>
       </mat-tab>
     </mat-tab-group>
