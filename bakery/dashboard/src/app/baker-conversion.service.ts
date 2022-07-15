@@ -134,13 +134,10 @@ export class BakerConversionService {
         // Loop over the ingredients for this interaction.
         for (const typeDefinition of ingredientTypeDefinitions) {
             const value = ingredientsJson[typeDefinition.name];
-            if (value === null || typeof (value) === "undefined") {
-                return `value for ingredient '${typeDefinition.name}' is missing.`;
-            }
             const ingredientValueOrError = this.ingredientValueFromTypeAndJsonValue(typeDefinition.type, value, typeDefinition.name);
             // If parsing an underlying value failed, return that error.
             if (typeof ingredientValueOrError === "string") {
-                return `incorrect ingredient format for ${ingredientValueOrError}`;
+                return `Incorrect ingredient: ${ingredientValueOrError}`;
             }
             resultArray.push({
                 "name": typeDefinition.name,
@@ -159,7 +156,7 @@ export class BakerConversionService {
         ] = Object.entries(type)[0];
 
         if (typeName !== "OptionType" && (value === null || typeof value === "undefined")) {
-            return `Expected value at ${valuePath} but was null or undefined.`;
+            return `Expected value at '${valuePath}' but was null or undefined.`;
         }
 
         switch (typeName) {
@@ -209,7 +206,8 @@ export class BakerConversionService {
 
     private mapValue(mapOptions: TypeMapTypeInner, value: any, valuePath: string): Value | string {
         if (typeof value !== "object" || Array.isArray(value)) {
-            return `Expected object at ${value} but wasn't`;
+            const actualType : string =  Array.isArray(value) ? "array" : typeof value;
+            return `Expected object at ${valuePath} but was ${actualType}`;
         }
         const valEntries : [string, Value][] = [];
 
