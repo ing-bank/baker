@@ -29,7 +29,7 @@ export class BakerConversionService {
     valueToJson(ii : Value) : unknown {
         switch (ii.typ) {
         case ValueType.NullValue: return null;
-        case ValueType.ListValue: return (ii as ListValue).val.map(this.valueToJson);
+        case ValueType.ListValue: return (ii as ListValue).val.map(listItem => this.valueToJson(listItem));
         case ValueType.RecordValue: {
             const record = ii as RecordValue;
             // eslint-disable-next-line array-element-newline
