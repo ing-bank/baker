@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.common
 
 import scala.annotation.nowarn
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 @nowarn
@@ -39,6 +40,9 @@ object BakerException {
   case class UnexpectedException(errorId: String)
     extends BakerException(s"Unexpected exception happened. Please look for '$errorId' in the logs.", 9)
 
+  case class TimeoutException(operationName: String)
+    extends BakerException(s"Exection of '$operationName' duration exceeded timeout", 10)
+
   @nowarn
   def encode(bakerException: BakerException): (String, Int) =
     bakerException match {
@@ -65,4 +69,11 @@ object BakerException {
       case 8 => Success(SingleInteractionExecutionFailedException(message))
       case _ => Failure(new IllegalArgumentException(s"No BakerException with enum flag $enum"))
     }
+
+  implicit class TimeoutExceptionHelper[A](val f : Future[A]) {
+    def javaTimeoutToBakerTimeout(operationName: String)(implicit executor: ExecutionContext) : Future[A] =
+      f.recoverWith {
+        case _ : java.util.concurrent.TimeoutException => Future.failed(BakerException.TimeoutException(operationName))
+      }
+  }
 }
