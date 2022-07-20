@@ -36,6 +36,9 @@ object BakerException {
   case class SingleInteractionExecutionFailedException(reason: String)
     extends BakerException(reason, 8)
 
+  case class UnexpectedException(errorId: String)
+    extends BakerException(s"Unexpected exception happened. Please look for '$errorId' in the logs.", 9)
+
   @nowarn
   def encode(bakerException: BakerException): (String, Int) =
     bakerException match {

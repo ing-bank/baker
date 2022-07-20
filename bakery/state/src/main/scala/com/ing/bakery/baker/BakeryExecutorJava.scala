@@ -10,7 +10,7 @@ import io.circe.generic.auto._
 import io.circe.parser.parse
 
 import java.nio.charset.Charset
-import java.util.Optional
+import java.util.{Optional, UUID}
 import java.util.concurrent.{CompletableFuture => JFuture}
 import scala.compat.java8.FutureConverters.FutureOps
 import scala.concurrent.{ExecutionContext, Future}
@@ -26,8 +26,9 @@ class BakeryExecutorJava(bakery: Bakery) extends LazyLogging {
     }.recover {
       case e: BakerException => BakerResult(e)
       case e: Throwable =>
-        logger.error(s"Unexpected exception happened when calling Baker", e)
-        BakerResult(e.getMessage)
+        val errorId = UUID.randomUUID().toString
+        logger.error(s"Unexpected exception happened when calling Baker (id='$errorId').", e)
+        BakerResult(BakerException.UnexpectedException(errorId))
     }.map(bakerResultEncoder.apply(_).noSpaces)
   }
 
