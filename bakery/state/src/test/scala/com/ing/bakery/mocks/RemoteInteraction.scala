@@ -43,17 +43,6 @@ class RemoteInteraction(mock: ClientAndServer) {
     )
   }
 
-  def respondsWithEmptyInteractionList(): IO[Unit] = IO {
-    mock.when(
-      receivedInquiry,
-      Times.exactly(1)
-    ).respond(
-      response()
-        .withStatusCode(200)
-        .withBody(I.Interactions(System.currentTimeMillis, List()).asJson.toString)
-    )
-  }
-
   def processesSuccessfullyAndFires(event: EventInstance): IO[Unit] = IO {
     mock.when(
       receivedExecutionRequest,
