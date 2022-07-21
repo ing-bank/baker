@@ -104,7 +104,7 @@ object JsonDecoders extends LazyLogging {
     for {
       message <- c.downField("message").as[String]
       enum <- c.downField("enum").as[Int]
-    } yield BakerException.decodeOrUnknownException(message, `enum`)
+    } yield BakerException.decodeOrUnknownBakerException(message, `enum`)
   }
 
   implicit val interactionInstanceInputDecoder: Decoder[InteractionInstanceInput] = deriveDecoder[InteractionInstanceInput]

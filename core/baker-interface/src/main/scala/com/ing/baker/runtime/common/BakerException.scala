@@ -84,7 +84,7 @@ object BakerException {
       case _ => Failure(new IllegalArgumentException(s"No BakerException with enum flag $enum"))
     }
 
-  def decodeOrUnknownException(message: String, `enum`: Int): BakerException =
+  def decodeOrUnknownBakerException(message: String, `enum`: Int): BakerException =
     decode(message, `enum`).getOrElse(UnknownBakerException(message, disableStackTrace = true))
 
   implicit class TimeoutExceptionHelper[A](val f : Future[A]) {
