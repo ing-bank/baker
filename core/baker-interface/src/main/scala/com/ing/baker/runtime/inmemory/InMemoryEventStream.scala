@@ -1,10 +1,10 @@
 package com.ing.baker.runtime.inmemory
 
 import cats.effect.IO
+import cats.effect.concurrent.Ref
 import com.ing.baker.runtime.model.EventStream
 import com.ing.baker.runtime.scaladsl.BakerEvent
 import com.typesafe.scalalogging.LazyLogging
-import cats.effect.Ref
 
 object InMemoryEventStream {
 

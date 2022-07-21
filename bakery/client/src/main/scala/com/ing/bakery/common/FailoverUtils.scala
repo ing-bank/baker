@@ -1,6 +1,6 @@
 package com.ing.bakery.common
 
-import cats.effect.IO
+import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
@@ -18,7 +18,6 @@ import retry.{RetryDetails, retryingOnAllErrors}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import cats.effect.Temporal
 
 object FailoverUtils extends LazyLogging {
 
@@ -57,7 +56,7 @@ object FailoverUtils extends LazyLogging {
                        handleHttpErrors: Response[IO] => IO[Throwable],
                        fallbackEndpoint: Option[EndpointConfig])
                       (implicit ec: ExecutionContext, decoder: Decoder[BakerResult]): IO[BakerResult] = {
-    implicit val timer: Temporal[IO] = IO.timer(ec)
+    implicit val timer: Timer[IO] = IO.timer(ec)
     implicit val cs: ContextShift[IO] = IO.contextShift(ec)
 
     retryingOnAllErrors(
