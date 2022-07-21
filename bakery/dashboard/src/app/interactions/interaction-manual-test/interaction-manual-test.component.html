@@ -1,0 +1,33 @@
+<mat-grid-list cols="2" rowHeight="100%" *ngIf="selectedInteraction">
+    <mat-grid-tile colspan="1">
+        <div class="tile-content">
+            <button [disabled]="serviceCallInProgress || interactionIngredientsAsValues == null" class="button-execute" color="primary" mat-fab (click)="execute()" aria-label="execute interaction"><mat-icon>play_arrow</mat-icon></button>
+            <textarea [(ngModel)]="interactionInput" (keyup)="inputElementChanged()"></textarea>
+            <div *ngIf="inputErrorMessage" class="input-error-message">{{inputErrorMessage}}</div>
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile colspan="1">
+        <cdk-virtual-scroll-viewport class="scroll-viewport" itemSize="50">
+            <mat-accordion class="tile-content">
+                <mat-expansion-panel *ngFor="let execution of executions">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>{{toLocalTimestamp(execution.requestSentAt)}}</mat-panel-title>
+                        <mat-panel-description>
+                            <span class="execution-status-error" *ngIf="execution?.serviceError?.error">Bakery Error Response</span>
+                            <span class="execution-status-error" *ngIf="execution?.serviceResponse?.failureReason">{{execution?.serviceResponse?.failureReason?.reason}}</span>
+                            <span class="execution-status-success" *ngIf="execution?.serviceResponse?.successEvent">{{execution?.serviceResponse?.successEvent?.name}}</span>
+                            &nbsp;({{execution.durationInMilliseconds}}ms)
+                        </mat-panel-description>
+                    </mat-expansion-panel-header>
+                    <span *ngIf="execution.serviceResponse?.failureReason?.reason === 'InteractionError'">{{execution.serviceResponse?.failureReason?.interactionErrorMessage}}</span>
+                    <div *ngIf="execution.serviceResponse?.successEvent?.providedIngredients">
+                        <pre>{{toJson(execution.serviceResponse?.successEvent?.providedIngredients)}}</pre>
+                    </div>
+                    <span *ngIf="execution?.serviceError?.error">{{execution?.serviceError?.error?.message}}</span>
+                </mat-expansion-panel>
+            </mat-accordion>
+        </cdk-virtual-scroll-viewport>
+    </mat-grid-tile>
+</mat-grid-list>
+<p *ngIf="!selectedInteraction">No interaction selected</p>
+

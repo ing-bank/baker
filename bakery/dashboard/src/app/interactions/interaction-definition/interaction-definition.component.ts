@@ -2,11 +2,11 @@ import {Component, Input, OnInit} from "@angular/core";
 import {Interaction} from "../../bakery.api";
 
 @Component({
-    "selector": "interactions-json-view",
-    "styleUrls": ["./interactions-json-view.component.scss"],
-    "templateUrl": "./interactions-json-view.component.html"
+    "selector": "interaction-definition",
+    "styleUrls": ["./interaction-definition.component.scss"],
+    "templateUrl": "./interaction-definition.component.html"
 })
-export class InteractionsJsonViewComponent implements OnInit {
+export class InteractionDefinitionComponent implements OnInit {
 
     @Input() selectedInteraction: Interaction;
 

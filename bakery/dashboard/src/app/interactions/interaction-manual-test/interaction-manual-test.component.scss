@@ -1,0 +1,43 @@
+.tile-content {
+  height: 100%;
+  width: 100%;
+}
+
+.interactions-interface {
+  font-size: 10px;
+}
+
+.scroll-viewport {
+  left: 4px;
+  height: calc(100% - 55px);
+  width: calc(100% - 4px);
+}
+
+
+textarea {
+  height: calc(100% - 8px);
+  width: calc(100% - 10px);
+  font-family: 'Courier New', monospace;
+  font-size: small;
+  resize: none;
+}
+
+.execution-status-error {
+  color: red;
+}
+.execution-status-success {
+  color: blue;
+}
+
+.button-execute {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.input-error-message {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  color: red;
+}

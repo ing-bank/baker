@@ -10,11 +10,11 @@ object Dependencies {
   val http4sVersion = "0.21.33"
   val fs2Version = "2.5.10"
   val circeVersion = "0.14.2"
-  val mockitoScalaVersion = "1.17.5"
+  val mockitoScalaVersion = "1.17.7"
   val catsEffectVersion = "2.5.5"
-  val catsCoreVersion = "2.7.0"
+  val catsCoreVersion = "2.8.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "5.3.20"
+  val springVersion = "5.3.22"
   val springBootVersion = "2.6.1"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
@@ -74,14 +74,14 @@ object Dependencies {
   val scalaGraphDot = "org.scala-graph" %% "graph-dot" % "1.13.0"
   val graphvizJava = "guru.nidi" % "graphviz-java" % "0.18.1"
 
-  val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.15.0"
+  val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.16.0"
   val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.17.0"
-  val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.2.5"
+  val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.3.0"
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.14.1"
   val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.14.1"
-  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.9"
+  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.10"
 
   val skuber = "io.skuber" %% "skuber" % "2.6.4"
   val play = "com.typesafe.play" %% "play-json" % "2.9.2"
@@ -113,7 +113,7 @@ object Dependencies {
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.20.1"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.21.2"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.1"
 
@@ -136,13 +136,15 @@ object Dependencies {
 
   val snakeYaml = "org.yaml" % "snakeyaml" % "1.30"
 
-  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.2.2"
+  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.3"
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.13.3"
-  val jawnParser = "org.typelevel" %% "jawn-parser" % "1.3.2"
-  val nettyHandler = "io.netty" % "netty-handler" % "4.1.77.Final"
+  val jawnParser = "org.typelevel" %% "jawn-parser" % "1.4.0"
+  val nettyHandler = "io.netty" % "netty-handler" % "4.1.79.Final"
 
-  val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.70"
-  val bouncyCastleBcpkix ="org.bouncycastle" % "bcpkix-jdk15on" % "1.70"
+  private val bouncycastleVersion = "1.70"
+
+  val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % bouncycastleVersion
+  val bouncyCastleBcpkix ="org.bouncycastle" % "bcpkix-jdk15on" % bouncycastleVersion
 
   val guava = "com.google.guava" % "guava" % "31.1-jre"
 
