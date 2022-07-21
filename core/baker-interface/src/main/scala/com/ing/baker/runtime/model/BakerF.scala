@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.model
 
 import cats.effect.implicits._
-import cats.effect.{ConcurrentEffect, Timer}
+import cats.effect.ConcurrentEffect
 import cats.implicits._
 import cats.~>
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -17,6 +17,7 @@ import com.typesafe.scalalogging.LazyLogging
 import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import cats.effect.Temporal
 
 /**
   * TODO create a Resource based runtime execution which runs the retention period stream and allocates a Blocker context
@@ -36,7 +37,7 @@ object BakerF {
                    )
 }
 
-abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) extends common.Baker[F] with ScalaApi with LazyLogging {
+abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Temporal[F]) extends common.Baker[F] with ScalaApi with LazyLogging {
   self =>
 
   val config: BakerF.Config
@@ -380,7 +381,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     components.recipeInstanceManager.stopRetryingInteraction(recipeInstanceId, interactionName)
       .timeout(config.processEventTimeout)
 
-  def translate[G[_]](mapK: F ~> G, comapK: G ~> F)(implicit components: BakerComponents[G], effect: ConcurrentEffect[G], timer: Timer[G]): BakerF[G] =
+  def translate[G[_]](mapK: F ~> G, comapK: G ~> F)(implicit components: BakerComponents[G], effect: ConcurrentEffect[G], timer: Temporal[G]): BakerF[G] =
     new BakerF[G] {
       override val config: BakerF.Config =
         self.config
