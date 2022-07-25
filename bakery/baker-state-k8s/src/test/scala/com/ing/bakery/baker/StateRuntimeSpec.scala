@@ -7,7 +7,7 @@ import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceDescriptor, InteractionInstanceInput}
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceInput}
 import com.ing.baker.types._
 import com.ing.bakery.baker.mocks.KubeApiServer
 import com.ing.bakery.mocks.{EventListener, RemoteInteraction}
@@ -72,9 +72,9 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
 
     test("Adding a recipe directly") { context =>
       for {
-        _ <- io(context.client.addRecipe(recipe, true))
+        _ <- io(context.client.addRecipe(recipe, validate = true))
         allRecipesBefore <- io(context.client.getAllRecipes)
-        _ <- io(context.client.addRecipe(otherRecipe, true))
+        _ <- io(context.client.addRecipe(otherRecipe, validate = true))
         allRecipesAfter <- io(context.client.getAllRecipes)
       } yield {
         allRecipesBefore.values.map(_.compiledRecipe.name).toSet shouldBe Set("ItemReservation.recipe")
@@ -112,8 +112,8 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         _ <- context.remoteInteractionKubernetes.respondsWithReserveItems()
         _ <- context.kubeApiServer.deployInteraction()
         _ <- awaitForInteractionDiscovery(context)
-        _ <- io(context.client.addRecipe(recipe, true))
-        _ <- io(context.client.addRecipe(SimpleRecipe.compiledRecipe, true))
+        _ <- io(context.client.addRecipe(recipe, validate = true))
+        _ <- io(context.client.addRecipe(SimpleRecipe.compiledRecipe, validate = true))
         recipeInformation <- io(context.client.getRecipe(recipeId))
         interactionInformation <- io(context.client.getInteraction("ReserveItems"))
         noSuchRecipeError <- io(context.client
@@ -133,7 +133,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
           "ItemsReserved" -> Map("reservedItems" -> RecordType(Seq(RecordField("items",
             ListType(RecordType(Seq(RecordField("itemId", CharArray))))), RecordField("data", ByteArray))))
         ))
-        noSuchRecipeError shouldBe Some(BakerException.NoSuchRecipeException("nonexistent"))
+        noSuchRecipeError shouldBe Some(BakerException.NoSuchRecipeException("nonexistent", disableStackTrace = true))
         allRecipes.get(recipeId).map(_.compiledRecipe.name) shouldBe Some(recipe.name)
         allRecipes.get(SimpleRecipe.compiledRecipe.recipeId).map(_.compiledRecipe.name) shouldBe Some("Simple")
       }
@@ -170,7 +170,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
           .recover { case e: BakerException => Some(e) })
         state <- io(context.client.getRecipeInstanceState(recipeInstanceId))
       } yield {
-        e shouldBe Some(BakerException.ProcessAlreadyExistsException(recipeInstanceId))
+        e shouldBe Some(BakerException.ProcessAlreadyExistsException(recipeInstanceId, disableStackTrace = true))
         state.recipeInstanceId shouldBe recipeInstanceId
       }
     }
@@ -185,7 +185,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
           .bake("nonexistent", recipeInstanceId)
           .map(_ => None)
           .recover { case e => Some(e) })
-      } yield e shouldBe Some(BakerException.NoSuchRecipeException("nonexistent"))
+      } yield e shouldBe Some(BakerException.NoSuchRecipeException("nonexistent", disableStackTrace = true))
     }
 
     test("Baker.getRecipeInstanceState (fails with NoSuchProcessException)") { context =>
@@ -198,7 +198,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
           .map(_ => None)
           .recover { case e => Some(e) })
       } yield {
-        e shouldBe Some(NoSuchProcessException("nonexistent"))
+        e shouldBe Some(NoSuchProcessException("nonexistent", disableStackTrace = true))
       }
     }
 
@@ -242,8 +242,8 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         serverState <- io(context.client.getRecipeInstanceState(recipeInstanceId))
         _ <- context.remoteInteractionKubernetes.didNothing
       } yield {
-        result shouldBe Some(BakerException.IllegalEventException("No event with name 'nonexistent' found in recipe 'ItemReservation.recipe'"))
-        serverState.events.map(_.name) should not contain ("OrderPlaced")
+        result shouldBe Some(BakerException.IllegalEventException("No event with name 'nonexistent' found in recipe 'ItemReservation.recipe'", disableStackTrace = true))
+        serverState.events.map(_.name) should not contain "OrderPlaced"
       }
     }
 
@@ -310,7 +310,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         }
       } yield {
         state1 should contain("OrderPlaced")
-        state1 should not contain ("ItemsReserved")
+        state1 should not contain "ItemsReserved"
         state2 should contain("OrderPlaced")
         state2 should contain("ItemsReserved")
       }
@@ -339,7 +339,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         }
       } yield {
         state1 should contain("OrderPlaced")
-        state1 should not contain ("ItemsReserved")
+        state1 should not contain "ItemsReserved"
         state2 should contain("OrderPlaced")
         state2 should contain("ItemsReserved")
         eventState shouldBe Some("resolution-item")
@@ -364,9 +364,9 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
         }
       } yield {
         state1 should contain("OrderPlaced")
-        state1 should not contain ("ItemsReserved")
+        state1 should not contain "ItemsReserved"
         state2 should contain("OrderPlaced")
-        state2 should not contain ("ItemsReserved")
+        state2 should not contain "ItemsReserved"
       }
     }
   }
