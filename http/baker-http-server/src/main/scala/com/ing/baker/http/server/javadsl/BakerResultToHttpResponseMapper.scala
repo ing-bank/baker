@@ -45,33 +45,40 @@ class BakerResultToHttpResponseMapper(val baker: Baker, ec: ExecutionContext) ex
 
   def appGetVisualRecipe(recipeId: String): JFuture[String] = baker.getRecipeVisual(recipeId).toBakerResult
 
-  def instanceGet(recipeInstanceId: String): JFuture[String] =  baker.getRecipeInstanceState(recipeInstanceId).toBakerResult
+  def bake(recipeId: String, recipeInstanceId: String): JFuture[String] = baker.bake(recipeId, recipeInstanceId).toBakerResult
 
-  def instanceGetEvents(recipeInstanceId: String): JFuture[String] = baker.getEvents(recipeInstanceId).toBakerResult
+  /**
+    * Do calls for a specific instance.
+    */
+  def instance(recipeInstanceId: String) : InstanceResponseMapper = new InstanceResponseMapper(recipeInstanceId)
 
-  def instanceGetIngredients(recipeInstanceId: String): JFuture[String] = baker.getIngredients(recipeInstanceId).toBakerResult
+  class InstanceResponseMapper(recipeInstanceId: String) {
+    def get(): JFuture[String] =  baker.getRecipeInstanceState(recipeInstanceId).toBakerResult
 
-  def instanceGetVisual(recipeInstanceId: String): JFuture[String] = baker.getVisualState(recipeInstanceId).toBakerResult
+    def getEvents: JFuture[String] = baker.getEvents(recipeInstanceId).toBakerResult
 
-  def instanceBake(recipeId: String, recipeInstanceId: String): JFuture[String] = baker.bake(recipeId, recipeInstanceId).toBakerResult
+    def getIngredients: JFuture[String] = baker.getIngredients(recipeInstanceId).toBakerResult
 
-  def instanceFireAndResolveWhenReceived(recipeInstanceId: String, eventJson: String, maybeCorrelationId: Optional[String]): JFuture[String] =
-    parseEventAndExecute(eventJson, baker.fireEventAndResolveWhenReceived(recipeInstanceId, _, toOption(maybeCorrelationId)))
+    def getVisual: JFuture[String] = baker.getVisualState(recipeInstanceId).toBakerResult
 
-  def instanceFireAndResolveWhenCompleted(recipeInstanceId: String, eventJson: String, maybeCorrelationId: Optional[String]): JFuture[String] =
-    parseEventAndExecute(eventJson, baker.fireEventAndResolveWhenCompleted(recipeInstanceId, _, toOption(maybeCorrelationId)))
+    def fireAndResolveWhenReceived(eventJson: String, maybeCorrelationId: Optional[String]): JFuture[String] =
+      parseEventAndExecute(eventJson, baker.fireEventAndResolveWhenReceived(recipeInstanceId, _, toOption(maybeCorrelationId)))
 
-  def instanceFireAndResolveOnEvent(recipeInstanceId: String, eventJson: String, event: String, maybeCorrelationId: Optional[String]): JFuture[String] =
-    parseEventAndExecute(eventJson, baker.fireEventAndResolveOnEvent(recipeInstanceId, _, event, toOption(maybeCorrelationId)))
+    def fireAndResolveWhenCompleted(eventJson: String, maybeCorrelationId: Optional[String]): JFuture[String] =
+      parseEventAndExecute(eventJson, baker.fireEventAndResolveWhenCompleted(recipeInstanceId, _, toOption(maybeCorrelationId)))
 
-  def instanceInteractionRetry(recipeInstanceId: String, interactionName: String): JFuture[String] =
-    baker.retryInteraction(recipeInstanceId, interactionName).toBakerResult
+    def fireAndResolveOnEvent(eventJson: String, event: String, maybeCorrelationId: Optional[String]): JFuture[String] =
+      parseEventAndExecute(eventJson, baker.fireEventAndResolveOnEvent(recipeInstanceId, _, event, toOption(maybeCorrelationId)))
 
-  def instanceInteractionStopRetrying(recipeInstanceId: String, interactionName: String): JFuture[String] =
-    baker.stopRetryingInteraction(recipeInstanceId, interactionName).toBakerResult
+    def retryInteraction(interactionName: String): JFuture[String] =
+      baker.retryInteraction(recipeInstanceId, interactionName).toBakerResult
 
-  def instanceInteractionResolve(recipeInstanceId: String, interactionName: String, eventJson: String): JFuture[String] =
-    parseEventAndExecute(eventJson, baker.resolveInteraction(recipeInstanceId, interactionName, _))
+    def stopRetryingInteraction(interactionName: String): JFuture[String] =
+      baker.stopRetryingInteraction(recipeInstanceId, interactionName).toBakerResult
+
+    def resolveInteraction(interactionName: String, eventJson: String): JFuture[String] =
+      parseEventAndExecute(eventJson, baker.resolveInteraction(recipeInstanceId, interactionName, _))
+  }
 
   private def toOption[T](opt: Optional[T]): Option[T] = if (opt.isPresent) Some(opt.get()) else None
 
