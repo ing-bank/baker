@@ -53,7 +53,7 @@ val dockerSettings: Seq[Setting[_]] = Seq(
   Docker / maintainer := "The Bakery Team",
   dockerBaseImage := "adoptopenjdk/openjdk11",
   dockerUpdateLatest := true, // todo only for master branch
-  Docker / version := "local", // used by smoke tests for locally built images
+  Docker / version := "local" // used by smoke tests for locally built images
 )
 
 val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
@@ -78,7 +78,7 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
     jawnParser,
     nettyHandler,
     bouncyCastleBcprov,
-    bouncyCastleBcpkix,
+    bouncyCastleBcpkix
   )
 )
 
@@ -242,7 +242,7 @@ lazy val `baker-recipe-dsl`: Project = project.in(file("core/recipe-dsl"))
       compileDeps(
         javaxInject,
         paranamer,
-        scalaReflect(scalaVersion.value),
+        scalaReflect(scalaVersion.value)
       ) ++
         testDeps(
           scalaTest,
@@ -263,6 +263,77 @@ lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compile
   .dependsOn(`baker-recipe-dsl`, `baker-intermediate-language`, testScope(`baker-recipe-dsl`))
 
 
+lazy val `baker-http-client`: Project = project.in(file("http/baker-http-client"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "baker-http-client",
+    libraryDependencies ++= Seq(
+      http4s,
+      http4sDsl,
+      http4sClient,
+      http4sCirce,
+      scalaLogging,
+      catsRetry,
+      http4sServer % "test",
+      slf4jApi % "test",
+      logback % "test",
+      scalaTest % "test",
+      mockitoScala % "test",
+      mockitoScalaTest % "test"
+    )
+  )
+  .dependsOn(`baker-interface`)
+
+
+lazy val `baker-http-server`: Project = project.in(file("http/baker-http-server"))
+  .settings(defaultModuleSettings)
+  .settings(yPartialUnificationSetting)
+  .settings(
+    moduleName := "baker-http-server",
+    libraryDependencies ++= Seq(
+      slf4jApi,
+      logback,
+      http4s,
+      http4sDsl,
+      http4sCirce,
+      http4sServer,
+      http4sPrometheus,
+      prometheus,
+      prometheusJmx
+    )
+  )
+  .dependsOn(
+    `baker-interface`,
+     testScope(`baker-recipe-compiler`)
+  )
+
+val npmBuildTask = taskKey[File]("Dashboard build")
+
+lazy val `baker-http-dashboard`: Project = project.in(file("http/baker-http-dashboard"))
+  .enablePlugins(UniversalPlugin)
+  .settings(defaultModuleSettings)
+  .settings(
+    name := "baker-http-dashboard",
+    maintainer := "The Bakery Team",
+    Universal / packageName  := s"baker-http-dashboard",
+    Universal / mappings ++= Seq(file("dashboard.zip") -> "dashboard.zip"),
+    npmBuildTask := {
+      val processBuilder = Process("./npm-build.sh", file("http/baker-http-dashboard"))
+      val process = processBuilder.run()
+      if(process.exitValue() != 0) throw new Error(s"NPM failed with exit value ${process.exitValue()}")
+      file("http/baker-http-dashboard/dashboard.zip")
+    },
+    Compile / doc / sources  := Seq.empty,
+    Compile / packageDoc / mappings := Seq(),
+    Compile / packageDoc / publishArtifact := false,
+    Compile / packageSrc / publishArtifact := false,
+    Compile / packageBin / publishArtifact := false,
+    Universal / packageBin := npmBuildTask.value,
+    addArtifact(Artifact("dashboard", "zip", "zip"), npmBuildTask),
+    publish := (publish dependsOn (Universal / packageBin)).value,
+    publishLocal := (publishLocal dependsOn (Universal / packageBin)).value
+  )
+
 lazy val `bakery-interaction-protocol`: Project = project.in(file("bakery/interaction-protocol"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
@@ -281,59 +352,11 @@ lazy val `bakery-interaction-protocol`: Project = project.in(file("bakery/intera
   )
   .dependsOn(`baker-interface`)
 
-lazy val `bakery-client`: Project = project.in(file("bakery/client"))
-  .settings(defaultModuleSettings)
-  .settings(
-    moduleName := "bakery-client",
-    libraryDependencies ++= Seq(
-      http4s,
-      http4sDsl,
-      http4sClient,
-      http4sCirce,
-      scalaLogging,
-      catsRetry,
-      http4sServer % "test",
-      slf4jApi % "test",
-      logback % "test",
-      scalaTest % "test",
-      mockitoScala % "test",
-      mockitoScalaTest % "test"
-    )
-  )
-  .dependsOn(`baker-interface`)
-
-val npmBuildTask = taskKey[File]("Dashboard build")
-
-lazy val `bakery-dashboard`: Project = project.in(file("bakery/dashboard"))
-  .enablePlugins(UniversalPlugin)
-  .settings(defaultModuleSettings)
-  .settings(
-    name := "bakery-dashboard",
-    maintainer := "The Bakery Team",
-    Universal / packageName  := s"bakery-dashboard",
-    Universal / mappings ++= Seq(file("dashboard.zip") -> "dashboard.zip"),
-    npmBuildTask := {
-      val processBuilder = Process("./npm-build.sh", file("bakery/dashboard"))
-      val process = processBuilder.run()
-      if(process.exitValue() != 0) throw new Error(s"NPM failed with exit value ${process.exitValue()}")
-      file("bakery/dashboard/dashboard.zip")
-    },
-    Compile / doc / sources  := Seq.empty,
-    Compile / packageDoc / mappings := Seq(),
-    Compile / packageDoc / publishArtifact := false,
-    Compile / packageSrc / publishArtifact := false,
-    Compile / packageBin / publishArtifact := false,
-    Universal / packageBin := npmBuildTask.value,
-    addArtifact(Artifact("dashboard", "zip", "zip"), npmBuildTask),
-    publish := (publish dependsOn (Universal / packageBin)).value,
-    publishLocal := (publishLocal dependsOn (Universal / packageBin)).value
-  )
-
-lazy val `bakery-state-k8s`: Project = project.in(file("bakery/baker-state-k8s"))
+lazy val `bakery-interaction-k8s-interaction-manager`: Project = project.in(file("bakery/interaction-k8s-interaction-manager"))
   .settings(defaultModuleSettings)
   .settings(yPartialUnificationSetting)
   .settings(
-    moduleName := "bakery-state-k8s",
+    moduleName := "bakery-interaction-k8s-interaction-manager",
     libraryDependencies ++= Seq(
       skuber
     ) ++ testDeps(
@@ -352,14 +375,17 @@ lazy val `bakery-state-k8s`: Project = project.in(file("bakery/baker-state-k8s")
   )
   .dependsOn(
     `baker-akka-runtime`,
-    `bakery-client`,
     `baker-interface`,
     `bakery-interaction-protocol`,
     `baker-recipe-compiler`,
     `baker-recipe-dsl`,
     `baker-intermediate-language`,
-    `bakery-dashboard`,
-    `bakery-state` % "compile->compile;test->test"
+    `baker-http-dashboard`,
+    `baker-http-server`,
+    `bakery-state`,
+    testScope(`bakery-state`),
+    testScope(`baker-http-client`),
+    testScope(`baker-http-server`)
   )
 
 
@@ -373,7 +399,7 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
     Docker / packageName := "bakery-state",
     dockerBaseImage := "adoptopenjdk/openjdk11",
     Universal / mappings ++=
-      directory(s"${(`bakery-dashboard` / baseDirectory).value.getAbsolutePath}/dist")
+      directory(s"${(`baker-http-dashboard` / baseDirectory).value.getAbsolutePath}/dist")
         .map(t => (t._1, t._2.replace("dist", "dashboard"))),
     moduleName := "bakery-state",
     libraryDependencies ++= Seq(
@@ -387,10 +413,6 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
       akkaDiscovery,
       akkaDiscoveryKube,
       akkaPki,
-      http4s,
-      http4sDsl,
-      http4sCirce,
-      http4sServer,
       kafkaClient
     ) ++ testDeps(
       slf4jApi,
@@ -408,13 +430,13 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
   )
   .dependsOn(
     `baker-akka-runtime`,
-    `bakery-client`,
     `baker-interface`,
     `bakery-interaction-protocol`,
     `baker-recipe-compiler`,
     `baker-recipe-dsl`,
     `baker-intermediate-language`,
-    `bakery-dashboard`
+    `baker-http-server`,
+    `baker-http-dashboard`
   )
 
 lazy val `bakery-interaction`: Project = project.in(file("bakery/interaction"))
@@ -429,7 +451,7 @@ lazy val `bakery-interaction`: Project = project.in(file("bakery/interaction"))
       http4sCirce,
       circe,
       catsEffect,
-      catsCore,
+      catsCore
     ) ++ testDeps(
       scalaTest,
       logback
@@ -463,11 +485,11 @@ lazy val `bakery-interaction-spring`: Project = project.in(file("bakery/interact
 lazy val baker: Project = project.in(file("."))
   .settings(defaultModuleSettings)
   .settings(
-    crossScalaVersions := Nil,
+    crossScalaVersions := Nil
   )
   .aggregate(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
-    `bakery-client`, `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
-    `bakery-state-k8s`, `baker-interface`, `bakery-dashboard`, `baker-annotations`, `baker-test`)
+    `baker-http-client`, `baker-http-server`, `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
+    `bakery-interaction-k8s-interaction-manager`, `baker-interface`, `baker-http-dashboard`, `baker-annotations`, `baker-test`)
 
 lazy val `baker-example`: Project = project
   .in(file("examples/baker-example"))
@@ -529,7 +551,7 @@ lazy val `bakery-client-example`: Project = project
   .settings(
     Docker / packageName := "bakery-client-example"
   )
-  .dependsOn(`baker-types`, `bakery-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
+  .dependsOn(`baker-types`, `baker-http-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
 
 lazy val `bakery-kafka-listener-example`: Project = project
   .in(file("examples/bakery-kafka-listener-example"))
@@ -555,7 +577,7 @@ lazy val `bakery-kafka-listener-example`: Project = project
   .settings(
     Docker / packageName := "bakery-kafka-listener-example"
   )
-  .dependsOn(`baker-types`, `bakery-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
+  .dependsOn(`baker-types`, `baker-http-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
 
 lazy val `interaction-example-reserve-items`: Project = project.in(file("examples/bakery-interaction-examples/reserve-items"))
   .enablePlugins(JavaAppPackaging)
@@ -613,7 +635,7 @@ lazy val `bakery-integration-tests`: Project = project.in(file("bakery/integrati
       )
   )
   .dependsOn(
-    `bakery-client`,
+    `baker-http-client`,
     `bakery-client-example`,
     `interaction-example-make-payment-and-ship-items`,
     `interaction-example-reserve-items`)

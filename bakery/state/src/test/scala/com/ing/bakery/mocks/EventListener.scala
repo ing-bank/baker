@@ -2,7 +2,7 @@ package com.ing.bakery.mocks
 
 import cats.effect.{ContextShift, IO}
 import com.ing.baker.runtime.common.{BakerEvent, EventInstance}
-import com.ing.bakery.baker.EventSink
+import com.ing.bakery.components.EventSink
 
 import scala.collection.mutable
 
