@@ -308,6 +308,7 @@ lazy val `baker-http-server`: Project = project.in(file("http/baker-http-server"
      testScope(`baker-recipe-compiler`)
   )
 
+val npmInputFiles = taskKey[Set[File]]("List of files which are used by the npmBuildTask. Used to determine if something has changed and an npm build needs to be redone.")
 val npmBuildTask = taskKey[File]("Uses NPM to build the dashboard into the dist directory")
 val zipDistFolder = taskKey[File]("Creates a zip file of the dashboard files")
 val staticDashboardFilePrefix = settingKey[String]("Prefix for static files of dashboard in jar.")
@@ -325,10 +326,20 @@ lazy val `baker-http-dashboard`: Project = project.in(file("http/baker-http-dash
     Universal / packageName  := name.value,
     Universal / mappings += file("dashboard.zip") -> "dashboard.zip",
     staticDashboardFilePrefix := "dashboard_static",
+    npmInputFiles := {
+      val sources = baseDirectory.value / "src" ** "*"
+      val projectConfiguration = baseDirectory.value * "*.json"
+      (sources.get() ++ projectConfiguration.get()).toSet
+    },
     npmBuildTask := {
-      val processBuilder = Process("./npm-build.sh", baseDirectory.value)
-      val process = processBuilder.run()
-      if(process.exitValue() != 0) throw new Error(s"NPM failed with exit value ${process.exitValue()}")
+      val cachedFunction = FileFunction.cached(streams.value.cacheDirectory / "npmBuild", inStyle = FileInfo.hash) { (in: Set[File]) =>
+        val processBuilder = Process("./npm-build.sh", baseDirectory.value)
+        val process = processBuilder.run()
+        if (process.exitValue() != 0) throw new Error(s"NPM failed with exit value ${process.exitValue()}")
+        val outputFiles = (baseDirectory.value / "dist" ** "*").get().toSet
+        outputFiles
+      }
+      cachedFunction(npmInputFiles.value)
       baseDirectory.value / "dist"
     },
     zipDistFolder := {
@@ -359,6 +370,7 @@ lazy val `baker-http-dashboard`: Project = project.in(file("http/baker-http-dash
     },
     dashboardZipArtifact := Artifact(name.value, "zip", "zip"),
     Compile / sourceDirectory := baseDirectory.value / "src-scala",
+    // Note: resourceGenerators is not run by task compile. It is run by task package or run.
     Compile / resourceGenerators += prefixedDashboardResources.taskValue,
     Compile / resourceGenerators += Def.task { Seq(dashboardFilesIndex.value) }.taskValue,
     addArtifact(dashboardZipArtifact, zipDistFolder)
