@@ -310,8 +310,9 @@ lazy val `baker-http-server`: Project = project.in(file("http/baker-http-server"
 
 val npmInputFiles = taskKey[Set[File]]("List of files which are used by the npmBuildTask. Used to determine if something has changed and an npm build needs to be redone.")
 val npmBuildTask = taskKey[File]("Uses NPM to build the dashboard into the dist directory")
-val zipDistFolder = taskKey[File]("Creates a zip file of the dashboard files")
+val zipDistDirectory = taskKey[File]("Creates a zip file of the dashboard files")
 val staticDashboardFilePrefix = settingKey[String]("Prefix for static files of dashboard in jar.")
+val distDirectory = settingKey[File]("dist directory. This is like /target but for npm builds.")
 val dashboardZipArtifact = settingKey[Artifact]("Creates the artifact object")
 val dashboardFilesList = taskKey[Seq[File]]("List of static dashboard files")
 val dashboardFilesIndex = taskKey[File]("Creates an index of dashboard resources.")
@@ -326,23 +327,27 @@ lazy val `baker-http-dashboard`: Project = project.in(file("http/baker-http-dash
     Universal / packageName  := name.value,
     Universal / mappings += file("dashboard.zip") -> "dashboard.zip",
     staticDashboardFilePrefix := "dashboard_static",
+    distDirectory := baseDirectory.value / "dist",
     npmInputFiles := {
       val sources = baseDirectory.value / "src" ** "*"
       val projectConfiguration = baseDirectory.value * "*.json"
       (sources.get() ++ projectConfiguration.get()).toSet
     },
     npmBuildTask := {
+      // Caches the npm ./npm-build.sh execution. Invalidation is done if either
+      // - anything is different in the baseDirectory / src, or files in the baseDirectory / *.json (compared using hash of file contents)
+      // - dist directory doesn't contain the same files as previously.
       val cachedFunction = FileFunction.cached(streams.value.cacheDirectory / "npmBuild", inStyle = FileInfo.hash) { (in: Set[File]) =>
         val processBuilder = Process("./npm-build.sh", baseDirectory.value)
         val process = processBuilder.run()
         if (process.exitValue() != 0) throw new Error(s"NPM failed with exit value ${process.exitValue()}")
-        val outputFiles = (baseDirectory.value / "dist" ** "*").get().toSet
+        val outputFiles = (distDirectory.value ** "*").get().toSet
         outputFiles
       }
       cachedFunction(npmInputFiles.value)
-      baseDirectory.value / "dist"
+      distDirectory.value
     },
-    zipDistFolder := {
+    zipDistDirectory := {
       val inputDirectory = npmBuildTask.value
       val targetZipFile = target.value / "dashboard.zip"
       IO.zip(
@@ -373,7 +378,8 @@ lazy val `baker-http-dashboard`: Project = project.in(file("http/baker-http-dash
     // Note: resourceGenerators is not run by task compile. It is run by task package or run.
     Compile / resourceGenerators += prefixedDashboardResources.taskValue,
     Compile / resourceGenerators += Def.task { Seq(dashboardFilesIndex.value) }.taskValue,
-    addArtifact(dashboardZipArtifact, zipDistFolder)
+    cleanFiles += distDirectory.value,
+    addArtifact(dashboardZipArtifact, zipDistDirectory)
   )
 
 lazy val `bakery-interaction-protocol`: Project = project.in(file("bakery/interaction-protocol"))
