@@ -126,7 +126,7 @@ class InteractionExecutorJava(implementations: java.util.List[InteractionInstanc
                               val executionContext: ExecutionContext)
   extends InteractionExecutor {
   @nowarn
-  private lazy val javaInteractions = JavaConverters.collectionAsScalaIterable(implementations).toList
+  private lazy val javaInteractions = JavaConverters.collectionAsScalaIterableConverter(implementations).asScala.toList
   def interactions: List[InteractionInstance] = javaInteractions
 
   def list: String = interactionsCodec(CurrentInteractions).noSpaces
