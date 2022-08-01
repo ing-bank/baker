@@ -22,7 +22,7 @@ object Main extends IOApp with LazyLogging {
     val apiPort = bakerConfig.getInt("api-port")
     val metricsPort = bakerConfig.getInt("metrics-port")
     val apiUrlPrefix = bakerConfig.getString("api-url-prefix")
-    val dashboardPath = bakerConfig.getString("dashboard-path")
+    val enableDashboard = bakerConfig.getBoolean("enable-dashboard")
     val loggingEnabled = bakerConfig.getBoolean("api-logging-enabled")
 
     (for {
@@ -33,7 +33,7 @@ object Main extends IOApp with LazyLogging {
         bakery.baker,
         bakery.executionContext,
         InetSocketAddress.createUnresolved("0.0.0.0", apiPort),
-        apiUrlPrefix, dashboardPath, loggingEnabled)
+        apiUrlPrefix, hostDashboard = enableDashboard, loggingEnabled)
 
     } yield (bakery, bakerService))
       .use { case (bakery, bakerService) =>

@@ -4,5 +4,4 @@ npm install
 npx ng build
 #npm run test
 #npm run lint
-cd dist
-zip -r ../dashboard.zip *
+

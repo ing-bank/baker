@@ -3,6 +3,7 @@ package com.ing.baker.http.server.scaladsl
 import cats.data.OptionT
 import cats.effect.{Blocker, ContextShift, IO, Resource, Sync, Timer}
 import cats.implicits._
+import com.ing.baker.http.Dashboard
 import com.ing.baker.http.server.common.RecipeLoader
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance}
@@ -24,7 +25,6 @@ import org.http4s.server.middleware.{CORS, Logger, Metrics}
 import org.http4s.server.{Router, Server}
 import org.slf4j.LoggerFactory
 
-import java.io.File
 import java.net.InetSocketAddress
 import java.nio.charset.Charset
 import scala.concurrent.duration.DurationInt
@@ -32,7 +32,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object Http4sBakerServer {
 
-  def resource(baker: Baker, ec: ExecutionContext, hostname: InetSocketAddress, apiUrlPrefix: String, dashboardPath: String, loggingEnabled: Boolean)
+  def resource(baker: Baker, ec: ExecutionContext, hostname: InetSocketAddress, apiUrlPrefix: String, hostDashboard: Boolean, loggingEnabled: Boolean)
               (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
 
     val bakeryRequestClassifier: Request[IO] => Option[String] = { request =>
@@ -66,16 +66,17 @@ object Http4sBakerServer {
                 logBody = loggingEnabled,
                 logAction = apiLoggingAction) {
 
-                def dashboardFile(request: Request[IO], filename: String): OptionT[IO, Response[IO]] =
-                  StaticFile.fromFile(new File(dashboardPath + "/" + filename), blocker, Some(request))
-
-                def index(request: Request[IO]) = dashboardFile(request, "index.html").getOrElseF(NotFound())
+                def dashboardFile(request: Request[IO], filename: String): OptionT[IO, Response[IO]] = {
+                  OptionT.fromOption(Dashboard.safeGetResourceUrl(filename))(implicitly[Sync[IO]])
+                    .flatMap(url => StaticFile.fromURL(url, blocker, Some(request)))
+                }
+                def index(request: Request[IO]): IO[Response[IO]] = dashboardFile(request, "index.html").getOrElseF(NotFound())
 
                 Router(
                   apiUrlPrefix -> Metrics[IO](metrics, classifierF = bakeryRequestClassifier)(routes(baker)),
                   "/" -> HttpRoutes.of[IO] {
                     case request =>
-                      if (dashboardPath.isEmpty) NotFound()
+                      if (!hostDashboard) NotFound()
                       else dashboardFile(request, request.pathInfo).getOrElseF(index(request))
                   }
                 ) orNotFound

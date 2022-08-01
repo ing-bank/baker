@@ -477,7 +477,7 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       _ <- Resource.eval(eventListener.eventSink.attach(baker))
       _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, baker))
 
-      server <- Http4sBakerServer.resource(baker, executionContext, InetSocketAddress.createUnresolved("127.0.0.1", 0), "/api/bakery", "/opt/docker/dashboard", loggingEnabled = true)
+      server <- Http4sBakerServer.resource(baker, executionContext, InetSocketAddress.createUnresolved("127.0.0.1", 0), apiUrlPrefix = "/api/bakery", hostDashboard = true, loggingEnabled = true)
       client <- BakerClient.resource(server.baseUri, "/api/bakery", executionContext)
 
     } yield Context(

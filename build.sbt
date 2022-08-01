@@ -304,10 +304,17 @@ lazy val `baker-http-server`: Project = project.in(file("http/baker-http-server"
   )
   .dependsOn(
     `baker-interface`,
+    `baker-http-dashboard`,
      testScope(`baker-recipe-compiler`)
   )
 
-val npmBuildTask = taskKey[File]("Dashboard build")
+val npmBuildTask = taskKey[File]("Uses NPM to build the dashboard into the dist directory")
+val zipDistFolder = taskKey[File]("Creates a zip file of the dashboard files")
+val staticDashboardFilePrefix = settingKey[String]("Prefix for static files of dashboard in jar.")
+val dashboardZipArtifact = settingKey[Artifact]("Creates the artifact object")
+val dashboardFilesList = taskKey[Seq[File]]("List of static dashboard files")
+val dashboardFilesIndex = taskKey[File]("Creates an index of dashboard resources.")
+val prefixedDashboardResources = taskKey[Seq[File]]("Create resources containing dashboard files, prefixed.")
 
 lazy val `baker-http-dashboard`: Project = project.in(file("http/baker-http-dashboard"))
   .enablePlugins(UniversalPlugin)
@@ -315,23 +322,46 @@ lazy val `baker-http-dashboard`: Project = project.in(file("http/baker-http-dash
   .settings(
     name := "baker-http-dashboard",
     maintainer := "The Bakery Team",
-    Universal / packageName  := s"baker-http-dashboard",
-    Universal / mappings ++= Seq(file("dashboard.zip") -> "dashboard.zip"),
+    Universal / packageName  := name.value,
+    Universal / mappings += file("dashboard.zip") -> "dashboard.zip",
+    staticDashboardFilePrefix := "dashboard_static",
     npmBuildTask := {
-      val processBuilder = Process("./npm-build.sh", file("http/baker-http-dashboard"))
+      val processBuilder = Process("./npm-build.sh", baseDirectory.value)
       val process = processBuilder.run()
       if(process.exitValue() != 0) throw new Error(s"NPM failed with exit value ${process.exitValue()}")
-      file("http/baker-http-dashboard/dashboard.zip")
+      baseDirectory.value / "dist"
     },
-    Compile / doc / sources  := Seq.empty,
-    Compile / packageDoc / mappings := Seq(),
-    Compile / packageDoc / publishArtifact := false,
-    Compile / packageSrc / publishArtifact := false,
-    Compile / packageBin / publishArtifact := false,
-    Universal / packageBin := npmBuildTask.value,
-    addArtifact(Artifact("dashboard", "zip", "zip"), npmBuildTask),
-    publish := (publish dependsOn (Universal / packageBin)).value,
-    publishLocal := (publishLocal dependsOn (Universal / packageBin)).value
+    zipDistFolder := {
+      val inputDirectory = npmBuildTask.value
+      val targetZipFile = target.value / "dashboard.zip"
+      IO.zip(
+        sources = (inputDirectory ** "*").get().map(f => (f, inputDirectory.relativize(f).get.toString)),
+        outputZip = targetZipFile,
+        time = None)
+      targetZipFile
+    },
+    prefixedDashboardResources := {
+      val outputFolder = (Compile / resourceManaged).value / staticDashboardFilePrefix.value
+      IO.copyDirectory(npmBuildTask.value, outputFolder)
+      (outputFolder ** "*").get()
+    },
+    dashboardFilesList := {
+      val distDir = npmBuildTask.value
+      (distDir ** "*")
+        .filter(_.isFile).get()
+    },
+    dashboardFilesIndex := {
+      val distDir = npmBuildTask.value
+      val resultFile = (Compile / resourceManaged).value / "dashboard_static_index"
+      IO.write(resultFile, dashboardFilesList.value
+        .map(file => s"${staticDashboardFilePrefix.value}/${distDir.relativize(file).get.toString}").mkString("\n"))
+      resultFile
+    },
+    dashboardZipArtifact := Artifact(name.value, "zip", "zip"),
+    Compile / sourceDirectory := baseDirectory.value / "src-scala",
+    Compile / resourceGenerators += prefixedDashboardResources.taskValue,
+    Compile / resourceGenerators += Def.task { Seq(dashboardFilesIndex.value) }.taskValue,
+    addArtifact(dashboardZipArtifact, zipDistFolder)
   )
 
 lazy val `bakery-interaction-protocol`: Project = project.in(file("bakery/interaction-protocol"))
@@ -398,9 +428,6 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
     dockerExposedPorts ++= Seq(8080),
     Docker / packageName := "bakery-state",
     dockerBaseImage := "adoptopenjdk/openjdk11",
-    Universal / mappings ++=
-      directory(s"${(`baker-http-dashboard` / baseDirectory).value.getAbsolutePath}/dist")
-        .map(t => (t._1, t._2.replace("dist", "dashboard"))),
     moduleName := "bakery-state",
     libraryDependencies ++= Seq(
       slf4jApi,
