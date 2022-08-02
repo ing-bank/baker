@@ -1,6 +1,7 @@
 package com.ing.bakery
 
 import cats.effect.{ExitCode, IO, IOApp}
+import com.ing.baker.http.DashboardConfiguration
 import com.ing.baker.http.server.common.RecipeLoader
 import com.ing.baker.http.server.scaladsl.Http4sBakerServer
 import com.ing.bakery.components.BakerReadinessCheck
@@ -22,7 +23,7 @@ object Main extends IOApp with LazyLogging {
     val apiPort = bakerConfig.getInt("api-port")
     val metricsPort = bakerConfig.getInt("metrics-port")
     val apiUrlPrefix = bakerConfig.getString("api-url-prefix")
-    val enableDashboard = bakerConfig.getBoolean("enable-dashboard")
+    val dashboardConfiguration = DashboardConfiguration.fromConfig(config)
     val loggingEnabled = bakerConfig.getBoolean("api-logging-enabled")
 
     (for {
@@ -33,7 +34,7 @@ object Main extends IOApp with LazyLogging {
         bakery.baker,
         bakery.executionContext,
         InetSocketAddress.createUnresolved("0.0.0.0", apiPort),
-        apiUrlPrefix, hostDashboard = enableDashboard, loggingEnabled)
+        apiUrlPrefix, dashboardConfiguration, loggingEnabled)
 
     } yield (bakery, bakerService))
       .use { case (bakery, bakerService) =>

@@ -1,7 +1,7 @@
 package com.ing.baker.http
 
 import java.net.URL
-import scala.io.Source
+import scala.io.{BufferedSource, Source}
 import scala.util.Try
 
 object Dashboard {
@@ -18,6 +18,17 @@ object Dashboard {
     * Get URL to resource from filename. Do not specify the dashboard prefix, as it is automatically added.
     * Uses a whitelist of files to prevent any unauthorized access of resources by a malicious user.
     */
-  def safeGetResourceUrl(fileName: String) : Option[URL] =
-    files.find(_ == DASHBOARD_PREFIX + fileName).flatMap(fn => Option(getClass.getResource(fn)))
+  def safeGetResourcePath(fileName: String) : Option[String] =
+    files.find(_ == fileName).map(DASHBOARD_PREFIX + _)
+
+  def versionJson(apiPath: String, dashboardConfiguration: DashboardConfiguration) : String =
+    s"""
+      |{
+      |   "applicationName": "${dashboardConfiguration.applicationName}",
+      |   "apiPath": "${apiPath}",
+      |   "clusterInformation": [
+      |   ${dashboardConfiguration.clusterInformation.map{ case (key, value) => s"""  "$key": "$value""""}.mkString(",\n     ")}
+      |   ]
+      |}
+      |""".stripMargin
 }

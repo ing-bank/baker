@@ -51,7 +51,7 @@ object RecipeLoader extends LazyLogging {
       bytes
   }
 
-  private[baker] def loadRecipes(path: String): IO[List[RecipeRecord]] = {
+  def loadRecipes(path: String): IO[List[RecipeRecord]] = {
 
     def recipeFiles(path: String): IO[List[File]] = IO {
       val d = new File(path)

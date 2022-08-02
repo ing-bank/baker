@@ -1,13 +1,13 @@
 import {HttpClient} from "@angular/common/http";
 import {Injectable} from "@angular/core";
+import {Value} from "./baker-value.api";
 
-const SETTINGS_LOCATION = "assets/settings/settings.json";
+const SETTINGS_LOCATION = "/dashboard_config";
 
 export interface AppSettings {
-    apiUrl: string;
-    title: string;
-    bakeryVersion: string;
-    stateVersion: string;
+  applicationName: string;
+  apiPath: string;
+  clusterInformation: { [key: string]: string };
 }
 
 @Injectable()

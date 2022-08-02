@@ -300,7 +300,7 @@ lazy val `baker-http-server`: Project = project.in(file("http/baker-http-server"
       http4sPrometheus,
       prometheus,
       prometheusJmx
-    )
+    ) ++ testDeps(mockitoScala, mockitoScalaTest, catsEffectTesting)
   )
   .dependsOn(
     `baker-interface`,
@@ -324,6 +324,10 @@ lazy val `baker-http-dashboard`: Project = project.in(file("http/baker-http-dash
   .settings(
     name := "baker-http-dashboard",
     maintainer := "The Bakery Team",
+    libraryDependencies ++= Seq(typeSafeConfig) ++ testDeps(
+      scalaTest,
+      logback
+    ),
     Universal / packageName  := name.value,
     Universal / mappings += file("dashboard.zip") -> "dashboard.zip",
     staticDashboardFilePrefix := "dashboard_static",
@@ -374,7 +378,7 @@ lazy val `baker-http-dashboard`: Project = project.in(file("http/baker-http-dash
       resultFile
     },
     dashboardZipArtifact := Artifact(name.value, "zip", "zip"),
-    Compile / sourceDirectory := baseDirectory.value / "src-scala",
+    sourceDirectory := baseDirectory.value / "src-scala",
     // Note: resourceGenerators is not run by task compile. It is run by task package or run.
     Compile / resourceGenerators += prefixedDashboardResources.taskValue,
     Compile / resourceGenerators += Def.task { Seq(dashboardFilesIndex.value) }.taskValue,

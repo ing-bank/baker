@@ -1,4 +1,4 @@
-import {Component, OnInit, Renderer2} from "@angular/core";
+import {Component, OnInit} from "@angular/core";
 import {AppSettingsService} from "../app.settings";
 
 /** @title Bakery DashboardComponent */
@@ -9,15 +9,13 @@ import {AppSettingsService} from "../app.settings";
 })
 export class HomeComponent implements OnInit {
 
-    bakeryVersion: string;
-    stateVersion: string;
+    clusterInformation: string;
 
     constructor () {
     }
 
     ngOnInit (): void {
-        this.bakeryVersion = AppSettingsService.settings.bakeryVersion;
-        this.stateVersion = AppSettingsService.settings.stateVersion;
+        this.clusterInformation = JSON.stringify(AppSettingsService.settings.clusterInformation);
     }
 
 }

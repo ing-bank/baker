@@ -3,7 +3,7 @@ package com.ing.baker.http.server.scaladsl
 import cats.data.OptionT
 import cats.effect.{Blocker, ContextShift, IO, Resource, Sync, Timer}
 import cats.implicits._
-import com.ing.baker.http.Dashboard
+import com.ing.baker.http.{Dashboard, DashboardConfiguration}
 import com.ing.baker.http.server.common.RecipeLoader
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance}
@@ -19,6 +19,7 @@ import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
+import org.http4s.metrics.MetricsOps
 import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.{CORS, Logger, Metrics}
@@ -32,19 +33,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object Http4sBakerServer {
 
-  def resource(baker: Baker, ec: ExecutionContext, hostname: InetSocketAddress, apiUrlPrefix: String, hostDashboard: Boolean, loggingEnabled: Boolean)
+  def resource(baker: Baker, ec: ExecutionContext, hostname: InetSocketAddress, apiUrlPrefix: String,
+               dashboardConfiguration: DashboardConfiguration, loggingEnabled: Boolean)
               (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
 
-    val bakeryRequestClassifier: Request[IO] => Option[String] = { request =>
-      val uriPath = request.uri.path
-      val p = uriPath.takeRight(uriPath.length - apiUrlPrefix.length)
-
-      if (p.startsWith("/app")) Some(p) // cardinality is low, we don't care
-      else if (p.startsWith("/instances")) {
-        val action = p.split('/') // /instances/<id>/<action>/... - we don't want ID here
-        if (action.length >= 4) Some(s"/instances/${action(3)}") else Some("/instances/state")
-      } else None
-    }
 
     val apiLoggingAction: Option[String => IO[Unit]] = if (loggingEnabled) {
       val apiLogger = LoggerFactory.getLogger("API")
@@ -64,31 +56,40 @@ object Http4sBakerServer {
               Logger.httpApp(
                 logHeaders = loggingEnabled,
                 logBody = loggingEnabled,
-                logAction = apiLoggingAction) {
-
-                def dashboardFile(request: Request[IO], filename: String): OptionT[IO, Response[IO]] = {
-                  OptionT.fromOption(Dashboard.safeGetResourceUrl(filename))(implicitly[Sync[IO]])
-                    .flatMap(url => StaticFile.fromURL(url, blocker, Some(request)))
-                }
-                def index(request: Request[IO]): IO[Response[IO]] = dashboardFile(request, "index.html").getOrElseF(NotFound())
-
-                Router(
-                  apiUrlPrefix -> Metrics[IO](metrics, classifierF = bakeryRequestClassifier)(routes(baker)),
-                  "/" -> HttpRoutes.of[IO] {
-                    case request =>
-                      if (!hostDashboard) NotFound()
-                      else dashboardFile(request, request.pathInfo).getOrElseF(index(request))
-                  }
-                ) orNotFound
-              })).resource
+                logAction = apiLoggingAction)(
+                routes(baker, apiUrlPrefix, metrics, dashboardConfiguration, blocker).orNotFound)))
+        .resource
     } yield server
   }
 
-  def routes(baker: Baker)(implicit cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] =
-    new Http4sBakerServer(baker).routes
+
+  def routes(baker: Baker, apiUrlPrefix: String, metrics: MetricsOps[IO],
+                          dashboardConfiguration: DashboardConfiguration, blocker: Blocker)
+                         (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] = {
+    val dashboardRoutesOrEmpty: HttpRoutes[IO] =
+      if (dashboardConfiguration.enabled) dashboardRoutes(apiUrlPrefix, dashboardConfiguration, blocker)
+      else HttpRoutes.empty
+
+    new Http4sBakerServer(baker).routesWithPrefixAndMetrics(apiUrlPrefix, metrics) <+> dashboardRoutesOrEmpty
+  }
+
+
+  private def dashboardRoutes(apiUrlPrefix: String, dashboardConfiguration: DashboardConfiguration, blocker: Blocker)
+                             (implicit sync: Sync[IO], cs: ContextShift[IO]): HttpRoutes[IO] =
+    HttpRoutes.of[IO] {
+      case GET -> Root / "dashboard_config" => Ok(Dashboard.versionJson(apiUrlPrefix, dashboardConfiguration))
+      case req@GET -> Root => dashboardFile(req, blocker, "index.html").getOrElseF(NotFound())
+      case req if Dashboard.files.contains(req.pathInfo) => dashboardFile(req, blocker, req.pathInfo).getOrElseF(NotFound())
+    }
+
+  private def dashboardFile(request: Request[IO], blocker: Blocker, filename: String)
+                           (implicit sync: Sync[IO], cs: ContextShift[IO]): OptionT[IO, Response[IO]] = {
+    OptionT.fromOption(Dashboard.safeGetResourcePath(filename))(sync)
+      .flatMap(resourcePath => StaticFile.fromResource(resourcePath, blocker, Some(request)))
+  }
 }
 
-final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
+final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO]) extends LazyLogging {
 
   object CorrelationId extends OptionalQueryParamDecoderMatcher[String]("correlationId")
 
@@ -107,6 +108,12 @@ final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO
   implicit val eventInstanceDecoder: EntityDecoder[IO, EventInstance] = jsonOf[IO, EventInstance]
   implicit val interactionExecutionRequestDecoder: EntityDecoder[IO, InteractionExecution.ExecutionRequest] = jsonOf[IO, InteractionExecution.ExecutionRequest]
   implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
+
+  def routesWithPrefixAndMetrics(apiUrlPrefix: String, metrics: MetricsOps[IO])
+                                (implicit timer: Timer[IO]): HttpRoutes[IO] =
+    Router(
+      apiUrlPrefix -> Metrics[IO](metrics, classifierF = metricsClassifier(apiUrlPrefix))(routes),
+    )
 
   def routes: HttpRoutes[IO] = app <+> instance
 
@@ -189,6 +196,17 @@ final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO
         result <- baker.resolveInteraction(recipeInstanceId, interactionName, event).toBakerResultResponseIO
       } yield result
   })
+
+  def metricsClassifier(apiUrlPrefix: String): Request[IO] => Option[String] = { request =>
+    val uriPath = request.uri.path
+    val p = uriPath.takeRight(uriPath.length - apiUrlPrefix.length)
+
+    if (p.startsWith("/app")) Some(p) // cardinality is low, we don't care
+    else if (p.startsWith("/instances")) {
+      val action = p.split('/') // /instances/<id>/<action>/... - we don't want ID here
+      if (action.length >= 4) Some(s"/instances/${action(3)}") else Some("/instances/state")
+    } else None
+  }
 
 
   private implicit class BakerResultFutureHelper[A](f: => Future[A]) {

@@ -2,6 +2,7 @@ package com.ing.bakery.baker
 
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
+import com.ing.baker.http.DashboardConfiguration
 import com.ing.baker.http.client.scaladsl.BakerClient
 import com.ing.baker.http.server.common.RecipeLoader
 import com.ing.baker.http.server.scaladsl.Http4sBakerServer
@@ -477,7 +478,13 @@ class StateRuntimeSpec extends BakeryFunSpec with Matchers {
       _ <- Resource.eval(eventListener.eventSink.attach(baker))
       _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, baker))
 
-      server <- Http4sBakerServer.resource(baker, executionContext, InetSocketAddress.createUnresolved("127.0.0.1", 0), apiUrlPrefix = "/api/bakery", hostDashboard = true, loggingEnabled = true)
+      server <- Http4sBakerServer.resource(
+        baker,
+        executionContext,
+        InetSocketAddress.createUnresolved("127.0.0.1", 0),
+        apiUrlPrefix = "/api/bakery",
+        dashboardConfiguration = DashboardConfiguration(enabled = true, applicationName = "StateRuntimeSpec", clusterInformation = Map.empty),
+        loggingEnabled = true)
       client <- BakerClient.resource(server.baseUri, "/api/bakery", executionContext)
 
     } yield Context(

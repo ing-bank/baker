@@ -9,7 +9,7 @@ import {wasmFolder} from "@hpcc-js/wasm";
     "templateUrl": "./app.component.html"
 })
 export class AppComponent implements OnDestroy, OnInit {
-    title = AppSettingsService.settings.title;
+    title = AppSettingsService.settings.applicationName;
     mobileQuery: MediaQueryList;
 
     private readonly mobileQueryListener: () => void;
