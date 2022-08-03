@@ -28,15 +28,14 @@ class DashboardAndConfigurationSpec extends AnyFlatSpec with should.Matchers {
         "version2" -> "2.0"
       )
     )
-    Dashboard.versionJson("/test/path", configuration).replace(" ", "") shouldEqual
-      """
-        |{
+    Dashboard.dashboardConfigJson("/test/path", configuration).replace(" ", "") shouldEqual
+      """{
         |   "applicationName": "application name",
         |   "apiPath": "/test/path",
-        |   "clusterInformation": [
+        |   "clusterInformation": {
         |     "version1": "1.0",
         |     "version2": "2.0"
-        |   ]
+        |   }
         | }
         |""".stripMargin.replace(" ", "")
   }

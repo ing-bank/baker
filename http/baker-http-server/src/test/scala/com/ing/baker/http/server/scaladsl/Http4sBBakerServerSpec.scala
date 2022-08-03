@@ -72,6 +72,12 @@ class Http4sBBakerServerSpec  extends AsyncFlatSpec with AsyncIOSpec with Matche
     response.headers.get(`Content-Type`).toString shouldEqual "Some(Content-Type: text/html)"
   }
 
+  "the routes" should "serve the other static files if dashboard is enabled" in {
+    val response = doRequest(Request(method = Method.GET, uri = uri"/main.js"))
+    response.status shouldEqual Status.Ok
+    response.headers.get(`Content-Type`).toString shouldEqual "Some(Content-Type: application/javascript)"
+  }
+
   "the routes" should "give 404 if dashboard is disabled" in {
     val response = doRequest(Request(method = Method.GET, uri = uri"/"), dashboardConfigurationDisabled)
     response.status shouldEqual Status.NotFound
@@ -80,7 +86,7 @@ class Http4sBBakerServerSpec  extends AsyncFlatSpec with AsyncIOSpec with Matche
   "the routes" should "give dashboard_config" in {
     val response = doRequest(Request(method = Method.GET, uri = uri"/dashboard_config"))
     response.status shouldEqual Status.Ok
-    response.headers.get(`Content-Length`).toString shouldEqual "Some(Content-Length: 105)"
+    response.headers.get(`Content-Length`).toString shouldEqual "Some(Content-Length: 104)"
   }
 
   "the routes" should "call the underlying baker implementation" in {

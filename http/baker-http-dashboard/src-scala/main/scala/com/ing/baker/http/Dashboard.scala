@@ -21,14 +21,13 @@ object Dashboard {
   def safeGetResourcePath(fileName: String) : Option[String] =
     files.find(_ == fileName).map(DASHBOARD_PREFIX + _)
 
-  def versionJson(apiPath: String, dashboardConfiguration: DashboardConfiguration) : String =
-    s"""
-      |{
+  def dashboardConfigJson(apiPath: String, dashboardConfiguration: DashboardConfiguration) : String =
+    s"""{
       |   "applicationName": "${dashboardConfiguration.applicationName}",
       |   "apiPath": "${apiPath}",
-      |   "clusterInformation": [
+      |   "clusterInformation": {
       |   ${dashboardConfiguration.clusterInformation.map{ case (key, value) => s"""  "$key": "$value""""}.mkString(",\n     ")}
-      |   ]
+      |   }
       |}
       |""".stripMargin
 }

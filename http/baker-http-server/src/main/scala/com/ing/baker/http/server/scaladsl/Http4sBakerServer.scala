@@ -18,6 +18,7 @@ import io.prometheus.client.CollectorRegistry
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._
+import org.http4s.headers.{`Content-Length`, `Content-Type`}
 import org.http4s.implicits._
 import org.http4s.metrics.MetricsOps
 import org.http4s.metrics.prometheus.Prometheus
@@ -77,9 +78,20 @@ object Http4sBakerServer {
   private def dashboardRoutes(apiUrlPrefix: String, dashboardConfiguration: DashboardConfiguration, blocker: Blocker)
                              (implicit sync: Sync[IO], cs: ContextShift[IO]): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
-      case GET -> Root / "dashboard_config" => Ok(Dashboard.versionJson(apiUrlPrefix, dashboardConfiguration))
+      case GET -> Root / "dashboard_config" =>
+        val bodyText = Dashboard.dashboardConfigJson(apiUrlPrefix, dashboardConfiguration)
+        IO(Response[IO](
+          status = Ok,
+          body = fs2.Stream(bodyText).through(fs2.text.utf8Encode),
+          headers = Headers(
+            `Content-Type`(MediaType.text.plain, org.http4s.Charset.`UTF-8`),
+            `Content-Length`.unsafeFromLong(bodyText.length)
+          )
+        ))
+        //Ok(Dashboard.versionJson(apiUrlPrefix, dashboardConfiguration))
       case req@GET -> Root => dashboardFile(req, blocker, "index.html").getOrElseF(NotFound())
-      case req if Dashboard.files.contains(req.pathInfo) => dashboardFile(req, blocker, req.pathInfo).getOrElseF(NotFound())
+      case req if Dashboard.files.contains(req.pathInfo.substring(1)) =>
+        dashboardFile(req, blocker, req.pathInfo.substring(1)).getOrElseF(NotFound())
     }
 
   private def dashboardFile(request: Request[IO], blocker: Blocker, filename: String)
