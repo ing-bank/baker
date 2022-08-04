@@ -84,7 +84,7 @@ object Http4sBakerServer {
   def java(baker: JBaker): CompletableFuture[ClosableBakerServer] = {
     implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
     implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-    val serverStarted = resource(baker.scalaBaker)
+    val serverStarted = resource(baker.getScalaBaker)
       .allocated
       .unsafeToFuture()
       .map {
