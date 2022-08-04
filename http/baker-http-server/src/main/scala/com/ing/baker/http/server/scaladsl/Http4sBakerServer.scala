@@ -7,10 +7,12 @@ import com.ing.baker.http.{Dashboard, DashboardConfiguration}
 import com.ing.baker.http.server.common.RecipeLoader
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance}
+import com.ing.baker.runtime.javadsl.{Baker => JBaker}
 import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe._
 import io.circe.generic.auto._
@@ -27,8 +29,11 @@ import org.http4s.server.middleware.{CORS, Logger, Metrics}
 import org.http4s.server.{Router, Server}
 import org.slf4j.LoggerFactory
 
+import java.io.Closeable
 import java.net.InetSocketAddress
 import java.nio.charset.Charset
+import java.util.concurrent.CompletableFuture
+import scala.compat.java8.FutureConverters
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -63,7 +68,34 @@ object Http4sBakerServer {
     } yield server
   }
 
+  def resource(baker: Baker, ec: ExecutionContext = ExecutionContext.global, config : Config = ConfigFactory.load())
+              (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
+    val hConf = Http4sBakerServerConfiguration.fromConfig(config)
+    val dConf = DashboardConfiguration.fromConfig(config)
 
+    resource(baker, ec,
+      hostname = InetSocketAddress.createUnresolved(hConf.apiHost, hConf.apiPort),
+      apiUrlPrefix = hConf.apiUrlPrefix,
+      dashboardConfiguration = dConf,
+      loggingEnabled = hConf.loggingEnabled
+    )
+  }
+
+  def java(baker: JBaker): CompletableFuture[ClosableBakerServer] = {
+    implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
+    implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+    val serverStarted = resource(baker.scalaBaker)
+      .allocated
+      .unsafeToFuture()
+      .map {
+        case (server: Server[IO], closeEffect: IO[Unit]) => new ClosableBakerServer(server, closeEffect)
+      }(ExecutionContext.global)
+    FutureConverters.toJava(serverStarted).toCompletableFuture
+  }
+
+  class ClosableBakerServer(val server : Server[IO], closeEffect : IO[Unit]) extends Closeable {
+    override def close(): Unit = closeEffect.unsafeRunSync()
+  }
   def routes(baker: Baker, apiUrlPrefix: String, metrics: MetricsOps[IO],
                           dashboardConfiguration: DashboardConfiguration, blocker: Blocker)
                          (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] = {

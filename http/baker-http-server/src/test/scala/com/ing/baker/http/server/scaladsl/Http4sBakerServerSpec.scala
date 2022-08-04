@@ -17,7 +17,7 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.Future
 
-class Http4sBBakerServerSpec  extends AsyncFlatSpec with AsyncIOSpec with Matchers{
+class Http4sBakerServerSpec  extends AsyncFlatSpec with AsyncIOSpec with Matchers{
 
   val bakerMock: Baker = mock[Baker]
 

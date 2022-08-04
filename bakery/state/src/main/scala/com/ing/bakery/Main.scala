@@ -19,12 +19,7 @@ object Main extends IOApp with LazyLogging {
 
     val configPath = sys.env.getOrElse("CONFIG_DIRECTORY", "/opt/docker/conf")
     val config = ConfigFactory.load(ConfigFactory.parseFile(new File(s"$configPath/application.conf")))
-    val bakerConfig = config.getConfig("baker")
-    val apiPort = bakerConfig.getInt("api-port")
-    val metricsPort = bakerConfig.getInt("metrics-port")
-    val apiUrlPrefix = bakerConfig.getString("api-url-prefix")
-    val dashboardConfiguration = DashboardConfiguration.fromConfig(config)
-    val loggingEnabled = bakerConfig.getBoolean("api-logging-enabled")
+    val metricsPort = config.getInt("baker.metrics-port")
 
     (for {
       bakery <- Bakery.akkaBakery(Some(config))
@@ -33,8 +28,7 @@ object Main extends IOApp with LazyLogging {
       bakerService <- Http4sBakerServer.resource(
         bakery.baker,
         bakery.executionContext,
-        InetSocketAddress.createUnresolved("0.0.0.0", apiPort),
-        apiUrlPrefix, dashboardConfiguration, loggingEnabled)
+        config)
 
     } yield (bakery, bakerService))
       .use { case (bakery, bakerService) =>
