@@ -120,9 +120,8 @@ object Http4sBakerServer {
             `Content-Length`.unsafeFromLong(bodyText.length)
           )
         ))
-        //Ok(Dashboard.versionJson(apiUrlPrefix, dashboardConfiguration))
-      case req@GET -> Root => dashboardFile(req, blocker, "index.html").getOrElseF(NotFound())
-      case req if Dashboard.files.contains(req.pathInfo.substring(1)) =>
+      case req if req.method == GET && Dashboard.indexPattern.matches(req.pathInfo) => dashboardFile(req, blocker, "index.html").getOrElseF(NotFound())
+      case req if req.method == GET && Dashboard.files.contains(req.pathInfo.substring(1)) =>
         dashboardFile(req, blocker, req.pathInfo.substring(1)).getOrElseF(NotFound())
     }
 

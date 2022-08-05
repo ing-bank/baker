@@ -1,8 +1,8 @@
 package com.ing.baker.http
 
-import java.net.URL
-import scala.io.{BufferedSource, Source}
+import scala.io.Source
 import scala.util.Try
+import scala.util.matching.Regex
 
 object Dashboard {
   private val DASHBOARD_PREFIX = "dashboard_static/"
@@ -13,6 +13,11 @@ object Dashboard {
   lazy val files : Seq[String] =
     Try(Source.fromResource("dashboard_static_index").getLines().map(_.replace(DASHBOARD_PREFIX, "")).toIndexedSeq)
       .getOrElse(throw new IllegalStateException("Expected list of dashboard files to be available under 'dashboard_static_index"))
+
+  /**
+    * Http paths that should serve the index page.
+    */
+  val indexPattern: Regex = "^(/)?|(/recipes)|(/interactions)|(/instances(/.+)?)$".r
 
   /**
     * Get URL to resource from filename. Do not specify the dashboard prefix, as it is automatically added.

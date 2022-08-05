@@ -40,5 +40,15 @@ class DashboardAndConfigurationSpec extends AnyFlatSpec with should.Matchers {
         |""".stripMargin.replace(" ", "")
   }
 
+  "The dashboard object" should "match correct urls" in {
+    Dashboard.indexPattern.matches("") shouldBe true
+    Dashboard.indexPattern.matches("/") shouldBe true
+    Dashboard.indexPattern.matches("/recipes") shouldBe true
+    Dashboard.indexPattern.matches("/interactions") shouldBe true
+    Dashboard.indexPattern.matches("/instances") shouldBe true
+    Dashboard.indexPattern.matches("/instances/instance-id") shouldBe true
+    Dashboard.indexPattern.matches("/instanceand") shouldBe false
+    Dashboard.indexPattern.matches("/instance/") shouldBe false
+  }
 
 }
