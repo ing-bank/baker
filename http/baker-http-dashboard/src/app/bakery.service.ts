@@ -40,7 +40,7 @@ export class BakeryService {
             pipe(map(recipes => Object.values(recipes.body)
                 .map(response => {
                     const row: Recipe = {
-                        "errors": response.compiledRecipe.errors,
+                        "errors": response.errors,
                         "name": response.compiledRecipe.name,
                         "recipeCreatedTime": response.recipeCreatedTime,
                         "recipeId": response.compiledRecipe.recipeId,

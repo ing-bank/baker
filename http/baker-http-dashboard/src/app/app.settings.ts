@@ -27,5 +27,11 @@ export class AppSettingsService {
                 }).
                 catch((response: any) => reject(Error(`Could not load file '${SETTINGS_LOCATION}': ${JSON.stringify(response)}`)));
         });
+        // For testing purposes:
+        // AppSettingsService.settings = {
+        //     "applicationName": "Test",
+        //     "apiPath": "/api/bakery",
+        //     "clusterInformation": {}
+        // };
     }
 }

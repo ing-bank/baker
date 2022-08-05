@@ -1,4 +1,6 @@
 {
+  // Will not work against https if self-signed. Use it to test against a non-https (e.g. localhost) baker-http-server.
+  // Sometimes failures will be cached. It can be helpful to test it in incognito mode in the browser.
   "/api/bakery": {
     "target": "http://localhost:8080",
     "secure": false,

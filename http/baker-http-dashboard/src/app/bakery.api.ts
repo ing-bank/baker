@@ -9,11 +9,17 @@ export interface Recipe {
   errors:            string[];
 }
 
+export interface RecipeBodyCompiledRecipe {
+  name:             string;
+  recipeId:         string;
+  validationErrors: string[];
+}
+
 export interface RecipeBody {
-  compiledRecipe:    Recipe;
+  compiledRecipe:    RecipeBodyCompiledRecipe;
   recipeCreatedTime: number;
-  validate:          boolean;
   errors:            string[];
+  validate:          boolean;
 }
 
 export interface Recipes {
