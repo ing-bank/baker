@@ -728,6 +728,7 @@ lazy val `baker-test`: Project = project.in(file("core/baker-test"))
   .settings(scalaPBSettings)
   .settings(
     moduleName := "baker-test",
+    test / parallelExecution := false,
     libraryDependencies ++= compileDeps(
       slf4jApi
     ) ++ testDeps(scalaTest, logback,
