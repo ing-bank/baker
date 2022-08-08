@@ -84,7 +84,6 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
 
 lazy val noPublishSettings: Seq[Setting[_]] = Seq(
   publish := {},
-  publishLocal := {},
   publishArtifact := false
 )
 
