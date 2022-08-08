@@ -617,6 +617,7 @@ lazy val `bakery-client-example`: Project = project
 lazy val `bakery-kafka-listener-example`: Project = project
   .in(file("examples/bakery-kafka-listener-example"))
   .enablePlugins(JavaAppPackaging)
+  .settings(noPublishSettings)
   .settings(defaultModuleSettings)
   .settings(yPartialUnificationSetting)
   .settings(
@@ -643,6 +644,7 @@ lazy val `bakery-kafka-listener-example`: Project = project
 lazy val `interaction-example-reserve-items`: Project = project.in(file("examples/bakery-interaction-examples/reserve-items"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
+  .settings(noPublishSettings)
   .settings(defaultModuleSettings)
   .settings(yPartialUnificationSetting)
   .settings(
@@ -663,6 +665,7 @@ lazy val `interaction-example-reserve-items`: Project = project.in(file("example
 lazy val `interaction-example-make-payment-and-ship-items`: Project = project.in(file("examples/bakery-interaction-examples/make-payment-and-ship-items"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
+  .settings(noPublishSettings)
   .settings(defaultModuleSettings)
   .settings(yPartialUnificationSetting)
   .settings(
