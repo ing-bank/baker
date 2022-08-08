@@ -3,7 +3,7 @@ package com.ing.bakery
 import cats.effect.{ExitCode, IO, IOApp}
 import com.ing.baker.http.DashboardConfiguration
 import com.ing.baker.http.server.common.RecipeLoader
-import com.ing.baker.http.server.scaladsl.Http4sBakerServer
+import com.ing.baker.http.server.scaladsl.{Http4sBakerServer, Http4sBakerServerConfiguration}
 import com.ing.bakery.components.BakerReadinessCheck
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.ConfigFactory
@@ -27,8 +27,9 @@ object Main extends IOApp with LazyLogging {
 
       bakerService <- Http4sBakerServer.resource(
         bakery.baker,
-        bakery.executionContext,
-        config)
+        Http4sBakerServerConfiguration.fromConfig(config),
+        DashboardConfiguration.fromConfig(config),
+        bakery.executionContext)
 
     } yield (bakery, bakerService))
       .use { case (bakery, bakerService) =>

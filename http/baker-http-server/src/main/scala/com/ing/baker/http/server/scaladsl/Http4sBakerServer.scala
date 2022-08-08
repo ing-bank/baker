@@ -68,29 +68,36 @@ object Http4sBakerServer {
     } yield server
   }
 
-  def resource(baker: Baker, ec: ExecutionContext = ExecutionContext.global, config : Config = ConfigFactory.load())
-              (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
-    val hConf = Http4sBakerServerConfiguration.fromConfig(config)
-    val dConf = DashboardConfiguration.fromConfig(config)
-
+  def resource(baker: Baker,
+               http4sBakerServerConfiguration: Http4sBakerServerConfiguration,
+               dashboardConfiguration: DashboardConfiguration,
+               ec: ExecutionContext = ExecutionContext.global)
+              (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] =
     resource(baker, ec,
-      hostname = InetSocketAddress.createUnresolved(hConf.apiHost, hConf.apiPort),
-      apiUrlPrefix = hConf.apiUrlPrefix,
-      dashboardConfiguration = dConf,
-      loggingEnabled = hConf.loggingEnabled
+      hostname = InetSocketAddress.createUnresolved(http4sBakerServerConfiguration.apiHost, http4sBakerServerConfiguration.apiPort),
+      apiUrlPrefix = http4sBakerServerConfiguration.apiUrlPrefix,
+      dashboardConfiguration = dashboardConfiguration,
+      loggingEnabled = http4sBakerServerConfiguration.loggingEnabled
     )
-  }
 
-  def java(baker: JBaker): CompletableFuture[ClosableBakerServer] = {
+  def java(baker: JBaker,
+           http4sBakerServerConfiguration: Http4sBakerServerConfiguration,
+           dashboardConfiguration: DashboardConfiguration,
+          ): CompletableFuture[ClosableBakerServer] = {
     implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
     implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-    val serverStarted = resource(baker.getScalaBaker)
+    val serverStarted = resource(baker.getScalaBaker, http4sBakerServerConfiguration, dashboardConfiguration)
       .allocated
       .unsafeToFuture()
       .map {
         case (server: Server[IO], closeEffect: IO[Unit]) => new ClosableBakerServer(server, closeEffect)
       }(ExecutionContext.global)
     FutureConverters.toJava(serverStarted).toCompletableFuture
+  }
+
+  def java(baker: JBaker): CompletableFuture[ClosableBakerServer] = {
+    val config : Config = ConfigFactory.load()
+    java(baker, Http4sBakerServerConfiguration.fromConfig(config), DashboardConfiguration.fromConfig(config))
   }
 
   class ClosableBakerServer(val server : Server[IO], closeEffect : IO[Unit]) extends Closeable {

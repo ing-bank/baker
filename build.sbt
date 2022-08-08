@@ -432,8 +432,6 @@ lazy val `bakery-interaction-k8s-interaction-manager`: Project = project.in(file
     `baker-recipe-compiler`,
     `baker-recipe-dsl`,
     `baker-intermediate-language`,
-    `baker-http-dashboard`,
-    `baker-http-server`,
     `bakery-state`,
     testScope(`bakery-state`),
     testScope(`baker-http-client`),
@@ -536,9 +534,19 @@ lazy val baker: Project = project.in(file("."))
   .settings(
     crossScalaVersions := Nil
   )
-  .aggregate(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
-    `baker-http-client`, `baker-http-server`, `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
-    `bakery-interaction-k8s-interaction-manager`, `baker-interface`, `baker-http-dashboard`, `baker-annotations`, `baker-test`)
+  .aggregate(
+    // Core
+    `baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
+    `baker-interface`, `baker-annotations`, `baker-test`,
+    // Http
+    `baker-http-client`, `baker-http-server`, `baker-http-dashboard`,
+    // Bakery
+    `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
+    `bakery-interaction-k8s-interaction-manager`,
+    // Examples
+    `baker-example`, `bakery-client-example`, `interaction-example-make-payment-and-ship-items`,
+    `interaction-example-reserve-items`, `bakery-kafka-listener-example`
+  )
 
 lazy val `baker-example`: Project = project
   .in(file("examples/baker-example"))
@@ -546,6 +554,7 @@ lazy val `baker-example`: Project = project
   .settings(commonSettings)
   .settings(noPublishSettings)
   .settings(yPartialUnificationSetting)
+  .settings(crossBuildSettings)
   .settings(
     moduleName := "baker-example",
     libraryDependencies ++=
@@ -564,7 +573,8 @@ lazy val `baker-example`: Project = project
         scalaCheck,
         mockitoScala,
         junitInterface,
-        slf4jApi
+        slf4jApi,
+        akkaTestKit
       )
   )
   .settings(dockerSettings)
@@ -577,8 +587,10 @@ lazy val `baker-example`: Project = project
 lazy val `bakery-client-example`: Project = project
   .in(file("examples/bakery-client-example"))
   .enablePlugins(JavaAppPackaging)
-  .settings(defaultModuleSettings)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
   .settings(yPartialUnificationSetting)
+  .settings(crossBuildSettings)
   .settings(
     moduleName := "bakery-client-example",
     libraryDependencies ++=

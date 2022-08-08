@@ -1,6 +1,7 @@
 package webshop;
 
 import akka.actor.ActorSystem;
+import akka.testkit.javadsl.TestKit;
 import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
@@ -10,6 +11,8 @@ import com.ing.baker.runtime.javadsl.Baker;
 import com.ing.baker.runtime.javadsl.EventInstance;
 import com.ing.baker.runtime.javadsl.EventMoment;
 import com.typesafe.config.ConfigFactory;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import scala.Console;
 import webshop.simple.*;
@@ -29,6 +32,18 @@ import java.util.stream.Collectors;
 import static org.mockito.Mockito.*;
 
 public class JWebshopRecipeTests {
+
+    static ActorSystem system;
+    @BeforeClass
+    public static void beforeAll() {
+        system = ActorSystem.apply("BakerActorSystem");
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        TestKit.shutdownActorSystem(system);
+    }
+
 
     @Test
     public void shouldCompileTheRecipeWithoutIssues() {
@@ -56,7 +71,7 @@ public class JWebshopRecipeTests {
         // Setup the Baker
         Baker baker = AkkaBaker.java(
                 ConfigFactory.load(),
-                ActorSystem.apply("BakerActorSystem"),
+                system,
                 implementations);
 
         // Create the sensory events
@@ -136,4 +151,6 @@ public class JWebshopRecipeTests {
                 blockedResult.contains("ShippingAddressReceived") &&
                 blockedResult.contains("ShippingConfirmed"));
     }
+
+
 }

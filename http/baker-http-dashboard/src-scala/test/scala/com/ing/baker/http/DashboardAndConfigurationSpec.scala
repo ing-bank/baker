@@ -41,14 +41,15 @@ class DashboardAndConfigurationSpec extends AnyFlatSpec with should.Matchers {
   }
 
   "The dashboard object" should "match correct urls" in {
-    Dashboard.indexPattern.matches("") shouldBe true
-    Dashboard.indexPattern.matches("/") shouldBe true
-    Dashboard.indexPattern.matches("/recipes") shouldBe true
-    Dashboard.indexPattern.matches("/interactions") shouldBe true
-    Dashboard.indexPattern.matches("/instances") shouldBe true
-    Dashboard.indexPattern.matches("/instances/instance-id") shouldBe true
-    Dashboard.indexPattern.matches("/instanceand") shouldBe false
-    Dashboard.indexPattern.matches("/instance/") shouldBe false
+    //TODO Revert this commit once scala-212 is no longer supported.
+    "".matches(Dashboard.indexPattern.regex) shouldBe true
+    "/".matches(Dashboard.indexPattern.regex) shouldBe true
+    "/recipes".matches(Dashboard.indexPattern.regex) shouldBe true
+    "/interactions".matches(Dashboard.indexPattern.regex) shouldBe true
+    "/instances".matches(Dashboard.indexPattern.regex) shouldBe true
+    "/instances/instance-id".matches(Dashboard.indexPattern.regex) shouldBe true
+    "/instanceand".matches(Dashboard.indexPattern.regex) shouldBe false
+    "/instance/".matches(Dashboard.indexPattern.regex) shouldBe false
   }
 
 }

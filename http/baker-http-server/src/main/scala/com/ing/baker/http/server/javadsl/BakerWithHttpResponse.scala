@@ -23,7 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * @param baker baker methods to wrap
   * @param ec execution context to use
   */
-class BakerResultToHttpResponseMapper(val baker: Baker, ec: ExecutionContext) extends LazyLogging {
+class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends LazyLogging {
   implicit val executionContext: ExecutionContext = ec
 
   def appGetAllInteractions: JFuture[String] = baker.getAllInteractions.toBakerResult
