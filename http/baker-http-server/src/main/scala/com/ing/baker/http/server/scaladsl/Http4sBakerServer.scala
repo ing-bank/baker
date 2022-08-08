@@ -120,7 +120,8 @@ object Http4sBakerServer {
             `Content-Length`.unsafeFromLong(bodyText.length)
           )
         ))
-      case req if req.method == GET && Dashboard.indexPattern.matches(req.pathInfo) => dashboardFile(req, blocker, "index.html").getOrElseF(NotFound())
+        //TODO: Change to Dashboard.indexPattern.matches(req.pathInfo) once support for scala_2.12 is removed.
+      case req if req.method == GET && req.pathInfo.matches(Dashboard.indexPattern.regex) => dashboardFile(req, blocker, "index.html").getOrElseF(NotFound())
       case req if req.method == GET && Dashboard.files.contains(req.pathInfo.substring(1)) =>
         dashboardFile(req, blocker, req.pathInfo.substring(1)).getOrElseF(NotFound())
     }
