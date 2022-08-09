@@ -161,6 +161,7 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
       |import org.springframework.context.annotation.AnnotationConfigApplicationContext
       |
       |import scala.collection.JavaConverters._
+      |import scala.annotation.nowarn
       |import scala.concurrent.ExecutionContext.Implicits.global
       |
       |/**
@@ -168,7 +169,7 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
       | */
       |object Main extends App with LazyLogging{
       |
-      |
+      |  @nowarn
       |  def getImplementations(configurationClassString: String) : List[InteractionInstance] = {
       |    val configClass = Class.forName(configurationClassString)
       |    logger.info("Class found: " + configClass)

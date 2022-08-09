@@ -53,7 +53,7 @@ val dockerSettings: Seq[Setting[_]] = Seq(
   Docker / maintainer := "The Bakery Team",
   dockerBaseImage := "adoptopenjdk/openjdk11",
   dockerUpdateLatest := true, // todo only for master branch
-  Docker / version := "local", // used by smoke tests for locally built images
+  Docker / version := "local" // used by smoke tests for locally built images
 )
 
 val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
@@ -78,13 +78,12 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
     jawnParser,
     nettyHandler,
     bouncyCastleBcprov,
-    bouncyCastleBcpkix,
+    bouncyCastleBcpkix
   )
 )
 
 lazy val noPublishSettings: Seq[Setting[_]] = Seq(
   publish := {},
-  publishLocal := {},
   publishArtifact := false
 )
 
@@ -242,7 +241,7 @@ lazy val `baker-recipe-dsl`: Project = project.in(file("core/recipe-dsl"))
       compileDeps(
         javaxInject,
         paranamer,
-        scalaReflect(scalaVersion.value),
+        scalaReflect(scalaVersion.value)
       ) ++
         testDeps(
           scalaTest,
@@ -263,6 +262,129 @@ lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compile
   .dependsOn(`baker-recipe-dsl`, `baker-intermediate-language`, testScope(`baker-recipe-dsl`))
 
 
+lazy val `baker-http-client`: Project = project.in(file("http/baker-http-client"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "baker-http-client",
+    libraryDependencies ++= Seq(
+      http4s,
+      http4sDsl,
+      http4sClient,
+      http4sCirce,
+      scalaLogging,
+      catsRetry,
+      http4sServer % "test",
+      slf4jApi % "test",
+      logback % "test",
+      scalaTest % "test",
+      mockitoScala % "test",
+      mockitoScalaTest % "test"
+    )
+  )
+  .dependsOn(`baker-interface`)
+
+
+lazy val `baker-http-server`: Project = project.in(file("http/baker-http-server"))
+  .settings(defaultModuleSettings)
+  .settings(yPartialUnificationSetting)
+  .settings(
+    moduleName := "baker-http-server",
+    libraryDependencies ++= Seq(
+      slf4jApi,
+      logback,
+      http4s,
+      http4sDsl,
+      http4sCirce,
+      http4sServer,
+      http4sPrometheus,
+      prometheus,
+      prometheusJmx
+    ) ++ testDeps(mockitoScala, mockitoScalaTest, catsEffectTesting)
+  )
+  .dependsOn(
+    `baker-interface`,
+    `baker-http-dashboard`,
+     testScope(`baker-recipe-compiler`)
+  )
+
+val npmInputFiles = taskKey[Set[File]]("List of files which are used by the npmBuildTask. Used to determine if something has changed and an npm build needs to be redone.")
+val npmBuildTask = taskKey[File]("Uses NPM to build the dashboard into the dist directory")
+val zipDistDirectory = taskKey[File]("Creates a zip file of the dashboard files")
+val staticDashboardFilePrefix = settingKey[String]("Prefix for static files of dashboard in jar.")
+val distDirectory = settingKey[File]("dist directory. This is like /target but for npm builds.")
+val dashboardZipArtifact = settingKey[Artifact]("Creates the artifact object")
+val dashboardFilesList = taskKey[Seq[File]]("List of static dashboard files")
+val dashboardFilesIndex = taskKey[File]("Creates an index of dashboard resources.")
+val prefixedDashboardResources = taskKey[Seq[File]]("Create resources containing dashboard files, prefixed.")
+
+lazy val `baker-http-dashboard`: Project = project.in(file("http/baker-http-dashboard"))
+  .enablePlugins(UniversalPlugin)
+  .settings(defaultModuleSettings)
+  .settings(
+    name := "baker-http-dashboard",
+    maintainer := "The Bakery Team",
+    libraryDependencies ++= Seq(typeSafeConfig) ++ testDeps(
+      scalaTest,
+      logback
+    ),
+    Universal / packageName  := name.value,
+    Universal / mappings += file("dashboard.zip") -> "dashboard.zip",
+    staticDashboardFilePrefix := "dashboard_static",
+    distDirectory := baseDirectory.value / "dist",
+    npmInputFiles := {
+      val sources = baseDirectory.value / "src" ** "*"
+      val projectConfiguration = baseDirectory.value * "*.json"
+      (sources.get() ++ projectConfiguration.get()).toSet
+    },
+    npmBuildTask := {
+      // Caches the npm ./npm-build.sh execution. Invalidation is done if either
+      // - anything is different in the baseDirectory / src, or files in the baseDirectory / *.json (compared using hash of file contents)
+      // - dist directory doesn't contain the same files as previously.
+      val cachedFunction = FileFunction.cached(streams.value.cacheDirectory / "npmBuild", inStyle = FileInfo.hash) { (in: Set[File]) =>
+        val processBuilder = Process("./npm-build.sh", baseDirectory.value)
+        val process = processBuilder.run()
+        if (process.exitValue() != 0) throw new Error(s"NPM failed with exit value ${process.exitValue()}")
+        val outputFiles = (distDirectory.value ** "*").get().toSet
+        outputFiles
+      }
+      cachedFunction(npmInputFiles.value)
+      distDirectory.value
+    },
+    zipDistDirectory := {
+      val inputDirectory = npmBuildTask.value
+      val targetZipFile = target.value / "dashboard.zip"
+      IO.zip(
+        sources = (inputDirectory ** "*").get().map(f => (f, inputDirectory.relativize(f).get.toString)),
+        outputZip = targetZipFile,
+        time = None)
+      targetZipFile
+    },
+    prefixedDashboardResources := {
+      val outputFolder = (Compile / resourceManaged).value / staticDashboardFilePrefix.value
+      IO.copyDirectory(npmBuildTask.value, outputFolder)
+      (outputFolder ** "*").get()
+    },
+    dashboardFilesList := {
+      val distDir = npmBuildTask.value
+      (distDir ** "*")
+        .filter(_.isFile).get()
+    },
+    dashboardFilesIndex := {
+      val distDir = npmBuildTask.value
+      val resultFile = (Compile / resourceManaged).value / "dashboard_static_index"
+      IO.write(resultFile, dashboardFilesList.value
+        .map(file => s"${staticDashboardFilePrefix.value}/${distDir.relativize(file).get.toString}").mkString("\n"))
+      resultFile
+    },
+    dashboardZipArtifact := Artifact(name.value, "zip", "zip"),
+    sourceDirectory := baseDirectory.value / "src-scala",
+    // Note: resourceGenerators is not run by task compile. It is run by task package or run.
+    Compile / resourceGenerators += prefixedDashboardResources.taskValue,
+    Compile / resourceGenerators += Def.task { Seq(dashboardFilesIndex.value) }.taskValue,
+    cleanFiles += distDirectory.value,
+    addArtifact(dashboardZipArtifact, zipDistDirectory)
+  )
+
 lazy val `bakery-interaction-protocol`: Project = project.in(file("bakery/interaction-protocol"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
@@ -281,59 +403,11 @@ lazy val `bakery-interaction-protocol`: Project = project.in(file("bakery/intera
   )
   .dependsOn(`baker-interface`)
 
-lazy val `bakery-client`: Project = project.in(file("bakery/client"))
-  .settings(defaultModuleSettings)
-  .settings(
-    moduleName := "bakery-client",
-    libraryDependencies ++= Seq(
-      http4s,
-      http4sDsl,
-      http4sClient,
-      http4sCirce,
-      scalaLogging,
-      catsRetry,
-      http4sServer % "test",
-      slf4jApi % "test",
-      logback % "test",
-      scalaTest % "test",
-      mockitoScala % "test",
-      mockitoScalaTest % "test"
-    )
-  )
-  .dependsOn(`baker-interface`)
-
-val npmBuildTask = taskKey[File]("Dashboard build")
-
-lazy val `bakery-dashboard`: Project = project.in(file("bakery/dashboard"))
-  .enablePlugins(UniversalPlugin)
-  .settings(defaultModuleSettings)
-  .settings(
-    name := "bakery-dashboard",
-    maintainer := "The Bakery Team",
-    Universal / packageName  := s"bakery-dashboard",
-    Universal / mappings ++= Seq(file("dashboard.zip") -> "dashboard.zip"),
-    npmBuildTask := {
-      val processBuilder = Process("./npm-build.sh", file("bakery/dashboard"))
-      val process = processBuilder.run()
-      if(process.exitValue() != 0) throw new Error(s"NPM failed with exit value ${process.exitValue()}")
-      file("bakery/dashboard/dashboard.zip")
-    },
-    Compile / doc / sources  := Seq.empty,
-    Compile / packageDoc / mappings := Seq(),
-    Compile / packageDoc / publishArtifact := false,
-    Compile / packageSrc / publishArtifact := false,
-    Compile / packageBin / publishArtifact := false,
-    Universal / packageBin := npmBuildTask.value,
-    addArtifact(Artifact("dashboard", "zip", "zip"), npmBuildTask),
-    publish := (publish dependsOn (Universal / packageBin)).value,
-    publishLocal := (publishLocal dependsOn (Universal / packageBin)).value
-  )
-
-lazy val `bakery-state-k8s`: Project = project.in(file("bakery/baker-state-k8s"))
+lazy val `bakery-interaction-k8s-interaction-manager`: Project = project.in(file("bakery/interaction-k8s-interaction-manager"))
   .settings(defaultModuleSettings)
   .settings(yPartialUnificationSetting)
   .settings(
-    moduleName := "bakery-state-k8s",
+    moduleName := "bakery-interaction-k8s-interaction-manager",
     libraryDependencies ++= Seq(
       skuber
     ) ++ testDeps(
@@ -352,14 +426,15 @@ lazy val `bakery-state-k8s`: Project = project.in(file("bakery/baker-state-k8s")
   )
   .dependsOn(
     `baker-akka-runtime`,
-    `bakery-client`,
     `baker-interface`,
     `bakery-interaction-protocol`,
     `baker-recipe-compiler`,
     `baker-recipe-dsl`,
     `baker-intermediate-language`,
-    `bakery-dashboard`,
-    `bakery-state` % "compile->compile;test->test"
+    `bakery-state`,
+    testScope(`bakery-state`),
+    testScope(`baker-http-client`),
+    testScope(`baker-http-server`)
   )
 
 
@@ -372,9 +447,6 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
     dockerExposedPorts ++= Seq(8080),
     Docker / packageName := "bakery-state",
     dockerBaseImage := "adoptopenjdk/openjdk11",
-    Universal / mappings ++=
-      directory(s"${(`bakery-dashboard` / baseDirectory).value.getAbsolutePath}/dist")
-        .map(t => (t._1, t._2.replace("dist", "dashboard"))),
     moduleName := "bakery-state",
     libraryDependencies ++= Seq(
       slf4jApi,
@@ -387,10 +459,6 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
       akkaDiscovery,
       akkaDiscoveryKube,
       akkaPki,
-      http4s,
-      http4sDsl,
-      http4sCirce,
-      http4sServer,
       kafkaClient
     ) ++ testDeps(
       slf4jApi,
@@ -408,13 +476,13 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
   )
   .dependsOn(
     `baker-akka-runtime`,
-    `bakery-client`,
     `baker-interface`,
     `bakery-interaction-protocol`,
     `baker-recipe-compiler`,
     `baker-recipe-dsl`,
     `baker-intermediate-language`,
-    `bakery-dashboard`
+    `baker-http-server`,
+    `baker-http-dashboard`
   )
 
 lazy val `bakery-interaction`: Project = project.in(file("bakery/interaction"))
@@ -429,7 +497,7 @@ lazy val `bakery-interaction`: Project = project.in(file("bakery/interaction"))
       http4sCirce,
       circe,
       catsEffect,
-      catsCore,
+      catsCore
     ) ++ testDeps(
       scalaTest,
       logback
@@ -463,11 +531,21 @@ lazy val `bakery-interaction-spring`: Project = project.in(file("bakery/interact
 lazy val baker: Project = project.in(file("."))
   .settings(defaultModuleSettings)
   .settings(
-    crossScalaVersions := Nil,
+    crossScalaVersions := Nil
   )
-  .aggregate(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
-    `bakery-client`, `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
-    `bakery-state-k8s`, `baker-interface`, `bakery-dashboard`, `baker-annotations`, `baker-test`)
+  .aggregate(
+    // Core
+    `baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
+    `baker-interface`, `baker-annotations`, `baker-test`,
+    // Http
+    `baker-http-client`, `baker-http-server`, `baker-http-dashboard`,
+    // Bakery
+    `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
+    `bakery-interaction-k8s-interaction-manager`,
+    // Examples
+    `baker-example`, `bakery-client-example`, `interaction-example-make-payment-and-ship-items`,
+    `interaction-example-reserve-items`, `bakery-kafka-listener-example`
+  )
 
 lazy val `baker-example`: Project = project
   .in(file("examples/baker-example"))
@@ -475,6 +553,7 @@ lazy val `baker-example`: Project = project
   .settings(commonSettings)
   .settings(noPublishSettings)
   .settings(yPartialUnificationSetting)
+  .settings(crossBuildSettings)
   .settings(
     moduleName := "baker-example",
     libraryDependencies ++=
@@ -493,7 +572,8 @@ lazy val `baker-example`: Project = project
         scalaCheck,
         mockitoScala,
         junitInterface,
-        slf4jApi
+        slf4jApi,
+        akkaTestKit
       )
   )
   .settings(dockerSettings)
@@ -506,8 +586,10 @@ lazy val `baker-example`: Project = project
 lazy val `bakery-client-example`: Project = project
   .in(file("examples/bakery-client-example"))
   .enablePlugins(JavaAppPackaging)
-  .settings(defaultModuleSettings)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
   .settings(yPartialUnificationSetting)
+  .settings(crossBuildSettings)
   .settings(
     moduleName := "bakery-client-example",
     libraryDependencies ++=
@@ -529,11 +611,12 @@ lazy val `bakery-client-example`: Project = project
   .settings(
     Docker / packageName := "bakery-client-example"
   )
-  .dependsOn(`baker-types`, `bakery-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
+  .dependsOn(`baker-types`, `baker-http-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
 
 lazy val `bakery-kafka-listener-example`: Project = project
   .in(file("examples/bakery-kafka-listener-example"))
   .enablePlugins(JavaAppPackaging)
+  .settings(noPublishSettings)
   .settings(defaultModuleSettings)
   .settings(yPartialUnificationSetting)
   .settings(
@@ -555,11 +638,12 @@ lazy val `bakery-kafka-listener-example`: Project = project
   .settings(
     Docker / packageName := "bakery-kafka-listener-example"
   )
-  .dependsOn(`baker-types`, `bakery-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
+  .dependsOn(`baker-types`, `baker-http-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
 
 lazy val `interaction-example-reserve-items`: Project = project.in(file("examples/bakery-interaction-examples/reserve-items"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
+  .settings(noPublishSettings)
   .settings(defaultModuleSettings)
   .settings(yPartialUnificationSetting)
   .settings(
@@ -580,6 +664,7 @@ lazy val `interaction-example-reserve-items`: Project = project.in(file("example
 lazy val `interaction-example-make-payment-and-ship-items`: Project = project.in(file("examples/bakery-interaction-examples/make-payment-and-ship-items"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
+  .settings(noPublishSettings)
   .settings(defaultModuleSettings)
   .settings(yPartialUnificationSetting)
   .settings(
@@ -613,7 +698,7 @@ lazy val `bakery-integration-tests`: Project = project.in(file("bakery/integrati
       )
   )
   .dependsOn(
-    `bakery-client`,
+    `baker-http-client`,
     `bakery-client-example`,
     `interaction-example-make-payment-and-ship-items`,
     `interaction-example-reserve-items`)
