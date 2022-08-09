@@ -682,12 +682,12 @@
 <h2 id="adding-your-compiled-recipe">Adding your Compiled Recipe</h2>
 <p>Once you have compiled your recipe you can add it to Baker.</p>
 <div class="tabbed-set" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><label for="__tabbed_5_1">Scala</label><div class="tabbed-content">
-<div class="highlight"><pre><span></span><code><span class="n">baker</span><span class="o">.</span><span class="n">addRecipe</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">baker</span><span class="o">.</span><span class="n">addRecipe</span><span class="o">(</span><span class="nc">RecipeRecord</span><span class="o">.</span><span class="n">of</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">))</span>
 </code></pre></div>
 
 </div>
 <input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><label for="__tabbed_5_2">Java</label><div class="tabbed-content">
-<div class="highlight"><pre><span></span><code><span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span><span class="n">RecipeRecord</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">));</span>
 </code></pre></div>
 
 </div>
@@ -708,7 +708,7 @@
 <span class="n">baker</span><span class="p">.</span><span class="na">addInteractionInstances</span><span class="p">(</span><span class="n">validateOrderImpl</span><span class="p">,</span> <span class="n">manufactureGoodsImpl</span><span class="p">);</span>
 
 <span class="c1">// Add the Compiled Recipe</span>
-<span class="n">String</span> <span class="n">recipeId</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">);</span>
+<span class="n">String</span> <span class="n">recipeId</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span><span class="n">RecipeRecord</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">));</span>
 </code></pre></div>
 
 <p>Baker is now ready to create an instance for the recipe and execute it.</p>

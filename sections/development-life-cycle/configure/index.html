@@ -684,8 +684,11 @@ akka.actor.allow-java-serialization = off
   # the default timeout for adding a recipe to Baker
   add-recipe-timeout = 10 seconds
 
-  # the time to wait for a gracefull shutdown
+  # the time to wait for a graceful shutdown
   shutdown-timeout = 30 seconds
+
+  # the timeout when calling executeSingleInteraction
+  execute-single-interaction-timeout = 60 seconds
 
   # The ingredients that are filtered out when getting the process instance.
   # This should be used if there are big ingredients to improve performance and memory usage.

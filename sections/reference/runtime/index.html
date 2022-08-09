@@ -480,8 +480,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakeraddrecipecompiledrecipe" class="md-nav__link">
-    baker.addRecipe(compiledRecipe)
+  <a href="#bakeraddrecipereciperecordofcompiledrecipe" class="md-nav__link">
+    baker.addRecipe(RecipeRecord.of(compiledRecipe))
   </a>
   
 </li>
@@ -777,8 +777,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bakeraddrecipecompiledrecipe" class="md-nav__link">
-    baker.addRecipe(compiledRecipe)
+  <a href="#bakeraddrecipereciperecordofcompiledrecipe" class="md-nav__link">
+    baker.addRecipe(RecipeRecord.of(compiledRecipe))
   </a>
   
 </li>
@@ -1107,18 +1107,18 @@ into a <a href="../visualization/">visualziation</a>.</p>
 
 </div>
 </div>
-<h2 id="bakeraddrecipecompiledrecipe">baker.addRecipe(compiledRecipe)</h2>
-<p>Once <code>Recipes</code> have been transformed into <code>CompiledRecipes</code> they must be added to a baker runtime. The <code>baker.addRecipe(compiledRecipe)</code>
+<h2 id="bakeraddrecipereciperecordofcompiledrecipe">baker.addRecipe(RecipeRecord.of(compiledRecipe))</h2>
+<p>Once <code>Recipes</code> have been transformed into <code>CompiledRecipes</code> they must be added to a baker runtime. The <code>baker.addRecipe(RecipeRecord.of(compiledRecipe))</code>
 API will do so and return an id that you can use to reference the added recipe later on.</p>
 <p><em>Note: Before doing this, baker requires you to add all related <code>InteractionInstances</code> to the runtime, this is because baker 
 does validation to ensure that every recipe is runnable from the previously added <code>InteractionInstances</code>.</em></p>
 <div class="tabbed-set" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><label for="__tabbed_6_1">Java</label><div class="tabbed-content">
-<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">recipeId</span> <span class="nc">Future</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">addRecipe</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">)</span>
+<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">recipeId</span> <span class="nc">Future</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">addRecipe</span><span class="o">(</span><span class="nc">RecipeRecord</span><span class="o">.</span><span class="n">of</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">))</span>
 </code></pre></div>
 
 </div>
 <input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><label for="__tabbed_6_2">Java</label><div class="tabbed-content">
-<div class="highlight"><pre><span></span><code><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">recipeId</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">recipeId</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span><span class="n">RecipeRecord</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">));</span>
 </code></pre></div>
 
 </div>
@@ -1155,7 +1155,7 @@ except it comes in a <code>CompletableFuture</code> that will help you handle as
 <div class="tabbed-set" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><label for="__tabbed_8_1">Scala</label><div class="tabbed-content">
 <div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">program</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> <span class="k">for</span> <span class="o">{</span>
   <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">addInteractionInstance</span><span class="o">(</span><span class="n">interactionInstances</span><span class="o">)</span>
-  <span class="n">recipeId</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">addRecipe</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">)</span>
+  <span class="n">recipeId</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">addRecipe</span><span class="o">(</span><span class="nc">RecipeRecord</span><span class="o">.</span><span class="n">of</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">))</span>
   <span class="n">recipeInstanceId</span> <span class="k">=</span> <span class="s">&quot;my-id&quot;</span>
   <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">baker</span><span class="o">.</span><span class="n">bake</span><span class="o">(</span><span class="n">recipeId</span><span class="o">,</span> <span class="n">recipeInstanceId</span><span class="o">)</span>
 <span class="o">}</span> <span class="k">yield</span> <span class="o">()</span>
@@ -1165,7 +1165,7 @@ except it comes in a <code>CompletableFuture</code> that will help you handle as
 <input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><label for="__tabbed_8_2">Java</label><div class="tabbed-content">
 <div class="highlight"><pre><span></span><code><span class="n">String</span> <span class="n">recipeInstanceId</span> <span class="o">=</span> <span class="s">&quot;my-id&quot;</span><span class="p">;</span>
 <span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">BoxedUnit</span><span class="o">&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">addInteractionInstace</span><span class="p">(</span><span class="n">reserveItemsInstance</span><span class="p">)</span>
-    <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">ignore</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">))</span>
+    <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">ignore</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span><span class="n">RecipeRecord</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">)))</span>
     <span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">recipeId</span> <span class="o">-&gt;</span> <span class="n">baker</span><span class="p">.</span><span class="na">bake</span><span class="p">(</span><span class="n">recipeId</span><span class="p">,</span> <span class="n">recipeInstanceId</span><span class="p">));</span>
 </code></pre></div>
 
