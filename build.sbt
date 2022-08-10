@@ -84,8 +84,7 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
 
 lazy val noPublishSettings: Seq[Setting[_]] = Seq(
   publish := {},
-  publishArtifact := false,
-  releaseProcess := Seq()
+  publishArtifact := false
 )
 
 lazy val crossBuildSettings: Seq[Setting[_]] = Seq(
@@ -314,7 +313,7 @@ lazy val `baker-http-server`: Project = project.in(file("http/baker-http-server"
   .dependsOn(
     `baker-interface`,
     `baker-http-dashboard`,
-     testScope(`baker-recipe-compiler`)
+    testScope(`baker-recipe-compiler`)
   )
 
 val npmInputFiles = taskKey[Set[File]]("List of files which are used by the npmBuildTask. Used to determine if something has changed and an npm build needs to be redone.")
@@ -546,7 +545,6 @@ lazy val `bakery-interaction-spring`: Project = project.in(file("bakery/interact
 
 lazy val baker: Project = project.in(file("."))
   .settings(defaultModuleSettings)
-  .settings(Publish.settings)
   .settings(
     crossScalaVersions := Nil
   )
