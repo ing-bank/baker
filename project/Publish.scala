@@ -16,7 +16,7 @@ object Publish {
   val SuppressJavaDocsAndSources = Seq(
     doc / sources  := Seq(),
     packageDoc / publishArtifact  := false,
-    packageSrc / publishArtifact  := false
+    packageSrc / publishArtifact  := true
   )
 
   val StableToAzureFeed = Seq(

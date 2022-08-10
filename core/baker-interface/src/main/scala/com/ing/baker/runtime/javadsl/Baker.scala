@@ -19,6 +19,11 @@ import scala.concurrent.{Await, Future}
 
 class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableFuture] with JavaApi with AutoCloseable {
 
+  /**
+    * Get underlying baker instance, which provides the scala api.
+    */
+  def getScalaBaker: scaladsl.Baker = baker
+
   override type SensoryEventResultType = SensoryEventResult
 
   override type EventResolutionsType = EventResolutions
