@@ -12,6 +12,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import io.circe.parser._
 
 import scala.concurrent.duration._
+import fs2.kafka.KafkaConsumer
 
 object Main extends IOApp with LazyLogging {
 
@@ -52,7 +53,7 @@ object Main extends IOApp with LazyLogging {
 
     logger.info(s"Started listening $clientConfig")
 
-    consumerStream(consumerSettings)
+    KafkaConsumer.stream(consumerSettings)
       .evalTap(_.subscribeTo(clientConfig.topic))
       .flatMap(_.stream)
       .map(committable => {
