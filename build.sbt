@@ -695,28 +695,28 @@ lazy val baker: Project = project.in(file("."))
 //      )
 //  )
 //  .dependsOn(`bakery-interaction`)
-
-lazy val `bakery-integration-tests`: Project = project.in(file("bakery/integration-tests"))
-  .settings(defaultModuleSettings)
-  .settings(noPublishSettings)
-  .settings(
-    moduleName := "bakery-integration-tests",
-    commands += buildExampleDockerCommand,
-    libraryDependencies ++= Seq() ++
-      testDeps(
-        http4sDsl,
-        http4sClient,
-        circe,
-        slf4jApi,
-        scalaTest,
-        scalaCheck
-      )
-  )
-  .dependsOn(
-    `baker-http-client`,
-    `bakery-client-example`,
-    `interaction-example-make-payment-and-ship-items`,
-    `interaction-example-reserve-items`)
+//
+//lazy val `bakery-integration-tests`: Project = project.in(file("bakery/integration-tests"))
+//  .settings(defaultModuleSettings)
+//  .settings(noPublishSettings)
+//  .settings(
+//    moduleName := "bakery-integration-tests",
+//    commands += buildExampleDockerCommand,
+//    libraryDependencies ++= Seq() ++
+//      testDeps(
+//        http4sDsl,
+//        http4sClient,
+//        circe,
+//        slf4jApi,
+//        scalaTest,
+//        scalaCheck
+//      )
+//  )
+//  .dependsOn(
+//    `baker-http-client`,
+//    `bakery-client-example`,
+//    `interaction-example-make-payment-and-ship-items`,
+//    `interaction-example-reserve-items`)
 
 lazy val `sbt-bakery-docker-generate`: Project = project.in(file("docker/sbt-bakery-docker-generate"))
   .settings(scalaVersion := scala212, crossScalaVersions := Nil)
