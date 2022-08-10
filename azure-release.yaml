@@ -41,7 +41,6 @@ steps:
         gpg --list-keys
         gpg --list-secret-keys
 
-        git checkout master
         git config --global user.email "bakery-release@github.com"
         git config --global user.name "baker release pipeline"
         git remote set-url origin "https://${GIT_AUTH_USER}:${GIT_AUTH_TOKEN}@github.com/ing-bank/baker"
