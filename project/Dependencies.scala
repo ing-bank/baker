@@ -27,7 +27,7 @@ object Dependencies {
   val scalaJava8Compat100 = "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.0"
   val scalaJava8Compat091 = "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
 
-  val scalaTest = "org.scalatest" %% "scalatest" % "3.2.11"
+  val scalaTest = "org.scalatest" %% "scalatest" % "3.2.12"
   val mockitoScala = "org.mockito" %% "mockito-scala" % mockitoScalaVersion
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
   val mockServer = "org.mock-server" % "mockserver-netty" % "5.13.2"
@@ -98,6 +98,7 @@ object Dependencies {
   val circeGenericExtras = "io.circe" %% "circe-generic-extras" % circeVersion
 
   val catsEffect = "org.typelevel" %% "cats-effect" % catsEffectVersion
+  val catsEffectTesting = "com.codecommit" %% "cats-effect-testing-scalatest" % "0.5.4"
   val catsCore = "org.typelevel" %% "cats-core" % catsCoreVersion
   val console4Cats = "dev.profunktor" %% "console4cats" % "0.8.0"
   val catsRetry = "com.github.cb372" %% "cats-retry" % "2.1.1"

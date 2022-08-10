@@ -116,14 +116,7 @@ object RecipeAssert {
   private implicit def toScala(duration: java.time.Duration): Duration =
     Duration.fromNanos(duration.toNanos)
 
-  // hack for now as there is no way to convert java baker to scala baker
   private implicit def toScala(baker: javadsl.Baker): scaladsl.Baker = {
-    val field = classOf[javadsl.Baker].getDeclaredField("baker")
-    try {
-      field.setAccessible(true)
-      field.get(baker).asInstanceOf[scaladsl.Baker]
-    } finally {
-      field.setAccessible(false)
-    }
+    baker.getScalaBaker
   }
 }
