@@ -84,7 +84,8 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
 
 lazy val noPublishSettings: Seq[Setting[_]] = Seq(
   publish := {},
-  publishArtifact := false
+  publishArtifact := false,
+  publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 )
 
 lazy val crossBuildSettings: Seq[Setting[_]] = Seq(
@@ -109,7 +110,6 @@ lazy val scalaPBSettings: Seq[Setting[_]] = Seq(Compile / PB.targets := Seq(scal
 
 lazy val `baker-types`: Project = project.in(file("core/baker-types"))
   .settings(defaultModuleSettings)
-  .settings(Publish.settings)
   .settings(
     moduleName := "baker-types",
     libraryDependencies ++= compileDeps(
@@ -125,7 +125,6 @@ lazy val `baker-types`: Project = project.in(file("core/baker-types"))
 
 lazy val `baker-intermediate-language`: Project = project.in(file("core/intermediate-language"))
   .settings(defaultModuleSettings)
-  .settings(Publish.settings)
   .settings(
     moduleName := "baker-intermediate-language",
     libraryDependencies ++= compileDeps(
@@ -140,7 +139,6 @@ lazy val `baker-intermediate-language`: Project = project.in(file("core/intermed
 lazy val `baker-interface`: Project = project.in(file("core/baker-interface"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
-  .settings(Publish.settings)
   .settings(
     moduleName := "baker-interface",
     libraryDependencies ++= Seq(
@@ -176,7 +174,6 @@ lazy val `baker-interface`: Project = project.in(file("core/baker-interface"))
 lazy val `baker-akka-runtime`: Project = project.in(file("core/akka-runtime"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
-  .settings(Publish.settings)
   .settings(
     moduleName := "baker-runtime",
     libraryDependencies ++=
@@ -232,7 +229,6 @@ lazy val `baker-akka-runtime`: Project = project.in(file("core/akka-runtime"))
 
 lazy val `baker-annotations`: Project = project.in(file("core/baker-annotations"))
   .settings(defaultModuleSettings)
-  .settings(Publish.settings)
   .settings(
     moduleName := "baker-annotations",
     libraryDependencies ++= compileDeps(javaxInject)
@@ -240,7 +236,6 @@ lazy val `baker-annotations`: Project = project.in(file("core/baker-annotations"
 
 lazy val `baker-recipe-dsl`: Project = project.in(file("core/recipe-dsl"))
   .settings(defaultModuleSettings)
-  .settings(Publish.settings)
   .settings(
     moduleName := "baker-recipe-dsl",
     libraryDependencies ++=
@@ -260,7 +255,6 @@ lazy val `baker-recipe-dsl`: Project = project.in(file("core/recipe-dsl"))
 
 lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compiler"))
   .settings(defaultModuleSettings)
-  .settings(Publish.settings)
   .settings(
     moduleName := "baker-compiler",
     libraryDependencies ++=
@@ -271,7 +265,6 @@ lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compile
 
 lazy val `baker-http-client`: Project = project.in(file("http/baker-http-client"))
   .settings(defaultModuleSettings)
-  .settings(Publish.settings)
   .settings(
     moduleName := "baker-http-client",
     libraryDependencies ++= Seq(
@@ -295,7 +288,6 @@ lazy val `baker-http-client`: Project = project.in(file("http/baker-http-client"
 lazy val `baker-http-server`: Project = project.in(file("http/baker-http-server"))
   .settings(defaultModuleSettings)
   .settings(yPartialUnificationSetting)
-  .settings(Publish.settings)
   .settings(
     moduleName := "baker-http-server",
     libraryDependencies ++= Seq(
@@ -329,7 +321,6 @@ val prefixedDashboardResources = taskKey[Seq[File]]("Create resources containing
 lazy val `baker-http-dashboard`: Project = project.in(file("http/baker-http-dashboard"))
   .enablePlugins(UniversalPlugin)
   .settings(defaultModuleSettings)
-  .settings(Publish.settings)
   .settings(
     name := "baker-http-dashboard",
     maintainer := "The Bakery Team",
@@ -398,7 +389,6 @@ lazy val `baker-http-dashboard`: Project = project.in(file("http/baker-http-dash
 lazy val `bakery-interaction-protocol`: Project = project.in(file("bakery/interaction-protocol"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
-  .settings(Publish.settings)
   .settings(
     moduleName := "bakery-interaction-protocol",
     libraryDependencies ++= Seq(
@@ -417,7 +407,6 @@ lazy val `bakery-interaction-protocol`: Project = project.in(file("bakery/intera
 lazy val `bakery-interaction-k8s-interaction-manager`: Project = project.in(file("bakery/interaction-k8s-interaction-manager"))
   .settings(defaultModuleSettings)
   .settings(yPartialUnificationSetting)
-  .settings(Publish.settings)
   .settings(
     moduleName := "bakery-interaction-k8s-interaction-manager",
     libraryDependencies ++= Seq(
@@ -454,7 +443,6 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(defaultModuleSettings)
   .settings(yPartialUnificationSetting)
-  .settings(Publish.settings)
   .settings(
     Compile / mainClass := Some("com.ing.bakery.baker.Main"),
     dockerExposedPorts ++= Seq(8080),
@@ -500,7 +488,6 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
 
 lazy val `bakery-interaction`: Project = project.in(file("bakery/interaction"))
   .settings(defaultModuleSettings)
-  .settings(Publish.settings)
   .settings(
     moduleName := "bakery-interaction",
     libraryDependencies ++= Seq(
@@ -521,7 +508,6 @@ lazy val `bakery-interaction`: Project = project.in(file("bakery/interaction"))
 
 lazy val `bakery-interaction-spring`: Project = project.in(file("bakery/interaction-spring"))
   .settings(defaultModuleSettings)
-  .settings(Publish.settings)
   .settings(
     moduleName := "bakery-interaction-spring",
     libraryDependencies ++= Seq(
@@ -545,6 +531,7 @@ lazy val `bakery-interaction-spring`: Project = project.in(file("bakery/interact
 
 lazy val baker: Project = project.in(file("."))
   .settings(defaultModuleSettings)
+  .settings(Publish.settings)
   .settings(
     crossScalaVersions := Nil
   )
@@ -740,7 +727,6 @@ lazy val `sbt-bakery-docker-generate`: Project = project.in(file("docker/sbt-bak
 
 lazy val `baker-test`: Project = project.in(file("core/baker-test"))
   .settings(defaultModuleSettings)
-  .settings(Publish.settings)
   .settings(scalaPBSettings)
   .settings(
     moduleName := "baker-test",
