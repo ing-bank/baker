@@ -85,8 +85,7 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
 lazy val noPublishSettings: Seq[Setting[_]] = Seq(
   publish := {},
   publishArtifact := false,
-  // publishTo is required to keep sbt-pgp's publish-signed happy:
-  publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
+  com.jsuereth.sbtpgp.PgpKeys.publishSigned := {}
 )
 
 lazy val crossBuildSettings: Seq[Setting[_]] = Seq(
