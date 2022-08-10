@@ -2,7 +2,7 @@ package com.ing.baker.runtime.inmemory
 
 import java.util.UUID
 
-import cats.effect.IO
+import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
@@ -13,12 +13,11 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import cats.effect.Temporal
 
 class InMemoryMemoryCleanupSpec extends AnyFunSpec with Matchers {
   describe("InMemoryRecipeInstanceManager") {
     it("should find a process in the timeout") {
-      implicit val timer: Temporal[IO] = IO.timer(ExecutionContext.global)
+      implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
       implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
       val recipeInstanceId = UUID.randomUUID().toString
@@ -33,7 +32,7 @@ class InMemoryMemoryCleanupSpec extends AnyFunSpec with Matchers {
     }
 
     it("should delete a process after the timeout") {
-      implicit val timer: Temporal[IO] = IO.timer(ExecutionContext.global)
+      implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
       implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
       val recipeInstanceId = UUID.randomUUID().toString

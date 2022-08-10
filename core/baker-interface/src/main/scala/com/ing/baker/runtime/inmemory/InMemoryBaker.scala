@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.inmemory
 
-import cats.effect.{ConcurrentEffect, IO}
+import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
 import cats.~>
 import com.ing.baker.runtime.model.{BakerComponents, BakerF, InteractionInstance}
 import com.ing.baker.runtime.{defaultinteractions, javadsl}
@@ -10,12 +10,11 @@ import java.util.{List => JavaList}
 import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.concurrent._
-import cats.effect.Temporal
 
 object InMemoryBaker {
 
   def build(config: BakerF.Config = BakerF.Config(),
-            implementations: List[InteractionInstance[IO]])(implicit timer: Temporal[IO]): IO[BakerF[IO]] = for {
+            implementations: List[InteractionInstance[IO]])(implicit timer: Timer[IO], cs: ContextShift[IO]): IO[BakerF[IO]] = for {
     recipeInstanceManager <- InMemoryRecipeInstanceManager.build(config.idleTimeout)
     recipeManager <- InMemoryRecipeManager.build
     eventStream <- InMemoryEventStream.build
@@ -23,14 +22,14 @@ object InMemoryBaker {
   } yield buildWith(BakerComponents[IO](interactions, recipeInstanceManager, recipeManager, eventStream), config)
 
   def buildWith(components: BakerComponents[IO],
-                config: BakerF.Config = BakerF.Config())(implicit timer: Temporal[IO]): BakerF[IO] = {
+                config: BakerF.Config = BakerF.Config())(implicit timer: Timer[IO], cs: ContextShift[IO]): BakerF[IO] = {
     implicit val c: BakerComponents[IO] = components
     new InMemoryBakerImpl(config)
   }
 
   @nowarn
   def java(config: BakerF.Config, implementations: JavaList[AnyRef]): javadsl.Baker = {
-    implicit val timer: Temporal[IO] = IO.timer(ExecutionContext.global)
+    implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
     implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     val bakerF = build(config, implementations.asScala.map(InteractionInstance.unsafeFrom[IO]).toList)
       .unsafeRunSync().asDeprecatedFutureImplementation(
@@ -53,7 +52,7 @@ object InMemoryBaker {
   }
 }
 
-final class InMemoryBakerImpl(val config: BakerF.Config)(implicit components: BakerComponents[IO], effect: ConcurrentEffect[IO], timer: Temporal[IO]) extends BakerF[IO] {
+final class InMemoryBakerImpl(val config: BakerF.Config)(implicit components: BakerComponents[IO], effect: ConcurrentEffect[IO], timer: Timer[IO]) extends BakerF[IO] {
 
   /**
     * Attempts to gracefully shutdown the baker system.
