@@ -4,7 +4,7 @@ addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "1.2.0")
 
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.13")
 
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.0")
+addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.2")
 
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.13")
 
