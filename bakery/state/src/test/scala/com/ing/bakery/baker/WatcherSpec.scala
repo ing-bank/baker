@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
+import com.ing.bakery.components.{Watcher, WatcherReadinessCheck}
 import com.ing.bakery.mocks.EventListener
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
