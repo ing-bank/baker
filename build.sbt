@@ -85,7 +85,7 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
 lazy val noPublishSettings: Seq[Setting[_]] = Seq(
   publish := {},
   publishArtifact := false,
-  com.jsuereth.sbtpgp.PgpKeys.publishSigned := {}
+  publish / skip := true
 )
 
 lazy val crossBuildSettings: Seq[Setting[_]] = Seq(
