@@ -18,7 +18,7 @@ import org.http4s.Method._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.blaze.client._
+import org.http4s.client.blaze._
 import org.http4s.client.dsl.io._
 
 import scala.collection.immutable.Seq

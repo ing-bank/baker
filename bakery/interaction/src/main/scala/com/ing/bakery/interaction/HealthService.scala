@@ -5,7 +5,7 @@ import java.net.InetSocketAddress
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import org.http4s.dsl.io.{->, /, GET, Ok, Root, _}
 import org.http4s.implicits._
-import org.http4s.blaze.server._
+import org.http4s.server.blaze._
 import org.http4s.server.{Router, Server}
 import org.http4s.{HttpApp, HttpRoutes}
 
