@@ -84,7 +84,8 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
 
 lazy val noPublishSettings: Seq[Setting[_]] = Seq(
   publish := {},
-  publishArtifact := false
+  publishArtifact := false,
+  releaseProcess := Seq()
 )
 
 lazy val crossBuildSettings: Seq[Setting[_]] = Seq(
