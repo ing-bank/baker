@@ -562,139 +562,139 @@ lazy val baker: Project = project.in(file("."))
 //    `interaction-example-reserve-items`, `bakery-kafka-listener-example`
   )
 
-lazy val `baker-example`: Project = project
-  .in(file("examples/baker-example"))
-  .enablePlugins(JavaAppPackaging)
-  .settings(commonSettings)
-  .settings(noPublishSettings)
-  .settings(yPartialUnificationSetting)
-  .settings(crossBuildSettings)
-  .settings(
-    moduleName := "baker-example",
-    libraryDependencies ++=
-      compileDeps(
-        slf4jApi,
-        http4s,
-        http4sDsl,
-        http4sServer,
-        http4sCirce,
-        circe,
-        circeGeneric,
-        akkaPersistenceCassandra,
-        akkaPersistenceQuery
-      ) ++ testDeps(
-        scalaTest,
-        scalaCheck,
-        mockitoScala,
-        junitInterface,
-        slf4jApi,
-        akkaTestKit
-      )
-  )
-  .settings(dockerSettings)
-  .settings(
-    Docker / packageName := "baker-example-app",
-    dockerExposedPorts := Seq(8080)
-  )
-  .dependsOn(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`)
-
-lazy val `bakery-client-example`: Project = project
-  .in(file("examples/bakery-client-example"))
-  .enablePlugins(JavaAppPackaging)
-  .settings(commonSettings)
-  .settings(noPublishSettings)
-  .settings(yPartialUnificationSetting)
-  .settings(crossBuildSettings)
-  .settings(
-    moduleName := "bakery-client-example",
-    libraryDependencies ++=
-      compileDeps(
-        slf4jApi,
-        logback,
-        http4s,
-        http4sDsl,
-        http4sServer,
-        http4sCirce,
-        circe,
-        circeGeneric
-      ) ++ testDeps(
-        scalaTest,
-        scalaCheck
-      )
-  )
-  .settings(dockerSettings)
-  .settings(
-    Docker / packageName := "bakery-client-example"
-  )
-  .dependsOn(`baker-types`, `baker-http-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
-
-lazy val `bakery-kafka-listener-example`: Project = project
-  .in(file("examples/bakery-kafka-listener-example"))
-  .enablePlugins(JavaAppPackaging)
-  .settings(noPublishSettings)
-  .settings(defaultModuleSettings)
-  .settings(yPartialUnificationSetting)
-  .settings(
-    moduleName := "bakery-kafka-listener-example",
-    libraryDependencies ++=
-      compileDeps(
-        slf4jApi,
-        circe,
-        circeGeneric,
-        circeGenericExtras,
-        fs2kafka,
-        ficusConfig
-      ) ++ testDeps(
-        scalaTest,
-        scalaCheck
-      )
-  )
-  .settings(dockerSettings)
-  .settings(
-    Docker / packageName := "bakery-kafka-listener-example"
-  )
-  .dependsOn(`baker-types`, `baker-http-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
-
-lazy val `interaction-example-reserve-items`: Project = project.in(file("examples/bakery-interaction-examples/reserve-items"))
-  .enablePlugins(JavaAppPackaging)
-  .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
-  .settings(noPublishSettings)
-  .settings(defaultModuleSettings)
-  .settings(yPartialUnificationSetting)
-  .settings(
-    moduleName := "interaction-example-reserve-items",
-    libraryDependencies ++=
-      compileDeps(
-        logback,
-        catsEffect,
-        springCore,
-        springContext
-      ) ++ testDeps(
-        scalaTest,
-        scalaCheck
-      )
-  )
-  .dependsOn(`bakery-interaction`, `baker-recipe-dsl`)
-
-lazy val `interaction-example-make-payment-and-ship-items`: Project = project.in(file("examples/bakery-interaction-examples/make-payment-and-ship-items"))
-  .enablePlugins(JavaAppPackaging)
-  .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
-  .settings(noPublishSettings)
-  .settings(defaultModuleSettings)
-  .settings(yPartialUnificationSetting)
-  .settings(
-    moduleName := "interaction-example-make-payment-and-ship-items",
-    libraryDependencies ++=
-      compileDeps(
-        logback,
-        catsEffect
-      ) ++ testDeps(
-        scalaTest,
-        scalaCheck,
-        scalaCheckPlus
-      )
-  )
-  .dependsOn(`bakery-interaction`)
+//lazy val `baker-example`: Project = project
+//  .in(file("examples/baker-example"))
+//  .enablePlugins(JavaAppPackaging)
+//  .settings(commonSettings)
+//  .settings(noPublishSettings)
+//  .settings(yPartialUnificationSetting)
+//  .settings(crossBuildSettings)
+//  .settings(
+//    moduleName := "baker-example",
+//    libraryDependencies ++=
+//      compileDeps(
+//        slf4jApi,
+//        http4s,
+//        http4sDsl,
+//        http4sServer,
+//        http4sCirce,
+//        circe,
+//        circeGeneric,
+//        akkaPersistenceCassandra,
+//        akkaPersistenceQuery
+//      ) ++ testDeps(
+//        scalaTest,
+//        scalaCheck,
+//        mockitoScala,
+//        junitInterface,
+//        slf4jApi,
+//        akkaTestKit
+//      )
+//  )
+//  .settings(dockerSettings)
+//  .settings(
+//    Docker / packageName := "baker-example-app",
+//    dockerExposedPorts := Seq(8080)
+//  )
+//  .dependsOn(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`)
+//
+//lazy val `bakery-client-example`: Project = project
+//  .in(file("examples/bakery-client-example"))
+//  .enablePlugins(JavaAppPackaging)
+//  .settings(commonSettings)
+//  .settings(noPublishSettings)
+//  .settings(yPartialUnificationSetting)
+//  .settings(crossBuildSettings)
+//  .settings(
+//    moduleName := "bakery-client-example",
+//    libraryDependencies ++=
+//      compileDeps(
+//        slf4jApi,
+//        logback,
+//        http4s,
+//        http4sDsl,
+//        http4sServer,
+//        http4sCirce,
+//        circe,
+//        circeGeneric
+//      ) ++ testDeps(
+//        scalaTest,
+//        scalaCheck
+//      )
+//  )
+//  .settings(dockerSettings)
+//  .settings(
+//    Docker / packageName := "bakery-client-example"
+//  )
+//  .dependsOn(`baker-types`, `baker-http-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
+//
+//lazy val `bakery-kafka-listener-example`: Project = project
+//  .in(file("examples/bakery-kafka-listener-example"))
+//  .enablePlugins(JavaAppPackaging)
+//  .settings(noPublishSettings)
+//  .settings(defaultModuleSettings)
+//  .settings(yPartialUnificationSetting)
+//  .settings(
+//    moduleName := "bakery-kafka-listener-example",
+//    libraryDependencies ++=
+//      compileDeps(
+//        slf4jApi,
+//        circe,
+//        circeGeneric,
+//        circeGenericExtras,
+//        fs2kafka,
+//        ficusConfig
+//      ) ++ testDeps(
+//        scalaTest,
+//        scalaCheck
+//      )
+//  )
+//  .settings(dockerSettings)
+//  .settings(
+//    Docker / packageName := "bakery-kafka-listener-example"
+//  )
+//  .dependsOn(`baker-types`, `baker-http-client`, `baker-recipe-compiler`, `baker-recipe-dsl`)
+//
+//lazy val `interaction-example-reserve-items`: Project = project.in(file("examples/bakery-interaction-examples/reserve-items"))
+//  .enablePlugins(JavaAppPackaging)
+//  .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
+//  .settings(noPublishSettings)
+//  .settings(defaultModuleSettings)
+//  .settings(yPartialUnificationSetting)
+//  .settings(
+//    moduleName := "interaction-example-reserve-items",
+//    libraryDependencies ++=
+//      compileDeps(
+//        logback,
+//        catsEffect,
+//        springCore,
+//        springContext
+//      ) ++ testDeps(
+//        scalaTest,
+//        scalaCheck
+//      )
+//  )
+//  .dependsOn(`bakery-interaction`, `baker-recipe-dsl`)
+//
+//lazy val `interaction-example-make-payment-and-ship-items`: Project = project.in(file("examples/bakery-interaction-examples/make-payment-and-ship-items"))
+//  .enablePlugins(JavaAppPackaging)
+//  .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
+//  .settings(noPublishSettings)
+//  .settings(defaultModuleSettings)
+//  .settings(yPartialUnificationSetting)
+//  .settings(
+//    moduleName := "interaction-example-make-payment-and-ship-items",
+//    libraryDependencies ++=
+//      compileDeps(
+//        logback,
+//        catsEffect
+//      ) ++ testDeps(
+//        scalaTest,
+//        scalaCheck,
+//        scalaCheckPlus
+//      )
+//  )
+//  .dependsOn(`bakery-interaction`)
 
 lazy val `bakery-integration-tests`: Project = project.in(file("bakery/integration-tests"))
   .settings(defaultModuleSettings)
