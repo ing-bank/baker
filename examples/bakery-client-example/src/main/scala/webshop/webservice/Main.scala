@@ -8,7 +8,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.http.client.scaladsl.BakerClient
 import com.typesafe.config.ConfigFactory
 import org.http4s.Uri
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
