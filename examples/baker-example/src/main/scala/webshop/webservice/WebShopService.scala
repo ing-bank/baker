@@ -5,8 +5,7 @@ import java.util.UUID
 import java.util.concurrent.Executors
 
 import cats.data.Kleisli
-import cats.effect.concurrent.Ref
-import cats.effect.{Blocker, ContextShift, IO, Timer}
+import cats.effect.IO
 import cats.implicits._
 import fs2.io.file
 import io.circe.generic.auto._
@@ -18,6 +17,7 @@ import org.http4s.implicits._
 import org.http4s.server.Router
 
 import scala.concurrent.ExecutionContext
+import cats.effect.{ Ref, Temporal }
 
 object WebShopService {
 
@@ -33,7 +33,7 @@ object WebShopService {
 
 }
 
-class WebShopService(webshop: WebShop, memoryDumpPath: String)(implicit timer: Timer[IO], cs: ContextShift[IO]) {
+class WebShopService(webshop: WebShop, memoryDumpPath: String)(implicit timer: Temporal[IO], cs: ContextShift[IO]) {
 
   import WebShopService._
 

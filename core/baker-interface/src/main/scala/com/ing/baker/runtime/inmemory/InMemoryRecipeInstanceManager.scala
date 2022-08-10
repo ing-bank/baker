@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.inmemory
 
-import cats.effect.concurrent.Ref
-import cats.effect.{IO, Timer}
+import cats.effect.IO
 import cats.implicits._
 import com.google.common.cache.{CacheBuilder, CacheLoader}
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
@@ -14,12 +13,13 @@ import java.util.concurrent.{ConcurrentMap, TimeUnit}
 import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
+import cats.effect.{ Ref, Temporal }
 
 object InMemoryRecipeInstanceManager {
 
   type Store = ConcurrentMap[String, RecipeInstanceStatus[IO]]
 
-  def build(instanceTTL: Duration)(implicit timer: Timer[IO]): IO[InMemoryRecipeInstanceManager] = {
+  def build(instanceTTL: Duration)(implicit timer: Temporal[IO]): IO[InMemoryRecipeInstanceManager] = {
     val cache: ConcurrentMap[String, RecipeInstanceStatus[IO]] = CacheBuilder.newBuilder()
       .expireAfterWrite(instanceTTL.toMillis, TimeUnit.MILLISECONDS)
       .build(new CacheLoader[String, RecipeInstanceStatus[IO]] {
@@ -29,7 +29,7 @@ object InMemoryRecipeInstanceManager {
   }
 }
 
-final class InMemoryRecipeInstanceManager(inmem: Ref[IO, InMemoryRecipeInstanceManager.Store])(implicit timer: Timer[IO]) extends RecipeInstanceManager[IO] {
+final class InMemoryRecipeInstanceManager(inmem: Ref[IO, InMemoryRecipeInstanceManager.Store])(implicit timer: Temporal[IO]) extends RecipeInstanceManager[IO] {
 
   override def fetch(recipeInstanceId: String): IO[Option[RecipeInstanceStatus[IO]]] =
     inmem.get.map(store => Option.apply(store.get(recipeInstanceId)))

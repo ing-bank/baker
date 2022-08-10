@@ -2,7 +2,6 @@ package webshop.webservice
 
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
-import cats.effect.concurrent.Ref
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
@@ -12,6 +11,7 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import org.log4s.Logger
 
 import scala.concurrent.ExecutionContext
+import cats.effect.Ref
 
 object Main extends IOApp {
 
