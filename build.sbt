@@ -4,6 +4,26 @@ import sbt.file
 
 import scala.sys.process.Process
 
+lazy val baker: Project = project.in(file("."))
+  .settings(defaultModuleSettings)
+  .settings(Publish.settings)
+  .settings(
+    crossScalaVersions := Nil
+  )
+  .aggregate(
+    // Core
+    `baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
+    `baker-interface`, `baker-annotations`, `baker-test`,
+    // Http
+    `baker-http-client`, `baker-http-server`, `baker-http-dashboard`,
+    // Bakery
+    `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
+    `bakery-interaction-k8s-interaction-manager`,
+    // Examples
+    `baker-example`, `bakery-client-example`, `interaction-example-make-payment-and-ship-items`,
+    `interaction-example-reserve-items`, `bakery-kafka-listener-example`
+  )
+
 def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = project % "test->test;test->compile"
 
 lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocker")({
@@ -110,6 +130,7 @@ lazy val scalaPBSettings: Seq[Setting[_]] = Seq(Compile / PB.targets := Seq(scal
 
 lazy val `baker-types`: Project = project.in(file("core/baker-types"))
   .settings(defaultModuleSettings)
+  .settings(Publish.settings)
   .settings(
     moduleName := "baker-types",
     libraryDependencies ++= compileDeps(
@@ -125,6 +146,7 @@ lazy val `baker-types`: Project = project.in(file("core/baker-types"))
 
 lazy val `baker-intermediate-language`: Project = project.in(file("core/intermediate-language"))
   .settings(defaultModuleSettings)
+  .settings(Publish.settings)
   .settings(
     moduleName := "baker-intermediate-language",
     libraryDependencies ++= compileDeps(
@@ -138,6 +160,7 @@ lazy val `baker-intermediate-language`: Project = project.in(file("core/intermed
 
 lazy val `baker-interface`: Project = project.in(file("core/baker-interface"))
   .settings(defaultModuleSettings)
+  .settings(Publish.settings)
   .settings(scalaPBSettings)
   .settings(
     moduleName := "baker-interface",
@@ -173,6 +196,7 @@ lazy val `baker-interface`: Project = project.in(file("core/baker-interface"))
 
 lazy val `baker-akka-runtime`: Project = project.in(file("core/akka-runtime"))
   .settings(defaultModuleSettings)
+  .settings(Publish.settings)
   .settings(scalaPBSettings)
   .settings(
     moduleName := "baker-runtime",
@@ -229,6 +253,7 @@ lazy val `baker-akka-runtime`: Project = project.in(file("core/akka-runtime"))
 
 lazy val `baker-annotations`: Project = project.in(file("core/baker-annotations"))
   .settings(defaultModuleSettings)
+  .settings(Publish.settings)
   .settings(
     moduleName := "baker-annotations",
     libraryDependencies ++= compileDeps(javaxInject)
@@ -236,6 +261,7 @@ lazy val `baker-annotations`: Project = project.in(file("core/baker-annotations"
 
 lazy val `baker-recipe-dsl`: Project = project.in(file("core/recipe-dsl"))
   .settings(defaultModuleSettings)
+  .settings(Publish.settings)
   .settings(
     moduleName := "baker-recipe-dsl",
     libraryDependencies ++=
@@ -255,6 +281,7 @@ lazy val `baker-recipe-dsl`: Project = project.in(file("core/recipe-dsl"))
 
 lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compiler"))
   .settings(defaultModuleSettings)
+  .settings(Publish.settings)
   .settings(
     moduleName := "baker-compiler",
     libraryDependencies ++=
@@ -262,9 +289,25 @@ lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compile
   )
   .dependsOn(`baker-recipe-dsl`, `baker-intermediate-language`, testScope(`baker-recipe-dsl`))
 
+lazy val `baker-test`: Project = project.in(file("core/baker-test"))
+  .settings(defaultModuleSettings)
+  .settings(Publish.settings)
+  .settings(scalaPBSettings)
+  .settings(
+    moduleName := "baker-test",
+    libraryDependencies ++= compileDeps(
+      slf4jApi
+    ) ++ testDeps(scalaTest, logback,
+      "io.altoo" %% "akka-kryo-serialization" % "2.4.3",
+      "junit" % "junit" % "4.13.2",
+      "org.scalatestplus" %% "junit-4-13" % "3.2.12.0"
+    )
+  ).dependsOn(`baker-interface`, testScope(`baker-akka-runtime`), testScope(`baker-recipe-compiler`))
+
 
 lazy val `baker-http-client`: Project = project.in(file("http/baker-http-client"))
   .settings(defaultModuleSettings)
+  .settings(Publish.settings)
   .settings(
     moduleName := "baker-http-client",
     libraryDependencies ++= Seq(
@@ -287,6 +330,7 @@ lazy val `baker-http-client`: Project = project.in(file("http/baker-http-client"
 
 lazy val `baker-http-server`: Project = project.in(file("http/baker-http-server"))
   .settings(defaultModuleSettings)
+  .settings(Publish.settings)
   .settings(yPartialUnificationSetting)
   .settings(
     moduleName := "baker-http-server",
@@ -321,6 +365,7 @@ val prefixedDashboardResources = taskKey[Seq[File]]("Create resources containing
 lazy val `baker-http-dashboard`: Project = project.in(file("http/baker-http-dashboard"))
   .enablePlugins(UniversalPlugin)
   .settings(defaultModuleSettings)
+  .settings(Publish.settings)
   .settings(
     name := "baker-http-dashboard",
     maintainer := "The Bakery Team",
@@ -388,6 +433,7 @@ lazy val `baker-http-dashboard`: Project = project.in(file("http/baker-http-dash
 
 lazy val `bakery-interaction-protocol`: Project = project.in(file("bakery/interaction-protocol"))
   .settings(defaultModuleSettings)
+  .settings(Publish.settings)
   .settings(scalaPBSettings)
   .settings(
     moduleName := "bakery-interaction-protocol",
@@ -406,6 +452,7 @@ lazy val `bakery-interaction-protocol`: Project = project.in(file("bakery/intera
 
 lazy val `bakery-interaction-k8s-interaction-manager`: Project = project.in(file("bakery/interaction-k8s-interaction-manager"))
   .settings(defaultModuleSettings)
+  .settings(Publish.settings)
   .settings(yPartialUnificationSetting)
   .settings(
     moduleName := "bakery-interaction-k8s-interaction-manager",
@@ -442,6 +489,7 @@ lazy val `bakery-interaction-k8s-interaction-manager`: Project = project.in(file
 lazy val `bakery-state`: Project = project.in(file("bakery/state"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(defaultModuleSettings)
+  .settings(Publish.settings)
   .settings(yPartialUnificationSetting)
   .settings(
     Compile / mainClass := Some("com.ing.bakery.baker.Main"),
@@ -488,6 +536,7 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
 
 lazy val `bakery-interaction`: Project = project.in(file("bakery/interaction"))
   .settings(defaultModuleSettings)
+  .settings(Publish.settings)
   .settings(
     moduleName := "bakery-interaction",
     libraryDependencies ++= Seq(
@@ -508,6 +557,7 @@ lazy val `bakery-interaction`: Project = project.in(file("bakery/interaction"))
 
 lazy val `bakery-interaction-spring`: Project = project.in(file("bakery/interaction-spring"))
   .settings(defaultModuleSettings)
+  .settings(Publish.settings)
   .settings(
     moduleName := "bakery-interaction-spring",
     libraryDependencies ++= Seq(
@@ -528,26 +578,6 @@ lazy val `bakery-interaction-spring`: Project = project.in(file("bakery/interact
     )
   )
   .dependsOn(`bakery-interaction`, `baker-recipe-dsl`)
-
-lazy val baker: Project = project.in(file("."))
-  .settings(defaultModuleSettings)
-  .settings(Publish.settings)
-  .settings(
-    crossScalaVersions := Nil
-  )
-  .aggregate(
-    // Core
-    `baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
-    `baker-interface`, `baker-annotations`, `baker-test`,
-    // Http
-    `baker-http-client`, `baker-http-server`, `baker-http-dashboard`,
-    // Bakery
-    `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
-    `bakery-interaction-k8s-interaction-manager`,
-    // Examples
-    `baker-example`, `bakery-client-example`, `interaction-example-make-payment-and-ship-items`,
-    `interaction-example-reserve-items`, `bakery-kafka-listener-example`
-  )
 
 lazy val `baker-example`: Project = project
   .in(file("examples/baker-example"))
@@ -724,18 +754,4 @@ lazy val `sbt-bakery-docker-generate`: Project = project.in(file("docker/sbt-bak
   .enablePlugins(SbtPlugin)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .dependsOn(`bakery-interaction`, `bakery-interaction-spring`)
-
-lazy val `baker-test`: Project = project.in(file("core/baker-test"))
-  .settings(defaultModuleSettings)
-  .settings(scalaPBSettings)
-  .settings(
-    moduleName := "baker-test",
-    libraryDependencies ++= compileDeps(
-      slf4jApi
-    ) ++ testDeps(scalaTest, logback,
-      "io.altoo" %% "akka-kryo-serialization" % "2.4.3",
-      "junit" % "junit" % "4.13.2",
-      "org.scalatestplus" %% "junit-4-13" % "3.2.12.0"
-    )
-  ).dependsOn(`baker-interface`, testScope(`baker-akka-runtime`), testScope(`baker-recipe-compiler`))
 
