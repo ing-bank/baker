@@ -66,7 +66,8 @@ val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
     Package.ManifestAttributes(
       "Build-Time" -> new java.util.Date().toString,
       "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
-    )
+    ),
+  versionScheme := Some("semver-spec")
 )
 
 val dockerSettings: Seq[Setting[_]] = Seq(
