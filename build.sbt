@@ -20,8 +20,8 @@ lazy val baker: Project = project.in(file("."))
     `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
     `bakery-interaction-k8s-interaction-manager`,
     // Examples
-//    `baker-example`, `bakery-client-example`, `interaction-example-make-payment-and-ship-items`,
-//    `interaction-example-reserve-items`, `bakery-kafka-listener-example`
+    `baker-example`, `bakery-client-example`, `interaction-example-make-payment-and-ship-items`,
+    `interaction-example-reserve-items`, `bakery-kafka-listener-example`
   )
 
 def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = project % "test->test;test->compile"
@@ -106,7 +106,7 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
 lazy val noPublishSettings: Seq[Setting[_]] = Seq(
   publish := {},
   publishArtifact := false,
-  publishTo := None
+  publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 )
 
 lazy val crossBuildSettings: Seq[Setting[_]] = Seq(
