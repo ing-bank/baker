@@ -70,6 +70,7 @@ object Publish {
     pomIncludeRepository := (_ => false),
     releaseCrossBuild := true,
     releaseProcess := Seq[ReleaseStep](
+      releaseStepCommand("sonatypeDropAll"),
       checkSnapshotDependencies,
       inquireVersions,
       runClean,
