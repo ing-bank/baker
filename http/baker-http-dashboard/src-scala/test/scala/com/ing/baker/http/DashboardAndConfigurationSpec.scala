@@ -1,5 +1,6 @@
 package com.ing.baker.http
 
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.flatspec._
 import org.scalatest.matchers._
 
@@ -50,6 +51,16 @@ class DashboardAndConfigurationSpec extends AnyFlatSpec with should.Matchers {
     "/instances/instance-id".matches(Dashboard.indexPattern.regex) shouldBe true
     "/instanceand".matches(Dashboard.indexPattern.regex) shouldBe false
     "/instance/".matches(Dashboard.indexPattern.regex) shouldBe false
+  }
+
+  "DashboardConfiguration" should "parse default configuration correctly" in {
+    val referenceConfig = ConfigFactory.load()
+
+    DashboardConfiguration.fromConfig(referenceConfig) shouldBe DashboardConfiguration(
+      enabled = true,
+      applicationName = "Baker OSS",
+      clusterInformation = Map.empty
+    )
   }
 
 }
