@@ -13,6 +13,7 @@ class SinkJournalWriter extends AsyncWriteJournal with SinkJournalWriterImpl
 class SinkSnapshotStore extends SnapshotStore with SinkSnapshotStoreImpl
 
 // Methods seperated from the class, to be able to test the methods outside of akka.
+private [journal]
 trait SinkJournalWriterImpl {
   def asyncWriteMessages(messages: immutable.Seq[AtomicWrite]): Future[immutable.Seq[Try[Unit]]] =
     Future.successful(immutable.Seq.empty[Try[Unit]])
@@ -26,7 +27,7 @@ trait SinkJournalWriterImpl {
   def asyncReadHighestSequenceNr(persistenceId: String, fromSequenceNr: Long): Future[Long] =
     Future.successful(0)
 }
-
+private [journal]
 trait SinkSnapshotStoreImpl {
   def loadAsync(persistenceId: String, criteria: SnapshotSelectionCriteria): Future[Option[SelectedSnapshot]] =
     Future.successful(None)
