@@ -14,10 +14,10 @@ import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceInput}
 import com.ing.baker.types._
 import com.ing.bakery.components.InteractionRegistry
-import com.ing.bakery.mocks.{EventListener, RemoteInteraction}
-import com.ing.bakery.recipe.Events.{ItemsReserved, OrderPlaced}
-import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
-import com.ing.bakery.recipe.{ItemReservationRecipe, SimpleRecipe, SimpleRecipe2}
+import com.ing.bakery.baker.mocks.{EventListener, RemoteInteraction}
+import com.ing.bakery.baker.recipe.Events.{ItemsReserved, OrderPlaced}
+import com.ing.bakery.baker.recipe.Ingredients.{Item, OrderId, ReservedItems}
+import com.ing.bakery.baker.recipe.{ItemReservationRecipe, SimpleRecipe, SimpleRecipe2}
 import com.ing.bakery.baker.mocks.KubeApiServer
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
@@ -31,7 +31,7 @@ import java.util.UUID
 import scala.collection.immutable.Seq
 import scala.concurrent.Future
 
-class StateRuntimeSpec extends BakeryFunSpec with Matchers {
+class AkkaBakerWithK8InteractionsSpec extends BakeryFunSpec with Matchers {
 
   val recipe: CompiledRecipe =
     ItemReservationRecipe.compiledRecipe

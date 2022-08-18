@@ -1,11 +1,11 @@
-package com.ing.bakery.recipe
+package com.ing.bakery.baker.recipe
 
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
 import com.ing.baker.recipe.common.InteractionFailureStrategy.{BlockInteraction, RetryWithIncrementalBackoff}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
-import com.ing.bakery.recipe.Events.{ItemsReserved, OrderHadUnavailableItems, OrderPlaced, ReserveItemsOutput}
+import Events.{ItemsReserved, OrderHadUnavailableItems, OrderPlaced, ReserveItemsOutput}
 
 import scala.collection.immutable.Seq
 import scala.concurrent.Future

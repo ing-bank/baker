@@ -1,5 +1,4 @@
-package com.ing.bakery.baker
-
+package com.ing.bakery.components
 
 import akka.actor.{ActorLogging, ActorRef, ActorSystem, NoSerializationVerificationNeeded, Props}
 import akka.pattern.ask

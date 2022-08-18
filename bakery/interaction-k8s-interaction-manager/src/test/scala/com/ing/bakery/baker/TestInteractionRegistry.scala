@@ -3,10 +3,9 @@ package com.ing.bakery.baker
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.model.InteractionManager
-import com.ing.bakery.baker.mocks.KubeApiServer
+import com.ing.bakery.baker.mocks.{KubeApiServer, RemoteInteraction}
 import com.ing.bakery.components.{BaseInteractionRegistry, LocalhostInteractions}
 import com.ing.bakery.interaction.BaseRemoteInteractionClient
-import com.ing.bakery.mocks.RemoteInteraction
 import com.typesafe.config.{Config, ConfigValueFactory}
 import org.http4s.Headers
 import org.http4s.client.Client

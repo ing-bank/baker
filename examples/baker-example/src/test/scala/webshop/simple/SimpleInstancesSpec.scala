@@ -1,9 +1,11 @@
 package webshop.simple
 
 import com.ing.baker.runtime.scaladsl.IngredientInstance
-import com.ing.baker.types.{ListValue, PrimitiveValue, Value}
+import com.ing.baker.types.{ListValue, PrimitiveValue}
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should
+
+import scala.collection.immutable.Seq
 
 class SimpleInstancesSpec extends AsyncFlatSpec with should.Matchers {
 
