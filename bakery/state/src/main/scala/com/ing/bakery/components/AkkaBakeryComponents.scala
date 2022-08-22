@@ -42,68 +42,57 @@ class AkkaBakeryComponents(optionalConfig: Option[Config] = None,
 
   def externalContextOptionResource: Resource[IO, Option[Any]] = Resource.pure[IO, Option[Any]](externalContext)
 
-  def actorSystemResource: Resource[IO, ActorSystem] = configResource.flatMap(config =>
+  def actorSystemResource(config: Config): Resource[IO, ActorSystem] =
     Resource.make(
       acquire = IO(ActorSystem("baker", config)))(
       release = as => IO.fromFuture(IO(as.terminate()))(IO.contextShift(as.dispatcher)).map(_ => ())
     )
-  )
-  val ec: Resource[IO, ExecutionContext] = actorSystemResource.map(_.dispatcher)
-  val cs: Resource[IO, ContextShift[IO]] = ec.map(IO.contextShift)
-  val timer: Resource[IO, Timer[IO]] = ec.map(IO.timer)
 
-  def akkaBakerTimeoutsResource: Resource[IO, AkkaBakerConfig.Timeouts] =
-    configResource.flatMap(config => Resource.eval(IO(AkkaBakerConfig.Timeouts(config))))
+  def ec(actorSystem: ActorSystem): Resource[IO, ExecutionContext] = Resource.pure[IO, ExecutionContext](actorSystem.dispatcher)
+  def cs(ec: ExecutionContext): Resource[IO, ContextShift[IO]] = Resource.pure[IO, ContextShift[IO]](IO.contextShift(ec))
+  def timer(ec: ExecutionContext): Resource[IO, Timer[IO]] = Resource.pure[IO, Timer[IO]](IO.timer(ec))
 
-  def akkaBakerConfigValidationSettingsResource: Resource[IO, AkkaBakerConfig.BakerValidationSettings] =
-    configResource.flatMap(config => Resource.eval(IO(AkkaBakerConfig.BakerValidationSettings.from(config))))
+  def akkaBakerTimeoutsResource(config: Config): Resource[IO, AkkaBakerConfig.Timeouts] =
+    Resource.pure[IO, AkkaBakerConfig.Timeouts](AkkaBakerConfig.Timeouts(config))
 
-  def bakerActorProviderResource: Resource[IO, BakerActorProvider] =
-    for {
-      config <- configResource
-    } yield AkkaBakerConfig.bakerProviderFrom(config)
+  def akkaBakerConfigValidationSettingsResource(config: Config): Resource[IO, AkkaBakerConfig.BakerValidationSettings] =
+    Resource.pure[IO, AkkaBakerConfig.BakerValidationSettings](AkkaBakerConfig.BakerValidationSettings.from(config))
 
-  def maybeCassandraResource: Resource[IO, Option[Cassandra]] = for {
-    config <- configResource
-    actorSystem <- actorSystemResource
-    ec <- ec
-    cs <- cs
-    timer <- timer
-    result <- Cassandra.resource(config, actorSystem)(cs, timer, ec)
-  } yield result
+  def bakerActorProviderResource(config: Config): Resource[IO, BakerActorProvider] =
+    Resource.pure[IO, BakerActorProvider](AkkaBakerConfig.bakerProviderFrom(config))
 
-  def watcherResource: Resource[IO, Resource[IO, Unit]] = for {
-    config <- configResource
-    actorSystem <- actorSystemResource
-    maybeCassandra <- maybeCassandraResource
-    ec <- ec
-    cs <- cs
-    timer <- timer
-  } yield Watcher.resource(config, actorSystem, maybeCassandra)(cs, timer, ec)
+  def maybeCassandraResource(config: Config,
+                             actorSystem: ActorSystem,
+                             ec: ExecutionContext,
+                             cs: ContextShift[IO],
+                             timer: Timer[IO]): Resource[IO, Option[Cassandra]] =
+    Cassandra.resource(config, actorSystem)(cs, timer, ec)
+
+  def watcherResource(config: Config,
+                      actorSystem: ActorSystem,
+                      ec: ExecutionContext,
+                      cs: ContextShift[IO],
+                      timer: Timer[IO],
+                      maybeCassandra: Option[Cassandra]): Resource[IO, Unit] =
+    Watcher.resource(config, actorSystem, maybeCassandra)(cs, timer, ec)
 
   def metricsOpsResource: Resource[IO, MetricsOps[IO]] =
     Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
 
-  def eventSinkResource: Resource[IO, EventSink] =
-    for {
-      config <- configResource
-      cs <- cs
-      timer <- timer
-      eventSink <- EventSink.resource(config)(cs, timer)
-    } yield eventSink
+  def eventSinkResource(config: Config,
+                        cs: ContextShift[IO],
+                        timer: Timer[IO]): Resource[IO, EventSink] =
+    EventSink.resource(config)(cs, timer)
 
-  def interactionManagerResource: Resource[IO, InteractionManager[IO]] =
-    for {
-      config <- configResource
-      actorSystem <- actorSystemResource
-      externalContextOption <- externalContextOptionResource
-      interactionRegistry <- InteractionRegistry.resource(externalContextOption, config, actorSystem)
-    } yield interactionRegistry
+  def interactionManagerResource(config: Config,
+                                 actorSystem: ActorSystem,
+                                 externalContextOption: Option[Any]
+                                ): Resource[IO, InteractionManager[IO]] =
+    InteractionRegistry.resource(externalContextOption, config, actorSystem)
 
-  def recipeManagerResource: Resource[IO, RecipeManager] = for {
-    actorSystem <- actorSystemResource
-    config <- configResource
-  } yield ActorBasedRecipeManager.getRecipeManagerActor(actorSystem, config)
+  def recipeManagerResource(config: Config,
+                            actorSystem: ActorSystem) : Resource[IO, RecipeManager] =
+    Resource.pure[IO, RecipeManager](ActorBasedRecipeManager.getRecipeManagerActor(actorSystem, config))
 
 
 }

@@ -28,18 +28,21 @@ object AkkaBakery extends LazyLogging {
     */
   def resource(abc: AkkaBakeryComponents): Resource[IO, AkkaBakery] = {
     for {
-      actorSystem <- abc.actorSystemResource
-      cs <- abc.cs
-      akkaBakerConfigTimeouts <- abc.akkaBakerTimeoutsResource
-      akkaBakerConfigValidationSettings <- abc.akkaBakerConfigValidationSettingsResource
-      _ <- abc.maybeCassandraResource
-      _ <- abc.watcherResource
+      config <- abc.configResource
+      actorSystem <- abc.actorSystemResource(config)
+      ec <- abc.ec(actorSystem)
+      cs <- abc.cs(ec)
+      timer <- abc.timer(ec)
+      akkaBakerConfigTimeouts <- abc.akkaBakerTimeoutsResource(config)
+      akkaBakerConfigValidationSettings <- abc.akkaBakerConfigValidationSettingsResource(config)
+      maybeCassandra <- abc.maybeCassandraResource(config, actorSystem, ec, cs, timer)
+      _ <- abc.watcherResource(config, actorSystem, ec, cs, timer, maybeCassandra)
       _ <- abc.metricsOpsResource
-      eventSink <- abc.eventSinkResource
-      interactions <- abc.interactionManagerResource
-      recipeManager <- abc.recipeManagerResource
+      eventSink <- abc.eventSinkResource(config, cs, timer)
       externalContext <- abc.externalContextOptionResource
-      bakerActorProvider <- abc.bakerActorProviderResource
+      interactions <- abc.interactionManagerResource(config, actorSystem, externalContext)
+      recipeManager <- abc.recipeManagerResource(config, actorSystem)
+      bakerActorProvider <- abc.bakerActorProviderResource(config)
       baker = AkkaBaker.apply(
         AkkaBakerConfig(
           externalContext = externalContext,
@@ -73,15 +76,21 @@ object Bakery {
                  interactionManager: Option[InteractionManager[IO]] = None,
                  recipeManager: Option[RecipeManager] = None) : Resource[IO, AkkaBakery] = {
     val akkaBakeryComponents = new AkkaBakeryComponents(optionalConfig, externalContext) {
-      override def interactionManagerResource: Resource[IO, InteractionManager[IO]] = interactionManager match {
-        case Some(value) => Resource.pure[IO, InteractionManager[IO]](value)
-        case None => super.interactionManagerResource
-      }
 
-      override def recipeManagerResource: Resource[IO, RecipeManager] = recipeManager match {
-        case Some(value) => Resource.pure[IO, RecipeManager](value)
-        case None => super.recipeManagerResource
-      }
+      override def interactionManagerResource(config: Config,
+                                              actorSystem: ActorSystem,
+                                              externalContextOption: Option[Any]): Resource[IO, InteractionManager[IO]] =
+        interactionManager match {
+          case Some(value) => Resource.pure[IO, InteractionManager[IO]](value)
+          case None => super.interactionManagerResource(config, actorSystem, externalContextOption)
+        }
+
+
+      override def recipeManagerResource(config: Config, actorSystem: ActorSystem): Resource[IO, RecipeManager] =
+        recipeManager match {
+          case Some(value) => Resource.pure[IO, RecipeManager](value)
+          case None => super.recipeManagerResource(config, actorSystem)
+        }
     }
     AkkaBakery.resource(akkaBakeryComponents)
   }
