@@ -5,11 +5,12 @@ import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.util.Timeout
 import com.ing.baker.runtime.akka.actor.GracefulShutdownShardRegions.InitiateGracefulShutdown
+import com.ing.baker.runtime.akka.internal.TimeoutUtil._
 import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, Future, Promise, TimeoutException}
+import scala.concurrent.{ExecutionContextExecutor, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 object GracefulShutdown {
@@ -17,7 +18,8 @@ object GracefulShutdown {
   @transient
   lazy val logger: Logger = Logger(LoggerFactory.getLogger(getClass.getName))
 
-  def gracefulShutdownActorSystem(actorSystem: ActorSystem, timeout: FiniteDuration, terminateActorSystem: Boolean): Any = {
+  def gracefulShutdownActorSystem(actorSystem: ActorSystem, timeout: FiniteDuration, terminateActorSystem: Boolean): Future[Any] = {
+    implicit val ec: ExecutionContextExecutor = actorSystem.dispatcher
 
     Try {
       Cluster.get(actorSystem)
@@ -42,33 +44,26 @@ object GracefulShutdown {
 
         cluster.leave(cluster.selfAddress)
 
-        Await.result(promise.future, timeout)
+        promise.future.withTimeout(timeout, "Graceful shutdown timed out")
 
       case Success(_) =>
         logger.warn("Not a member of a cluster, no need for cluster-level graceful shutdown")
         if (terminateActorSystem) {
           logger.info("terminating the actor system")
-          Await.result(actorSystem.terminate(), timeout)
-        } else
-          Future.successful(())
+          actorSystem.terminate().withTimeout(timeout, "terminating actor system timed out")
+        } else Future.successful(())
+
       case Failure(exception) =>
         logger.warn("Cluster not available for actor system", exception)
         if (terminateActorSystem)
-          Await.result(actorSystem.terminate(), timeout)
-        else
-          Future.successful(())
+          actorSystem.terminate().withTimeout(timeout, "terminating actor system timed out")
+        else Future.successful(())
     }
   }
 
-  def gracefulShutdownShards(typeNames: Seq[String])(implicit timeout: Timeout, actorSystem: ActorSystem): Unit = {
+  def gracefulShutdownShards(typeNames: Seq[String])(implicit timeout: Timeout, actorSystem: ActorSystem): Future[Any] = {
     // first hand over the shards
     val actor = actorSystem.actorOf(GracefulShutdownShardRegions.props(timeout.duration, typeNames))
-
-    try {
-      Await.result(actor.ask(InitiateGracefulShutdown), timeout.duration)
-    } catch {
-      case _: TimeoutException =>
-        logger.warn(s"Graceful shutdown of shards timed out after $timeout")
-    }
+    actor.ask(InitiateGracefulShutdown).withTimeout(timeout.duration, s"Graceful shutdown of shards timed out after $timeout")(actorSystem.dispatcher)
   }
 }

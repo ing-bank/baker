@@ -509,6 +509,6 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     */
   @nowarn
   override def gracefulShutdown(): Future[Unit] =
-    Future(GracefulShutdown.gracefulShutdownActorSystem(system, config.timeouts.defaultShutdownTimeout, config.terminateActorSystem))
+    GracefulShutdown.gracefulShutdownActorSystem(system, config.timeouts.defaultShutdownTimeout, config.terminateActorSystem)
       .javaTimeoutToBakerTimeout("gracefulShutdown").map(_ => ())
 }

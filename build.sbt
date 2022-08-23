@@ -17,7 +17,7 @@ lazy val baker: Project = project.in(file("."))
     `baker-http-client`, `baker-http-server`, `baker-http-dashboard`,
     // Bakery
     `bakery-state`, `bakery-interaction`, `bakery-interaction-spring`, `bakery-interaction-protocol`,
-    `bakery-interaction-k8s-interaction-manager`, //`bakery-integration-tests`,
+    `bakery-interaction-k8s-interaction-manager`,
     // Examples
     `baker-example`, `bakery-client-example`, `interaction-example-make-payment-and-ship-items`,
     `interaction-example-reserve-items`, `bakery-kafka-listener-example`
