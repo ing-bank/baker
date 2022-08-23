@@ -7,16 +7,17 @@ import akka.util.Timeout
 import com.ing.baker.runtime.akka.actor.GracefulShutdownShardRegions.InitiateGracefulShutdown
 import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
+
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ Await, Promise, TimeoutException }
-import scala.util.{ Failure, Success, Try }
+import scala.concurrent.{Await, Future, Promise, TimeoutException}
+import scala.util.{Failure, Success, Try}
 
 object GracefulShutdown {
 
   @transient
   lazy val logger: Logger = Logger(LoggerFactory.getLogger(getClass.getName))
 
-  def gracefulShutdownActorSystem(actorSystem: ActorSystem, timeout: FiniteDuration): Any = {
+  def gracefulShutdownActorSystem(actorSystem: ActorSystem, timeout: FiniteDuration, terminateActorSystem: Boolean): Any = {
 
     Try {
       Cluster.get(actorSystem)
@@ -34,7 +35,9 @@ object GracefulShutdown {
         cluster.registerOnMemberRemoved {
           logger.warn("Successfully left the akka cluster, terminating the actor system")
           promise.success(true)
-          actorSystem.terminate()
+          if (terminateActorSystem) {
+            actorSystem.terminate()
+          }
         }
 
         cluster.leave(cluster.selfAddress)
@@ -42,11 +45,18 @@ object GracefulShutdown {
         Await.result(promise.future, timeout)
 
       case Success(_) =>
-        logger.warn("Not a member of a cluster, terminating the actor system")
-        actorSystem.terminate()
+        logger.warn("Not a member of a cluster, no need for cluster-level graceful shutdown")
+        if (terminateActorSystem) {
+          logger.info("terminating the actor system")
+          Await.result(actorSystem.terminate(), timeout)
+        } else
+          Future.successful(())
       case Failure(exception) =>
         logger.warn("Cluster not available for actor system", exception)
-        actorSystem.terminate()
+        if (terminateActorSystem)
+          Await.result(actorSystem.terminate(), timeout)
+        else
+          Future.successful(())
     }
   }
 
