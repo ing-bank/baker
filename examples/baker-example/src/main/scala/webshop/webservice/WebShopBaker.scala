@@ -7,7 +7,8 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import org.log4s.{Logger, getLogger}
-import webshop.webservice.CheckoutFlowIngredients.{Item, PaymentInformation, ShippingAddress}
+import webshop.webservice.recipe.CheckoutFlowIngredients.{Item, PaymentInformation, ShippingAddress}
+import webshop.webservice.recipe.{CheckoutFlowEvents, CheckoutFlowRecipe, OrderStatus}
 
 import scala.concurrent.ExecutionContext
 

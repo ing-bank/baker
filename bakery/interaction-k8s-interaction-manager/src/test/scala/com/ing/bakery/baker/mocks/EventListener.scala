@@ -1,4 +1,4 @@
-package com.ing.bakery.mocks
+package com.ing.bakery.baker.mocks
 
 import cats.effect.{ContextShift, IO}
 import com.ing.baker.runtime.common.{BakerEvent, EventInstance}

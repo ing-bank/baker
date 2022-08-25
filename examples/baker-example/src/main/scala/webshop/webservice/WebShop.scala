@@ -1,6 +1,7 @@
 package webshop.webservice
 
 import cats.effect.IO
+import webshop.webservice.recipe.OrderStatus
 
 trait WebShop {
 

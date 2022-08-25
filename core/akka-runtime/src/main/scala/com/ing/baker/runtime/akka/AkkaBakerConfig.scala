@@ -22,7 +22,8 @@ case class AkkaBakerConfig(
                             interactions: InteractionManager[IO],
                             recipeManager: RecipeManager,
                             timeouts: AkkaBakerConfig.Timeouts,
-                            bakerValidationSettings: BakerValidationSettings
+                            bakerValidationSettings: BakerValidationSettings,
+                            terminateActorSystem: Boolean = true,
                           )(implicit val system: ActorSystem)
 
 object AkkaBakerConfig extends LazyLogging {

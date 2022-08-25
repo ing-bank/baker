@@ -1,9 +1,9 @@
-package webshop.webservice
+package webshop.webservice.recipe
 
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
-import webshop.webservice.CheckoutFlowEvents._
-import webshop.webservice.CheckoutFlowIngredients._
-import webshop.webservice.CheckoutFlowInteractions._
+import webshop.webservice.recipe.CheckoutFlowEvents._
+import webshop.webservice.recipe.CheckoutFlowIngredients._
+import webshop.webservice.recipe.CheckoutFlowInteractions._
 
 import scala.collection.immutable.Seq
 
@@ -67,7 +67,7 @@ object CheckoutFlowInteractions {
 
   trait MakePayment {
 
-    def apply(processId: String, items: ReservedItems, address: ShippingAddress, payment: PaymentInformation): Future[MakePaymentOutput]
+    def apply(processId: String, items: ReservedItems, payment: PaymentInformation): Future[MakePaymentOutput]
   }
 
   def MakePaymentInteraction = Interaction(
