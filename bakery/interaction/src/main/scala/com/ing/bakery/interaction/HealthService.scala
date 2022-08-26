@@ -2,7 +2,7 @@ package com.ing.bakery.interaction
 
 import java.net.InetSocketAddress
 
-import cats.effect.{IO, Resource}
+import cats.effect.{ContextShift, IO, Resource, Timer}
 import org.http4s.dsl.io.{->, /, GET, Ok, Root, _}
 import org.http4s.implicits._
 import org.http4s.server.blaze._
@@ -10,11 +10,10 @@ import org.http4s.server.{Router, Server}
 import org.http4s.{HttpApp, HttpRoutes}
 
 import scala.concurrent.ExecutionContext
-import cats.effect.Temporal
 
 object HealthService {
 
-  def resource(address: InetSocketAddress)(implicit clock: Temporal[IO]): Resource[IO, Server[IO]] =
+  def resource(address: InetSocketAddress)(implicit cs: ContextShift[IO], clock: Timer[IO]): Resource[IO, Server[IO]] =
     BlazeServerBuilder[IO](ExecutionContext.global)
       .bindSocketAddress(address)
       .withHttpApp(new HealthService().build)

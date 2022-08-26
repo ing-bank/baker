@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.internal
 
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
 import com.ing.baker.runtime.scaladsl.{InteractionInstance, InteractionInstanceInput}

@@ -2,7 +2,7 @@ package webshop.webservice
 
 import java.util.UUID
 
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}

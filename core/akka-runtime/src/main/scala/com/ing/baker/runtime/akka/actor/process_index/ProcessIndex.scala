@@ -355,7 +355,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         EitherT.liftF(IO(thunk))
 
       def async[A](callback: (Either[Throwable, A] => Unit) => Unit): FireEventIO[A] =
-        EitherT.liftF(IO.async_(callback))
+        EitherT.liftF(IO.async(callback))
 
       def fetchCurrentTime: FireEventIO[Long] =
         EitherT.liftF(IO {

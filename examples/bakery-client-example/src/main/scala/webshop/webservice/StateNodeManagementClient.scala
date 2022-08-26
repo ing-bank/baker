@@ -1,6 +1,6 @@
 package webshop.webservice
 
-import cats.effect.{IO, Resource}
+import cats.effect.{ContextShift, IO, Resource, Timer}
 import org.http4s.Method._
 import org.http4s.Uri
 import org.http4s.client.Client
@@ -8,20 +8,19 @@ import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.dsl.io._
 
 import scala.concurrent.ExecutionContext
-import cats.effect.Temporal
 
 object StateNodeManagementClient {
 
   /** use method `use` of the Resource, the client will be acquired and shut down automatically each time
     * the resulting `IO` is run, each time using the common connection pool.
     */
-  def resource(hostname: Uri, pool: ExecutionContext)(implicit timer: Temporal[IO]): Resource[IO, StateNodeManagementClient] =
+  def resource(hostname: Uri, pool: ExecutionContext)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, StateNodeManagementClient] =
     BlazeClientBuilder[IO](pool)
       .resource
       .map(new StateNodeManagementClient(_, hostname))
 }
 
-final class StateNodeManagementClient(client: Client[IO], hostname: Uri)(implicit cs: ContextShift[IO], timer: Temporal[IO]) {
+final class StateNodeManagementClient(client: Client[IO], hostname: Uri)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
 
   def knownRecipes: IO[String] = {
     val request = GET(hostname / "api" / "bakery" / "app" / "recipes")

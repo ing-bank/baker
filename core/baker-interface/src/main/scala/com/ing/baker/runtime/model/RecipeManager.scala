@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.model
 
-import cats.effect.Effect
+import cats.effect.{Effect, Timer}
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.BakerException.{ImplementationsException, NoSuchRecipeException, RecipeValidationException}
@@ -9,7 +9,6 @@ import com.ing.baker.runtime.scaladsl.{RecipeAdded, RecipeInformation}
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.duration
-import cats.effect.Temporal
 
 trait RecipeManager[F[_]] extends LazyLogging {
 
@@ -19,7 +18,7 @@ trait RecipeManager[F[_]] extends LazyLogging {
 
   protected def fetch(recipeId: String): F[Option[RecipeRecord]]
 
-  def addRecipe(compiledRecipe: CompiledRecipe, suppressImplementationErrors: Boolean)(implicit components: BakerComponents[F], effect: Effect[F], timer: Temporal[F]): F[String] =
+  def addRecipe(compiledRecipe: CompiledRecipe, suppressImplementationErrors: Boolean)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[String] =
     for {
       implementationErrors <-
         if (suppressImplementationErrors) effect.delay {

@@ -1,11 +1,10 @@
 package com.ing.baker.runtime.defaultinteractions
 
-import cats.effect.IO
+import cats.effect.{IO, Timer}
 
 import scala.concurrent.duration.FiniteDuration
-import cats.effect.Temporal
 
-class TimerInteraction(skipWait: Boolean)(implicit timer: Temporal[IO]) {
+class TimerInteraction(skipWait: Boolean)(implicit timer: Timer[IO]) {
 
   class TimeWaited()
 

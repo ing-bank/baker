@@ -1,7 +1,7 @@
 package webshop.webservice
 
 import java.util.UUID
-import cats.effect.IO
+import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.RecipeRecord
@@ -10,7 +10,6 @@ import org.log4s.{Logger, getLogger}
 import webshop.webservice.CheckoutFlowIngredients.{Item, PaymentInformation, ShippingAddress}
 
 import scala.concurrent.ExecutionContext
-import cats.effect.Temporal
 
 object WebShopBaker {
 
@@ -19,7 +18,7 @@ object WebShopBaker {
   val checkoutFlowCompiledRecipe: CompiledRecipe =
     RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
 
-  def initRecipes(baker: Baker)(implicit time: Temporal[IO], ec: ExecutionContext): IO[String] = {
+  def initRecipes(baker: Baker)(implicit time: Timer[IO], ec: ExecutionContext): IO[String] = {
     implicit val cs = IO.contextShift(ec)
 
     IO.fromFuture(IO(for {
