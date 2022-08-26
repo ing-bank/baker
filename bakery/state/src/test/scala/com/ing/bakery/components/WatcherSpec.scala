@@ -1,23 +1,12 @@
-package com.ing.bakery.baker
+package com.ing.bakery.components
 
 import akka.actor.ActorSystem
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import com.ing.baker.runtime.akka.internal.CachingInteractionManager
-import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
-import com.ing.bakery.components.{Watcher, WatcherReadinessCheck}
-import com.ing.bakery.mocks.EventListener
-import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
-import org.http4s.Status.Ok
-import org.http4s.client.blaze.BlazeClientBuilder
 import org.scalatest.concurrent.Eventually
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.funspec.FixtureAsyncFunSpecLike
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
 
-import java.io.File
-import java.net.InetSocketAddress
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 

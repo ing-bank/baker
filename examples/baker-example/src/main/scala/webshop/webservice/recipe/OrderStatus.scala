@@ -1,6 +1,6 @@
-package webshop.webservice
+package webshop.webservice.recipe
 
-import webshop.webservice.OrderStatus._
+import webshop.webservice.recipe.OrderStatus._
 
 trait OrderStatus {
 

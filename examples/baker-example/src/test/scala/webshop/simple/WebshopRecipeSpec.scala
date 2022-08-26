@@ -9,13 +9,13 @@ import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import org.scalatest.BeforeAndAfterAll
+import org.scalatest.flatspec.AsyncFlatSpecLike
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpecLike
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-class WebshopRecipeSpec extends TestKit(ActorSystem("baker-webshop-system")) with Matchers with AnyWordSpecLike with BeforeAndAfterAll {
+class WebshopRecipeSpec extends TestKit(ActorSystem("baker-webshop-system")) with Matchers with AsyncFlatSpecLike with BeforeAndAfterAll {
 
   implicit val ec : ExecutionContext = system.dispatcher
 
@@ -23,28 +23,22 @@ class WebshopRecipeSpec extends TestKit(ActorSystem("baker-webshop-system")) wit
     TestKit.shutdownActorSystem(system)
   }
 
-  "The WebshopRecipeReflection" should {
-    "compile the recipe without errors" in {
+  "The WebshopRecipeReflection" should "compile the recipe without errors" in {
       RecipeCompiler.compileRecipe(SimpleWebshopRecipeReflection.recipe)
       Future.successful(succeed)
-    }
   }
 
-  "The WebshopRecipe" should {
-    "compile the recipe without errors" in {
+  "The WebshopRecipe" should "compile the recipe without errors" in {
       RecipeCompiler.compileRecipe(SimpleWebshopRecipe.recipe)
       Future.successful(succeed)
-    }
   }
 
-  it should {
-    "visualize the recipe" in {
+  it should "visualize the recipe" in {
       val compiled = RecipeCompiler.compileRecipe(SimpleWebshopRecipe.recipe)
       val viz: String = compiled.getRecipeVisualization
       println(Console.GREEN + s"Recipe visualization, paste this into webgraphviz.com:")
       println(viz + Console.RESET)
       Future.successful(succeed)
-    }
   }
 
   trait ReserveItems {
@@ -71,8 +65,7 @@ class WebshopRecipeSpec extends TestKit(ActorSystem("baker-webshop-system")) wit
     }
   }
 
-  it should {
-    "reserve items in happy conditions" in {
+  it should "reserve items in happy conditions" in {
       implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
       val reserveItemsInstance: InteractionInstance =
@@ -107,6 +100,5 @@ class WebshopRecipeSpec extends TestKit(ActorSystem("baker-webshop-system")) wit
           .getOrElse("No reserved items")
 
       } yield provided shouldBe items.mkString(", ")
-    }
   }
 }

@@ -1,9 +1,9 @@
-package webshop.webservice
+package webshop.webservice.recipe
 
 import cats.effect.{IO, Timer}
-import webshop.webservice.CheckoutFlowEvents.ReserveItemsOutput
-import webshop.webservice.CheckoutFlowIngredients.{Item, ReservedItems}
-import webshop.webservice.CheckoutFlowInteractions.ReserveItems
+import webshop.webservice.recipe.CheckoutFlowEvents.ReserveItemsOutput
+import webshop.webservice.recipe.CheckoutFlowIngredients.{Item, ReservedItems}
+import webshop.webservice.recipe.CheckoutFlowInteractions.ReserveItems
 
 import scala.concurrent.Future
 import scala.concurrent.duration._

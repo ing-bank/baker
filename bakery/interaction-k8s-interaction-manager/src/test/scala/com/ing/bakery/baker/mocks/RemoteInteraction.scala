@@ -1,9 +1,9 @@
-package com.ing.bakery.mocks
+package com.ing.bakery.baker.mocks
 
 import cats.effect.IO
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceInput}
 import com.ing.baker.runtime.serialization.{InteractionExecution => I}
-import com.ing.bakery.recipe.Interactions
+import com.ing.bakery.baker.recipe.Interactions
 import io.circe.syntax._
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.matchers.Times

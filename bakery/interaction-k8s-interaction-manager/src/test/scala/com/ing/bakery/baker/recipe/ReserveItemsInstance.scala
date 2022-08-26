@@ -1,9 +1,11 @@
-package com.ing.bakery.recipe
+package com.ing.bakery.baker.recipe
 
 import cats.effect.{IO, Timer}
-import com.ing.bakery.recipe.Events.{ItemsReserved, ReserveItemsOutput}
-import com.ing.bakery.recipe.Ingredients.{Item, OrderId, ReservedItems}
-import com.ing.bakery.recipe.Interactions.ReserveItems
+import com.ing.bakery.baker.recipe.Events.ReserveItemsOutput
+import com.ing.bakery.baker.recipe.Ingredients.{Item, OrderId}
+import com.ing.bakery.baker.recipe.Interactions.ReserveItems
+import Events.ItemsReserved
+import Ingredients.ReservedItems
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
