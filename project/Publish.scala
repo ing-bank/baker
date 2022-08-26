@@ -9,11 +9,11 @@ object Publish {
   lazy val settings =
     if (sys.env.contains("FEEDURL")) StableToAzureFeed
     else if ( (sys.env.contains("USERNAME"))) ReleaseToSonatype
-    else SuppressJavaDocsAndSources
+    else SuppressJavaDocs
 
   import aether.AetherKeys._
 
-  val SuppressJavaDocsAndSources = Seq(
+  val SuppressJavaDocs = Seq(
     doc / sources  := Seq(),
     packageDoc / publishArtifact  := false,
     packageSrc / publishArtifact  := true
@@ -70,6 +70,7 @@ object Publish {
     pomIncludeRepository := (_ => false),
     releaseCrossBuild := true,
     releaseProcess := Seq[ReleaseStep](
+      releaseStepCommand("sonatypeDropAll"),
       checkSnapshotDependencies,
       inquireVersions,
       runClean,

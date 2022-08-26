@@ -28,6 +28,8 @@ steps:
     inputs:
       targetType: 'inline'
       script: |
+        export SourceBranchName=`echo "$(Build.SourceBranch)" | cut -b 12-`  # cuts the first 12 characters, namely "refs/heads/"
+        echo "Will build on branch $SourceBranchName."
         echo $(tty)
         ls -la $(pubring.secureFilePath)
         ls -la $(secring.secureFilePath)
@@ -41,7 +43,7 @@ steps:
         gpg --list-keys
         gpg --list-secret-keys
 
-        git checkout master
+        git checkout "$SourceBranchName"
         git config --global user.email "bakery-release@github.com"
         git config --global user.name "baker release pipeline"
         git remote set-url origin "https://${GIT_AUTH_USER}:${GIT_AUTH_TOKEN}@github.com/ing-bank/baker"

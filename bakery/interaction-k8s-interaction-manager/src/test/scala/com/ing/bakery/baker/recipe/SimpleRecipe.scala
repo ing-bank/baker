@@ -1,14 +1,13 @@
-package com.ing.bakery.recipe
+package com.ing.bakery.baker.recipe
 
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
 import com.ing.baker.recipe.scaladsl.{Event, Recipe}
-import com.ing.bakery.recipe.Events.OrderPlaced
+import Events.OrderPlaced
 
 import scala.concurrent.duration._
-
 
 object SimpleRecipe {
 

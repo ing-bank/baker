@@ -10,6 +10,7 @@ import com.ing.baker.runtime.scaladsl._
 import com.typesafe.config.ConfigFactory
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.log4s.Logger
+import webshop.webservice.recipe.{MakePaymentInstance, ReserveItemsInstance, ShipItemsInstance}
 
 import scala.concurrent.ExecutionContext
 
@@ -28,13 +29,13 @@ object Main extends IOApp {
         baker <- IO { AkkaBaker(config, actorSystem, CachingInteractionManager(List(
           InteractionInstance.unsafeFrom(new ReserveItemsInstance()),
           InteractionInstance.unsafeFrom(new MakePaymentInstance()),
-          InteractionInstance.unsafeFrom(new ShipItemsInstance())
+          InteractionInstance.unsafeFrom(new ShipItemsInstance()),
         ))) }
         checkoutRecipeId <- WebShopBaker.initRecipes(baker)(timer, actorSystem.dispatcher)
         sd <- Ref.of[IO, Boolean](false)
         webShopBaker = new WebShopBaker(baker, checkoutRecipeId)(actorSystem.dispatcher)
         memoryDumpPath = config.getString("service.memory-dump-path")
-        httpPort = config.getInt("bakery-component.http-api-port")
+        httpPort = config.getInt("baker.http-api-port")
         app = new WebShopService(webShopBaker, memoryDumpPath)
         resources = SystemResources(actorSystem, baker, app, httpPort, sd)
       } yield resources

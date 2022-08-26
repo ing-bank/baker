@@ -1,9 +1,9 @@
-package com.ing.bakery.baker
+package com.ing.bakery.components
+
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource, Timer}
-import com.typesafe.config.Config
 import cats.implicits._
-import com.ing.bakery.components.{Cassandra, Watcher}
+import com.typesafe.config.Config
 
 import scala.concurrent.duration._
 object TestWatcher {

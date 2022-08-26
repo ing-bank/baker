@@ -11,7 +11,9 @@ object SimpleWebshopInstances {
 
   val ReserveItemsInstance: InteractionInstance = InteractionInstance(
     name = SimpleWebshopRecipe.Interactions.ReserveItems.name,
-    input = Seq(InteractionInstanceInput(Option.empty, ListType(CharArray))),
+    input = Seq(
+      InteractionInstanceInput(Option.empty, CharArray), // orderId
+      InteractionInstanceInput(Option.empty, ListType(CharArray))), // items
     run = handleReserveItems
   )
 

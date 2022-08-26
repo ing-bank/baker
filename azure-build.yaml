@@ -80,14 +80,6 @@ steps:
         sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} coverage test coverageReport && bash <(curl -s https://codecov.io/bash)
       failOnStderr: false
 
-  - task: Bash@3
-    displayName: 'Building and testing examples'
-    inputs:
-      targetType: 'inline'
-      script: |
-        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project interaction-example-make-payment-and-ship-items; test; project interaction-example-reserve-items; test; project bakery-client-example; test; project bakery-kafka-listener-example; test"
-      failOnStderr: false
-
   - ${{ if or(eq(parameters['ForcePublish'],true),eq(variables['Build.SourceBranch'], 'refs/heads/master')) }}:
     - task: Bash@3
       displayName: 'Prepare publishing credentials'

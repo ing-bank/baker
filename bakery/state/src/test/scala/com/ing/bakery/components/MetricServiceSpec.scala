@@ -1,4 +1,4 @@
-package com.ing.bakery.baker
+package com.ing.bakery.components
 
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.bakery.metrics.MetricService
