@@ -135,7 +135,7 @@ object Dependencies {
   val springCore = "org.springframework" % "spring-core" % springVersion
   val springBootStarter = "org.springframework.boot" % "spring-boot-starter" % springBootVersion
 
-  val snakeYaml = "org.yaml" % "snakeyaml" % "1.31"
+  val snakeYaml = "org.yaml" % "snakeyaml" % "1.32"
 
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.3"
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.13.3"
