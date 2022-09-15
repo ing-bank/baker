@@ -6,6 +6,7 @@ between business logic and implementation through the `Recipe` and `InteractionI
 `Interactions`, since every `Interaction` should only depend on the input. 
 
 We present the layers of testing when using Baker, and how to write tests for such layers, use them as necessary.
+We also will explain how to simplify your testing logic using our `baker-test` library.
 
 ## Testing Recipes for Soundness: Compiling the Recipe in a Test
 
@@ -51,7 +52,8 @@ On the next example we will:
 5. Assert expectations on the state and/or the sensory event results.
 
 _Note: Take into consideration the asynchronous nature of Baker, some times the easiest is to use `fireAndResolveWhenCompleted`
-that will resolve when a sensory event has completely finished affecting the state of the recipe instance._
+that will resolve when a sensory event has completely finished affecting the state of the recipe instance.
+Or the other way is to use `BakerAssert.waitFor(eventsFlow)` method from the `baker-test` library._
 
 === "Scala"
 
@@ -280,3 +282,263 @@ The final layer is to individually test your implementations, which will resembl
 tests, or unit tests which mock the dependencies. If we put a code example here it would be more of a tutorial on how to 
 generally test code than Baker, which is a good argument to show that Baker si all about decoupling your code and automatically
 orchestrate it through distributed boundaries.
+
+## Baker Test library
+
+This library contains the tooling to help with the testing of the baker-based logic. 
+The usage of this library makes the test code concise and readable in both java and scala. 
+It also simplifies the testing of the cases when asynchronous recipe execution is involved.
+
+=== "Scala"
+
+    ```scala
+    RecipeAssert(baker, recipeInstanceId)
+        .waitFor(classOf[SensoryEvent] :: classOf[InteractionSucceeded] :: EmptyFlow)
+        .assertIngredient("testIngredient").isEqual("foo")
+    ```
+
+=== "Java"
+
+    ```java
+    RecipeAssert.of(baker, recipeInstanceId)
+        .waitFor(EventsFlow.of(SensoryEvent.class, InteractionSucceeded.class))
+        .assertIngredient("testIngredient").isEqual("foo")
+    ```
+
+You can include it to your project by adding `baker-test` artifact:
+
+=== "Sbt"
+
+    ```scala 
+    libraryDependencies += "com.ing.baker" %% "baker-test" % bakerVersion
+    ```
+
+=== "Maven"
+
+    ```xml 
+    <dependency>
+      <groupId>com.ing.baker</groupId>
+      <artifactId>baker-test_2.12</artifactId>
+      <version>${baker.version}</version>
+    </dependency>
+    ```
+
+### EventsFlow
+
+`EventsFlow` is made to simplify the work with the baker events while testing. `EventsFlow` is immutable.
+
+You create a new events flow from events classes:
+
+=== "Scala"
+
+    ```scala
+    val flow: EventsFlow = 
+          classOf[SomeSensoryEvent] :: classOf[InteractionSucceeded] :: EmptyFlow
+    ```
+
+=== "Java"
+
+    ```java
+    EventsFlow flow = EventsFlow.of(
+        SomeSensoryEvent.class,
+        InteractionSucceeded.class
+    );
+    ```
+
+There is also an option to create a new event flow from the existing one:
+
+=== "Scala"
+
+    ```scala
+    val anotherFlow: EventsFlow = 
+        flow -- classOf[SomeSensoryEvent] ++ classOf[AnotherSensoryEvent]
+    ```
+
+=== "Java"
+
+    ```java
+    EventsFlow anotherFlow = flow
+        .remove(SomeSensoryEvent.class)
+        .add(AnotherSensoryEvent.class);
+    ```
+
+It is also possible to combine classes, strings and other events flows:
+
+=== "Scala"
+
+    ```scala
+        val unhappyFlow: EventsFlow = 
+            happyFlow -- classOf[InteractionSucceeded] ++ "InteractionExhausted" +++ someErrorFlow
+    ``` 
+
+=== "Java"
+
+    ```java
+        EventsFlow unhappyFlow = happyFlow
+            .remove(InteractionSucceeded.class)
+            .add("InteractionExhausted")
+            .add(someErrorFlow);
+    ```
+
+Events flows are compared ignoring the order of the events:
+
+=== "Scala"
+
+    ```scala
+       "EventOne" :: "EventTwo" :: EmptyFlow == "EventTwo" :: "EventOne" :: EmptyFlow // true   
+    ```
+
+=== "Java"
+
+    ```java
+       EventsFlow.of("EventOne","EventTwo").equals(EventsFlow.of("EventTwo","EventOne")); // true   
+    ```
+
+While comparing events flows it does not matter if an event is provided as a class or as a string:
+
+=== "Scala"
+
+    ```scala
+       classOf[EventOne] :: EmptyFlow == "EventOne" :: EmptyFlow // true   
+    ```
+
+=== "Java"
+
+    ```java
+       EventsFlow.of(EventOne.class).equals(EventsFlow.of("EventOne")); // true   
+    ```
+
+### RecipeAssert
+
+To create a recipe assert instance a baker instance and a recipe instance id are required:
+
+=== "Scala"
+
+    ```scala
+      val recipeAssert: RecipeAssert = RecipeAssert(baker, recipeInstanceId)
+    ```
+
+=== "Java"
+
+    ```java
+        RecipeAssert recipeAssert = RecipeAssert.of(baker, recipeInstanceId);
+    ```
+
+There is a simple way to assert if the events flow for this recipe instance is exactly the same as expected:
+
+=== "Scala"
+
+    ```scala
+      val happyFlow: EventsFlow =
+        classOf[SomeSensoryEvent] :: classOf[InteractionSucceeded] :: EmptyFlow
+      RecipeAssert(baker, recipeInstanceId).assertEventsFlow(happyFlow)
+    ```
+
+=== "Java"
+
+    ```java
+        EventsFlow happyFlow = EventsFlow.of(
+            SomeSensoryEvent.class,
+            InteractionSucceeded.class
+        );
+        RecipeAssert.of(baker, recipeInstanceId).assertEventsFlow(happyFlow);
+    ```
+
+If it is not the same a clear error message of what is the difference is provided:
+
+```
+Events are not equal:
+    actual: OrderPlaced, ItemsReserved
+  expected: OrderPlaced, ItemsNotReserved
+difference: ++ ItemsNotReserved
+            -- ItemsReserved
+```
+
+There are multiple methods to assert ingredient values.
+
+=== "Scala"
+
+    ```scala
+    RecipeAssert(baker, recipeInstanceId)
+      .assertIngredient("ingredientName").isEqual(expectedValue) // is equal to the expected value
+      .assertIngredient("nullishIngredient").isNull // exists and has `null` value
+      .assertIngredient("not-existing").isAbsent // ingredient is not a part of the recipe
+      .assertIngredient("someListOfStrings").is(value => Assertions.assert(value.asList(classOf[String]).size == 2)) // custom
+    ```
+
+=== "Java"
+
+    ```java
+    RecipeAssert.of(baker, recipeInstanceId)
+      .assertIngredient("ingredientName").isEqual(expectedValue) // is equal to the expected value
+      .assertIngredient("nullishIngredient").isNull() // exists and has `null` value
+      .assertIngredient("not-existing").isAbsent() // ingredient is not a part of the recipe
+      .assertIngredient("someListOfStrings").is(val => Assert.assertEquals(2, val.asList(String.class).size())); // custom
+    ```
+
+You can log some information from baker recipe instance.
+
+_Note: But in most case you should not have to do it because the current state is logged when any of the assertions fails_
+
+
+=== "Scala"
+
+    ```scala
+    RecipeAssert(baker, recipeInstanceId)
+        .logIngredients() // logs ingredients
+        .logEventNames() // logs event names
+        .logVisualState() // logs visual state in dot language
+        .logCurrentState() // logs all the information available
+    ```
+
+=== "Java"
+
+    ```java
+    RecipeAssert.of(baker, recipeInstanceId)
+        .logIngredients() // logs ingredients
+        .logEventNames() // logs event names
+        .logVisualState() // logs visual state in dot language
+        .logCurrentState(); // logs all the information available
+    ```
+
+Quite a common task is to wait for a baker process to finish or specific event to fire.
+Therefore, the blocking method was implemented:
+
+=== "Scala"
+
+    ```scala
+    RecipeAssert(baker, recipeInstanceId).waitFor(happyFlow)
+    // on this line all the events within happyFlow have happened
+    // otherwise timeout occurs and an assertion error is thrown
+    ```
+
+=== "Java"
+
+    ```java
+    RecipeAssert.of(baker, recipeInstanceId).waitFor(happyFlow);
+    // on this line all the events within happyFlow have happened
+    // otherwise timeout occurs and an assertion error is thrown
+    ```
+
+As you probably already noticed `RecipeAssert` is chainable 
+so the typical usage would probably something like the following:
+
+=== "Scala"
+
+    ```scala
+    RecipeAssert(baker, recipeInstanceId)
+        .waitFor(happyFlow)
+        .assertEventsFlow(happyFlow)
+        .assertIngredient("ingredientA").isEqual(ingredientValueA)
+        .assertIngredient("ingredientB").isEqual(ingredientValueB)
+    ```
+
+=== "Java"
+
+    ```java
+    RecipeAssert.of(baker, recipeInstanceId)
+        .waitFor(happyFlow)
+        .assertEventsFlow(happyFlow)
+        .assertIngredient("ingredientA").isEqual(ingredientValueA)
+        .assertIngredient("ingredientB").isEqual(ingredientValueB);
+    ```
