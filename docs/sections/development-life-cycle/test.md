@@ -320,6 +320,7 @@ You can include it to your project by adding `baker-test` artifact:
       <groupId>com.ing.baker</groupId>
       <artifactId>baker-test_2.12</artifactId>
       <version>${baker.version}</version>
+      <scope>test</scope>
     </dependency>
     ```
 
@@ -410,7 +411,9 @@ While comparing events flows it does not matter if an event is provided as a cla
 
 ### RecipeAssert
 
-To create a recipe assert instance a baker instance and a recipe instance id are required:
+`RecipeAssert` is the starting point of all your assertions for the recipe instance.
+
+To create a `RecipeAssert` instance a baker instance and a recipe instance id are required:
 
 === "Scala"
 
@@ -444,7 +447,7 @@ There is a simple way to assert if the events flow for this recipe instance is e
         RecipeAssert.of(baker, recipeInstanceId).assertEventsFlow(happyFlow);
     ```
 
-If it is not the same a clear error message of what is the difference is provided:
+If the assertion fails a clear error message with the difference is provided:
 
 ```
 Events are not equal:
@@ -476,9 +479,9 @@ There are multiple methods to assert ingredient values.
       .assertIngredient("someListOfStrings").is(val => Assert.assertEquals(2, val.asList(String.class).size())); // custom
     ```
 
-You can log some information from baker recipe instance.
+You can log some information from the baker recipe instance.
 
-_Note: But in most case you should not have to do it because the current state is logged when any of the assertions fails_
+_Note: But in most cases you probably should not have to do it because the current state is logged when any of the assertions fail._
 
 
 === "Scala"
@@ -520,8 +523,8 @@ Therefore, the blocking method was implemented:
     // otherwise timeout occurs and an assertion error is thrown
     ```
 
-As you probably already noticed `RecipeAssert` is chainable 
-so the typical usage would probably something like the following:
+As you have probably already noticed `RecipeAssert` is chainable 
+so the typical usage would probably be something like the following:
 
 === "Scala"
 
