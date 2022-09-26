@@ -25,6 +25,17 @@ message Initialized {
     optional SerializedData initial_state = 2;
 }
 
+message MetaDataAddedRecord {
+    optional string key = 1;
+    optional string value = 2;
+}
+
+message MetaDataAdded {
+    option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
+
+    repeated MetaDataAddedRecord metaData = 1;
+}
+
 message TransitionFired {
     option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
 

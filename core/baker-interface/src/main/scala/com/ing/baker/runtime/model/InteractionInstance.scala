@@ -22,7 +22,7 @@ import scala.runtime.ScalaRunTime
 abstract class InteractionInstance[F[_]] extends common.InteractionInstance[F] with ScalaApi {
   self =>
 
-  val run: Seq[IngredientInstance] => F[Option[EventInstance]]
+  val run: Seq[IngredientInstance]=> F[Option[EventInstance]]
 
   override type Event = EventInstance
 

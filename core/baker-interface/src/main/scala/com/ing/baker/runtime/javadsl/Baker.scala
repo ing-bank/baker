@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.function.{BiConsumer, Consumer}
 import javax.annotation.Nonnull
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.compat.java8.FutureConverters
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -395,4 +395,15 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
       .toCompletableFuture
       .thenApply(_.asJava)
 
+  /**
+    * This method is used to add metadata to your request. This will be added to the ingredients map in Baker.
+    * Since this is meant to be used as metadata this should not
+    * These cannot be ingredients already found in your recipe.
+    *
+    * @param metadata
+    */
+  override def addMetaData(recipeInstanceId: String, metadata: java.util.Map[String, String]): CompletableFuture[Unit] = {
+    val x: Map[String, String] = metadata.asScala.toMap
+    toCompletableFuture(baker.addMetaData(recipeInstanceId, x))
+  }
 }
