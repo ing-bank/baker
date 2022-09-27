@@ -100,7 +100,9 @@ object BakerTypedProtobufSerializer {
       forType[ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived]
         .register("ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived"),
       forType[ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet]
-        .register("ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet")
+        .register("ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet"),
+      forType[ProcessIndexProtocol.AddRecipeInstanceMetaData]
+      .register("ProcessIndexProtocol.AddRecipeInstanceMetaData")
     )
 
   def processInstanceEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] =
@@ -133,12 +135,16 @@ object BakerTypedProtobufSerializer {
         .register("ProcessInstanceProtocol.TransitionFailed"),
       forType[ProcessInstanceProtocol.TransitionFired]
         .register("ProcessInstanceProtocol.TransitionFired"),
+      forType[ProcessInstanceProtocol.MetaDataAdded.type]
+        .register("ProcessInstanceProtocol.MetaDataAdded"),
       forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFired]
         .register("TransitionFired")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFired)),
       forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailed]
         .register("TransitionFailed")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailed)),
       forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.Initialized]
-        .register("Initialized")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.Initialized))
+        .register("Initialized")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.Initialized)),
+      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.MetaDataAdded]
+        .register("MetaDataAdded")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.MetaDataAdded)),
     )
 
   def recipeManagerEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] =

@@ -209,6 +209,13 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
           sender() ! instanceState
       }
 
+    case AddMetaData(metaData: Map[String, String]) =>
+      persistEvent(instance, ProcessInstanceEventSourcing.MetaDataAdded(metaData))(
+        eventSource.apply(instance)
+          .andThen {
+            case (instance) =>
+              sender() ! ProcessInstanceProtocol.MetaDataAdded
+              context become running(instance, scheduledRetries)})
 
     case event@TransitionFiredEvent(jobId, transitionId, correlationId, timeStarted, timeCompleted, consumed, produced, output) =>
 

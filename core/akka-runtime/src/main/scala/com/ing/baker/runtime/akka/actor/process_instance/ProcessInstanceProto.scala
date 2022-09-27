@@ -289,6 +289,22 @@ object ProcessInstanceProto {
         } yield  TransitionFailed(jobId, transitionId, message.correlationId, consume, input, reason, strategy)
     }
 
+  implicit def metaDataAddedProto(implicit ev0: AnyRefMapping): ProtoMap[MetaDataAdded.type, protobuf.MetaDataAdded] =
+    new ProtoMap[MetaDataAdded.type, protobuf.MetaDataAdded] {
+
+      val companion: GeneratedMessageCompanion[protobuf.MetaDataAdded] =
+        protobuf.MetaDataAdded
+
+      override def toProto(a: MetaDataAdded.type): protobuf.MetaDataAdded =
+        protobuf.MetaDataAdded()
+
+      override def fromProto(message: protobuf.MetaDataAdded): Try[MetaDataAdded.type] = {
+        Success(MetaDataAdded)
+      }
+    }
+
+
+
   implicit def transitionFiredProto(implicit ev0: AnyRefMapping): ProtoMap[TransitionFired, protobuf.TransitionFiredMessage] =
     new ProtoMap[TransitionFired, protobuf.TransitionFiredMessage] {
 

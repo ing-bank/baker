@@ -256,6 +256,14 @@ trait Baker[F[_]] extends LanguageApi {
   def fireEvent(recipeInstanceId: String, event: EventInstanceType, correlationId: language.Option[String]): EventResolutionsType
 
   /**
+    * This method is used to add metadata to your request. This will be added to the ingredients map in Baker.
+    * Since this is meant to be used as metadata this should not
+    * These cannot be ingredients already found in your recipe.
+    * @param metadata
+    */
+  def addMetaData(recipeInstanceId: String, metadata: language.Map[String, String]): F[Unit]
+
+  /**
     * Returns an index of all running processes.
     *
     * Can potentially return a partial index when baker runs in cluster mode

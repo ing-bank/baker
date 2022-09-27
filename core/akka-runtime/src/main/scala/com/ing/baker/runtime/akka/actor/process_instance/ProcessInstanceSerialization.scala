@@ -31,6 +31,7 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](pro
     case e: protobuf.Initialized => deserializeInitialized(e)
     case e: protobuf.TransitionFired => deserializeTransitionFired(e)
     case e: protobuf.TransitionFailed => deserializeTransitionFailed(e)
+    case e: protobuf.MetaDataAdded => deserializeMetaDataAdded(e)
   }
 
   /**
@@ -41,6 +42,7 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](pro
       case e: InitializedEvent => serializeInitialized(e)
       case e: TransitionFiredEvent => serializeTransitionFired(e)
       case e: TransitionFailedEvent => serializeTransitionFailed(e)
+      case e: com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.MetaDataAdded => serializeMetaDataAdded(e)
     }
 
   private def missingFieldException(field: String) = throw new IllegalStateException(s"Missing field in serialized data: $field")
@@ -186,4 +188,19 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](pro
 
     TransitionFiredEvent(jobId, transitionId, e.correlationId, timeStarted, timeCompleted, consumed, produced, output)
   }
+
+  private def serializeMetaDataAdded(e: com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.MetaDataAdded): protobuf.MetaDataAdded = {
+    protobuf.MetaDataAdded(
+      e.metaData.map(record => {
+        protobuf.MetaDataAddedRecord(Some(record._1), Some(record._2))
+      }).toSeq
+    )
+  }
+
+  private def deserializeMetaDataAdded(e: protobuf.MetaDataAdded):
+    Instance[P, T, S] => com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.MetaDataAdded = instance => {
+      com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.MetaDataAdded(
+        e.metaData.map(record => (record.key.get -> record.value.get)).toMap
+      )
+    }
 }

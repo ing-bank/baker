@@ -7,12 +7,18 @@ import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.sensors.actor.PersistentActorMetrics
 import akka.stream.scaladsl.Source
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.Event
 import com.ing.baker.runtime.akka.actor.process_instance.internal.{ExceptionState, ExceptionStrategy, Instance, Job}
 import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
+import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetaDataName
+import com.ing.baker.runtime.scaladsl.RecipeInstanceState
 import com.ing.baker.runtime.serialization.Encryption
+import com.ing.baker.types.{CharArray, MapType, Value}
+import com.typesafe.scalalogging.LazyLogging
 
-object ProcessInstanceEventSourcing {
+import scala.jdk.CollectionConverters._
+
+object ProcessInstanceEventSourcing extends LazyLogging {
 
   sealed trait Event extends NoSerializationVerificationNeeded
 
@@ -52,6 +58,12 @@ object ProcessInstanceEventSourcing {
   case class InitializedEvent(marking: Marking[Id],
                               state: Any) extends Event
 
+  /**
+    * An event that describes the metaData being updated
+    * @param metaData
+    */
+  case class MetaDataAdded(metaData: Map[String, String]) extends Event
+
   def apply[P : Identifiable, T : Identifiable, S, E](sourceFn: T => (S => E => S)): Instance[P, T, S] => Event => Instance[P, T, S] = instance => {
     case InitializedEvent(initial, initialState) =>
 
@@ -83,6 +95,31 @@ object ProcessInstanceEventSourcing {
       val failureCount = job.failureCount + 1
       val updatedJob: Job[P, T, S] = job.copy(failure = Some(ExceptionState(e.timeFailed, failureCount, e.failureReason, e.exceptionStrategy)))
       instance.copy[P, T, S](jobs = instance.jobs + (job.id -> updatedJob))
+    case e: MetaDataAdded =>
+        val newState: S = instance.state match {
+          case state: RecipeInstanceState =>
+            val newBakerMetaData: Map[String, String] =
+              state.ingredients.get(RecipeInstanceMetaDataName) match {
+                case Some(value) =>
+                  if(value.isInstanceOf(MapType(CharArray))) {
+                    val oldMetaData: Map[String, String] = value.asMap[String, String](classOf[String], classOf[String]).asScala.toMap
+                    oldMetaData ++ e.metaData
+                  }
+                  else {
+                    //If the old metadata is not of Type[String, String] we overwrite it since this is not allowed.
+                    logger.info("Old RecipeInstanceMetaData was not of type Map[String, String]")
+                    e.metaData
+                  }
+                case None =>
+                  e.metaData
+              }
+            val newIngredients: Map[String, Value] =
+              state.ingredients + (RecipeInstanceMetaDataName -> com.ing.baker.types.Converters.toValue(newBakerMetaData))
+            state.copy(ingredients = newIngredients).asInstanceOf[S]
+          case state =>
+            state
+      }
+      instance.copy[P, T, S](state = newState)
   }
 
   def eventsForInstance[P : Identifiable, T : Identifiable, S, E](
@@ -140,6 +177,7 @@ abstract class ProcessInstanceEventSourcing[P : Identifiable, T : Identifiable, 
     case e: protobuf.Initialized      => applyToRecoveringState(e)
     case e: protobuf.TransitionFired  => applyToRecoveringState(e)
     case e: protobuf.TransitionFailed => applyToRecoveringState(e)
+    case e: protobuf.MetaDataAdded => applyToRecoveringState(e)
     case RecoveryCompleted =>
       if (recoveringState.sequenceNr > 0)
         onRecoveryCompleted(recoveringState)
