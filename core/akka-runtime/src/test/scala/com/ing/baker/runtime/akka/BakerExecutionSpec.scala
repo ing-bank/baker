@@ -188,7 +188,20 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           metaData.containsKey("key") && metaData.get("key") == "value2")
     }
 
-    "has not metaData if not given" in {
+    "allows empty metadata to an RecipeInstance" in {
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("MetaDataFour")
+        id = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, id)
+        _ <- baker.addMetaData(id, Map.empty)
+        ingredients: Map[String, Value] <- baker.getIngredients(id)
+        metaData = ingredients(RecipeInstanceMetaDataName).asMap(classOf[String], classOf[String])
+      } yield
+        assert(
+          metaData.size() == 0)
+    }
+
+    "has no metaData if not given" in {
       for {
         (baker, recipeId) <- setupBakerWithRecipe("MetaDataThree")
         id = UUID.randomUUID().toString
