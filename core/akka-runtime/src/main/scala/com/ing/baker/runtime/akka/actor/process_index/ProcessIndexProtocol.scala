@@ -30,6 +30,8 @@ object ProcessIndexProtocol {
 
   case class ResolveBlockedInteraction(recipeInstanceId: String, interactionName: String, output: EventInstance) extends ProcessIndexMessage
 
+  case class AddRecipeInstanceMetaData(recipeInstanceId: String, metaData: Map[String, String]) extends ProcessIndexMessage
+
   /**
     * Failure when attempting to resolve a blocked interaction, the event is not of valid type according with the recipe
     *

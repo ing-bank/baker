@@ -3,7 +3,6 @@ package com.ing.baker.runtime.akka
 import java.net.MalformedURLException
 import java.util.concurrent.TimeUnit
 import java.util.{Optional, UUID}
-
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
@@ -17,9 +16,10 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFail
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
+import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetaDataName
 import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance, InteractionInstanceInput, RecipeEventMetadata}
-import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
+import com.ing.baker.types.{CharArray, Int32, PrimitiveValue, Value}
 import com.typesafe.config.{Config, ConfigFactory}
 import io.prometheus.client.CollectorRegistry
 import org.mockito.ArgumentMatchers.{any, anyString, argThat, eq => mockitoEq}
@@ -158,6 +158,56 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           baker.bake(recipeId, id)
         }
       } yield succeed
+    }
+
+    "allows adding metadata to an RecipeInstance" in {
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("MetaDataOne")
+        id = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, id)
+        _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value"))
+        _ <- baker.addMetaData(id, Map.apply[String, String]("key2" -> "value2"))
+        ingredients: Map[String, Value] <- baker.getIngredients(id)
+        metaData = ingredients(RecipeInstanceMetaDataName).asMap(classOf[String], classOf[String])
+      } yield assert(
+        metaData.containsKey("key") && metaData.get("key") == "value" &&
+        metaData.containsKey("key2") && metaData.get("key2") == "value2")
+    }
+
+    "allows updating metadata to an RecipeInstance" in {
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("MetaDataTwo")
+        id = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, id)
+        _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value"))
+        _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value2"))
+        ingredients: Map[String, Value] <- baker.getIngredients(id)
+        metaData = ingredients(RecipeInstanceMetaDataName).asMap(classOf[String], classOf[String])
+      } yield
+        assert(
+          metaData.containsKey("key") && metaData.get("key") == "value2")
+    }
+
+    "allows empty metadata to an RecipeInstance" in {
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("MetaDataFour")
+        id = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, id)
+        _ <- baker.addMetaData(id, Map.empty)
+        ingredients: Map[String, Value] <- baker.getIngredients(id)
+        metaData = ingredients(RecipeInstanceMetaDataName).asMap(classOf[String], classOf[String])
+      } yield
+        assert(
+          metaData.size() == 0)
+    }
+
+    "has no metaData if not given" in {
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("MetaDataThree")
+        id = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, id)
+        ingredients: Map[String, Value] <- baker.getIngredients(id)
+      } yield assert(!ingredients.contains(RecipeInstanceMetaDataName))
     }
 
     "throw a NoSuchProcessException" when {

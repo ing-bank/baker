@@ -145,7 +145,10 @@ private[recipeinstance] case class TransitionExecution(
     }
 
     def execute: F[Option[EventInstance]] =
-      components.interactions.execute(interactionTransition, buildInteractionInput)
+      components.interactions.execute(
+        interactionTransition,
+        buildInteractionInput,
+        com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.getMetaDataFromIngredients(ingredients))
 
     for {
       startTime <- timer.clock.realTime(MILLISECONDS)
