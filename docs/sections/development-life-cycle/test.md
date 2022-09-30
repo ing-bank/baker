@@ -310,7 +310,7 @@ You can include it to your project by adding `baker-test` artifact:
 === "Sbt"
 
     ```scala 
-    libraryDependencies += "com.ing.baker" %% "baker-test" % bakerVersion
+    libraryDependencies += "com.ing.baker" %% "baker-test_2.12" % bakerVersion
     ```
 
 === "Maven"
