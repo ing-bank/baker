@@ -360,6 +360,24 @@ object ProcessIndexProto {
         } yield ProcessEventResponse(recipeInstanceId)
     }
 
+  implicit def addRecipeInstanceMetaDataProto(implicit provider: AkkaSerializerProvider): ProtoMap[AddRecipeInstanceMetaData, protobuf.AddRecipeInstanceMetaData] =
+    new ProtoMap[AddRecipeInstanceMetaData, protobuf.AddRecipeInstanceMetaData] {
+
+      val companion = protobuf.AddRecipeInstanceMetaData
+
+      def toProto(a: AddRecipeInstanceMetaData): protobuf.AddRecipeInstanceMetaData =
+        protobuf.AddRecipeInstanceMetaData(
+          Some(a.recipeInstanceId),
+          a.metaData.map(record => {
+            protobuf.AddRecipeInstanceMetaDataRecord(Some(record._1), Some(record._2))}).toSeq)
+
+      def fromProto(message: protobuf.AddRecipeInstanceMetaData): Try[AddRecipeInstanceMetaData] =
+        for {
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+          metaData = message.metaData.map(record => (record.getKey -> record.getValue)).toMap
+        } yield AddRecipeInstanceMetaData(recipeInstanceId, metaData)
+    }
+
   implicit def getProcessStateProto: ProtoMap[GetProcessState, protobuf.GetProcessState] =
     new ProtoMap[GetProcessState, protobuf.GetProcessState] {
 

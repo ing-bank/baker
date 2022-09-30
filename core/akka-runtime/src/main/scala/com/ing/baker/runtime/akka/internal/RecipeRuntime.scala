@@ -205,7 +205,8 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
         eventStream.publish(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName))
 
         // executes the interaction and obtain the (optional) output event
-        interactionManager.execute(interaction, input).map { interactionOutput =>
+        interactionManager.execute(interaction, input,
+          com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.getMetaDataFromIngredients(processState.ingredients)).map { interactionOutput =>
 
           // validates the event, throws a FatalInteraction exception if invalid
           RecipeRuntime.validateInteractionOutput(interaction, interactionOutput).foreach { validationError =>

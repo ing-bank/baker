@@ -8,6 +8,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.petrinet.api.{Id, Marking, MultiSet}
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.AddRecipeInstanceMetaData
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
@@ -15,6 +16,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor.Recipe
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
 import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManagerActor, RecipeManagerProtocol}
+import com.ing.baker.runtime.akka.actor.serialization.SerializationSpec.GenUtil.mapOf
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState, SensoryEventResult}
 import com.ing.baker.runtime.serialization.Encryption.{AESEncryption, NoEncryption}
@@ -126,6 +128,8 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
   checkFor[ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived].run
 
   checkFor[ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet].run
+
+  checkFor[ProcessIndexProtocol.AddRecipeInstanceMetaData].run
 
   checkFor[ProcessIndexProtocol.ProcessDeleted].run
 
@@ -498,6 +502,17 @@ object SerializationSpec {
       for {
         recipeInstanceId <- Gen.alphaStr
       } yield ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet(recipeInstanceId)
+
+
+    val metaDataEntries: Gen[(String, String)] = for {
+      fieldName <- Gen.alphaStr
+      fieldValue <- Gen.alphaStr
+    } yield (fieldName -> fieldValue)
+
+    implicit val addRecipeInstanceMetaDataGen: Gen[ProcessIndexProtocol.AddRecipeInstanceMetaData] = for {
+      recipeInstanceId <- Gen.alphaStr
+      map: Map[String, String] <- Gen.nonEmptyMap(metaDataEntries)
+    } yield AddRecipeInstanceMetaData(recipeInstanceId, map)
 
   }
 

@@ -479,6 +479,11 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         }
       }
 
+    case AddRecipeInstanceMetaData(recipeInstanceId, metaData) =>
+      withActiveProcess(recipeInstanceId) { actorRef =>
+        actorRef.forward(AddMetaData(metaData))
+      }
+
     case GetProcessState(recipeInstanceId) =>
       withActiveProcess(recipeInstanceId) { actorRef => actorRef.forward(GetState) }
 
