@@ -261,7 +261,9 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
   override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: String): EventResolutionsType =
     fireEvent(recipeInstanceId, event, Some(correlationId))
 
-  override def addMetaData(recipeInstanceId: String, metadata: Map[String, String]): F[Unit] = throw new NotImplementedError()
+  override def addMetaData(recipeInstanceId: String, metadata: Map[String, String]): F[Unit] =
+    components.recipeInstanceManager.addMetaData(recipeInstanceId, metadata)
+
 
   /**
     * Returns an index of all running processes.

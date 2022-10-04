@@ -6,14 +6,17 @@ import cats.effect.{ConcurrentEffect, Effect, Resource, Timer}
 import cats.implicits._
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common.BakerException.{ProcessAlreadyExistsException, ProcessDeletedException}
+import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetaDataName
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.model.RecipeInstanceManager.RecipeInstanceStatus
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
+import com.ing.baker.types.MapType
 import fs2.{Pipe, Stream}
 
 import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
 import scala.collection.immutable.Seq
+import scala.jdk.CollectionConverters._
 
 object RecipeInstanceManager {
 
@@ -140,6 +143,24 @@ trait RecipeInstanceManager[F[_]] {
         } yield (
           foldToStatus((_: Unit) => received.get)(outcome.map(_ => ())),
           foldToResult((_: Unit) => completed.get)(outcome.map(_ => ()))))
+
+  def addMetaData(recipeInstanceId: String, metadata: Map[String, String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] = {
+    getExistent(recipeInstanceId).map((recipeInstance: RecipeInstance[F]) => {
+      recipeInstance.state.update(currentState => {
+        val newBakerMetaData = currentState.ingredients.get(RecipeInstanceMetaDataName) match {
+          case Some(value) =>
+            if (value.isInstanceOf(MapType(com.ing.baker.types.CharArray))) {
+              val oldMetaData: Map[String, String] = value.asMap[String, String](classOf[String], classOf[String]).asScala.toMap
+              oldMetaData ++ metadata
+            }
+            else metadata
+          case None => metadata
+        }
+        currentState.copy(ingredients = currentState.ingredients + (RecipeInstanceMetaDataName -> com.ing.baker.types.Converters.toValue(newBakerMetaData)))
+      })
+    }).flatten
+  }
+
 
   def stopRetryingInteraction(recipeInstanceId: String, interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] =
     getExistent(recipeInstanceId).flatMap(_.stopRetryingInteraction(interactionName))
