@@ -5,6 +5,7 @@ import com.ing.baker.runtime.{javadsl, scaladsl}
 import com.ing.baker.types.Value
 import com.typesafe.scalalogging.LazyLogging
 
+import java.util.concurrent.ExecutionException
 import java.util.function.Consumer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{Duration, _}
@@ -37,16 +38,19 @@ class RecipeAssert(private val baker: Baker, private val recipeInstanceId: Strin
 
   // logging
 
-  def logIngredients(): RecipeAssert = verify {
+  def logIngredients(): RecipeAssert = {
     baker.getIngredients(recipeInstanceId).map(ingredients => logger.info(s"Ingredients: $ingredients"))
+    this
   }
 
-  def logEventNames(): RecipeAssert = verify {
+  def logEventNames(): RecipeAssert = {
     baker.getEventNames(recipeInstanceId).map(names => logger.info(s"Event names: $names"))
+    this
   }
 
-  def logVisualState(): RecipeAssert = verify {
+  def logVisualState(): RecipeAssert = {
     baker.getVisualState(recipeInstanceId).map(state => logger.info(s"Visual state: $state"))
+    this
   }
 
   def logCurrentState(): RecipeAssert = {
@@ -63,8 +67,11 @@ class RecipeAssert(private val baker: Baker, private val recipeInstanceId: Strin
   private def verify(future: Future[_]): RecipeAssert = await(future) match {
     case Success(_) => this
     case Failure(exception) =>
-      logCurrentState()
-      throw exception.getCause
+      Try(logCurrentState())
+      exception match {
+        case e: ExecutionException => throw e.getCause()
+        case _ => throw exception
+      }
   }
 
   private def getActualFlow: Future[EventsFlow] =
