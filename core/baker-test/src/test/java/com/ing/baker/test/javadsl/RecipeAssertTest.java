@@ -1,6 +1,8 @@
 package com.ing.baker.test.javadsl;
 
 import com.ing.baker.runtime.javadsl.EventInstance;
+import com.ing.baker.runtime.common.BakerException.NoSuchProcessException;
+import com.ing.baker.test.EventsFlow;
 import com.ing.baker.test.RecipeAssert;
 import com.ing.baker.test.recipe.WebshopBaker;
 import com.ing.baker.test.recipe.WebshopRecipe;
@@ -107,5 +109,12 @@ public class RecipeAssertTest {
         createRecipeAssert()
                 .waitFor(WebshopRecipe.happyFlow())
                 .assertIngredient("orderId").is(value -> assertEquals("order-2", value.as(String.class)));
+    }
+
+    @Test(expected = NoSuchProcessException.class)
+    public void testNoSuchProcessFailure() {
+        EventsFlow flow = EventsFlow.of("Event");
+        RecipeAssert.of(WebshopBaker.javaBaker(), UUID.randomUUID().toString())
+                .waitFor(flow);
     }
 }
