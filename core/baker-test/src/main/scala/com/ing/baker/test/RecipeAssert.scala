@@ -58,17 +58,18 @@ class RecipeAssert(private val baker: Baker, private val recipeInstanceId: Strin
   // logging
 
   def logIngredients(): RecipeAssert = {
-    baker.getIngredients(recipeInstanceId).map(ingredients => logger.info(s"Ingredients: $ingredients"))
+    await(baker.getIngredients(recipeInstanceId).map(ingredients => logger.info(s"Ingredients: $ingredients"))).get
     this
   }
 
   def logEventNames(): RecipeAssert = {
-    baker.getEventNames(recipeInstanceId).map(names => logger.info(s"Event names: $names"))
+    await(baker.getEventNames(recipeInstanceId).map(names => logger.info(s"Event names: $names"))).get
     this
   }
 
   def logVisualState(): RecipeAssert = {
-    baker.getVisualState(recipeInstanceId).map(state => logger.info(s"Visual state: $state"))
+    val visualStateRecipeFuture = baker.getVisualState(recipeInstanceId).map(state => logger.info(s"Visual state: $state"))
+    Await.result(visualStateRecipeFuture, 60.seconds)
     this
   }
 
