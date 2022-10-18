@@ -6,7 +6,6 @@ import com.ing.baker.test.EventsFlow;
 import com.ing.baker.test.RecipeAssert;
 import com.ing.baker.test.recipe.WebshopBaker;
 import com.ing.baker.test.recipe.WebshopRecipe;
-import org.junit.Before;
 import org.junit.Test;
 import scala.collection.JavaConverters;
 import scala.collection.mutable.Buffer;
@@ -53,6 +52,34 @@ public class RecipeAssertTest {
         createRecipeAssert()
                 .waitFor(WebshopRecipe.happyFlow())
                 .assertEventsFlow(WebshopRecipe.happyFlow());
+    }
+
+    @Test
+    public void testEventNamesHaveHappened() {
+        createRecipeAssert()
+                .waitFor(WebshopRecipe.happyFlow())
+                .assertEventNamesHappened(WebshopRecipe.happyFlow().events().last());
+    }
+
+    @Test
+    public void testEventsHaveHappened() {
+        createRecipeAssert()
+                .waitFor(WebshopRecipe.happyFlow())
+                .assertEventsHappened(WebshopRecipe.ItemsReserved.class);
+    }
+
+    @Test(expected = AssertionError.class)
+    public void testEventNamesHaveNotHappened() {
+        createRecipeAssert()
+                .waitFor(WebshopRecipe.happyFlow())
+                .assertEventNamesNotHappened("NonExistentEvent", "NonExistentEvent2");
+    }
+
+    @Test(expected = AssertionError.class)
+    public void testEventsHaveNotHappened() {
+        createRecipeAssert()
+                .waitFor(WebshopRecipe.happyFlow())
+                .assertEventsNotHappened(Object.class);
     }
 
     @Test

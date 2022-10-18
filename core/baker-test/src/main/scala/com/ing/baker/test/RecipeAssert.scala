@@ -7,6 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 
 import java.util.concurrent.ExecutionException
 import java.util.function.Consumer
+import scala.annotation.varargs
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, Future}
@@ -34,7 +35,25 @@ class RecipeAssert(private val baker: Baker, private val recipeInstanceId: Strin
     this.getActualFlow.map(actual => assert(expected == actual, errorMsg("Events are not equal", expected, actual)))
   }
 
-  def assertIngredient(name: String): IngredientAssert = new IngredientAssert(name)
+  @varargs def assertEventNamesHappened(expectedEventNames: String*): RecipeAssert = verify{
+    this.getActualFlow.map { actual =>
+      val actualRelevantEvents = expectedEventNames.filter(expected => actual.events.contains(expected))
+      assert(expectedEventNames.length == actualRelevantEvents.length,
+        errorMsg("Not all expected events have happened", EventsFlow.of(expectedEventNames:_*), EventsFlow.of(actualRelevantEvents:_*)))
+    }
+  }
+
+  @varargs def assertEventNamesNotHappened(forbiddenEventNames: String*): RecipeAssert = verify {
+    this.getActualFlow.map { actual =>
+      val actualUnexpectedEvents = forbiddenEventNames.filter(forbidden => actual.events.contains(forbidden))
+      assert(actualUnexpectedEvents.nonEmpty, s"The following events happened, that should NOT have happened: ${actualUnexpectedEvents.mkString}")
+    }
+  }
+
+  @varargs def assertEventsHappened(expectedEvents: Class[_]*): RecipeAssert = assertEventNamesHappened(expectedEvents.map(_.getSimpleName):_*)
+  @varargs def assertEventsNotHappened(forbiddenEvent: Class[_]*): RecipeAssert = assertEventNamesNotHappened(forbiddenEvent.map(_.getSimpleName):_*)
+
+  def assertIngredient(name: String) = new IngredientAssert(name)
 
   // logging
 
@@ -69,7 +88,7 @@ class RecipeAssert(private val baker: Baker, private val recipeInstanceId: Strin
     case Failure(exception) =>
       Try(logCurrentState())
       exception match {
-        case e: ExecutionException => throw e.getCause()
+        case e: ExecutionException => throw e.getCause
         case _ => throw exception
       }
   }
