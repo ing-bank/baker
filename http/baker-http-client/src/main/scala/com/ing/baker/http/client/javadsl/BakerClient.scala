@@ -1,6 +1,6 @@
 package com.ing.baker.http.client.javadsl
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
 import com.ing.baker.http.client.common.TLSConfig
 import com.ing.baker.http.client.scaladsl.{BakerClient => ScalaClient, EndpointConfig}
 import com.ing.baker.runtime.javadsl.{Baker => JavaBaker}
@@ -15,6 +15,7 @@ import scala.collection.JavaConverters._
 import scala.compat.java8.FunctionConverters._
 import scala.compat.java8.FutureConverters
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
+import cats.effect.Temporal
 
 
 object BakerClient {
@@ -43,7 +44,7 @@ object BakerClient {
 
     implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
     implicit val contextShift: ContextShift[IO] = IO.contextShift(ec)
-    implicit val timer: Timer[IO] = IO.timer(ec)
+    implicit val timer: Temporal[IO] = IO.timer(ec)
 
     val future = BlazeClientBuilder[IO](
       executionContext = connectionPool,

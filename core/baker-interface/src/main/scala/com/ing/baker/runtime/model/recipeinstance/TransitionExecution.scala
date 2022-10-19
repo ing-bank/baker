@@ -2,7 +2,7 @@ package com.ing.baker.runtime.model.recipeinstance
 
 import java.lang.reflect.InvocationTargetException
 
-import cats.effect.{Effect, Timer}
+import cats.effect.Effect
 import cats.implicits._
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -19,6 +19,7 @@ import org.slf4j.MDC
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.MILLISECONDS
 import scala.util.Random
+import cats.effect.Temporal
 
 object TransitionExecution {
 
@@ -91,7 +92,7 @@ private[recipeinstance] case class TransitionExecution(
   def toFailedState(failureStrategy: ExceptionStrategyOutcome): TransitionExecution =
     copy(state = TransitionExecution.State.Failed(failureCount + 1, failureStrategy))
 
-  def execute[F[_]](implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[TransitionExecution.Outcome] =
+  def execute[F[_]](implicit components: BakerComponents[F], effect: Effect[F], timer: Temporal[F]): F[TransitionExecution.Outcome] =
     for {
       result <- effect.attempt {
         transition match {
@@ -122,7 +123,7 @@ private[recipeinstance] case class TransitionExecution(
       }
     } yield outcome
 
-  private def executeInteractionInstance[F[_]](interactionTransition: InteractionTransition)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[Option[EventInstance]] = {
+  private def executeInteractionInstance[F[_]](interactionTransition: InteractionTransition)(implicit components: BakerComponents[F], effect: Effect[F], timer: Temporal[F]): F[Option[EventInstance]] = {
 
     def buildInteractionInput: Seq[IngredientInstance] = {
       val recipeInstanceIdIngredient: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(recipeInstanceId)
@@ -189,7 +190,7 @@ private[recipeinstance] case class TransitionExecution(
     } yield outcome
   }
 
-  def validateEventForResolvingBlockedInteraction[F[_]](eventInstance: EventInstance)(implicit effect: Effect[F], timer: Timer[F]): F[EventInstance] =
+  def validateEventForResolvingBlockedInteraction[F[_]](eventInstance: EventInstance)(implicit effect: Effect[F], timer: Temporal[F]): F[EventInstance] =
     (isBlocked, transition) match {
       case (true, interactionTransition: InteractionTransition) =>
         validateInteractionOutput[F](interactionTransition, Some(eventInstance))
