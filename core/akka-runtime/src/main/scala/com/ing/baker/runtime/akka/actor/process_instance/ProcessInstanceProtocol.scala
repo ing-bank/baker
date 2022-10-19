@@ -23,6 +23,11 @@ object ProcessInstanceProtocol {
     */
   case class Stop(delete: Boolean = false) extends Command
 
+  /**
+    * Command to add Ingredient
+    */
+  case class AddMetaData(metaData: Map[String, String]) extends Command
+
   object Initialize {
 
     def apply[P : Identifiable](marking: Marking[P]): Initialize = Initialize(marking.marshall, null)
@@ -72,6 +77,8 @@ object ProcessInstanceProtocol {
     * Indicates that the received FireTransition command with a specific correlation id was already received.
     */
   case class AlreadyReceived(correlationId: String) extends Response
+
+  case object MetaDataAdded extends Response
 
   object Initialized {
 

@@ -12,12 +12,10 @@ import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ValueReader
 
 import scala.concurrent.duration._
 
 case class AkkaBakerConfig(
-                            externalContext: Option[Any],
                             bakerActorProvider: BakerActorProvider,
                             interactions: InteractionManager[IO],
                             recipeManager: RecipeManager,
@@ -86,7 +84,6 @@ object AkkaBakerConfig extends LazyLogging {
       )
 
     AkkaBakerConfig(
-      None,
       timeouts = defaultTimeouts,
       bakerValidationSettings = BakerValidationSettings.default,
       bakerActorProvider = localProvider,
@@ -113,7 +110,6 @@ object AkkaBakerConfig extends LazyLogging {
       )
 
     AkkaBakerConfig(
-      None,
       timeouts = defaultTimeouts,
       bakerValidationSettings = BakerValidationSettings.default,
       bakerActorProvider = clusterProvider,
@@ -127,7 +123,6 @@ object AkkaBakerConfig extends LazyLogging {
       throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
 
     AkkaBakerConfig(
-      None,
       timeouts = Timeouts.apply(config),
       bakerValidationSettings = BakerValidationSettings.from(config),
       bakerActorProvider = bakerProviderFrom(config),

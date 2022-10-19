@@ -46,7 +46,6 @@ object AkkaBakery extends LazyLogging {
       baker <- Resource.make[IO, AkkaBaker](
         acquire = IO(AkkaBaker.apply(
         AkkaBakerConfig(
-          externalContext = externalContext,
           interactions = interactions,
           recipeManager = recipeManager,
           bakerActorProvider = bakerActorProvider,

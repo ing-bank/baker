@@ -261,6 +261,10 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
   override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: String): EventResolutionsType =
     fireEvent(recipeInstanceId, event, Some(correlationId))
 
+  override def addMetaData(recipeInstanceId: String, metadata: Map[String, String]): F[Unit] =
+    components.recipeInstanceManager.addMetaData(recipeInstanceId, metadata)
+
+
   /**
     * Returns an index of all running processes.
     *
@@ -509,6 +513,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.resolveInteraction(recipeInstanceId, interactionName, event))
       override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
         mapK(self.stopRetryingInteraction(recipeInstanceId, interactionName))
+      override def addMetaData(recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] =
+        mapK(self.addMetaData(recipeInstanceId, metadata))
     }
 
 }

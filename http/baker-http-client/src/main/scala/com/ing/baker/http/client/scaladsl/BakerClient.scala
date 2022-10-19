@@ -287,6 +287,12 @@ final class BakerClient( client: Client[IO],
     throw new NotImplementedError("Multiple events via HTTP API are not supported")
 
   /**
+    *
+    */
+  override def addMetaData(recipeInstanceId: String, metadata: Map[String,String]): Future[Unit] =
+    throw new NotImplementedError("AddMetaData not implemented for the BakerClient")
+
+  /**
     * Returns an index of all running processes.
     *
     * Can potentially return a partial index when baker runs in cluster mode

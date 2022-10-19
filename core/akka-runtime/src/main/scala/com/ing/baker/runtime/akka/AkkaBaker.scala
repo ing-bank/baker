@@ -9,7 +9,7 @@ import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, MetaDataAdded, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
@@ -333,6 +333,17 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
           Future.successful(result)
       }
     EventResolutions(futureReceived, futureCompleted)
+  }
+
+  override def addMetaData(recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] = {
+    processIndexActor
+      .ask(AddRecipeInstanceMetaData(recipeInstanceId, metadata))(Timeout.durationToTimeout(config.timeouts.defaultInquireTimeout))
+      .flatMap {
+        case MetaDataAdded => Future.successful(())
+        case Uninitialized(id) => Future.failed(NoSuchProcessException(id))
+        case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
+        case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
+      }
   }
 
   /**

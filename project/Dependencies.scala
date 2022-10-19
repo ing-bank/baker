@@ -135,12 +135,12 @@ object Dependencies {
   val springCore = "org.springframework" % "spring-core" % springVersion
   val springBootStarter = "org.springframework.boot" % "spring-boot-starter" % springBootVersion
 
-  val snakeYaml = "org.yaml" % "snakeyaml" % "1.30"
+  val snakeYaml = "org.yaml" % "snakeyaml" % "1.31"
 
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.13.3"
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.13.3"
   val jawnParser = "org.typelevel" %% "jawn-parser" % "1.4.0"
-  val nettyHandler = "io.netty" % "netty-handler" % "4.1.79.Final"
+  val nettyHandler = "io.netty" % "netty-handler" % "4.1.81.Final"
 
   private val bouncycastleVersion = "1.70"
 
