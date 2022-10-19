@@ -68,18 +68,32 @@ public class RecipeAssertTest {
                 .assertEventsHappened(WebshopRecipe.ItemsReserved.class);
     }
 
-    @Test(expected = AssertionError.class)
-    public void testEventNamesHaveNotHappened() {
+    @Test
+    public void testEventNamesHaveNotHappenedSuccess() {
         createRecipeAssert()
                 .waitFor(WebshopRecipe.happyFlow())
                 .assertEventNamesNotHappened("NonExistentEvent", "NonExistentEvent2");
     }
 
-    @Test(expected = AssertionError.class)
-    public void testEventsHaveNotHappened() {
+    @Test
+    public void testEventsHaveNotHappenedSuccess() {
         createRecipeAssert()
                 .waitFor(WebshopRecipe.happyFlow())
                 .assertEventsNotHappened(Object.class);
+    }
+
+    @Test(expected = AssertionError.class)
+    public void testEventNamesHaveNotHappenedFail() {
+        createRecipeAssert()
+                .waitFor(WebshopRecipe.happyFlow())
+                .assertEventNamesNotHappened(WebshopRecipe.ItemsReserved.class.getSimpleName());
+    }
+
+    @Test(expected = AssertionError.class)
+    public void testEventsHaveNotHappenedFail() {
+        createRecipeAssert()
+                .waitFor(WebshopRecipe.happyFlow())
+                .assertEventsNotHappened(WebshopRecipe.ItemsReserved.class);
     }
 
     @Test

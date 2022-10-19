@@ -46,7 +46,7 @@ class RecipeAssert(private val baker: Baker, private val recipeInstanceId: Strin
   @varargs def assertEventNamesNotHappened(forbiddenEventNames: String*): RecipeAssert = verify {
     this.getActualFlow.map { actual =>
       val actualUnexpectedEvents = forbiddenEventNames.filter(forbidden => actual.events.contains(forbidden))
-      assert(actualUnexpectedEvents.nonEmpty, s"The following events happened, that should NOT have happened: ${actualUnexpectedEvents.mkString}")
+      assert(actualUnexpectedEvents.isEmpty, s"The following events happened, that should NOT have happened: ${actualUnexpectedEvents.mkString}")
     }
   }
 
