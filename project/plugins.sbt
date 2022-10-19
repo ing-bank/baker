@@ -18,7 +18,7 @@ addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.9")
 
 addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent" % "0.1.6")
 
-addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.4.0")
+addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.4.1")
 
 addSbtPlugin("no.arktekk.sbt" % "aether-deploy" % "0.27.0")
 
