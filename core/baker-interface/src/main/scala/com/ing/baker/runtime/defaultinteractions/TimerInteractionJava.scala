@@ -3,12 +3,11 @@ package com.ing.baker.runtime.defaultinteractions
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
-import cats.effect.IO
+import cats.effect.{IO, Timer}
 
 import scala.concurrent.duration.FiniteDuration
-import cats.effect.Temporal
 
-class TimerInteractionJava(skipWait: Boolean)(implicit timer: Temporal[IO]) {
+class TimerInteractionJava(skipWait: Boolean)(implicit timer: Timer[IO]) {
 
   class TimeWaited()
 
