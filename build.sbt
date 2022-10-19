@@ -40,7 +40,7 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
 })
 
 lazy val scala212 = "2.12.16"
-lazy val scala213 = "2.13.8"
+lazy val scala213 = "2.13.10"
 
 lazy val supportedScalaVersions = List(scala213, scala212)
 val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
