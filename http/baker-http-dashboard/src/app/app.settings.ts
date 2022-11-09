@@ -64,7 +64,6 @@ export class AppSettingsService {
         if(temp.lastIndexOf("/") > 0) {
           temp = temp.substring(0, temp.lastIndexOf('/'))
         }
-        console.log("temp:" + temp)
         AppSettingsService.prefix = {"prefix": temp}
       }
 
