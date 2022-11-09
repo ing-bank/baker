@@ -43,10 +43,31 @@ export class AppSettingsService {
     }
 
     load () {
-      console.log(window.location.href.substring(window.location.href.lastIndexOf('/') + 1));
+      const url = new URL(window.location.href);
 
-      AppSettingsService.prefix = {"prefix": window.location.href.substring(window.location.href.lastIndexOf('/') + 1)}
-      this.getAppSettings(AppSettingsService.prefix.prefix)
+      // if there is an empty path or just a / the prefix is empty
+      if(url.pathname == "/" || url.pathname.length == 0) {
+        AppSettingsService.prefix = {"prefix": url.pathname.substring(url.pathname.lastIndexOf('/') + 1)}
+      }
+      // If there is a path we need to ensure they are not part of the path
+      else {
+        var temp = url.pathname;
+        if(temp.includes('/recipes')) {
+          temp = temp.substring(0, temp.lastIndexOf('/recipes'))
+        }
+        if(temp.includes('/interactions')) {
+            temp = temp.substring(0, temp.lastIndexOf('/interactions'))
+        }
+        if(temp.includes('/instances')) {
+            temp = temp.substring(0, temp.lastIndexOf('/instances'))
+        }
+        if(temp.lastIndexOf("/") > 0) {
+          temp = temp.substring(0, temp.lastIndexOf('/'))
+        }
+        console.log("temp:" + temp)
+        AppSettingsService.prefix = {"prefix": temp}
+      }
+
       return new Promise<void>((resolve, reject) => {
             this.getAppSettings(AppSettingsService.prefix.prefix)
               .then(_ => resolve())

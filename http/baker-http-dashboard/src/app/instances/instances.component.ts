@@ -10,6 +10,7 @@ import {Value, ValueType} from "../baker-value.api";
 import {BakerConversionService} from "../baker-conversion.service";
 import {BakeryService} from "../bakery.service";
 import {EventRecord} from "../bakery.api";
+import {AppSettingsService} from "../app.settings";
 
 type InstanceIngredient = { name : string, value: string, isSimple: boolean };
 
@@ -42,15 +43,16 @@ export class InstancesComponent implements OnInit {
     @ViewChild("instanceGraph", {"static": false}) instanceGraph: ElementRef;
 
     ngOnInit (): void {
-        if (this.route.snapshot.url.length > 1) {
-            this.instanceId = this.route.snapshot.url[1].path;
+        let lastUrl = this.route.snapshot.url[this.route.snapshot.url.length-1].path
+        if (lastUrl != "instances") {
+            this.instanceId = lastUrl
             this.instanceChanged();
         }
     }
 
     updateInstance(event: Event): void {
         (event.target as HTMLInputElement)?.blur();
-        this.router.navigateByUrl(`/instances/${this.instanceId}`).then(() => this.instanceChanged());
+        this.router.navigateByUrl(AppSettingsService.prefix.prefix + `/instances/${this.instanceId}`).then(() => this.instanceChanged());
     }
 
     instanceChanged (): void {
