@@ -25,20 +25,20 @@ export class AppSettingsService {
 
     public getAppSettings(prefix: String):Promise<void> {
       return new Promise<void>((resolve, reject) => {
-        //For testing purposes:
-         AppSettingsService.settings = {
-           "applicationName": "Test",
-           "apiPath": "/api/bakery",
-           "clusterInformation": {"1": "2"}
-         };
-         resolve()
+//         //For testing purposes:
+//          AppSettingsService.settings = {
+//            "applicationName": "Test",
+//            "apiPath": "/api/bakery",
+//            "clusterInformation": {"1": "2"}
+//          };
+//          resolve()
 
-//         this.http.get(prefix + "/" + SETTINGS_LOCATION).toPromise().then(response => {
-//            AppSettingsService.settings = <AppSettings>response;
-//            resolve();
-//         }).catch((response: any) => {
-//             reject(Error(`Could not load file '${SETTINGS_LOCATION}': ${JSON.stringify(response)}`))
-//         })
+        this.http.get(prefix + "/" + SETTINGS_LOCATION).toPromise().then(response => {
+           AppSettingsService.settings = <AppSettings>response;
+           resolve();
+        }).catch((response: any) => {
+            reject(Error(`Could not load file '${SETTINGS_LOCATION}': ${JSON.stringify(response)}`))
+        })
       })
     }
 
