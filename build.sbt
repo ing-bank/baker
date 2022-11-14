@@ -550,6 +550,7 @@ lazy val `bakery-interaction`: Project = project.in(file("bakery/interaction"))
       catsCore
     ) ++ testDeps(
       scalaTest,
+      mockitoScala,
       logback
     )
   )

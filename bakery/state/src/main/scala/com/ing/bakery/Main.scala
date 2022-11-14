@@ -1,6 +1,7 @@
 package com.ing.bakery
 
 import cats.effect.{ExitCode, IO, IOApp}
+import com.codahale.metrics.MetricRegistry
 import com.ing.baker.http.DashboardConfiguration
 import com.ing.baker.http.server.common.RecipeLoader
 import com.ing.baker.http.server.scaladsl.{Http4sBakerServer, Http4sBakerServerConfiguration}
@@ -8,6 +9,7 @@ import com.ing.bakery.components.BakerReadinessCheck
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
+import io.prometheus.client.CollectorRegistry
 
 import java.io.File
 import java.net.InetSocketAddress
@@ -23,7 +25,10 @@ object Main extends IOApp with LazyLogging {
 
     (for {
       bakery <- Bakery.akkaBakery(Some(config))
-      _ <- MetricService.resource(InetSocketAddress.createUnresolved("0.0.0.0", metricsPort), bakery.executionContext)
+      _ <- MetricService.resourceServer(
+        socketAddress = InetSocketAddress.createUnresolved("0.0.0.0", metricsPort),
+        registry = CollectorRegistry.defaultRegistry,
+        ec = bakery.executionContext)
 
       bakerService <- Http4sBakerServer.resource(
         bakery.baker,

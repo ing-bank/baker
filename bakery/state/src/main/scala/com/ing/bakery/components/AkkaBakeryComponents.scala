@@ -6,6 +6,7 @@ import com.ing.baker.runtime.akka.AkkaBakerConfig
 import com.ing.baker.runtime.akka.actor.BakerActorProvider
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.{ActorBasedRecipeManager, RecipeManager}
+import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.prometheus.client.CollectorRegistry
@@ -23,7 +24,11 @@ import scala.concurrent.ExecutionContext
   * @param externalContext Context passed to the default interactionManagerResource.
   */
 class AkkaBakeryComponents(optionalConfig: Option[Config] = None,
-                           externalContext: Option[Any] = None) extends LazyLogging {
+                           externalContext: Option[Any] = None,
+                           registry: CollectorRegistry = CollectorRegistry.defaultRegistry
+                          ) extends LazyLogging {
+
+  val metricService: MetricService = new MetricService(registry)
 
   def configResource: Resource[IO, Config] = Resource.eval(IO {
     val configPath = sys.env.getOrElse("CONFIG_DIRECTORY", "/opt/docker/conf")
@@ -78,7 +83,7 @@ class AkkaBakeryComponents(optionalConfig: Option[Config] = None,
     Watcher.resource(config, actorSystem, maybeCassandra)(cs, timer, ec).logResourceLifecycle("Watcher")
 
   def metricsOpsResource: Resource[IO, MetricsOps[IO]] =
-    Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions").logResourceLifecycle("Prometheus")
+    Prometheus.metricsOps[IO](metricService.registry, "http_interactions").logResourceLifecycle("Prometheus")
 
   def eventSinkResource(config: Config,
                         cs: ContextShift[IO],
@@ -89,7 +94,7 @@ class AkkaBakeryComponents(optionalConfig: Option[Config] = None,
                                  actorSystem: ActorSystem,
                                  externalContextOption: Option[Any]
                                 ): Resource[IO, InteractionManager[IO]] =
-    InteractionRegistry.resource(externalContextOption, config, actorSystem).logResourceLifecycle("InteractionManager")
+    InteractionRegistry.resource(externalContextOption, metricService, config, actorSystem).logResourceLifecycle("InteractionManager")
 
   def recipeManagerResource(config: Config,
                             actorSystem: ActorSystem) : Resource[IO, RecipeManager] =

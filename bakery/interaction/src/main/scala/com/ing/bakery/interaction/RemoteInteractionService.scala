@@ -34,7 +34,8 @@ object RemoteInteractionService {
                interactionPerTypeMetricsEnabled: Boolean = true,
                metricsPort: Int = 9096,
                metricsEnabled: Boolean = false,
-               apiUrlPrefix: String = "/api/bakery/interactions")(implicit timer: Timer[IO], cs: ContextShift[IO], executionContext: ExecutionContext): Resource[IO, Server[IO]] = {
+               apiUrlPrefix: String = "/api/bakery/interactions",
+               registry: Option[CollectorRegistry] = None)(implicit timer: Timer[IO], cs: ContextShift[IO], executionContext: ExecutionContext): Resource[IO, Server[IO]] = {
 
     val idToNameMap = interactions.map(i => URLEncoder.encode(i.shaBase64, "UTF-8").take(8) -> i.name).toMap
 
@@ -51,8 +52,10 @@ object RemoteInteractionService {
       (if (p.length == 4) Some(p(2)) else None).map(v => idToNameMap.getOrElse(v.take(8), "unknown"))
     } else None
 
+    val collectorRegistry = registry.getOrElse(CollectorRegistry.defaultRegistry)
+
     for {
-      metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
+      metrics <- Prometheus.metricsOps[IO](collectorRegistry, "http_interactions")
       app = BlazeServerBuilder[IO](ExecutionContext.global)
         .bindSocketAddress(address)
         .withHttpApp(
@@ -67,9 +70,10 @@ object RemoteInteractionService {
         case Some((sslConfig, sslParams)) => app.withSslContextAndParameters(sslConfig, sslParams)
         case None => app
       }).resource
-      _ <- if (metricsEnabled)
+      _ <- if (metricsEnabled) {
         MetricService
-          .resource(InetSocketAddress.createUnresolved("0.0.0.0", metricsPort), ExecutionContext.global) (cs, timer)
+          .resourceServer(InetSocketAddress.createUnresolved("0.0.0.0", metricsPort), collectorRegistry, ExecutionContext.global)(cs, timer)
+      }
       else Resource.eval(IO.unit)
 
     } yield server
