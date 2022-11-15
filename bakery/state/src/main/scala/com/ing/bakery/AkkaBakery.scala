@@ -11,6 +11,7 @@ import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.bakery.components.AkkaBakeryComponents
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.prometheus.client.CollectorRegistry
 
 import scala.concurrent.ExecutionContext
 
@@ -45,14 +46,14 @@ object AkkaBakery extends LazyLogging {
       recipeManager <- abc.recipeManagerResource(config, actorSystem)
       baker <- Resource.make[IO, AkkaBaker](
         acquire = IO(AkkaBaker.apply(
-        AkkaBakerConfig(
-          interactions = interactions,
-          recipeManager = recipeManager,
-          bakerActorProvider = bakerActorProvider,
-          timeouts = akkaBakerConfigTimeouts,
-          bakerValidationSettings = akkaBakerConfigValidationSettings,
-          terminateActorSystem = false, // terminating the actor system is done in it's own resource.
-        )(actorSystem))))(
+          AkkaBakerConfig(
+            interactions = interactions,
+            recipeManager = recipeManager,
+            bakerActorProvider = bakerActorProvider,
+            timeouts = akkaBakerConfigTimeouts,
+            bakerValidationSettings = akkaBakerConfigValidationSettings,
+            terminateActorSystem = false, // terminating the actor system is done in it's own resource.
+          )(actorSystem))))(
         release = baker => IO.fromFuture(IO(baker.gracefulShutdown()))(cs)
       )
       _ <- Resource.eval(eventSink.attach(baker)(cs))
@@ -76,24 +77,27 @@ object Bakery {
   def akkaBakery(optionalConfig: Option[Config],
                  externalContext: Option[Any] = None,
                  interactionManager: Option[InteractionManager[IO]] = None,
-                 recipeManager: Option[RecipeManager] = None) : Resource[IO, AkkaBakery] = {
-    val akkaBakeryComponents = new AkkaBakeryComponents(optionalConfig, externalContext) {
+                 recipeManager: Option[RecipeManager] = None,
+                 registry: CollectorRegistry = CollectorRegistry.defaultRegistry): Resource[IO, AkkaBakery] = {
 
-      override def interactionManagerResource(config: Config,
-                                              actorSystem: ActorSystem,
-                                              externalContextOption: Option[Any]): Resource[IO, InteractionManager[IO]] =
-        interactionManager match {
-          case Some(value) => Resource.pure[IO, InteractionManager[IO]](value)
-          case None => super.interactionManagerResource(config, actorSystem, externalContextOption)
-        }
+    val akkaBakeryComponents: AkkaBakeryComponents =
+      new AkkaBakeryComponents(optionalConfig, externalContext, registry) {
+
+        override def interactionManagerResource(config: Config,
+                                                actorSystem: ActorSystem,
+                                                externalContextOption: Option[Any]): Resource[IO, InteractionManager[IO]] =
+          interactionManager match {
+            case Some(value) => Resource.pure[IO, InteractionManager[IO]](value)
+            case None => super.interactionManagerResource(config, actorSystem, externalContextOption)
+          }
 
 
-      override def recipeManagerResource(config: Config, actorSystem: ActorSystem): Resource[IO, RecipeManager] =
-        recipeManager match {
-          case Some(value) => Resource.pure[IO, RecipeManager](value)
-          case None => super.recipeManagerResource(config, actorSystem)
-        }
-    }
+        override def recipeManagerResource(config: Config, actorSystem: ActorSystem): Resource[IO, RecipeManager] =
+          recipeManager match {
+            case Some(value) => Resource.pure[IO, RecipeManager](value)
+            case None => super.recipeManagerResource(config, actorSystem)
+          }
+      }
     AkkaBakery.resource(akkaBakeryComponents)
   }
 }
