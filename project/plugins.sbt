@@ -1,4 +1,4 @@
-addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "1.0.2")
+addSbtPlugin("com.github.sbt" % "sbt-git" % "2.0.1")
 
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "1.2.0")
 
