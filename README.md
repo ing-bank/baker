@@ -19,6 +19,8 @@ An introductory presentation of Baker: [Baker talk @ Amsterdam.Scala meetup](htt
 
 A talk about Baker at the Scale By the Bay 2017 conference: [Declare, verify and execute microservices-based process flows](https://www.youtube.com/watch?v=0bWQwUmeXHU).
 
+A talk about Baker and Bakery at the J-Fall 2021 conference: [Bakery Platform: API orchestration taken to next level](https://www.youtube.com/watch?v=U4aCUT9zIFk)
+
 For an example web-shop recipe in Scala, see the [examples sub-project](examples/baker-example/src/main/scala/webshop/webservice).
 Java developers new to Baker can use this [workshop](https://github.com/nikolakasev/workshop-baker) to get familiar with the library by reading the workshop assignment PDF document and making the unit tests green.
 
