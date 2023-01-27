@@ -7,7 +7,7 @@ object Dependencies {
   val akkaManagementVersion = "1.1.3"
   val akkaPersistenceCassandraVersion = "1.0.5"
   val akkaHttpVersion = "10.2.9"
-  val http4sVersion = "0.21.33"
+  val http4sVersion = "0.23.18"
   val fs2Version = "2.5.10"
   val circeVersion = "0.14.2"
   val mockitoScalaVersion = "1.17.7"
@@ -76,7 +76,7 @@ object Dependencies {
 
   val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.16.0"
   val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.17.0"
-  val sensors =  "nl.pragmasoft.sensors" %% "sensors-core" % "0.3.0"
+  val sensors = "nl.pragmasoft.sensors" %% "sensors-core" % "0.3.0"
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.14.1"
@@ -91,7 +91,7 @@ object Dependencies {
   val http4sServer = "org.http4s" %% "http4s-blaze-server" % http4sVersion
   val http4sClient = "org.http4s" %% "http4s-blaze-client" % http4sVersion
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sVersion
-  val http4sPrometheus =  "org.http4s" %% "http4s-prometheus-metrics" % http4sVersion
+  val http4sPrometheus = "org.http4s" %% "http4s-prometheus-metrics" % http4sVersion
   val circe = "io.circe" %% "circe-core" % circeVersion
   val circeParser = "io.circe" %% "circe-parser" % circeVersion
   val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
@@ -124,7 +124,7 @@ object Dependencies {
   val jodaTime = "joda-time" % "joda-time" % "2.10.14"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "1.7.36"
   val logback = "ch.qos.logback" % "logback-classic" % "1.2.11"
-  val logstash =  "net.logstash.logback" % "logstash-logback-encoder" % "6.4"
+  val logstash = "net.logstash.logback" % "logstash-logback-encoder" % "6.4"
   val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.16.0"
   val scalaCheckPlus = "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0"
   val scalaCheckPlusMockito = "org.scalatestplus" %% "mockito-3-12" % "3.2.10.0"
@@ -145,7 +145,7 @@ object Dependencies {
   private val bouncycastleVersion = "1.70"
 
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % bouncycastleVersion
-  val bouncyCastleBcpkix ="org.bouncycastle" % "bcpkix-jdk15on" % bouncycastleVersion
+  val bouncyCastleBcpkix = "org.bouncycastle" % "bcpkix-jdk15on" % bouncycastleVersion
 
   val guava = "com.google.guava" % "guava" % "31.1-jre"
 
