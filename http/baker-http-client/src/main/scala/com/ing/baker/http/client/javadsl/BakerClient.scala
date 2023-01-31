@@ -4,7 +4,7 @@ import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.http.client.common.TLSConfig
 import com.ing.baker.http.client.scaladsl.{BakerClient => ScalaClient, EndpointConfig}
 import com.ing.baker.runtime.javadsl.{Baker => JavaBaker}
-import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.{Request, Uri}
 
 import java.util.concurrent.CompletableFuture

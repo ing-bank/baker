@@ -8,7 +8,7 @@ import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.scaladsl._
 import com.typesafe.config.ConfigFactory
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.log4s.Logger
 import webshop.webservice.recipe.{MakePaymentInstance, ReserveItemsInstance, ShipItemsInstance}
 
