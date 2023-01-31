@@ -13,14 +13,16 @@ import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceInput}
 import com.ing.baker.types._
-import com.ing.bakery.components.InteractionRegistry
-import com.ing.bakery.baker.mocks.{EventListener, RemoteInteraction}
+import com.ing.bakery.baker.mocks.{EventListener, KubeApiServer, RemoteInteraction}
 import com.ing.bakery.baker.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.bakery.baker.recipe.Ingredients.{Item, OrderId, ReservedItems}
 import com.ing.bakery.baker.recipe.{ItemReservationRecipe, SimpleRecipe, SimpleRecipe2}
-import com.ing.bakery.baker.mocks.KubeApiServer
+import com.ing.bakery.components.InteractionRegistry
+import com.ing.bakery.metrics.MetricService
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
+import io.prometheus.client.Counter
+import org.mockito.MockitoSugar.{mock, when}
 import org.mockserver.integration.ClientAndServer
 import org.scalatest.ConfigMap
 import org.scalatest.compatible.Assertion
@@ -28,10 +30,16 @@ import org.scalatest.matchers.should.Matchers
 
 import java.net.InetSocketAddress
 import java.util.UUID
-import scala.collection.immutable.Seq
 import scala.concurrent.Future
 
 class AkkaBakerWithK8InteractionsSpec extends BakeryFunSpec with Matchers {
+  val metricsService = {
+    val service = mock[MetricService]
+    when(service.interactionFailureCounter).thenReturn(mock[Counter])
+    when(service.interactionSuccessCounter).thenReturn(mock[Counter])
+
+    service
+  }
 
   val recipe: CompiledRecipe =
     ItemReservationRecipe.compiledRecipe
@@ -465,7 +473,8 @@ class AkkaBakerWithK8InteractionsSpec extends BakeryFunSpec with Matchers {
       }).void
       system <- Resource.make(makeActorSystem)(stopActorSystem)
       _ <- Resource.eval(remoteInteractionLocalhost.respondsWithCancelReserveItems())
-      interactions <- InteractionRegistry.resource(None, config, system)
+
+      interactions <- InteractionRegistry.resource(None, metricsService, config, system)
 
       eventListener = new EventListener()
       baker = AkkaBaker

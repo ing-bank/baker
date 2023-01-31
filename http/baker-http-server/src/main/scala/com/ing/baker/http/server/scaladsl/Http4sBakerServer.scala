@@ -48,7 +48,6 @@ object Http4sBakerServer {
       val apiLogger = LoggerFactory.getLogger("API")
       Some(s => IO(apiLogger.info(s)))
     } else None
-
     for {
       metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_api")
       blocker <- Blocker[IO]

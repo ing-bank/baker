@@ -23,7 +23,7 @@ import {Injectable} from "@angular/core";
 @Injectable({"providedIn": "root"})
 export class BakeryService {
 
-    private baseUrl = AppSettingsService.settings.apiPath;
+    private baseUrl = AppSettingsService.prefix.prefix + AppSettingsService.settings.apiPath;
 
     httpOptions = {
         "headers": new HttpHeaders({"Content-Type": "application/json"})

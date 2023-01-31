@@ -6,7 +6,6 @@ import com.ing.baker.test.EventsFlow;
 import com.ing.baker.test.RecipeAssert;
 import com.ing.baker.test.recipe.WebshopBaker;
 import com.ing.baker.test.recipe.WebshopRecipe;
-import org.junit.Before;
 import org.junit.Test;
 import scala.collection.JavaConverters;
 import scala.collection.mutable.Buffer;
@@ -53,6 +52,48 @@ public class RecipeAssertTest {
         createRecipeAssert()
                 .waitFor(WebshopRecipe.happyFlow())
                 .assertEventsFlow(WebshopRecipe.happyFlow());
+    }
+
+    @Test
+    public void testEventNamesHaveHappened() {
+        createRecipeAssert()
+                .waitFor(WebshopRecipe.happyFlow())
+                .assertEventNamesHappened(WebshopRecipe.happyFlow().events().last());
+    }
+
+    @Test
+    public void testEventsHaveHappened() {
+        createRecipeAssert()
+                .waitFor(WebshopRecipe.happyFlow())
+                .assertEventsHappened(WebshopRecipe.ItemsReserved.class);
+    }
+
+    @Test
+    public void testEventNamesHaveNotHappenedSuccess() {
+        createRecipeAssert()
+                .waitFor(WebshopRecipe.happyFlow())
+                .assertEventNamesNotHappened("NonExistentEvent", "NonExistentEvent2");
+    }
+
+    @Test
+    public void testEventsHaveNotHappenedSuccess() {
+        createRecipeAssert()
+                .waitFor(WebshopRecipe.happyFlow())
+                .assertEventsNotHappened(Object.class);
+    }
+
+    @Test(expected = AssertionError.class)
+    public void testEventNamesHaveNotHappenedFail() {
+        createRecipeAssert()
+                .waitFor(WebshopRecipe.happyFlow())
+                .assertEventNamesNotHappened(WebshopRecipe.ItemsReserved.class.getSimpleName());
+    }
+
+    @Test(expected = AssertionError.class)
+    public void testEventsHaveNotHappenedFail() {
+        createRecipeAssert()
+                .waitFor(WebshopRecipe.happyFlow())
+                .assertEventsNotHappened(WebshopRecipe.ItemsReserved.class);
     }
 
     @Test

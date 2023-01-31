@@ -29,7 +29,7 @@ object BakerF {
                     retentionPeriodCheckInterval: FiniteDuration = 10.seconds,
                     bakeTimeout: FiniteDuration = 10.seconds,
                     processEventTimeout: FiniteDuration = 10.seconds,
-                    inquireTimeout: FiniteDuration = 10.seconds,
+                    inquireTimeout: FiniteDuration = 60.seconds,
                     shutdownTimeout: FiniteDuration = 10.seconds,
                     addRecipeTimeout: FiniteDuration = 10.seconds,
                     executeSingleInteractionTimeout: FiniteDuration = 60.seconds,

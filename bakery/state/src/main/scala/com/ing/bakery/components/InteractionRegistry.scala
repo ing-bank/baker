@@ -8,6 +8,7 @@ import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
 import com.ing.baker.runtime.defaultinteractions
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.bakery.interaction.{BaseRemoteInteractionClient, RemoteInteractionClient}
+import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.http4s.client.Client
@@ -20,15 +21,16 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 object InteractionRegistry extends LazyLogging {
 
-  def resource(externalContext: Option[Any], config: Config, actorSystem: ActorSystem): Resource[IO, InteractionRegistry] =
+  def resource(externalContext: Option[Any], metricService: MetricService, config: Config, actorSystem: ActorSystem): Resource[IO, InteractionRegistry] = {
     readInteractionClassName(config)
       .map(Class.forName)
       .getOrElse(classOf[BaseInteractionRegistry])
       .tap(c => logger.info(s"Interaction registry: ${c.getName}"))
-      .getDeclaredConstructor(classOf[Config], classOf[ActorSystem])
-      .newInstance(config, actorSystem)
+      .getDeclaredConstructor(classOf[Config], classOf[MetricService], classOf[ActorSystem])
+      .newInstance(config, metricService, actorSystem)
       .asInstanceOf[InteractionRegistry]
       .resource(externalContext)
+  }
 
   private def readInteractionClassName(config: Config): Option[String] = {
     Some(config.getString("baker.interactions.class")).filterNot(_.isEmpty)
@@ -60,7 +62,7 @@ trait TraversingInteractionRegistry extends InteractionRegistry {
 /**
   * Base implementation of interaction registry
   */
-class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
+class BaseInteractionRegistry(config: Config, metricService: MetricService, actorSystem: ActorSystem)
   extends TraversingInteractionRegistry
     with LazyLogging {
 
@@ -76,7 +78,7 @@ class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
   override def resource(externalContext: Option[Any]): Resource[IO, InteractionRegistry] = {
     for {
       client <- BlazeClientBuilder[IO](actorSystem.dispatcher).resource
-      interactionManagers <- interactionManagersResource(client)
+      interactionManagers <- interactionManagersResource(client, metricService)
     } yield {
       managers = interactionManagers
       logger.info(s"Initialised interaction registry with managers: ${managers.map(_.getClass.getName).mkString(",")}")
@@ -84,9 +86,9 @@ class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
     }
   }
 
-  protected def interactionManagersResource(client: Client[IO]): Resource[IO, List[InteractionManager[IO]]] = {
+  protected def interactionManagersResource(client: Client[IO], metricService: MetricService): Resource[IO, List[InteractionManager[IO]]] = {
 
-    val interactionClient = new BaseRemoteInteractionClient(client, Headers.empty)
+    val interactionClient = new BaseRemoteInteractionClient(client, Headers.empty, metricService)
 
     def getRemoteInteractions: Option[DynamicInteractionManager] = {
       val path = "baker.interactions.remote.class"
