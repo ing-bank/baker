@@ -10,6 +10,7 @@ import com.datastax.oss.driver.api.querybuilder.QueryBuilder._
 import com.datastax.oss.driver.api.querybuilder.term.Term
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.scalalogging.LazyLogging
+import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.exporter.common.TextFormat
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper._
 import org.scalatest.BeforeAndAfterAll
@@ -31,12 +32,13 @@ import scala.concurrent.{Await, ExecutionContext}
 class AkkaCassandraJmxMetricsSpec extends AnyFreeSpec with LazyLogging with Eventually with BeforeAndAfterAll {
 
   import TestActors._
+
   implicit override val patienceConfig: PatienceConfig =
     PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(5, Millis)))
 
   implicit val ec: ExecutionContext = ExecutionContext.global
   private var system: Option[ActorSystem] = None
-  private var persistenceInitActor : Option[ActorRef] = None
+  private var persistenceInitActor: Option[ActorRef] = None
 
   // Currently apple silicon architecture is not supported (and no workarounds exist). Skip this test in that case.
   // more info https://stackoverflow.com/questions/68315912/how-to-start-cassandra-on-a-m1-macbook
@@ -103,12 +105,13 @@ class AkkaCassandraJmxMetricsSpec extends AnyFreeSpec with LazyLogging with Even
         for (i <- 1 to 100000) {
           pingActor
         }
-        val prometheusRegistry = MetricService.registry
+
+        val prometheusRegistry = MetricService.defaultInstance.registry
 
         val writer = new CharArrayWriter(16 * 1024)
         TextFormat.write004(writer, prometheusRegistry.metricFamilySamples)
         val content = writer.toString
-        println(content)
+
         assert(content.split("\n").exists(_.startsWith("cassandra_cql")))
       }
     }

@@ -12,13 +12,15 @@ import java.io.Closeable
 
 class ClosableBakery(baker: Baker,
                      system: ActorSystem,
-                     close: IO[Unit]) extends AkkaBakery(baker, system) with Closeable {
+                     close: IO[Unit]
+                    ) extends AkkaBakery(baker, system) with Closeable {
   override def close(): Unit = close.unsafeRunSync()
 }
 
 object ClosableBakery {
   /**
     * Create bakery instance as external context
+    *
     * @param externalContext optional external context in which Bakery is running, e.g. Spring context
     */
   def instance(optionalConfig: Option[Config],
