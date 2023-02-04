@@ -36,7 +36,7 @@
     "@angular-eslint/eslint-plugin-template": "14.0.2",
     "@angular-eslint/schematics": "14.0.2",
     "@angular-eslint/template-parser": "14.0.2",
-    "@angular/cli": "^14.2.9",
+    "@angular/cli": "^14.2.10",
     "@angular/compiler-cli": "^14.0.6",
     "@angular/language-service": "^14.0.6",
     "@angular/localize": "^14.0.6",
