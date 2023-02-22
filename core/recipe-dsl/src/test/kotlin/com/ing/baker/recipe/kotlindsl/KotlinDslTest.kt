@@ -9,9 +9,4 @@ class KotlinDslTest {
     fun `hello test`() {
         assertEquals(KotlinDsl.hello, "World")
     }
-
-    @Test
-    fun `false is true`() {
-        assertEquals(KotlinDsl.hello, "Hello")
-    }
 }

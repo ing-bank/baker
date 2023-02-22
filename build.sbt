@@ -264,7 +264,8 @@ lazy val `baker-recipe-dsl`: Project = project.in(file("core/recipe-dsl"))
   .settings(Publish.settings)
   .settings(
     moduleName := "baker-recipe-dsl",
-    kotlinVersion := "1.6.0",
+    kotlinVersion := "1.8.10",
+    kotlincJvmTarget := "1.8",
     libraryDependencies ++=
       compileDeps(
         javaxInject,
