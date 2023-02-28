@@ -13,4 +13,4 @@ jobs:
           distribution: temurin
           java-version: 17
       - name: Build and Test
-        run: sbt baker-recipe-dsl/test
+        run: sbt baker-recipe-dsl-kotlin/test
