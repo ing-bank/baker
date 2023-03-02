@@ -26,12 +26,21 @@ class KotlinDslTest {
 
         val recipe = convertRecipe(recipeBuilder)
 
-        assertEquals(recipe.name(), "Name")
-        assertEquals(
-            recipe.getInteractions().get(0).inputIngredients().toJavaIterable().toList().map { it.name() },
-            listOf("reservedItems", "paymentInformation")
-        )
+        fun com.ing.baker.recipe.javadsl.Recipe.toIngredientList(i:Int) = getInteractions().get(i).inputIngredients().toJavaIterable().toList().map { it.name() }
 
+        assertEquals(recipe.name(), "Name")
+
+        assertEquals(recipe.getInteractions().get(0).name(), "MakePayment")
+        assertEquals(recipe.getInteractions().get(1).name(), "ReserveItems")
+        assertEquals(recipe.getInteractions().get(2).name(), "ShipItems")
+
+        assertEquals(recipe.getInteractions().get(0).requiredEvents().toJavaIterable().toSet(), emptySet<String>())
+        assertEquals(recipe.getInteractions().get(1).requiredEvents().toJavaIterable().toSet(), emptySet<String>())
+        assertEquals(recipe.getInteractions().get(2).requiredEvents().toJavaIterable().toSet(), setOf("PaymentSuccessful"))
+
+        assertEquals(recipe.toIngredientList(0), listOf("reservedItems", "paymentInformation"))
+        assertEquals(recipe.toIngredientList(1), listOf("items"))
+        assertEquals(recipe.toIngredientList(2), listOf("shippingAddress", "reservedItems"))
     }
 
     object Events {

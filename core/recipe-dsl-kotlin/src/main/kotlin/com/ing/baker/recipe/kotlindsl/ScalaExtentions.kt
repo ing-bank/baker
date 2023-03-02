@@ -20,4 +20,6 @@ object ScalaExtensions {
 
     fun <A> scala.collection.immutable.List<A>.toJavaIterable(): Iterable<A> =
         JavaConverters.asJava(this)
+    fun <A> scala.collection.immutable.Set<A>.toJavaIterable(): Iterable<A> =
+        JavaConverters.asJava(this)
 }
