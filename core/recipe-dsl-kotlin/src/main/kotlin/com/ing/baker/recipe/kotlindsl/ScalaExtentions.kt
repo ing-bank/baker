@@ -14,4 +14,10 @@ object ScalaExtensions {
     fun <K, V> Map<K, V>.toScalaMap(): scala.collection.immutable.Map<K, V> =
         scala.collection.immutable.Map.from(JavaConverters.asScala(this))
 
+
+    fun <A> scala.collection.immutable.Seq<A>.toJavaIterable(): Iterable<A> =
+        JavaConverters.asJava(this)
+
+    fun <A> scala.collection.immutable.List<A>.toJavaIterable(): Iterable<A> =
+        JavaConverters.asJava(this)
 }

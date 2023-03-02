@@ -1,36 +1,22 @@
 package com.ing.baker.recipe.kotlindsl
 
-import org.jetbrains.annotations.TestOnly
-import org.junit.Test
-import org.junit.Assert.assertEquals
-
+import com.example.demo.ScalaExtensions.toJavaIterable
 import com.ing.baker.recipe.javadsl.Interaction
+import org.junit.Assert.assertEquals
+import org.junit.Test
 
 class KotlinDslTest {
+
     @Test
     fun `should convert dsl to recipe`() {
-        val recipe = recipe {
-            name = "Recipe"
-            interactions(
-                interaction {
-                    func(
-                        Interactions.MakePayment::apply
-                    )
-                },
-                interaction {
-                    func(
-                        Interactions.ReserveItems::apply
-                    )
-                },
-                interaction {
-                    func(
-                        Interactions.ShipItems::apply
-                    )
-                    requiredEvents(
-                        Interactions.MakePayment.PaymentSuccessful::class
-                    )
+        val recipeBuilder = recipe("Name") {
+            interactions {
+                interaction(Interactions.MakePayment::apply)
+                interaction(Interactions.ReserveItems::apply)
+                interaction(Interactions.ShipItems::apply) {
+                    requiredEvents(Interactions.MakePayment.PaymentSuccessful::class)
                 }
-            )
+            }
             sensoryEvents(
                 Events.OrderPlaced::class,
                 Events.PaymentInformationReceived::class,
@@ -38,7 +24,14 @@ class KotlinDslTest {
             )
         }
 
-        assertEquals(recipe.name, "Recipe")
+        val recipe = convertRecipe(recipeBuilder)
+
+        assertEquals(recipe.name(), "Name")
+        assertEquals(
+            recipe.getInteractions().get(0).inputIngredients().toJavaIterable().toList().map { it.name() },
+            listOf("reservedItems", "paymentInformation")
+        )
+
     }
 
     object Events {

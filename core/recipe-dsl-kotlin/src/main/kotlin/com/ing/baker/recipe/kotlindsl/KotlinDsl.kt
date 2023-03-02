@@ -51,10 +51,25 @@ fun KFunction<*>.ownerClass(): KClass<*> {
    return (owner as KClass<*>)
 }
 
-fun interaction(init: InteractionBuilder.() -> Unit): InteractionBuilder {
-   val builder = InteractionBuilder()
-   builder.apply(init)
-   return builder
+
+
+class InteractionsBuilder {
+
+   var interactions: Set<InteractionBuilder> = setOf()
+
+   fun interaction(func: KFunction<*>) {
+      val builder = InteractionBuilder()
+      builder.func(func)
+      interactions =  interactions + builder
+   }
+   fun interaction(func: KFunction<*>, init: InteractionBuilder.() -> Unit) {
+      val builder = InteractionBuilder()
+      builder.apply(init)
+      builder.func(func)
+      interactions =  interactions + builder
+   }
+
+   fun build() = interactions
 }
 
 class InteractionBuilder {
@@ -84,8 +99,9 @@ class InteractionBuilder {
 }
 
 
-fun recipe(init: RecipeBuilder.() -> Unit): RecipeBuilder {
+fun recipe(name: String, init: RecipeBuilder.() -> Unit): RecipeBuilder {
    val builder = RecipeBuilder()
+   builder.name = name
    builder.apply(init)
    return builder
 }
@@ -96,8 +112,10 @@ class RecipeBuilder {
    lateinit var interactions: Set<InteractionBuilder>
    lateinit var sensoryEvents: Set<KClass<*>>
 
-   fun interactions(vararg interactions: InteractionBuilder) {
-      this.interactions = interactions.toSet()
+   fun interactions(init: InteractionsBuilder.() -> Unit) {
+      val builder = InteractionsBuilder()
+      builder.apply(init)
+      this.interactions = builder.build()
    }
 
    fun sensoryEvents(vararg sensoryEvents: KClass<*>) {
