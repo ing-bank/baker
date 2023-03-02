@@ -3,6 +3,7 @@ package com.ing.baker.runtime.akka.actor.recipe_manager
 import akka.actor.{ActorLogging, Props}
 import akka.persistence.PersistentActor
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
@@ -36,8 +37,7 @@ class RecipeManagerActor extends PersistentActor with ActorLogging {
         val timestamp = System.currentTimeMillis()
         persist(RecipeAdded(compiledRecipe, timestamp)) { _ =>
           addRecipe(compiledRecipe, timestamp)
-          context.system.eventStream.publish(
-            com.ing.baker.runtime.scaladsl.RecipeAdded(compiledRecipe.name, compiledRecipe.recipeId, timestamp, compiledRecipe))
+          LogAndSendEvent.recipeAdded(com.ing.baker.runtime.scaladsl.RecipeAdded(compiledRecipe.name, compiledRecipe.recipeId, timestamp, compiledRecipe), context.system.eventStream)
           sender() ! AddRecipeResponse(compiledRecipe.recipeId)
         }
       }

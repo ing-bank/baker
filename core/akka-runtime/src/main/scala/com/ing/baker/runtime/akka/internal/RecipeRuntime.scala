@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.akka.internal
 
 import java.lang.reflect.InvocationTargetException
-
 import akka.event.EventStream
 import cats.effect.{ContextShift, IO}
 import com.ing.baker.il
@@ -9,6 +8,7 @@ import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor}
 import com.ing.baker.petrinet.api._
+import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceRuntime
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
@@ -159,9 +159,8 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
 
           val currentTime = System.currentTimeMillis()
 
-          eventStream.publish(
-            InteractionFailed(currentTime, currentTime - startTime, recipe.name, recipe.recipeId,
-              job.processState.recipeInstanceId, job.transition.label, failureCount, throwable, failureStrategyOutcome))
+          LogAndSendEvent.interactionFailed(InteractionFailed(currentTime, currentTime - startTime, recipe.name, recipe.recipeId,
+            job.processState.recipeInstanceId, job.transition.label, failureCount, throwable, failureStrategyOutcome), eventStream)
 
           // translates the recipe failure strategy to a petri net failure strategy
           failureStrategyOutcome match {
@@ -190,19 +189,18 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
     // returns a delayed task that will get executed by the process instance
 
       // add MDC values for logging
-      MDC.put("RecipeInstanceId", processState.recipeInstanceId)
+      MDC.put("recipeInstanceId", processState.recipeInstanceId)
+      MDC.put("recipeId", recipe.recipeId)
       MDC.put("recipeName", recipe.name)
 
       try {
-
-
         // create the interaction input
         val input = createInteractionInput(interaction, processState)
 
         val timeStarted = System.currentTimeMillis()
 
         // publish the fact that we started the interaction
-        eventStream.publish(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName))
+        LogAndSendEvent.interactionStarted(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName), eventStream)
 
         // executes the interaction and obtain the (optional) output event
         interactionManager.execute(interaction, input,
@@ -220,7 +218,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
           val timeCompleted = System.currentTimeMillis()
 
           // publish the fact that the interaction completed
-          eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName, outputEvent))
+          LogAndSendEvent.interactionCompleted(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName, outputEvent), eventStream)
 
           // create the output marking for the petri net
           val outputMarking: Marking[Place] = RecipeRuntime.createProducedMarking(outAdjacent, outputEvent)
@@ -230,7 +228,8 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
 
       } finally {
         // remove the MDC values
-        MDC.remove("RecipeInstanceId")
+        MDC.remove("recipeInstanceId")
+        MDC.remove("recipeId")
         MDC.remove("recipeName")
       }
 
