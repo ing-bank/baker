@@ -1,7 +1,6 @@
 package com.ing.baker.types
 
-import java.lang.reflect.ParameterizedType
-
+import java.lang.reflect.{ParameterizedType, WildcardType}
 import com.ing.baker.types.Converters.readJavaType
 import com.ing.baker.types.modules._
 
@@ -20,6 +19,8 @@ class TypeAdapter(private val modules: Map[Class[_], TypeModule]) {
     val clazz: Class[_] = javaType match {
       case c: Class[_] => c
       case genericType: ParameterizedType => getBaseClass(genericType)
+      // wildcardType is used for kotlin lists
+      case wildcardType: WildcardType if wildcardType.getUpperBounds.length == 1 && wildcardType.getLowerBounds.isEmpty => getBaseClass(wildcardType.getUpperBounds.head)
       case _ => throw new IllegalArgumentException(s"Incompatible type: $javaType")
     }
 
