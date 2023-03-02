@@ -279,6 +279,30 @@ lazy val `baker-recipe-dsl`: Project = project.in(file("core/recipe-dsl"))
         )
   ).dependsOn(`baker-types`, `baker-annotations`)
 
+lazy val `baker-recipe-dsl-kotlin`: Project = project.in(file("core/recipe-dsl-kotlin"))
+  .settings(defaultModuleSettings)
+  .settings(Publish.settings)
+  .settings(
+    moduleName := "baker-recipe-dsl-kotlin",
+    kotlinVersion := "1.8.10",
+    kotlincJvmTarget := "1.8",
+    kotlinLib("stdlib"),
+    kotlinLib("reflect"),
+    libraryDependencies ++=
+      compileDeps(
+        javaxInject,
+        paranamer,
+        scalaReflect(scalaVersion.value)
+      ) ++
+        testDeps(
+          scalaTest,
+          scalaCheck,
+          scalaCheckPlus,
+          junitInterface,
+          slf4jApi
+        )
+  ).dependsOn(`baker-types`, `baker-annotations`, `baker-recipe-dsl`)
+
 lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compiler"))
   .settings(defaultModuleSettings)
   .settings(Publish.settings)
