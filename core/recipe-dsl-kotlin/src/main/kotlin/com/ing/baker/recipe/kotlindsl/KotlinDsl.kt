@@ -42,16 +42,14 @@ fun interactionFunctionToCommonInteraction(builder: InteractionBuilder): Interac
 fun convertRecipe(builder: RecipeBuilder): Recipe {
    return Recipe(builder.name)
       .withInteractions(builder.interactions.map(::interactionFunctionToCommonInteraction).toScalaSeq())
-      .withSensoryEvents(builder.sensoryEvents.map { it.java }.toScalaSeq())
-
+      // TODO differentiate between events with and without firing limit.
+      .withSensoryEvents(builder.sensoryEvents.map { it.kClass.java }.toScalaSeq())
 }
 
 fun KFunction<*>.ownerClass(): KClass<*> {
    val owner = (this as CallableReference).owner
    return (owner as KClass<*>)
 }
-
-
 
 class InteractionsBuilder {
 
@@ -98,7 +96,6 @@ class InteractionBuilder {
    }
 }
 
-
 fun recipe(name: String, init: RecipeBuilder.() -> Unit): RecipeBuilder {
    val builder = RecipeBuilder()
    builder.name = name
@@ -106,11 +103,25 @@ fun recipe(name: String, init: RecipeBuilder.() -> Unit): RecipeBuilder {
    return builder
 }
 
+class SensoryEventsBuilder {
+   val events = mutableSetOf<KotlinEvent>()
+
+   inline fun <reified T> event(maxFiringLimit: Int = 1) = events.add(KotlinEvent(T::class, maxFiringLimit))
+   inline fun <reified T> eventWithoutFiringLimit() = events.add(KotlinEvent(T::class, null))
+
+   fun build() = events.toSet()
+}
+
+
+// Temp class for experimentation purposes. Probably should map this to some common Event class.
+// We can get ingredients from a KClass via .primaryConstructor?.parameters?.map { Pair(it.name, it.type) }
+data class KotlinEvent(val kClass: KClass<*>, val maxFiringLimit: Int?)
+
 class RecipeBuilder {
 
    lateinit var name: String
    lateinit var interactions: Set<InteractionBuilder>
-   lateinit var sensoryEvents: Set<KClass<*>>
+   lateinit var sensoryEvents: Set<KotlinEvent>
 
    fun interactions(init: InteractionsBuilder.() -> Unit) {
       val builder = InteractionsBuilder()
@@ -118,8 +129,7 @@ class RecipeBuilder {
       this.interactions = builder.build()
    }
 
-   fun sensoryEvents(vararg sensoryEvents: KClass<*>) {
-      this.sensoryEvents = sensoryEvents.toSet()
+   fun sensoryEvents(init: SensoryEventsBuilder.() -> Unit) {
+      sensoryEvents = SensoryEventsBuilder().apply(init).build()
    }
-
 }

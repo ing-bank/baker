@@ -10,6 +10,11 @@ class KotlinDslTest {
     @Test
     fun `should convert dsl to recipe`() {
         val recipeBuilder = recipe("Name") {
+            sensoryEvents {
+                event<Events.OrderPlaced>()
+                event<Events.PaymentInformationReceived>(maxFiringLimit = 5)
+                eventWithoutFiringLimit<Events.ShippingAddressReceived>()
+            }
             interactions {
                 interaction(Interactions.MakePayment::apply)
                 interaction(Interactions.ReserveItems::apply)
@@ -17,11 +22,6 @@ class KotlinDslTest {
                     requiredEvents(Interactions.MakePayment.PaymentSuccessful::class)
                 }
             }
-            sensoryEvents(
-                Events.OrderPlaced::class,
-                Events.PaymentInformationReceived::class,
-                Events.ShippingAddressReceived::class
-            )
         }
 
         val recipe = convertRecipe(recipeBuilder)
@@ -41,6 +41,13 @@ class KotlinDslTest {
         assertEquals(recipe.toIngredientList(0), listOf("reservedItems", "paymentInformation"))
         assertEquals(recipe.toIngredientList(1), listOf("items"))
         assertEquals(recipe.toIngredientList(2), listOf("shippingAddress", "reservedItems"))
+
+        with(recipe.getEvents()) {
+            assertEquals(size, 3)
+            assertEquals(get(0).name(), "OrderPlaced")
+            assertEquals(get(1).name(), "PaymentInformationReceived")
+            assertEquals(get(2).name(), "ShippingAddressReceived")
+        }
     }
 
     object Events {
