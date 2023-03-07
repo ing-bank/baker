@@ -135,12 +135,12 @@ private[recipeinstance] case class TransitionExecution(
     }
 
     def setupMdc: F[Unit] = effect.delay {
-      MDC.put("RecipeInstanceId", recipeInstanceId)
+      MDC.put("recipeInstanceId", recipeInstanceId)
       MDC.put("recipeName", recipe.name)
     }
 
     def cleanMdc: F[Unit] = effect.delay {
-      MDC.remove("RecipeInstanceId")
+      MDC.remove("recipeInstanceId")
       MDC.remove("recipeName")
     }
 

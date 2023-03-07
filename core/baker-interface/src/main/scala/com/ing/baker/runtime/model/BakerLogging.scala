@@ -30,7 +30,7 @@ case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
     .appendSeparator(" ")
     .toFormatter
 
-  private def withMDC(mdc: Map[String, String], log: Logger => Unit): Unit = {
+  def withMDC(mdc: Map[String, String], log: Logger => Unit): Unit = {
       mdc.foreach { case (k, v) => MDC.put(k, v) }
       log(logger)
       mdc.keys.foreach(MDC.remove)
