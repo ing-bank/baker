@@ -132,7 +132,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         case None => effect.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
           InteractionExecutionFailureReason.INTERACTION_NOT_FOUND, None, None))))
         case Some(interactionInstance) =>
-          interactionInstance.execute(ingredients)
+          interactionInstance.execute(ingredients, Map.empty)
             .map(executionSuccess => InteractionExecutionResult(Right(InteractionExecutionResult.Success(executionSuccess))))
             .recover {
               case e => InteractionExecutionResult(Left(InteractionExecutionResult.Failure(

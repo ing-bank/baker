@@ -196,7 +196,7 @@ final class BakerClient( client: Client[IO],
 
   override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): Future[InteractionExecutionResult] =
     callRemoteBakerService[InteractionExecution.ExecutionResult]((host, prefix) =>
-      POST(InteractionExecution.ExecutionRequest(interactionId, ingredients.toList), root(host, prefix) / "app" / "interactions" / "execute")).map{ result =>
+      POST(InteractionExecution.ExecutionRequest(interactionId, ingredients.toList, Option.empty), root(host, prefix) / "app" / "interactions" / "execute")).map{ result =>
         result.outcome match {
           case Left(failure) => InteractionExecutionResult(Left(failure.toBakerInteractionExecutionFailure))
           case Right(success) => InteractionExecutionResult(Right(success.toBakerInteractionExecutionSuccess))

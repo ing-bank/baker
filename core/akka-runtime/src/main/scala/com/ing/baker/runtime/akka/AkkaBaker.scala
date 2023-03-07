@@ -181,7 +181,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
         case None => cats.effect.IO.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
           InteractionExecutionFailureReason.INTERACTION_NOT_FOUND, None, None))))
         case Some(interactionInstance) =>
-          interactionInstance.execute(ingredients)
+          interactionInstance.execute(ingredients, Map())
             .map(executionSuccess => InteractionExecutionResult(Right(InteractionExecutionResult.Success(executionSuccess))))
             .recover {
               case e => InteractionExecutionResult(Left(InteractionExecutionResult.Failure(

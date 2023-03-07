@@ -5,7 +5,7 @@ import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import cats.effect.IO
-import com.ing.baker.il.petrinet.Transition
+import com.ing.baker.il.petrinet.{EventTransition, Transition}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstance._
@@ -15,6 +15,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
+import com.ing.baker.runtime.model.BakerLogging
 import com.ing.baker.runtime.scaladsl.RecipeInstanceState
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.PrimitiveValue
@@ -426,7 +427,11 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
 
   def executeJob(job: Job[P, T, S], originalSender: ActorRef): Unit = {
 
-    log.firingInteraction(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
+    log.fireTransition(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
+
+    if(job.transition.isInstanceOf[EventTransition]) {
+      BakerLogging.default.firingEvent(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
+    }
 
     // context.self can be potentially throw NullPointerException in non graceful shutdown situations
     Try(context.self).foreach { self =>

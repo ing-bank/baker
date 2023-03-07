@@ -14,6 +14,7 @@ import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka._
 import com.ing.baker.runtime.akka.actor.Util.logging._
+import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
@@ -23,7 +24,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
 import com.ing.baker.runtime.common.RecipeRecord
-import com.ing.baker.runtime.model.InteractionManager
+import com.ing.baker.runtime.model.{BakerLogging, InteractionManager}
 import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
@@ -295,7 +296,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
                 val actorMetadata = ActorMetadata(recipeId, recipeInstanceId, createdTime, Active)
 
-                context.system.eventStream.publish(RecipeInstanceCreated(System.currentTimeMillis(), recipeId, compiledRecipe.name, recipeInstanceId))
+                LogAndSendEvent.recipeInstanceCreated(
+                  RecipeInstanceCreated(System.currentTimeMillis(), recipeId, compiledRecipe.name, recipeInstanceId),
+                  context.system.eventStream)
 
                 index += recipeInstanceId -> actorMetadata
               }
