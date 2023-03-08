@@ -48,8 +48,14 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
 
   def bake(recipeId: String, recipeInstanceId: String): JFuture[String] = baker.bake(recipeId, recipeInstanceId).toBakerResult
 
-  def bake(recipeId: String, recipeInstanceId: String, bakeRequestJson: String): JFuture[String] = {
-    val metadata = parse(bakeRequestJson) match {
+  def bake(recipeId: String, recipeInstanceId: String, bakeRequestJson: String): JFuture[String] =
+    baker.bake(recipeId, recipeInstanceId, getMetaDataFromBakeRequest(bakeRequestJson)).toBakerResult
+
+  def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]) =
+    baker.bake(recipeId, recipeInstanceId, metadata).toBakerResult
+
+  def getMetaDataFromBakeRequest(bakeRequestJson: String): Map[String, String] = {
+    parse(bakeRequestJson) match {
       case Left(_) =>
         logger.error("Failure parsing bakeRequest")
         Map.empty[String, String]
@@ -62,7 +68,6 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
             bakeRequest.metadata.getOrElse(Map.empty[String, String])
         }
     }
-    baker.bake(recipeId, recipeInstanceId, metadata).toBakerResult
   }
 
   /**
