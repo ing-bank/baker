@@ -6,6 +6,7 @@ import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventS
 import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EncodedRecipe, EventInstance, EventMoment, EventResolutions, IngredientInstance, InteractionExecutionResult, InteractionInstanceDescriptor, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
 import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
+import com.ing.baker.runtime.serialization.BakeRequest
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.types.Value
@@ -95,7 +96,8 @@ final class BakerClient( client: Client[IO],
                        (implicit ec: ExecutionContext) extends ScalaBaker with LazyLogging {
 
   implicit val eventInstanceResultEntityEncoder: EntityEncoder[IO, EventInstance] = jsonEncoderOf[IO, EventInstance]
-  implicit val recipeEncoder: EntityEncoder[IO, EncodedRecipe] = jsonEncoderOf[IO, EncodedRecipe]
+  implicit val recipeJsonEncoder: EntityEncoder[IO, EncodedRecipe] = jsonEncoderOf[IO, EncodedRecipe]
+  implicit val bakeRequestJsonEncoder: EntityEncoder[IO, BakeRequest] = jsonEncoderOf[IO, BakeRequest]
   implicit val interactionRequestEncoder: EntityEncoder[IO, InteractionExecution.ExecutionRequest] = jsonEncoderOf[IO, InteractionExecution.ExecutionRequest]
 
   override def addRecipe(recipe: RecipeRecord): Future[String] =
@@ -186,6 +188,11 @@ final class BakerClient( client: Client[IO],
       logger.info(s"Baked recipe instance '$recipeInstanceId' from recipe '$recipeId'")
     }
 
+  override def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] =
+    callRemoteBakerService[Unit]((host, prefix) =>
+      POST(BakeRequest(Some(metadata)), root(host, prefix) / "instances" / recipeInstanceId / "bake" / recipeId)).map { _ =>
+      logger.info(s"Baked recipe instance '$recipeInstanceId' from recipe '$recipeId'")
+    }
 
   override def getInteraction(interactionName: String): Future[Option[InteractionInstanceDescriptor]] =
     callRemoteBakerService[Option[InteractionInstanceDescriptor]]((host, prefix) => GET(root(host, prefix) / "app" / "interactions" / interactionName))
