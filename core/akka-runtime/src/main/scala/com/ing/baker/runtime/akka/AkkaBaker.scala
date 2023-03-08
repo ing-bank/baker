@@ -215,6 +215,20 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     }
   }
 
+  /**
+    * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
+    * This variant also gets a metadata map added on bake.
+    * This is similar to calling addMetaData after doing the regular bake but depending on the implementation this can be more optimized.
+    *
+    * @param recipeId         The recipeId for the recipe to bake
+    * @param recipeInstanceId The identifier for the newly baked process
+    * @param metadata
+    * @return
+    */
+  override def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] = {
+    bake(recipeId, recipeInstanceId).map(_ -> addMetaData(recipeInstanceId, metadata))
+  }
+
   override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] =
     processIndexActor.ask(ProcessEvent(
       recipeInstanceId = recipeInstanceId,

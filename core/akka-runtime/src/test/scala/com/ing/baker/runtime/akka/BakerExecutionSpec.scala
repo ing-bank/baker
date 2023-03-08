@@ -138,6 +138,17 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       } yield succeed
     }
 
+    "bake a process successfully if baking for the first time with MetaData" in {
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("FirstTimeBaking")
+        id = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, id, Map("key" -> "value"))
+        ingredients: Map[String, Value] <- baker.getIngredients(id)
+        metaData = ingredients(RecipeInstanceMetaDataName).asMap(classOf[String], classOf[String])
+      } yield
+        assert(metaData.containsKey("key") && metaData.get("key") == "value")
+    }
+
     "bake and terminate baker successfully" in {
       val terminationActorSystem = ActorSystem("termination-actor-system")
       for {

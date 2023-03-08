@@ -5,6 +5,7 @@ import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance}
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
+import com.ing.baker.runtime.serialization.BakeRequest
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import io.circe.generic.auto._
@@ -47,6 +48,23 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
 
   def bake(recipeId: String, recipeInstanceId: String): JFuture[String] = baker.bake(recipeId, recipeInstanceId).toBakerResult
 
+  def bake(recipeId: String, recipeInstanceId: String, bakeRequestJson: String): JFuture[String] = {
+    val metadata = parse(bakeRequestJson) match {
+      case Left(_) =>
+        logger.error("Failure parsing bakeRequest")
+        Map.empty[String, String]
+      case Right(json: io.circe.Json) =>
+        json.as[BakeRequest] match {
+          case Left(_) =>
+            logger.error("Failure parsing bakeRequest")
+            Map.empty[String, String]
+          case Right(bakeRequest: BakeRequest) =>
+            bakeRequest.metadata.getOrElse(Map.empty[String, String])
+        }
+    }
+    baker.bake(recipeId, recipeInstanceId, metadata).toBakerResult
+  }
+
   /**
     * Do calls for a specific instance.
     */
@@ -82,12 +100,13 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
 
   private def toOption[T](opt: Optional[T]): Option[T] = if (opt.isPresent) Some(opt.get()) else None
 
-  private def parseEventAndExecute[A](eventJson: String, f: EventInstance => Future[A])(implicit encoder: Encoder[A]): JFuture[String] =  (for {
-    json <- parse(eventJson)
-    eventInstance <- json.as[EventInstance]
-  } yield {
-    f(eventInstance).toBakerResultScalaFuture
-  }).getOrElse(Future.failed(new IllegalArgumentException("Can't process event"))).toJava.toCompletableFuture
+  private def parseEventAndExecute[A](eventJson: String, f: EventInstance => Future[A])(implicit encoder: Encoder[A]): JFuture[String] =  (
+    for {
+      json <- parse(eventJson)
+      eventInstance <- json.as[EventInstance]
+    } yield {
+      f(eventInstance).toBakerResultScalaFuture
+    }).getOrElse(Future.failed(new IllegalArgumentException("Can't process event"))).toJava.toCompletableFuture
 
   private implicit class BakerResultHelperJavaFuture[A](f: => Future[A])(implicit encoder: Encoder[A]) {
     def toBakerResult: JFuture[String] = f.toBakerResultScalaFuture.toJava.toCompletableFuture
