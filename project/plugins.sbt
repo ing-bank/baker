@@ -22,6 +22,6 @@ addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.4.0")
 
 addSbtPlugin("no.arktekk.sbt" % "aether-deploy" % "0.27.0")
 
-addSbtPlugin("community.flock.sbt" % "sbt-kotlin-plugin" % "3.0.0")
+addSbtPlugin("community.flock.sbt" % "sbt-kotlin-plugin" % "3.0.1")
 
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.36"
