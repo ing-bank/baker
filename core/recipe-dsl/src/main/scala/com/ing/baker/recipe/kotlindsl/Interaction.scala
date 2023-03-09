@@ -5,17 +5,19 @@ import com.ing.baker.recipe.common.{Event, EventOutputTransformer, Ingredient, I
 import com.ing.baker.types.Value
 
 import scala.jdk.CollectionConverters._
-case class Interaction (
+import scala.collection.immutable.Seq
+import scala.collection.immutable.List
+
+class Interaction (
   nameInput:String,
   inputIngredientsInput: java.util.Set[Ingredient],
   eventsInput: java.util.Set[Event],
   requiredEventsInput: java.util.Set[String],
 ) extends common.InteractionDescriptor {
-
-  override val name = nameInput
-  override val originalName = nameInput
-  override val inputIngredients = inputIngredientsInput.asScala.toSeq
-  override val output = eventsInput.asScala.toSeq
+  override val name: String = nameInput
+  override val originalName: String = nameInput
+  override val inputIngredients: Seq[Ingredient] = List.apply(inputIngredientsInput.asScala.toSeq:_*)
+  override val output: Seq[Event] = List.apply(eventsInput.asScala.toSeq:_*)
   override val requiredEvents: Set[String] = requiredEventsInput.asScala.toSet
   override val requiredOneOfEvents: Set[Set[String]] = Set.empty
   override val predefinedIngredients: Map[String, Value] = Map.empty

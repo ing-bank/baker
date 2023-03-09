@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
 import com.ing.baker.types.{Converters, Type}
 
-
+import scala.collection.immutable.Seq
 import scala.reflect.ClassTag
 
 package object javadsl {

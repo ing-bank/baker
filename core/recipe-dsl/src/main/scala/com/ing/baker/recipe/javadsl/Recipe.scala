@@ -4,7 +4,7 @@ import com.ing.baker.recipe.common
 
 import scala.annotation.{nowarn, varargs}
 import scala.collection.JavaConverters._
-
+import scala.collection.immutable.Seq
 import scala.concurrent.duration
 import scala.concurrent.duration.{Duration, FiniteDuration}
 

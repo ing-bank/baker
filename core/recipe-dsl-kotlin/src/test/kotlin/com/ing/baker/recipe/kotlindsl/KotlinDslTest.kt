@@ -39,7 +39,7 @@ class KotlinDslTest {
 
         assertEquals(recipe.name(), "Name")
 
-        with(recipe.interactionsInput()[0]) {
+        with(recipe.interactions().toList().apply(0)) {
             assertEquals("MakePayment", name())
 
             assertEquals(0, requiredEvents().size())
@@ -49,7 +49,7 @@ class KotlinDslTest {
             assertEquals("reservedItems", inputIngredients().toList().apply(1).name())
         }
 
-        with(recipe.interactionsInput()[1]) {
+        with(recipe.interactions().toList().apply(1)) {
             assertEquals("ReserveItems", name())
 
             assertEquals(0, requiredEvents().size())

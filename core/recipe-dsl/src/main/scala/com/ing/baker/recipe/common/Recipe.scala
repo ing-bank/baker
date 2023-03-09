@@ -1,7 +1,7 @@
 package com.ing.baker.recipe.common
 
 import scala.concurrent.duration.FiniteDuration
-
+import scala.collection.immutable.Seq
 
 /**
   * A Recipe combines a set of interactions & events.
