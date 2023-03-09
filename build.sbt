@@ -11,7 +11,7 @@ lazy val baker: Project = project.in(file("."))
   )
   .aggregate(
     // Core
-    `baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
+    `baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-recipe-dsl-kotlin`, `baker-intermediate-language`,
     `baker-interface`, `baker-annotations`, `baker-test`,
     // Http
     `baker-http-client`, `baker-http-server`, `baker-http-dashboard`,
