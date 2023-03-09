@@ -1,17 +1,14 @@
 package com.ing.baker.recipe.kotlindsl
 
-import com.example.demo.ScalaExtensions.toScalaMap
-import com.example.demo.ScalaExtensions.toScalaSeq
-import com.example.demo.ScalaExtensions.toScalaSet
-import com.ing.baker.recipe.common.EventOutputTransformer
 import com.ing.baker.recipe.common.Ingredient
+import com.ing.baker.recipe.common.InteractionDescriptor
+import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
 import com.ing.baker.recipe.javadsl.Event
-import com.ing.baker.recipe.javadsl.InteractionDescriptor
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy
-import com.ing.baker.recipe.javadsl.Recipe
 import com.ing.baker.types.Converters
-import com.ing.baker.types.Value
 import scala.Option
+import java.util.*
+import kotlin.collections.HashSet
 import kotlin.jvm.internal.CallableReference
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -24,40 +21,42 @@ import kotlin.time.toJavaDuration
 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
 annotation class Scoped
 
-fun interactionFunctionToCommonInteraction(builder: InteractionBuilder): InteractionDescriptor {
+fun interactionFunctionToCommonInteraction(builder: InteractionBuilder): Interaction {
     val inputIngredients = builder.func.parameters.drop(1)
         .map {
             val type = Converters.readJavaType(it.type.javaType)
             Ingredient(it.name, type)
         }
 
-    return InteractionDescriptor(
-        builder.func.ownerClass().simpleName,
-        inputIngredients.toScalaSeq(),
-        builder.events.map { Event(it.java, Option.empty()) }.toScalaSeq(),
-        builder.requiredEvents.map { it.java.simpleName }.toScalaSet(),
-        setOf<scala.collection.immutable.Set<String>>().toScalaSet(),
-        mapOf<String, Value>().toScalaMap(),
-        mapOf<String, String>().toScalaMap(),
-        Option.empty(),
-        Option.empty(),
-        Option.empty(),
-        mapOf<com.ing.baker.recipe.common.Event, EventOutputTransformer>().toScalaMap(),
-        Option.empty(),
+    val events: Set<com.ing.baker.recipe.common.Event> = builder.events
+        .map { Event(it.java, Option.empty()) }
+        .toSet()
+
+    return Interaction(
+        builder.func.ownerClass().simpleName ?: "",
+        HashSet(inputIngredients),
+        HashSet(events),
+        HashSet(builder.requiredEvents.map { it.simpleName })
     )
 }
 
 fun convertRecipe(builder: RecipeBuilder): Recipe {
-    return Recipe(builder.name)
-        .withInteractions(builder.interactions.map(::interactionFunctionToCommonInteraction).toScalaSeq())
-        // TODO differentiate between events with and without firing limit.
-        .withSensoryEvents(builder.sensoryEvents.map { it.kClass.java }.toScalaSeq())
-        .withDefaultFailureStrategy(InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder()
-            .withInitialDelay(builder.defaultFailureStrategy.initialDelay?.toJavaDuration())
-            .withDeadline(builder.defaultFailureStrategy.deadline?.toJavaDuration())
-            .withMaxTimeBetweenRetries(builder.defaultFailureStrategy.maxTimeBetweenRetries?.toJavaDuration())
-            .build()
-        )
+    return Recipe(
+        builder.name,
+        builder.interactions.map(::interactionFunctionToCommonInteraction).toList(),
+        builder.sensoryEvents.map { it.kClass.java }.toList(),
+        builder.defaultFailureStrategy
+            ?.run {
+                InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder()
+                    .withInitialDelay(initialDelay?.toJavaDuration())
+                    .withDeadline(deadline?.toJavaDuration())
+                    .withMaxTimeBetweenRetries(maxTimeBetweenRetries?.toJavaDuration())
+                    .build()
+            }
+            ?: BlockInteraction(),
+        Optional.empty(),
+        Optional.empty(),
+    )
 }
 
 fun KFunction<*>.ownerClass(): KClass<*> {
@@ -113,10 +112,12 @@ class InteractionBuilder {
     }
 }
 
-fun recipe(name: String, init: RecipeBuilder.() -> Unit): RecipeBuilder {
+fun recipe(name: String, init: (RecipeBuilder.() -> Unit)? = null): RecipeBuilder {
     val builder = RecipeBuilder()
     builder.name = name
-    builder.apply(init)
+    init?.apply {
+        builder.apply(this)
+    }
     return builder
 }
 
@@ -135,7 +136,9 @@ class DefaultFailureStrategyBuilder {
     data class DefaultFailureStrategy(
         val initialDelay: Duration? = null,
         val deadline: Duration? = null,
-        val maxTimeBetweenRetries: Duration? = null
+        val maxTimeBetweenRetries: Duration? = null,
+        val maximumRetries: Int? = null,
+        val backoffFactor: Double? = null
     )
 
     var defaultFailureStrategy = DefaultFailureStrategy()
@@ -151,6 +154,16 @@ class DefaultFailureStrategyBuilder {
     fun maxTimeBetweenRetries(maxTimeBetweenRetries: Duration) = defaultFailureStrategy
         .copy(maxTimeBetweenRetries = maxTimeBetweenRetries)
         .also { this.defaultFailureStrategy = it }
+
+    fun maximumRetries(maximumRetries: Int) = defaultFailureStrategy
+        .copy(maximumRetries = maximumRetries)
+        .also { this.defaultFailureStrategy = it }
+
+    fun backoffFactor(backoffFactor: Double) = defaultFailureStrategy
+        .copy(backoffFactor = backoffFactor)
+        .also { this.defaultFailureStrategy = it }
+
+
     fun build() = defaultFailureStrategy
 }
 
@@ -163,9 +176,9 @@ data class KotlinEvent(val kClass: KClass<*>, val maxFiringLimit: Int?)
 class RecipeBuilder {
 
     lateinit var name: String
-    lateinit var interactions: Set<InteractionBuilder>
-    lateinit var sensoryEvents: Set<KotlinEvent>
-    lateinit var defaultFailureStrategy: DefaultFailureStrategyBuilder.DefaultFailureStrategy
+    var interactions: Set<InteractionBuilder> = emptySet()
+    var sensoryEvents: Set<KotlinEvent> = emptySet()
+    var defaultFailureStrategy: DefaultFailureStrategyBuilder.DefaultFailureStrategy? = null
 
     fun interactions(init: InteractionsBuilder.() -> Unit) {
         val builder = InteractionsBuilder()

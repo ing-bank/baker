@@ -268,6 +268,7 @@ lazy val `baker-recipe-dsl`: Project = project.in(file("core/recipe-dsl"))
       compileDeps(
         javaxInject,
         paranamer,
+        scalaCollectionCompat,
         scalaReflect(scalaVersion.value)
       ) ++
         testDeps(
@@ -292,6 +293,7 @@ lazy val `baker-recipe-dsl-kotlin`: Project = project.in(file("core/recipe-dsl-k
       compileDeps(
         javaxInject,
         paranamer,
+        scalaCollectionCompat,
         scalaReflect(scalaVersion.value)
       ) ++
         testDeps(

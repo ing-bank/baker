@@ -3,7 +3,7 @@ package com.ing.baker.recipe.scaladsl
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 
-import scala.collection.immutable.Seq
+
 import scala.concurrent.duration.FiniteDuration
 import scala.language.experimental.macros
 

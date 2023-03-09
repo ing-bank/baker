@@ -1,9 +1,7 @@
 package com.ing.baker.recipe.kotlindsl
 
-import com.example.demo.ScalaExtensions.toJavaIterable
+import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction as BlockInteraction
-import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure as FireEventAfterFailure
-import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff as RetryWithIncrementalBackoff
 import com.ing.baker.recipe.javadsl.Interaction
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -32,50 +30,73 @@ class KotlinDslTest {
                 initialDelay(1.0.milliseconds)
                 deadline(2.0.hours)
                 maxTimeBetweenRetries(3.0.seconds)
+                maximumRetries(3)
+                backoffFactor(10.0)
             }
         }
 
         val recipe = convertRecipe(recipeBuilder)
 
-        fun com.ing.baker.recipe.javadsl.Recipe.toIngredientList(i:Int) = getInteractions().get(i).inputIngredients().toJavaIterable().toList().map { it.name() }
-
         assertEquals(recipe.name(), "Name")
 
-        with(recipe.interactions[0]) {
+        with(recipe.interactionsInput()[0]) {
             assertEquals("MakePayment", name())
-            assertEquals(emptySet<String>(), requiredEvents().toJavaIterable().toSet())
-            assertEquals(listOf("reservedItems", "paymentInformation"), inputIngredients().toJavaIterable().toList().map { it.name() })
+
+            assertEquals(0, requiredEvents().size())
+
+            assertEquals(2, inputIngredients().size())
+            assertEquals("paymentInformation", inputIngredients().toList().apply(0).name())
+            assertEquals("reservedItems", inputIngredients().toList().apply(1).name())
         }
 
-        with(recipe.interactions[1]) {
+        with(recipe.interactionsInput()[1]) {
             assertEquals("ReserveItems", name())
-            assertEquals(emptySet<String>(), requiredEvents().toJavaIterable().toSet())
-            assertEquals(listOf("items"), inputIngredients().toJavaIterable().toList().map { it.name() })
+
+            assertEquals(0, requiredEvents().size())
+
+            assertEquals(1, inputIngredients().size())
+            assertEquals("items", inputIngredients().toList().apply(0).name())
         }
 
-        with(recipe.interactions[2]) {
+        with(recipe.interactions().toList().apply(2)) {
             assertEquals("ShipItems", name())
-            assertEquals(setOf("PaymentSuccessful"), requiredEvents().toJavaIterable().toSet())
-            assertEquals(listOf("shippingAddress", "reservedItems"), inputIngredients().toJavaIterable().toList().map { it.name() })
+
+            assertEquals(1, requiredEvents().size())
+            assertEquals("PaymentSuccessful", requiredEvents().toList().apply(0))
+
+            assertEquals(2, inputIngredients().size())
+            assertEquals("shippingAddress", inputIngredients().toList().apply(0).name())
+            assertEquals("reservedItems", inputIngredients().toList().apply(1).name())
         }
 
-        with(recipe.events) {
-            assertEquals(size, 3)
-            assertEquals("OrderPlaced", get(0).name())
-            assertEquals("PaymentInformationReceived", get(1).name())
-            assertEquals("ShippingAddressReceived", get(2).name())
+        with(recipe.sensoryEvents()) {
+            assertEquals(this.size(), 3)
+            assertEquals("OrderPlaced", this.toList().apply(0).name())
+            assertEquals("PaymentInformationReceived", this.toList().apply(1).name())
+            assertEquals("ShippingAddressReceived",this.toList().apply(2).name())
         }
 
         with(recipe.defaultFailureStrategy()) {
             when(this){
-                is RetryWithIncrementalBackoff -> {
+                is InteractionFailureStrategy.RetryWithIncrementalBackoff -> {
                     assertEquals(1L, this.initialDelay().toMillis())
                     assertEquals(2410, this.maximumRetries())
                     assertEquals(3000L, this.maxTimeBetweenRetries().get().toMillis())
+                    assertEquals(2.0, this.backoffFactor(), 0.0)
                 }
                 else -> error("Classname did not match ")
             }
         }
+    }
+
+    @Test
+    fun `should convert to recipe without properties`(){
+        val recipeBuilder = recipe("NameNoProps")
+
+        val recipe = convertRecipe(recipeBuilder)
+
+        assertEquals(BlockInteraction::class.java, recipe.defaultFailureStrategy().javaClass)
+
     }
 
     object Events {
@@ -122,4 +143,6 @@ class KotlinDslTest {
         }
 
     }
+
+
 }

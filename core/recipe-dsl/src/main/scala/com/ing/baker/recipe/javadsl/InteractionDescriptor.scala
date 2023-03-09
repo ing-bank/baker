@@ -5,7 +5,7 @@ import com.ing.baker.types.Converters
 
 import scala.annotation.{nowarn, varargs}
 import scala.collection.JavaConverters._
-import scala.collection.immutable.Seq
+
 
 case class InteractionDescriptor private(
                           override val originalName: String,
