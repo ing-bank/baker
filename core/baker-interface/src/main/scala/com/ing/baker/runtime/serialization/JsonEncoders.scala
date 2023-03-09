@@ -85,5 +85,7 @@ object JsonEncoders {
   implicit val interactionInstanceDescriptorEncoder: Encoder[InteractionInstanceDescriptor] = deriveEncoder[InteractionInstanceDescriptor]
   implicit val optionalInteractionInstanceDescriptorEncoder: Encoder[Option[InteractionInstanceDescriptor]] = Encoder.encodeOption(interactionInstanceDescriptorEncoder)
 
-  implicit val recipeEnoder: Encoder[EncodedRecipe] = deriveEncoder[EncodedRecipe]
+  implicit val recipeEncoder: Encoder[EncodedRecipe] = deriveEncoder[EncodedRecipe]
+
+  implicit val bakeRequestEncoder: io.circe.Encoder[com.ing.baker.runtime.serialization.BakeRequest] = deriveEncoder[BakeRequest]
 }
