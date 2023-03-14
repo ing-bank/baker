@@ -312,9 +312,17 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         case _ if index(recipeInstanceId).isDeleted =>
           sender() ! ProcessDeleted(recipeInstanceId)
         case None =>
-          //TODO decide what to do in this situation.
-          log.error("ProcessInstance not found but it is found in the index")
-          sender() ! ProcessAlreadyExists(recipeInstanceId)
+          //Temporary solution for the situation that the initializeCmd is not send in the original Bake
+          getCompiledRecipe(recipeId) match {
+            case Some(compiledRecipe) =>
+              val processState = RecipeInstanceState(recipeInstanceId, Map.empty[String, Value], List.empty)
+              val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
+              createProcessActor(recipeInstanceId, compiledRecipe) ! initializeCmd
+              sender() ! ProcessAlreadyExists(recipeInstanceId)
+            case None =>
+              //Kept the ProcessAlreadyExists since this was the original error
+              sender() ! ProcessAlreadyExists(recipeInstanceId)
+          }
         case Some(actorRef: ActorRef) =>
           //Temporary solution for the situation that the initializeCmd is not send in the original Bake
           getCompiledRecipe(recipeId) match {
