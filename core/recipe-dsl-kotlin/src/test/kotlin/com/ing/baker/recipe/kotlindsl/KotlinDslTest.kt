@@ -5,9 +5,6 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction a
 import com.ing.baker.recipe.javadsl.Interaction
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import kotlin.time.Duration.Companion.days
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class KotlinDslTest {
@@ -62,8 +59,6 @@ class KotlinDslTest {
                         )
                     )
 
-                    requiredEvents(Interactions.MakePayment.PaymentSuccessful::class)
-
                 }
             }
             defaultFailureStrategy {
@@ -96,6 +91,17 @@ class KotlinDslTest {
 
             assertEquals(1, inputIngredients().size())
             assertEquals("items", inputIngredients().toList().apply(0).name())
+        }
+
+        with(recipe.interactions().toList().apply(2)) {
+            assertEquals("ShipItems", name())
+
+            assertEquals(1, requiredEvents().size())
+            assertEquals("PaymentSuccessful", requiredEvents().toList().apply(0))
+
+            assertEquals(2, inputIngredients().size())
+            assertEquals("shippingAddress", inputIngredients().toList().apply(0).name())
+            assertEquals("reservedItems", inputIngredients().toList().apply(1).name())
 
             with(failureStrategy().get()) {
                 when(this){
@@ -108,17 +114,6 @@ class KotlinDslTest {
                     else -> error("Classname did not match ")
                 }
             }
-        }
-
-        with(recipe.interactions().toList().apply(2)) {
-            assertEquals("ShipItems", name())
-
-            assertEquals(1, requiredEvents().size())
-            assertEquals("PaymentSuccessful", requiredEvents().toList().apply(0))
-
-            assertEquals(2, inputIngredients().size())
-            assertEquals("shippingAddress", inputIngredients().toList().apply(0).name())
-            assertEquals("reservedItems", inputIngredients().toList().apply(1).name())
         }
 
         with(recipe.sensoryEvents()) {

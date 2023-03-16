@@ -160,6 +160,10 @@ class InteractionBuilder {
         )
     }
 
+    fun failureStrategy(init: FailureStrategyBuilder.() -> Unit) {
+        this.failureStrategy = FailureStrategyBuilder().apply(init)
+    }
+
 }
 
 // TODO fix this
@@ -195,10 +199,6 @@ class InteractionRequiredOneOfEventsBuilder {
     }
 
     fun build() = events.toSet()
-
-    fun failureStrategy(init: FailureStrategyBuilder.() -> Unit) {
-        this.failureStrategy = FailureStrategyBuilder().apply(init)
-    }
 }
 
 fun recipe(name: String, init: (RecipeBuilder.() -> Unit)? = null): RecipeBuilder {
