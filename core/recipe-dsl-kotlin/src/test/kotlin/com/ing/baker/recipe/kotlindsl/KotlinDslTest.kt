@@ -17,7 +17,7 @@ class KotlinDslTest {
             sensoryEvents {
                 event<Events.OrderPlaced>()
                 event<Events.PaymentInformationReceived>(maxFiringLimit = 5)
-                eventWithoutFiringLimit<Events.ShippingAddressReceived>()
+                event<Events.ShippingAddressReceived>(maxFiringLimit = 1)
             }
             interactions {
                 interaction(Interactions.MakePayment::apply)

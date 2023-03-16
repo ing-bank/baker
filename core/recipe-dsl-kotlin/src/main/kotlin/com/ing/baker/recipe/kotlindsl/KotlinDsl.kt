@@ -125,8 +125,7 @@ fun recipe(name: String, init: (RecipeBuilder.() -> Unit)? = null): RecipeBuilde
 class SensoryEventsBuilder {
     val events = mutableSetOf<KotlinEvent>()
 
-    inline fun <reified T> event(maxFiringLimit: Int = 1) = events.add(KotlinEvent(T::class, maxFiringLimit))
-    inline fun <reified T> eventWithoutFiringLimit() = events.add(KotlinEvent(T::class, null))
+    inline fun <reified T> event(maxFiringLimit: Int? = null) = events.add(KotlinEvent(T::class, maxFiringLimit))
 
     fun build() = events.toSet()
 }
