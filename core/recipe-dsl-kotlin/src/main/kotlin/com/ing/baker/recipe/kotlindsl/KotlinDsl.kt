@@ -1,14 +1,12 @@
 package com.ing.baker.recipe.kotlindsl
 
 import com.ing.baker.recipe.common.Ingredient
-import com.ing.baker.recipe.common.InteractionDescriptor
 import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
 import com.ing.baker.recipe.javadsl.Event
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy
 import com.ing.baker.types.Converters
 import scala.Option
 import java.util.*
-import kotlin.collections.HashSet
 import kotlin.jvm.internal.CallableReference
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -36,7 +34,8 @@ fun interactionFunctionToCommonInteraction(builder: InteractionBuilder): Interac
         builder.func.ownerClass().simpleName ?: "",
         HashSet(inputIngredients),
         HashSet(events),
-        HashSet(builder.requiredEvents.map { it.name })
+        HashSet(builder.requiredEvents.map { it.name }),
+        builder.failureStrategy.convert()
     )
 }
 
@@ -45,19 +44,46 @@ fun convertRecipe(builder: RecipeBuilder): Recipe {
         builder.name,
         builder.interactions.map(::interactionFunctionToCommonInteraction).toList(),
         builder.sensoryEvents.map { it.kClass.java }.toList(),
-        builder.defaultFailureStrategy
-            ?.run {
-                InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder()
-                    .withInitialDelay(initialDelay?.toJavaDuration())
-                    .withDeadline(deadline?.toJavaDuration())
-                    .withMaxTimeBetweenRetries(maxTimeBetweenRetries?.toJavaDuration())
-                    .build()
-            }
-            ?: BlockInteraction(),
+        builder.defaultFailureStrategy.convert(),
         Optional.empty(),
         Optional.empty(),
     )
 }
+
+fun FailureStrategyBuilder?.convert(): com.ing.baker.recipe.common.InteractionFailureStrategy = this
+    ?.run {
+        InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder()
+            .run {
+                backoffFactor?.let { withBackoffFactor(it) } ?: this
+            }
+            .run {
+                initialDelay?.let { withInitialDelay(it.toJavaDuration()) } ?: this
+            }
+            .run {
+                maxTimeBetweenRetries?.let { withMaxTimeBetweenRetries(it.toJavaDuration()) }
+                    ?: this
+            }
+            .run {
+                fireRetryExhaustedEvent?.let { withFireRetryExhaustedEvent(it) } ?: this
+            }
+            .run {
+                when (until) {
+                    is FailureStrategyBuilder.Deadline -> (until as FailureStrategyBuilder.Deadline).duration.let {
+                        withDeadline(
+                            it.toJavaDuration()
+                        )
+                    }
+
+                    is FailureStrategyBuilder.MaximumRetries -> (until as FailureStrategyBuilder.MaximumRetries).count.let {
+                        withMaximumRetries(
+                            it
+                        )
+                    }
+                }
+            }
+            .build()
+    }
+    ?: BlockInteraction()
 
 fun KFunction<*>.ownerClass(): KClass<*> {
     val owner = (this as CallableReference).owner
@@ -105,6 +131,8 @@ class InteractionBuilder {
     val eventTransformations: MutableSet<EventTransformation> = mutableSetOf()
     val requiredEvents: MutableSet<InteractionEvent> = mutableSetOf()
     val requiredOneOfEvents: MutableSet<Set<InteractionEvent>> = mutableSetOf() // TODO actually use this somewhere
+
+    var failureStrategy: FailureStrategyBuilder? = null
 
     fun func(func: KFunction<*>) {
         val sealedSubclasses = (func.returnType.classifier as KClass<*>).sealedSubclasses
@@ -167,6 +195,10 @@ class InteractionRequiredOneOfEventsBuilder {
     }
 
     fun build() = events.toSet()
+
+    fun failureStrategy(init: FailureStrategyBuilder.() -> Unit) {
+        this.failureStrategy = FailureStrategyBuilder().apply(init)
+    }
 }
 
 fun recipe(name: String, init: (RecipeBuilder.() -> Unit)? = null): RecipeBuilder {
@@ -188,39 +220,22 @@ class SensoryEventsBuilder {
 }
 
 @Scoped
-class DefaultFailureStrategyBuilder {
-    data class DefaultFailureStrategy(
-        val initialDelay: Duration? = null,
-        val deadline: Duration? = null,
-        val maxTimeBetweenRetries: Duration? = null,
-        val maximumRetries: Int? = null,
-        val backoffFactor: Double? = null
-    )
+class FailureStrategyBuilder {
 
-    var defaultFailureStrategy = DefaultFailureStrategy()
+    sealed interface Until
+    data class Deadline(val duration: Duration) : Until
+    data class MaximumRetries(val count: Int) : Until
 
-    fun initialDelay(initialDelay: Duration) = defaultFailureStrategy
-        .copy(initialDelay = initialDelay)
-        .also { this.defaultFailureStrategy = it }
+    lateinit var until: Until
 
-    fun deadline(deadline: Duration) = defaultFailureStrategy
-        .copy(deadline = deadline)
-        .also { this.defaultFailureStrategy = it }
+    var initialDelay: Duration? = null
+    var maxTimeBetweenRetries: Duration? = null
+    var backoffFactor: Double? = null
+    var fireRetryExhaustedEvent: String? = null
 
-    fun maxTimeBetweenRetries(maxTimeBetweenRetries: Duration) = defaultFailureStrategy
-        .copy(maxTimeBetweenRetries = maxTimeBetweenRetries)
-        .also { this.defaultFailureStrategy = it }
+    fun deadline(duration: Duration) = Deadline(duration)
+    fun maximumRetries(count: Int) = MaximumRetries(count)
 
-    fun maximumRetries(maximumRetries: Int) = defaultFailureStrategy
-        .copy(maximumRetries = maximumRetries)
-        .also { this.defaultFailureStrategy = it }
-
-    fun backoffFactor(backoffFactor: Double) = defaultFailureStrategy
-        .copy(backoffFactor = backoffFactor)
-        .also { this.defaultFailureStrategy = it }
-
-
-    fun build() = defaultFailureStrategy
 }
 
 
@@ -234,7 +249,7 @@ class RecipeBuilder {
     lateinit var name: String
     var interactions: Set<InteractionBuilder> = emptySet()
     var sensoryEvents: Set<KotlinEvent> = emptySet()
-    var defaultFailureStrategy: DefaultFailureStrategyBuilder.DefaultFailureStrategy? = null
+    var defaultFailureStrategy: FailureStrategyBuilder? = null
 
     fun interactions(init: InteractionsBuilder.() -> Unit) {
         val builder = InteractionsBuilder()
@@ -246,7 +261,7 @@ class RecipeBuilder {
         sensoryEvents = SensoryEventsBuilder().apply(init).build()
     }
 
-    fun defaultFailureStrategy(init: DefaultFailureStrategyBuilder.() -> Unit) {
-        defaultFailureStrategy = DefaultFailureStrategyBuilder().apply(init).build()
+    fun defaultFailureStrategy(init: FailureStrategyBuilder.() -> Unit) {
+        defaultFailureStrategy = FailureStrategyBuilder().apply(init)
     }
 }

@@ -5,6 +5,7 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction a
 import com.ing.baker.recipe.javadsl.Interaction
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -26,8 +27,14 @@ class KotlinDslTest {
                     requiredEvents {
                         event<Interactions.MakePayment.PaymentSuccessful>()
                     }
+                    failureStrategy {
+                        initialDelay = 1.0.seconds
+                        maxTimeBetweenRetries = 2.0.seconds
+                        backoffFactor = 3.0
+                        fireRetryExhaustedEvent = "TestEvent1"
+                        until = maximumRetries(20)
+                    }
                 }
-
                 interaction(Interactions.ShipItems::apply) {
                     name = "foo"
                     maximumInteractionCount = 10
@@ -55,14 +62,16 @@ class KotlinDslTest {
                         )
                     )
 
+                    requiredEvents(Interactions.MakePayment.PaymentSuccessful::class)
+
                 }
             }
-            defaultFailureStrategy{
-                initialDelay(1.0.milliseconds)
-                deadline(2.0.hours)
-                maxTimeBetweenRetries(3.0.seconds)
-                maximumRetries(3)
-                backoffFactor(10.0)
+            defaultFailureStrategy {
+                initialDelay = 10.0.seconds
+                maxTimeBetweenRetries = 3.0.seconds
+                backoffFactor = 10.0
+                fireRetryExhaustedEvent = "TestEvent1"
+                until = deadline(20.0.seconds)
             }
         }
 
@@ -87,6 +96,18 @@ class KotlinDslTest {
 
             assertEquals(1, inputIngredients().size())
             assertEquals("items", inputIngredients().toList().apply(0).name())
+
+            with(failureStrategy().get()) {
+                when(this){
+                    is InteractionFailureStrategy.RetryWithIncrementalBackoff -> {
+                        assertEquals(1L, this.initialDelay().toSeconds())
+                        assertEquals(20, this.maximumRetries())
+                        assertEquals(2000L, this.maxTimeBetweenRetries().get().toMillis())
+                        assertEquals(3.0, this.backoffFactor(), 0.0)
+                    }
+                    else -> error("Classname did not match ")
+                }
+            }
         }
 
         with(recipe.interactions().toList().apply(2)) {
@@ -110,10 +131,10 @@ class KotlinDslTest {
         with(recipe.defaultFailureStrategy()) {
             when(this){
                 is InteractionFailureStrategy.RetryWithIncrementalBackoff -> {
-                    assertEquals(1L, this.initialDelay().toMillis())
-                    assertEquals(2410, this.maximumRetries())
+                    assertEquals(10L, this.initialDelay().toSeconds())
+                    assertEquals(4, this.maximumRetries())
                     assertEquals(3000L, this.maxTimeBetweenRetries().get().toMillis())
-                    assertEquals(2.0, this.backoffFactor(), 0.0)
+                    assertEquals(10.0, this.backoffFactor(), 0.0)
                 }
                 else -> error("Classname did not match ")
             }
@@ -123,11 +144,8 @@ class KotlinDslTest {
     @Test
     fun `should convert to recipe without properties`(){
         val recipeBuilder = recipe("NameNoProps")
-
         val recipe = convertRecipe(recipeBuilder)
-
         assertEquals(BlockInteraction::class.java, recipe.defaultFailureStrategy().javaClass)
-
     }
 
     object Events {

@@ -13,6 +13,7 @@ class Interaction (
   inputIngredientsInput: java.util.Set[Ingredient],
   eventsInput: java.util.Set[Event],
   requiredEventsInput: java.util.Set[String],
+  failureStrategyInput: InteractionFailureStrategy,
 ) extends common.InteractionDescriptor {
   override val name: String = nameInput
   override val originalName: String = nameInput
@@ -25,5 +26,5 @@ class Interaction (
   override val overriddenOutputIngredientName: Option[String] = None
   override val eventOutputTransformers: Map[Event, EventOutputTransformer] = Map.empty
   override val maximumInteractionCount: Option[Int] = None
-  override val failureStrategy: Option[InteractionFailureStrategy] = None
+  override val failureStrategy: Option[InteractionFailureStrategy] = Option.apply(failureStrategyInput)
 }
