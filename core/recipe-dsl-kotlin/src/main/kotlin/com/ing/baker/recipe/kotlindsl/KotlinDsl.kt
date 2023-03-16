@@ -170,11 +170,11 @@ class InteractionRequiredEventsBuilder {
     val events = mutableSetOf<InteractionEvent>()
 
     // TODO not null assertion...
-    inline fun <reified T> event(): Unit {
+    inline fun <reified T> event() {
         events.add(InteractionEvent(T::class.simpleName!!))
     }
 
-    fun event(name: String): Unit {
+    fun event(name: String) {
         events.add(InteractionEvent(name))
     }
 
@@ -186,11 +186,11 @@ class InteractionRequiredOneOfEventsBuilder {
     val events = mutableSetOf<InteractionEvent>()
 
     // TODO not null assertion...
-    inline fun <reified T> event(): Unit {
+    inline fun <reified T> event() {
         events.add(InteractionEvent(T::class.simpleName!!))
     }
 
-    fun event(name: String): Unit {
+    fun event(name: String) {
         events.add(InteractionEvent(name))
     }
 
