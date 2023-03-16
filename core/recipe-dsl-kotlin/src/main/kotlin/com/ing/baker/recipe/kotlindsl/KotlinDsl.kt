@@ -36,7 +36,7 @@ fun interactionFunctionToCommonInteraction(builder: InteractionBuilder): Interac
         builder.func.ownerClass().simpleName ?: "",
         HashSet(inputIngredients),
         HashSet(events),
-        HashSet(builder.requiredEvents.map { it.simpleName })
+        HashSet(builder.requiredEvents.map { it.name })
     )
 }
 
@@ -85,12 +85,26 @@ class InteractionsBuilder {
     fun build() = interactions
 }
 
+data class EventTransformation(
+    val from: KClass<*>,
+    val to: String,
+    val ingredientRenames: Map<String, String>
+)
+
 @Scoped
 class InteractionBuilder {
+    var name: String? = null
+    var maximumInteractionCount: Int? = null
+
+    // TODO varargs not possible here, probably can be nicer
+    var preDefinedIngredients: Set<Pair<String, String>> = emptySet()
 
     lateinit var func: KFunction<*>
     var events: Set<KClass<*>> = setOf()
-    var requiredEvents: Set<KClass<*>> = setOf()
+
+    val eventTransformations: MutableSet<EventTransformation> = mutableSetOf()
+    val requiredEvents: MutableSet<InteractionEvent> = mutableSetOf()
+    val requiredOneOfEvents: MutableSet<Set<InteractionEvent>> = mutableSetOf() // TODO actually use this somewhere
 
     fun func(func: KFunction<*>) {
         val sealedSubclasses = (func.returnType.classifier as KClass<*>).sealedSubclasses
@@ -103,13 +117,56 @@ class InteractionBuilder {
         this.func = func
     }
 
-    fun events(vararg events: KClass<*>) {
-        this.events = events.toSet()
+    fun requiredEvents(init: InteractionRequiredEventsBuilder.() -> Unit) {
+        requiredEvents.addAll(InteractionRequiredEventsBuilder().apply(init).build())
     }
 
-    fun requiredEvents(vararg requiredEvents: KClass<*>) {
-        this.requiredEvents = requiredEvents.toSet()
+    fun requiredOneOfEvents(init: InteractionRequiredOneOfEventsBuilder.() -> Unit) {
+        requiredOneOfEvents.add(InteractionRequiredOneOfEventsBuilder().apply(init).build())
     }
+
+    // TODO Investigate if we can improve on this with vararg
+    inline fun <reified T> transformEvent(to: String, ingredientRenames: Map<String, String> = emptyMap()) {
+        eventTransformations.add(
+            EventTransformation(T::class, to, ingredientRenames)
+        )
+    }
+
+}
+
+// TODO fix this
+data class InteractionEvent(val name: String)
+
+@Scoped
+class InteractionRequiredEventsBuilder {
+    val events = mutableSetOf<InteractionEvent>()
+
+    // TODO not null assertion...
+    inline fun <reified T> event(): Unit {
+        events.add(InteractionEvent(T::class.simpleName!!))
+    }
+
+    fun event(name: String): Unit {
+        events.add(InteractionEvent(name))
+    }
+
+    fun build() = events.toSet()
+}
+
+@Scoped
+class InteractionRequiredOneOfEventsBuilder {
+    val events = mutableSetOf<InteractionEvent>()
+
+    // TODO not null assertion...
+    inline fun <reified T> event(): Unit {
+        events.add(InteractionEvent(T::class.simpleName!!))
+    }
+
+    fun event(name: String): Unit {
+        events.add(InteractionEvent(name))
+    }
+
+    fun build() = events.toSet()
 }
 
 fun recipe(name: String, init: (RecipeBuilder.() -> Unit)? = null): RecipeBuilder {

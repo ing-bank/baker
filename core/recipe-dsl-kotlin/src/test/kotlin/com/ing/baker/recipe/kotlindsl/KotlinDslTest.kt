@@ -23,7 +23,38 @@ class KotlinDslTest {
                 interaction(Interactions.MakePayment::apply)
                 interaction(Interactions.ReserveItems::apply)
                 interaction(Interactions.ShipItems::apply) {
-                    requiredEvents(Interactions.MakePayment.PaymentSuccessful::class)
+                    requiredEvents {
+                        event<Interactions.MakePayment.PaymentSuccessful>()
+                    }
+                }
+
+                interaction(Interactions.ShipItems::apply) {
+                    name = "foo"
+                    maximumInteractionCount = 10
+                    preDefinedIngredients = setOf(
+                        "foo" to "bar"
+                    )
+
+                    requiredEvents {
+                        event<Interactions.MakePayment.PaymentSuccessful>()
+                        event("myEvent")
+                    }
+
+                    requiredOneOfEvents {
+                        event<Ingredients.PaymentInformation>()
+                        event("SomeEvent")
+                    }
+
+                    transformEvent<Char>("foo")
+
+                    transformEvent<Boolean>(
+                        to = "AnotherBoolean",
+                        ingredientRenames = mapOf(
+                            "foo" to "bar",
+                            "this" to "that"
+                        )
+                    )
+
                 }
             }
             defaultFailureStrategy{
