@@ -14,7 +14,6 @@ import kotlin.reflect.jvm.javaType
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
-
 @DslMarker
 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
 annotation class Scoped
@@ -23,13 +22,14 @@ fun convertRecipe(builder: RecipeBuilder): Recipe {
     return Recipe(
         builder.name,
         builder.interactions.map(::interactionFunctionToCommonInteraction).toList(),
-        builder.sensoryEvents.map { it.kClass.java }.toList(),
+        builder.sensoryEvents.toList(),
         builder.defaultFailureStrategy.convert(),
         Optional.empty(),
         Optional.empty(),
     )
 }
 
+// TODO do we have use-cases where the recipe doesn't have a body?
 fun recipe(name: String, init: (RecipeBuilder.() -> Unit)? = null): RecipeBuilder {
     val builder = RecipeBuilder()
     builder.name = name
@@ -44,7 +44,7 @@ class RecipeBuilder {
 
     lateinit var name: String
     var interactions: Set<InteractionBuilder> = emptySet()
-    var sensoryEvents: Set<KotlinEvent> = emptySet()
+    var sensoryEvents: Set<Event> = emptySet()
     var defaultFailureStrategy: FailureStrategyBuilder? = null
 
     fun interactions(init: InteractionsBuilder.() -> Unit) {
@@ -249,9 +249,10 @@ class InteractionRequiredOneOfEventsBuilder {
 
 @Scoped
 class SensoryEventsBuilder {
-    val events = mutableSetOf<KotlinEvent>()
+    val events = mutableSetOf<Event>()
 
-    inline fun <reified T> event(maxFiringLimit: Int? = null) = events.add(KotlinEvent(T::class, maxFiringLimit))
+    inline fun <reified T> event(maxFiringLimit: Int? = null) =
+        events.add(Event(T::class.java, maxFiringLimit.toScalaOption()))
 
     fun build() = events.toSet()
 }
@@ -273,7 +274,3 @@ class FailureStrategyBuilder {
     fun deadline(duration: Duration) = Deadline(duration)
     fun maximumRetries(count: Int) = MaximumRetries(count)
 }
-
-// Temp class for experimentation purposes. Probably should map this to some common Event class.
-// We can get ingredients from a KClass via .primaryConstructor?.parameters?.map { Pair(it.name, it.type) }
-data class KotlinEvent(val kClass: KClass<*>, val maxFiringLimit: Int?)
