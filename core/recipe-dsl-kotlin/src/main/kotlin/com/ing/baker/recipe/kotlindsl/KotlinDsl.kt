@@ -19,6 +19,49 @@ import kotlin.time.toJavaDuration
 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
 annotation class Scoped
 
+fun convertRecipe(builder: RecipeBuilder): Recipe {
+    return Recipe(
+        builder.name,
+        builder.interactions.map(::interactionFunctionToCommonInteraction).toList(),
+        builder.sensoryEvents.map { it.kClass.java }.toList(),
+        builder.defaultFailureStrategy.convert(),
+        Optional.empty(),
+        Optional.empty(),
+    )
+}
+
+fun recipe(name: String, init: (RecipeBuilder.() -> Unit)? = null): RecipeBuilder {
+    val builder = RecipeBuilder()
+    builder.name = name
+    init?.apply {
+        builder.apply(this)
+    }
+    return builder
+}
+
+@Scoped
+class RecipeBuilder {
+
+    lateinit var name: String
+    var interactions: Set<InteractionBuilder> = emptySet()
+    var sensoryEvents: Set<KotlinEvent> = emptySet()
+    var defaultFailureStrategy: FailureStrategyBuilder? = null
+
+    fun interactions(init: InteractionsBuilder.() -> Unit) {
+        val builder = InteractionsBuilder()
+        builder.apply(init)
+        this.interactions = builder.build()
+    }
+
+    fun sensoryEvents(init: SensoryEventsBuilder.() -> Unit) {
+        sensoryEvents = SensoryEventsBuilder().apply(init).build()
+    }
+
+    fun defaultFailureStrategy(init: FailureStrategyBuilder.() -> Unit) {
+        defaultFailureStrategy = FailureStrategyBuilder().apply(init)
+    }
+}
+
 fun interactionFunctionToCommonInteraction(builder: InteractionBuilder): Interaction {
     val inputIngredients = builder.func.parameters.drop(1)
         .map {
@@ -36,17 +79,6 @@ fun interactionFunctionToCommonInteraction(builder: InteractionBuilder): Interac
         HashSet(events),
         HashSet(builder.requiredEvents.map { it.name }),
         builder.failureStrategy.convert()
-    )
-}
-
-fun convertRecipe(builder: RecipeBuilder): Recipe {
-    return Recipe(
-        builder.name,
-        builder.interactions.map(::interactionFunctionToCommonInteraction).toList(),
-        builder.sensoryEvents.map { it.kClass.java }.toList(),
-        builder.defaultFailureStrategy.convert(),
-        Optional.empty(),
-        Optional.empty(),
     )
 }
 
@@ -215,15 +247,6 @@ class InteractionRequiredOneOfEventsBuilder {
     fun build() = events.toSet()
 }
 
-fun recipe(name: String, init: (RecipeBuilder.() -> Unit)? = null): RecipeBuilder {
-    val builder = RecipeBuilder()
-    builder.name = name
-    init?.apply {
-        builder.apply(this)
-    }
-    return builder
-}
-
 @Scoped
 class SensoryEventsBuilder {
     val events = mutableSetOf<KotlinEvent>()
@@ -249,33 +272,8 @@ class FailureStrategyBuilder {
 
     fun deadline(duration: Duration) = Deadline(duration)
     fun maximumRetries(count: Int) = MaximumRetries(count)
-
 }
-
 
 // Temp class for experimentation purposes. Probably should map this to some common Event class.
 // We can get ingredients from a KClass via .primaryConstructor?.parameters?.map { Pair(it.name, it.type) }
 data class KotlinEvent(val kClass: KClass<*>, val maxFiringLimit: Int?)
-
-@Scoped
-class RecipeBuilder {
-
-    lateinit var name: String
-    var interactions: Set<InteractionBuilder> = emptySet()
-    var sensoryEvents: Set<KotlinEvent> = emptySet()
-    var defaultFailureStrategy: FailureStrategyBuilder? = null
-
-    fun interactions(init: InteractionsBuilder.() -> Unit) {
-        val builder = InteractionsBuilder()
-        builder.apply(init)
-        this.interactions = builder.build()
-    }
-
-    fun sensoryEvents(init: SensoryEventsBuilder.() -> Unit) {
-        sensoryEvents = SensoryEventsBuilder().apply(init).build()
-    }
-
-    fun defaultFailureStrategy(init: FailureStrategyBuilder.() -> Unit) {
-        defaultFailureStrategy = FailureStrategyBuilder().apply(init)
-    }
-}
