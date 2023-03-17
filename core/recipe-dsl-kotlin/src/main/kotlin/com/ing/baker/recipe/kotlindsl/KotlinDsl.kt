@@ -47,10 +47,17 @@ class RecipeBuilder {
     var sensoryEvents: Set<Event> = emptySet()
     var defaultFailureStrategy: FailureStrategyBuilder? = null
 
-    fun interactions(init: InteractionsBuilder.() -> Unit) {
-        val builder = InteractionsBuilder()
+    fun interaction(func: KFunction<*>) {
+        val builder = InteractionBuilder()
+        builder.func(func)
+        interactions = interactions + builder
+    }
+
+    fun interaction(func: KFunction<*>, init: InteractionBuilder.() -> Unit) {
+        val builder = InteractionBuilder()
         builder.apply(init)
-        this.interactions = builder.build()
+        builder.func(func)
+        interactions = interactions + builder
     }
 
     fun sensoryEvents(init: SensoryEventsBuilder.() -> Unit) {
@@ -120,27 +127,6 @@ fun FailureStrategyBuilder?.convert(): com.ing.baker.recipe.common.InteractionFa
 fun KFunction<*>.ownerClass(): KClass<*> {
     val owner = (this as CallableReference).owner
     return (owner as KClass<*>)
-}
-
-@Scoped
-class InteractionsBuilder {
-
-    var interactions: Set<InteractionBuilder> = setOf()
-
-    fun interaction(func: KFunction<*>) {
-        val builder = InteractionBuilder()
-        builder.func(func)
-        interactions = interactions + builder
-    }
-
-    fun interaction(func: KFunction<*>, init: InteractionBuilder.() -> Unit) {
-        val builder = InteractionBuilder()
-        builder.apply(init)
-        builder.func(func)
-        interactions = interactions + builder
-    }
-
-    fun build() = interactions
 }
 
 data class EventTransformation(

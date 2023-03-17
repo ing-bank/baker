@@ -21,51 +21,51 @@ class KotlinDslTest {
                 event<Events.PaymentInformationReceived>(maxFiringLimit = 5)
                 event<Events.ShippingAddressReceived>(maxFiringLimit = 1)
             }
-            interactions {
-                interaction(Interactions.MakePayment::apply)
-                interaction(Interactions.ReserveItems::apply)
-                interaction(Interactions.ShipItems::apply) {
-                    requiredEvents {
-                        event<Interactions.MakePayment.PaymentSuccessful>()
-                    }
-                    failureStrategy {
-                        initialDelay = 1.0.seconds
-                        maxTimeBetweenRetries = 2.0.seconds
-                        backoffFactor = 3.0
-                        fireRetryExhaustedEvent = "TestEvent1"
-                        until = maximumRetries(20)
-                    }
+
+            interaction(Interactions.MakePayment::apply)
+            interaction(Interactions.ReserveItems::apply)
+            interaction(Interactions.ShipItems::apply) {
+                requiredEvents {
+                    event<Interactions.MakePayment.PaymentSuccessful>()
                 }
-                interaction(Interactions.ShipItems::apply) {
-                    name = "foo"
-                    maximumInteractionCount = 10
-
-                    preDefinedIngredients {
-                        "foo" to "bar"
-                        "blah" to "koekoek"
-                    }
-
-                    requiredEvents {
-                        event<Interactions.MakePayment.PaymentSuccessful>()
-                        event("myEvent")
-                    }
-
-                    requiredOneOfEvents {
-                        event<Ingredients.PaymentInformation>()
-                        event("SomeEvent")
-                    }
-
-                    transformEvent<Char>("foo")
-
-                    transformEvent<Boolean>(
-                        to = "AnotherBoolean",
-                        ingredientRenames = mapOf(
-                            "foo" to "bar",
-                            "this" to "that"
-                        )
-                    )
+                failureStrategy {
+                    initialDelay = 1.0.seconds
+                    maxTimeBetweenRetries = 2.0.seconds
+                    backoffFactor = 3.0
+                    fireRetryExhaustedEvent = "TestEvent1"
+                    until = maximumRetries(20)
                 }
             }
+            interaction(Interactions.ShipItems::apply) {
+                name = "foo"
+                maximumInteractionCount = 10
+
+                preDefinedIngredients {
+                    "foo" to "bar"
+                    "blah" to "koekoek"
+                }
+
+                requiredEvents {
+                    event<Interactions.MakePayment.PaymentSuccessful>()
+                    event("myEvent")
+                }
+
+                requiredOneOfEvents {
+                    event<Ingredients.PaymentInformation>()
+                    event("SomeEvent")
+                }
+
+                transformEvent<Char>("foo")
+
+                transformEvent<Boolean>(
+                    to = "AnotherBoolean",
+                    ingredientRenames = mapOf(
+                        "foo" to "bar",
+                        "this" to "that"
+                    )
+                )
+            }
+
             defaultFailureStrategy {
                 initialDelay = 10.0.seconds
                 maxTimeBetweenRetries = 3.0.seconds
