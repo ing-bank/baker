@@ -178,7 +178,7 @@ class KotlinDslTest {
                 assertEquals("Two", name())
                 assertEquals(Some(5), maxFiringLimit())
                 assertEquals(1, providedIngredients().size())
-                assertEquals("value", providedIngredients().get(0).name())
+                assertEquals("text", providedIngredients().get(0).name())
                 assertEquals("CharArray", providedIngredients().get(0).ingredientType().toString())
             }
         }
@@ -190,7 +190,7 @@ class KotlinDslTest {
         class ShippingAddressReceived(val shippingAddress: Ingredients.ShippingAddress)
 
         class One(val flag: Boolean)
-        class Two(val value: String)
+        class Two(val text: String)
     }
 
     object Ingredients {
