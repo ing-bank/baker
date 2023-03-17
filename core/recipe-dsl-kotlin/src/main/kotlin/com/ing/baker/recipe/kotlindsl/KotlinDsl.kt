@@ -123,7 +123,7 @@ class InteractionBuilder {
     var maximumInteractionCount: Int? = null
 
     // TODO varargs not possible here, probably can be nicer
-    var preDefinedIngredients: Set<Pair<String, String>> = emptySet()
+    var preDefinedIngredients = mutableMapOf<String, String>()
 
     lateinit var func: KFunction<*>
     var events: Set<KClass<*>> = setOf()
@@ -153,6 +153,10 @@ class InteractionBuilder {
         requiredOneOfEvents.add(InteractionRequiredOneOfEventsBuilder().apply(init).build())
     }
 
+    fun preDefinedIngredients(init: PredefinedIngredientsBuilder.() -> Unit) {
+        preDefinedIngredients.putAll(PredefinedIngredientsBuilder().apply(init).build())
+    }
+
     // TODO Investigate if we can improve on this with vararg
     inline fun <reified T> transformEvent(to: String, ingredientRenames: Map<String, String> = emptyMap()) {
         eventTransformations.add(
@@ -163,7 +167,17 @@ class InteractionBuilder {
     fun failureStrategy(init: FailureStrategyBuilder.() -> Unit) {
         this.failureStrategy = FailureStrategyBuilder().apply(init)
     }
+}
 
+@Scoped
+class PredefinedIngredientsBuilder {
+    private val preDefinedIngredients: MutableMap<String, String> = mutableMapOf()
+
+    infix fun String.to(value: String) {
+        preDefinedIngredients[this] = value
+    }
+
+    fun build() = preDefinedIngredients.toMap()
 }
 
 // TODO fix this

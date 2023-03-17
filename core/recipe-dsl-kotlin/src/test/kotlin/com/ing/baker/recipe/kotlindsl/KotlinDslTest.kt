@@ -35,9 +35,11 @@ class KotlinDslTest {
                 interaction(Interactions.ShipItems::apply) {
                     name = "foo"
                     maximumInteractionCount = 10
-                    preDefinedIngredients = setOf(
+
+                    preDefinedIngredients {
                         "foo" to "bar"
-                    )
+                        "blah" to "koekoek"
+                    }
 
                     requiredEvents {
                         event<Interactions.MakePayment.PaymentSuccessful>()
@@ -58,7 +60,6 @@ class KotlinDslTest {
                             "this" to "that"
                         )
                     )
-
                 }
             }
             defaultFailureStrategy {
