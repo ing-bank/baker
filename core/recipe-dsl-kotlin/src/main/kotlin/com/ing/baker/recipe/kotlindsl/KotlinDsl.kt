@@ -4,7 +4,6 @@ import com.ing.baker.recipe.common.Ingredient
 import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy
 import com.ing.baker.types.Converters
-import scala.Option
 import java.util.*
 import kotlin.jvm.internal.CallableReference
 import kotlin.reflect.KClass
@@ -123,7 +122,7 @@ fun FailureStrategyBuilder?.convert(): com.ing.baker.recipe.common.InteractionFa
     }
     ?: BlockInteraction()
 
-fun KotlinEvent.convert(): com.ing.baker.recipe.common.Event {
+fun KotlinEvent.convert(): com.ing.baker.recipe.kotlindsl.Event {
     return com.ing.baker.recipe.kotlindsl.Event(
         kClass.simpleName,
         kClass.primaryConstructor?.parameters?.map { Ingredient(it.name, it.type.javaType) },
