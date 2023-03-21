@@ -9,7 +9,7 @@ import scala.jdk.CollectionConverters._
 class Recipe(
   nameInput: String,
   interactionsInput: java.util.List[Interaction],
-  sensoryEventsInput: java.util.List[javadsl.Event],
+  sensoryEventsInput: java.util.List[common.Event],
   defaultFailureStrategyInput: common.InteractionFailureStrategy,
   eventReceivePeriodInput: java.util.Optional[java.time.Duration],
   retentionPeriodInput: java.util.Optional[java.time.Duration]

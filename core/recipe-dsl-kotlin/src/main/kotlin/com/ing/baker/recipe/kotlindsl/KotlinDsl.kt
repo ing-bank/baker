@@ -42,7 +42,7 @@ class RecipeBuilder {
 
     lateinit var name: String
     var interactions: Set<InteractionBuilder> = emptySet()
-    var sensoryEvents: Set<Event> = emptySet()
+    var sensoryEvents: Set<KotlinEvent> = emptySet()
     var defaultFailureStrategy: FailureStrategyBuilder? = null
 
     fun interaction(func: KFunction<*>) {
@@ -123,16 +123,11 @@ fun FailureStrategyBuilder?.convert(): com.ing.baker.recipe.common.InteractionFa
     }
     ?: BlockInteraction()
 
-fun Event.convert(): com.ing.baker.recipe.common.Event {
-
-    val name = this.kClass.simpleName,
-    val ingredients = this.kClass.primaryConstructor.parameters.map { it.name to it.type }
-    val event = com.ing.baker.recipe.kotlindsl.Event(
-        this.kClass.simpleName,
-        this.
-
-
-
+fun KotlinEvent.convert(): com.ing.baker.recipe.common.Event {
+    return com.ing.baker.recipe.kotlindsl.Event(
+        kClass.simpleName,
+        kClass.primaryConstructor?.parameters?.map { Ingredient(it.name, it.type.javaType) },
+        Optional.ofNullable(maxFiringLimit)
     )
 }
 
@@ -141,10 +136,12 @@ fun KFunction<*>.ownerClass(): KClass<*> {
     return (owner as KClass<*>)
 }
 
-data class Event(
+// TODO ugly name
+data class KotlinEvent(
     val kClass: KClass<*>,
     val maxFiringLimit: Int?,
 )
+
 data class EventTransformation(
     val from: KClass<*>,
     val to: String,
@@ -251,10 +248,10 @@ class InteractionRequiredOneOfEventsBuilder {
 
 @Scoped
 class SensoryEventsBuilder {
-    val events = mutableSetOf<Event>()
+    val events = mutableSetOf<KotlinEvent>()
 
     inline fun <reified T> event(maxFiringLimit: Int? = null) =
-        events.add(Event(T::class, maxFiringLimit))
+        events.add(KotlinEvent(T::class, maxFiringLimit))
 
     fun build() = events.toSet()
 }
