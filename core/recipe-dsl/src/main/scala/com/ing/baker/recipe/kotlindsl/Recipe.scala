@@ -2,9 +2,10 @@ package com.ing.baker.recipe.kotlindsl
 
 import com.ing.baker.recipe.common
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
-import scala.jdk.CollectionConverters._
 
+import scala.jdk.CollectionConverters._
 import scala.collection.immutable.Seq
 import scala.collection.immutable.List
 import scala.collection.immutable.Map
@@ -23,6 +24,6 @@ class Recipe(
   override val interactions: Seq[Interaction] = List.apply(interactionsInput.asScala.toSeq:_*)
   override val sensoryEvents: Set[common.Event] = sensoryEventsInput.asScala.toSet
   override val defaultFailureStrategy: common.InteractionFailureStrategy = defaultFailureStrategyInput
-  override val eventReceivePeriod: Option[FiniteDuration] = None //eventReceivePeriodInput
-  override val retentionPeriod: Option[FiniteDuration] = None //retentionPeriodInput
+  override val eventReceivePeriod: Option[FiniteDuration] = eventReceivePeriodInput.map[Option[FiniteDuration]](d => Option.apply(FiniteDuration(d.toNanos, TimeUnit.NANOSECONDS))).orElse(None)
+  override val retentionPeriod: Option[FiniteDuration] = retentionPeriodInput.map[Option[FiniteDuration]](d => Option.apply(FiniteDuration(d.toNanos, TimeUnit.NANOSECONDS))).orElse(None)
 }

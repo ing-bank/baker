@@ -23,8 +23,8 @@ fun convertRecipe(builder: RecipeBuilder): Recipe {
         builder.interactions.map { it.convert() }.toList(),
         builder.sensoryEvents.map { it.convert() }.toList(),
         builder.defaultFailureStrategy.convert(),
-        Optional.empty(),
-        Optional.empty(),
+        Optional.ofNullable(builder.eventReceivePeriod?.toJavaDuration()),
+        Optional.ofNullable(builder.retentionPeriod?.toJavaDuration()),
     )
 }
 
@@ -43,6 +43,8 @@ class RecipeBuilder {
     var interactions: Set<InteractionBuilder> = emptySet()
     var sensoryEvents: Set<SensoryEvent> = emptySet()
     var defaultFailureStrategy: FailureStrategyBuilder? = null
+    var eventReceivePeriod: Duration? = null
+    var retentionPeriod: Duration? = null
 
     fun interaction(func: KFunction<*>) {
         val builder = InteractionBuilder()

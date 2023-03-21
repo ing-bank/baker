@@ -9,6 +9,8 @@ import scala.Option
 import scala.Some
 import scala.collection.Seq
 import scala.collection.Set
+import scala.concurrent.duration.FiniteDuration
+import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
 class KotlinDslTest {
@@ -16,6 +18,8 @@ class KotlinDslTest {
     @Test
     fun `should convert dsl to recipe`() {
         val recipeBuilder = recipe("Name") {
+            retentionPeriod = 3.seconds
+            eventReceivePeriod = 4.seconds
             sensoryEvents {
                 event<Events.OrderPlaced>()
                 event<Events.PaymentInformationReceived>(maxFiringLimit = 5)
@@ -77,7 +81,9 @@ class KotlinDslTest {
 
         val recipe = convertRecipe(recipeBuilder)
 
-        assertEquals(recipe.name(), "Name")
+        assertEquals("Name", recipe.name())
+        assertEquals(Option.apply(FiniteDuration(3000000000, TimeUnit.NANOSECONDS)), recipe.retentionPeriod())
+        assertEquals(Option.apply(FiniteDuration(4000000000, TimeUnit.NANOSECONDS)), recipe.eventReceivePeriod())
 
         with(recipe.interactions().toList().apply(0)) {
             assertEquals("MakePayment", name())
