@@ -42,7 +42,7 @@ class KotlinDslTest {
 
                 preDefinedIngredients {
                     "foo" to "bar"
-                    "blah" to "koekoek"
+                    "blah" to true
                 }
 
                 requiredEvents {
@@ -85,8 +85,8 @@ class KotlinDslTest {
             assertEquals(0, requiredEvents().size())
 
             assertEquals(2, inputIngredients().size())
-            assertEquals("paymentInformation", inputIngredients().toList().apply(0).name())
-            assertEquals("reservedItems", inputIngredients().toList().apply(1).name())
+            assertEquals("reservedItems", inputIngredients().toList().apply(0).name())
+            assertEquals("paymentInformation", inputIngredients().toList().apply(1).name())
         }
 
         with(recipe.interactions().toList().apply(1)) {

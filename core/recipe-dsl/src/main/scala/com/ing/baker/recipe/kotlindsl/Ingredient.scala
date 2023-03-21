@@ -1,7 +1,7 @@
 package com.ing.baker.recipe.kotlindsl
 
-import com.ing.baker.types.Type
+import com.ing.baker.recipe.common
+import com.ing.baker.types.Converters
 
-import java.util.Objects
-
-case class Ingredient(name: String, ingredientType: java.lang.reflect.Type)
+case class Ingredient(nameInput: String, ingredientTypeInput: java.lang.reflect.Type)
+  extends common.Ingredient(nameInput, Converters.readJavaType(ingredientTypeInput))

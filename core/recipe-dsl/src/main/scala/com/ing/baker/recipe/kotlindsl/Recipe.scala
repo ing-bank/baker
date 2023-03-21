@@ -5,6 +5,11 @@ import com.ing.baker.recipe.common
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 
+import scala.collection.immutable.Seq
+import scala.collection.immutable.List
+import scala.collection.immutable.Map
+import scala.collection.immutable.Set
+
 class Recipe(
   nameInput: String,
   interactionsInput: java.util.List[Interaction],

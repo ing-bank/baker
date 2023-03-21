@@ -1,9 +1,9 @@
 package com.ing.baker.recipe.kotlindsl
 
-import com.ing.baker.recipe.common.Ingredient
 import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy
 import com.ing.baker.types.Converters
+import com.ing.baker.types.Value
 import java.util.*
 import kotlin.jvm.internal.CallableReference
 import kotlin.reflect.KClass
@@ -20,7 +20,7 @@ annotation class Scoped
 fun convertRecipe(builder: RecipeBuilder): Recipe {
     return Recipe(
         builder.name,
-        builder.interactions.map(::interactionFunctionToCommonInteraction).toList(),
+        builder.interactions.map { it.convert() }.toList(),
         builder.sensoryEvents.map { it.convert() }.toList(),
         builder.defaultFailureStrategy.convert(),
         Optional.empty(),
@@ -41,7 +41,7 @@ class RecipeBuilder {
 
     lateinit var name: String
     var interactions: Set<InteractionBuilder> = emptySet()
-    var sensoryEvents: Set<KotlinEvent> = emptySet()
+    var sensoryEvents: Set<SensoryEvent> = emptySet()
     var defaultFailureStrategy: FailureStrategyBuilder? = null
 
     fun interaction(func: KFunction<*>) {
@@ -66,24 +66,31 @@ class RecipeBuilder {
     }
 }
 
-fun interactionFunctionToCommonInteraction(builder: InteractionBuilder): Interaction {
-    val inputIngredients = builder.func.parameters.drop(1)
-        .map {
-            val type = Converters.readJavaType(it.type.javaType)
-            Ingredient(it.name, type)
-        }
 
-    val events: Set<com.ing.baker.recipe.common.Event> = builder.events
-        .map { Event(it) }
+fun InteractionBuilder.convert(): Interaction {
+    val inputIngredients = func.parameters.drop(1)
+        .map { Ingredient(it.name, it.type.javaType) }
+        .toSet()
+
+    val outputEvents: Set<Event> = events
         .map { it.convert() }
         .toSet()
 
+    val eventTransformationsInput: Map<Event, EventOutputTransformer> =
+        eventTransformations.associate { it.from.convert() to EventOutputTransformer(it.to, it.ingredientRenames) }
+
     return Interaction(
-        builder.func.ownerClass().simpleName ?: "",
-        HashSet(inputIngredients),
-        HashSet(events),
-        HashSet(builder.requiredEvents.map { it.name }),
-        builder.failureStrategy.convert()
+        func.ownerClass().simpleName!!,
+        inputIngredients,
+        outputEvents,
+        requiredEvents,
+        requiredOneOfEvents,
+        preDefinedIngredients,
+        emptyMap<String, String>(),  // TODO probably not needed
+        Optional.empty(), // TODO probably not needed
+        eventTransformationsInput,
+        Optional.ofNullable(maximumInteractionCount),
+        failureStrategy.convert()
     )
 }
 
@@ -122,10 +129,19 @@ fun FailureStrategyBuilder?.convert(): com.ing.baker.recipe.common.InteractionFa
     }
     ?: BlockInteraction()
 
-fun KotlinEvent.convert(): com.ing.baker.recipe.kotlindsl.Event {
-    return com.ing.baker.recipe.kotlindsl.Event(
-        kClass.simpleName,
-        kClass.primaryConstructor?.parameters?.map { Ingredient(it.name, it.type.javaType) },
+fun SensoryEvent.convert(): Event {
+    return kClass.convert(maxFiringLimit)
+}
+
+fun KClass<*>.convert(maxFiringLimit: Int? = null): Event {
+    return Event(
+        simpleName,
+        primaryConstructor?.parameters?.map {
+            Ingredient(
+                it.name,
+                it.type.javaType
+            )
+        },
         Optional.ofNullable(maxFiringLimit)
     )
 }
@@ -135,8 +151,7 @@ fun KFunction<*>.ownerClass(): KClass<*> {
     return (owner as KClass<*>)
 }
 
-// TODO ugly name
-data class KotlinEvent(
+data class SensoryEvent(
     val kClass: KClass<*>,
     val maxFiringLimit: Int?,
 )
@@ -152,15 +167,14 @@ class InteractionBuilder {
     var name: String? = null
     var maximumInteractionCount: Int? = null
 
-    // TODO varargs not possible here, probably can be nicer
-    var preDefinedIngredients = mutableMapOf<String, String>()
+    var preDefinedIngredients = mutableMapOf<String, Any>()
 
     lateinit var func: KFunction<*>
     var events: Set<KClass<*>> = setOf()
 
     val eventTransformations: MutableSet<EventTransformation> = mutableSetOf()
-    val requiredEvents: MutableSet<InteractionEvent> = mutableSetOf()
-    val requiredOneOfEvents: MutableSet<Set<InteractionEvent>> = mutableSetOf() // TODO actually use this somewhere
+    val requiredEvents: MutableSet<String> = mutableSetOf()
+    val requiredOneOfEvents: MutableSet<Set<String>> = mutableSetOf()
 
     var failureStrategy: FailureStrategyBuilder? = null
 
@@ -215,15 +229,14 @@ data class InteractionEvent(val name: String)
 
 @Scoped
 class InteractionRequiredEventsBuilder {
-    val events = mutableSetOf<InteractionEvent>()
+    val events = mutableSetOf<String>()
 
-    // TODO not null assertion...
     inline fun <reified T> event() {
-        events.add(InteractionEvent(T::class.simpleName!!))
+        events.add(T::class.simpleName!!)
     }
 
     fun event(name: String) {
-        events.add(InteractionEvent(name))
+        events.add(name)
     }
 
     fun build() = events.toSet()
@@ -231,15 +244,14 @@ class InteractionRequiredEventsBuilder {
 
 @Scoped
 class InteractionRequiredOneOfEventsBuilder {
-    val events = mutableSetOf<InteractionEvent>()
+    val events = mutableSetOf<String>()
 
-    // TODO not null assertion...
     inline fun <reified T> event() {
-        events.add(InteractionEvent(T::class.simpleName!!))
+        events.add(T::class.simpleName!!)
     }
 
     fun event(name: String) {
-        events.add(InteractionEvent(name))
+        events.add(name)
     }
 
     fun build() = events.toSet()
@@ -247,10 +259,10 @@ class InteractionRequiredOneOfEventsBuilder {
 
 @Scoped
 class SensoryEventsBuilder {
-    val events = mutableSetOf<KotlinEvent>()
+    val events = mutableSetOf<SensoryEvent>()
 
     inline fun <reified T> event(maxFiringLimit: Int? = null) =
-        events.add(KotlinEvent(T::class, maxFiringLimit))
+        events.add(SensoryEvent(T::class, maxFiringLimit))
 
     fun build() = events.toSet()
 }

@@ -4,6 +4,7 @@ import com.ing.baker.recipe.common
 import com.ing.baker.types.Converters
 
 import scala.jdk.CollectionConverters._
+import scala.collection.immutable.{List, Seq}
 
 class Event(
   nameInput: String,
@@ -11,7 +12,6 @@ class Event(
   maxFiringLimitInput: java.util.Optional[java.lang.Integer]
 ) extends common.Event {
   override val name: String = nameInput
-  override val providedIngredients: Seq[common.Ingredient] = ingredientsInput.asScala.toSeq
-    .map(i => new common.Ingredient(i.name, Converters.readJavaType(i.ingredientType)))
-  override val maxFiringLimit: Option[Int] = Option.apply(maxFiringLimitInput.orElse(null))
+  override val providedIngredients: Seq[common.Ingredient] = List.apply(ingredientsInput.asScala.toSeq:_*)
+  override val maxFiringLimit: Option[Int] = maxFiringLimitInput.map[Option[Int]](x => Option.apply(x)).orElse(Option.empty)
 }
