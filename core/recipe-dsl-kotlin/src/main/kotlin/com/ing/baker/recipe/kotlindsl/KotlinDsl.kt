@@ -2,7 +2,6 @@ package com.ing.baker.recipe.kotlindsl
 
 import com.ing.baker.recipe.common.Ingredient
 import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
-import com.ing.baker.recipe.javadsl.Event
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy
 import com.ing.baker.types.Converters
 import scala.Option
@@ -10,6 +9,7 @@ import java.util.*
 import kotlin.jvm.internal.CallableReference
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
+import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaType
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
@@ -22,7 +22,7 @@ fun convertRecipe(builder: RecipeBuilder): Recipe {
     return Recipe(
         builder.name,
         builder.interactions.map(::interactionFunctionToCommonInteraction).toList(),
-        builder.sensoryEvents.toList(),
+        builder.sensoryEvents.map { it.convert() }.toList(),
         builder.defaultFailureStrategy.convert(),
         Optional.empty(),
         Optional.empty(),
@@ -30,12 +30,10 @@ fun convertRecipe(builder: RecipeBuilder): Recipe {
 }
 
 // TODO do we have use-cases where the recipe doesn't have a body?
-fun recipe(name: String, init: (RecipeBuilder.() -> Unit)? = null): RecipeBuilder {
+fun recipe(name: String, init: (RecipeBuilder.() -> Unit) = {}): RecipeBuilder {
     val builder = RecipeBuilder()
     builder.name = name
-    init?.apply {
-        builder.apply(this)
-    }
+    builder.apply(init)
     return builder
 }
 
@@ -77,7 +75,8 @@ fun interactionFunctionToCommonInteraction(builder: InteractionBuilder): Interac
         }
 
     val events: Set<com.ing.baker.recipe.common.Event> = builder.events
-        .map { Event(it.java, Option.empty()) }
+        .map { Event(it) }
+        .map { it.convert() }
         .toSet()
 
     return Interaction(
@@ -124,11 +123,28 @@ fun FailureStrategyBuilder?.convert(): com.ing.baker.recipe.common.InteractionFa
     }
     ?: BlockInteraction()
 
+fun Event.convert(): com.ing.baker.recipe.common.Event {
+
+    val name = this.kClass.simpleName,
+    val ingredients = this.kClass.primaryConstructor.parameters.map { it.name to it.type }
+    val event = com.ing.baker.recipe.kotlindsl.Event(
+        this.kClass.simpleName,
+        this.
+
+
+
+    )
+}
+
 fun KFunction<*>.ownerClass(): KClass<*> {
     val owner = (this as CallableReference).owner
     return (owner as KClass<*>)
 }
 
+data class Event(
+    val kClass: KClass<*>,
+    val maxFiringLimit: Int?,
+)
 data class EventTransformation(
     val from: KClass<*>,
     val to: String,
@@ -238,7 +254,7 @@ class SensoryEventsBuilder {
     val events = mutableSetOf<Event>()
 
     inline fun <reified T> event(maxFiringLimit: Int? = null) =
-        events.add(Event(T::class.java, maxFiringLimit.toScalaOption()))
+        events.add(Event(T::class, maxFiringLimit))
 
     fun build() = events.toSet()
 }
