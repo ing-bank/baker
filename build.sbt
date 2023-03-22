@@ -287,7 +287,7 @@ lazy val `baker-recipe-dsl-kotlin`: Project = project.in(file("core/recipe-dsl-k
     moduleName := "baker-recipe-dsl-kotlin",
     kotlinVersion := "1.7.22",
     kotlincJvmTarget := "1.8",
-    kotlinLib("stdlib"),
+    kotlinLib("stdlib-jdk8"),
     kotlinLib("reflect"),
     libraryDependencies ++=
       compileDeps(
