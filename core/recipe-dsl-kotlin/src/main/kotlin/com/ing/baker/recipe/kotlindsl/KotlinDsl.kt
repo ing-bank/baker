@@ -16,22 +16,10 @@ import kotlin.time.toJavaDuration
 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
 annotation class Scoped
 
-fun convertRecipe(builder: RecipeBuilder): Recipe {
-    return Recipe(
-        builder.name,
-        builder.interactions.map { it.convert() }.toList(),
-        builder.sensoryEvents.map { it.convert() }.toList(),
-        builder.defaultFailureStrategy?.convert() ?: BlockInteraction(),
-        Optional.ofNullable(builder.eventReceivePeriod?.toJavaDuration()),
-        Optional.ofNullable(builder.retentionPeriod?.toJavaDuration()),
-    )
-}
-
-fun recipe(name: String, init: (RecipeBuilder.() -> Unit) = {}): RecipeBuilder {
+fun recipe(name: String, init: (RecipeBuilder.() -> Unit) = {}): Recipe {
     val builder = RecipeBuilder()
     builder.name = name
-    builder.apply(init)
-    return builder
+    return builder.apply(init).build()
 }
 
 @Scoped
@@ -76,8 +64,17 @@ class RecipeBuilder {
     inline fun <reified T> fireEventAfterFailure(): InteractionFailureStrategyBuilder {
         return FireEventAfterFailureBuilder(T::class.simpleName!!)
     }
-}
 
+    fun build() = Recipe(
+        name,
+        interactions.map { it.convert() }.toList(),
+        sensoryEvents.map { it.convert() }.toList(),
+        defaultFailureStrategy?.convert() ?: BlockInteraction(),
+        Optional.ofNullable(eventReceivePeriod?.toJavaDuration()),
+        Optional.ofNullable(retentionPeriod?.toJavaDuration())
+    )
+
+}
 
 fun InteractionBuilder.convert(): Interaction {
     val inputIngredients = func.parameters.drop(1)

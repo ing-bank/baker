@@ -18,7 +18,7 @@ class KotlinDslTest {
 
     @Test
     fun `should convert dsl to recipe`() {
-        val recipeBuilder = recipe("Name") {
+        val recipe = recipe("Name") {
             retentionPeriod = 3.seconds
             eventReceivePeriod = 4.seconds
 
@@ -86,8 +86,6 @@ class KotlinDslTest {
                 }
             }
         }
-
-        val recipe = convertRecipe(recipeBuilder)
 
         assertEquals("Name", recipe.name())
         assertEquals(FiniteDuration(3000000000, TimeUnit.NANOSECONDS), recipe.retentionPeriod().get())
@@ -228,21 +226,18 @@ class KotlinDslTest {
 
     @Test
     fun `create a recipe without any configuration`() {
-        val recipeBuilder = recipe("NameNoProps")
-        val recipe = convertRecipe(recipeBuilder)
+        val recipe = recipe("NameNoProps")
         assertEquals(BlockInteraction::class.java, recipe.defaultFailureStrategy().javaClass)
     }
 
     @Test
     fun `create a recipe with sensory events`() {
-        val recipeBuilder = recipe("recipe with sensory events") {
+        val recipe = recipe("recipe with sensory events") {
             sensoryEvents {
                 event<Events.One>()
                 event<Events.Two>(maxFiringLimit = 5)
             }
         }
-
-        val recipe = convertRecipe(recipeBuilder)
 
         assertEquals("recipe with sensory events", recipe.name())
 
