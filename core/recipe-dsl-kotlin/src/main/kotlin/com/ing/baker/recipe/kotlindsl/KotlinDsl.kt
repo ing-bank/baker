@@ -196,8 +196,8 @@ class InteractionBuilder {
         return RetryWithIncrementalBackoffBuilder().apply(init)
     }
 
-    fun blockInteraction(init: BlockInteractionBuilder.() -> Unit): InteractionFailureStrategyBuilder {
-        return BlockInteractionBuilder.apply(init)
+    fun blockInteraction(): InteractionFailureStrategyBuilder {
+        return BlockInteractionBuilder
     }
 
     fun fireEventAfterFailure(eventName: String): InteractionFailureStrategyBuilder {
