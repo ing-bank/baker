@@ -1,7 +1,7 @@
 package com.ing.baker.recipe.kotlindsl
 
 import com.ing.baker.recipe.common.InteractionFailureStrategy
-import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction as BlockInteraction
+import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
 import com.ing.baker.recipe.javadsl.Interaction
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -20,24 +20,37 @@ class KotlinDslTest {
         val recipeBuilder = recipe("Name") {
             retentionPeriod = 3.seconds
             eventReceivePeriod = 4.seconds
+
+            defaultFailureStrategy = retryWithIncrementalBackoff {
+                initialDelay = 10.0.seconds
+                maxTimeBetweenRetries = 3.0.seconds
+                backoffFactor = 10.0
+                fireRetryExhaustedEvent = "TestEvent1"
+                until = deadline(20.0.seconds)
+            }
+
             sensoryEvents {
                 event<Events.OrderPlaced>()
                 event<Events.PaymentInformationReceived>(maxFiringLimit = 5)
                 event<Events.ShippingAddressReceived>(maxFiringLimit = 1)
             }
 
-            interaction(Interactions.MakePayment::apply)
-            interaction(Interactions.ReserveItems::apply)
+            interaction(Interactions.MakePayment::apply){
+                failureStrategy = fireEventAfterFailure<Events.OrderPlaced>()
+            }
+            interaction(Interactions.ReserveItems::apply){
+                failureStrategy = fireEventAfterFailure("OrderPlaced")
+            }
             interaction(Interactions.ShipItems::apply) {
-                requiredEvents {
-                    event<Interactions.MakePayment.PaymentSuccessful>()
-                }
-                failureStrategy {
+                failureStrategy = retryWithIncrementalBackoff {
                     initialDelay = 1.0.seconds
                     maxTimeBetweenRetries = 2.0.seconds
                     backoffFactor = 3.0
                     fireRetryExhaustedEvent = "TestEvent1"
                     until = maximumRetries(20)
+                }
+                requiredEvents {
+                    event<Interactions.MakePayment.PaymentSuccessful>()
                 }
             }
             interaction(Interactions.ShipItems::apply) {
@@ -71,14 +84,6 @@ class KotlinDslTest {
                     "bar" to "krakaka"
                 }
             }
-
-            defaultFailureStrategy {
-                initialDelay = 10.0.seconds
-                maxTimeBetweenRetries = 3.0.seconds
-                backoffFactor = 10.0
-                fireRetryExhaustedEvent = "TestEvent1"
-                until = deadline(20.0.seconds)
-            }
         }
 
         val recipe = convertRecipe(recipeBuilder)
@@ -95,6 +100,16 @@ class KotlinDslTest {
             assertEquals(2, inputIngredients().size())
             assertEquals("reservedItems", inputIngredients().toList().apply(0).name())
             assertEquals("paymentInformation", inputIngredients().toList().apply(1).name())
+
+            with(failureStrategy().get()) {
+                when (this) {
+                    is InteractionFailureStrategy.FireEventAfterFailure -> {
+                        assertEquals(Option.apply("OrderPlaced"), eventName())
+                    }
+
+                    else -> error("Classname did not match ")
+                }
+            }
         }
 
         with(recipe.interactions().toList().apply(1)) {
@@ -104,6 +119,16 @@ class KotlinDslTest {
 
             assertEquals(1, inputIngredients().size())
             assertEquals("items", inputIngredients().toList().apply(0).name())
+
+            with(failureStrategy().get()) {
+                when (this) {
+                    is InteractionFailureStrategy.FireEventAfterFailure -> {
+                        assertEquals(Option.apply("OrderPlaced"), eventName())
+                    }
+
+                    else -> error("Classname did not match ")
+                }
+            }
         }
 
         with(recipe.interactions().toList().apply(2)) {
@@ -119,10 +144,10 @@ class KotlinDslTest {
             with(failureStrategy().get()) {
                 when (this) {
                     is InteractionFailureStrategy.RetryWithIncrementalBackoff -> {
-                        assertEquals(1L, this.initialDelay().toSeconds())
-                        assertEquals(20, this.maximumRetries())
-                        assertEquals(2000L, this.maxTimeBetweenRetries().get().toMillis())
-                        assertEquals(3.0, this.backoffFactor(), 0.0)
+                        assertEquals(1L, initialDelay().toSeconds())
+                        assertEquals(20, maximumRetries())
+                        assertEquals(2000L, maxTimeBetweenRetries().get().toMillis())
+                        assertEquals(3.0, backoffFactor(), 0.0)
                     }
 
                     else -> error("Classname did not match ")
