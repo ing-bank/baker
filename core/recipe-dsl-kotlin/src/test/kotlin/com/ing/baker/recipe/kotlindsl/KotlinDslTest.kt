@@ -61,13 +61,15 @@ class KotlinDslTest {
 
                 transformEvent<Char>("foo")
 
-                transformEvent<Boolean>(
-                    to = "AnotherBoolean",
-                    ingredientRenames = mapOf(
-                        "foo" to "bar",
-                        "this" to "that"
-                    )
-                )
+                transformEvent<Boolean>(newName = "AnotherBoolean") {
+                    "foo" to "bar"
+                    "this" to "that"
+                }
+
+                ingredientNameOverrides {
+                    "foo" to "yolo"
+                    "bar" to "krakaka"
+                }
             }
 
             defaultFailureStrategy {

@@ -2,8 +2,6 @@ package com.ing.baker.recipe.kotlindsl
 
 import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy
-import com.ing.baker.types.Converters
-import com.ing.baker.types.Value
 import java.util.*
 import kotlin.jvm.internal.CallableReference
 import kotlin.reflect.KClass
@@ -28,7 +26,6 @@ fun convertRecipe(builder: RecipeBuilder): Recipe {
     )
 }
 
-// TODO do we have use-cases where the recipe doesn't have a body?
 fun recipe(name: String, init: (RecipeBuilder.() -> Unit) = {}): RecipeBuilder {
     val builder = RecipeBuilder()
     builder.name = name
@@ -88,8 +85,7 @@ fun InteractionBuilder.convert(): Interaction {
         requiredEvents,
         requiredOneOfEvents,
         preDefinedIngredients,
-        emptyMap<String, String>(),  // TODO probably not needed
-        Optional.empty(), // TODO probably not needed
+        ingredientNameOverrides,
         eventTransformationsInput,
         Optional.ofNullable(maximumInteractionCount),
         failureStrategy.convert()
@@ -170,6 +166,7 @@ class InteractionBuilder {
     var maximumInteractionCount: Int? = null
 
     var preDefinedIngredients = mutableMapOf<String, Any>()
+    var ingredientNameOverrides = mutableMapOf<String, String>()
 
     lateinit var func: KFunction<*>
     var events: Set<KClass<*>> = setOf()
@@ -203,10 +200,17 @@ class InteractionBuilder {
         preDefinedIngredients.putAll(PredefinedIngredientsBuilder().apply(init).build())
     }
 
-    // TODO Investigate if we can improve on this with vararg
-    inline fun <reified T> transformEvent(to: String, ingredientRenames: Map<String, String> = emptyMap()) {
+    fun ingredientNameOverrides(init: IngredientNameOverridesBuilder.() -> Unit) {
+        ingredientNameOverrides.putAll(IngredientNameOverridesBuilder().apply(init).build())
+    }
+
+    inline fun <reified T> transformEvent(newName: String, init: (IngredientRenamesBuilder.() -> Unit) = {}) {
         eventTransformations.add(
-            EventTransformation(T::class, to, ingredientRenames)
+            EventTransformation(
+                from = T::class,
+                to = newName,
+                ingredientRenames = IngredientRenamesBuilder().apply(init).build()
+            )
         )
     }
 
@@ -217,17 +221,36 @@ class InteractionBuilder {
 
 @Scoped
 class PredefinedIngredientsBuilder {
-    private val preDefinedIngredients: MutableMap<String, String> = mutableMapOf()
+    private val preDefinedIngredients: MutableMap<String, Any> = mutableMapOf()
 
-    infix fun String.to(value: String) {
+    infix fun String.to(value: Any) {
         preDefinedIngredients[this] = value
     }
 
     fun build() = preDefinedIngredients.toMap()
 }
 
-// TODO fix this
-data class InteractionEvent(val name: String)
+@Scoped
+class IngredientRenamesBuilder {
+    private val ingredientRenames: MutableMap<String, String> = mutableMapOf()
+
+    infix fun String.to(value: String) {
+        ingredientRenames[this] = value
+    }
+
+    fun build() = ingredientRenames.toMap()
+}
+
+@Scoped
+class IngredientNameOverridesBuilder {
+    private val ingredientNameOverrides: MutableMap<String, String> = mutableMapOf()
+
+    infix fun String.to(value: String) {
+        ingredientNameOverrides[this] = value
+    }
+
+    fun build() = ingredientNameOverrides.toMap()
+}
 
 @Scoped
 class InteractionRequiredEventsBuilder {
