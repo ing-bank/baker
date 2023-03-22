@@ -7,6 +7,7 @@ import java.util.*
 import kotlin.jvm.internal.CallableReference
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
+import kotlin.reflect.full.functions
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaType
 import kotlin.time.Duration
@@ -26,27 +27,22 @@ fun recipe(name: String, init: (RecipeBuilder.() -> Unit) = {}): Recipe {
 class RecipeBuilder {
 
     lateinit var name: String
-    var interactions: Set<InteractionBuilder> = emptySet()
-    var sensoryEvents: Set<SensoryEvent> = emptySet()
+    val interactions: MutableSet<InteractionBuilder> = mutableSetOf()
+    val sensoryEvents: MutableSet<SensoryEvent> = mutableSetOf()
     var defaultFailureStrategy: InteractionFailureStrategyBuilder? = null
     var eventReceivePeriod: Duration? = null
     var retentionPeriod: Duration? = null
 
-    fun interaction(func: KFunction<*>) {
-        val builder = InteractionBuilder()
-        builder.func(func)
-        interactions = interactions + builder
+    inline fun <reified T: com.ing.baker.recipe.javadsl.Interaction> interaction() {
+        interactions.add(InteractionBuilder(T::class))
     }
 
-    fun interaction(func: KFunction<*>, init: InteractionBuilder.() -> Unit) {
-        val builder = InteractionBuilder()
-        builder.apply(init)
-        builder.func(func)
-        interactions = interactions + builder
+    inline fun <reified T: com.ing.baker.recipe.javadsl.Interaction> interaction(init: InteractionBuilder.() -> Unit) {
+        interactions.add(InteractionBuilder(T::class).apply(init))
     }
 
     fun sensoryEvents(init: SensoryEventsBuilder.() -> Unit) {
-        sensoryEvents = SensoryEventsBuilder().apply(init).build()
+        sensoryEvents.addAll(SensoryEventsBuilder().apply(init).build())
     }
 
     fun retryWithIncrementalBackoff(init: RetryWithIncrementalBackoffBuilder.() -> Unit): InteractionFailureStrategyBuilder {
@@ -136,7 +132,7 @@ data class EventTransformation(
 )
 
 @Scoped
-class InteractionBuilder {
+class InteractionBuilder(interactionClass: KClass<*>) {
     var name: String? = null
     var maximumInteractionCount: Int? = null
 
@@ -152,15 +148,15 @@ class InteractionBuilder {
 
     var failureStrategy: InteractionFailureStrategyBuilder? = null
 
-    fun func(func: KFunction<*>) {
-        val sealedSubclasses = (func.returnType.classifier as KClass<*>).sealedSubclasses
+    init {
+        val applyFn = interactionClass.functions.single { it.name == "apply" }
+        val sealedSubclasses = (applyFn.returnType.classifier as KClass<*>).sealedSubclasses
         if (sealedSubclasses.isNotEmpty()) {
             this.events = sealedSubclasses.toSet()
         } else {
-            this.events = setOf(func.returnType.classifier as KClass<*>)
+            this.events = setOf(applyFn.returnType.classifier as KClass<*>)
         }
-
-        this.func = func
+        this.func = applyFn
     }
 
     fun requiredEvents(init: InteractionRequiredEventsBuilder.() -> Unit) {

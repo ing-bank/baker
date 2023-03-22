@@ -36,13 +36,13 @@ class KotlinDslTest {
                 event<Events.ShippingAddressReceived>(maxFiringLimit = 1)
             }
 
-            interaction(Interactions.MakePayment::apply){
+            interaction<Interactions.MakePayment> {
                 failureStrategy = fireEventAfterFailure<Events.OrderPlaced>()
             }
-            interaction(Interactions.ReserveItems::apply){
+            interaction<Interactions.ReserveItems> {
                 failureStrategy = fireEventAfterFailure("OrderPlaced")
             }
-            interaction(Interactions.ShipItems::apply) {
+            interaction<Interactions.ShipItems> {
                 failureStrategy = retryWithIncrementalBackoff {
                     initialDelay = 1.0.seconds
                     maxTimeBetweenRetries = 2.0.seconds
@@ -54,7 +54,7 @@ class KotlinDslTest {
                     event<Interactions.MakePayment.PaymentSuccessful>()
                 }
             }
-            interaction(Interactions.ShipItems::apply) {
+            interaction<Interactions.ShipItems> {
                 name = "foo"
                 maximumInteractionCount = 10
 
