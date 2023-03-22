@@ -10,6 +10,7 @@ import scala.Some
 import scala.collection.Seq
 import scala.collection.Set
 import scala.concurrent.duration.FiniteDuration
+import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
@@ -58,8 +59,8 @@ class KotlinDslTest {
                 maximumInteractionCount = 10
 
                 preDefinedIngredients {
-                    "foo" to "bar"
-                    "blah" to true
+                    "foo" to "val"
+                    "bar" to true
                 }
 
                 requiredEvents {
@@ -89,8 +90,8 @@ class KotlinDslTest {
         val recipe = convertRecipe(recipeBuilder)
 
         assertEquals("Name", recipe.name())
-        assertEquals(Option.apply(FiniteDuration(3000000000, TimeUnit.NANOSECONDS)), recipe.retentionPeriod())
-        assertEquals(Option.apply(FiniteDuration(4000000000, TimeUnit.NANOSECONDS)), recipe.eventReceivePeriod())
+        assertEquals(FiniteDuration(3000000000, TimeUnit.NANOSECONDS), recipe.retentionPeriod().get())
+        assertEquals(FiniteDuration(4000000000, TimeUnit.NANOSECONDS), recipe.eventReceivePeriod().get())
 
         with(recipe.interactions().toList().apply(0)) {
             assertEquals("MakePayment", name())
@@ -104,7 +105,7 @@ class KotlinDslTest {
             with(failureStrategy().get()) {
                 when (this) {
                     is InteractionFailureStrategy.FireEventAfterFailure -> {
-                        assertEquals(Option.apply("OrderPlaced"), eventName())
+                        assertEquals("OrderPlaced", eventName().get())
                     }
 
                     else -> error("Classname did not match ")
@@ -123,7 +124,7 @@ class KotlinDslTest {
             with(failureStrategy().get()) {
                 when (this) {
                     is InteractionFailureStrategy.FireEventAfterFailure -> {
-                        assertEquals(Option.apply("OrderPlaced"), eventName())
+                        assertEquals("OrderPlaced", eventName().get())
                     }
 
                     else -> error("Classname did not match ")
@@ -147,8 +148,56 @@ class KotlinDslTest {
                         assertEquals(1L, initialDelay().toSeconds())
                         assertEquals(20, maximumRetries())
                         assertEquals(2000L, maxTimeBetweenRetries().get().toMillis())
+                        assertEquals("TestEvent1", fireRetryExhaustedEvent().get().get())
                         assertEquals(3.0, backoffFactor(), 0.0)
                     }
+
+                    else -> error("Classname did not match ")
+                }
+            }
+        }
+
+        with(recipe.interactions().toList().apply(3)) {
+            assertEquals("foo", name())
+            assertEquals(10, maximumInteractionCount().get())
+
+            assertEquals(2, requiredEvents().size())
+            assertEquals("PaymentSuccessful", requiredEvents().toList().apply(0))
+            assertEquals("myEvent", requiredEvents().toList().apply(1))
+
+            assertEquals(2, inputIngredients().size())
+            assertEquals("shippingAddress", inputIngredients().toList().apply(0).name())
+            assertEquals("reservedItems", inputIngredients().toList().apply(1).name())
+
+            assertEquals(2, predefinedIngredients().size())
+            assertEquals("val", (predefinedIngredients().get("foo").get() as com.ing.baker.types.PrimitiveValue).value())
+            assertEquals(true, (predefinedIngredients().get("bar").get() as com.ing.baker.types.PrimitiveValue).value())
+
+            assertEquals(2, requiredEvents().size())
+            assertEquals("PaymentSuccessful", requiredEvents().get(0))
+            assertEquals("myEvent", requiredEvents().get(1))
+
+            assertEquals(1, requiredOneOfEvents().size())
+            assertEquals(2, requiredOneOfEvents().get(0).size())
+            assertEquals("PaymentInformation", requiredOneOfEvents().get(0).get(0))
+            assertEquals("SomeEvent", requiredOneOfEvents().get(0).get(1))
+
+            assertEquals(2, eventOutputTransformers().size())
+            assertEquals(Event("Char", listOf(), Optional.empty()), eventOutputTransformers().toList().get(0)._1)
+            assertEquals(EventOutputTransformer("foo", emptyMap()), eventOutputTransformers().toList().get(0)._2)
+            assertEquals(Event("Boolean", listOf(), Optional.empty()), eventOutputTransformers().toList().get(1)._1)
+            assertEquals(EventOutputTransformer("AnotherBoolean", mapOf("foo" to "bar", "this" to "that")), eventOutputTransformers().toList().get(1)._2)
+
+            assertEquals(2, overriddenIngredientNames().size())
+            assertEquals("yolo", overriddenIngredientNames().get("foo").get())
+            assertEquals("krakaka", overriddenIngredientNames().get("bar").get())
+
+
+            with(failureStrategy().get()) {
+                when (this) {
+                    is InteractionFailureStrategy.BlockInteraction -> {
+                        assertEquals("BlockInteraction", this.javaClass.simpleName)
+                   }
 
                     else -> error("Classname did not match ")
                 }
@@ -168,6 +217,7 @@ class KotlinDslTest {
                     assertEquals(10L, this.initialDelay().toSeconds())
                     assertEquals(4, this.maximumRetries())
                     assertEquals(3000L, this.maxTimeBetweenRetries().get().toMillis())
+                    assertEquals("TestEvent1", fireRetryExhaustedEvent().get().get())
                     assertEquals(10.0, this.backoffFactor(), 0.0)
                 }
 

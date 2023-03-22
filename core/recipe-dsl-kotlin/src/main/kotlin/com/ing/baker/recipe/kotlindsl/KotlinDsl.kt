@@ -92,7 +92,7 @@ fun InteractionBuilder.convert(): Interaction {
         eventTransformations.associate { it.from.convert() to EventOutputTransformer(it.to, it.ingredientRenames) }
 
     return Interaction(
-        func.ownerClass().simpleName!!,
+        name ?: func.ownerClass().simpleName!!,
         inputIngredients,
         outputEvents,
         requiredEvents,
