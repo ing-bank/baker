@@ -19,9 +19,14 @@ trait Recipe {
   val interactions: Seq[InteractionDescriptor]
 
   /**
-    * The set of events.
+    * The set of sensory events.
     */
   val sensoryEvents: Set[Event]
+
+  /**
+   * The set of result events.
+   */
+  val resultEvents: Set[ResultEvent]
 
   /**
     * The default interaction failure strategy.

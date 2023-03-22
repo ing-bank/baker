@@ -1,8 +1,9 @@
 package com.ing.baker.compiler
 
-import java.util.Optional
+import com.ing.baker.il.petrinet.InteractionTransition
 
-import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
+import java.util.Optional
+import com.ing.baker.il.{CompiledRecipe, ValidationSettings, resultEventInteractionPrefix}
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.{TestRecipeJava, common}
 import com.ing.baker.recipe.common.InteractionFailureStrategy
@@ -331,6 +332,18 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         val recipe = TestRecipeJava.getRecipe("id-test-recipe")
         val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
         compiledRecipe.recipeId shouldBe "220827c42a75b3f8"
+      }
+    }
+
+
+    "give the interaction for result-events" when {
+      "it compiles a java recipe" in {
+        val recipe = TestRecipeJava.getRecipe("id-test-recipe")
+          .withResultEvent(ResultEvent("Success")
+            .withRequiredEvent(initialEvent))
+        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        compiledRecipe.recipeId shouldBe "36d45da78d767d2f"
+        compiledRecipe.petriNet.transitions.count { case i: InteractionTransition => i.interactionName.contains(s"${resultEventInteractionPrefix}Success") case _ => false } shouldBe 1
       }
     }
   }

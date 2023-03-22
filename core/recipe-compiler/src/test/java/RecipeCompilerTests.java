@@ -1,15 +1,30 @@
 import com.ing.baker.compiler.RecipeCompiler;
+import com.ing.baker.il.CompiledRecipe;
+import com.ing.baker.il.petrinet.InteractionTransition;
 import com.ing.baker.recipe.javadsl.Recipe;
+import com.ing.baker.recipe.javadsl.ResultEvent;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.stream.Collectors;
+
 public class RecipeCompilerTests {
 
-    static class EventA {}
-    static class EventB {}
-    static class EventC {}
-    static class EventD {}
-    static class EventE {}
+    static class EventA {
+    }
+
+    static class EventB {
+    }
+
+    static class EventC {
+    }
+
+    static class EventD {
+    }
+
+    static class EventE {
+    }
 
     @Test
     public void shouldFailOnDuplicatedEventsEvenWithFiringLimitDifference() {
@@ -26,9 +41,37 @@ public class RecipeCompilerTests {
                 .withSensoryEventsNoFiringLimit(EventA.class);
 
         Assertions.assertThrows(IllegalStateException.class, () ->
-            RecipeCompiler.compileRecipe(recipe1));
+                RecipeCompiler.compileRecipe(recipe1));
 
         Assertions.assertThrows(IllegalStateException.class, () ->
-            RecipeCompiler.compileRecipe(recipe2));
+                RecipeCompiler.compileRecipe(recipe2));
+    }
+
+    @Test
+    public void shouldAddInteractionsForResultEvents() {
+
+        Recipe recipe = new Recipe("recipe1")
+                .withSensoryEvents(EventB.class, EventC.class, EventD.class)
+                .withSensoryEventsNoFiringLimit(EventA.class)
+                .withResultEvent(new ResultEvent("Success")
+                        .withRequiredEvents(EventB.class, EventC.class));
+
+
+        CompiledRecipe compiled = RecipeCompiler.compileRecipe(recipe);
+
+        Object actual = convertList(compiled.petriNet().transitions())
+                .stream()
+                .filter(InteractionTransition.class::isInstance)
+                .map(i -> ((InteractionTransition) i).interactionName())
+                .collect(Collectors.toUnmodifiableList());
+
+        Assertions.assertEquals(java.util.List.of("$ResultEventInteraction$Success"), actual);
+
+    }
+
+    private java.util.List convertList(scala.collection.immutable.Set list) {
+        java.util.List l = new ArrayList();
+        list.foreach(i -> l.add(i));
+        return l;
     }
 }

@@ -7,6 +7,7 @@ import akka.pattern.{BackoffOpts, BackoffSupervisor}
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import cats.effect.IO
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
+import com.ing.baker.il.resultEventInteractionPrefix
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstance._
@@ -433,12 +434,13 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     log.fireTransition(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
     // Make it do a callback with TransitionEvent if successful
     job.transition match {
-      case _ :EventTransition =>
+      case i :EventTransition =>
+        println(i)
         BakerLogging.default.firingEvent(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
         executeJobOriginal(job, originalSender)
       //TODO rewrite if statement, this is a very naive implementation, the interface could be wrong!
-      case i: InteractionTransition if i.interactionName == "TimerInteraction"  =>
-        returnFinishedInteraction(job, originalSender, "TimeWaited")
+      case i: InteractionTransition if i.interactionName.startsWith(resultEventInteractionPrefix) =>
+        returnFinishedInteraction(job, originalSender, i.interactionName.stripPrefix(resultEventInteractionPrefix))
       case _ => executeJobOriginal(job, originalSender)
     }
   }
