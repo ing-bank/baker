@@ -13,7 +13,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe, ResultEvent}
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetaDataName
@@ -1449,6 +1449,29 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           _ = state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
         } yield succeed
       }
+    }
+
+    "should fire result-event" in {
+
+        val recipe =
+          Recipe("ResultEvent")
+            .withInteraction(interactionOne)
+            .withSensoryEvent(initialEvent)
+            .withResultEvent(ResultEvent("Success")
+              .withRequiredEvent(initialEvent))
+
+        for {
+          (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+          _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(null)
+          recipeInstanceId = UUID.randomUUID().toString
+          _ <- baker.bake(recipeId, recipeInstanceId)
+          _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+          _ = verify(testInteractionOneMock).apply(recipeInstanceId, "initialIngredient")
+          state <- baker.getRecipeInstanceState(recipeInstanceId)
+          _ = state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
+          _ = state.eventNames shouldBe Seq("InitialEvent", "Success")
+        } yield succeed
+
     }
   }
 }

@@ -147,7 +147,6 @@ object Examples {
     val accountOpenedFailedEvent = Event("accountOpenedFailed")
     val createCustomerSuccessful = Event("CreateCustomerSuccessful", customerId)
 
-    //Recipe
     //Interactions
     val createCustomer = Interaction(
       name = "CreateCustomer",
@@ -160,6 +159,7 @@ object Examples {
       inputIngredients =Seq(customerId),
       output = Seq(accountOpenedEvent, accountOpenedFailedEvent))
 
+    //Recipe
     val onboardingRecipe: Recipe =
       Recipe("newCustomerRecipe")
         .withInteractions(
@@ -180,6 +180,40 @@ object Examples {
           NameProvidedEvent,
           manualApprovedEvent,
           automaticApprovedEvent
+        )
+  }
+
+  object resultEventExample {
+
+    //Ingredients
+    val tomato = Ingredient[String]("tomato")
+    val cheese = Ingredient[String]("cheese")
+
+    //Events
+    val ingredientsProvided = Event("IngredientsProvided", tomato, cheese)
+    val bakePizzaSuccessful = Event("CreateCustomerSuccessful")
+
+    //ResultEvents
+    val successResult = ResultEvent("success")
+      .withRequiredEvent(bakePizzaSuccessful)
+
+    //Interactions
+    val bakePizza = Interaction(
+      name = "BakePizza",
+      inputIngredients = Seq(tomato, cheese),
+      output = Seq(bakePizzaSuccessful))
+
+    //Recipe
+    val pizzaRecipe: Recipe =
+      Recipe("resultEvent")
+        .withInteractions(
+          bakePizza
+        )
+        .withSensoryEvents(
+          ingredientsProvided,
+        )
+        .withResultEvent(
+          successResult
         )
   }
 }

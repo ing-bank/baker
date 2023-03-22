@@ -4,9 +4,9 @@ import cats.MonadError
 import cats.effect.Sync
 import cats.implicits._
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
+import com.ing.baker.il.{EventDescriptor, IngredientDescriptor, resultEventInteractionPrefix}
 import com.ing.baker.runtime.common.RecipeRecord
-import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.{FatalInteractionException, empty}
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
 import com.ing.baker.types.Type
 import com.typesafe.config.ConfigFactory
@@ -137,10 +137,13 @@ trait InteractionManager[F[_]] {
   def incompatibilities(transition: InteractionTransition)(implicit sync: Sync[F]): F[Seq[InteractionIncompatible]] = for {
     all <- listAll
   } yield {
-    if (all.exists(compatible(transition, _)))
+    if(transition.originalInteractionName.startsWith(resultEventInteractionPrefix))
+      Seq.empty
+    else if (all.exists(compatible(transition, _)))
       Seq.empty
     else {
-      all.filter(_.name == transition.originalInteractionName) match {
+      all
+        .filter(_.name == transition.originalInteractionName) match {
         case Nil => Seq(NameNotFound)
         case sameName => sameName.flatMap(incompatibilityReason(transition, _))
       }
