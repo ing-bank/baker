@@ -15,16 +15,15 @@ import kotlin.time.toJavaDuration
 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
 annotation class Scoped
 
+/**
+ * Creates a new [Recipe] with a [name] and configured with settings provided via the [init] lambda.
+ */
 fun recipe(name: String, init: (RecipeBuilder.() -> Unit) = {}): Recipe {
-    val builder = RecipeBuilder()
-    builder.name = name
-    return builder.apply(init).build()
+    return RecipeBuilder(name).apply(init).build()
 }
 
 @Scoped
-class RecipeBuilder {
-    lateinit var name: String
-
+class RecipeBuilder(private val name: String) {
     var defaultFailureStrategy: InteractionFailureStrategyBuilder? = null
     var eventReceivePeriod: Duration? = null
     var retentionPeriod: Duration? = null
