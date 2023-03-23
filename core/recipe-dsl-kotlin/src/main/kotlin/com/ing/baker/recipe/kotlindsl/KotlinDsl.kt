@@ -25,18 +25,18 @@ fun recipe(name: String, init: (RecipeBuilder.() -> Unit) = {}): Recipe {
 class RecipeBuilder {
 
     lateinit var name: String
-    val interactions: MutableSet<InteractionBuilder> = mutableSetOf()
-    val sensoryEvents: MutableSet<SensoryEvent> = mutableSetOf()
+    val interactions: MutableSet<Interaction> = mutableSetOf()
+    val sensoryEvents: MutableSet<Event> = mutableSetOf()
     var defaultFailureStrategy: InteractionFailureStrategyBuilder? = null
     var eventReceivePeriod: Duration? = null
     var retentionPeriod: Duration? = null
 
-    inline fun <reified T: com.ing.baker.recipe.javadsl.Interaction> interaction() {
-        interactions.add(InteractionBuilder(T::class))
+    inline fun <reified T : com.ing.baker.recipe.javadsl.Interaction> interaction() {
+        interactions.add(InteractionBuilder(T::class).build())
     }
 
-    inline fun <reified T: com.ing.baker.recipe.javadsl.Interaction> interaction(init: InteractionBuilder.() -> Unit) {
-        interactions.add(InteractionBuilder(T::class).apply(init))
+    inline fun <reified T : com.ing.baker.recipe.javadsl.Interaction> interaction(init: InteractionBuilder.() -> Unit) {
+        interactions.add(InteractionBuilder(T::class).apply(init).build())
     }
 
     fun sensoryEvents(init: SensoryEventsBuilder.() -> Unit) {
@@ -61,55 +61,11 @@ class RecipeBuilder {
 
     fun build() = Recipe(
         name,
-        interactions.map { it.convert() }.toList(),
-        sensoryEvents.map { it.convert() }.toList(),
-        defaultFailureStrategy?.convert() ?: BlockInteraction(),
+        interactions.toList(),
+        sensoryEvents.toList(),
+        defaultFailureStrategy?.build() ?: BlockInteractionBuilder.build(),
         Optional.ofNullable(eventReceivePeriod?.toJavaDuration()),
         Optional.ofNullable(retentionPeriod?.toJavaDuration())
-    )
-
-}
-
-fun InteractionBuilder.convert(): Interaction {
-    val inputIngredients = interactionClass.interactionFunction().parameters.drop(1)
-        .map { Ingredient(it.name, it.type.javaType) }
-        .toSet()
-
-    val outputEvents: Set<Event> = events
-        .map { it.convert() }
-        .toSet()
-
-    val eventTransformationsInput: Map<Event, EventOutputTransformer> =
-        eventTransformations.associate { it.from.convert() to EventOutputTransformer(it.to, it.ingredientRenames) }
-
-    return Interaction(
-        name ?: interactionClass.simpleName!!,
-        inputIngredients,
-        outputEvents,
-        requiredEvents,
-        requiredOneOfEvents,
-        preDefinedIngredients,
-        ingredientNameOverrides,
-        eventTransformationsInput,
-        Optional.ofNullable(maximumInteractionCount),
-        failureStrategy?.convert() ?: BlockInteraction()
-    )
-}
-
-fun SensoryEvent.convert(): Event {
-    return kClass.convert(maxFiringLimit)
-}
-
-fun KClass<*>.convert(maxFiringLimit: Int? = null): Event {
-    return Event(
-        simpleName,
-        primaryConstructor?.parameters?.map {
-            Ingredient(
-                it.name,
-                it.type.javaType
-            )
-        },
-        Optional.ofNullable(maxFiringLimit)
     )
 }
 
@@ -194,6 +150,32 @@ class InteractionBuilder(val interactionClass: KClass<*>) {
     inline fun <reified T> fireEventAfterFailure(): InteractionFailureStrategyBuilder {
         return FireEventAfterFailureBuilder(T::class.simpleName!!)
     }
+
+    fun build(): Interaction {
+        val inputIngredients = interactionClass.interactionFunction().parameters.drop(1)
+            .map { Ingredient(it.name, it.type.javaType) }
+            .toSet()
+
+        val outputEvents: Set<Event> = events
+            .map { it.toEvent() }
+            .toSet()
+
+        val eventTransformationsInput: Map<Event, EventOutputTransformer> =
+            eventTransformations.associate { it.from.toEvent() to EventOutputTransformer(it.to, it.ingredientRenames) }
+
+        return Interaction(
+            name ?: interactionClass.simpleName!!,
+            inputIngredients,
+            outputEvents,
+            requiredEvents,
+            requiredOneOfEvents,
+            preDefinedIngredients,
+            ingredientNameOverrides,
+            eventTransformationsInput,
+            Optional.ofNullable(maximumInteractionCount),
+            failureStrategy?.build() ?: BlockInteraction()
+        )
+    }
 }
 
 @Scoped
@@ -266,22 +248,37 @@ class SensoryEventsBuilder {
     inline fun <reified T> event(maxFiringLimit: Int? = null) =
         events.add(SensoryEvent(T::class, maxFiringLimit))
 
-    fun build() = events.toSet()
+    fun build() = events.map { it.toKotlinDslEvent() }.toSet()
 }
 
+fun SensoryEvent.toKotlinDslEvent(): Event {
+    return kClass.toEvent(maxFiringLimit)
+}
+
+fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
+    return Event(
+        simpleName,
+        primaryConstructor?.parameters?.map {
+            Ingredient(
+                it.name,
+                it.type.javaType
+            )
+        },
+        Optional.ofNullable(maxFiringLimit)
+    )
+}
 
 sealed interface InteractionFailureStrategyBuilder {
-    fun convert(): com.ing.baker.recipe.common.InteractionFailureStrategy
+    fun build(): com.ing.baker.recipe.common.InteractionFailureStrategy
 }
 
 object BlockInteractionBuilder : InteractionFailureStrategyBuilder {
-    override fun convert(): com.ing.baker.recipe.common.InteractionFailureStrategy {
-        return BlockInteraction()
-    }
+    override fun build(): com.ing.baker.recipe.common.InteractionFailureStrategy =
+        BlockInteraction()
 }
 
 class FireEventAfterFailureBuilder(private val eventName: String) : InteractionFailureStrategyBuilder {
-    override fun convert(): com.ing.baker.recipe.common.InteractionFailureStrategy =
+    override fun build(): com.ing.baker.recipe.common.InteractionFailureStrategy =
         com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure(Option.apply(eventName))
 }
 
@@ -302,7 +299,7 @@ class RetryWithIncrementalBackoffBuilder : InteractionFailureStrategyBuilder {
     fun deadline(duration: Duration) = Deadline(duration)
     fun maximumRetries(count: Int) = MaximumRetries(count)
 
-    override fun convert(): com.ing.baker.recipe.common.InteractionFailureStrategy =
+    override fun build(): com.ing.baker.recipe.common.InteractionFailureStrategy =
         InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder()
             .run {
                 backoffFactor?.let { withBackoffFactor(it) } ?: this
