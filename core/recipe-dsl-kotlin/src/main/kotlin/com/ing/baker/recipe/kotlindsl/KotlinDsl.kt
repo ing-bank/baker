@@ -73,8 +73,8 @@ class RecipeBuilder {
 private fun KClass<*>.interactionFunction() =
     functions.single { it.name == "apply" }
 
-// TODO ideally we don't expose this. However, it needs to be public since it's used by an inline fn
-data class EventTransformation(
+@PublishedApi
+internal data class EventTransformation(
     val from: KClass<*>,
     val to: String,
     val ingredientRenames: Map<String, String>
@@ -86,8 +86,8 @@ class InteractionBuilder(private val interactionClass: KClass<*>) {
     var maximumInteractionCount: Int? = null
     var failureStrategy: InteractionFailureStrategyBuilder? = null
 
-    // TODO ideally we don't expose this
-    val eventTransformations: MutableSet<EventTransformation> = mutableSetOf()
+    @PublishedApi
+    internal val eventTransformations: MutableSet<EventTransformation> = mutableSetOf()
 
     private val preDefinedIngredients = mutableMapOf<String, Any>()
     private val ingredientNameOverrides = mutableMapOf<String, String>()
@@ -147,8 +147,8 @@ class InteractionBuilder(private val interactionClass: KClass<*>) {
         return FireEventAfterFailureBuilder(T::class.simpleName!!)
     }
 
-    // TODO Ideally we don't expose this build fn
-    fun build(): Interaction {
+    @PublishedApi
+    internal fun build(): Interaction {
         val inputIngredients = interactionClass.interactionFunction().parameters.drop(1)
             .map { Ingredient(it.name, it.type.javaType) }
             .toSet()
@@ -194,8 +194,8 @@ class IngredientRenamesBuilder {
         ingredientRenames[this] = value
     }
 
-    // TODO ideally we don't expose this
-    fun build() = ingredientRenames.toMap()
+    @PublishedApi
+    internal fun build() = ingredientRenames.toMap()
 }
 
 @Scoped
@@ -226,7 +226,8 @@ class InteractionRequiredEventsBuilder {
 
 @Scoped
 class InteractionRequiredOneOfEventsBuilder {
-    val events = mutableSetOf<String>() // TODO ideally we don't expose this
+    @PublishedApi
+    internal val events = mutableSetOf<String>()
 
     inline fun <reified T> event() {
         events.add(T::class.simpleName!!)
@@ -241,7 +242,8 @@ class InteractionRequiredOneOfEventsBuilder {
 
 @Scoped
 class SensoryEventsBuilder {
-    val events = mutableMapOf<KClass<*>, Int?>() // TODO ideally we don't expose this
+    @PublishedApi
+    internal val events = mutableMapOf<KClass<*>, Int?>()
 
     inline fun <reified T> event(maxFiringLimit: Int? = null) =
         events.put(T::class, maxFiringLimit)
