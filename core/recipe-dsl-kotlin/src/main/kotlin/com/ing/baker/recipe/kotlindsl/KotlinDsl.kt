@@ -25,10 +25,12 @@ fun recipe(name: String, init: (RecipeBuilder.() -> Unit) = {}): Recipe {
 class RecipeBuilder {
     lateinit var name: String
 
-    val interactions: MutableSet<Interaction> = mutableSetOf()
     var defaultFailureStrategy: InteractionFailureStrategyBuilder? = null
     var eventReceivePeriod: Duration? = null
     var retentionPeriod: Duration? = null
+
+    @PublishedApi
+    internal val interactions: MutableSet<Interaction> = mutableSetOf()
 
     private val sensoryEvents: MutableSet<Event> = mutableSetOf()
 
@@ -211,7 +213,8 @@ class IngredientNameOverridesBuilder {
 
 @Scoped
 class InteractionRequiredEventsBuilder {
-    val events = mutableSetOf<String>()
+    @PublishedApi
+    internal val events = mutableSetOf<String>()
 
     inline fun <reified T> event() {
         events.add(T::class.simpleName!!)
@@ -265,7 +268,7 @@ private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
 }
 
 sealed interface InteractionFailureStrategyBuilder {
-     fun build(): com.ing.baker.recipe.common.InteractionFailureStrategy
+    fun build(): com.ing.baker.recipe.common.InteractionFailureStrategy
 }
 
 object BlockInteractionBuilder : InteractionFailureStrategyBuilder {
