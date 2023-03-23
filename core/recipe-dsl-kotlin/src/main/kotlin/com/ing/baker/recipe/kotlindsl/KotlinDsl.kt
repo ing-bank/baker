@@ -23,13 +23,14 @@ fun recipe(name: String, init: (RecipeBuilder.() -> Unit) = {}): Recipe {
 
 @Scoped
 class RecipeBuilder {
-
     lateinit var name: String
+
     val interactions: MutableSet<Interaction> = mutableSetOf()
-    val sensoryEvents: MutableSet<Event> = mutableSetOf()
     var defaultFailureStrategy: InteractionFailureStrategyBuilder? = null
     var eventReceivePeriod: Duration? = null
     var retentionPeriod: Duration? = null
+
+    private val sensoryEvents: MutableSet<Event> = mutableSetOf()
 
     inline fun <reified T : com.ing.baker.recipe.javadsl.Interaction> interaction() {
         interactions.add(InteractionBuilder(T::class).build())
@@ -59,7 +60,7 @@ class RecipeBuilder {
         return FireEventAfterFailureBuilder(T::class.simpleName!!)
     }
 
-    fun build() = Recipe(
+    internal fun build() = Recipe(
         name,
         interactions.toList(),
         sensoryEvents.toList(),
@@ -69,14 +70,10 @@ class RecipeBuilder {
     )
 }
 
-fun KClass<*>.interactionFunction() =
+private fun KClass<*>.interactionFunction() =
     functions.single { it.name == "apply" }
 
-data class SensoryEvent(
-    val kClass: KClass<*>,
-    val maxFiringLimit: Int?,
-)
-
+// TODO ideally we don't expose this. However, it needs to be public since it's used by an inline fn
 data class EventTransformation(
     val from: KClass<*>,
     val to: String,
@@ -84,28 +81,27 @@ data class EventTransformation(
 )
 
 @Scoped
-class InteractionBuilder(val interactionClass: KClass<*>) {
+class InteractionBuilder(private val interactionClass: KClass<*>) {
     var name: String? = null
     var maximumInteractionCount: Int? = null
-
-    var preDefinedIngredients = mutableMapOf<String, Any>()
-    var ingredientNameOverrides = mutableMapOf<String, String>()
-
-    var events: Set<KClass<*>> = setOf()
-
-    val eventTransformations: MutableSet<EventTransformation> = mutableSetOf()
-    val requiredEvents: MutableSet<String> = mutableSetOf()
-    val requiredOneOfEvents: MutableSet<Set<String>> = mutableSetOf()
-
     var failureStrategy: InteractionFailureStrategyBuilder? = null
+
+    // TODO ideally we don't expose this
+    val eventTransformations: MutableSet<EventTransformation> = mutableSetOf()
+
+    private val preDefinedIngredients = mutableMapOf<String, Any>()
+    private val ingredientNameOverrides = mutableMapOf<String, String>()
+    private val events = mutableSetOf<KClass<*>>()
+    private val requiredEvents: MutableSet<String> = mutableSetOf()
+    private val requiredOneOfEvents: MutableSet<Set<String>> = mutableSetOf()
 
     init {
         val applyFn = interactionClass.interactionFunction()
         val sealedSubclasses = (applyFn.returnType.classifier as KClass<*>).sealedSubclasses
         if (sealedSubclasses.isNotEmpty()) {
-            this.events = sealedSubclasses.toSet()
+            events.addAll(sealedSubclasses.toSet())
         } else {
-            this.events = setOf(applyFn.returnType.classifier as KClass<*>)
+            events.addAll(setOf(applyFn.returnType.classifier as KClass<*>))
         }
     }
 
@@ -151,6 +147,7 @@ class InteractionBuilder(val interactionClass: KClass<*>) {
         return FireEventAfterFailureBuilder(T::class.simpleName!!)
     }
 
+    // TODO Ideally we don't expose this build fn
     fun build(): Interaction {
         val inputIngredients = interactionClass.interactionFunction().parameters.drop(1)
             .map { Ingredient(it.name, it.type.javaType) }
@@ -186,7 +183,7 @@ class PredefinedIngredientsBuilder {
         preDefinedIngredients[this] = value
     }
 
-    fun build() = preDefinedIngredients.toMap()
+    internal fun build() = preDefinedIngredients.toMap()
 }
 
 @Scoped
@@ -197,6 +194,7 @@ class IngredientRenamesBuilder {
         ingredientRenames[this] = value
     }
 
+    // TODO ideally we don't expose this
     fun build() = ingredientRenames.toMap()
 }
 
@@ -208,7 +206,7 @@ class IngredientNameOverridesBuilder {
         ingredientNameOverrides[this] = value
     }
 
-    fun build() = ingredientNameOverrides.toMap()
+    internal fun build() = ingredientNameOverrides.toMap()
 }
 
 @Scoped
@@ -223,12 +221,12 @@ class InteractionRequiredEventsBuilder {
         events.add(name)
     }
 
-    fun build() = events.toSet()
+    internal fun build() = events.toSet()
 }
 
 @Scoped
 class InteractionRequiredOneOfEventsBuilder {
-    val events = mutableSetOf<String>()
+    val events = mutableSetOf<String>() // TODO ideally we don't expose this
 
     inline fun <reified T> event() {
         events.add(T::class.simpleName!!)
@@ -238,24 +236,20 @@ class InteractionRequiredOneOfEventsBuilder {
         events.add(name)
     }
 
-    fun build() = events.toSet()
+    internal fun build() = events.toSet()
 }
 
 @Scoped
 class SensoryEventsBuilder {
-    val events = mutableSetOf<SensoryEvent>()
+    val events = mutableMapOf<KClass<*>, Int?>() // TODO ideally we don't expose this
 
     inline fun <reified T> event(maxFiringLimit: Int? = null) =
-        events.add(SensoryEvent(T::class, maxFiringLimit))
+        events.put(T::class, maxFiringLimit)
 
-    fun build() = events.map { it.toKotlinDslEvent() }.toSet()
+    internal fun build() = events.map { it.key.toEvent(it.value) }
 }
 
-fun SensoryEvent.toKotlinDslEvent(): Event {
-    return kClass.toEvent(maxFiringLimit)
-}
-
-fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
+private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
     return Event(
         simpleName,
         primaryConstructor?.parameters?.map {
@@ -269,7 +263,7 @@ fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
 }
 
 sealed interface InteractionFailureStrategyBuilder {
-    fun build(): com.ing.baker.recipe.common.InteractionFailureStrategy
+     fun build(): com.ing.baker.recipe.common.InteractionFailureStrategy
 }
 
 object BlockInteractionBuilder : InteractionFailureStrategyBuilder {
