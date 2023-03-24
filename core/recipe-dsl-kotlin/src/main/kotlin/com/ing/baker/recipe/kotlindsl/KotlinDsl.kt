@@ -33,11 +33,7 @@ class RecipeBuilder(private val name: String) {
 
     private val sensoryEvents: MutableSet<Event> = mutableSetOf()
 
-    inline fun <reified T : com.ing.baker.recipe.javadsl.Interaction> interaction() {
-        interactions.add(InteractionBuilder(T::class).build())
-    }
-
-    inline fun <reified T : com.ing.baker.recipe.javadsl.Interaction> interaction(init: InteractionBuilder.() -> Unit) {
+    inline fun <reified T : com.ing.baker.recipe.javadsl.Interaction> interaction(init: (InteractionBuilder.() -> Unit) = {}) {
         interactions.add(InteractionBuilder(T::class).apply(init).build())
     }
 
@@ -71,8 +67,7 @@ class RecipeBuilder(private val name: String) {
     )
 }
 
-private fun KClass<*>.interactionFunction() =
-    functions.single { it.name == "apply" }
+private fun KClass<*>.interactionFunction() = functions.single { it.name == "apply" }
 
 @PublishedApi
 internal data class EventTransformation(
