@@ -12,17 +12,16 @@ import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
 @DslMarker
-@Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
-annotation class Scoped
+annotation class RecipeDslMarker
 
 /**
- * Creates a new [Recipe] with a [name] and configured with settings provided via the [init] lambda.
+ * Creates a [Recipe] with the given [name] and [configuration] provided through the [RecipeBuilder] receiver.
  */
-fun recipe(name: String, init: (RecipeBuilder.() -> Unit) = {}): Recipe {
-    return RecipeBuilder(name).apply(init).build()
+fun recipe(name: String, configuration: (RecipeBuilder.() -> Unit) = {}): Recipe {
+    return RecipeBuilder(name).apply(configuration).build()
 }
 
-@Scoped
+@RecipeDslMarker
 class RecipeBuilder(private val name: String) {
     var defaultFailureStrategy: InteractionFailureStrategyBuilder? = null
     var eventReceivePeriod: Duration? = null
@@ -33,20 +32,20 @@ class RecipeBuilder(private val name: String) {
 
     private val sensoryEvents: MutableSet<Event> = mutableSetOf()
 
-    inline fun <reified T : com.ing.baker.recipe.javadsl.Interaction> interaction(init: (InteractionBuilder.() -> Unit) = {}) {
-        interactions.add(InteractionBuilder(T::class).apply(init).build())
-    }
-
     fun sensoryEvents(init: SensoryEventsBuilder.() -> Unit) {
         sensoryEvents.addAll(SensoryEventsBuilder().apply(init).build())
+    }
+
+    inline fun <reified T : com.ing.baker.recipe.javadsl.Interaction> interaction(configuration: (InteractionBuilder.() -> Unit) = {}) {
+        interactions.add(InteractionBuilder(T::class).apply(configuration).build())
     }
 
     fun retryWithIncrementalBackoff(init: RetryWithIncrementalBackoffBuilder.() -> Unit): InteractionFailureStrategyBuilder {
         return RetryWithIncrementalBackoffBuilder().apply(init)
     }
 
-    fun blockInteraction(init: BlockInteractionBuilder.() -> Unit): InteractionFailureStrategyBuilder {
-        return BlockInteractionBuilder.apply(init)
+    fun blockInteraction(): InteractionFailureStrategyBuilder {
+        return BlockInteractionBuilder
     }
 
     fun fireEventAfterFailure(eventName: String): InteractionFailureStrategyBuilder {
@@ -76,7 +75,7 @@ internal data class EventTransformation(
     val ingredientRenames: Map<String, String>
 )
 
-@Scoped
+@RecipeDslMarker
 class InteractionBuilder(private val interactionClass: KClass<*>) {
     var name: String? = null
     var maximumInteractionCount: Int? = null
@@ -171,7 +170,7 @@ class InteractionBuilder(private val interactionClass: KClass<*>) {
     }
 }
 
-@Scoped
+@RecipeDslMarker
 class PredefinedIngredientsBuilder {
     private val preDefinedIngredients: MutableMap<String, Any> = mutableMapOf()
 
@@ -182,7 +181,7 @@ class PredefinedIngredientsBuilder {
     internal fun build() = preDefinedIngredients.toMap()
 }
 
-@Scoped
+@RecipeDslMarker
 class IngredientRenamesBuilder {
     private val ingredientRenames: MutableMap<String, String> = mutableMapOf()
 
@@ -194,7 +193,7 @@ class IngredientRenamesBuilder {
     internal fun build() = ingredientRenames.toMap()
 }
 
-@Scoped
+@RecipeDslMarker
 class IngredientNameOverridesBuilder {
     private val ingredientNameOverrides: MutableMap<String, String> = mutableMapOf()
 
@@ -205,7 +204,7 @@ class IngredientNameOverridesBuilder {
     internal fun build() = ingredientNameOverrides.toMap()
 }
 
-@Scoped
+@RecipeDslMarker
 class InteractionRequiredEventsBuilder {
     @PublishedApi
     internal val events = mutableSetOf<String>()
@@ -221,7 +220,7 @@ class InteractionRequiredEventsBuilder {
     internal fun build() = events.toSet()
 }
 
-@Scoped
+@RecipeDslMarker
 class InteractionRequiredOneOfEventsBuilder {
     @PublishedApi
     internal val events = mutableSetOf<String>()
@@ -237,7 +236,7 @@ class InteractionRequiredOneOfEventsBuilder {
     internal fun build() = events.toSet()
 }
 
-@Scoped
+@RecipeDslMarker
 class SensoryEventsBuilder {
     @PublishedApi
     internal val events = mutableMapOf<KClass<*>, Int?>()
@@ -280,7 +279,7 @@ class FireEventAfterFailureBuilder(private val eventName: String) : InteractionF
         com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure(Option.apply(eventName))
 }
 
-@Scoped
+@RecipeDslMarker
 class RetryWithIncrementalBackoffBuilder : InteractionFailureStrategyBuilder {
 
     sealed interface Until
