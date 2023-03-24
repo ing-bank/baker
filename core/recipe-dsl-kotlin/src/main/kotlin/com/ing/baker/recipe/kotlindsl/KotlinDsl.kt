@@ -242,8 +242,13 @@ class SensoryEventsBuilder {
     @PublishedApi
     internal val events = mutableMapOf<KClass<*>, Int?>()
 
-    inline fun <reified T> event(maxFiringLimit: Int? = null) =
-        events.put(T::class, maxFiringLimit)
+    inline fun <reified T> event(maxFiringLimit: Int = 1) {
+        events[T::class] = maxFiringLimit
+    }
+
+    inline fun <reified T> eventWithoutFiringLimit() {
+        events[T::class] = null
+    }
 
     internal fun build() = events.map { it.key.toEvent(it.value) }
 }

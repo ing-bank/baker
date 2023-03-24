@@ -31,9 +31,9 @@ class KotlinDslTest {
             }
 
             sensoryEvents {
-                event<Events.OrderPlaced>()
+                eventWithoutFiringLimit<Events.OrderPlaced>()
                 event<Events.PaymentInformationReceived>(maxFiringLimit = 5)
-                event<Events.ShippingAddressReceived>(maxFiringLimit = 1)
+                event<Events.ShippingAddressReceived>()
             }
 
             interaction<Interactions.MakePayment> {
@@ -227,6 +227,7 @@ class KotlinDslTest {
     @Test
     fun `create a recipe without any configuration`() {
         val recipe = recipe("NameNoProps")
+        assertEquals("NameNoProps", recipe.name())
         assertEquals(BlockInteraction::class.java, recipe.defaultFailureStrategy().javaClass)
     }
 
@@ -234,7 +235,7 @@ class KotlinDslTest {
     fun `create a recipe with sensory events`() {
         val recipe = recipe("recipe with sensory events") {
             sensoryEvents {
-                event<Events.One>()
+                eventWithoutFiringLimit<Events.One>()
                 event<Events.Two>(maxFiringLimit = 5)
             }
         }
