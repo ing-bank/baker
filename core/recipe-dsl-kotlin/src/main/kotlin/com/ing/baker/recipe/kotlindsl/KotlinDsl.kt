@@ -32,10 +32,25 @@ class RecipeBuilder(private val name: String) {
 
     private val sensoryEvents: MutableSet<Event> = mutableSetOf()
 
+    /**
+     * Registers sensory events to the recipe via the [SensoryEventsBuilder] receiver.
+     */
     fun sensoryEvents(init: SensoryEventsBuilder.() -> Unit) {
         sensoryEvents.addAll(SensoryEventsBuilder().apply(init).build())
     }
 
+    /**
+     * Registers an interaction [T] to the recipe. Additional [configuration] can be provided via
+     * the [InteractionBuilder] receiver.
+     *
+     * @see InteractionBuilder.requiredOneOfEvents
+     * @see InteractionBuilder.requiredEvents
+     * @see InteractionBuilder.preDefinedIngredients
+     * @see InteractionBuilder.ingredientNameOverrides
+     * @see InteractionBuilder.name
+     * @see InteractionBuilder.maximumInteractionCount
+     * @see InteractionBuilder.failureStrategy
+     */
     inline fun <reified T : com.ing.baker.recipe.javadsl.Interaction> interaction(configuration: (InteractionBuilder.() -> Unit) = {}) {
         interactions.add(InteractionBuilder(T::class).apply(configuration).build())
     }
