@@ -1,10 +1,9 @@
 package com.ing.baker.runtime.akka.actor.timer_interaction
 
-import akka.actor.{ActorLogging, Props}
-import akka.persistence.PersistentActor
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.TransitionFiredEvent
+import akka.actor.{ActorLogging, Props, ReceiveTimeout}
+import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess, PersistentActor}
 import com.ing.baker.runtime.akka.actor.timer_interaction.TimerInteraction.prefix
-import com.ing.baker.runtime.akka.actor.timer_interaction.TimerInteractionProtocol.{StartTimerInteraction, TimerInteractionFinished}
+import com.ing.baker.runtime.akka.actor.timer_interaction.TimerInteractionProtocol.StartTimerInteraction
 
 object TimerInteraction {
 
@@ -15,22 +14,42 @@ object TimerInteraction {
 
 class TimerInteraction() extends PersistentActor with ActorLogging {
 
+  override def receiveCommand: Receive = initialised
+
   override def preStart(): Unit = {
-    log.debug("TimerInteraction started")
+    log.info("TimerInteraction started")
   }
 
   override def postStop(): Unit = {
-    log.debug("TimerInteraction stopped")
+    log.info("TimerInteraction stopped")
   }
 
   override def receiveRecover: Receive = {
     case _ => ()
   }
 
-  override def receiveCommand: Receive = {
-    case StartTimerInteraction(job, originalSender) => ()
-//      sender ! TransitionFiredEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, producedMarking.marshall, out)
+
+  def initialised: Receive = {
+    case StartTimerInteraction(transitionFiredEvent, originalSender) =>
+      log.info(s"StartTimerInteraction received")
+      sender().tell(transitionFiredEvent, originalSender)
+      deleteMessages(lastSequenceNr)
+      context.become(waitForDeleteConfirmation())
   }
 
   override def persistenceId: String = prefix(context.self.path.name)
+
+  def waitForDeleteConfirmation(): Receive = {
+    case DeleteMessagesSuccess(toSequenceNr) =>
+      log.debug("TimerInteraction deletion success")
+      context.stop(self)
+
+    case DeleteMessagesFailure(cause, toSequenceNr) =>
+      log.warning("TimerInteraction deletion failed")
+      context.stop(self)
+
+    case ReceiveTimeout =>
+      log.warning(s"imerInteraction deletion timeout")
+      context.stop(self)
+  }
 }

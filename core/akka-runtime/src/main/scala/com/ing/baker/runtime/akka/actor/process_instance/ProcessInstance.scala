@@ -438,7 +438,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
         executeJobOriginal(job, originalSender)
       //TODO rewrite if statement, this is a very naive implementation, the interface could be wrong!
       case i: InteractionTransition if i.interactionName == "TimerInteraction"  =>
-        returnFinishedInteraction(job, originalSender, "TimeWaited")
+        createTimerInteractionActor(job, originalSender)
       case _ => executeJobOriginal(job, originalSender)
     }
   }
@@ -458,7 +458,6 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
   }
 
   def returnFinishedInteraction(job: Job[P, T, S], originalSender: ActorRef, outputEventName: String): Unit = {
-    log.info("Called returnFinishedInteraction")
     val startTime = System.currentTimeMillis()
     val outputEvent: EventInstance = EventInstance.apply(outputEventName)
     val event = com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.TransitionFiredEvent(
@@ -474,23 +473,31 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     self.tell(event, originalSender)
   }
 
-//  def createTimerInteractionActor(job: Job[P, T, S], originalSender: ActorRef): Unit = {
-//    //TODO add BackoffSupervisor for case of failure (Might not be needed since the simplicity of the Actor)
-//    val timerInteractionProps = TimerInteraction.props()
-//
-//    val transitionFiredEvent = TransitionFired(
-//      job.id,
-//      job.transition.getId,
-//      job.correlationId,
-//      job.consume.marshall,
-//      RecipeRuntime.createProducedMarking(petriNet.outMarking(job.transition).asInstanceOf[MultiSet[Place]], None),
-//      null,
-//      null
-//    )
-//
-//    val timerInteraction: ActorRef = context.actorOf(props = timerInteractionProps, name = s"$recipeInstanceId:${job.transition.getId}")
-//    timerInteraction ! StartTimerInteraction(transitionFiredEvent, originalSender)
-//  }
+  def createTimerInteractionActor(job: Job[P, T, S], originalSender: ActorRef): Unit = {
+    //TODO add BackoffSupervisor for case of failure (Might not be needed since the simplicity of the Actor)
+    val timerInteractionProps = TimerInteraction.props()
+
+    val startTime = System.currentTimeMillis()
+    val outputEvent: EventInstance = EventInstance.apply("TimeWaited")
+    val event = com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.TransitionFiredEvent(
+      job.id,
+      job.transition.getId,
+      job.correlationId,
+      startTime,
+      System.currentTimeMillis(),
+      job.consume.marshall,
+      RecipeRuntime.createProducedMarking(petriNet.outMarking(job.transition).asInstanceOf[MultiSet[Place]], Some(outputEvent)).marshall,
+      outputEvent
+    )
+
+    log.info("Creating timer interaction")
+    val timerInteraction: ActorRef = context.actorOf(
+      props = timerInteractionProps,
+      name = s"$recipeInstanceId:${job.transition.getId}")
+
+    log.info("Sending StartTimerInteraction")
+    timerInteraction ! StartTimerInteraction(event, originalSender)
+  }
 
   def scheduleFailedJobsForRetry(instance: Instance[P, T, S]): Map[Long, Cancellable] = {
     instance.jobs.values.foldLeft(Map.empty[Long, Cancellable]) {
