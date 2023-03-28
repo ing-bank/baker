@@ -59,6 +59,9 @@ package object il {
         case CompiledRecipe.Scala212CompatibleJava =>
           if (s.isEmpty) s"$emptyNameJava()"
           else s.mkStringForRecipeId(nonEmptyNameJava, variant)
+        case CompiledRecipe.Scala212CompatibleKotlin =>
+          if (s.isEmpty) s"$emptyNameJava()"
+          else s.mkStringForRecipeId(nonEmptyNameJava, variant)
         case CompiledRecipe.Scala212CompatibleScala =>
           if (s.isEmpty) s"$emptyNameScala()"
           else s.mkStringForRecipeId(nonEmptyNameScala, variant)

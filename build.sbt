@@ -310,10 +310,12 @@ lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compile
   .settings(Publish.settings)
   .settings(
     moduleName := "baker-compiler",
+    kotlinVersion := "1.7.22",
+    kotlincJvmTarget := "1.8",
     libraryDependencies ++=
       testDeps(scalaTest, scalaCheck, junitJupiter)
   )
-  .dependsOn(`baker-recipe-dsl`, `baker-intermediate-language`, testScope(`baker-recipe-dsl`))
+  .dependsOn(`baker-recipe-dsl`, `baker-recipe-dsl-kotlin`, `baker-intermediate-language`, testScope(`baker-recipe-dsl`), testScope(`baker-recipe-dsl-kotlin`))
 
 lazy val `baker-test`: Project = project.in(file("core/baker-test"))
   .settings(defaultModuleSettings)

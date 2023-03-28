@@ -4,6 +4,8 @@ import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.types.{Converters, Value}
 
+import scala.collection.compat.immutable.ArraySeq
+
 import scala.jdk.CollectionConverters._
 import scala.collection.immutable.Seq
 import scala.collection.immutable.List
@@ -24,8 +26,8 @@ class Interaction (
 ) extends common.InteractionDescriptor {
   override val name: String = nameInput
   override val originalName: String = nameInput
-  override val inputIngredients: Seq[common.Ingredient] = List.apply(inputIngredientsInput.asScala.toSeq:_*)
-  override val output: Seq[Event] = List.apply(eventsInput.asScala.toSeq:_*)
+  override val inputIngredients: Seq[common.Ingredient] = new ArraySeq.ofRef(inputIngredientsInput.asScala.toArray)
+  override val output: Seq[Event] = new ArraySeq.ofRef(eventsInput.asScala.toArray)
   override val requiredEvents: Set[String] = requiredEventsInput.asScala.toSet
   override val requiredOneOfEvents: Set[Set[String]] = requiredOneOfEventsInput.asScala.map(x => x.asScala.toSet).toSet
   override val predefinedIngredients: Map[String, Value] = predefinedIngredientsInput.asScala.toMap.map{case(k, v) => k -> Converters.toValue(v)}
