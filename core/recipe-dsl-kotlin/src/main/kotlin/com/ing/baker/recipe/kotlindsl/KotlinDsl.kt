@@ -16,8 +16,6 @@ annotation class RecipeDslMarker
 
 /**
  * Creates a [Recipe] with the given [name] and [configuration] provided through the [RecipeBuilder] receiver.
- *
- * @see RecipeBuilder
  */
 fun recipe(name: String, configuration: (RecipeBuilder.() -> Unit) = {}): Recipe {
     return RecipeBuilder(name).apply(configuration).build()
@@ -25,7 +23,14 @@ fun recipe(name: String, configuration: (RecipeBuilder.() -> Unit) = {}): Recipe
 
 @RecipeDslMarker
 class RecipeBuilder(private val name: String) {
-    var defaultFailureStrategy: InteractionFailureStrategyBuilder? = null
+    /**
+     * The default failure strategy for interactions that don't specify a failure strategy explicitly.
+     *
+     * Available strategies are: [retryWithIncrementalBackoff], [fireEventAfterFailure], and [blockInteraction].
+     * If nothing is specified, [blockInteraction] is used by default.
+     */
+    var defaultFailureStrategy: InteractionFailureStrategyBuilder = BlockInteractionBuilder
+
     var eventReceivePeriod: Duration? = null
     var retentionPeriod: Duration? = null
 
@@ -73,7 +78,7 @@ class RecipeBuilder(private val name: String) {
         name,
         interactions.toList(),
         sensoryEvents.toList(),
-        defaultFailureStrategy?.build() ?: BlockInteractionBuilder.build(),
+        defaultFailureStrategy.build(),
         Optional.ofNullable(eventReceivePeriod?.toJavaDuration()),
         Optional.ofNullable(retentionPeriod?.toJavaDuration())
     )
