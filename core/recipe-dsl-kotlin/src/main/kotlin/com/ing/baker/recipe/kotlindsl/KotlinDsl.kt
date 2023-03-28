@@ -31,7 +31,18 @@ class RecipeBuilder(private val name: String) {
      */
     var defaultFailureStrategy: InteractionFailureStrategyBuilder = BlockInteractionBuilder
 
+    /**
+     * The period during which the process accepts sensory events.
+     *
+     * TODO what does it mean when you keep the default value of null?
+     */
     var eventReceivePeriod: Duration? = null
+
+    /**
+     * The period for which process data is stored.
+     *
+     * TODO what does it mean when you keep the default value of null?
+     */
     var retentionPeriod: Duration? = null
 
     @PublishedApi
@@ -41,8 +52,6 @@ class RecipeBuilder(private val name: String) {
 
     /**
      * Registers sensory events to the recipe via the [SensoryEventsBuilder] receiver.
-     *
-     * @see SensoryEventsBuilder
      */
     fun sensoryEvents(init: SensoryEventsBuilder.() -> Unit) {
         sensoryEvents.addAll(SensoryEventsBuilder().apply(init).build())
@@ -51,13 +60,13 @@ class RecipeBuilder(private val name: String) {
     /**
      * Registers an interaction [T] to the recipe. Additional [configuration] can be provided via
      * the [InteractionBuilder] receiver.
-     *
-     * @see InteractionBuilder
      */
     inline fun <reified T : com.ing.baker.recipe.javadsl.Interaction> interaction(configuration: (InteractionBuilder.() -> Unit) = {}) {
         interactions.add(InteractionBuilder(T::class).apply(configuration).build())
     }
 
+    // TODO these functions are exactly the same as the ones in the interaction. Should we maybe create an object
+    // FailureStrategy which implements these functions?
     fun retryWithIncrementalBackoff(init: RetryWithIncrementalBackoffBuilder.() -> Unit): InteractionFailureStrategyBuilder {
         return RetryWithIncrementalBackoffBuilder().apply(init)
     }
@@ -95,8 +104,24 @@ internal data class EventTransformation(
 
 @RecipeDslMarker
 class InteractionBuilder(private val interactionClass: KClass<*>) {
+    /**
+     * The name of the interaction. Defaults to the name of the interaction class.
+     */
     var name: String? = null
+
+    /**
+     * The maximum number of times this interaction can be invoked.
+     *
+     * TODO describe what happens when the maximum is reached?
+     */
     var maximumInteractionCount: Int? = null
+
+    /**
+     * The failure strategy for this interaction.
+     *
+     * Available strategies are: [retryWithIncrementalBackoff], [fireEventAfterFailure], and [blockInteraction].
+     * Defaults to the failure strategy of the recipe.
+     */
     var failureStrategy: InteractionFailureStrategyBuilder? = null
 
     @PublishedApi
@@ -118,18 +143,35 @@ class InteractionBuilder(private val interactionClass: KClass<*>) {
         }
     }
 
+    /**
+     * All events specified in this block have to be available for the interaction to be executed (AND precondition).
+     *
+     * @see requiredOneOfEvents
+     */
     fun requiredEvents(init: InteractionRequiredEventsBuilder.() -> Unit) {
         requiredEvents.addAll(InteractionRequiredEventsBuilder().apply(init).build())
     }
 
+    /**
+     * One of the events specified in this block have to be available for the interaction to be
+     * executed (OR precondition).
+     *
+     * @see requiredEvents
+     */
     fun requiredOneOfEvents(init: InteractionRequiredOneOfEventsBuilder.() -> Unit) {
         requiredOneOfEvents.add(InteractionRequiredOneOfEventsBuilder().apply(init).build())
     }
 
+    /**
+     * Registers pre-defined ingredients to the recipe via the [PredefinedIngredientsBuilder] receiver.
+     */
     fun preDefinedIngredients(init: PredefinedIngredientsBuilder.() -> Unit) {
         preDefinedIngredients.putAll(PredefinedIngredientsBuilder().apply(init).build())
     }
 
+    /**
+     * Registers overrides of names of input ingredients via the [IngredientNameOverridesBuilder] receiver.
+     */
     fun ingredientNameOverrides(init: IngredientNameOverridesBuilder.() -> Unit) {
         ingredientNameOverrides.putAll(IngredientNameOverridesBuilder().apply(init).build())
     }
