@@ -183,7 +183,7 @@ class InteractionBuilder(private val interactionClass: KClass<*>) {
             ingredientNameOverrides,
             eventTransformationsInput,
             Optional.ofNullable(maximumInteractionCount),
-            failureStrategy?.build() ?: BlockInteraction()
+            Optional.ofNullable(failureStrategy?.build())
         )
     }
 }

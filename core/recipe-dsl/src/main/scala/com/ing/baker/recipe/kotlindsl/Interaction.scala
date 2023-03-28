@@ -1,6 +1,7 @@
 package com.ing.baker.recipe.kotlindsl
 
 import com.ing.baker.recipe.common
+import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.types.{Converters, Value}
 
 import scala.jdk.CollectionConverters._
@@ -19,7 +20,7 @@ class Interaction (
   overriddenIngredientNamesInput: java.util.Map[String, String],
   eventOutputTransformersInput: java.util.Map[Event, EventOutputTransformer],
   maximumInteractionCountInput: java.util.Optional[Int],
-  failureStrategyInput: common.InteractionFailureStrategy,
+  failureStrategyInput: java.util.Optional[common.InteractionFailureStrategy],
 ) extends common.InteractionDescriptor {
   override val name: String = nameInput
   override val originalName: String = nameInput
@@ -32,5 +33,5 @@ class Interaction (
   override val overriddenOutputIngredientName: Option[String] = None
   override val eventOutputTransformers: Map[common.Event, common.EventOutputTransformer] = eventOutputTransformersInput.asScala.toMap
   override val maximumInteractionCount: Option[Int] = maximumInteractionCountInput.map[Option[Int]](Option.apply(_)).orElse(None)
-  override val failureStrategy: Option[common.InteractionFailureStrategy] = Option.apply(failureStrategyInput)
+  override val failureStrategy: Option[common.InteractionFailureStrategy] = failureStrategyInput.map[Option[InteractionFailureStrategy]](Option.apply(_)).orElse(None)
 }

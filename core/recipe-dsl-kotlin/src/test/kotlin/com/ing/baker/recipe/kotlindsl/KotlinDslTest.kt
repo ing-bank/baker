@@ -4,6 +4,7 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
 import com.ing.baker.recipe.javadsl.Interaction
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import scala.Option
 import scala.Some
@@ -190,16 +191,7 @@ class KotlinDslTest {
             assertEquals("yolo", overriddenIngredientNames().get("foo").get())
             assertEquals("krakaka", overriddenIngredientNames().get("bar").get())
 
-
-            with(failureStrategy().get()) {
-                when (this) {
-                    is InteractionFailureStrategy.BlockInteraction -> {
-                        assertEquals("BlockInteraction", this.javaClass.simpleName)
-                   }
-
-                    else -> error("Classname did not match ")
-                }
-            }
+            assertTrue(failureStrategy().isEmpty)
         }
 
         with(recipe.sensoryEvents()) {
