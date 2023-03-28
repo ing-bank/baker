@@ -16,6 +16,8 @@ annotation class RecipeDslMarker
 
 /**
  * Creates a [Recipe] with the given [name] and [configuration] provided through the [RecipeBuilder] receiver.
+ *
+ * @see RecipeBuilder
  */
 fun recipe(name: String, configuration: (RecipeBuilder.() -> Unit) = {}): Recipe {
     return RecipeBuilder(name).apply(configuration).build()
@@ -34,6 +36,8 @@ class RecipeBuilder(private val name: String) {
 
     /**
      * Registers sensory events to the recipe via the [SensoryEventsBuilder] receiver.
+     *
+     * @see SensoryEventsBuilder
      */
     fun sensoryEvents(init: SensoryEventsBuilder.() -> Unit) {
         sensoryEvents.addAll(SensoryEventsBuilder().apply(init).build())
@@ -43,13 +47,7 @@ class RecipeBuilder(private val name: String) {
      * Registers an interaction [T] to the recipe. Additional [configuration] can be provided via
      * the [InteractionBuilder] receiver.
      *
-     * @see InteractionBuilder.requiredOneOfEvents
-     * @see InteractionBuilder.requiredEvents
-     * @see InteractionBuilder.preDefinedIngredients
-     * @see InteractionBuilder.ingredientNameOverrides
-     * @see InteractionBuilder.name
-     * @see InteractionBuilder.maximumInteractionCount
-     * @see InteractionBuilder.failureStrategy
+     * @see InteractionBuilder
      */
     inline fun <reified T : com.ing.baker.recipe.javadsl.Interaction> interaction(configuration: (InteractionBuilder.() -> Unit) = {}) {
         interactions.add(InteractionBuilder(T::class).apply(configuration).build())
