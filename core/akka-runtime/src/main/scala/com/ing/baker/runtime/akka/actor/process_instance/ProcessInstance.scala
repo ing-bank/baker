@@ -3,9 +3,10 @@ package com.ing.baker.runtime.akka.actor.process_instance
 import akka.actor._
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.{DiagnosticLoggingAdapter, Logging}
+import akka.pattern.{BackoffOpts, BackoffSupervisor}
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import cats.effect.IO
-import com.ing.baker.il.petrinet.{EventTransition, Transition}
+import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstance._
@@ -15,8 +16,11 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
+import com.ing.baker.runtime.akka.actor.timer_interaction.TimerInteraction
+import com.ing.baker.runtime.akka.actor.timer_interaction.TimerInteractionProtocol.StartTimerInteraction
+import com.ing.baker.runtime.akka.internal.RecipeRuntime
 import com.ing.baker.runtime.model.BakerLogging
-import com.ing.baker.runtime.scaladsl.RecipeInstanceState
+import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.PrimitiveValue
 
@@ -198,7 +202,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
         log.warning(s"Process $persistenceId has been stopped by idle timeout")
         stopMe()
       } else {
-        log.warning("Receive timeout happened but jobs are still active: will wait for another receive timeout")
+        log.debug("Receive timeout happened but jobs are still active: will wait for another receive timeout")
       }
 
     case GetState =>
@@ -426,26 +430,67 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
 
 
   def executeJob(job: Job[P, T, S], originalSender: ActorRef): Unit = {
-
     log.fireTransition(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
-
-    if(job.transition.isInstanceOf[EventTransition]) {
-      BakerLogging.default.firingEvent(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
+    // Make it do a callback with TransitionEvent if successful
+    job.transition match {
+      case _ :EventTransition =>
+        BakerLogging.default.firingEvent(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
+        executeJobOriginal(job, originalSender)
+      //TODO rewrite if statement, this is a very naive implementation, the interface could be wrong!
+      case i: InteractionTransition if i.interactionName == "TimerInteraction"  =>
+        returnFinishedInteraction(job, originalSender, "TimeWaited")
+      case _ => executeJobOriginal(job, originalSender)
     }
+  }
 
+  //TODO rewrite
+  def executeJobOriginal(job: Job[P, T, S], originalSender: ActorRef): Unit = {
     // context.self can be potentially throw NullPointerException in non graceful shutdown situations
     Try(context.self).foreach { self =>
-
       // executes the IO task on the ExecutionContext
       val io = IO.shift(settings.executionContext) *> executor(job)
-
       // pipes the result back this actor
       io.unsafeRunAsync {
-        case Right(event) => self.tell(event, originalSender)
+        case Right(event: TransitionEvent) => self.tell(event, originalSender)
         case Left(exception) => self.tell(Status.Failure(exception), originalSender)
       }
     }
   }
+
+  def returnFinishedInteraction(job: Job[P, T, S], originalSender: ActorRef, outputEventName: String): Unit = {
+    log.info("Called returnFinishedInteraction")
+    val startTime = System.currentTimeMillis()
+    val outputEvent: EventInstance = EventInstance.apply(outputEventName)
+    val event = com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.TransitionFiredEvent(
+      job.id,
+      job.transition.getId,
+      job.correlationId,
+      startTime,
+      System.currentTimeMillis(),
+      job.consume.marshall,
+      RecipeRuntime.createProducedMarking(petriNet.outMarking(job.transition).asInstanceOf[MultiSet[Place]], Some(outputEvent)).marshall,
+      outputEvent
+    )
+    self.tell(event, originalSender)
+  }
+
+//  def createTimerInteractionActor(job: Job[P, T, S], originalSender: ActorRef): Unit = {
+//    //TODO add BackoffSupervisor for case of failure (Might not be needed since the simplicity of the Actor)
+//    val timerInteractionProps = TimerInteraction.props()
+//
+//    val transitionFiredEvent = TransitionFired(
+//      job.id,
+//      job.transition.getId,
+//      job.correlationId,
+//      job.consume.marshall,
+//      RecipeRuntime.createProducedMarking(petriNet.outMarking(job.transition).asInstanceOf[MultiSet[Place]], None),
+//      null,
+//      null
+//    )
+//
+//    val timerInteraction: ActorRef = context.actorOf(props = timerInteractionProps, name = s"$recipeInstanceId:${job.transition.getId}")
+//    timerInteraction ! StartTimerInteraction(transitionFiredEvent, originalSender)
+//  }
 
   def scheduleFailedJobsForRetry(instance: Instance[P, T, S]): Map[Long, Cancellable] = {
     instance.jobs.values.foldLeft(Map.empty[Long, Cancellable]) {
