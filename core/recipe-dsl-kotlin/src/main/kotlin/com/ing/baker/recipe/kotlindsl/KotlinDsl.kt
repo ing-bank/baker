@@ -390,7 +390,7 @@ internal data class EventTransformation(
     val ingredientRenames: Map<String, String>
 )
 
-private fun KClass<*>.interactionFunction() = functions.single { it.name == "apply" }
+private fun KClass<out com.ing.baker.recipe.javadsl.Interaction>.interactionFunction() = functions.single { it.name == "apply" }
 
 private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
     return Event(
