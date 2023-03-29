@@ -89,7 +89,7 @@ class InteractionBuilder(private val interactionClass: KClass<*>) {
     /**
      * The name of the interaction. Defaults to the name of the interaction class.
      */
-    var name: String? = null
+    var name: String = interactionClass.simpleName!! // Not null assertion is okay, will never be an anonymous class.
 
     /**
      * The maximum number of times this interaction can be invoked.
@@ -208,7 +208,7 @@ class InteractionBuilder(private val interactionClass: KClass<*>) {
             eventTransformations.associate { it.from.toEvent() to EventOutputTransformer(it.to, it.ingredientRenames) }
 
         return Interaction(
-            name ?: interactionClass.simpleName!!,
+            name,
             inputIngredients,
             outputEvents,
             requiredEvents,
