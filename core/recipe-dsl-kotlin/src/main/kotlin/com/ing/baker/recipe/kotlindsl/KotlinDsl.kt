@@ -26,8 +26,8 @@ class RecipeBuilder(private val name: String) {
     /**
      * The default failure strategy for interactions that don't specify a failure strategy explicitly.
      *
-     * Available strategies are: [FailureStrategy.retryWithIncrementalBackoff], [FailureStrategy.fireEventAfterFailure],
-     * and [FailureStrategy.blockInteraction]. Defaults to [FailureStrategy.blockInteraction].
+     * Available strategies are: [retryWithIncrementalBackoff], [fireEventAfterFailure], and [blockInteraction].
+     * Defaults to [blockInteraction].
      */
     var defaultFailureStrategy: InteractionFailureStrategyBuilder = BlockInteractionBuilder
 
@@ -65,6 +65,36 @@ class RecipeBuilder(private val name: String) {
         interactions.add(InteractionBuilder(T::class).apply(configuration).build())
     }
 
+    /**
+     * Retries interaction with an incremental backoff on failure.
+     *
+     * TODO write better docs for this.
+     */
+    fun retryWithIncrementalBackoff(init: RetryWithIncrementalBackoffBuilder.() -> Unit): InteractionFailureStrategyBuilder {
+        return RetryWithIncrementalBackoffBuilder().apply(init)
+    }
+
+    /**
+     * Blocks processing of interaction on failure.
+     */
+    fun blockInteraction(): InteractionFailureStrategyBuilder {
+        return BlockInteractionBuilder
+    }
+
+    /**
+     * Fires an event with a specified [name] on failure.
+     */
+    fun fireEventAfterFailure(name: String): InteractionFailureStrategyBuilder {
+        return FireEventAfterFailureBuilder(name)
+    }
+
+    /**
+     * Fires an event [T] on failure.
+     */
+    inline fun <reified T> fireEventAfterFailure(): InteractionFailureStrategyBuilder {
+        return FireEventAfterFailureBuilder(T::class.simpleName!!)
+    }
+
     internal fun build() = Recipe(
         name,
         interactions.toList(),
@@ -84,16 +114,14 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
 
     /**
      * The maximum number of times this interaction can be invoked.
-     *
-     * TODO describe what happens when the maximum is reached?
      */
     var maximumInteractionCount: Int? = null
 
     /**
      * The failure strategy for this interaction.
      *
-     * Available strategies are: [FailureStrategy.retryWithIncrementalBackoff], [FailureStrategy.fireEventAfterFailure],
-     * and [FailureStrategy.blockInteraction]. Defaults to the failure strategy of the recipe.
+     * Available strategies are: [retryWithIncrementalBackoff], [fireEventAfterFailure], and [blockInteraction].
+     * Defaults to the failure strategy of the recipe.
      */
     var failureStrategy: InteractionFailureStrategyBuilder? = null
 
@@ -185,6 +213,36 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
                 ingredientRenames = IngredientRenamesBuilder().apply(init).build()
             )
         )
+    }
+
+    /**
+     * Retries interaction with an incremental backoff on failure.
+     *
+     * TODO write better docs for this.
+     */
+    fun retryWithIncrementalBackoff(init: RetryWithIncrementalBackoffBuilder.() -> Unit): InteractionFailureStrategyBuilder {
+        return RetryWithIncrementalBackoffBuilder().apply(init)
+    }
+
+    /**
+     * Blocks processing of interaction on failure.
+     */
+    fun blockInteraction(): InteractionFailureStrategyBuilder {
+        return BlockInteractionBuilder
+    }
+
+    /**
+     * Fires an event with a specified [name] on failure.
+     */
+    fun fireEventAfterFailure(name: String): InteractionFailureStrategyBuilder {
+        return FireEventAfterFailureBuilder(name)
+    }
+
+    /**
+     * Fires an event [T] on failure.
+     */
+    inline fun <reified T> fireEventAfterFailure(): InteractionFailureStrategyBuilder {
+        return FireEventAfterFailureBuilder(T::class.simpleName!!)
     }
 
     @PublishedApi
@@ -303,38 +361,6 @@ class SensoryEventsBuilder {
     }
 
     internal fun build() = events.map { it.key.toEvent(it.value) }
-}
-
-object FailureStrategy {
-    /**
-     * Retries interaction with an incremental backoff on failure.
-     *
-     * TODO write better docs for this.
-     */
-    fun retryWithIncrementalBackoff(init: RetryWithIncrementalBackoffBuilder.() -> Unit): InteractionFailureStrategyBuilder {
-        return RetryWithIncrementalBackoffBuilder().apply(init)
-    }
-
-    /**
-     * Blocks processing of interaction on failure.
-     */
-    fun blockInteraction(): InteractionFailureStrategyBuilder {
-        return BlockInteractionBuilder
-    }
-
-    /**
-     * Fires an event with a specified [name] on failure.
-     */
-    fun fireEventAfterFailure(name: String): InteractionFailureStrategyBuilder {
-        return FireEventAfterFailureBuilder(name)
-    }
-
-    /**
-     * Fires an event [T] on failure.
-     */
-    inline fun <reified T> fireEventAfterFailure(): InteractionFailureStrategyBuilder {
-        return FireEventAfterFailureBuilder(T::class.simpleName!!)
-    }
 }
 
 sealed interface InteractionFailureStrategyBuilder {
