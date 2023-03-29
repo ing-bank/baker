@@ -76,7 +76,7 @@ class RecipeBuilder(private val name: String) {
 }
 
 @RecipeDslMarker
-class InteractionBuilder(private val interactionClass: KClass<*>) {
+class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.recipe.javadsl.Interaction>) {
     /**
      * The name of the interaction. Defaults to the name of the interaction class.
      */
