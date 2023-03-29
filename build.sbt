@@ -99,6 +99,9 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
     nettyHandler,
     bouncyCastleBcprov,
     bouncyCastleBcpkix
+  ),
+  excludeDependencies ++= Seq(
+    ExclusionRule("org.jetbrains.kotlin", "kotlin-scripting-compiler-embeddable")
   )
 )
 
