@@ -176,6 +176,10 @@ class InteractionBuilder(private val interactionClass: KClass<*>) {
         ingredientNameOverrides.putAll(IngredientNameOverridesBuilder().apply(init).build())
     }
 
+    /**
+     * Transforms output event [T] to an event with a name of [newName]. Ingredients can be renamed via the
+     * [IngredientRenamesBuilder] receiver.
+     */
     inline fun <reified T> transformEvent(newName: String, init: (IngredientRenamesBuilder.() -> Unit) = {}) {
         eventTransformations.add(
             EventTransformation(
