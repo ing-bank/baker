@@ -26,8 +26,8 @@ class RecipeBuilder(private val name: String) {
     /**
      * The default failure strategy for interactions that don't specify a failure strategy explicitly.
      *
-     * Available strategies are: [retryWithIncrementalBackoff], [fireEventAfterFailure], and [blockInteraction].
-     * If nothing is specified, [blockInteraction] is used by default.
+     * Available strategies are: [FailureStrategy.retryWithIncrementalBackoff], [FailureStrategy.fireEventAfterFailure],
+     * and [FailureStrategy.blockInteraction]. Defaults to [FailureStrategy.blockInteraction].
      */
     var defaultFailureStrategy: InteractionFailureStrategyBuilder = BlockInteractionBuilder
 
@@ -63,24 +63,6 @@ class RecipeBuilder(private val name: String) {
      */
     inline fun <reified T : com.ing.baker.recipe.javadsl.Interaction> interaction(configuration: (InteractionBuilder.() -> Unit) = {}) {
         interactions.add(InteractionBuilder(T::class).apply(configuration).build())
-    }
-
-    // TODO these functions are exactly the same as the ones in the interaction. Should we maybe create an object
-    // FailureStrategy which implements these functions?
-    fun retryWithIncrementalBackoff(init: RetryWithIncrementalBackoffBuilder.() -> Unit): InteractionFailureStrategyBuilder {
-        return RetryWithIncrementalBackoffBuilder().apply(init)
-    }
-
-    fun blockInteraction(): InteractionFailureStrategyBuilder {
-        return BlockInteractionBuilder
-    }
-
-    fun fireEventAfterFailure(eventName: String): InteractionFailureStrategyBuilder {
-        return FireEventAfterFailureBuilder(eventName)
-    }
-
-    inline fun <reified T> fireEventAfterFailure(): InteractionFailureStrategyBuilder {
-        return FireEventAfterFailureBuilder(T::class.simpleName!!)
     }
 
     internal fun build() = Recipe(
@@ -119,8 +101,8 @@ class InteractionBuilder(private val interactionClass: KClass<*>) {
     /**
      * The failure strategy for this interaction.
      *
-     * Available strategies are: [retryWithIncrementalBackoff], [fireEventAfterFailure], and [blockInteraction].
-     * Defaults to the failure strategy of the recipe.
+     * Available strategies are: [FailureStrategy.retryWithIncrementalBackoff], [FailureStrategy.fireEventAfterFailure],
+     * and [FailureStrategy.blockInteraction]. Defaults to the failure strategy of the recipe.
      */
     var failureStrategy: InteractionFailureStrategyBuilder? = null
 
@@ -164,6 +146,14 @@ class InteractionBuilder(private val interactionClass: KClass<*>) {
 
     /**
      * Registers pre-defined ingredients to the recipe via the [PredefinedIngredientsBuilder] receiver.
+     *
+     * Example usage:
+     * ```kotlin
+     * preDefinedIngredients {
+     *     "foo" to MyIngredient
+     *     "bar" to MyOtherIngredient
+     * }
+     * ```
      */
     fun preDefinedIngredients(init: PredefinedIngredientsBuilder.() -> Unit) {
         preDefinedIngredients.putAll(PredefinedIngredientsBuilder().apply(init).build())
@@ -171,6 +161,14 @@ class InteractionBuilder(private val interactionClass: KClass<*>) {
 
     /**
      * Registers overrides of names of input ingredients via the [IngredientNameOverridesBuilder] receiver.
+     *
+     * Example usage:
+     * ```kotlin
+     * ingredientNameOverrides {
+     *     "foo" to "bar"
+     *     "this" to "that"
+     * }
+     * ```
      */
     fun ingredientNameOverrides(init: IngredientNameOverridesBuilder.() -> Unit) {
         ingredientNameOverrides.putAll(IngredientNameOverridesBuilder().apply(init).build())
@@ -179,6 +177,14 @@ class InteractionBuilder(private val interactionClass: KClass<*>) {
     /**
      * Transforms output event [T] to an event with a name of [newName]. Ingredients can be renamed via the
      * [IngredientRenamesBuilder] receiver.
+     *
+     * Example usage:
+     * ```kotlin
+     * transformEvent<MyEvent>(newName = "YourEvent") {
+     *     "foo" to "bar"
+     *     "this" to "that"
+     * }
+     * ```
      */
     inline fun <reified T> transformEvent(newName: String, init: (IngredientRenamesBuilder.() -> Unit) = {}) {
         eventTransformations.add(
@@ -190,31 +196,13 @@ class InteractionBuilder(private val interactionClass: KClass<*>) {
         )
     }
 
-    fun retryWithIncrementalBackoff(init: RetryWithIncrementalBackoffBuilder.() -> Unit): InteractionFailureStrategyBuilder {
-        return RetryWithIncrementalBackoffBuilder().apply(init)
-    }
-
-    fun blockInteraction(): InteractionFailureStrategyBuilder {
-        return BlockInteractionBuilder
-    }
-
-    fun fireEventAfterFailure(eventName: String): InteractionFailureStrategyBuilder {
-        return FireEventAfterFailureBuilder(eventName)
-    }
-
-    inline fun <reified T> fireEventAfterFailure(): InteractionFailureStrategyBuilder {
-        return FireEventAfterFailureBuilder(T::class.simpleName!!)
-    }
-
     @PublishedApi
     internal fun build(): Interaction {
         val inputIngredients = interactionClass.interactionFunction().parameters.drop(1)
             .map { Ingredient(it.name, it.type.javaType) }
             .toSet()
 
-        val outputEvents: Set<Event> = events
-            .map { it.toEvent() }
-            .toSet()
+        val outputEvents: Set<Event> = events.map { it.toEvent() }.toSet()
 
         val eventTransformationsInput: Map<Event, EventOutputTransformer> =
             eventTransformations.associate { it.from.toEvent() to EventOutputTransformer(it.to, it.ingredientRenames) }
@@ -305,10 +293,20 @@ class SensoryEventsBuilder {
     @PublishedApi
     internal val events = mutableMapOf<KClass<*>, Int?>()
 
+    /**
+     * Registers a sensory event [T] with a [maxFiringLimit] to the recipe.
+     *
+     * @see eventWithoutFiringLimit
+     */
     inline fun <reified T> event(maxFiringLimit: Int = 1) {
         events[T::class] = maxFiringLimit
     }
 
+    /**
+     * Registers a sensory event [T] without firing limit to the recipe.
+     *
+     * @see event
+     */
     inline fun <reified T> eventWithoutFiringLimit() {
         events[T::class] = null
     }
@@ -327,6 +325,24 @@ private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
         },
         Optional.ofNullable(maxFiringLimit)
     )
+}
+
+object FailureStrategy {
+    fun retryWithIncrementalBackoff(init: RetryWithIncrementalBackoffBuilder.() -> Unit): InteractionFailureStrategyBuilder {
+        return RetryWithIncrementalBackoffBuilder().apply(init)
+    }
+
+    fun blockInteraction(): InteractionFailureStrategyBuilder {
+        return BlockInteractionBuilder
+    }
+
+    fun fireEventAfterFailure(eventName: String): InteractionFailureStrategyBuilder {
+        return FireEventAfterFailureBuilder(eventName)
+    }
+
+    inline fun <reified T> fireEventAfterFailure(): InteractionFailureStrategyBuilder {
+        return FireEventAfterFailureBuilder(T::class.simpleName!!)
+    }
 }
 
 sealed interface InteractionFailureStrategyBuilder {

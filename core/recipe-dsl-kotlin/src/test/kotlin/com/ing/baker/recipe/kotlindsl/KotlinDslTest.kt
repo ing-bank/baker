@@ -23,7 +23,7 @@ class KotlinDslTest {
             retentionPeriod = 3.seconds
             eventReceivePeriod = 4.seconds
 
-            defaultFailureStrategy = retryWithIncrementalBackoff {
+            defaultFailureStrategy = FailureStrategy.retryWithIncrementalBackoff {
                 initialDelay = 10.0.seconds
                 maxTimeBetweenRetries = 3.0.seconds
                 backoffFactor = 10.0
@@ -38,13 +38,13 @@ class KotlinDslTest {
             }
 
             interaction<Interactions.MakePayment> {
-                failureStrategy = fireEventAfterFailure<Events.OrderPlaced>()
+                failureStrategy = FailureStrategy.fireEventAfterFailure<Events.OrderPlaced>()
             }
             interaction<Interactions.ReserveItems> {
-                failureStrategy = fireEventAfterFailure("OrderPlaced")
+                failureStrategy = FailureStrategy.fireEventAfterFailure("OrderPlaced")
             }
             interaction<Interactions.ShipItems> {
-                failureStrategy = retryWithIncrementalBackoff {
+                failureStrategy = FailureStrategy.retryWithIncrementalBackoff {
                     initialDelay = 1.0.seconds
                     maxTimeBetweenRetries = 2.0.seconds
                     backoffFactor = 3.0
