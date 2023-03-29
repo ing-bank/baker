@@ -75,15 +75,6 @@ class RecipeBuilder(private val name: String) {
     )
 }
 
-private fun KClass<*>.interactionFunction() = functions.single { it.name == "apply" }
-
-@PublishedApi
-internal data class EventTransformation(
-    val from: KClass<*>,
-    val to: String,
-    val ingredientRenames: Map<String, String>
-)
-
 @RecipeDslMarker
 class InteractionBuilder(private val interactionClass: KClass<*>) {
     /**
@@ -314,32 +305,33 @@ class SensoryEventsBuilder {
     internal fun build() = events.map { it.key.toEvent(it.value) }
 }
 
-private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
-    return Event(
-        simpleName,
-        primaryConstructor?.parameters?.map {
-            Ingredient(
-                it.name,
-                it.type.javaType
-            )
-        },
-        Optional.ofNullable(maxFiringLimit)
-    )
-}
-
 object FailureStrategy {
+    /**
+     * Retries interaction with an incremental backoff on failure.
+     *
+     * TODO write better docs for this.
+     */
     fun retryWithIncrementalBackoff(init: RetryWithIncrementalBackoffBuilder.() -> Unit): InteractionFailureStrategyBuilder {
         return RetryWithIncrementalBackoffBuilder().apply(init)
     }
 
+    /**
+     * Blocks processing of interaction on failure.
+     */
     fun blockInteraction(): InteractionFailureStrategyBuilder {
         return BlockInteractionBuilder
     }
 
-    fun fireEventAfterFailure(eventName: String): InteractionFailureStrategyBuilder {
-        return FireEventAfterFailureBuilder(eventName)
+    /**
+     * Fires an event with a specified [name] on failure.
+     */
+    fun fireEventAfterFailure(name: String): InteractionFailureStrategyBuilder {
+        return FireEventAfterFailureBuilder(name)
     }
 
+    /**
+     * Fires an event [T] on failure.
+     */
     inline fun <reified T> fireEventAfterFailure(): InteractionFailureStrategyBuilder {
         return FireEventAfterFailureBuilder(T::class.simpleName!!)
     }
@@ -378,33 +370,37 @@ class RetryWithIncrementalBackoffBuilder : InteractionFailureStrategyBuilder {
 
     override fun build(): com.ing.baker.recipe.common.InteractionFailureStrategy =
         InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder()
-            .run {
-                backoffFactor?.let { withBackoffFactor(it) } ?: this
-            }
-            .run {
-                initialDelay?.let { withInitialDelay(it.toJavaDuration()) } ?: this
-            }
-            .run {
-                maxTimeBetweenRetries?.let { withMaxTimeBetweenRetries(it.toJavaDuration()) }
-                    ?: this
-            }
-            .run {
-                fireRetryExhaustedEvent?.let { withFireRetryExhaustedEvent(it) } ?: this
-            }
+            .run { backoffFactor?.let { withBackoffFactor(it) } ?: this }
+            .run { initialDelay?.let { withInitialDelay(it.toJavaDuration()) } ?: this }
+            .run { maxTimeBetweenRetries?.let { withMaxTimeBetweenRetries(it.toJavaDuration()) } ?: this }
+            .run { fireRetryExhaustedEvent?.let { withFireRetryExhaustedEvent(it) } ?: this }
             .run {
                 when (until) {
-                    is RetryWithIncrementalBackoffBuilder.Deadline -> (until as RetryWithIncrementalBackoffBuilder.Deadline).duration.let {
-                        withDeadline(
-                            it.toJavaDuration()
-                        )
-                    }
-
-                    is RetryWithIncrementalBackoffBuilder.MaximumRetries -> (until as RetryWithIncrementalBackoffBuilder.MaximumRetries).count.let {
-                        withMaximumRetries(
-                            it
-                        )
-                    }
+                    is Deadline -> withDeadline((until as Deadline).duration.toJavaDuration())
+                    is MaximumRetries -> withMaximumRetries((until as MaximumRetries).count)
                 }
             }
             .build()
+}
+
+@PublishedApi
+internal data class EventTransformation(
+    val from: KClass<*>,
+    val to: String,
+    val ingredientRenames: Map<String, String>
+)
+
+private fun KClass<*>.interactionFunction() = functions.single { it.name == "apply" }
+
+private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
+    return Event(
+        simpleName,
+        primaryConstructor?.parameters?.map {
+            Ingredient(
+                it.name,
+                it.type.javaType
+            )
+        },
+        Optional.ofNullable(maxFiringLimit)
+    )
 }
