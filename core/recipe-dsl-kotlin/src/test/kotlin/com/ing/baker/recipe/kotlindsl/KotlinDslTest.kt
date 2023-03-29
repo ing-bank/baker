@@ -15,6 +15,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
+@OptIn(ExperimentalDsl::class)
 class KotlinDslTest {
 
     @Test

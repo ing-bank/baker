@@ -14,9 +14,16 @@ import kotlin.time.toJavaDuration
 @DslMarker
 annotation class RecipeDslMarker
 
+@RequiresOptIn(
+    message = "This DSL is experimental. The API might change in the future.",
+    level = RequiresOptIn.Level.WARNING
+)
+annotation class ExperimentalDsl
+
 /**
  * Creates a [Recipe] with the given [name] and [configuration] provided through the [RecipeBuilder] receiver.
  */
+@ExperimentalDsl
 fun recipe(name: String, configuration: (RecipeBuilder.() -> Unit) = {}): Recipe {
     return RecipeBuilder(name).apply(configuration).build()
 }
@@ -32,16 +39,12 @@ class RecipeBuilder(private val name: String) {
     var defaultFailureStrategy: InteractionFailureStrategyBuilder = BlockInteractionBuilder
 
     /**
-     * The period during which the process accepts sensory events.
-     *
-     * TODO what does it mean when you keep the default value of null?
+     * The period during which the process accepts sensory events. Defaults to accepting sensory events forever.
      */
     var eventReceivePeriod: Duration? = null
 
     /**
-     * The period for which process data is stored.
-     *
-     * TODO what does it mean when you keep the default value of null?
+     * The period for which process data is stored. Defaults to storing process data forever.
      */
     var retentionPeriod: Duration? = null
 
@@ -67,8 +70,6 @@ class RecipeBuilder(private val name: String) {
 
     /**
      * Retries interaction with an incremental backoff on failure.
-     *
-     * TODO write better docs for this.
      */
     fun retryWithIncrementalBackoff(init: RetryWithIncrementalBackoffBuilder.() -> Unit): InteractionFailureStrategyBuilder {
         return RetryWithIncrementalBackoffBuilder().apply(init)
@@ -165,14 +166,6 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
 
     /**
      * Registers pre-defined ingredients to the recipe via the [PredefinedIngredientsBuilder] receiver.
-     *
-     * Example usage:
-     * ```kotlin
-     * preDefinedIngredients {
-     *     "foo" to MyIngredient
-     *     "bar" to MyOtherIngredient
-     * }
-     * ```
      */
     fun preDefinedIngredients(init: PredefinedIngredientsBuilder.() -> Unit) {
         preDefinedIngredients.putAll(PredefinedIngredientsBuilder().apply(init).build())
@@ -180,14 +173,6 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
 
     /**
      * Registers overrides of names of input ingredients via the [IngredientNameOverridesBuilder] receiver.
-     *
-     * Example usage:
-     * ```kotlin
-     * ingredientNameOverrides {
-     *     "foo" to "bar"
-     *     "this" to "that"
-     * }
-     * ```
      */
     fun ingredientNameOverrides(init: IngredientNameOverridesBuilder.() -> Unit) {
         ingredientNameOverrides.putAll(IngredientNameOverridesBuilder().apply(init).build())
@@ -196,14 +181,6 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
     /**
      * Transforms output event [T] to an event with a name of [newName]. Ingredients can be renamed via the
      * [IngredientRenamesBuilder] receiver.
-     *
-     * Example usage:
-     * ```kotlin
-     * transformEvent<MyEvent>(newName = "YourEvent") {
-     *     "foo" to "bar"
-     *     "this" to "that"
-     * }
-     * ```
      */
     inline fun <reified T> transformEvent(newName: String, init: (IngredientRenamesBuilder.() -> Unit) = {}) {
         eventTransformations.add(
@@ -217,8 +194,6 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
 
     /**
      * Retries interaction with an incremental backoff on failure.
-     *
-     * TODO write better docs for this.
      */
     fun retryWithIncrementalBackoff(init: RetryWithIncrementalBackoffBuilder.() -> Unit): InteractionFailureStrategyBuilder {
         return RetryWithIncrementalBackoffBuilder().apply(init)
@@ -416,7 +391,8 @@ internal data class EventTransformation(
     val ingredientRenames: Map<String, String>
 )
 
-private fun KClass<out com.ing.baker.recipe.javadsl.Interaction>.interactionFunction() = functions.single { it.name == "apply" }
+private fun KClass<out com.ing.baker.recipe.javadsl.Interaction>.interactionFunction() =
+    functions.single { it.name == "apply" }
 
 private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
     return Event(
