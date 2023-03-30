@@ -105,7 +105,7 @@ class RemoteInteractionSpec extends BakeryFunSpec {
 
     val implementation1 = InteractionInstance(
       name = "TestInteraction1",
-      input = Seq(InteractionInstanceInput(Option.empty, CharArray), InteractionInstanceInput(Option.empty, Int64)),
+      input = Seq(InteractionInstanceInput(Option.empty, CharArray), InteractionInstanceInput(Option.empty, Int64)).toList,
       run = input => Future.successful(Some(result(input.head.value.as[String] + "!", input(1).value.as[Int] + 1)))
     )
 
@@ -125,8 +125,8 @@ class RemoteInteractionSpec extends BakeryFunSpec {
         val ingredient0 = IngredientInstance("input0", PrimitiveValue("A"))
         val ingredient1 = IngredientInstance("input1", PrimitiveValue(1))
         for {
-          result0 <- client.execute(uri, implementation0.shaBase64, Seq(ingredient0, ingredient1))
-          result1 <- client.execute(uri, implementation1.shaBase64, Seq(ingredient0, ingredient1))
+          result0 <- client.execute(uri, implementation0.shaBase64, Seq(ingredient0, ingredient1), Map.empty)
+          result1 <- client.execute(uri, implementation1.shaBase64, Seq(ingredient0, ingredient1), Map.empty)
         } yield {
           assert(result0 === Some(result("A", 1)))
           assert(result1 === Some(result("A!", 2)))
@@ -138,7 +138,7 @@ class RemoteInteractionSpec extends BakeryFunSpec {
       context.withNoTrustClient(List(implementation0)) { (client, uri) =>
         val ingredient0 = IngredientInstance("input0", PrimitiveValue("A"))
         val ingredient1 = IngredientInstance("input1", PrimitiveValue(1))
-        val result: IO[Option[String]] = client.execute(uri, implementation0.shaBase64, Seq(ingredient0, ingredient1))
+        val result: IO[Option[String]] = client.execute(uri, implementation0.shaBase64, Seq(ingredient0, ingredient1), Map.empty)
           .map(_ => None)
           .handleErrorWith {
             case _: java.net.ConnectException | Command.EOF => IO.pure(Some("connection error"))

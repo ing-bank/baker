@@ -181,7 +181,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
         case None => cats.effect.IO.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
           InteractionExecutionFailureReason.INTERACTION_NOT_FOUND, None, None))))
         case Some(interactionInstance) =>
-          interactionInstance.execute(ingredients)
+          interactionInstance.execute(ingredients, Map())
             .map(executionSuccess => InteractionExecutionResult(Right(InteractionExecutionResult.Success(executionSuccess))))
             .recover {
               case e => InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
@@ -213,6 +213,20 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       case RecipeManagerProtocol.NoRecipeFound(_) =>
         Future.failed(NoSuchRecipeException(recipeId))
     }
+  }
+
+  /**
+    * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
+    * This variant also gets a metadata map added on bake.
+    * This is similar to calling addMetaData after doing the regular bake but depending on the implementation this can be more optimized.
+    *
+    * @param recipeId         The recipeId for the recipe to bake
+    * @param recipeInstanceId The identifier for the newly baked process
+    * @param metadata
+    * @return
+    */
+  override def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] = {
+    bake(recipeId, recipeInstanceId).map(_ -> addMetaData(recipeInstanceId, metadata))
   }
 
   override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] =

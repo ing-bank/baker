@@ -38,8 +38,9 @@ trait RecipeManager[F[_]] extends LazyLogging {
           for {
             timestamp <- timer.clock.realTime(duration.MILLISECONDS)
             _ <- store(compiledRecipe, timestamp)
-            _ <- components.logging.addedRecipe(compiledRecipe, timestamp)
-            _ <- components.eventStream.publish(RecipeAdded(compiledRecipe.name, compiledRecipe.recipeId, timestamp, compiledRecipe))
+            event = RecipeAdded(compiledRecipe.name, compiledRecipe.recipeId, timestamp, compiledRecipe)
+            _ <- effect.delay(components.logging.addedRecipe(event))
+            _ <- components.eventStream.publish(event)
           } yield ()
     } yield compiledRecipe.recipeId
 

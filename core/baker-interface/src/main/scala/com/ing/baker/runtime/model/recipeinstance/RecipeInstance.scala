@@ -24,8 +24,9 @@ object RecipeInstance {
     for {
       timestamp <- timer.clock.realTime(MILLISECONDS)
       state <- Ref.of[F, RecipeInstanceState](RecipeInstanceState.empty(recipeInstanceId, recipe, timestamp))
-      _ <- components.logging.recipeInstanceCreated(recipeInstanceId, timestamp, recipe)
-      _ <- components.eventStream.publish(RecipeInstanceCreated(timestamp, recipe.recipeId, recipe.name, recipeInstanceId))
+      recipeInstanceCreated = RecipeInstanceCreated(timestamp, recipe.recipeId, recipe.name, recipeInstanceId)
+      _ <- effect.delay(components.logging.recipeInstanceCreated(recipeInstanceCreated))
+      _ <- components.eventStream.publish(recipeInstanceCreated)
     } yield RecipeInstance(recipeInstanceId, settings, state)
 
   class FatalInteractionException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
@@ -40,8 +41,9 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
       initialExecution <- EitherT.fromEither[F](currentState.validateExecution(input, correlationId, currentTime))
         .leftSemiflatMap { case (rejection, reason)  =>
           for {
-            _ <- components.logging.eventRejected(recipeInstanceId, input, reason)
-            _ <- components.eventStream.publish(EventRejected(currentTime, recipeInstanceId, correlationId, input, rejection.asReason))
+            event <- effect.delay(EventRejected(currentTime, recipeInstanceId, correlationId, input, rejection.asReason))
+            _ <- effect.delay(components.logging.eventRejected(event))
+            _ <- components.eventStream.publish(event)
           } yield rejection
         }
       _ <- EitherT.liftF(components.eventStream.publish(EventReceived(currentTime, currentState.recipe.name, currentState.recipe.recipeId, recipeInstanceId, correlationId, input)))
@@ -116,7 +118,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
           _ <- state.update(_
             .recordFailedExecution(finishedExecution, strategy)
             .addRetryingExecution(finishedExecution.id))
-          _ <- components.logging.scheduleRetry(recipeInstanceId, finishedExecution.transition, delay)
+          _ <- effect.delay(components.logging.scheduleRetry(recipeInstanceId, finishedExecution.transition, delay))
           finalOutcome <- timer.sleep(delay.milliseconds) *> state.get.flatMap { currentState =>
             if (currentState.retryingExecutions.contains(finishedExecution.id)) {
               val currentTransitionExecution = currentState.executions(finishedExecution.id)
@@ -145,7 +147,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
       state.get.flatMap { currentState =>
         if (currentState.isInactive && currentState.sequenceNumber == sequenceNumber)
           components.recipeInstanceManager.idleStop(recipeInstanceId) *>
-            components.logging.idleStop(recipeInstanceId, originalIdleTTL)
+            effect.delay(components.logging.idleStop(recipeInstanceId, originalIdleTTL))
         else effect.unit
       }
 

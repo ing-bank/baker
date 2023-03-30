@@ -97,6 +97,18 @@ trait Baker[F[_]] extends LanguageApi {
     */
   def bake(recipeId: String, recipeInstanceId: String): F[Unit]
 
+
+  /**
+    * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
+    * This variant also gets a metadata map added on bake.
+    * This is similar to calling addMetaData after doing the regular bake but depending on the implementation this can be more optimized.
+    * @param recipeId         The recipeId for the recipe to bake
+    * @param recipeInstanceId The identifier for the newly baked process
+    * @param metadata
+    * @return
+    */
+  def bake(recipeId: String, recipeInstanceId: String, metadata: language.Map[String, String]): F[Unit]
+
   /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
     *

@@ -3,6 +3,7 @@ package com.ing.baker.runtime.akka.actor.process_index
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, ReceiveTimeout}
 import akka.sensors.actor.ActorMetrics
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
@@ -35,14 +36,15 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
   }
 
   def notifyReceive(recipe: CompiledRecipe): Unit = {
-    context.system.eventStream.publish(
+    LogAndSendEvent.eventReceived(
       EventReceived(
         System.currentTimeMillis(),
         recipe.name,
         recipe.recipeId,
         command.recipeInstanceId,
         command.correlationId,
-        command.event))
+        command.event), context.system.eventStream)
+
     command.reaction match {
       case FireSensoryEventReaction.NotifyWhenCompleted(_) =>
         ()
@@ -87,13 +89,14 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
     log.debug("Stopping SensoryEventResponseHandler and rejecting request")
     log.debug("Reject reason: " + rejection.asReason)
     log.debug("message: " + rejection)
-    context.system.eventStream.publish(
+    LogAndSendEvent.eventRejected(
       EventRejected(
         System.currentTimeMillis(),
         command.recipeInstanceId,
         command.correlationId,
         command.event,
-        rejection.asReason))
+        rejection.asReason), context.system.eventStream)
+
     command.reaction match {
       case FireSensoryEventReaction.NotifyBoth(_, completeReceiver) =>
         receiver ! rejection; completeReceiver ! rejection
