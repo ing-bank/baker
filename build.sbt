@@ -11,7 +11,7 @@ lazy val baker: Project = project.in(file("."))
   )
   .aggregate(
     // Core
-    `baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`,
+    `baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-recipe-dsl-kotlin`, `baker-intermediate-language`,
     `baker-interface`, `baker-annotations`, `baker-test`,
     // Http
     `baker-http-client`, `baker-http-server`, `baker-http-dashboard`,
@@ -99,6 +99,9 @@ val dependencyOverrideSettings: Seq[Setting[_]] = Seq(
     nettyHandler,
     bouncyCastleBcprov,
     bouncyCastleBcpkix
+  ),
+  excludeDependencies ++= Seq(
+    ExclusionRule("org.jetbrains.kotlin", "kotlin-scripting-compiler-embeddable")
   )
 )
 
@@ -268,6 +271,7 @@ lazy val `baker-recipe-dsl`: Project = project.in(file("core/recipe-dsl"))
       compileDeps(
         javaxInject,
         paranamer,
+        scalaCollectionCompat,
         scalaReflect(scalaVersion.value)
       ) ++
         testDeps(
@@ -279,15 +283,42 @@ lazy val `baker-recipe-dsl`: Project = project.in(file("core/recipe-dsl"))
         )
   ).dependsOn(`baker-types`, `baker-annotations`)
 
+lazy val `baker-recipe-dsl-kotlin`: Project = project.in(file("core/recipe-dsl-kotlin"))
+  .settings(defaultModuleSettings)
+  .settings(Publish.settings)
+  .settings(
+    moduleName := "baker-recipe-dsl-kotlin",
+    kotlinVersion := "1.7.22",
+    kotlincJvmTarget := "1.8",
+    kotlinLib("stdlib-jdk8"),
+    kotlinLib("reflect"),
+    libraryDependencies ++=
+      compileDeps(
+        javaxInject,
+        paranamer,
+        scalaCollectionCompat,
+        scalaReflect(scalaVersion.value)
+      ) ++
+        testDeps(
+          scalaTest,
+          scalaCheck,
+          scalaCheckPlus,
+          junitInterface,
+          slf4jApi
+        )
+  ).dependsOn(`baker-types`, `baker-annotations`, `baker-recipe-dsl`)
+
 lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compiler"))
   .settings(defaultModuleSettings)
   .settings(Publish.settings)
   .settings(
     moduleName := "baker-compiler",
+    kotlinVersion := "1.7.22",
+    kotlincJvmTarget := "1.8",
     libraryDependencies ++=
       testDeps(scalaTest, scalaCheck, junitJupiter)
   )
-  .dependsOn(`baker-recipe-dsl`, `baker-intermediate-language`, testScope(`baker-recipe-dsl`))
+  .dependsOn(`baker-recipe-dsl`, `baker-recipe-dsl-kotlin`, `baker-intermediate-language`, testScope(`baker-recipe-dsl`), testScope(`baker-recipe-dsl-kotlin`))
 
 lazy val `baker-test`: Project = project.in(file("core/baker-test"))
   .settings(defaultModuleSettings)
