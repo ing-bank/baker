@@ -22,7 +22,7 @@ object Assertions {
   private def assertSensoryEventsNegativeFiringLimits(recipe: Recipe): Seq[String] =
     Seq(
       Some("MaxFiringLimit should be greater than 0").filter(_ =>
-        recipe.sensoryEvents.flatMap(_.maxFiringLimit).exists(_ < 0)
+        recipe.sensoryEvents.flatMap(_.maxFiringLimit).exists(_ <= 0)
       ),
     ).flatten
 
