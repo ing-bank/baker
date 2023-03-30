@@ -288,7 +288,7 @@ lazy val `baker-recipe-dsl-kotlin`: Project = project.in(file("core/recipe-dsl-k
   .settings(Publish.settings)
   .settings(
     moduleName := "baker-recipe-dsl-kotlin",
-    kotlinVersion := "1.7.22",
+    kotlinVersion := "1.8.20",
     kotlincJvmTarget := "1.8",
     kotlinLib("stdlib-jdk8"),
     kotlinLib("reflect"),
@@ -313,7 +313,7 @@ lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compile
   .settings(Publish.settings)
   .settings(
     moduleName := "baker-compiler",
-    kotlinVersion := "1.7.22",
+    kotlinVersion := "1.8.20",
     kotlincJvmTarget := "1.8",
     libraryDependencies ++=
       testDeps(scalaTest, scalaCheck, junitJupiter)
