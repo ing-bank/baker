@@ -9,12 +9,12 @@ import org.http4s.Method.GET
 import org.http4s._
 import org.http4s.circe.jsonEncoderOf
 import org.http4s.client.Client
-import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.Router
-import org.http4s.blaze.server.BlazeServerBuilder
+import org.http4s.server.blaze.BlazeServerBuilder
 import org.scalatest.funspec.FixtureAsyncFunSpec
 import org.scalatest.{Assertion, FutureOutcome}
 

@@ -4,7 +4,7 @@ import cats.effect.{ContextShift, IO, Resource, Timer}
 import org.http4s.Method._
 import org.http4s.Uri
 import org.http4s.client.Client
-import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.dsl.io._
 
 import scala.concurrent.ExecutionContext

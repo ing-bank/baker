@@ -12,7 +12,7 @@ import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.http4s.client.Client
-import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.{Headers, Uri}
 import scalax.collection.ChainingOps
 

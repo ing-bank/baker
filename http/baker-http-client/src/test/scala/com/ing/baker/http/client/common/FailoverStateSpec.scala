@@ -6,15 +6,14 @@ import org.scalatest.funspec.AnyFunSpec
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import org.http4s.syntax.literals._
 
 
 class FailoverStateSpec extends AnyFunSpec {
 
-  private val uriA = Uri(path = path"baker-a-host")
-  private val uriB = Uri(path = path"baker-b-host")
-  private val uriC = Uri(path = path"baker-c-host")
-  private val uriD = Uri(path = path"baker-d-host")
+  private val uriA = Uri(path = "baker-a-host")
+  private val uriB = Uri(path = "baker-b-host")
+  private val uriC = Uri(path = "baker-c-host")
+  private val uriD = Uri(path = "baker-d-host")
 
   describe("Balancer") {
 

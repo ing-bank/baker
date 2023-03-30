@@ -5,7 +5,7 @@ import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.ConfigFactory
 import io.prometheus.client.CollectorRegistry
 import org.http4s.Status.Ok
-import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.client.blaze.BlazeClientBuilder
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
