@@ -220,8 +220,15 @@ class KotlinDslTest {
     @Test
     fun `create a recipe without any configuration`() {
         val recipe = recipe("NameNoProps")
-        assertEquals("NameNoProps", recipe.name())
-        assertEquals(BlockInteraction::class.java, recipe.defaultFailureStrategy().javaClass)
+
+        with(recipe) {
+            assertEquals("NameNoProps", name())
+            assertEquals(Option.empty<FiniteDuration>(), retentionPeriod())
+            assertEquals(Option.empty<FiniteDuration>(), eventReceivePeriod())
+            assertEquals(BlockInteraction::class.java, defaultFailureStrategy().javaClass)
+            assertTrue(sensoryEvents().isEmpty)
+            assertTrue(interactions().isEmpty)
+        }
     }
 
     @Test
@@ -230,28 +237,34 @@ class KotlinDslTest {
             sensoryEvents {
                 eventWithoutFiringLimit<Events.One>()
                 event<Events.Two>(maxFiringLimit = 5)
+                event<Events.Three>()
             }
         }
 
-        assertEquals("recipe with sensory events", recipe.name())
+        with(recipe) {
+            assertEquals("recipe with sensory events", name())
+            assertEquals(3, sensoryEvents().size())
 
-        with(recipe.sensoryEvents()) {
-            assertEquals(2, size())
-
-            with(firstElement()) {
+            with(sensoryEvents().get(0)) {
                 assertEquals("One", name())
                 assertEquals(Option.empty<Int>(), maxFiringLimit())
                 assertEquals(1, providedIngredients().size())
                 assertEquals("flag", providedIngredients().get(0).name())
                 assertEquals("Bool", providedIngredients().get(0).ingredientType().toString())
             }
-
-            with(secondElement()) {
+            with(sensoryEvents().get(1)) {
                 assertEquals("Two", name())
                 assertEquals(Some(5), maxFiringLimit())
                 assertEquals(1, providedIngredients().size())
                 assertEquals("text", providedIngredients().get(0).name())
                 assertEquals("CharArray", providedIngredients().get(0).ingredientType().toString())
+            }
+            with(sensoryEvents().get(2)) {
+                assertEquals("Three", name())
+                assertEquals(Some(1), maxFiringLimit())
+                assertEquals(1, providedIngredients().size())
+                assertEquals("number", providedIngredients().get(0).name())
+                assertEquals("Int32", providedIngredients().get(0).ingredientType().toString())
             }
         }
     }
@@ -263,6 +276,7 @@ class KotlinDslTest {
 
         class One(val flag: Boolean)
         class Two(val text: String)
+        class Three(val number: Int)
     }
 
     object Ingredients {
