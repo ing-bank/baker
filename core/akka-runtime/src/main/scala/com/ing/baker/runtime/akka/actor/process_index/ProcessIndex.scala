@@ -14,6 +14,7 @@ import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka._
 import com.ing.baker.runtime.akka.actor.Util.logging._
+import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
@@ -23,7 +24,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
 import com.ing.baker.runtime.common.RecipeRecord
-import com.ing.baker.runtime.model.InteractionManager
+import com.ing.baker.runtime.model.{BakerLogging, InteractionManager}
 import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
@@ -291,11 +292,15 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
                 val processState = RecipeInstanceState(recipeInstanceId, Map.empty[String, Value], List.empty)
                 val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
 
-                createProcessActor(recipeInstanceId, compiledRecipe).forward(initializeCmd)
+                //TODO ensure the initilzeCMD is accepted before we add it ot the index
+                createProcessActor(recipeInstanceId, compiledRecipe)
+                  .forward(initializeCmd)
 
                 val actorMetadata = ActorMetadata(recipeId, recipeInstanceId, createdTime, Active)
 
-                context.system.eventStream.publish(RecipeInstanceCreated(System.currentTimeMillis(), recipeId, compiledRecipe.name, recipeInstanceId))
+                LogAndSendEvent.recipeInstanceCreated(
+                  RecipeInstanceCreated(System.currentTimeMillis(), recipeId, compiledRecipe.name, recipeInstanceId),
+                  context.system.eventStream)
 
                 index += recipeInstanceId -> actorMetadata
               }
@@ -306,12 +311,32 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
         case _ if index(recipeInstanceId).isDeleted =>
           sender() ! ProcessDeleted(recipeInstanceId)
-        case _ =>
-          sender() ! ProcessAlreadyExists(recipeInstanceId)
+        case None =>
+          //Temporary solution for the situation that the initializeCmd is not send in the original Bake
+          getCompiledRecipe(recipeId) match {
+            case Some(compiledRecipe) =>
+              val processState = RecipeInstanceState(recipeInstanceId, Map.empty[String, Value], List.empty)
+              val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
+              createProcessActor(recipeInstanceId, compiledRecipe) ! initializeCmd
+              sender() ! ProcessAlreadyExists(recipeInstanceId)
+            case None =>
+              //Kept the ProcessAlreadyExists since this was the original error
+              sender() ! ProcessAlreadyExists(recipeInstanceId)
+          }
+        case Some(actorRef: ActorRef) =>
+          //Temporary solution for the situation that the initializeCmd is not send in the original Bake
+          getCompiledRecipe(recipeId) match {
+            case Some(compiledRecipe) =>
+              val processState = RecipeInstanceState(recipeInstanceId, Map.empty[String, Value], List.empty)
+              val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
+              actorRef ! initializeCmd
+              sender() ! ProcessAlreadyExists(recipeInstanceId)
+            case None =>
+              sender() ! NoRecipeFound(recipeId)
+          }
       }
 
     case command@ProcessEvent(recipeInstanceId, event, correlationId, _, _) =>
-
       run { responseHandler =>
         for {
           instanceAndMeta <- fetchInstance

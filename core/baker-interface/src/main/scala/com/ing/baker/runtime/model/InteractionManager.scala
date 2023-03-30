@@ -43,7 +43,7 @@ trait InteractionManager[F[_]] {
   def execute(interaction: InteractionTransition, input: Seq[IngredientInstance], metadata: Option[Map[String, String]])(implicit sync: Sync[F], effect: MonadError[F, Throwable]): F[Option[EventInstance]] =
     findFor(interaction)
       .flatMap {
-        case Some(implementation) => implementation.execute(input)
+        case Some(implementation) => implementation.execute(input, metadata.getOrElse(Map()))
         case None => effect.raiseError(new FatalInteractionException(s"No implementation available for interaction ${interaction.interactionName}"))
       }
 
