@@ -9,7 +9,7 @@ import scala.collection.JavaConverters._
 
 object JavaModules {
 
-  class ListModule extends ClassModule[java.util.List[_]] {
+  class ListModule extends ClassModule[util.List[_]] {
 
     override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): ListType = {
       val entryType = context.readType(getTypeParameter(javaType, 0))
