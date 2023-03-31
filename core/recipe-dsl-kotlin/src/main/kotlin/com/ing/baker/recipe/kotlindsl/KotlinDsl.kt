@@ -1,6 +1,8 @@
 package com.ing.baker.recipe.kotlindsl
 
+import com.ing.baker.recipe.annotations.FiresEvent
 import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
+import com.ing.baker.recipe.common.RecipeValidationException
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy
 import scala.Option
 import java.util.*
@@ -131,19 +133,16 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
 
     private val preDefinedIngredients = mutableMapOf<String, Any>()
     private val ingredientNameOverrides = mutableMapOf<String, String>()
-    private val events = mutableSetOf<KClass<*>>()
+
+    private val events = mutableSetOf<Event>()
     private val requiredEvents: MutableSet<String> = mutableSetOf()
     private val requiredOneOfEvents: MutableSet<Set<String>> = mutableSetOf()
 
     init {
-        val applyFn = interactionClass.interactionFunction()
-
-        // TODO: Java classes won't have sealed subclasses. We should look at the annotations instead
-        val sealedSubclasses = (applyFn.returnType.classifier as KClass<*>).sealedSubclasses
-        if (sealedSubclasses.isNotEmpty()) {
-            events.addAll(sealedSubclasses.toSet())
+        if (interactionClass.isKotlinClass()) {
+            extractOutputEventsForKotlinInteraction()
         } else {
-            events.addAll(setOf(applyFn.returnType.classifier as KClass<*>))
+            extractOutputEventsForJavaInteraction()
         }
     }
 
@@ -229,15 +228,13 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
             .map { Ingredient(it.name, it.type.javaType) }
             .toSet()
 
-        val outputEvents: Set<Event> = events.map { it.toEvent() }.toSet()
-
         val eventTransformationsInput: Map<Event, EventOutputTransformer> =
             eventTransformations.associate { it.from.toEvent() to EventOutputTransformer(it.to, it.ingredientRenames) }
 
         return Interaction(
             name,
             inputIngredients,
-            outputEvents,
+            events,
             requiredEvents,
             requiredOneOfEvents,
             preDefinedIngredients,
@@ -246,6 +243,27 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
             Optional.ofNullable(maximumInteractionCount),
             Optional.ofNullable(failureStrategy?.build())
         )
+    }
+
+    private fun extractOutputEventsForKotlinInteraction() {
+        val classifier = interactionClass.interactionFunction().returnType.classifier as KClass<*>
+        with(classifier) {
+            if (sealedSubclasses.isNotEmpty()) {
+                events.addAll(sealedSubclasses.map { it.toEvent() }.toSet())
+            } else {
+                events.addAll(setOf(classifier.toEvent()))
+            }
+        }
+    }
+
+    private fun extractOutputEventsForJavaInteraction() {
+        interactionClass.interactionFunction().annotations
+            .singleOrNull { it.annotationClass == FiresEvent::class }
+            ?.let { annotationClass -> annotationClass as FiresEvent }
+            ?.oneOf
+            ?.map { firesEventAnnotation -> firesEventAnnotation.java.toEvent() }
+            ?.also { events.addAll(it) }
+            ?: throw RecipeValidationException("Encountered Java interaction without @FiresEvent annotation.")
     }
 }
 
@@ -400,12 +418,17 @@ private fun <T : com.ing.baker.recipe.javadsl.Interaction> KClass<T>.interaction
 private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
     return Event(
         simpleName,
-        primaryConstructor?.parameters?.map {
-            Ingredient(
-                it.name,
-                it.type.javaType
-            )
-        },
+        primaryConstructor?.parameters?.map { Ingredient(it.name, it.type.javaType) },
         Optional.ofNullable(maxFiringLimit)
     )
 }
+
+private fun Class<*>.toEvent(): Event {
+    return Event(
+        simpleName,
+        declaredFields.filterNot { it.isSynthetic }.map { Ingredient(it.name, it.type) },
+        Optional.empty()
+    )
+}
+
+private fun KClass<*>.isKotlinClass() = java.declaredAnnotations.any { it.annotationClass == Metadata::class }
