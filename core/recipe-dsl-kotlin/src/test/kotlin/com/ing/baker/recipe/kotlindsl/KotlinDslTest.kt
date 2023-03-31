@@ -269,6 +269,13 @@ class KotlinDslTest {
         }
     }
 
+    @Test
+    fun `create a recipe with Java interactions`() {
+        val recipe = recipe("recipe with Java interactions") {
+            interaction<JavaInteraction>()
+        }
+    }
+
     object Events {
         class OrderPlaced(val items: List<Ingredients.Item>)
         class PaymentInformationReceived(val paymentInformation: Ingredients.PaymentInformation)

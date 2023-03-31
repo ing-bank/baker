@@ -137,6 +137,8 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
 
     init {
         val applyFn = interactionClass.interactionFunction()
+
+        // TODO: Java classes won't have sealed subclasses. We should look at the annotations instead
         val sealedSubclasses = (applyFn.returnType.classifier as KClass<*>).sealedSubclasses
         if (sealedSubclasses.isNotEmpty()) {
             events.addAll(sealedSubclasses.toSet())
@@ -222,6 +224,7 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
 
     @PublishedApi
     internal fun build(): Interaction {
+        // TODO ingredient argument names are lost (arg0, arg1, etc)
         val inputIngredients = interactionClass.interactionFunction().parameters.drop(1)
             .map { Ingredient(it.name, it.type.javaType) }
             .toSet()
