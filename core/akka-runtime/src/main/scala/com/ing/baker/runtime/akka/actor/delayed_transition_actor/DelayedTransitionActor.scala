@@ -38,11 +38,11 @@ class DelayedTransitionActor(processIndex: ActorRef) extends PersistentActor wit
   override def receiveCommand: Receive = starting
 
   override def preStart(): Unit = {
-    log.info(s"DelayedTransitionActor started: ${persistenceId}")
+    log.debug(s"DelayedTransitionActor started: ${persistenceId}")
   }
 
   override def postStop(): Unit = {
-    log.info("DelayedTransitionActor stopped: ${persistenceId}")
+    log.debug(s"DelayedTransitionActor stopped: ${persistenceId}")
   }
 
   private def handleScheduleDelayedTransition(event: ScheduleDelayedTransition) = {
@@ -58,12 +58,11 @@ class DelayedTransitionActor(processIndex: ActorRef) extends PersistentActor wit
     )
     persist(DelayedTransitionScheduled(id, instance)) { _ =>
       if (!waitingTimer.contains(id)) {
-        log.info(s"New ScheduleDelayedTransition received")
         waitingTimer.put(id, instance)
         sender() ! ProcessInstanceProtocol.TransitionDelayed(event.jobId, event.transitionId, event.consumed)
       }
       else {
-        log.info(s"Ignoring ScheduleDelayedTransition since it already exists")
+        log.warning(s"Ignoring ScheduleDelayedTransition since it already exists")
       }
     }
   }
@@ -86,7 +85,6 @@ class DelayedTransitionActor(processIndex: ActorRef) extends PersistentActor wit
       waitingTimer.foreach { case (id, instance) =>
         val newInstance = instance.copy(fired = true)
         if(!instance.fired &&  System.currentTimeMillis() > instance.timeToFire) {
-          log.info(s"DelayedTransition to fire found")
           persist(DelayedTransitionExecuted(id, newInstance)) { _ =>
             processIndex ! FireDelayedTransition(instance.recipeInstanceId,
               instance.jobId,
@@ -110,7 +108,5 @@ class DelayedTransitionActor(processIndex: ActorRef) extends PersistentActor wit
       waitingTimer.put(
         fired.id,
         fired.delayedTransitionInstance)
-    case RecoveryCompleted =>
-      log.info(s"Timer reloaded: ${waitingTimer.keys}")
   }
 }

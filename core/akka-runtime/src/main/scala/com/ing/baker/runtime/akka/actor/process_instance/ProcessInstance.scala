@@ -196,7 +196,6 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
         context.stop(self)
 
     case IdleStop(n) =>
-      log.info(s"IdleStop called with $n == ${instance.sequenceNr}")
       if (n == instance.sequenceNr && instance.activeJobs.isEmpty) {
         log.idleStop(recipeInstanceId, settings.idleTTL.getOrElse(Duration.Zero))
         stopMe()
@@ -263,6 +262,8 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
         val produced = RecipeRuntime.createProducedMarking(petriNet.outMarking(transition)
           .asInstanceOf[MultiSet[Place]], Some(out)).marshall
         val internalEvent = ProcessInstanceEventSourcing.DelayedTransitionFired(jobId, transitionId, produced, out)
+
+        log.transitionFired(recipeInstanceId, transition.asInstanceOf[Transition], jobId, System.currentTimeMillis(), System.currentTimeMillis())
 
         persistEvent(instance, internalEvent)(
           eventSource.apply(instance)
@@ -474,7 +475,6 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       case _ :EventTransition =>
         BakerLogging.default.firingEvent(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
         executeJobViaExecutor(job, originalSender)
-
       case i: InteractionTransition if isDelayedInteraction(i)  =>
         startDelayedTransition(i, job, originalSender)
       case _ => executeJobViaExecutor(job, originalSender)
@@ -517,7 +517,6 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
   }
 
   def startDelayedTransition(interactionTransition: InteractionTransition, job: Job[P, T, S], originalSender: ActorRef): Unit = {
-    log.info("Sending DelayedTransition")
     delayedTransitionActor ! ScheduleDelayedTransition(
       recipeInstanceId,
       getWaitTimeInMillis(interactionTransition, job),
