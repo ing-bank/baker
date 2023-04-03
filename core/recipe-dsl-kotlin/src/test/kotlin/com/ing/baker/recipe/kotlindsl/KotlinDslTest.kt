@@ -186,7 +186,10 @@ class KotlinDslTest {
             assertEquals(Event("Char", listOf(), Optional.empty()), eventOutputTransformers().toList().get(0)._1)
             assertEquals(EventOutputTransformer("foo", emptyMap()), eventOutputTransformers().toList().get(0)._2)
             assertEquals(Event("Boolean", listOf(), Optional.empty()), eventOutputTransformers().toList().get(1)._1)
-            assertEquals(EventOutputTransformer("AnotherBoolean", mapOf("foo" to "bar", "this" to "that")), eventOutputTransformers().toList().get(1)._2)
+            assertEquals(
+                EventOutputTransformer("AnotherBoolean", mapOf("foo" to "bar", "this" to "that")),
+                eventOutputTransformers().toList().get(1)._2
+            )
 
             assertEquals(2, overriddenIngredientNames().size())
             assertEquals("yolo", overriddenIngredientNames().get("foo").get())
@@ -270,9 +273,29 @@ class KotlinDslTest {
     }
 
     @Test
-    fun `create a recipe with Java interactions`() {
+    fun `create a recipe with an interaction that's writting in Java`() {
         val recipe = recipe("recipe with Java interactions") {
             interaction<JavaInteraction>()
+        }
+
+        with(recipe.interactions().toList().apply(0)) {
+            assertEquals("JavaInteraction", name())
+
+            assertEquals(2, inputIngredients().size())
+            assertEquals(inputIngredients().toList().apply(0).name(), "orderId")
+            assertEquals(inputIngredients().toList().apply(1).name(), "items")
+
+            assertEquals(2, output().size())
+            with(output().toList().apply(0)) {
+                assertEquals("ItemsReserved", name())
+                assertEquals(1, providedIngredients().size())
+                assertEquals("reservedItems", providedIngredients().toList().apply(0).name())
+            }
+            with(output().toList().apply(1)) {
+                assertEquals("OrderHadUnavailableItems", name())
+                assertEquals(1, providedIngredients().size())
+                assertEquals("unavailableItems", providedIngredients().toList().apply(0).name())
+            }
         }
     }
 

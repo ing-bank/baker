@@ -1,8 +1,7 @@
 package com.ing.baker.recipe.kotlindsl
 
-import com.ing.baker.recipe.annotations.FiresEvent
 import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
-import com.ing.baker.recipe.common.RecipeValidationException
+import com.ing.baker.recipe.javadsl.InteractionDescriptor
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy
 import scala.Option
 import java.util.*
@@ -133,18 +132,8 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
 
     private val preDefinedIngredients = mutableMapOf<String, Any>()
     private val ingredientNameOverrides = mutableMapOf<String, String>()
-
-    private val events = mutableSetOf<Event>()
     private val requiredEvents: MutableSet<String> = mutableSetOf()
     private val requiredOneOfEvents: MutableSet<Set<String>> = mutableSetOf()
-
-    init {
-        if (interactionClass.isKotlinClass()) {
-            extractOutputEventsForKotlinInteraction()
-        } else {
-            extractOutputEventsForJavaInteraction()
-        }
-    }
 
     /**
      * All events specified in this block have to be available for the interaction to be executed (AND precondition).
@@ -223,47 +212,52 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
 
     @PublishedApi
     internal fun build(): Interaction {
-        // TODO ingredient argument names are lost (arg0, arg1, etc)
-        val inputIngredients = interactionClass.interactionFunction().parameters.drop(1)
-            .map { Ingredient(it.name, it.type.javaType) }
-            .toSet()
-
         val eventTransformationsInput: Map<Event, EventOutputTransformer> =
             eventTransformations.associate { it.from.toEvent() to EventOutputTransformer(it.to, it.ingredientRenames) }
 
-        return Interaction(
-            name,
-            inputIngredients,
-            events,
-            requiredEvents,
-            requiredOneOfEvents,
-            preDefinedIngredients,
-            ingredientNameOverrides,
-            eventTransformationsInput,
-            Optional.ofNullable(maximumInteractionCount),
-            Optional.ofNullable(failureStrategy?.build())
-        )
-    }
+        // For Kotlin interaction classes, input ingredients and output events are determined via reflection.
+        // For Java interaction classes, input ingredients and output events are determined via annotations.
+        return if (interactionClass.isKotlinClass()) {
+            val inputIngredients = interactionClass.interactionFunction().parameters.drop(1)
+                .map { Ingredient(it.name, it.type.javaType) }
+                .toSet()
 
-    private fun extractOutputEventsForKotlinInteraction() {
-        val classifier = interactionClass.interactionFunction().returnType.classifier as KClass<*>
-        with(classifier) {
-            if (sealedSubclasses.isNotEmpty()) {
-                events.addAll(sealedSubclasses.map { it.toEvent() }.toSet())
-            } else {
-                events.addAll(setOf(classifier.toEvent()))
-            }
+            Interaction(
+                name,
+                inputIngredients,
+                extractOutputEvents(),
+                requiredEvents,
+                requiredOneOfEvents,
+                preDefinedIngredients,
+                ingredientNameOverrides,
+                eventTransformationsInput,
+                Optional.ofNullable(maximumInteractionCount),
+                Optional.ofNullable(failureStrategy?.build())
+            )
+        } else {
+            Interaction(
+                name,
+                InteractionDescriptor.of(interactionClass.java),
+                requiredEvents,
+                requiredOneOfEvents,
+                preDefinedIngredients,
+                ingredientNameOverrides,
+                eventTransformationsInput,
+                Optional.ofNullable(maximumInteractionCount),
+                Optional.ofNullable(failureStrategy?.build())
+            )
         }
     }
 
-    private fun extractOutputEventsForJavaInteraction() {
-        interactionClass.interactionFunction().annotations
-            .singleOrNull { it.annotationClass == FiresEvent::class }
-            ?.let { annotationClass -> annotationClass as FiresEvent }
-            ?.oneOf
-            ?.map { firesEventAnnotation -> firesEventAnnotation.java.toEvent() }
-            ?.also { events.addAll(it) }
-            ?: throw RecipeValidationException("Encountered Java interaction without @FiresEvent annotation.")
+    private fun extractOutputEvents(): Set<Event> {
+        val classifier = interactionClass.interactionFunction().returnType.classifier as KClass<*>
+        return with(classifier) {
+            if (sealedSubclasses.isNotEmpty()) {
+                sealedSubclasses.map { it.toEvent() }.toSet()
+            } else {
+                setOf(classifier.toEvent())
+            }
+        }
     }
 }
 
@@ -420,14 +414,6 @@ private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
         simpleName,
         primaryConstructor?.parameters?.map { Ingredient(it.name, it.type.javaType) },
         Optional.ofNullable(maxFiringLimit)
-    )
-}
-
-private fun Class<*>.toEvent(): Event {
-    return Event(
-        simpleName,
-        declaredFields.filterNot { it.isSynthetic }.map { Ingredient(it.name, it.type) },
-        Optional.empty()
     )
 }
 
