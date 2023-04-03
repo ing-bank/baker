@@ -1,7 +1,7 @@
 package com.ing.baker
 package compiler
 
-import com.ing.baker.il.CompiledRecipe.{OldRecipeIdVariant, Scala212CompatibleJava, Scala212CompatibleScala}
+import com.ing.baker.il.CompiledRecipe.{OldRecipeIdVariant, Scala212CompatibleJava, Scala212CompatibleKotlin, Scala212CompatibleScala}
 import com.ing.baker.il.RecipeValidations.postCompileValidations
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
@@ -303,7 +303,9 @@ object RecipeCompiler {
     val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
 
     val oldRecipeIdVariant : OldRecipeIdVariant =
-      if (recipe.isInstanceOf[com.ing.baker.recipe.javadsl.Recipe]) Scala212CompatibleJava else Scala212CompatibleScala
+      if (recipe.isInstanceOf[com.ing.baker.recipe.javadsl.Recipe]) Scala212CompatibleJava
+      else if (recipe.isInstanceOf[com.ing.baker.recipe.kotlindsl.Recipe]) Scala212CompatibleKotlin
+      else Scala212CompatibleScala
 
     val compiledRecipe = CompiledRecipe.build(
       name = recipe.name,

@@ -112,6 +112,8 @@ object Dependencies {
   val paranamer = "com.thoughtworks.paranamer" % "paranamer" % "2.8"
   val findbugs = "com.google.code.findbugs" % "jsr305" % "1.3.9"
 
+  val scalaCollectionCompat = "org.scala-lang.modules" %% "scala-collection-compat" % "2.9.0"
+
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
   val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.21.2"
