@@ -417,4 +417,5 @@ private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
     )
 }
 
+// The Metadata annotation is present on any class file produced by the Kotlin compiler.
 private fun KClass<*>.isKotlinClass() = java.declaredAnnotations.any { it.annotationClass == Metadata::class }
