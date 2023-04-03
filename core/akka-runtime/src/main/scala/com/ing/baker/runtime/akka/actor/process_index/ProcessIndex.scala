@@ -14,6 +14,8 @@ import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka._
 import com.ing.baker.runtime.akka.actor.Util.logging._
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransition, StartTimer}
 import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
@@ -24,7 +26,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
 import com.ing.baker.runtime.common.RecipeRecord
-import com.ing.baker.runtime.model.{BakerLogging, InteractionManager}
+import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
@@ -120,7 +122,6 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   import context.dispatcher
 
-
   private val config: Config = context.system.settings.config
 
   private val snapShotInterval: Int = config.getInt("baker.actor.snapshot-interval")
@@ -134,6 +135,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
   private val recipeCache: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
+
+  private val delayedTransitionActor: ActorRef = context.actorOf(
+    props = DelayedTransitionActor.props(this.self),
+    name = s"${self.path.name}-timer")
 
   // if there is a retention check interval defined we schedule a recurring message
   retentionCheckInterval.foreach { interval =>
@@ -188,7 +193,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
               executionContext = bakerExecutionContext,
               encryption = configuredEncryption,
               idleTTL = recipeInstanceIdleTimeout,
-              ingredientsFilter = ingredientsFilter)
+              ingredientsFilter = ingredientsFilter),
+            delayedTransitionActor = delayedTransitionActor
           ),
           childName = recipeInstanceId,
           minBackoff = restartMinBackoff,
@@ -292,7 +298,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
                 val processState = RecipeInstanceState(recipeInstanceId, Map.empty[String, Value], List.empty)
                 val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
 
-                //TODO ensure the initilzeCMD is accepted before we add it ot the index
+                //TODO ensure the initialiseCMD is accepted before we add it ot the index
                 createProcessActor(recipeInstanceId, compiledRecipe)
                   .forward(initializeCmd)
 
@@ -337,120 +343,26 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       }
 
     case command@ProcessEvent(recipeInstanceId, event, correlationId, _, _) =>
-      run { responseHandler =>
+      run ({ responseHandler =>
         for {
-          instanceAndMeta <- fetchInstance
+          instanceAndMeta <- fetchInstance(recipeInstanceId)
           (processInstance, metadata) = instanceAndMeta
           recipe <- fetchRecipe(metadata)
           _ <- initializeResponseHandler(recipe, responseHandler)
-          transitionAndDescriptor <- validateEventIsInRecipe(recipe)
+          transitionAndDescriptor <- validateEventIsInRecipe(recipe, event, recipeInstanceId)
           (transition, descriptor) = transitionAndDescriptor
-          _ <- validateEventIsSound(descriptor)
-          _ <- validateWithinReceivePeriod(recipe, metadata)
+          _ <- validateEventIsSound(descriptor, event, recipeInstanceId)
+          _ <- validateWithinReceivePeriod(recipe, metadata, recipeInstanceId)
           fireTransitionCommand = FireTransition(transition.id, event, correlationId)
           _ <- forwardToProcessInstance(fireTransitionCommand, processInstance, responseHandler)
         } yield ()
+      }, command)
+
+    case FireDelayedTransition(recipeInstanceId, jobId, transitionId, eventToFire, originalSender) =>
+      log.info("DelayedTransitionFired called")
+      withActiveProcess(recipeInstanceId) { processActor =>
+        processActor.tell(DelayedTransitionFired(jobId, transitionId, eventToFire), originalSender)
       }
-
-      type FireEventIO[A] = EitherT[IO, FireSensoryEventRejection, A]
-
-      def run(program: ActorRef => FireEventIO[Unit]): Unit = {
-        val responseHandler = context.actorOf(
-          SensoryEventResponseHandler(sender(), command, ingredientsFilter))
-        program(responseHandler).value.unsafeRunAsync {
-          case Left(exception) =>
-            throw exception // TODO decide what to do, might never happen, except if we generalize it as a runtime for the actor
-          case Right(Left(rejection)) =>
-            responseHandler ! rejection
-          case Right(Right(())) =>
-            ()
-        }
-      }
-
-      def reject[A](rejection: FireSensoryEventRejection): FireEventIO[A] =
-        EitherT.leftT(rejection)
-
-      def accept[A](a: A): FireEventIO[A] =
-        EitherT.rightT(a)
-
-      def continue: FireEventIO[Unit] =
-        accept(())
-
-      def sync[A](thunk: => A): FireEventIO[A] =
-        EitherT.liftF(IO(thunk))
-
-      def async[A](callback: (Either[Throwable, A] => Unit) => Unit): FireEventIO[A] =
-        EitherT.liftF(IO.async(callback))
-
-      def fetchCurrentTime: FireEventIO[Long] =
-        EitherT.liftF(IO {
-          System.currentTimeMillis()
-        })
-
-      def fetchInstance: FireEventIO[(ActorRef, ActorMetadata)] =
-        context.child(recipeInstanceId) match {
-          case Some(process) =>
-            accept(process -> index(recipeInstanceId))
-          case None if !index.contains(recipeInstanceId) =>
-            reject(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId))
-          case None if index(recipeInstanceId).isDeleted =>
-            reject(FireSensoryEventRejection.RecipeInstanceDeleted(recipeInstanceId))
-          case None =>
-            async { callback =>
-              createProcessActor(recipeInstanceId).foreach { actor =>
-                persistWithSnapshot(ActorActivated(recipeInstanceId)) { _ =>
-                  callback(Right(actor -> index(recipeInstanceId)))
-                }
-              }
-            }
-        }
-
-      def fetchRecipe(metadata: ActorMetadata): FireEventIO[CompiledRecipe] =
-        accept(getCompiledRecipe(metadata.recipeId).get)
-
-      def initializeResponseHandler(recipe: CompiledRecipe, handler: ActorRef): FireEventIO[Unit] =
-        sync(handler ! recipe)
-
-      def validateEventIsInRecipe(recipe: CompiledRecipe): FireEventIO[(Transition, EventDescriptor)] = {
-        val transition0 = recipe.petriNet.transitions.find(_.label == event.name)
-        val sensoryEvent0 = recipe.sensoryEvents.find(_.name == event.name)
-        (transition0, sensoryEvent0) match {
-          case (Some(transition), Some(sensoryEvent)) =>
-            accept(transition -> sensoryEvent)
-          case _ =>
-            reject(FireSensoryEventRejection.InvalidEvent(
-              recipeInstanceId,
-              s"No event with name '${event.name}' found in recipe '${recipe.name}'"
-            ))
-        }
-      }
-
-      def validateEventIsSound(descriptor: EventDescriptor): FireEventIO[Unit] = {
-        val eventValidationErrors = event.validate(descriptor)
-        if (eventValidationErrors.nonEmpty)
-          reject(FireSensoryEventRejection.InvalidEvent(
-            recipeInstanceId,
-            s"Invalid event: " + eventValidationErrors.mkString(",")
-          ))
-        else continue
-      }
-
-      def validateWithinReceivePeriod(recipe: CompiledRecipe, metadata: ActorMetadata): FireEventIO[Unit] = {
-        def outOfReceivePeriod(current: Long, period: FiniteDuration): Boolean =
-          current - metadata.createdDateTime > period.toMillis
-
-        for {
-          currentTime <- fetchCurrentTime
-          _ <- recipe.eventReceivePeriod match {
-            case Some(receivePeriod) if outOfReceivePeriod(currentTime, receivePeriod) =>
-              reject(FireSensoryEventRejection.ReceivePeriodExpired(recipeInstanceId))
-            case _ => continue
-          }
-        } yield ()
-      }
-
-      def forwardToProcessInstance(fireTransitionCommand: FireTransition, processInstance: ActorRef, responseHandler: ActorRef): FireEventIO[Unit] =
-        sync(processInstance.tell(fireTransitionCommand, responseHandler))
 
     case StopRetryingInteraction(recipeInstanceId, interactionName) =>
 
@@ -528,11 +440,112 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
     case StopProcessIndexShard =>
       log.debug("StopProcessIndexShard received, stopping self")
+      context.stop(delayedTransitionActor)
       context.stop(self)
 
     case cmd =>
       log.error(s"Unrecognized command $cmd")
   }
+
+  type FireEventIO[A] = EitherT[IO, FireSensoryEventRejection, A]
+
+  def run(program: ActorRef => FireEventIO[Unit], command: ProcessEvent): Unit = {
+    val responseHandler = context.actorOf(
+      SensoryEventResponseHandler(sender(), command, ingredientsFilter))
+    program(responseHandler).value.unsafeRunAsync {
+      case Left(exception) =>
+        throw exception // TODO decide what to do, might never happen, except if we generalize it as a runtime for the actor
+      case Right(Left(rejection)) =>
+        responseHandler ! rejection
+      case Right(Right(())) =>
+        ()
+    }
+  }
+
+  def reject[A](rejection: FireSensoryEventRejection): FireEventIO[A] =
+    EitherT.leftT(rejection)
+
+  def accept[A](a: A): FireEventIO[A] =
+    EitherT.rightT(a)
+
+  def continue: FireEventIO[Unit] =
+    accept(())
+
+  def sync[A](thunk: => A): FireEventIO[A] =
+    EitherT.liftF(IO(thunk))
+
+  def async[A](callback: (Either[Throwable, A] => Unit) => Unit): FireEventIO[A] =
+    EitherT.liftF(IO.async(callback))
+
+  def fetchCurrentTime: FireEventIO[Long] =
+    EitherT.liftF(IO {
+      System.currentTimeMillis()
+    })
+
+  def fetchInstance(recipeInstanceId: String): FireEventIO[(ActorRef, ActorMetadata)] =
+    context.child(recipeInstanceId) match {
+      case Some(process) =>
+        accept(process -> index(recipeInstanceId))
+      case None if !index.contains(recipeInstanceId) =>
+        reject(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId))
+      case None if index(recipeInstanceId).isDeleted =>
+        reject(FireSensoryEventRejection.RecipeInstanceDeleted(recipeInstanceId))
+      case None =>
+        async { callback =>
+          createProcessActor(recipeInstanceId).foreach { actor =>
+            persistWithSnapshot(ActorActivated(recipeInstanceId)) { _ =>
+              callback(Right(actor -> index(recipeInstanceId)))
+            }
+          }
+        }
+    }
+
+  def fetchRecipe(metadata: ActorMetadata): FireEventIO[CompiledRecipe] =
+    accept(getCompiledRecipe(metadata.recipeId).get)
+
+  def initializeResponseHandler(recipe: CompiledRecipe, handler: ActorRef): FireEventIO[Unit] =
+    sync(handler ! recipe)
+
+  def validateEventIsInRecipe(recipe: CompiledRecipe, event: EventInstance, recipeInstanceId: String): FireEventIO[(Transition, EventDescriptor)] = {
+    val transition0 = recipe.petriNet.transitions.find(_.label == event.name)
+    val sensoryEvent0 = recipe.sensoryEvents.find(_.name == event.name)
+    (transition0, sensoryEvent0) match {
+      case (Some(transition), Some(sensoryEvent)) =>
+        accept(transition -> sensoryEvent)
+      case _ =>
+        reject(FireSensoryEventRejection.InvalidEvent(
+          recipeInstanceId,
+          s"No event with name '${event.name}' found in recipe '${recipe.name}'"
+        ))
+    }
+  }
+
+  def validateEventIsSound(descriptor: EventDescriptor, event: EventInstance, recipeInstanceId: String): FireEventIO[Unit] = {
+    val eventValidationErrors = event.validate(descriptor)
+    if (eventValidationErrors.nonEmpty)
+      reject(FireSensoryEventRejection.InvalidEvent(
+        recipeInstanceId,
+        s"Invalid event: " + eventValidationErrors.mkString(",")
+      ))
+    else continue
+  }
+
+  def validateWithinReceivePeriod(recipe: CompiledRecipe, metadata: ActorMetadata, recipeInstanceId: String): FireEventIO[Unit] = {
+    def outOfReceivePeriod(current: Long, period: FiniteDuration): Boolean =
+      current - metadata.createdDateTime > period.toMillis
+
+    for {
+      currentTime <- fetchCurrentTime
+      _ <- recipe.eventReceivePeriod match {
+        case Some(receivePeriod) if outOfReceivePeriod(currentTime, receivePeriod) =>
+          reject(FireSensoryEventRejection.ReceivePeriodExpired(recipeInstanceId))
+        case _ => continue
+      }
+    } yield ()
+  }
+
+  def forwardToProcessInstance(command: Any, processInstance: ActorRef, responseHandler: ActorRef): FireEventIO[Unit] =
+    sync(processInstance.tell(command, responseHandler))
 
   private def updateWithStatus(recipeInstanceId: String, processStatus: ProcessStatus): Unit = {
     index.get(recipeInstanceId)
@@ -559,6 +572,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       index
         .filter(process => process._2.processStatus == Active ).keys
         .foreach(id => createProcessActor(id))
+      delayedTransitionActor ! StartTimer
   }
 
   def persistWithSnapshot[A](event: A)(handler: A => Unit): Unit = {

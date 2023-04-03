@@ -4,6 +4,7 @@ import akka.actor.{ActorRefProvider, ExtendedActorSystem}
 import com.ing.baker.il
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionProto._
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
@@ -12,6 +13,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManagerActor, Reci
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.ProtoMap
 import SerializedDataProto._
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.{DelayedTransitionExecuted, DelayedTransitionInstance, DelayedTransitionScheduled}
 import com.ing.baker.runtime.akka.actor.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
 
 object BakerTypedProtobufSerializer {
@@ -19,7 +21,7 @@ object BakerTypedProtobufSerializer {
   def entries(actorRefProvider: ActorRefProvider)(serializersProvider: AkkaSerializerProvider): List[BinarySerializable] = {
     implicit val ev0 = serializersProvider
     implicit val ev1 = actorRefProvider
-    commonEntries ++ processIndexEntries ++ processInstanceEntries ++ recipeManagerEntries
+    commonEntries ++ processIndexEntries ++ processInstanceEntries ++ recipeManagerEntries ++ delayedTransitionEntries
   }
 
   /** Hardcoded serializerId for this serializer. This should not conflict with other serializers.
@@ -145,6 +147,10 @@ object BakerTypedProtobufSerializer {
         .register("Initialized")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.Initialized)),
       forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.MetaDataAdded]
         .register("MetaDataAdded")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.MetaDataAdded)),
+      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionDelayed]
+        .register("TransitionDelayed")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionDelayed)),
+      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.DelayedTransitionFired]
+        .register("DelayedTransitionFired")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.DelayedTransitionFired)),
     )
 
   def recipeManagerEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] =
@@ -166,6 +172,17 @@ object BakerTypedProtobufSerializer {
       forType[RecipeManagerActor.RecipeAdded]
         .register("RecipeManager.RecipeAdded")
     )
+
+  def delayedTransitionEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] = {
+    List(
+      forType[DelayedTransitionInstance]
+        .register("DelayedTransitionInstance"),
+      forType[DelayedTransitionScheduled]
+        .register("DelayedTransitionScheduled"),
+      forType[DelayedTransitionExecuted]
+        .register("DelayedTransitionExecuted")
+    )
+  }
 }
 
 class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends TypedProtobufSerializer(system, BakerTypedProtobufSerializer.identifier, BakerTypedProtobufSerializer.entries(system.provider))

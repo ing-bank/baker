@@ -49,6 +49,22 @@ message TransitionFired {
     optional SerializedData data = 8;
 }
 
+message TransitionDelayed {
+    option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
+    optional int64 job_id = 1;
+    optional int64 transition_id = 3;
+    repeated ConsumedToken consumed = 6;
+}
+
+message DelayedTransitionFired {
+    option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
+    optional int64 job_id = 1;
+    optional int64 transition_id = 3;
+    repeated ConsumedToken consumed = 6;
+    repeated ProducedToken produced = 7;
+    optional SerializedData data = 8;
+}
+
 message FailureStrategy {
     enum StrategyType {
         BLOCK_TRANSITION = 0;

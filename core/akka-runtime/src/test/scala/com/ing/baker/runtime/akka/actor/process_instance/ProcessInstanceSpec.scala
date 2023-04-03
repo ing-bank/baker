@@ -61,14 +61,15 @@ object ProcessInstanceSpec {
   def processInstanceProps[S, E](
                                   topology: PetriNet[Place, Transition],
                                   runtime: ProcessInstanceRuntime[Place, Transition, S, E],
-                                  settings: Settings): Props =
-
+                                  settings: Settings): Props = {
     Props(new ProcessInstance[Place, Transition, S, E](
       "test",
       topology,
       settings,
-      runtime)
+      runtime,
+      null)
     )
+  }
 
   def createPetriNetActor(props: Props, name: String)(implicit system: ActorSystem): ActorRef = {
     system.actorOf(props, name)

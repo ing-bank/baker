@@ -2,6 +2,8 @@ package com.ing.baker.runtime.akka.actor.process_instance
 
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.TransitionDelayed
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.DelayedTransitionFired
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal.Instance
 import com.ing.baker.runtime.akka.actor.process_instance.protobuf.FailureStrategy.StrategyType
@@ -30,8 +32,11 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](pro
   def deserializeEvent(event: AnyRef): Instance[P, T, S] => ProcessInstanceEventSourcing.Event = event match {
     case e: protobuf.Initialized => deserializeInitialized(e)
     case e: protobuf.TransitionFired => deserializeTransitionFired(e)
+    case e: protobuf.TransitionDelayed => deserializeTransitionDelayed(e)
+    case e: protobuf.DelayedTransitionFired => deserializeDelayedTransitionFired(e)
     case e: protobuf.TransitionFailed => deserializeTransitionFailed(e)
     case e: protobuf.MetaDataAdded => deserializeMetaDataAdded(e)
+//    case _ => throw new RuntimeException("e") //TODO write the serialisation for the new stored messages in Protobuff
   }
 
   /**
@@ -41,6 +46,8 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](pro
     _ => e match {
       case e: InitializedEvent => serializeInitialized(e)
       case e: TransitionFiredEvent => serializeTransitionFired(e)
+      case e: TransitionDelayed => serializeTransitionDelayed(e)
+      case e: DelayedTransitionFired => serializeDelayedTransitionFired(e)
       case e: TransitionFailedEvent => serializeTransitionFailed(e)
       case e: com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.MetaDataAdded => serializeMetaDataAdded(e)
     }
@@ -174,6 +181,27 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](pro
     )
   }
 
+  private def serializeTransitionDelayed(e: TransitionDelayed): protobuf.TransitionDelayed = {
+    val consumedTokens = serializeConsumedMarking(e.consumed)
+    protobuf.TransitionDelayed(
+      jobId = Some(e.jobId),
+      transitionId = Some(e.transitionId),
+      consumed = consumedTokens
+    )
+  }
+
+  private def serializeDelayedTransitionFired(e: DelayedTransitionFired): protobuf.DelayedTransitionFired = {
+
+    val producedTokens = serializeProducedMarking(e.produced)
+
+    protobuf.DelayedTransitionFired(
+      jobId = Some(e.jobId),
+      transitionId = Some(e.transitionId),
+      produced = producedTokens,
+      data = serializeObject(e.output)
+    )
+  }
+
   private def deserializeTransitionFired(e: protobuf.TransitionFired): Instance[P, T, S] => TransitionFiredEvent = instance => {
 
     val consumed: Marking[Id] = deserializeConsumedMarking(instance, e.consumed)
@@ -187,6 +215,26 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](pro
     val timeCompleted = e.timeCompleted.getOrElse(missingFieldException("time_completed"))
 
     TransitionFiredEvent(jobId, transitionId, e.correlationId, timeStarted, timeCompleted, consumed, produced, output)
+  }
+
+  private def deserializeTransitionDelayed(e: protobuf.TransitionDelayed): Instance[P, T, S] => TransitionDelayed = instance => {
+
+    val consumed: Marking[Id] = deserializeConsumedMarking(instance, e.consumed)
+    val transitionId = e.transitionId.getOrElse(missingFieldException("transition_id"))
+    val jobId = e.jobId.getOrElse(missingFieldException("job_id"))
+    TransitionDelayed(jobId, transitionId, consumed)
+  }
+
+  private def deserializeDelayedTransitionFired(e: protobuf.DelayedTransitionFired): Instance[P, T, S] => DelayedTransitionFired = instance => {
+
+    val produced: Marking[Id] = deserializeProducedMarking(instance, e.produced)
+
+    val output = e.data.map(deserializeObject).orNull
+
+    val transitionId = e.transitionId.getOrElse(missingFieldException("transition_id"))
+    val jobId = e.jobId.getOrElse(missingFieldException("job_id"))
+
+    DelayedTransitionFired(jobId, transitionId, produced, output)
   }
 
   private def serializeMetaDataAdded(e: com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.MetaDataAdded): protobuf.MetaDataAdded = {

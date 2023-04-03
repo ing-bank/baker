@@ -53,6 +53,21 @@ object ProcessInstanceEventSourcing extends LazyLogging {
                                    exceptionStrategy: ExceptionStrategy) extends TransitionEvent
 
   /**
+    * An event describing the fact that a transition has been postponed to be fired.
+    */
+  case class TransitionDelayed(override val jobId: Long,
+                               override val transitionId: Id,
+                               consumed: Marking[Id]) extends TransitionEvent
+
+  /**
+    * An event describing the fact that a transition has been postponed to be fired.
+    */
+  case class DelayedTransitionFired(override val jobId: Long,
+                                    override val transitionId: Id,
+                                    produced: Marking[Id],
+                                    output: Any) extends TransitionEvent
+
+  /**
     * An event describing the fact that an instance was initialized.
     */
   case class InitializedEvent(marking: Marking[Id],
@@ -69,9 +84,8 @@ object ProcessInstanceEventSourcing extends LazyLogging {
 
       val initialMarking: Marking[P] = initial.unmarshall(instance.petriNet.places)
 
-      Instance[P, T, S](instance.petriNet, 1, initialMarking, initialState.asInstanceOf[S], Map.empty, Set.empty)
+      Instance[P, T, S](instance.petriNet, 1, initialMarking, Map.empty, initialState.asInstanceOf[S], Map.empty, Set.empty)
     case e: TransitionFiredEvent =>
-
       val transition = instance.petriNet.transitions.getById(e.transitionId)
       val newState = sourceFn(transition)(instance.state)(e.output.asInstanceOf[E])
       val consumed: Marking[P] = e.consumed.unmarshall(instance.petriNet.places)
@@ -95,6 +109,32 @@ object ProcessInstanceEventSourcing extends LazyLogging {
       val failureCount = job.failureCount + 1
       val updatedJob: Job[P, T, S] = job.copy(failure = Some(ExceptionState(e.timeFailed, failureCount, e.failureReason, e.exceptionStrategy)))
       instance.copy[P, T, S](jobs = instance.jobs + (job.id -> updatedJob))
+
+    case e: TransitionDelayed =>
+      val consumed: Marking[P] = e.consumed.unmarshall(instance.petriNet.places)
+
+      val delayedInstanceCount: Int = instance.delayedTransitionIds.getOrElse(e.transitionId, 0)
+
+      instance.copy[P, T, S](
+        sequenceNr = instance.sequenceNr + 1,
+        marking = (instance.marking |-| consumed),
+        delayedTransitionIds = instance.delayedTransitionIds + (e.transitionId -> (delayedInstanceCount + 1)), //Claim the consumed tokens
+        jobs = instance.jobs - e.jobId
+      )
+
+    case e: DelayedTransitionFired =>
+      val delayedInstanceCount: Int = instance.delayedTransitionIds(e.transitionId)
+      val produced: Marking[P] = e.produced.unmarshall(instance.petriNet.places)
+      val transition = instance.petriNet.transitions.getById(e.transitionId)
+      val newState = sourceFn(transition)(instance.state)(e.output.asInstanceOf[E])
+
+      instance.copy[P, T, S](
+        sequenceNr = instance.sequenceNr + 1,
+        marking = instance.marking |+| produced,
+        delayedTransitionIds = instance.delayedTransitionIds + (e.transitionId -> (delayedInstanceCount - 1)),
+        state = newState
+      )
+
     case e: MetaDataAdded =>
         val newState: S = instance.state match {
           case state: RecipeInstanceState =>
@@ -177,6 +217,8 @@ abstract class ProcessInstanceEventSourcing[P : Identifiable, T : Identifiable, 
     case e: protobuf.Initialized      => applyToRecoveringState(e)
     case e: protobuf.TransitionFired  => applyToRecoveringState(e)
     case e: protobuf.TransitionFailed => applyToRecoveringState(e)
+    case e: protobuf.TransitionDelayed => applyToRecoveringState(e)
+    case e: protobuf.DelayedTransitionFired => applyToRecoveringState(e)
     case e: protobuf.MetaDataAdded => applyToRecoveringState(e)
     case RecoveryCompleted =>
       if (recoveringState.sequenceNr > 0)
