@@ -359,7 +359,6 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       }, command)
 
     case FireDelayedTransition(recipeInstanceId, jobId, transitionId, eventToFire, originalSender) =>
-      log.info("DelayedTransitionFired called")
       withActiveProcess(recipeInstanceId) { processActor =>
         processActor.tell(DelayedTransitionFired(jobId, transitionId, eventToFire), originalSender)
       }
