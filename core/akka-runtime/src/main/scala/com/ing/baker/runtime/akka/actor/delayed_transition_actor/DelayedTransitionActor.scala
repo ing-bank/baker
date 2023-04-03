@@ -63,6 +63,7 @@ class DelayedTransitionActor(processIndex: ActorRef) extends PersistentActor wit
       }
       else {
         log.warning(s"Ignoring ScheduleDelayedTransition since it already exists")
+        sender() ! ProcessInstanceProtocol.TransitionDelayed(event.jobId, event.transitionId, event.consumed)
       }
     }
   }
