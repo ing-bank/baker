@@ -259,8 +259,12 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       if(instance.delayedTransitionIds.contains(transitionId) && instance.delayedTransitionIds(transitionId) > 0) {
         val transition = petriNet.transitions.getById(transitionId, "transition in petrinet")
         val out: EventInstance = EventInstance.apply(eventToFire)
-        val produced = RecipeRuntime.createProducedMarking(petriNet.outMarking(transition)
-          .asInstanceOf[MultiSet[Place]], Some(out)).marshall
+
+        //TODO create a better way to get the outgoing places (not by directly calling the RecipeRuntime)
+        val produced = RecipeRuntime.createProducedMarking(
+          petriNet.outMarking(transition).asInstanceOf[MultiSet[Place]],
+          Some(out)
+        ).marshall
         val internalEvent = ProcessInstanceEventSourcing.DelayedTransitionFired(jobId, transitionId, produced, out)
 
         log.transitionFired(recipeInstanceId, transition.asInstanceOf[Transition], jobId, System.currentTimeMillis(), System.currentTimeMillis())
