@@ -53,14 +53,14 @@ object ProcessInstanceEventSourcing extends LazyLogging {
                                    exceptionStrategy: ExceptionStrategy) extends TransitionEvent
 
   /**
-    * An event describing the fact that a transition has been postponed to be fired.
+    * An event describing the fact that a transition has been delayed.
     */
   case class TransitionDelayed(override val jobId: Long,
                                override val transitionId: Id,
                                consumed: Marking[Id]) extends TransitionEvent
 
   /**
-    * An event describing the fact that a transition has been postponed to be fired.
+    * An event describing the fact that a transition has been fired after its delay.
     */
   case class DelayedTransitionFired(override val jobId: Long,
                                     override val transitionId: Id,
