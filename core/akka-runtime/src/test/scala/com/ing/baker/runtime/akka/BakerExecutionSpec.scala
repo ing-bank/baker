@@ -1458,18 +1458,19 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
             .withInteraction(interactionOne)
             .withSensoryEvent(initialEvent)
             .withCheckpointEvent(CheckPointEvent("Success")
-              .withRequiredEvent(initialEvent))
+              .withRequiredEvent(initialEvent)
+              .withRequiredEvent(interactionOneSuccessful))
 
         for {
           (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
-          _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(null)
+          _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful("Hello")))
           recipeInstanceId = UUID.randomUUID().toString
           _ <- baker.bake(recipeId, recipeInstanceId)
           _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
           _ = verify(testInteractionOneMock).apply(recipeInstanceId, "initialIngredient")
           state <- baker.getRecipeInstanceState(recipeInstanceId)
-          _ = state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
-          _ = state.eventNames shouldBe Seq("InitialEvent", "Success")
+          _ = state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> "Hello")
+          _ = state.eventNames shouldBe Seq("InitialEvent", "InteractionOneSuccessful", "Success")
         } yield succeed
 
     }
