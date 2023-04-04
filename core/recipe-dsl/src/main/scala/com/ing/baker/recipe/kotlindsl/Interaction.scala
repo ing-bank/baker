@@ -38,57 +38,52 @@ class Interaction private(
   override val eventOutputTransformers: Map[common.Event, common.EventOutputTransformer] = eventOutputTransformersInput
   override val maximumInteractionCount: Option[Int] = maximumInteractionCountInput
   override val failureStrategy: Option[common.InteractionFailureStrategy] = failureStrategyInput
+}
 
-  def this(
-    nameInput: String,
-    inputIngredientsInput: java.util.Set[Ingredient],
-    eventsInput: java.util.Set[Event],
-    requiredEventsInput: java.util.Set[String],
-    requiredOneOfEventsInput: java.util.Set[java.util.Set[String]],
-    predefinedIngredientsInput: java.util.Map[String, Object],
-    overriddenIngredientNamesInput: java.util.Map[String, String],
-    eventOutputTransformersInput: java.util.Map[Event, EventOutputTransformer],
-    maximumInteractionCountInput: java.util.Optional[Int],
-    failureStrategyInput: java.util.Optional[common.InteractionFailureStrategy]
-  ) = {
-    this(
-      nameInput,
-      nameInput,
-      new ArraySeq.ofRef(inputIngredientsInput.asScala.toArray),
-      new ArraySeq.ofRef(eventsInput.asScala.toArray),
-      requiredEventsInput.asScala.toSet,
-      requiredOneOfEventsInput.asScala.map(x => x.asScala.toSet).toSet,
-      predefinedIngredientsInput.asScala.toMap.map{case(k, v) => k -> Converters.toValue(v)},
-      overriddenIngredientNamesInput.asScala.toMap,
-      eventOutputTransformersInput.asScala.toMap.map{case(k, v) => k -> v},
-      maximumInteractionCountInput.map[Option[Int]](Option.apply(_)).orElse(None),
-      failureStrategyInput.map[Option[InteractionFailureStrategy]](Option.apply(_)).orElse(None)
-    )
-  }
+object Interaction {
+  def of(name: String,
+         interactionDescriptor: InteractionDescriptor,
+         requiredEvents: java.util.Set[String],
+         requiredOneOfEvents: java.util.Set[java.util.Set[String]],
+         predefinedIngredients: java.util.Map[String, Object],
+         overriddenIngredientNames: java.util.Map[String, String],
+         eventOutputTransformers: java.util.Map[Event, EventOutputTransformer],
+         maximumInteractionCount: java.util.Optional[Int],
+         failureStrategy: java.util.Optional[common.InteractionFailureStrategy]) = new Interaction(
+    name,
+    interactionDescriptor.originalName,
+    interactionDescriptor.inputIngredients,
+    interactionDescriptor.output,
+    requiredEvents.asScala.toSet,
+    requiredOneOfEvents.asScala.map(x => x.asScala.toSet).toSet,
+    predefinedIngredients.asScala.toMap.map { case (k, v) => k -> Converters.toValue(v) },
+    overriddenIngredientNames.asScala.toMap,
+    eventOutputTransformers.asScala.toMap.map { case (k, v) => k -> v },
+    maximumInteractionCount.map[Option[Int]](Option.apply(_)).orElse(None),
+    failureStrategy.map[Option[InteractionFailureStrategy]](Option.apply(_)).orElse(None)
+  )
 
-  def this(
-    nameInput: String,
-    interactionDescriptor: InteractionDescriptor,
-    requiredEventsInput: java.util.Set[String],
-    requiredOneOfEventsInput: java.util.Set[java.util.Set[String]],
-    predefinedIngredientsInput: java.util.Map[String, Object],
-    overriddenIngredientNamesInput: java.util.Map[String, String],
-    eventOutputTransformersInput: java.util.Map[Event, EventOutputTransformer],
-    maximumInteractionCountInput: java.util.Optional[Int],
-    failureStrategyInput: java.util.Optional[common.InteractionFailureStrategy]
-  ) = {
-    this(
-      nameInput,
-      nameInput,
-      interactionDescriptor.inputIngredients,
-      interactionDescriptor.output,
-      requiredEventsInput.asScala.toSet,
-      requiredOneOfEventsInput.asScala.map(x => x.asScala.toSet).toSet,
-      predefinedIngredientsInput.asScala.toMap.map { case (k, v) => k -> Converters.toValue(v) },
-      overriddenIngredientNamesInput.asScala.toMap,
-      eventOutputTransformersInput.asScala.toMap.map { case (k, v) => k -> v },
-      maximumInteractionCountInput.map[Option[Int]](Option.apply(_)).orElse(None),
-      failureStrategyInput.map[Option[InteractionFailureStrategy]](Option.apply(_)).orElse(None)
-    )
-  }
+  def of(name: String,
+         originalName: String,
+         inputIngredients: java.util.Set[Ingredient],
+         events: java.util.Set[Event],
+         requiredEvents: java.util.Set[String],
+         requiredOneOfEvents: java.util.Set[java.util.Set[String]],
+         predefinedIngredients: java.util.Map[String, Object],
+         overriddenIngredientNames: java.util.Map[String, String],
+         eventOutputTransformers: java.util.Map[Event, EventOutputTransformer],
+         maximumInteractionCount: java.util.Optional[Int],
+         failureStrategy: java.util.Optional[common.InteractionFailureStrategy]) = new Interaction(
+    name,
+    originalName,
+    new ArraySeq.ofRef(inputIngredients.asScala.toArray),
+    new ArraySeq.ofRef(events.asScala.toArray),
+    requiredEvents.asScala.toSet,
+    requiredOneOfEvents.asScala.map(x => x.asScala.toSet).toSet,
+    predefinedIngredients.asScala.toMap.map { case (k, v) => k -> Converters.toValue(v) },
+    overriddenIngredientNames.asScala.toMap,
+    eventOutputTransformers.asScala.toMap.map { case (k, v) => k -> v },
+    maximumInteractionCount.map[Option[Int]](Option.apply(_)).orElse(None),
+    failureStrategy.map[Option[InteractionFailureStrategy]](Option.apply(_)).orElse(None)
+  )
 }
