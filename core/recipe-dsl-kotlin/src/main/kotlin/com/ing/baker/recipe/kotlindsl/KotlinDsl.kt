@@ -218,7 +218,7 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
             eventTransformations.associate { it.from.toEvent() to EventOutputTransformer(it.to, it.ingredientRenames) }
 
         return if (interactionClass.interactionFunction().hasFiresEventAnnotation()) {
-            Interaction(
+            Interaction.of(
                 name,
                 InteractionDescriptor.of(interactionClass.java),
                 requiredEvents,
@@ -234,8 +234,9 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
                 .map { Ingredient(it.name, it.type.javaType) }
                 .toSet()
 
-            Interaction(
+            Interaction.of(
                 name,
+                interactionClass.simpleName,
                 inputIngredients,
                 extractOutputEvents(),
                 requiredEvents,
