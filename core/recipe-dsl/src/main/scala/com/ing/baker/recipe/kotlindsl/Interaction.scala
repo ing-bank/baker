@@ -2,7 +2,7 @@ package com.ing.baker.recipe.kotlindsl
 
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy
-import com.ing.baker.recipe.javadsl.InteractionDescriptor
+import com.ing.baker.recipe.common.InteractionDescriptor
 import com.ing.baker.types.{Converters, Value}
 
 import scala.collection.compat.immutable.ArraySeq

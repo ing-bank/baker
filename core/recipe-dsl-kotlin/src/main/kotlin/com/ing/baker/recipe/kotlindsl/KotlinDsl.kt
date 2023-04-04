@@ -1,11 +1,13 @@
 package com.ing.baker.recipe.kotlindsl
 
+import com.ing.baker.recipe.annotations.FiresEvent
 import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
 import com.ing.baker.recipe.javadsl.InteractionDescriptor
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy
 import scala.Option
 import java.util.*
 import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
 import kotlin.reflect.full.functions
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaType
@@ -215,17 +217,10 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
         val eventTransformationsInput: Map<Event, EventOutputTransformer> =
             eventTransformations.associate { it.from.toEvent() to EventOutputTransformer(it.to, it.ingredientRenames) }
 
-        // For Kotlin interaction classes, input ingredients and output events are determined via reflection.
-        // For Java interaction classes, input ingredients and output events are determined via annotations.
-        return if (interactionClass.isKotlinClass()) {
-            val inputIngredients = interactionClass.interactionFunction().parameters.drop(1)
-                .map { Ingredient(it.name, it.type.javaType) }
-                .toSet()
-
+        return if (interactionClass.interactionFunction().hasFiresEventAnnotation()) {
             Interaction(
                 name,
-                inputIngredients,
-                extractOutputEvents(),
+                InteractionDescriptor.of(interactionClass.java),
                 requiredEvents,
                 requiredOneOfEvents,
                 preDefinedIngredients,
@@ -235,9 +230,14 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
                 Optional.ofNullable(failureStrategy?.build())
             )
         } else {
+            val inputIngredients = interactionClass.interactionFunction().parameters.drop(1)
+                .map { Ingredient(it.name, it.type.javaType) }
+                .toSet()
+
             Interaction(
                 name,
-                InteractionDescriptor.of(interactionClass.java),
+                inputIngredients,
+                extractOutputEvents(),
                 requiredEvents,
                 requiredOneOfEvents,
                 preDefinedIngredients,
@@ -417,5 +417,4 @@ private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
     )
 }
 
-// The Metadata annotation is present on any class file produced by the Kotlin compiler.
-private fun KClass<*>.isKotlinClass() = java.declaredAnnotations.any { it.annotationClass == Metadata::class }
+private fun KFunction<*>.hasFiresEventAnnotation() = annotations.any { it.annotationClass == FiresEvent::class }

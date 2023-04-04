@@ -1,5 +1,7 @@
 package com.ing.baker.recipe.kotlindsl
 
+import com.ing.baker.recipe.annotations.FiresEvent
+import com.ing.baker.recipe.annotations.RequiresIngredient
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
 import com.ing.baker.recipe.javadsl.Interaction
@@ -273,9 +275,10 @@ class KotlinDslTest {
     }
 
     @Test
-    fun `create a recipe with an interaction that's writting in Java`() {
-        val recipe = recipe("recipe with Java interactions") {
+    fun `create a recipe with interactions that use annotations`() {
+        val recipe = recipe("recipe with interactions that use annotations") {
             interaction<JavaInteraction>()
+            interaction<KotlinInteractionWithAnnotations>()
         }
 
         with(recipe.interactions().toList().apply(0)) {
@@ -295,6 +298,26 @@ class KotlinDslTest {
                 assertEquals("OrderHadUnavailableItems", name())
                 assertEquals(1, providedIngredients().size())
                 assertEquals("unavailableItems", providedIngredients().toList().apply(0).name())
+            }
+        }
+
+        with(recipe.interactions().toList().apply(1)) {
+            assertEquals("KotlinInteractionWithAnnotations", name())
+
+            assertEquals(1, inputIngredients().size())
+            assertEquals(inputIngredients().toList().apply(0).name(), "id")
+
+            assertEquals(2, output().size())
+            with(output().toList().apply(0)) {
+                assertEquals("Person", name())
+                assertEquals(2, providedIngredients().size())
+                assertEquals("name", providedIngredients().toList().apply(0).name())
+                assertEquals("age", providedIngredients().toList().apply(1).name())
+            }
+            with(output().toList().apply(1)) {
+                assertEquals("Error", name())
+                assertEquals(1, providedIngredients().size())
+                assertEquals("reason", providedIngredients().toList().apply(0).name())
             }
         }
     }
@@ -345,7 +368,17 @@ class KotlinDslTest {
 
             fun apply(items: List<Ingredients.Item>): ReserveItemsOutcome
         }
+    }
 
+    interface KotlinInteractionWithAnnotations : Interaction {
+        interface Outcome
+        data class Person(val name: String, val age: Int): Outcome
+        data class Error(val reason: String): Outcome
+
+        @FiresEvent(oneOf = [Person::class, Error::class])
+        fun apply(
+            @RequiresIngredient("id") id: String,
+        ): Outcome
     }
 
     private fun <T> Seq<T>.get(index: Int): T = apply(index)
