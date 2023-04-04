@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
 import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props, Terminated}
-import akka.testkit.TestDuration
+import akka.testkit.{TestDuration, TestProbe}
 import akka.util.Timeout
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.AkkaTestBase
@@ -61,14 +61,15 @@ object ProcessInstanceSpec {
   def processInstanceProps[S, E](
                                   topology: PetriNet[Place, Transition],
                                   runtime: ProcessInstanceRuntime[Place, Transition, S, E],
-                                  settings: Settings): Props =
-
+                                  settings: Settings): Props = {
     Props(new ProcessInstance[Place, Transition, S, E](
       "test",
       topology,
       settings,
-      runtime)
+      runtime,
+      null)
     )
+  }
 
   def createPetriNetActor(props: Props, name: String)(implicit system: ActorSystem): ActorRef = {
     system.actorOf(props, name)
@@ -641,6 +642,22 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
           { case TransitionFired(_, 3, _, _, _, _, _) => }
         )
       }
+    }
+    "Reject DelayedTransitionFired after not receiving a TransitionDelayed" in new TestSequenceNet {
+
+      override val sequence = Seq(
+        transition() { _ => Added(1) })
+
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+
+      actor ! Initialize(initialMarking, Set.empty)
+      expectMsgClass(classOf[Initialized])
+
+      val receiver = TestProbe()
+
+      actor.tell(DelayedTransitionFired(jobId = 1, transitionId = 1, "EventToFire"), receiver.testActor)
+
+      receiver.expectNoMessage()
     }
   }
 }

@@ -7,6 +7,7 @@ import akka.util.Timeout
 import com.ing.baker.il.petrinet.{EventTransition, Place, RecipePetriNet, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
 import com.ing.baker.petrinet.api.{Marking, PetriNet}
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.FireDelayedTransition
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.CheckForProcessesToBeDeleted
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.NotifyWhenReceived
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
@@ -320,6 +321,34 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       petriNetActorProbe.expectNoMessage(noMsgExpectTimeout)
 
       expectMsg(FireSensoryEventRejection.ReceivePeriodExpired(recipeInstanceId))
+    }
+
+    "Forward the DelayedTransitionFired command when a FireDelayedTransition is received" in {
+      val receivePeriodTimeout = 1000 milliseconds
+      val petriNetActorProbe = TestProbe("petrinet-probe")
+      val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
+      val eventType = EventDescriptor("Event", Seq.empty)
+      val transitions: Set[Transition] = Set(EventTransition(eventType, true, None))
+      when(petrinetMock.transitions).thenReturn(transitions)
+
+      val recipeManager = mock[RecipeManager]
+      val recipe = CompiledRecipe("name", recipeId, petrinetMock, Marking.empty, Seq.empty,
+        Some(receivePeriodTimeout), Option.empty)
+      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0L))))
+
+      val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
+
+      val recipeInstanceId = UUID.randomUUID().toString
+      val jobId: Long = 1
+      val transitionId: Long = 2
+      val eventToFire = "EventToFire"
+
+      actorIndex ! CreateProcess(recipeId, recipeInstanceId)
+      petriNetActorProbe.expectMsgAllClassOf(classOf[Initialize])
+
+      val receiverProbe = TestProbe()
+      actorIndex ! FireDelayedTransition(recipeInstanceId, jobId, transitionId, eventToFire, receiverProbe.testActor)
+      petriNetActorProbe.expectMsg(DelayedTransitionFired(jobId, transitionId, eventToFire))
     }
   }
 
