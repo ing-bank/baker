@@ -1,13 +1,9 @@
 package com.ing.baker.recipe.common
 
-import com.ing.baker.recipe.common
-import com.ing.baker.recipe.scaladsl.Interaction
-
-
 trait CheckPointEvent {
 
   /**
-   * name of the result event
+   * name of the checkpoint event
    */
   val name: String
 

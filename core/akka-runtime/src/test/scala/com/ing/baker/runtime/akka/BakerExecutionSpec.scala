@@ -1451,7 +1451,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       }
     }
 
-    "should fire result-event" in {
+    "fire checkpoint-event" in {
 
         val recipe =
           Recipe("CheckpointEvent")

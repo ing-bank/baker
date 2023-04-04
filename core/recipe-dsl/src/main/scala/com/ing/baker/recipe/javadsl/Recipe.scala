@@ -59,7 +59,7 @@ case class Recipe(
     copy(interactions = interactions ++ newInteractions)
 
   /**
-   * Adds the result event to the recipe
+   * Adds the checkpoint event to the recipe
    *
    * @param newEvent
    * @return

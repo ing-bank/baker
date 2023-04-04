@@ -187,7 +187,7 @@ object RecipeCompiler {
 
     val precompileErrors: Seq[String] = Assertions.preCompileAssertions(recipe)
 
-    // Extend the interactions with the result event interactions
+    // Extend the interactions with the checkpoint event interactions
     val allInteractions = recipe.interactions ++ recipe.checkpointEvents.map(convertCheckpointEventToInteraction)
 
     //All ingredient names provided by sensory events or by interactions
