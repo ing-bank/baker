@@ -35,7 +35,7 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
     case FireSensoryEventReaction.NotifyOnEvent(waitForRetries0, _) => waitForRetries0
   }
 
-  def notifyReceive(recipe: CompiledRecipe): Unit = {
+  def notifyReceive(recipe: CompiledRecipe, firstEvent: TransitionFired): Unit = {
     LogAndSendEvent.eventReceived(
       EventReceived(
         System.currentTimeMillis(),
@@ -47,13 +47,15 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
 
     command.reaction match {
       case FireSensoryEventReaction.NotifyWhenCompleted(_) =>
-        ()
+        context.become(streaming(firstEvent.newJobsIds - firstEvent.jobId, List(firstEvent)))
       case FireSensoryEventReaction.NotifyOnEvent(_, _) =>
-        ()
+        context.become(streaming(firstEvent.newJobsIds - firstEvent.jobId, List(firstEvent)))
       case FireSensoryEventReaction.NotifyWhenReceived =>
         receiver ! ProcessEventReceivedResponse(SensoryEventStatus.Received)
+        stopActor()
       case FireSensoryEventReaction.NotifyBoth(_, _) =>
         receiver ! ProcessEventReceivedResponse(SensoryEventStatus.Received)
+        context.become(streaming(firstEvent.newJobsIds - firstEvent.jobId, List(firstEvent)))
     }
   }
 
@@ -141,11 +143,9 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
   def waitForFirstEvent(recipe: CompiledRecipe): Receive =
     handleRejections orElse {
       case firstEvent: TransitionFired =>
-        notifyReceive(recipe)
-        context.become(streaming(firstEvent.newJobsIds - firstEvent.jobId, List(firstEvent)))
+        notifyReceive(recipe, firstEvent)
       case ReceiveTimeout =>
         log.debug("Timeout on SensoryEventResponseHandler when expecting the first transition fired event")
-        stopActor()
       case message =>
         log.debug(s"Unexpected message $message on SensoryEventResponseHandler when expecting the first transition fired event")
         stopActor()
