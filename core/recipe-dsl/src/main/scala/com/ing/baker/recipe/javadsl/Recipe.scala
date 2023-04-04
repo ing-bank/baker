@@ -12,7 +12,7 @@ case class Recipe(
                    override val name: String,
                    override val interactions: Seq[common.InteractionDescriptor],
                    override val sensoryEvents: Set[common.Event],
-                   override val resultEvents: Set[common.ResultEvent],
+                   override val checkpointEvents: Set[common.CheckPointEvent],
                    override val defaultFailureStrategy: common.InteractionFailureStrategy,
                    override val eventReceivePeriod: Option[FiniteDuration],
                    override val retentionPeriod: Option[FiniteDuration]) extends common.Recipe {
@@ -64,8 +64,8 @@ case class Recipe(
    * @param newEvent
    * @return
    */
-  def withResultEvent(resultEvent: common.ResultEvent): Recipe =
-    copy(resultEvents = resultEvents + resultEvent)
+  def withCheckpointEvent(checkpointEvent: common.CheckPointEvent): Recipe =
+    copy(checkpointEvents = checkpointEvents + checkpointEvent)
 
   /**
     * Adds the sensory event to the recipe

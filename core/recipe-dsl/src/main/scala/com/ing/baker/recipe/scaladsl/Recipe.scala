@@ -21,7 +21,7 @@ object Recipe {
 case class Recipe private(override val name: String,
                           override val interactions: Seq[common.InteractionDescriptor],
                           override val sensoryEvents: Set[common.Event],
-                          override val resultEvents: Set[common.ResultEvent],
+                          override val checkpointEvents: Set[common.CheckPointEvent],
                           override val defaultFailureStrategy: InteractionFailureStrategy,
                           override val eventReceivePeriod: Option[FiniteDuration],
                           override val retentionPeriod: Option[FiniteDuration])
@@ -34,7 +34,7 @@ case class Recipe private(override val name: String,
   def withSensoryEvent(newEvent: common.Event): Recipe = copy(sensoryEvents = sensoryEvents + newEvent)
 
   def withSensoryEvents(newEvents: common.Event*): Recipe = copy(sensoryEvents = sensoryEvents ++ newEvents)
-  def withResultEvent(resultEvent: common.ResultEvent*): Recipe = copy(resultEvents = resultEvents ++ resultEvent)
+  def withCheckpointEvent(checkpointEvent: common.CheckPointEvent*): Recipe = copy(checkpointEvents = checkpointEvents ++ checkpointEvent)
 
   def withEventReceivePeriod(duration: FiniteDuration): Recipe = copy(eventReceivePeriod = Some(duration))
 

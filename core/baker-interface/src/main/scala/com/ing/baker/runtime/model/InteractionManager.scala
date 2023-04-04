@@ -4,7 +4,7 @@ import cats.MonadError
 import cats.effect.Sync
 import cats.implicits._
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.il.{EventDescriptor, IngredientDescriptor, resultEventInteractionPrefix}
+import com.ing.baker.il.{EventDescriptor, IngredientDescriptor, checkpointEventInteractionPrefix}
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.{FatalInteractionException, empty}
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
@@ -137,7 +137,7 @@ trait InteractionManager[F[_]] {
   def incompatibilities(transition: InteractionTransition)(implicit sync: Sync[F]): F[Seq[InteractionIncompatible]] = for {
     all <- listAll
   } yield {
-    if(transition.originalInteractionName.startsWith(resultEventInteractionPrefix))
+    if(transition.originalInteractionName.startsWith(checkpointEventInteractionPrefix))
       Seq.empty
     else if (all.exists(compatible(transition, _)))
       Seq.empty

@@ -5,7 +5,7 @@ import com.ing.baker.il.CompiledRecipe.{OldRecipeIdVariant, Scala212CompatibleJa
 import com.ing.baker.il.RecipeValidations.postCompileValidations
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
-import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings, resultEventInteractionPrefix}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings, checkpointEventInteractionPrefix}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common._
 import com.ing.baker.recipe.scaladsl.Interaction
@@ -177,9 +177,9 @@ object RecipeCompiler {
   def compileRecipe(recipe: Recipe,
                     validationSettings: ValidationSettings): CompiledRecipe = {
 
-    def convertResultEventToInteraction(e: ResultEvent) =
+    def convertCheckpointEventToInteraction(e: CheckPointEvent) =
       Interaction(
-        name = s"${resultEventInteractionPrefix}${e.name}",
+        name = s"${checkpointEventInteractionPrefix}${e.name}",
         inputIngredients = Seq.empty,
         output = Seq.empty,
         requiredEvents = e.requiredEvents,
@@ -188,7 +188,7 @@ object RecipeCompiler {
     val precompileErrors: Seq[String] = Assertions.preCompileAssertions(recipe)
 
     // Extend the interactions with the result event interactions
-    val allInteractions = recipe.interactions ++ recipe.resultEvents.map(convertResultEventToInteraction)
+    val allInteractions = recipe.interactions ++ recipe.checkpointEvents.map(convertCheckpointEventToInteraction)
 
     //All ingredient names provided by sensory events or by interactions
     val allIngredientNames: Set[String] =

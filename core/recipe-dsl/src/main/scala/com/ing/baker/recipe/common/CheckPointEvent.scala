@@ -4,7 +4,7 @@ import com.ing.baker.recipe.common
 import com.ing.baker.recipe.scaladsl.Interaction
 
 
-trait ResultEvent {
+trait CheckPointEvent {
 
   /**
    * name of the result event

@@ -13,7 +13,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe, ResultEvent}
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe, CheckPointEvent}
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetaDataName
@@ -1454,10 +1454,10 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
     "should fire result-event" in {
 
         val recipe =
-          Recipe("ResultEvent")
+          Recipe("CheckpointEvent")
             .withInteraction(interactionOne)
             .withSensoryEvent(initialEvent)
-            .withResultEvent(ResultEvent("Success")
+            .withCheckpointEvent(CheckPointEvent("Success")
               .withRequiredEvent(initialEvent))
 
         for {

@@ -7,11 +7,11 @@ import scala.annotation.{nowarn, varargs}
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Seq
 
-case class ResultEvent private(
+case class CheckPointEvent private(
                                 override val name: String = "",
                                 override val requiredEvents: Set[String] = Set.empty,
                                 override val requiredOneOfEvents: Set[Set[String]] = Set.empty)
-  extends common.ResultEvent {
+  extends common.CheckPointEvent {
 
   // initialize with defaults
   def this(name: String) = this(name = name, requiredEvents = Set.empty, requiredOneOfEvents = Set.empty)
@@ -22,7 +22,7 @@ case class ResultEvent private(
    * @param newRequiredEvent the class of the events that needs to have been fired
    * @return
    */
-  def withRequiredEvent(newRequiredEvent: Class[_]): ResultEvent =
+  def withRequiredEvent(newRequiredEvent: Class[_]): CheckPointEvent =
     this.copy(requiredEvents = requiredEvents + newRequiredEvent.getSimpleName)
 
   /**
@@ -33,7 +33,7 @@ case class ResultEvent private(
    */
   @SafeVarargs
   @varargs
-  def withRequiredEvents(newRequiredEvents: Class[_]*): ResultEvent =
+  def withRequiredEvents(newRequiredEvents: Class[_]*): CheckPointEvent =
     this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.map(_.getSimpleName))
 
   /**
@@ -43,7 +43,7 @@ case class ResultEvent private(
    * @return
    */
   @nowarn
-  def withRequiredEvents(newRequiredEvents: java.util.Set[Class[_]]): ResultEvent =
+  def withRequiredEvents(newRequiredEvents: java.util.Set[Class[_]]): CheckPointEvent =
     this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.asScala.map(_.getSimpleName))
 
 
@@ -53,7 +53,7 @@ case class ResultEvent private(
    * @param newRequiredEventName the name of the events that needs to have been fired
    * @return
    */
-  def withRequiredEventFromName(newRequiredEventName: String): ResultEvent =
+  def withRequiredEventFromName(newRequiredEventName: String): CheckPointEvent =
     this.copy(requiredEvents = requiredEvents + newRequiredEventName)
 
   /**
@@ -64,7 +64,7 @@ case class ResultEvent private(
    */
   @SafeVarargs
   @varargs
-  def withRequiredEventsFromName(newRequiredEventNames: String*): ResultEvent =
+  def withRequiredEventsFromName(newRequiredEventNames: String*): CheckPointEvent =
     this.copy(requiredEvents = requiredEvents ++ newRequiredEventNames)
 
   /**
@@ -74,7 +74,7 @@ case class ResultEvent private(
    * @return
    */
   @nowarn
-  def withRequiredEventsFromName(newRequiredEvents: java.util.Set[String]): ResultEvent =
+  def withRequiredEventsFromName(newRequiredEvents: java.util.Set[String]): CheckPointEvent =
     this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.asScala)
 
   /**
@@ -85,7 +85,7 @@ case class ResultEvent private(
    */
   @SafeVarargs
   @varargs
-  def withRequiredOneOfEvents(newRequiredOneOfEvents: Class[_]*): ResultEvent = {
+  def withRequiredOneOfEvents(newRequiredOneOfEvents: Class[_]*): CheckPointEvent = {
     if (newRequiredOneOfEvents.nonEmpty && newRequiredOneOfEvents.size < 2)
       throw new IllegalArgumentException("At least 2 events should be provided as 'requiredOneOfEvents'")
 
@@ -102,7 +102,7 @@ case class ResultEvent private(
    */
   @SafeVarargs
   @varargs
-  def withRequiredOneOfEventsFromName(newRequiredOneOfEvents: String*): ResultEvent = {
+  def withRequiredOneOfEventsFromName(newRequiredOneOfEvents: String*): CheckPointEvent = {
     if (newRequiredOneOfEvents.nonEmpty && newRequiredOneOfEvents.size < 2)
       throw new IllegalArgumentException("At least 2 events should be provided as 'requiredOneOfEvents'")
     val newRequired: Set[Set[String]] = requiredOneOfEvents + newRequiredOneOfEvents.toSet

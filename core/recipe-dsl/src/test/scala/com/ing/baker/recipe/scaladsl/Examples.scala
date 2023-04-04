@@ -183,7 +183,7 @@ object Examples {
         )
   }
 
-  object resultEventExample {
+  object checkpointEventExample {
 
     //Ingredients
     val tomato = Ingredient[String]("tomato")
@@ -193,8 +193,8 @@ object Examples {
     val ingredientsProvided = Event("IngredientsProvided", tomato, cheese)
     val bakePizzaSuccessful = Event("CreateCustomerSuccessful")
 
-    //ResultEvents
-    val successResult = ResultEvent("success")
+    //CheckpointEventEvents
+    val successResult = CheckPointEvent("success")
       .withRequiredEvent(bakePizzaSuccessful)
 
     //Interactions
@@ -205,14 +205,14 @@ object Examples {
 
     //Recipe
     val pizzaRecipe: Recipe =
-      Recipe("resultEvent")
+      Recipe("checkpointEventEvent")
         .withInteractions(
           bakePizza
         )
         .withSensoryEvents(
           ingredientsProvided,
         )
-        .withResultEvent(
+        .withCheckpointEvent(
           successResult
         )
   }

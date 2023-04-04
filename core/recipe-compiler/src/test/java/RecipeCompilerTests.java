@@ -7,6 +7,7 @@ import com.ing.baker.recipe.javadsl.InteractionDescriptor;
 import com.ing.baker.il.petrinet.InteractionTransition;
 import com.ing.baker.recipe.javadsl.Recipe;
 
+import com.ing.baker.recipe.javadsl.CheckPointEvent;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -108,12 +109,12 @@ public class RecipeCompilerTests {
     }
 
     @Test
-    public void shouldAddInteractionsForResultEvents() {
+    public void shouldAddInteractionsForCheckpointEvents() {
 
         Recipe recipe = new Recipe("recipe1")
                 .withSensoryEvents(EventB.class, EventC.class, EventD.class)
                 .withSensoryEventsNoFiringLimit(EventA.class)
-                .withResultEvent(new ResultEvent("Success")
+                .withCheckpointEvent(new CheckPointEvent("Success")
                         .withRequiredEvents(EventB.class, EventC.class));
 
 
@@ -125,7 +126,7 @@ public class RecipeCompilerTests {
                 .map(i -> ((InteractionTransition) i).interactionName())
                 .collect(Collectors.toUnmodifiableList());
 
-        Assertions.assertEquals(java.util.List.of("$ResultEventInteraction$Success"), actual);
+        Assertions.assertEquals(java.util.List.of("$CheckpointEventInteraction$Success"), actual);
 
     }
 

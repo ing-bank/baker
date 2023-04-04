@@ -51,6 +51,11 @@ class RecipeBuilder(private val name: String) {
      */
     var retentionPeriod: Duration? = null
 
+    /**
+     * Collects events and fires and new event when conditions are met.
+     */
+    var checkpointEvents: MutableSet<CheckPointEvent> = mutableSetOf()
+
     @PublishedApi
     internal val interactions: MutableSet<Interaction> = mutableSetOf()
 
@@ -61,6 +66,13 @@ class RecipeBuilder(private val name: String) {
      */
     fun sensoryEvents(init: SensoryEventsBuilder.() -> Unit) {
         sensoryEvents.addAll(SensoryEventsBuilder().apply(init).build())
+    }
+
+    /**
+     * Registers checkpoint events to the recipe via the [CheckpointEventBuilder] receiver.
+     */
+    fun checkpointEvents(eventName: String, init: CheckpointEventBuilder.() -> Unit) {
+        checkpointEvents.add(CheckpointEventBuilder().apply(init).build(eventName))
     }
 
     /**
@@ -105,7 +117,8 @@ class RecipeBuilder(private val name: String) {
         sensoryEvents.toList(),
         defaultFailureStrategy.build(),
         Optional.ofNullable(eventReceivePeriod?.toJavaDuration()),
-        Optional.ofNullable(retentionPeriod?.toJavaDuration())
+        Optional.ofNullable(retentionPeriod?.toJavaDuration()),
+        checkpointEvents
     )
 }
 
@@ -352,6 +365,34 @@ class SensoryEventsBuilder {
     }
 
     internal fun build() = events.map { it.key.toEvent(it.value) }
+}
+
+@RecipeDslMarker
+class CheckpointEventBuilder {
+
+    private val requiredEvents: MutableSet<String> = mutableSetOf()
+    private val requiredOneOfEvents: MutableSet<Set<String>> = mutableSetOf()
+
+    /**
+     * All events specified in this block have to be available for the interaction to be executed (AND precondition).
+     *
+     * @see requiredOneOfEvents
+     */
+    fun requiredEvents(init: InteractionRequiredEventsBuilder.() -> Unit) {
+        requiredEvents.addAll(InteractionRequiredEventsBuilder().apply(init).build())
+    }
+
+    /**
+     * One of the events specified in this block have to be available for the interaction to be
+     * executed (OR precondition).
+     *
+     * @see requiredEvents
+     */
+    fun requiredOneOfEvents(init: InteractionRequiredOneOfEventsBuilder.() -> Unit) {
+        requiredOneOfEvents.add(InteractionRequiredOneOfEventsBuilder().apply(init).build())
+    }
+
+    internal fun build(eventName: String) = CheckPointEvent(eventName, requiredEvents, requiredOneOfEvents)
 }
 
 sealed interface InteractionFailureStrategyBuilder {

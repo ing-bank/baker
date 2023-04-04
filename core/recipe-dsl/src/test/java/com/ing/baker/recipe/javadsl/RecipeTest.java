@@ -142,10 +142,10 @@ public class RecipeTest {
     }
 
     @Test
-    public void shouldSetupRecipeWithResultEvents() {
+    public void shouldSetupRecipeWithCheckpointEvents() {
         Recipe recipe = new Recipe("OneInteractionRecipe")
                 .withInteraction(of(SimpleInteraction.class))
-                .withResultEvent(new ResultEvent("Success")
+                .withCheckpointEvent(new CheckPointEvent("Success")
                         .withRequiredEvent(SimpleInteraction.InitialIngredientEvent.class));
         assertEquals(recipe.getEvents().size(), 0);
         assertEquals(recipe.getInteractions().size(), 1);

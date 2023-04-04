@@ -24,9 +24,9 @@ trait Recipe {
   val sensoryEvents: Set[Event]
 
   /**
-   * The set of result events.
+   * The set of checkpoint events.
    */
-  val resultEvents: Set[ResultEvent]
+  val checkpointEvents: Set[CheckPointEvent]
 
   /**
     * The default interaction failure strategy.

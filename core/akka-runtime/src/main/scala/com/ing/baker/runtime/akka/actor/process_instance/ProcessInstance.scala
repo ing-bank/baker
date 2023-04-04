@@ -6,7 +6,7 @@ import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import cats.effect.IO
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
-import com.ing.baker.il.resultEventInteractionPrefix
+import com.ing.baker.il.checkpointEventInteractionPrefix
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstance._
@@ -477,16 +477,15 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
   def executeJob(job: Job[P, T, S], originalSender: ActorRef): Unit = {
     log.fireTransition(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
     job.transition match {
-      case i :EventTransition =>
-        println(i)
+      case _: EventTransition =>
         BakerLogging.default.firingEvent(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
-        executeJobOriginal(job, originalSender)
+        executeJobViaExecutor(job, originalSender)
       //TODO rewrite if statement, this is a very naive implementation, the interface could be wrong!
-      case i: InteractionTransition if i.interactionName == "TimerInteraction"  =>
-        returnFinishedInteraction(job, originalSender, "TimeWaited")
-      case i: InteractionTransition if i.interactionName.startsWith(resultEventInteractionPrefix) =>
-        returnFinishedInteraction(job, originalSender, i.interactionName.stripPrefix(resultEventInteractionPrefix))
-      case _ => executeJobOriginal(job, originalSender)
+      case i: InteractionTransition if isDelayedInteraction(i) =>
+        startDelayedTransition(i, job, originalSender)
+      case i: InteractionTransition if isCheckpointEventInteraction(i) =>
+        jobToFinishedInteraction(job, i.interactionName.stripPrefix(checkpointEventInteractionPrefix))
+      case _ => executeJobViaExecutor(job, originalSender)
     }
   }
 
@@ -523,6 +522,10 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
   // This only recognises the TimerInteractions as delayed interaction
   private def isDelayedInteraction(interactionTransition: InteractionTransition): Boolean = {
     interactionTransition.originalInteractionName == "TimerInteraction"
+  }
+
+  private def isCheckpointEventInteraction(interactionTransition: InteractionTransition): Boolean = {
+    interactionTransition.interactionName.startsWith(checkpointEventInteractionPrefix)
   }
 
   def startDelayedTransition(interactionTransition: InteractionTransition, job: Job[P, T, S], originalSender: ActorRef): Unit = {
