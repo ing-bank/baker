@@ -142,7 +142,9 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withInteraction(interactionOne)
         .withSensoryEvent(initialEvent)
           .withCheckpointEvent(CheckPointEvent("Success")
-          .withRequiredEvents(initialEvent))
+          .withRequiredEvents(initialEvent)
+          .withRequiredEvents(interactionOneSuccessful))
+
 
       val compiled = RecipeCompiler.compileRecipe(recipe)
 

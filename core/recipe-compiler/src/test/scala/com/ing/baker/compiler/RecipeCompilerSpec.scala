@@ -342,7 +342,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           .withCheckpointEvent(CheckPointEvent("Success")
             .withRequiredEvent(initialEvent))
         val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
-        compiledRecipe.recipeId shouldBe "753bd775b8582b22"
+        compiledRecipe.recipeId shouldBe "469441173f91869a"
         compiledRecipe.petriNet.transitions.count { case i: InteractionTransition => i.interactionName.contains(s"${checkpointEventInteractionPrefix}Success") case _ => false } shouldBe 1
       }
     }
