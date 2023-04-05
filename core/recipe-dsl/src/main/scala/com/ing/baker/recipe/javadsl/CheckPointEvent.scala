@@ -17,7 +17,7 @@ case class CheckPointEvent private(
   def this(name: String) = this(name = name, requiredEvents = Set.empty, requiredOneOfEvents = Set.empty)
 
   /**
-   * This sets a requirement for this checkout-event that a specific event needs to have been fired before it can execute.
+   * This sets a requirement for this checkpoint-event that a specific event needs to have been fired before it can execute.
    *
    * @param newRequiredEvent the class of the events that needs to have been fired
    * @return
@@ -26,7 +26,7 @@ case class CheckPointEvent private(
     this.copy(requiredEvents = requiredEvents + newRequiredEvent.getSimpleName)
 
   /**
-   * This sets a requirement for this checkout-event that some specific events needs to have been fired before it can execute.
+   * This sets a requirement for this checkpoint-event that some specific events needs to have been fired before it can execute.
    *
    * @param newRequiredEvents the classes of the events.
    * @return
@@ -37,7 +37,7 @@ case class CheckPointEvent private(
     this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.map(_.getSimpleName))
 
   /**
-   * This sets a requirement for this checkout-event that some specific events needs to have been fired before it can execute.
+   * This sets a requirement for this checkpoint-event that some specific events needs to have been fired before it can execute.
    *
    * @param newRequiredEvents the classes of the event.
    * @return
@@ -48,7 +48,7 @@ case class CheckPointEvent private(
 
 
   /**
-   * This sets a requirement for this checkout-event that a specific event needs to have been fired before it can execute.
+   * This sets a requirement for this checkpoint-event that a specific event needs to have been fired before it can execute.
    *
    * @param newRequiredEventName the name of the events that needs to have been fired
    * @return
@@ -57,7 +57,7 @@ case class CheckPointEvent private(
     this.copy(requiredEvents = requiredEvents + newRequiredEventName)
 
   /**
-   * This sets a requirement for this checkout-event that some specific events needs to have been fired before it can execute.
+   * This sets a requirement for this checkpoint-event that some specific events needs to have been fired before it can execute.
    *
    * @param newRequiredEventNames the names of the events.
    * @return
@@ -68,7 +68,7 @@ case class CheckPointEvent private(
     this.copy(requiredEvents = requiredEvents ++ newRequiredEventNames)
 
   /**
-   * This sets a requirement for this checkout-event that some specific events needs to have been fired before it can execute.
+   * This sets a requirement for this checkpoint-event that some specific events needs to have been fired before it can execute.
    *
    * @param newRequiredEvents the names of the events.
    * @return
@@ -78,7 +78,7 @@ case class CheckPointEvent private(
     this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.asScala)
 
   /**
-   * This sets a requirement for this checkout-event that one of the given events needs to have been fired before it can execute.
+   * This sets a requirement for this checkpoint-event that one of the given events needs to have been fired before it can execute.
    *
    * @param newRequiredOneOfEvents the classes of the events.
    * @return
@@ -95,7 +95,7 @@ case class CheckPointEvent private(
   }
 
   /**
-   * This sets a requirement for this checkout-event that one of the given events needs to have been fired before it can execute.
+   * This sets a requirement for this checkpoint-event that one of the given events needs to have been fired before it can execute.
    *
    * @param newRequiredOneOfEvents the names of the events.
    * @return
