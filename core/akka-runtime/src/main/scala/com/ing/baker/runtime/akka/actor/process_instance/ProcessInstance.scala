@@ -6,6 +6,7 @@ import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import cats.effect.IO
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
+import com.ing.baker.il.checkpointEventInteractionPrefix
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstance._
@@ -476,11 +477,15 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
   def executeJob(job: Job[P, T, S], originalSender: ActorRef): Unit = {
     log.fireTransition(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
     job.transition match {
-      case _ :EventTransition =>
+      case _: EventTransition =>
         BakerLogging.default.firingEvent(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
         executeJobViaExecutor(job, originalSender)
-      case i: InteractionTransition if isDelayedInteraction(i)  =>
+      //TODO rewrite if statement, this is a very naive implementation, the interface could be wrong!
+      case i: InteractionTransition if isDelayedInteraction(i) =>
         startDelayedTransition(i, job, originalSender)
+      case i: InteractionTransition if isCheckpointEventInteraction(i) =>
+        val event = jobToFinishedInteraction(job, i.eventsToFire.head.name)
+        self.tell(event, originalSender)
       case _ => executeJobViaExecutor(job, originalSender)
     }
   }
@@ -518,6 +523,10 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
   // This only recognises the TimerInteractions as delayed interaction
   private def isDelayedInteraction(interactionTransition: InteractionTransition): Boolean = {
     interactionTransition.originalInteractionName == "TimerInteraction"
+  }
+
+  private def isCheckpointEventInteraction(interactionTransition: InteractionTransition): Boolean = {
+    interactionTransition.interactionName.startsWith(checkpointEventInteractionPrefix)
   }
 
   def startDelayedTransition(interactionTransition: InteractionTransition, job: Job[P, T, S], originalSender: ActorRef): Unit = {

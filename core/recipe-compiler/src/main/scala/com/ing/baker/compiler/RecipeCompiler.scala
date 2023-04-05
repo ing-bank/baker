@@ -5,9 +5,10 @@ import com.ing.baker.il.CompiledRecipe.{OldRecipeIdVariant, Scala212CompatibleJa
 import com.ing.baker.il.RecipeValidations.postCompileValidations
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
-import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings, checkpointEventInteractionPrefix}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common._
+import com.ing.baker.recipe.scaladsl.{Interaction, Event}
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
@@ -176,12 +177,23 @@ object RecipeCompiler {
   def compileRecipe(recipe: Recipe,
                     validationSettings: ValidationSettings): CompiledRecipe = {
 
+    def convertCheckpointEventToInteraction(e: CheckPointEvent) =
+      Interaction(
+        name = s"${checkpointEventInteractionPrefix}${e.name}",
+        inputIngredients = Seq.empty,
+        output = Seq(Event(e.name)),
+        requiredEvents = e.requiredEvents,
+        requiredOneOfEvents = e.requiredOneOfEvents)
+
     val precompileErrors: Seq[String] = Assertions.preCompileAssertions(recipe)
+
+    // Extend the interactions with the checkpoint event interactions
+    val allInteractions = recipe.interactions ++ recipe.checkpointEvents.map(convertCheckpointEventToInteraction)
 
     //All ingredient names provided by sensory events or by interactions
     val allIngredientNames: Set[String] =
       recipe.sensoryEvents.flatMap(e => e.providedIngredients.map(i => i.name)) ++
-        recipe.interactions.flatMap(i => i.output.flatMap { e =>
+        allInteractions.flatMap(i => i.output.flatMap { e =>
             // check if the event was renamed (check if there is a transformer for this event)
             i.eventOutputTransformers.get(e) match {
               case Some(transformer) => e.providedIngredients.map(ingredient => transformer.ingredientRenames.getOrElse(ingredient.name, ingredient.name))
@@ -190,11 +202,11 @@ object RecipeCompiler {
           }
         )
 
-    val actionDescriptors: Seq[InteractionDescriptor] = recipe.interactions
+    val actionDescriptors: Seq[InteractionDescriptor] = allInteractions
 
     // For inputs for which no matching output cannot be found, we do not want to generate a place.
     // It should be provided at runtime from outside the active petri net (marking)
-    val interactionTransitions = recipe.interactions.map(_.toInteractionTransition(recipe.defaultFailureStrategy, allIngredientNames))
+    val interactionTransitions = allInteractions.map(_.toInteractionTransition(recipe.defaultFailureStrategy, allIngredientNames))
 
     val allInteractionTransitions: Seq[InteractionTransition] = interactionTransitions
 

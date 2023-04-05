@@ -322,6 +322,43 @@ class KotlinDslTest {
         }
     }
 
+
+    @Test
+    fun `create a recipe with checkpoint evenst`() {
+        val recipe = recipe("RecipeWithCheckpointEvent"){
+            checkpointEvent("Success"){
+                requiredEvents {
+                    event<Interactions.MakePayment.PaymentSuccessful>()
+                    event("myEvent")
+                }
+
+                requiredOneOfEvents {
+                    event<Ingredients.PaymentInformation>()
+                    event("SomeEvent")
+                }
+            }
+        }
+
+        with(recipe) {
+            assertEquals("RecipeWithCheckpointEvent", name())
+            assertEquals(Option.empty<FiniteDuration>(), retentionPeriod())
+            assertEquals(Option.empty<FiniteDuration>(), eventReceivePeriod())
+            assertEquals(BlockInteraction::class.java, defaultFailureStrategy().javaClass)
+            assertEquals(1, checkpointEvents().size())
+            assertEquals("Success", checkpointEvents().get(0).name())
+            assertEquals(2, checkpointEvents().get(0).requiredEvents().size())
+            assertEquals("PaymentSuccessful", checkpointEvents().get(0).requiredEvents().get(0))
+            assertEquals("myEvent", checkpointEvents().get(0).requiredEvents().get(1))
+            assertEquals(1, checkpointEvents().get(0).requiredOneOfEvents().size())
+            assertEquals(2, checkpointEvents().get(0).requiredOneOfEvents().get(0).size())
+            assertEquals("PaymentInformation", checkpointEvents().get(0).requiredOneOfEvents().get(0).get(0))
+            assertEquals("SomeEvent", checkpointEvents().get(0).requiredOneOfEvents().get(0).get(1))
+            assertTrue(sensoryEvents().isEmpty)
+            assertTrue(interactions().isEmpty)
+        }
+    }
+
+
     object Events {
         class OrderPlaced(val items: List<Ingredients.Item>)
         class PaymentInformationReceived(val paymentInformation: Ingredients.PaymentInformation)

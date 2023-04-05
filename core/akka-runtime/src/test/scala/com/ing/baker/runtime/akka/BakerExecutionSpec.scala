@@ -13,7 +13,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe, CheckPointEvent}
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetaDataName
@@ -1449,6 +1449,30 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           _ = state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
         } yield succeed
       }
+    }
+
+    "fire checkpoint-event" in {
+
+        val recipe =
+          Recipe("CheckpointEvent")
+            .withInteraction(interactionOne)
+            .withSensoryEvent(initialEvent)
+            .withCheckpointEvent(CheckPointEvent("Success")
+              .withRequiredEvent(initialEvent)
+              .withRequiredEvent(interactionOneSuccessful))
+
+        for {
+          (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+          _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful("Hello")))
+          recipeInstanceId = UUID.randomUUID().toString
+          _ <- baker.bake(recipeId, recipeInstanceId)
+          _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+          _ = verify(testInteractionOneMock).apply(recipeInstanceId, "initialIngredient")
+          state <- baker.getRecipeInstanceState(recipeInstanceId)
+          _ = state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> "Hello")
+          _ = state.eventNames shouldBe Seq("InitialEvent", "InteractionOneSuccessful", "Success")
+        } yield succeed
+
     }
   }
 }

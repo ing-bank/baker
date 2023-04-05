@@ -12,11 +12,12 @@ case class Recipe(
                    override val name: String,
                    override val interactions: Seq[common.InteractionDescriptor],
                    override val sensoryEvents: Set[common.Event],
+                   override val checkpointEvents: Set[common.CheckPointEvent],
                    override val defaultFailureStrategy: common.InteractionFailureStrategy,
                    override val eventReceivePeriod: Option[FiniteDuration],
                    override val retentionPeriod: Option[FiniteDuration]) extends common.Recipe {
 
-  def this(name: String) = this(name, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction(), None, None)
+  def this(name: String) = this(name, Seq.empty, Set.empty, Set.empty, InteractionFailureStrategy.BlockInteraction(), None, None)
 
   @nowarn
   def getInteractions: java.util.List[common.InteractionDescriptor] = interactions.asJava
@@ -56,6 +57,15 @@ case class Recipe(
   @varargs
   def withInteractions(newInteractions: common.InteractionDescriptor*): Recipe =
     copy(interactions = interactions ++ newInteractions)
+
+  /**
+   * Adds the checkpoint event to the recipe
+   *
+   * @param newEvent
+   * @return
+   */
+  def withCheckpointEvent(checkpointEvent: common.CheckPointEvent): Recipe =
+    copy(checkpointEvents = checkpointEvents + checkpointEvent)
 
   /**
     * Adds the sensory event to the recipe
