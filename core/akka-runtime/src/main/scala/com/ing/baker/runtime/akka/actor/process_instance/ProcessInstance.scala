@@ -484,7 +484,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       case i: InteractionTransition if isDelayedInteraction(i) =>
         startDelayedTransition(i, job, originalSender)
       case i: InteractionTransition if isCheckpointEventInteraction(i) =>
-        val event = jobToFinishedInteraction(job, i.interactionName.stripPrefix(checkpointEventInteractionPrefix))
+        val event = jobToFinishedInteraction(job, i.eventsToFire.head.name)
         self.tell(event, originalSender)
       case _ => executeJobViaExecutor(job, originalSender)
     }

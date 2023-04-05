@@ -8,7 +8,7 @@ import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings, checkpointEventInteractionPrefix}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common._
-import com.ing.baker.recipe.scaladsl.Interaction
+import com.ing.baker.recipe.scaladsl.{Interaction, Event}
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
@@ -181,7 +181,7 @@ object RecipeCompiler {
       Interaction(
         name = s"${checkpointEventInteractionPrefix}${e.name}",
         inputIngredients = Seq.empty,
-        output = Seq.empty,
+        output = Seq(Event(e.name)),
         requiredEvents = e.requiredEvents,
         requiredOneOfEvents = e.requiredOneOfEvents)
 

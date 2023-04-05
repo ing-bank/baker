@@ -91,7 +91,7 @@ trait RecipeInstanceManager[F[_]] {
       ingredientNames = currentState.ingredients.keySet
     )
 
-  def fireEventStream(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, Stream[F, EventInstance]] =
+  def fireEventStream(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, Stream[F, EventInstance]] = {
     EitherT(fetch(recipeInstanceId).map {
       case None =>
         Left(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId))
@@ -100,6 +100,7 @@ trait RecipeInstanceManager[F[_]] {
       case Some(RecipeInstanceStatus.Active(recipeInstance)) =>
         Right(recipeInstance)
     }).flatMap(_.fireEventStream(event, correlationId))
+  }
 
   def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[SensoryEventStatus] =
     fireEventStream(recipeInstanceId, event, correlationId)

@@ -40,12 +40,18 @@ trait InteractionManager[F[_]] {
 
   def existsFor(interaction: InteractionTransition)(implicit sync: Sync[F]): F[Boolean] = findFor(interaction).map(_.nonEmpty)
 
-  def execute(interaction: InteractionTransition, input: Seq[IngredientInstance], metadata: Option[Map[String, String]])(implicit sync: Sync[F], effect: MonadError[F, Throwable]): F[Option[EventInstance]] =
-    findFor(interaction)
-      .flatMap {
-        case Some(implementation) => implementation.execute(input, metadata.getOrElse(Map()))
-        case None => effect.raiseError(new FatalInteractionException(s"No implementation available for interaction ${interaction.interactionName}"))
-      }
+  def execute(interaction: InteractionTransition, input: Seq[IngredientInstance], metadata: Option[Map[String, String]])(implicit sync: Sync[F], effect: MonadError[F, Throwable]): F[Option[EventInstance]] = {
+    if(interaction.interactionName.startsWith(checkpointEventInteractionPrefix)){
+      effect.pure(Some(EventInstance(interaction.interactionName.stripPrefix(checkpointEventInteractionPrefix))))
+    }else{
+      findFor(interaction)
+        .flatMap {
+          case Some(implementation) => implementation.execute(input, metadata.getOrElse(Map()))
+          case None => effect.raiseError(new FatalInteractionException(s"No implementation available for interaction ${interaction.interactionName}"))
+        }
+    }
+
+  }
 
   private def interactionNameMatches(transition: InteractionTransition, implementation: InteractionInstance[F]): Boolean =
     transition.originalInteractionName == implementation.name || transition.interactionName == implementation.name
