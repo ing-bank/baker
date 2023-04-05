@@ -71,7 +71,7 @@ class RecipeBuilder(private val name: String) {
     /**
      * Registers checkpoint events to the recipe via the [CheckpointEventBuilder] receiver.
      */
-    fun checkpointEvents(eventName: String, init: CheckpointEventBuilder.() -> Unit) {
+    fun checkpointEvent(eventName: String, init: CheckpointEventBuilder.() -> Unit) {
         checkpointEvents.add(CheckpointEventBuilder().apply(init).build(eventName))
     }
 
@@ -374,7 +374,7 @@ class CheckpointEventBuilder {
     private val requiredOneOfEvents: MutableSet<Set<String>> = mutableSetOf()
 
     /**
-     * All events specified in this block have to be available for the interaction to be executed (AND precondition).
+     * All events specified in this block have to be available for the checkpoint to be executed (AND precondition).
      *
      * @see requiredOneOfEvents
      */
@@ -383,7 +383,7 @@ class CheckpointEventBuilder {
     }
 
     /**
-     * One of the events specified in this block have to be available for the interaction to be
+     * One of the events specified in this block have to be available for the checkpoint to be
      * executed (OR precondition).
      *
      * @see requiredEvents

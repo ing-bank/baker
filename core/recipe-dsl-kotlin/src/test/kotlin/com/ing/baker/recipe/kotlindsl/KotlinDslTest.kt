@@ -326,7 +326,7 @@ class KotlinDslTest {
     @Test
     fun `create a recipe with checkpoint evenst`() {
         val recipe = recipe("RecipeWithCheckpointEvent"){
-            checkpointEvents("Success"){
+            checkpointEvent("Success"){
                 requiredEvents {
                     event<Interactions.MakePayment.PaymentSuccessful>()
                     event("myEvent")
