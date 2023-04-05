@@ -54,7 +54,7 @@ class RecipeBuilder(private val name: String) {
     /**
      * Collects events and fires and new event when conditions are met.
      */
-    var checkpointEvents: MutableSet<CheckPointEvent> = mutableSetOf()
+    private val checkpointEvents: MutableSet<CheckPointEvent> = mutableSetOf()
 
     @PublishedApi
     internal val interactions: MutableSet<Interaction> = mutableSetOf()
