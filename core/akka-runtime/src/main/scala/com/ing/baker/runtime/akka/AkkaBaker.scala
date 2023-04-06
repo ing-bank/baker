@@ -137,7 +137,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     // here we ask the RecipeManager actor to return us the recipe for the given id
     recipeManager.get(recipeId).flatMap {
       case Some(r: RecipeRecord) =>
-        getImplementationErrors(r.recipe).map(errors => RecipeInformation(r.recipe, r.updated, errors, r.validate ))
+        getImplementationErrors(r.recipe).map(errors => RecipeInformation(r.recipe, r.updated, errors, r.validate, r.recipe.sensoryEvents ))
       case None =>
         Future.failed(NoSuchRecipeException(recipeId))
     }
@@ -157,7 +157,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       .flatMap(
         _.toList
           .traverse(ri => getImplementationErrors(ri.recipe)
-            .map(errors => ri.recipeId -> RecipeInformation(ri.recipe, ri.updated, errors, ri.validate))
+            .map(errors => ri.recipeId -> RecipeInformation(ri.recipe, ri.updated, errors, ri.validate, ri.recipe.sensoryEvents))
           ).map(_.toMap)
       )
   }
