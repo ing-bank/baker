@@ -74,6 +74,7 @@ trait RecipeInstanceManager[F[_]] {
     getExistent(recipeInstanceId).flatMap(
       _.state.get.map { currentState =>
         RecipeInstanceState(
+          currentState.recipe.recipeId,
           recipeInstanceId,
           currentState.ingredients,
           currentState.events

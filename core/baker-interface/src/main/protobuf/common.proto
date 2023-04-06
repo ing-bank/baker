@@ -155,6 +155,7 @@ message RecipeInstanceMetadata {
 }
 
 message ProcessState {
+    optional string recipeId = 5;
     optional string recipeInstanceId = 1;
     repeated Ingredient ingredients = 2;
     repeated EventMoment events = 4;

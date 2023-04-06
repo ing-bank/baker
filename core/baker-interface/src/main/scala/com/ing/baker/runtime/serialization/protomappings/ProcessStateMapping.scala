@@ -1,5 +1,6 @@
 package com.ing.baker.runtime.serialization.protomappings
 
+import cats.effect.ExitCode.Success
 import cats.implicits._
 import com.ing.baker.types.Value
 import com.ing.baker.runtime.akka.actor.{protobuf => proto}
@@ -17,11 +18,12 @@ class ProcessStateMapping extends ProtoMap[RecipeInstanceState, proto.ProcessSta
       val protoIngredients = a.ingredients.toSeq.map { case (name, value) =>
         proto.Ingredient(Some(name), None, Some(ctxToProto(value)))
       }
-      proto.ProcessState(Some(a.recipeInstanceId), protoIngredients, a.events.map(ctxToProto(_)))
+      proto.ProcessState(Some(a.recipeId), Some(a.recipeInstanceId), protoIngredients, a.events.map(ctxToProto(_)))
     }
 
     def fromProto(message: proto.ProcessState): Try[RecipeInstanceState] =
       for {
+        recipeId <- Try(message.recipeId.getOrElse(""))
         recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
         ingredients <- message.ingredients.toList.traverse[Try, (String, Value)] { i =>
           for {
@@ -32,5 +34,5 @@ class ProcessStateMapping extends ProtoMap[RecipeInstanceState, proto.ProcessSta
         }
         events <- message.events.toList.traverse (ctxFromProto(_))
 
-      } yield RecipeInstanceState(recipeInstanceId, ingredients.toMap, events)
+      } yield RecipeInstanceState(recipeId, recipeInstanceId, ingredients.toMap, events)
 }
