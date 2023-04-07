@@ -297,6 +297,9 @@ lazy val `baker-recipe-dsl-kotlin`: Project = project.in(file("core/recipe-dsl-k
         javaxInject,
         paranamer,
         scalaCollectionCompat,
+        kotlinXCoroutinesCore,
+        kotlinXCoroutinesJdk8,
+        kotlinPoet,
         scalaReflect(scalaVersion.value)
       ) ++
         testDeps(
