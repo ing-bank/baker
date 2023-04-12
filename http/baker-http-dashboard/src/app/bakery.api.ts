@@ -1,4 +1,4 @@
-import {RecordField} from "./baker-types.api";
+import {RecordField, Type} from "./baker-types.api";
 import {Value} from "./baker-value.api";
 
 export interface Recipe {
@@ -20,11 +20,17 @@ export interface RecipeBody {
   recipeCreatedTime: number;
   errors:            string[];
   validate:          boolean;
+  sensoryEvents:     EventDescriptor[];
 }
 
 export interface Recipes {
   result: string;
   body:   { [key: string]: RecipeBody };
+}
+
+export interface RecipeResponse {
+  result: string;
+  body:   RecipeBody;
 }
 
 export interface DigraphResponse {
@@ -39,6 +45,11 @@ export interface Interaction {
   output?:   { [eventName: string]: RecordField };
 }
 
+export interface EventDescriptor {
+  name:        string;
+  ingredients: RecordField[];
+}
+
 export interface InteractionsResponse {
   result: string;
   body:   Interaction[];
@@ -51,6 +62,7 @@ export interface EventRecord {
 
 
 export interface Instance {
+  recipeId: string;
   recipeInstanceId: string;
   ingredients:  { [key: string]: Value };
   events: EventRecord[];
@@ -110,6 +122,17 @@ export interface ExecuteInteractionResponse {
   body: ExecuteInteractionResponseBody;
 }
 
+export interface FireEventResponse {
+  result: BakerResultCode;
+  body: FireEventResponseBody;
+}
+
+export type SensoryEventStatus = "FiringLimitMet" | "Completed"
+export interface FireEventResponseBody {
+  eventNames: unknown[];
+  ingredients: {};
+  sensoryEventStatus: SensoryEventStatus;
+}
 export interface SimplifiedFailureReason {
   reason: string;
   interactionErrorMessage: string | null;
@@ -120,9 +143,9 @@ export interface SimplifiedEventInstance {
   providedIngredients: any;
 }
 
-export interface ExecuteInteractionInformation {
+export interface ServiceInformation<A> {
   requestSentAt: Date;
-  response: ExecuteInteractionResponse;
+  response: A;
   durationInMilliseconds : number;
   failureReason: SimplifiedFailureReason | null;
   successEvent: SimplifiedEventInstance | null;

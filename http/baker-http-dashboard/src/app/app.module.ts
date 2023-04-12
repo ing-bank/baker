@@ -35,6 +35,7 @@ import {AppSettingsService} from "./app.settings";
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {HomeComponent} from "./home/home.component";
 import {InstancesComponent} from "./instances/instances.component";
+import {InstanceManualTestComponent} from "./instances/instance-manual-test/instance-manual-test.component";
 import {InteractionsComponent} from "./interactions/interactions.component";
 import {InteractionManualTestComponent} from "./interactions/interaction-manual-test/interaction-manual-test.component";
 import {InteractionDefinitionComponent} from "./interactions/interaction-definition/interaction-definition.component";
@@ -52,6 +53,7 @@ export const initializeApp = (settings: AppSettingsService) => () => settings.lo
         RecipesComponent,
         InteractionsComponent,
         InstancesComponent,
+        InstanceManualTestComponent,
         VisualizeRecipeComponent,
         InteractionManualTestComponent,
         InteractionDefinitionComponent,

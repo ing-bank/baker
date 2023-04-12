@@ -9,8 +9,9 @@ import {
 import {Value, ValueType} from "../baker-value.api";
 import {BakerConversionService} from "../baker-conversion.service";
 import {BakeryService} from "../bakery.service";
-import {EventRecord} from "../bakery.api";
+import {EventDescriptor, EventRecord, Interaction} from "../bakery.api";
 import {AppSettingsService} from "../app.settings";
+import {MatSelectionListChange} from "@angular/material/list";
 
 type InstanceIngredient = { name : string, value: string, isSimple: boolean };
 
@@ -31,6 +32,10 @@ export class InstancesComponent implements OnInit {
     }
     instanceId: string;
     visual: string | undefined | null;
+
+    events: EventDescriptor[];
+    selectedEvent: EventDescriptor;
+
     instanceEvents: EventRecord[];
     instanceIngredients: InstanceIngredient[];
     displayedInstanceId: string | undefined | null;
@@ -39,6 +44,8 @@ export class InstancesComponent implements OnInit {
         "timestamp",
     ];
     failedInstanceId: string | undefined | null;
+
+    selectedInteraction: Interaction
 
     @ViewChild("instanceGraph", {"static": false}) instanceGraph: ElementRef;
 
@@ -61,11 +68,16 @@ export class InstancesComponent implements OnInit {
         this.loadGraph();
     }
 
+    eventChanged (event: MatSelectionListChange):void{
+      this.selectedEvent = <EventDescriptor>event.options[0].value;
+    }
+
     loadEventsAndIngredients(): void {
         this.bakeryService.getInstance(this.instanceId).
             // eslint-disable-next-line max-statements
             subscribe(instance => {
                 if (instance) {
+                    this.loadRecipe(instance.recipeId)
                     this.displayedInstanceId = instance.recipeInstanceId;
                     // eslint-disable-next-line id-length
                     this.instanceEvents = instance.events.sort((a, b) => a.occurredOn - b.occurredOn);
@@ -82,6 +94,14 @@ export class InstancesComponent implements OnInit {
                     this.instanceIngredients = [];
                 }
             });
+    }
+
+    loadRecipe(recipeId: string): void {
+      this.bakeryService.getRecipe(recipeId).
+        // eslint-disable-next-line max-statements
+        subscribe(recipe => {
+          this.events = recipe.sensoryEvents
+        });
     }
 
     loadGraph(): void {

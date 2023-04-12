@@ -15,8 +15,8 @@ export class RecipesComponent implements OnInit {
         "recipeName",
         "recipeId",
         "validate",
-        "visualization",
         "errors",
+        "actions",
     ];
 
     selectedRecipeGraph: string | null;
@@ -43,7 +43,27 @@ export class RecipesComponent implements OnInit {
         });
     }
 
+    bakeRecipe(recipeId: string): void {
+        const instanceId = this.randomId(8)
+        this.bakeryService.postBake(instanceId, recipeId).subscribe(() => {
+          window.location.href = `/instances/${instanceId}`
+        });
+    }
+
     toIsoString(linuxTime: number) : string {
         return new Date(linuxTime).toISOString();
     }
+
+   randomId(length:number) {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    let counter = 0;
+    while (counter < length) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      counter += 1;
+    }
+    return result;
+  }
+
 }
