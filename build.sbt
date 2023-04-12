@@ -12,7 +12,7 @@ lazy val baker: Project = project.in(file("."))
   .aggregate(
     // Core
     `baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-recipe-dsl-kotlin`, `baker-intermediate-language`,
-    `baker-interface`, `baker-annotations`, `baker-test`,
+    `baker-interface`, `baker-interface-kotlin`, `baker-annotations`, `baker-test`,
     // Http
     `baker-http-client`, `baker-http-server`, `baker-http-dashboard`,
     // Bakery
@@ -197,6 +197,33 @@ lazy val `baker-interface`: Project = project.in(file("core/baker-interface"))
     testScope(`baker-recipe-compiler`),
     testScope(`baker-types`))
 
+lazy val `baker-interface-kotlin`: Project = project.in(file("core/baker-interface-kotlin"))
+  .settings(defaultModuleSettings)
+  .settings(Publish.settings)
+  .settings(
+    moduleName := "baker-interface-kotlin",
+    kotlinVersion := "1.7.22",
+    kotlincJvmTarget := "1.8",
+    kotlinLib("stdlib-jdk8"),
+    kotlinLib("reflect"),
+    libraryDependencies ++=
+      compileDeps(
+        javaxInject,
+        paranamer,
+        scalaCollectionCompat,
+        kotlinXCoroutinesCore,
+        kotlinXCoroutinesJdk8,
+        scalaReflect(scalaVersion.value)
+      ) ++
+        testDeps(
+          scalaTest,
+          scalaCheck,
+          scalaCheckPlus,
+          junitInterface,
+          slf4jApi
+        )
+  ).dependsOn(`baker-interface`)
+
 lazy val `baker-akka-runtime`: Project = project.in(file("core/akka-runtime"))
   .settings(defaultModuleSettings)
   .settings(Publish.settings)
@@ -297,9 +324,6 @@ lazy val `baker-recipe-dsl-kotlin`: Project = project.in(file("core/recipe-dsl-k
         javaxInject,
         paranamer,
         scalaCollectionCompat,
-        kotlinXCoroutinesCore,
-        kotlinXCoroutinesJdk8,
-        kotlinPoet,
         scalaReflect(scalaVersion.value)
       ) ++
         testDeps(
