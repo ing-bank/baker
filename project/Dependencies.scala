@@ -144,10 +144,10 @@ object Dependencies {
   val jawnParser = "org.typelevel" %% "jawn-parser" % "1.4.0"
   val nettyHandler = "io.netty" % "netty-handler" % "4.1.81.Final"
 
-  private val bouncycastleVersion = "1.70"
+  private val bouncycastleVersion = "1.73"
 
-  val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % bouncycastleVersion
-  val bouncyCastleBcpkix = "org.bouncycastle" % "bcpkix-jdk15on" % bouncycastleVersion
+  val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk18on" % bouncycastleVersion
+  val bouncyCastleBcpkix = "org.bouncycastle" % "bcpkix-jdk18on" % bouncycastleVersion
 
   val guava = "com.google.guava" % "guava" % "31.1-jre"
 
