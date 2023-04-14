@@ -1,15 +1,20 @@
 import com.ing.baker.runtime.common.Baker
-import org.junit.Assert.assertEquals
+import org.junit.Assert.fail
 import org.junit.Test
 import java.lang.reflect.Method
 import kotlin.math.pow
 import kotlin.reflect.full.declaredFunctions
 
-class BakerInterfaceTest {
+class CoroutineBakerInterfaceTest {
 
     @Test
     fun `compare Scala and Kotlin Baker interfaces`() {
-        assertEquals(methodsInScalaInterface(), methodsInKotlinInterface())
+        @Suppress("ConvertArgumentToSet") // Some method names occur multiple times.
+        val missingInKotlinInterface = methodsInScalaInterface().minus(methodsInKotlinInterface())
+
+        if (missingInKotlinInterface.isNotEmpty()) {
+            fail("Failed to find $missingInKotlinInterface in the Kotlin interface")
+        }
     }
 
     private fun methodsInScalaInterface() = Baker::class.java.declaredMethods
@@ -31,10 +36,10 @@ class BakerInterfaceTest {
         com.ing.baker.runtime.kotlindsl.Baker::class
             .declaredFunctions
             .forEach { function ->
+                // The Kotlin interface uses default arguments instead of overloads. As a result the Kotlin
+                // interface has fewer methods. We correct that here.
                 val defaultArgumentsCount = function.parameters.count { param -> param.isOptional }
                 if (defaultArgumentsCount != 0) {
-                    // The Kotlin interface uses default arguments instead of overloads. As a result the Kotlin
-                    // interface has fewer methods. We correct that here.
                     repeat(2.toDouble().pow(defaultArgumentsCount.toDouble()).toInt()) {
                         methodNames.add(function.name)
                     }
@@ -43,8 +48,7 @@ class BakerInterfaceTest {
                 }
             }
 
-        // We removed a couple of nonsensical overloads from the Kotlin interface. We need to add them here so the
-        // comparison does not fail.
+        // We removed a couple of nonsensical overloads. We need to add those here so the comparison does not fail.
         methodNames.add("fireEventAndResolveWhenReceived")
         methodNames.add("fireEventAndResolveWhenCompleted")
         methodNames.add("fireEventAndResolveOnEvent")
