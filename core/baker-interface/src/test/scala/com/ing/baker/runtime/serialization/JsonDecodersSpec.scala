@@ -86,5 +86,16 @@ class JsonDecodersSpec extends AnyFunSpec with Matchers {
       instance5 shouldEqual InteractionInstanceDescriptor("id", "name", Seq(InteractionInstanceInput(Option.empty, com.ing.baker.types.CharArray)), Option.empty)
 
     }
+
+    it("should decode BakeRequest") {
+      val bakeRequestEmpty = decode[BakeRequest]("""{"metadata":null}""").right.get
+      bakeRequestEmpty shouldEqual BakeRequest(Option.empty)
+
+      val bakeRequestWithEmptyMap = decode[BakeRequest]("""{"metadata":{}}""").right.get
+      bakeRequestWithEmptyMap shouldEqual BakeRequest(Option.apply(Map()))
+
+      val bakeRequestWithData = decode[BakeRequest]("""{"metadata":{"Key1":"Value1"}}""").right.get
+      bakeRequestWithData shouldEqual BakeRequest(Option.apply(Map("Key1"-> "Value1")))
+    }
   }
 }

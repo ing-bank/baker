@@ -7,6 +7,8 @@ import cats.syntax.all._
 import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
 import com.ing.baker.runtime.defaultinteractions
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
+import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
+import com.ing.baker.types.Type
 import com.ing.bakery.interaction.{BaseRemoteInteractionClient, RemoteInteractionClient}
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.Config
@@ -17,6 +19,7 @@ import org.http4s.{Headers, Uri}
 import scalax.collection.ChainingOps
 
 import java.io.IOException
+import scala.collection.immutable.Seq
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 object InteractionRegistry extends LazyLogging {
@@ -153,13 +156,15 @@ trait RemoteInteractionDiscovery extends LazyLogging {
         val interfaces = response.interactions
         if (interfaces.isEmpty) logger.warn(s"${uri.toString} provides no interactions")
         RemoteInteractions(response.startedAt,
-          interfaces.map(interaction => {
-            InteractionInstance.build[IO](
-              _name = interaction.name,
-              _input = interaction.input,
-              _output = interaction.output,
-              _run = input => remoteInteractions.execute(uri, interaction.id, input),
-            )
+          interfaces.map(interface => {
+            new InteractionInstance[IO] {
+              override val name: String = interface.name
+              override val input: Seq[InteractionInstanceInput] = interface.input
+              override val run: Seq[IngredientInstance] => IO[Option[EventInstance]] = _ => IO.pure(Option.empty) //Ignoring the run since the execute does not use it
+              override val output: Option[Map[String, Map[String, Type]]] = interface.output
+              override def execute(input: Seq[IngredientInstance], metadata: Map[String, String]): IO[Option[EventInstance]] =
+                remoteInteractions.execute(uri, interface.id, input, metadata)
+            }
           }))
       }
       }

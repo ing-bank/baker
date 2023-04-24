@@ -100,5 +100,16 @@ class JsonEncodersSpec extends AnyFunSpec with Matchers {
       interactionInstanceDescriptor5.asJson.noSpaces shouldEqual """{"id":"id","name":"name","input":[{"name":null,"type":{"CharArray":{}}}],"output":{}}"""
 
     }
+
+    it("should encode BakeRequest") {
+      val bakeRequestEmpty = BakeRequest(Option.empty)
+      bakeRequestEmpty.asJson.noSpaces shouldEqual """{"metadata":null}"""
+
+      val bakeRequestWithEmptyMap= BakeRequest(Option.apply(Map()))
+      bakeRequestWithEmptyMap.asJson.noSpaces shouldEqual """{"metadata":{}}"""
+
+      val bakeRequestWithData = BakeRequest(Option.apply(Map("Key1"-> "Value1")))
+      bakeRequestWithData.asJson.noSpaces shouldEqual """{"metadata":{"Key1":"Value1"}}"""
+    }
   }
 }

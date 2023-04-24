@@ -31,11 +31,13 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
 
   override val output: Optional[util.Map[String, util.Map[String, Type]]] = Optional.empty()
 
-  override def execute(input: util.List[IngredientInstance]): CompletableFuture[Optional[EventInstance]]
+  def run(input: util.List[IngredientInstance]): CompletableFuture[Optional[EventInstance]]
+
+  override def execute(input: util.List[IngredientInstance], metadata: Map[String, String]): CompletableFuture[Optional[EventInstance]]
 
   @nowarn
-  private def wrapExecuteToFuture(input: Seq[scaladsl.IngredientInstance]): Future[Option[scaladsl.EventInstance]] = {
-    FutureConverters.toScala(execute(input.map(_.asJava).asJava)
+  private def wrapRunToFuture(input: Seq[scaladsl.IngredientInstance]): Future[Option[scaladsl.EventInstance]] = {
+    FutureConverters.toScala(run(input.map(_.asJava).asJava)
       .thenApply[Option[scaladsl.EventInstance]] {
         optional =>
           if (optional.isPresent) Some(optional.get().asScala)
@@ -53,7 +55,7 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
     scaladsl.InteractionInstance(
       name,
       input.asScala.map(input => input.asScala).toIndexedSeq,
-      input => wrapExecuteToFuture(input),
+      input => wrapRunToFuture(input),
       outputOrNone
     )
   }
@@ -63,7 +65,7 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
     model.InteractionInstance.build(
       name,
       input.asScala.map(input => input.asScala).toIndexedSeq,
-      input => IO.fromFuture(IO(wrapExecuteToFuture(input)))(cs),
+      input => IO.fromFuture(IO(wrapRunToFuture(input)))(cs),
       outputOrNone
     )
   }
@@ -95,11 +97,15 @@ object InteractionInstance {
           case Some(out) => Optional.of(out.view.map { case (key, value) => (key, value.asJava)}.toMap.asJava)
           case None => Optional.empty[util.Map[String, util.Map[String, Type]]]()
         }
-      override def execute(input: util.List[javadsl.IngredientInstance]): CompletableFuture[Optional[javadsl.EventInstance]] =
+
+      override def run(input: util.List[javadsl.IngredientInstance]): CompletableFuture[Optional[javadsl.EventInstance]] =
         converter(common.run(input.asScala.map(_.asScala).toIndexedSeq))
           .thenApply(
             _.fold(Optional.empty[javadsl.EventInstance]())(
               e => Optional.of(e.asJava)))
+
+      override def execute(input: util.List[javadsl.IngredientInstance], metadata: Map[String, String]): CompletableFuture[Optional[javadsl.EventInstance]] =
+        run(input)
     }
   }
 }

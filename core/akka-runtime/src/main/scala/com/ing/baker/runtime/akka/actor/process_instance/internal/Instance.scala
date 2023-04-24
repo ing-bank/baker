@@ -5,7 +5,7 @@ import com.ing.baker.petrinet.api._
 import scala.util.Random
 
 object Instance {
-  def uninitialized[P, T, S](process: PetriNet[P, T]): Instance[P, T, S] = Instance[P, T, S](process, 0, Marking.empty, null.asInstanceOf[S], Map.empty, Set.empty)
+  def uninitialized[P, T, S](process: PetriNet[P, T]): Instance[P, T, S] = Instance[P, T, S](process, 0, Marking.empty, Map.empty, null.asInstanceOf[S], Map.empty, Set.empty)
 }
 
 /**
@@ -15,6 +15,7 @@ case class Instance[P, T, S](
     petriNet: PetriNet[P, T],
     sequenceNr: Long,
     marking: Marking[P],
+    delayedTransitionIds: Map[Id, Int],
     state: S,
     jobs: Map[Long, Job[P, T, S]],
     receivedCorrelationIds: Set[String]) {
@@ -22,7 +23,10 @@ case class Instance[P, T, S](
   /**
    * The marking that is already used by running jobs
    */
-  lazy val reservedMarking: Marking[P] = jobs.map { case (id, job) => job.consume }.reduceOption(_ |+| _).getOrElse(Marking.empty)
+  lazy val reservedMarking: Marking[P] = jobs.map {
+    case (id, job) => job.consume }
+    .reduceOption(_ |+| _)
+    .getOrElse(Marking.empty)
 
   /**
    * The marking that is available for new jobs
@@ -43,7 +47,7 @@ case class Instance[P, T, S](
   }.isDefined
 
   def hasReceivedCorrelationId(correlationId: String): Boolean =
-    receivedCorrelationIds.contains(correlationId) || jobs.values.exists(_.correlationId == Some(correlationId))
+    receivedCorrelationIds.contains(correlationId) || jobs.values.exists(_.correlationId.contains(correlationId))
 
   def nextJobId(): Long = Random.nextLong()
 }

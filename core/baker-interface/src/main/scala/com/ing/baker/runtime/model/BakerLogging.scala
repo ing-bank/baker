@@ -1,9 +1,7 @@
 package com.ing.baker.runtime.model
 
-import cats.effect.Sync
-import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.Transition
-import com.ing.baker.runtime.scaladsl.EventInstance
+import com.ing.baker.runtime.common._
 import com.typesafe.scalalogging.Logger
 import org.joda.time.Period
 import org.joda.time.format.{PeriodFormatter, PeriodFormatterBuilder}
@@ -12,8 +10,9 @@ import org.slf4j.MDC
 import scala.concurrent.duration.FiniteDuration
 
 object BakerLogging {
-
   lazy val defaultLogger: Logger = Logger("com.ing.baker")
+
+  lazy val default: BakerLogging = BakerLogging()
 }
 
 case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
@@ -31,35 +30,71 @@ case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
     .appendSeparator(" ")
     .toFormatter
 
-  private def withMDC[F[_]](mdc: Map[String, String], log: Logger => Unit)(implicit effect: Sync[F]): F[Unit] =
-    effect.delay {
+  def withMDC(mdc: Map[String, String], log: Logger => Unit): Unit = {
       mdc.foreach { case (k, v) => MDC.put(k, v) }
       log(logger)
       mdc.keys.foreach(MDC.remove)
     }
 
-  def addedRecipe[F[_]](recipe: CompiledRecipe, timestamp: Long)(implicit effect: Sync[F]): F[Unit] = {
-    val msg = s"Added recipe '${recipe.name}'"
+  def addedRecipe(recipeAdded: RecipeAdded): Unit = {
+    val msg = s"Added recipe '${recipeAdded.recipeName}'"
     val MDC = Map(
-      "recipeName" -> recipe.name,
-      "recipeId" -> recipe.recipeId,
-      "addedOn" -> timestamp.toString
+      "recipeName" -> recipeAdded.recipeName,
+      "recipeId" -> recipeAdded.recipeId,
+      "addedOn" -> recipeAdded.date.toString
     )
     withMDC(MDC, _.info(msg))
   }
 
-  def recipeInstanceCreated[F[_]](recipeInstanceId: String, createdOn: Long, recipe: CompiledRecipe)(implicit effect: Sync[F]): F[Unit] = {
-    val msg = s"Baked recipe instance '$recipeInstanceId' from recipe '${recipe.name}'"
+  def recipeInstanceCreated(recipeInstanceCreated: RecipeInstanceCreated): Unit = {
+    val msg = s"Baked recipe instance '${recipeInstanceCreated.recipeInstanceId}' from recipe '${recipeInstanceCreated.recipeName} : ${recipeInstanceCreated.recipeId}'"
     val MDC = Map(
-      "recipeInstanceId" -> recipeInstanceId,
-      "createdOn" -> createdOn.toString,
-      "recipeName" -> recipe.name,
-      "recipeId" -> recipe.recipeId
+      "recipeInstanceId" -> recipeInstanceCreated.recipeInstanceId,
+      "createdOn" -> recipeInstanceCreated.timeStamp.toString,
+      "recipeName" -> recipeInstanceCreated.recipeName,
+      "recipeId" -> recipeInstanceCreated.recipeId
     )
     withMDC(MDC, _.info(msg))
   }
 
-  def firingEvent[F[_]](recipeInstanceId: String, executionId: Long, transition: Transition, timeStarted: Long)(implicit effect: Sync[F]): F[Unit] = {
+  def interactionStarted(interactionStarted: InteractionStarted): Unit = {
+    val msg = s"Interaction started '${interactionStarted.interactionName}'"
+    val mdc = Map(
+      "recipeInstanceId" -> interactionStarted.recipeInstanceId,
+      "interactionName" -> interactionStarted.interactionName,
+      "timeStarted" -> interactionStarted.timeStamp.toString,
+      "recipeId" -> interactionStarted.recipeId,
+      "recipeName" -> interactionStarted.recipeName
+    )
+    withMDC(mdc, _.info(msg))
+  }
+
+  def interactionFinished(interactionCompleted: InteractionCompleted): Unit = {
+    val msg = s"Interaction finished '${interactionCompleted.interactionName}'"
+    val mdc = Map(
+      "recipeInstanceId" -> interactionCompleted.recipeInstanceId,
+      "interactionName" -> interactionCompleted.interactionName,
+      "duration" -> interactionCompleted.duration.toString,
+      "timeFinished" -> interactionCompleted.timeStamp.toString
+    )
+    withMDC(mdc, _.info(msg))
+  }
+
+  def interactionFailed(interactionFailed: InteractionFailed): Unit = {
+    val msg = s"Interaction failed '${interactionFailed.interactionName}'"
+    val mdc = Map(
+      "recipeInstanceId" -> interactionFailed.recipeInstanceId,
+      "interactionName" -> interactionFailed.interactionName,
+      "duration" -> interactionFailed.duration.toString,
+      "timeFailed" -> interactionFailed.timeStamp.toString,
+      "recipeId" -> interactionFailed.recipeId,
+      "recipeName" -> interactionFailed.recipeName,
+      "failureCount" -> interactionFailed.failureCount.toString
+    )
+    withMDC(mdc, _.error(msg, interactionFailed.throwable))
+  }
+
+  def firingEvent(recipeInstanceId: String, executionId: Long, transition: Transition, timeStarted: Long): Unit = {
     val msg = s"Firing event '${transition.label}'"
     val mdc = Map(
       "recipeInstanceId" -> recipeInstanceId,
@@ -70,60 +105,29 @@ case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
     withMDC(mdc, _.info(msg))
   }
 
-  def interactionStarted[F[_]](recipeInstanceId: String, executionId: Long, transition: Transition, timeStarted: Long)(implicit effect: Sync[F]): F[Unit] = {
-    val msg = s"Interaction started '${transition.label}'"
+  def eventReceived(eventReceived: EventReceived): Unit = {
+    val msg = s"Event received '${eventReceived.event.name}'"
     val mdc = Map(
-      "recipeInstanceId" -> recipeInstanceId,
-      "interactionName" -> transition.label,
-      "timeStarted" -> timeStarted.toString,
-      "executionId" -> executionId.toString
-    )
-    withMDC(mdc, _.info(msg))
-  }
-
-  def interactionFinished[F[_]](recipeInstanceId: String, executionId: Long, transition: Transition, timeStarted: Long, timeFinished: Long)(implicit effect: Sync[F]): F[Unit] = {
-    val msg = s"Interaction finished '${transition.label}'"
-    val mdc = Map(
-      "recipeInstanceId" -> recipeInstanceId,
-      "interactionName" -> transition.label,
-      "duration" -> (timeFinished - timeStarted).toString,
-      "timeStarted" -> timeStarted.toString,
-      "timeFinished" -> timeFinished.toString,
-      "executionId" -> executionId.toString
-    )
-    withMDC(mdc, _.info(msg))
-  }
-
-  def interactionFailed[F[_]](recipeInstanceId: String, transition: Transition, executionId: Long, timeStarted: Long, timeFailed: Long, failureReason: Throwable)(implicit effect: Sync[F]): F[Unit] = {
-    val msg = s"Interaction failed '${transition.label}'"
-    val mdc = Map(
-      "recipeInstanceId" -> recipeInstanceId,
-      "interactionName" -> transition.label,
-      "duration" -> (timeFailed - timeStarted).toString,
-      "timeStarted" -> timeStarted.toString,
-      "timeFailed" -> timeFailed.toString,
-      "executionId" -> executionId.toString,
-    )
-    withMDC(mdc, _.error(msg, failureReason))
-  }
-
-  def idleStop[F[_]](recipeInstanceId: String, idleTTL: FiniteDuration)(implicit effect: Sync[F]): F[Unit] = {
-    val msg = s"Instance was idle for $idleTTL"
-    val mdc = Map("recipeInstanceId" -> recipeInstanceId)
-    withMDC(mdc, _.info(msg))
-  }
-
-  def eventRejected[F[_]](recipeInstanceId: String, event: EventInstance, rejectReason: String)(implicit effect: Sync[F]): F[Unit] = {
-    val msg = s"Event rejected '${event.name}' because: $rejectReason"
-    val mdc = Map(
-      "recipeInstanceId" -> recipeInstanceId,
-      "event" -> event.name,
-      "rejectReason" -> rejectReason
+      "event" -> eventReceived.event.name,
+      "recipeInstanceId" -> eventReceived.recipeInstanceId,
+      "recipeId" -> eventReceived.recipeId,
+      "recipeName" -> eventReceived.recipeName,
+      "timeReceived" -> eventReceived.timeStamp.toString,
     )
     withMDC(mdc, _.warn(msg))
   }
 
-  def scheduleRetry[F[_]](recipeInstanceId: String, transition: Transition, delay: Long)(implicit effect: Sync[F]): F[Unit] = {
+  def eventRejected(eventRejected: EventRejected): Unit = {
+    val msg = s"Event rejected '${eventRejected.event.name}' because: ${eventRejected.reason}"
+    val mdc = Map(
+      "event" -> eventRejected.event.name,
+      "recipeInstanceId" -> eventRejected.recipeInstanceId,
+      "timeReceived" -> eventRejected.timeStamp.toString,
+    )
+    withMDC(mdc, _.warn(msg))
+  }
+
+  def scheduleRetry(recipeInstanceId: String, transition: Transition, delay: Long): Unit = {
     val msg = s"Scheduling a retry of interaction '${transition.label}' in ${durationFormatter.print(new Period(delay))}"
     val mdc = Map(
       "recipeInstanceId" -> recipeInstanceId,
@@ -133,6 +137,12 @@ case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
     withMDC(mdc, _.info(msg))
   }
 
-  def exceptionOnEventListener[F[_]](throwable: Throwable)(implicit effect: Sync[F]): F[Unit] =
-    effect.delay(logger.error("Exception on event listener", throwable))
+  def idleStop(recipeInstanceId: String, idleTTL: FiniteDuration): Unit = {
+    val msg = s"Instance was idle for $idleTTL"
+    val mdc = Map("recipeInstanceId" -> recipeInstanceId)
+    withMDC(mdc, _.info(msg))
+  }
+
+  def exceptionOnEventListener(throwable: Throwable): Unit =
+    logger.error("Exception on event listener", throwable)
 }

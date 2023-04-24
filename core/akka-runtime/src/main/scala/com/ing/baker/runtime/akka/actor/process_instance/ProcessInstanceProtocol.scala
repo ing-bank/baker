@@ -48,6 +48,16 @@ object ProcessInstanceProtocol {
     input: Any,
     correlationId: Option[String] = None) extends Command
 
+  case class TransitionDelayed(
+    jobId: Long,
+    transitionId: Id,
+    consumed: Marking[Id])  extends Command
+
+  case class DelayedTransitionFired(
+    jobId: Long,
+    transitionId: Id,
+    eventToFire: String)  extends Command
+
   /**
     * Overrides the chosen exception strategy of a job (running transition)
     *

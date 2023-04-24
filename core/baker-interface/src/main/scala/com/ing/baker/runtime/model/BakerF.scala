@@ -132,7 +132,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         case None => effect.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
           InteractionExecutionFailureReason.INTERACTION_NOT_FOUND, None, None))))
         case Some(interactionInstance) =>
-          interactionInstance.execute(ingredients)
+          interactionInstance.execute(ingredients, Map.empty)
             .map(executionSuccess => InteractionExecutionResult(Right(InteractionExecutionResult.Success(executionSuccess))))
             .recover {
               case e => InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
@@ -162,6 +162,19 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     components.recipeInstanceManager.bake(recipeId, recipeInstanceId, config.recipeInstanceConfig)
       .timeout(config.bakeTimeout)
       .recoverWith(javaTimeoutToBakerTimeout("bake"))
+
+  /**
+    *
+    * @param recipeId         The recipeId for the recipe to bake
+    * @param recipeInstanceId The identifier for the newly baked process
+    * @param metadata
+    *  @return
+    */
+  override def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): F[Unit] =
+    components.recipeInstanceManager.bake(recipeId, recipeInstanceId, config.recipeInstanceConfig)
+      .timeout(config.bakeTimeout)
+      .recoverWith(javaTimeoutToBakerTimeout("bake"))
+      .flatMap(_ => components.recipeInstanceManager.addMetaData(recipeInstanceId, metadata))
 
   /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
@@ -477,6 +490,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.executeSingleInteraction(interactionId, ingredients))
       override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] =
         mapK(self.bake(recipeId, recipeInstanceId))
+      override def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] =
+        mapK(self.bake(recipeId, recipeInstanceId, metadata))
       override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] =
         mapK(self.fireEventAndResolveWhenReceived(recipeInstanceId, event, correlationId))
       override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventResult] =

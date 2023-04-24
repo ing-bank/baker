@@ -3,6 +3,7 @@ package com.ing.baker.runtime.akka.actor.process_instance
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import com.ing.baker.il.petrinet.Transition
 import com.ing.baker.runtime.akka.actor.Util.logging._
+import com.ing.baker.runtime.model.BakerLogging
 
 import scala.concurrent.duration._
 
@@ -24,6 +25,8 @@ object ProcessInstanceLogger {
     .toFormatter
 
   implicit class LoggingAdapterFns(log: DiagnosticLoggingAdapter) {
+
+    val bakerLogging: BakerLogging = BakerLogging.default
 
     def processHistoryDeletionSuccessful(recipeInstanceId: String, toSequenceNr: Long) = {
       val msg = s"Process history successfully deleted (up to event sequence $toSequenceNr), stopping the actor"
@@ -48,7 +51,24 @@ object ProcessInstanceLogger {
       log.errorWithMDC(msg, mdc, cause)
     }
 
-    def transitionFired(recipeInstanceId: String, transition: Transition, jobId: Long, timeStarted: Long, timeCompleted: Long) = {
+    def fireTransition(recipeInstanceId: String, jobId: Long, transition: Transition, timeStarted: Long): Unit = {
+      val mdc = Map(
+        "processEvent" -> "FiringTransition",
+        "processId" -> recipeInstanceId,
+        "recipeInstanceId" -> recipeInstanceId,
+        "jobId" -> jobId,
+        "transitionId" -> transition.label,
+        "timeStarted" -> timeStarted
+      )
+      val msg = s"Firing transition ${transition.label}"
+      log.logWithMDC(Logging.InfoLevel, msg, mdc)
+    }
+
+    def transitionFired(recipeInstanceId: String,
+                        transition: Transition,
+                        jobId: Long,
+                        timeStarted: Long,
+                        timeCompleted: Long) = {
 
       val mdc = Map(
         "processEvent" -> "TransitionFired",
@@ -75,6 +95,7 @@ object ProcessInstanceLogger {
         "processEvent" -> "TransitionFailed",
         "processId" -> recipeInstanceId,
         "recipeInstanceId" -> recipeInstanceId,
+        "jobId" -> jobId,
         "timeStarted" -> timeStarted,
         "timeFailed" -> timeFailed,
         "duration" -> (timeFailed - timeStarted),
@@ -84,30 +105,6 @@ object ProcessInstanceLogger {
 
       val msg = s"Transition '${transition.label}' failed with: $failureReason"
       log.logWithMDC(Logging.ErrorLevel, msg, mdc)
-    }
-
-    def firingInteraction(recipeInstanceId: String, jobId: Long, transition: Transition, timeStarted: Long): Unit = {
-      val mdc = Map(
-        "processEvent" -> "FiringTransition",
-        "recipeInstanceEvent" -> "FiringInteraction",
-        "processId" -> recipeInstanceId,
-        "recipeInstanceId" -> recipeInstanceId,
-        "jobId" -> jobId,
-        "transitionId" -> transition.label,
-        "timeStarted" -> timeStarted
-      )
-      val msg = s"Firing interaction ${transition.label}"
-      log.logWithMDC(Logging.InfoLevel, msg, mdc)
-    }
-
-    def idleStop(recipeInstanceId: String, idleTTL: FiniteDuration): Unit = {
-      val mdc = Map(
-        "recipeInstanceId" -> recipeInstanceId,
-        "processId" -> recipeInstanceId,
-      )
-      val msg = s"Instance was idle for $idleTTL, stopping the actor"
-
-      log.logWithMDC(Logging.InfoLevel, msg, mdc)
     }
 
     def fireTransitionRejected(recipeInstanceId: String, transition: Transition, rejectReason: String): Unit = {
@@ -124,17 +121,12 @@ object ProcessInstanceLogger {
       log.logWithMDC(Logging.WarningLevel, msg, mdc)
     }
 
+    def idleStop(recipeInstanceId: String, idleTTL: FiniteDuration): Unit = {
+      bakerLogging.idleStop(recipeInstanceId, idleTTL)
+    }
+
     def scheduleRetry(recipeInstanceId: String, transition: Transition, delay: Long): Unit = {
-      val mdc = Map(
-        "processEvent" -> "TransitionRetry",
-        "recipeInstanceEvent" -> "InteractionRetry",
-        "processId" -> recipeInstanceId,
-        "recipeInstanceId" -> recipeInstanceId,
-        "transitionId" -> transition.label)
-
-      val msg = s"Scheduling a retry of interaction '${transition.label}' in ${durationFormatter.print(new org.joda.time.Period(delay))}"
-
-      log.logWithMDC(Logging.InfoLevel, msg, mdc)
+      bakerLogging.scheduleRetry(recipeInstanceId, transition, delay)
     }
   }
 

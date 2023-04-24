@@ -38,5 +38,5 @@ trait InteractionInstance[F[_]] extends LanguageApi { self =>
     * Note: The input is a sequence of ingredients because there can be 2 ingredients with the same name, e.g. when
     * 2 ingredients get renamed to the same name.
     */
-  def execute(input: language.Seq[Ingredient]): F[language.Option[Event]]
+  def execute(input: language.Seq[Ingredient], metaData: Map[String, String]): F[language.Option[Event]]
 }

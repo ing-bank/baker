@@ -16,7 +16,7 @@ trait EventStream[F[_]] {
       _ <- listeners.traverse { listener =>
         effect.runAsync(effect.delay(listener(event))) {
           case Right(_) => IO.unit
-          case Left(e) => effect.toIO(components.logging.exceptionOnEventListener(e))
+          case Left(e) => effect.toIO(effect.delay(components.logging.exceptionOnEventListener(e)))
         }
       }.to[F]
     } yield ()

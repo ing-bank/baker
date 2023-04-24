@@ -140,4 +140,14 @@ public class RecipeTest {
                 com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction.class,
                 recipe3.defaultFailureStrategy().getClass());
     }
+
+    @Test
+    public void shouldSetupRecipeWithCheckpointEvents() {
+        Recipe recipe = new Recipe("OneInteractionRecipe")
+                .withInteraction(of(SimpleInteraction.class))
+                .withCheckpointEvent(new CheckPointEvent("Success")
+                        .withRequiredEvent(SimpleInteraction.InitialIngredientEvent.class));
+        assertEquals(recipe.getEvents().size(), 0);
+        assertEquals(recipe.getInteractions().size(), 1);
+    }
 }

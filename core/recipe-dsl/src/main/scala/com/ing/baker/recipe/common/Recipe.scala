@@ -19,9 +19,14 @@ trait Recipe {
   val interactions: Seq[InteractionDescriptor]
 
   /**
-    * The set of events.
+    * The set of sensory events.
     */
   val sensoryEvents: Set[Event]
+
+  /**
+   * The set of checkpoint events.
+   */
+  val checkpointEvents: Set[CheckPointEvent]
 
   /**
     * The default interaction failure strategy.

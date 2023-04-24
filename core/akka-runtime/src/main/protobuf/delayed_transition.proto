@@ -1,0 +1,28 @@
+syntax = "proto2";
+
+import "scalapb/scalapb.proto";
+
+option java_package = "com.ing.baker.runtime.akka.actor.delayed_transition_actor.protobuf";
+option (scalapb.options) = {
+  flat_package: true
+  preserve_unknown_fields: false
+};
+
+message DelayedTransitionInstance {
+  optional string recipeInstanceId = 1;
+  optional int64 timeToFire = 2;
+  optional int64 jobId = 3;
+  optional int64 transitionId = 4;
+  optional string eventToFire = 5;
+  optional bool fired = 6;
+}
+
+message DelayedTransitionScheduled {
+  optional string id = 1;
+  optional DelayedTransitionInstance delayedTransitionInstance = 2;
+}
+
+message DelayedTransitionExecuted {
+  optional string id = 1;
+  optional DelayedTransitionInstance delayedTransitionInstance = 2;
+}

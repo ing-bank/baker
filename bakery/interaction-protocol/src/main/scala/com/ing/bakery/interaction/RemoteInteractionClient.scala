@@ -35,7 +35,7 @@ trait RemoteInteractionClient {
 
   def entityCodecs: (EntityEncoder[IO, ExecutionRequest], EntityDecoder[IO, ExecutionResult], EntityDecoder[IO, Interactions])
 
-  def execute(uri: Uri, interactionId: String, input: Seq[IngredientInstance]): IO[Option[EventInstance]]
+  def execute(uri: Uri, interactionId: String, input: Seq[IngredientInstance], metaData: Map[String, String]): IO[Option[EventInstance]]
 
   def interfaces(uri: Uri): IO[Interactions]
 }
@@ -65,13 +65,13 @@ class BaseRemoteInteractionClient(
       )
     )
 
-  def execute(uri: Uri, interactionId: String, input: Seq[IngredientInstance]): IO[Option[EventInstance]] = {
+  def execute(uri: Uri, interactionId: String, input: Seq[IngredientInstance], metaData: Map[String, String]): IO[Option[EventInstance]] = {
     client.expect[ExecutionResult](
       Request[IO](
         method = POST,
         uri = uri,
         headers = headers,
-      ).withEntity(ExecutionRequest(interactionId, input.toList)))
+      ).withEntity(ExecutionRequest(interactionId, input.toList, Some(metaData))))
       .flatMap {
         case InteractionExecution.ExecutionResult(Right(success)) =>
           IO {
