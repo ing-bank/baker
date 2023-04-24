@@ -12,7 +12,7 @@ class PojoModule extends TypeModule {
   override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): Type = {
 
     val pojoClass = getBaseClass(javaType)
-    val fields = pojoClass.getDeclaredFields.toIndexedSeq.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers) || Modifier.isFinal(f.getModifiers))
+    val fields = pojoClass.getDeclaredFields.toIndexedSeq.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
     val ingredients = fields.map(f => RecordField(f.getName, context.readType(f.getGenericType)))
     RecordType(ingredients)
   }
