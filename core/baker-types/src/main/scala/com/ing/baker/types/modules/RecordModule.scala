@@ -44,8 +44,8 @@ class RecordModule extends TypeModule {
 
       try {
         val paramTypes = recordType.getRecordComponents.map(r => r.getType)
-        val MH_canonicalConstructor = LOOKUP.findConstructor(recordType, methodType(classOf[Unit], paramTypes)).asType(methodType(classOf[AnyRef], paramTypes))
-        MH_canonicalConstructor.invokeWithArguments(recordValues)
+        val canonicalConstructor = LOOKUP.findConstructor(recordType, methodType(classOf[Unit], paramTypes)).asType(methodType(classOf[AnyRef], paramTypes))
+        canonicalConstructor.invokeWithArguments(recordValues)
 
       } catch {
         case _: Exception =>

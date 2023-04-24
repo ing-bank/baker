@@ -25,8 +25,8 @@ class UUIDModule extends TypeModule {
   override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any = {
     (value, javaType) match {
       case (NullValue, _) => null
-      case (PrimitiveValue(option: String), clazz: Class[_]) if clazz.isAssignableFrom(classOf[java.util.UUID]) =>
-        java.util.UUID.fromString(option)
+      case (PrimitiveValue(uuid: String), clazz: Class[_]) if clazz.isAssignableFrom(classOf[java.util.UUID]) =>
+        java.util.UUID.fromString(uuid)
     }
   }
 
