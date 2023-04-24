@@ -3,7 +3,6 @@ package com.ing.baker.types.modules
 import com.ing.baker.types._
 
 import java.time._
-import scala.annotation.nowarn
 
 /**
  * Add support for Java time objects
@@ -16,7 +15,6 @@ class JavaTimeModule extends TypeModule {
 
   override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): Type = Date
 
-  @nowarn
   override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any =
     (value, javaType) match {
       case (NullValue, _) => null
