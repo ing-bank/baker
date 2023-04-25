@@ -15,6 +15,8 @@ trait RecipeInstanceState extends LanguageApi { self =>
 
   type EventType <: EventMoment { type Language <: self.Language}
 
+  def recipeId: String
+
   def recipeInstanceId: String
 
   def ingredients: language.Map[String, Value]

@@ -295,7 +295,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
               persistWithSnapshot(ActorCreated(recipeId, recipeInstanceId, createdTime)) { _ =>
 
                 // after that we actually create the ProcessInstance actor
-                val processState = RecipeInstanceState(recipeInstanceId, Map.empty[String, Value], List.empty)
+                val processState = RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty)
                 val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
 
                 //TODO ensure the initialiseCMD is accepted before we add it ot the index
@@ -321,7 +321,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           //Temporary solution for the situation that the initializeCmd is not send in the original Bake
           getCompiledRecipe(recipeId) match {
             case Some(compiledRecipe) =>
-              val processState = RecipeInstanceState(recipeInstanceId, Map.empty[String, Value], List.empty)
+              val processState = RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty)
               val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
               createProcessActor(recipeInstanceId, compiledRecipe) ! initializeCmd
               sender() ! ProcessAlreadyExists(recipeInstanceId)
@@ -333,7 +333,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           //Temporary solution for the situation that the initializeCmd is not send in the original Bake
           getCompiledRecipe(recipeId) match {
             case Some(compiledRecipe) =>
-              val processState = RecipeInstanceState(recipeInstanceId, Map.empty[String, Value], List.empty)
+              val processState = RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty)
               val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
               actorRef ! initializeCmd
               sender() ! ProcessAlreadyExists(recipeInstanceId)

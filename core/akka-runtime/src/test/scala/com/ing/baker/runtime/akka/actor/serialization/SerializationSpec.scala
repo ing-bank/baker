@@ -281,9 +281,10 @@ object SerializationSpec {
 
     implicit val processStateGen: Gen[RecipeInstanceState] = for {
       recipeInstanceId <- recipeInstanceIdGen
+      recipeId <- recipeIdGen
       ingredients <- Gen.mapOf(ingredientsGen)
       events <- Gen.listOf(eventMomentsGen)
-    } yield RecipeInstanceState(recipeInstanceId, ingredients, events)
+    } yield RecipeInstanceState(recipeId, recipeInstanceId, ingredients, events)
 
     implicit val messagesGen: Gen[AnyRef] = Gen.oneOf(runtimeEventGen, processStateGen)
 

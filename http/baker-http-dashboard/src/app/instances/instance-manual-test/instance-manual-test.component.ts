@@ -1,32 +1,37 @@
 import {
-    Component,
-    Input,
-    OnChanges,
-    OnInit,
+  Component, EventEmitter,
+  Input,
+  OnChanges,
+  OnInit, Output,
 } from "@angular/core";
 import {
+  EventDescriptor,
   ServiceInformation,
-  Interaction, NameAndValue,
-  ServiceError, ExecuteInteractionResponse
+  NameAndValue,
+  ServiceError, FireEventResponse
 } from "../../bakery.api";
 import {BakerConversionService} from "../../baker-conversion.service";
 import {BakeryService} from "../../bakery.service";
+import {Value} from "../../baker-value.api";
 
-type SuccessOrServiceError = {
-    "serviceResponse": ServiceInformation<ExecuteInteractionResponse> | null,
+type SuccessOrServiceError<A> = {
+    "serviceResponse": ServiceInformation<A> | null,
     "serviceError" : ServiceError | null,
     "requestSentAt" : Date,
     "durationInMilliseconds": number,
 }
 
 @Component({
-    "selector": "interaction-manual-test",
-    "styleUrls": ["./interaction-manual-test.component.scss"],
-    "templateUrl": "./interaction-manual-test.component.html"
+    "selector": "instance-manual-test",
+    "styleUrls": ["./instance-manual-test.component.scss"],
+    "templateUrl": "./instance-manual-test.component.html"
 })
-export class InteractionManualTestComponent implements OnInit, OnChanges {
+export class InstanceManualTestComponent implements OnInit, OnChanges {
 
-    @Input() selectedInteraction: Interaction;
+    @Input() instanceId: string;
+    @Input() selectedEvent: EventDescriptor;
+
+    @Output() reload= new EventEmitter();
 
     constructor (
         private bakeryService: BakeryService,
@@ -36,7 +41,7 @@ export class InteractionManualTestComponent implements OnInit, OnChanges {
 
     interactionInput: string | undefined;
     interactionIngredientsAsValues: NameAndValue[] | null | undefined;
-    executions: SuccessOrServiceError[] = [];
+    executions: SuccessOrServiceError<FireEventResponse>[] = [];
     serviceCallInProgress = false;
     inputErrorMessage: string | undefined | null;
 
@@ -49,9 +54,10 @@ export class InteractionManualTestComponent implements OnInit, OnChanges {
     }
 
     selectedInteractionChanged() : void {
+      if(this?.selectedEvent?.ingredients != undefined) {
         this.interactionInput =
-            JSON.stringify(this.bakerConversionService.exampleJsonIngredientsList(this.selectedInteraction?.input), null, 4);
-
+          JSON.stringify(this.bakerConversionService.exampleJsonIngredientsList(this.selectedEvent.ingredients), null, 4);
+      }
         this.inputElementChanged();
     }
 
@@ -62,7 +68,7 @@ export class InteractionManualTestComponent implements OnInit, OnChanges {
         }
         try {
             const interactionInputJson = JSON.parse(this.interactionInput);
-            const valuesOrError = this.bakerConversionService.ingredientsJsonToBakerValues(this.selectedInteraction.input, interactionInputJson);
+            const valuesOrError = this.bakerConversionService.ingredientsJsonToBakerValues(this.selectedEvent.ingredients, interactionInputJson);
             if (typeof valuesOrError === "string") {
                 this.interactionIngredientsAsValues = null;
                 this.inputErrorMessage = valuesOrError;
@@ -88,7 +94,7 @@ export class InteractionManualTestComponent implements OnInit, OnChanges {
         return `${this.addLeadingZeros(date.getHours(), 2)}:${this.addLeadingZeros(date.getMinutes(), 2)}:${this.addLeadingZeros(date.getSeconds(), 2)}.${this.addLeadingZeros(date.getMilliseconds(), 3)}`;
     }
 
-    toSuccessOrServiceError(response: ServiceInformation<ExecuteInteractionResponse> | ServiceError) : SuccessOrServiceError {
+    toSuccessOrServiceError(response: ServiceInformation<FireEventResponse> | ServiceError) : SuccessOrServiceError<FireEventResponse> {
         if (Object.keys(response).includes("error")) {
             return {
                 "serviceResponse": null,
@@ -98,7 +104,7 @@ export class InteractionManualTestComponent implements OnInit, OnChanges {
             };
         }
         return {
-            "serviceResponse": response as ServiceInformation<ExecuteInteractionResponse>,
+            "serviceResponse": response as ServiceInformation<FireEventResponse>,
             "serviceError": null,
             "requestSentAt": response.requestSentAt,
             "durationInMilliseconds": response.durationInMilliseconds,
@@ -113,11 +119,15 @@ export class InteractionManualTestComponent implements OnInit, OnChanges {
 
         this.serviceCallInProgress = true;
 
-        this.bakeryService.executeInteraction(this.selectedInteraction.id, interactionIngredientsJson).subscribe(executionInformationOrError => {
+        // Map NameAndValue to Record<string, Value>
+        const ingredients:Record<string, Value> = interactionIngredientsJson.reduce((acc, cur) => ({...acc, [cur.name]: cur.value}), {})
+
+        this.bakeryService.fireEvent(this.instanceId, this.selectedEvent.name, ingredients).subscribe(executionInformationOrError => {
             this.serviceCallInProgress = false;
 
             // unshift means prepend.
             this.executions.unshift(this.toSuccessOrServiceError(executionInformationOrError));
+            this.reload.emit()
         });
     }
 
