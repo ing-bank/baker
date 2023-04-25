@@ -3,7 +3,8 @@ package com.ing.baker.runtime.akka.actor.delayed_transition_actor
 import akka.actor.{ActorLogging, ActorRef, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.{DelayedTransitionExecuted, DelayedTransitionInstance, DelayedTransitionScheduled, prefix}
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransition, ScheduleDelayedTransition, StartTimer, TickTimer}
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransition, FireDelayedTransitionAck, ScheduleDelayedTransition, StartTimer, TickTimer}
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{NoSuchProcess, ProcessDeleted}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 
@@ -31,7 +32,7 @@ object DelayedTransitionActor {
 
 class DelayedTransitionActor(processIndex: ActorRef) extends PersistentActor with ActorLogging {
 
-  private val waitingTimer: mutable.Map[String, DelayedTransitionInstance] = mutable.Map[String, DelayedTransitionInstance]()
+  private var waitingTimer: Map[String, DelayedTransitionInstance] = Map[String, DelayedTransitionInstance]()
 
   import context.dispatcher
 
@@ -45,8 +46,11 @@ class DelayedTransitionActor(processIndex: ActorRef) extends PersistentActor wit
     log.debug(s"DelayedTransitionActor stopped: ${persistenceId}")
   }
 
+  private def getId(recipeInstanceId: String, jobId: Long): String =
+    recipeInstanceId + jobId
+
   private def handleScheduleDelayedTransition(event: ScheduleDelayedTransition) = {
-    val id = event.recipeInstanceId + event.jobId
+    val id = getId(event.recipeInstanceId, event.jobId)
     val instance = DelayedTransitionInstance(
       event.recipeInstanceId,
       System.currentTimeMillis() + event.waitTimeInMillis,
@@ -58,7 +62,7 @@ class DelayedTransitionActor(processIndex: ActorRef) extends PersistentActor wit
     )
     persist(DelayedTransitionScheduled(id, instance)) { _ =>
       if (!waitingTimer.contains(id)) {
-        waitingTimer.put(id, instance)
+        waitingTimer += (id -> instance)
         sender() ! ProcessInstanceProtocol.TransitionDelayed(event.jobId, event.transitionId, event.consumed)
       }
       else {
@@ -84,30 +88,46 @@ class DelayedTransitionActor(processIndex: ActorRef) extends PersistentActor wit
 
     case TickTimer =>
       waitingTimer.foreach { case (id, instance) =>
-        val newInstance = instance.copy(fired = true)
-        if(!instance.fired &&  System.currentTimeMillis() > instance.timeToFire) {
-          persist(DelayedTransitionExecuted(id, newInstance)) { _ =>
-            processIndex ! FireDelayedTransition(instance.recipeInstanceId,
-              instance.jobId,
-              instance.transitionId,
-              instance.eventToFire,
-              instance.optionalActorRef.getOrElse(self))
-            waitingTimer.put(id, newInstance)
-          }
+        if (!instance.fired && System.currentTimeMillis() > instance.timeToFire) {
+          processIndex ! FireDelayedTransition(instance.recipeInstanceId,
+            instance.jobId,
+            instance.transitionId,
+            instance.eventToFire,
+            instance.optionalActorRef.getOrElse(self))
         }
       }
+
+    case FireDelayedTransitionAck(recipeInstanceId, jobId) =>
+      val id = getId(recipeInstanceId, jobId)
+      log.error(s"FireDelayedTransitionAck received for $id")
+      waitingTimer.get(id) match {
+        case Some(instance) =>
+          val newInstance = instance.copy(fired = true)
+          persist(DelayedTransitionExecuted(id, newInstance)) { _ =>
+            waitingTimer += (id -> newInstance)
+          }
+        case None => log.error(s"FireDelayedTransitionAck received for $id but not found")
+      }
+
+    case ProcessDeleted(recipeInstanceId) =>
+      log.error(s"ProcessDeleted received in DelayedTransitionInstance for $recipeInstanceId")
+      waitingTimer --= waitingTimer.filter(d => d._2.recipeInstanceId != recipeInstanceId).keys
+
+    case NoSuchProcess(recipeInstanceId) =>
+      log.error(s"NoSuchProcess received in DelayedTransitionInstance for $recipeInstanceId")
+      waitingTimer --= waitingTimer.filter(d => d._2.recipeInstanceId != recipeInstanceId).keys
   }
 
   override def persistenceId: String = prefix(context.self.path.name)
 
   override def receiveRecover: Receive = {
     case scheduled: DelayedTransitionScheduled =>
-      waitingTimer.put(
-        scheduled.id,
+      waitingTimer += (
+        scheduled.id ->
         scheduled.delayedTransitionInstance)
     case fired: DelayedTransitionExecuted =>
-      waitingTimer.put(
-        fired.id,
+      waitingTimer += (
+        fired.id ->
         fired.delayedTransitionInstance)
   }
 }
