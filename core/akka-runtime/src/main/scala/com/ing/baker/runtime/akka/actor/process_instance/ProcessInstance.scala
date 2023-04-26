@@ -80,6 +80,8 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
 
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
+  val filterAll: Boolean = settings.ingredientsFilter.contains("*")
+
   override def preStart(): Unit = {
     log.debug("ProcessInstance started")
   }
@@ -177,16 +179,16 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
   }
 
 
-  def filterIngredientValues(state: RecipeInstanceState, ingredientFilter: Seq[String]): RecipeInstanceState =
+  def filterIngredientValues(state: RecipeInstanceState, ingredientFilter: Seq[String]): RecipeInstanceState = {
     state.copy(ingredients = state.ingredients.map(ingredient =>
-      if (ingredientFilter.contains(ingredient._1))
+      if (filterAll || ingredientFilter.contains(ingredient._1))
         ingredient._1 -> PrimitiveValue("")
       else
         ingredient))
+  }
 
   def running(instance: Instance[P, T, S],
               scheduledRetries: Map[Long, Cancellable]): Receive = {
-
     case Stop(deleteHistory) =>
       scheduledRetries.values.foreach(_.cancel())
       if (deleteHistory) {
@@ -217,6 +219,17 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
           sender() ! instanceState.copy(state = filterIngredientValues(state, settings.ingredientsFilter))
         case _ =>
           sender() ! instanceState
+      }
+
+    case GetIngredient(name) =>
+      instance.state match {
+        case state: RecipeInstanceState =>
+          state.ingredients.get(name) match {
+            case Some(value) => sender() ! IngredientFound(value)
+            case None => sender() ! IngredientNotFound
+          }
+        case _ =>
+          sender() ! IngredientNotFound
       }
 
     case AddMetaData(metaData: Map[String, String]) =>

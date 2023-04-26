@@ -218,6 +218,14 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
     toCompletableFuture(baker.getRecipeInstanceState(recipeInstanceId)).thenApply(_.asJava)
 
   /**
+    * @param recipeInstanceId The recipeInstance Id.
+    * @param name The name of the ingredient.
+    *  @return The provided ingredients.
+    */
+  override def getIngredient(recipeInstanceId: String, name: String): CompletableFuture[Value] =
+    toCompletableFuture(baker.getIngredient(recipeInstanceId, name))
+
+  /**
     * Returns all the ingredients that are accumulated for a given process.
     *
     * @param recipeInstanceId The process identifier

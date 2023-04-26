@@ -2,6 +2,7 @@ package com.ing.baker.runtime.akka.actor.process_instance
 
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
+import com.ing.baker.types.Value
 
 /**
  * Describes the messages to and from a PetriNetInstance actor.
@@ -17,6 +18,15 @@ object ProcessInstanceProtocol {
    * Command to request the current state of the petri net instance.
    */
   case object GetState extends Command
+
+  /**
+    * Command to request the current ingredient
+    */
+  case class GetIngredient(name: String) extends Command
+
+  case class IngredientFound(value: Value) extends Response
+
+  case object IngredientNotFound extends Response
 
   /**
     * Command to stop and optionally delete the process instance.

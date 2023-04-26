@@ -423,6 +423,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     case GetProcessState(recipeInstanceId) =>
       withActiveProcess(recipeInstanceId) { actorRef => actorRef.forward(GetState) }
 
+    case GetProcessIngredient(recipeInstanceId, name) =>
+      withActiveProcess(recipeInstanceId) { actorRef => actorRef.forward(GetIngredient(name)) }
+
     case GetCompiledRecipe(recipeInstanceId) =>
       index.get(recipeInstanceId) match {
         case Some(processMetadata) if processMetadata.isDeleted => sender() ! ProcessDeleted(recipeInstanceId)
