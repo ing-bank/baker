@@ -2,7 +2,7 @@ package com.ing.baker.runtime.akka.actor.delayed_transition_actor
 
 import akka.actor.{ActorLogging, ActorRef, Props}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.{DelayedTransitionExecuted, DelayedTransitionInstance, DelayedTransitionScheduled, prefix}
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.{DelayedTransitionExecuted, DelayedTransitionInstance, DelayedTransitionScheduled, getId, prefix}
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransition, FireDelayedTransitionAck, ScheduleDelayedTransition, StartTimer, TickTimer}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{NoSuchProcess, ProcessDeleted}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
@@ -28,6 +28,9 @@ object DelayedTransitionActor {
   case class DelayedTransitionScheduled(id: String, delayedTransitionInstance: DelayedTransitionInstance) extends BakerSerializable
 
   case class DelayedTransitionExecuted(id: String, delayedTransitionInstance: DelayedTransitionInstance) extends BakerSerializable
+
+  private def getId(recipeInstanceId: String, jobId: Long): String =
+    recipeInstanceId + jobId
 }
 
 class DelayedTransitionActor(processIndex: ActorRef) extends PersistentActor with ActorLogging {
@@ -45,9 +48,6 @@ class DelayedTransitionActor(processIndex: ActorRef) extends PersistentActor wit
   override def postStop(): Unit = {
     log.debug(s"DelayedTransitionActor stopped: ${persistenceId}")
   }
-
-  private def getId(recipeInstanceId: String, jobId: Long): String =
-    recipeInstanceId + jobId
 
   private def handleScheduleDelayedTransition(event: ScheduleDelayedTransition) = {
     val id = getId(event.recipeInstanceId, event.jobId)
@@ -99,7 +99,6 @@ class DelayedTransitionActor(processIndex: ActorRef) extends PersistentActor wit
 
     case FireDelayedTransitionAck(recipeInstanceId, jobId) =>
       val id = getId(recipeInstanceId, jobId)
-      log.error(s"FireDelayedTransitionAck received for $id")
       waitingTimer.get(id) match {
         case Some(instance) =>
           val newInstance = instance.copy(fired = true)
