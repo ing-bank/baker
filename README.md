@@ -131,7 +131,7 @@ Baker is released to [Maven Central](https://search.maven.org/search?q=g:com.ing
 2. compiler: Compiles recipes into models the runtime can execute
 3. runtime: The runtime to manage and execute recipes
 
-> **note**
+> **Note**
 > If you want to use the Kotlin DSL add `baker-recipe-dsl-kotlin_2.13` instead of `baker-recipe-dsl_2.13`.
 
 ### Maven
