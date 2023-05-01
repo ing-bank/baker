@@ -137,19 +137,19 @@ Baker is released to [Maven Central](https://search.maven.org/search?q=g:com.ing
 ### Maven
 ```xml
 <dependency> 
-	<groupId>com.ing.baker</groupId> 
-	<artifactId>baker-recipe-dsl_2.13</artifactId> 
-	<version>3.6.3</version> 
+  <groupId>com.ing.baker</groupId> 
+  <artifactId>baker-recipe-dsl_2.13</artifactId> 
+  <version>3.6.3</version> 
 </dependency> 
 <dependency> 
-	<groupId>com.ing.baker</groupId> 
-	<artifactId>baker-compiler_2.13</artifactId> 
-	<version>3.6.3</version> 
+  <groupId>com.ing.baker</groupId> 
+  <artifactId>baker-compiler_2.13</artifactId> 
+  <version>3.6.3</version> 
 </dependency> 
 <dependency> 
-	<groupId>com.ing.baker</groupId> 
-	<artifactId>baker-runtime_2.13</artifactId> 
-	<version>3.6.3</version> 
+  <groupId>com.ing.baker</groupId> 
+  <artifactId>baker-runtime_2.13</artifactId> 
+  <version>3.6.3</version> 
 </dependency>
 ```
 
