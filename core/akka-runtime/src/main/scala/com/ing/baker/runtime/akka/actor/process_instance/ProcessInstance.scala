@@ -34,7 +34,8 @@ object ProcessInstance {
   case class Settings(executionContext: ExecutionContext,
                       idleTTL: Option[FiniteDuration],
                       encryption: Encryption,
-                      ingredientsFilter: Seq[String])
+                      getIngredientsFilter: Seq[String],
+                      providedIngredientFilter: Seq[String])
 
   case class IdleStop(seq: Long) extends NoSerializationVerificationNeeded
 
@@ -61,6 +62,17 @@ object ProcessInstance {
       runtime,
       delayedTransitionActor)
     )
+
+  private def filterIngredients(ingredients: Map[String, Value], ingredientFilter: Seq[String]) = {
+    val filterAll: Boolean = ingredientFilter.contains("*")
+    ingredients.map {
+      ingredient =>
+        if (filterAll || ingredientFilter.contains(ingredient._1))
+          ingredient._1 -> PrimitiveValue("")
+        else
+          ingredient
+    }
+  }
 }
 
 /**
@@ -79,8 +91,6 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
   context.setReceiveTimeout(settings.idleTTL.getOrElse(15 minutes) * 2)
 
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
-
-  val filterAll: Boolean = settings.ingredientsFilter.contains("*")
 
   override def preStart(): Unit = {
     log.debug("ProcessInstance started")
@@ -106,7 +116,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       instance.marking.marshall,
       instance.state match {
         case state: RecipeInstanceState =>
-          filterIngredientValues(state, settings.ingredientsFilter)
+          filterIngredientValuesFromState(state)
         case _ => instance.state
       },
       instance.jobs.view.map { case (key, value) => (key, mapJobsToProtocol(value))}.toMap
@@ -178,13 +188,21 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       context.stop(context.self)
   }
 
+  private def filterIngredientValuesFromState(state: RecipeInstanceState): RecipeInstanceState = {
+    state.copy(ingredients = filterIngredients(state.ingredients, settings.getIngredientsFilter))
+  }
 
-  def filterIngredientValues(state: RecipeInstanceState, ingredientFilter: Seq[String]): RecipeInstanceState = {
-    state.copy(ingredients = state.ingredients.map(ingredient =>
-      if (filterAll || ingredientFilter.contains(ingredient._1))
-        ingredient._1 -> PrimitiveValue("")
-      else
-        ingredient))
+  private def filterIngredientValuesFromEventInstance(eventInstance: Any): Any = {
+    if(eventInstance == null) {
+      eventInstance
+    } else eventInstance match {
+      case casted: EventInstance =>
+        if (casted.providedIngredients != null && casted.providedIngredients.nonEmpty)
+          casted.copy(providedIngredients = filterIngredients(casted.providedIngredients, settings.providedIngredientFilter))
+        else
+          casted
+      case _ => eventInstance
+    }
   }
 
   def running(instance: Instance[P, T, S],
@@ -213,13 +231,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       }
 
     case GetState =>
-      val instanceState: InstanceState = mapStateToProtocol(instance)
-      instanceState.state match {
-        case state: RecipeInstanceState =>
-          sender() ! instanceState.copy(state = filterIngredientValues(state, settings.ingredientsFilter))
-        case _ =>
-          sender() ! instanceState
-      }
+      sender() ! mapStateToProtocol(instance)
 
     case GetIngredient(name) =>
       instance.state match {
@@ -241,6 +253,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
               context become running(instance, scheduledRetries)})
 
     case event@TransitionFiredEvent(jobId, transitionId, correlationId, timeStarted, timeCompleted, consumed, produced, output) =>
+
       val transition = instance.petriNet.transitions.getById(transitionId)
       log.transitionFired(recipeInstanceId, transition.asInstanceOf[Transition], jobId, timeStarted, timeCompleted)
       // persist the success event
@@ -250,7 +263,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
           .andThen {
             case (updatedInstance, newJobs) =>
               // the sender is notified of the transition having fired
-              sender() ! TransitionFired(jobId, transitionId, correlationId, consumed, produced, newJobs.map(_.id), output)
+              sender() ! TransitionFired(jobId, transitionId, correlationId, consumed, produced, newJobs.map(_.id), filterIngredientValuesFromEventInstance(output))
 
               // the job is removed from the state since it completed
               context become running(updatedInstance, scheduledRetries - jobId)
@@ -289,7 +302,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
             .andThen {
               case (updatedInstance, newJobs) =>
                 // the sender is notified of the transition having fired
-                sender() ! TransitionFired(jobId, transitionId, None, null, produced, newJobs.map(_.id), out)
+                sender() ! TransitionFired(jobId, transitionId, None, null, produced, newJobs.map(_.id), filterIngredientValuesFromEventInstance(out))
                 // the job is removed from the state since it completed
                 context become running(updatedInstance, scheduledRetries - jobId)
             }
@@ -340,7 +353,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
             eventSource.apply(instance)
               .andThen(step)
               .andThen { case (updatedInstance, newJobs) =>
-                sender() ! TransitionFired(jobId, transitionId, correlationId, consume, marshallMarking(produced), newJobs.map(_.id), out)
+                sender() ! TransitionFired(jobId, transitionId, correlationId, consume, marshallMarking(produced), newJobs.map(_.id), filterIngredientValuesFromEventInstance(out))
                 context become running(updatedInstance, scheduledRetries - jobId)
               })
 

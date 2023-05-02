@@ -28,6 +28,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import scala.collection.immutable.Seq
 import scala.concurrent.Promise
 import scala.concurrent.duration._
 import scala.util.Success
@@ -55,6 +56,7 @@ object ProcessInstanceSpec {
     executionContext = testExecutionContext,
     idleTTL = None,
     encryption = NoEncryption,
+    Seq.empty,
     Seq.empty
   )
 

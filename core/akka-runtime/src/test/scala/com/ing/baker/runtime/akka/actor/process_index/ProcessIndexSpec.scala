@@ -359,6 +359,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       configuredEncryption = Encryption.NoEncryption,
       interactionManager = CachingInteractionManager(),
       recipeManager = recipeManager,
+      Seq.empty,
       Seq.empty) {
       override def createProcessActor(id: String, compiledRecipe: CompiledRecipe) = {
         context.watch(petriNetActorRef)
