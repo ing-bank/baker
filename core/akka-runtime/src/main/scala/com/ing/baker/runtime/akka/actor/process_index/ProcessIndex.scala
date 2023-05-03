@@ -46,14 +46,16 @@ object ProcessIndex {
             configuredEncryption: Encryption,
             interactions: InteractionManager[IO],
             recipeManager: RecipeManager,
-            ingredientsFilter: Seq[String]): Props =
+            getIngredientsFilter: Seq[String],
+            providedIngredientFilter: Seq[String]): Props =
     Props(new ProcessIndex(
       recipeInstanceIdleTimeout,
       retentionCheckInterval,
       configuredEncryption,
       interactions,
       recipeManager,
-      ingredientsFilter))
+      getIngredientsFilter,
+      providedIngredientFilter))
 
   sealed trait ProcessStatus
 
@@ -107,7 +109,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
                    configuredEncryption: Encryption,
                    interactionManager: InteractionManager[IO],
                    recipeManager: RecipeManager,
-                   ingredientsFilter: Seq[String]) extends PersistentActor with PersistentActorMetrics {
+                   getIngredientsFilter: Seq[String],
+                   providedIngredientFilter: Seq[String]) extends PersistentActor with PersistentActorMetrics {
 
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(logSource = this)
 
@@ -193,7 +196,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
               executionContext = bakerExecutionContext,
               encryption = configuredEncryption,
               idleTTL = recipeInstanceIdleTimeout,
-              ingredientsFilter = ingredientsFilter),
+              getIngredientsFilter = getIngredientsFilter,
+              providedIngredientFilter = providedIngredientFilter,
+            ),
             delayedTransitionActor = delayedTransitionActor
           ),
           childName = recipeInstanceId,
@@ -423,6 +428,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     case GetProcessState(recipeInstanceId) =>
       withActiveProcess(recipeInstanceId) { actorRef => actorRef.forward(GetState) }
 
+    case GetProcessIngredient(recipeInstanceId, name) =>
+      withActiveProcess(recipeInstanceId) { actorRef => actorRef.forward(GetIngredient(name)) }
+
     case GetCompiledRecipe(recipeInstanceId) =>
       index.get(recipeInstanceId) match {
         case Some(processMetadata) if processMetadata.isDeleted => sender() ! ProcessDeleted(recipeInstanceId)
@@ -450,7 +458,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   def run(program: ActorRef => FireEventIO[Unit], command: ProcessEvent): Unit = {
     val responseHandler = context.actorOf(
-      SensoryEventResponseHandler(sender(), command, ingredientsFilter))
+      SensoryEventResponseHandler(sender(), command))
     program(responseHandler).value.unsafeRunAsync {
       case Left(exception) =>
         throw exception // TODO decide what to do, might never happen, except if we generalize it as a runtime for the actor

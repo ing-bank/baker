@@ -22,6 +22,8 @@ object ProcessIndexProtocol {
 
   case class GetProcessState(recipeInstanceId: String) extends ProcessIndexMessage
 
+  case class GetProcessIngredient(recipeInstanceId: String, name: String) extends ProcessIndexMessage
+
   case class GetCompiledRecipe(recipeInstanceId: String) extends ProcessIndexMessage
 
   case class RetryBlockedInteraction(recipeInstanceId: String, interactionName: String) extends ProcessIndexMessage
