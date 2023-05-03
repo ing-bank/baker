@@ -423,22 +423,22 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
         case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
       }
 
-  /**
-    * @param recipeInstanceId The recipeInstance Id.
-    * @param name The name of the ingredient.
-    *  @return The provided ingredients.
-    */
-  override def getIngredient(recipeInstanceId: String, name: String): Future[Value] =
-    processIndexActor
-      .ask(GetProcessIngredient(recipeInstanceId, name))(Timeout.durationToTimeout(config.timeouts.defaultInquireTimeout))
-      .javaTimeoutToBakerTimeout("getRecipeInstanceState")
-      .flatMap {
-        case ingredientFound: IngredientFound => Future.successful(ingredientFound.value)
-        case IngredientNotFound  => Future.failed(NoSuchIngredientException(name))
-        case Uninitialized(id) => Future.failed(NoSuchProcessException(id))
-        case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
-        case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
-      }
+//  /**
+//    * @param recipeInstanceId The recipeInstance Id.
+//    * @param name The name of the ingredient.
+//    *  @return The provided ingredients.
+//    */
+//  override def getIngredient(recipeInstanceId: String, name: String): Future[Value] =
+//    processIndexActor
+//      .ask(GetProcessIngredient(recipeInstanceId, name))(Timeout.durationToTimeout(config.timeouts.defaultInquireTimeout))
+//      .javaTimeoutToBakerTimeout("getRecipeInstanceState")
+//      .flatMap {
+//        case ingredientFound: IngredientFound => Future.successful(ingredientFound.value)
+//        case IngredientNotFound  => Future.failed(NoSuchIngredientException(name))
+//        case Uninitialized(id) => Future.failed(NoSuchProcessException(id))
+//        case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
+//        case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
+//      }
 
   /**
     * Returns all provided ingredients for a given process id.

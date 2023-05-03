@@ -80,7 +80,7 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
 
     def getEvents: JFuture[String] = baker.getEvents(recipeInstanceId).toBakerResult
 
-    def getIngredient(name: String): JFuture[String] = baker.getIngredient(recipeInstanceId, name).toBakerResult
+//    def getIngredient(name: String): JFuture[String] = baker.getIngredient(recipeInstanceId, name).toBakerResult
 
     def getIngredients: JFuture[String] = baker.getIngredients(recipeInstanceId).toBakerResult
 
