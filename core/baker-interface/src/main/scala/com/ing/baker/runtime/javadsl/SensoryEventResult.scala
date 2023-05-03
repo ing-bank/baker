@@ -11,6 +11,7 @@ import scala.collection.JavaConverters._
 case class SensoryEventResult(
                                sensoryEventStatus: SensoryEventStatus,
                                eventNames: java.util.List[String],
+                               @deprecated("This will be removed in the next version, use Baker.getIngredients instead.", "3.8.0")
                                ingredients: java.util.Map[String, Value]
 ) extends common.SensoryEventResult with JavaApi {
 
@@ -18,6 +19,12 @@ case class SensoryEventResult(
 
   def getEventNames: java.util.List[String] = eventNames
 
+  /**
+    * @deprecated This will be removed in the next version, use Baker.getIngredients instead.
+    * @return
+    */
+  @Deprecated
+  @deprecated("This will be removed in the next version, use Baker.getIngredients instead.", "3.8.0")
   def getIngredients: java.util.Map[String, Value] = ingredients
 
   @nowarn
