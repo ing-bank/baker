@@ -9,7 +9,7 @@ import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, MetaDataAdded, Uninitialized}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{IngredientFound, IngredientNotFound, Initialized, InstanceState, MetaDataAdded, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
@@ -422,6 +422,23 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
         case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
         case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
       }
+
+//  /**
+//    * @param recipeInstanceId The recipeInstance Id.
+//    * @param name The name of the ingredient.
+//    *  @return The provided ingredients.
+//    */
+//  override def getIngredient(recipeInstanceId: String, name: String): Future[Value] =
+//    processIndexActor
+//      .ask(GetProcessIngredient(recipeInstanceId, name))(Timeout.durationToTimeout(config.timeouts.defaultInquireTimeout))
+//      .javaTimeoutToBakerTimeout("getRecipeInstanceState")
+//      .flatMap {
+//        case ingredientFound: IngredientFound => Future.successful(ingredientFound.value)
+//        case IngredientNotFound  => Future.failed(NoSuchIngredientException(name))
+//        case Uninitialized(id) => Future.failed(NoSuchProcessException(id))
+//        case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
+//        case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
+//      }
 
   /**
     * Returns all provided ingredients for a given process id.

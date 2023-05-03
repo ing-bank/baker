@@ -77,7 +77,8 @@ object AkkaBakerConfig extends LazyLogging {
     val localProvider =
       new LocalBakerActorProvider(
         retentionCheckInterval = 1.minute,
-        ingredientsFilter = List.empty,
+        getIngredientsFilter = List.empty,
+        providedIngredientFilter = List.empty,
         actorIdleTimeout = Some(5.minutes),
         configuredEncryption = Encryption.NoEncryption,
         timeouts = defaultTimeouts
@@ -102,7 +103,8 @@ object AkkaBakerConfig extends LazyLogging {
         nrOfShards = 50,
         retentionCheckInterval = 1.minute,
         actorIdleTimeout = Some(5.minutes),
-        ingredientsFilter = List.empty,
+        getIngredientsFilter = List.empty,
+        providedIngredientFilter = List.empty,
         journalInitializeTimeout = 30.seconds,
         seedNodes = ClusterBakerActorProvider.SeedNodesList(seedNodes),
         configuredEncryption = Encryption.NoEncryption,
@@ -141,7 +143,8 @@ object AkkaBakerConfig extends LazyLogging {
       case None | Some("local") =>
         new LocalBakerActorProvider(
           retentionCheckInterval = config.as[FiniteDuration]("baker.actor.retention-check-interval"),
-          ingredientsFilter = config.as[List[String]]("baker.filtered-ingredient-values"),
+          getIngredientsFilter =  config.as[List[String]]("baker.filtered-ingredient-values") ++ config.as[List[String]]("baker.filtered-ingredient-values-for-get"),
+          providedIngredientFilter = config.as[List[String]]("baker.filtered-ingredient-values") ++ config.as[List[String]]("baker.filtered-ingredient-values-for-stream"),
           actorIdleTimeout = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout"),
           configuredEncryption = encryption,
           Timeouts.apply(config)
@@ -159,7 +162,8 @@ object AkkaBakerConfig extends LazyLogging {
             else
               ClusterBakerActorProvider.ServiceDiscovery
           },
-          ingredientsFilter = config.as[List[String]]("baker.filtered-ingredient-values"),
+          getIngredientsFilter = config.as[List[String]]("baker.filtered-ingredient-values") ++ config.as[List[String]]("baker.filtered-ingredient-values-for-get"),
+          providedIngredientFilter = config.as[List[String]]("baker.filtered-ingredient-values") ++ config.as[List[String]]("baker.filtered-ingredient-values-for-stream"),
           configuredEncryption = encryption,
           Timeouts.apply(config)
         )

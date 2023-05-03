@@ -392,6 +392,21 @@ object ProcessIndexProto {
         } yield GetProcessState(recipeInstanceId)
     }
 
+  implicit def getIngredient: ProtoMap[GetProcessIngredient, protobuf.GetProcessIngredient] =
+    new ProtoMap[GetProcessIngredient, protobuf.GetProcessIngredient] {
+
+      val companion = protobuf.GetProcessIngredient
+
+      def toProto(a: GetProcessIngredient): protobuf.GetProcessIngredient =
+        protobuf.GetProcessIngredient(Some(a.recipeInstanceId), Some(a.name))
+
+      def fromProto(message: protobuf.GetProcessIngredient): Try[GetProcessIngredient] =
+        for {
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+          name <- versioned(message.name, "Name")
+        } yield GetProcessIngredient(recipeInstanceId, name)
+    }
+
   implicit def getCompiledRecipeProto: ProtoMap[GetCompiledRecipe, protobuf.GetCompiledRecipe] =
     new ProtoMap[GetCompiledRecipe, protobuf.GetCompiledRecipe] {
 

@@ -295,6 +295,15 @@ trait Baker[F[_]] extends LanguageApi {
     */
   def getRecipeInstanceState(recipeInstanceId: String): F[RecipeInstanceStateType]
 
+//  /**
+//    * Returns a specific ingredient for a given RecipeInstance id.
+//    *
+//    * @param recipeInstanceId The recipeInstance Id.
+//    * @param name The name of the ingredient.
+//    * @return The provided ingredients.
+//    */
+//  def getIngredient(recipeInstanceId: String, name: String): F[Value]
+
   /**
     * Returns all provided ingredients for a given RecipeInstance id.
     *

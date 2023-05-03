@@ -321,6 +321,14 @@ final class BakerClient( client: Client[IO],
   override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] =
     callRemoteBakerServiceFallbackAware[RecipeInstanceState]((host, prefix) => GET(root(host, prefix) / "instances" / recipeInstanceId), fallbackEndpoint)
 
+//  /**
+//    * @param recipeInstanceId
+//    * @param name
+//    * @return
+//    */
+//  override def getIngredient(recipeInstanceId: String, name: String): Future[Value] =
+//    callRemoteBakerServiceFallbackAware[Value]((host, prefix) => GET(root(host, prefix) / "instances" / recipeInstanceId / "ingredient" / name), fallbackEndpoint)
+
   /**
     * Returns all provided ingredients for a given RecipeInstance id.
     *
