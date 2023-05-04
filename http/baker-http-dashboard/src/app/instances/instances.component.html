@@ -70,7 +70,7 @@
           </cdk-virtual-scroll-viewport>
         </mat-grid-tile>
         <mat-grid-tile colspan="8" rowspan="1">
-          <instance-manual-test [instanceId]="instanceId" [selectedEvent]="selectedEvent" (reload)="loadGraph()"></instance-manual-test>
+          <instance-manual-test [instanceId]="instanceId" [selectedEvent]="selectedEvent" (reload)="instanceChanged()"></instance-manual-test>
         </mat-grid-tile>
       </mat-grid-list>
     </ng-template>

@@ -1,4 +1,5 @@
 import {Component, ElementRef, OnInit} from "@angular/core";
+import {AppSettingsService} from "../app.settings";
 import {BakeryService} from "../bakery.service";
 import {Recipe} from "../bakery.api";
 
@@ -46,7 +47,7 @@ export class RecipesComponent implements OnInit {
     bakeRecipe(recipeId: string): void {
         const instanceId = this.randomId(8)
         this.bakeryService.postBake(instanceId, recipeId).subscribe(() => {
-          window.location.href = `/instances/${instanceId}`
+          window.location.href = AppSettingsService.prefix.prefix + `/instances/${instanceId}`
         });
     }
 
