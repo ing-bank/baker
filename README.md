@@ -155,14 +155,14 @@ modules.
     <version>3.6.3</version>
 </dependency>
 <dependency>
-<groupId>com.ing.baker</groupId>
-<artifactId>baker-compiler_2.13</artifactId>
-<version>3.6.3</version>
+    <groupId>com.ing.baker</groupId>
+    <artifactId>baker-compiler_2.13</artifactId>
+    <version>3.6.3</version>
 </dependency>
 <dependency>
-<groupId>com.ing.baker</groupId>
-<artifactId>baker-runtime_2.13</artifactId>
-<version>3.6.3</version>
+    <groupId>com.ing.baker</groupId>
+    <artifactId>baker-runtime_2.13</artifactId>
+    <version>3.6.3</version>
 </dependency>
 ```
 
