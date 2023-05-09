@@ -1,6 +1,6 @@
 package com.ing.baker.recipe.kotlindsl
 
-import com.ing.baker.recipe.common
+import com.ing.baker.recipe.{common, javadsl}
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionDescriptor
 import com.ing.baker.types.{Converters, Value}
@@ -47,7 +47,7 @@ object Interaction {
          requiredOneOfEvents: java.util.Set[java.util.Set[String]],
          predefinedIngredients: java.util.Map[String, Object],
          overriddenIngredientNames: java.util.Map[String, String],
-         eventOutputTransformers: java.util.Map[Event, EventOutputTransformer],
+         eventOutputTransformers: java.util.Map[javadsl.Event, EventOutputTransformer],
          maximumInteractionCount: java.util.Optional[Int],
          failureStrategy: java.util.Optional[common.InteractionFailureStrategy]) = new Interaction(
     name,
