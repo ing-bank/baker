@@ -231,7 +231,7 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
             val eventTransformationsInput = eventTransformations.associate {
                 com.ing.baker.recipe.javadsl.Event(it.from.java, Option.empty()) to it.toEventOutputTransformer()
             }
-
+            // test
             Interaction.of(
                 name,
                 InteractionDescriptor.of(interactionClass.java),
