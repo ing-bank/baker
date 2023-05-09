@@ -360,10 +360,14 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       interactionManager = CachingInteractionManager(),
       recipeManager = recipeManager,
       Seq.empty,
+      Seq.empty,
       Seq.empty) {
       override def createProcessActor(id: String, compiledRecipe: CompiledRecipe) = {
         context.watch(petriNetActorRef)
         petriNetActorRef
+      }
+      override def getProcessActor(recipeInstanceId: String): Option[ActorRef] = {
+        Some(petriNetActorRef)
       }
     })
     system.actorOf(props, s"actorIndex-${UUID.randomUUID().toString}")
