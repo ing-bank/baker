@@ -21,7 +21,8 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol, ProcessInstanceRuntime}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceLogger._
+import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceLogger, ProcessInstanceProtocol, ProcessInstanceRuntime}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
@@ -240,9 +241,11 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
             log.debug(s"Deleting with persistenceId: ${persistenceId}")
             persistWithSnapshot(ActorDeleted(meta.recipeInstanceId)) { _ =>
               //Using deleteAllEvents since we do not use Snapshots for ProcessInstances
-              cleanup.deleteAllEvents(persistenceId, neverUsePersistenceIdAgain = false).map {
-                _ -> index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
-              }
+              cleanup.deleteAllEvents(persistenceId, neverUsePersistenceIdAgain = false)
+                .map(_ -> {
+                  log.processHistoryDeletionSuccessful(meta.recipeInstanceId, 0)
+                  index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
+                })
             }
           case None =>
             log.debug(s"Recipe not found for ${meta.recipeInstanceId}, marking as deleted")
