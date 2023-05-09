@@ -73,6 +73,7 @@ class ClusterBakerActorProvider(
                                  providedIngredientFilter: List[String],
                                  configuredEncryption: Encryption,
                                  timeouts: AkkaBakerConfig.Timeouts,
+                                 blacklistedProcesses: List[String]
                                ) extends BakerActorProvider with LazyLogging {
 
   def initialize(implicit system: ActorSystem): Unit = {
@@ -119,7 +120,8 @@ class ClusterBakerActorProvider(
                 interactionManager,
                 recipeManager,
                 getIngredientsFilter,
-                providedIngredientFilter),
+                providedIngredientFilter,
+                blacklistedProcesses),
       settings = clusterShardingSettings,
       extractEntityId = ClusterBakerActorProvider.entityIdExtractor(nrOfShards),
       extractShardId = ClusterBakerActorProvider.shardIdExtractor(nrOfShards),
