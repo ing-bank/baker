@@ -232,8 +232,6 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
                 com.ing.baker.recipe.javadsl.Event(it.from.java, Option.empty()) to it.toEventOutputTransformer()
             }
 
-            // foo
-
             Interaction.of(
                 name,
                 InteractionDescriptor.of(interactionClass.java),
