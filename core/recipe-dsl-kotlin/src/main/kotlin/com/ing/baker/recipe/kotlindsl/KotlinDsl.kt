@@ -227,10 +227,10 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
 
     @PublishedApi
     internal fun build(): Interaction {
-        val eventTransformationsInput: Map<Event, EventOutputTransformer> =
-            eventTransformations.associate { it.from.toEvent() to EventOutputTransformer(it.to, it.ingredientRenames) }
-
         return if (interactionClass.interactionFunction().hasFiresEventAnnotation()) {
+            val eventTransformationsInput = eventTransformations.associate {
+                com.ing.baker.recipe.javadsl.Event(it.from.java, Option.empty()) to it.toEventOutputTransformer()
+            }
             Interaction.of(
                 name,
                 InteractionDescriptor.of(interactionClass.java),
@@ -243,6 +243,10 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
                 Optional.ofNullable(failureStrategy?.build())
             )
         } else {
+            val eventTransformationsInput = eventTransformations.associate {
+                it.from.toEvent() to it.toEventOutputTransformer()
+            }
+
             val inputIngredients = interactionClass.interactionFunction().parameters.drop(1)
                 .map { Ingredient(it.name, it.type.javaType) }
                 .toSet()
@@ -446,7 +450,9 @@ internal data class EventTransformation(
     val from: KClass<*>,
     val to: String,
     val ingredientRenames: Map<String, String>
-)
+) {
+    fun toEventOutputTransformer() = EventOutputTransformer(to, ingredientRenames)
+}
 
 private fun <T : com.ing.baker.recipe.javadsl.Interaction> KClass<T>.interactionFunction() =
     functions.single { it.name == "apply" }

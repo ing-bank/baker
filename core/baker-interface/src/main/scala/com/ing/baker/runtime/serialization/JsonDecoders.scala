@@ -1,8 +1,7 @@
 package com.ing.baker.runtime.serialization
 
 import java.util.Base64
-
-import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.petrinet.api.{Marking, PetriNet}
 import com.ing.baker.runtime.common.{BakerException, RejectReason, SensoryEventStatus}
@@ -89,6 +88,8 @@ object JsonDecoders extends LazyLogging {
     }
   }
   implicit val eventInstanceDecoder: Decoder[EventInstance] = deriveDecoder[EventInstance]
+  implicit val ingredientDescriptorDecoder: Decoder[IngredientDescriptor] = deriveDecoder[IngredientDescriptor]
+  implicit val eventDescriptorDecoder: Decoder[EventDescriptor] = deriveDecoder[EventDescriptor]
   implicit val bakerEventDecoder: Decoder[BakerEvent] = deriveDecoder[BakerEvent]
   implicit val recipeInformationDecoder: Decoder[RecipeInformation] = deriveDecoder[RecipeInformation]
   implicit val recipeInstanceStateDecoder: Decoder[RecipeInstanceState] = deriveDecoder[RecipeInstanceState]

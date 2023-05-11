@@ -16,6 +16,7 @@ import scala.collection.JavaConverters._
   * @param events           The events that have occurred so far
   */
 case class RecipeInstanceState(
+    recipeId: String,
     recipeInstanceId: String,
     ingredients: java.util.Map[String, Value],
     events: java.util.List[EventMoment]
@@ -53,5 +54,5 @@ case class RecipeInstanceState(
 
   @nowarn
   def asScala: scaladsl.RecipeInstanceState =
-    scaladsl.RecipeInstanceState(recipeInstanceId, ingredients.asScala.toMap, events.asScala.map(_.asScala).toIndexedSeq)
+    scaladsl.RecipeInstanceState(recipeId, recipeInstanceId, ingredients.asScala.toMap, events.asScala.map(_.asScala).toIndexedSeq)
 }

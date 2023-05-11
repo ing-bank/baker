@@ -58,7 +58,7 @@ val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
     "-language:implicitConversions",
     "-language:postfixOps",
     "-encoding", "utf8",
-    "-Xfatal-warnings"
+//    "-Xfatal-warnings" //Cannot be enabled since we have deprecated our own methods and use them for now. Can be enabled again after we completely remove the depcrecated methods.
   ),
   coverageExcludedPackages := "<empty>;bakery.sbt;.*javadsl.*;.*scaladsl.*;.*common.*;.*protobuf.*;.*protomappings.*;.*Main.*",
   packageBin / packageOptions +=

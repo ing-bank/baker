@@ -7,6 +7,7 @@ import cats.~>
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common
+import com.ing.baker.runtime.common.BakerException.NoSuchIngredientException
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.common.{BakerException, InteractionExecutionFailureReason, RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
@@ -304,6 +305,20 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
       .timeout(config.inquireTimeout)
       .recoverWith(javaTimeoutToBakerTimeout("getRecipeInstanceState"))
 
+//  /**
+//    * Returns all provided ingredients for a given RecipeInstance id.
+//    *
+//    * @param recipeInstanceId The process id.
+//    * @return The provided ingredients.
+//    */
+//  override def getIngredient(recipeInstanceId: String, name: String): F[Value] = {
+//    getRecipeInstanceState(recipeInstanceId).map(_.ingredients)
+//      .map(x => x.get(name) match {
+//        case Some(value) => value
+//        case None => throw NoSuchIngredientException(name)
+//      })
+//  }
+
   /**
     * Returns all provided ingredients for a given RecipeInstance id.
     *
@@ -448,6 +463,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.getAllRecipeInstancesMetadata)
       override def getRecipeInstanceState(recipeInstanceId: String): G[RecipeInstanceState] =
         mapK(self.getRecipeInstanceState(recipeInstanceId))
+//      override def getIngredient(recipeInstanceId: String, name: String): G[Value] =
+//        mapK(self.getIngredient(recipeInstanceId, name))
       override def getIngredients(recipeInstanceId: String): G[Map[String, Value]] =
         mapK(self.getIngredients(recipeInstanceId))
       override def getEvents(recipeInstanceId: String): G[Seq[EventMoment]] =
@@ -506,6 +523,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.getAllRecipeInstancesMetadata)
       override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] =
         mapK(self.getRecipeInstanceState(recipeInstanceId))
+//      override def getIngredient(recipeInstanceId: String, name: String): Future[Value] =
+//        mapK(self.getIngredient(recipeInstanceId, name))
       override def getIngredients(recipeInstanceId: String): Future[Map[String, Value]] =
         mapK(self.getIngredients(recipeInstanceId))
       override def getEvents(recipeInstanceId: String): Future[Seq[EventMoment]] =

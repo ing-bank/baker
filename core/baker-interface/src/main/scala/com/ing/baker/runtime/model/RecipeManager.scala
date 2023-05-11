@@ -48,7 +48,7 @@ trait RecipeManager[F[_]] extends LazyLogging {
     fetch(recipeId).flatMap[RecipeInformation] {
       case Some(r: RecipeRecord) =>
         getImplementationErrors(r.recipe).map( errors =>
-          RecipeInformation(r.recipe, r.updated, errors, r.validate))
+          RecipeInformation(r.recipe, r.updated, errors, r.validate, r.recipe.sensoryEvents))
       case None =>
         effect.raiseError(NoSuchRecipeException(recipeId))
     }
@@ -57,7 +57,7 @@ trait RecipeManager[F[_]] extends LazyLogging {
     fetchAll.flatMap(_.toList
       .traverse { case (recipeId, r) =>
         getImplementationErrors(r.recipe)
-          .map(errors => recipeId -> RecipeInformation(r.recipe, r.updated, errors, r.validate))
+          .map(errors => recipeId -> RecipeInformation(r.recipe, r.updated, errors, r.validate, r.recipe.sensoryEvents))
       }
       .map(_.toMap))
 
