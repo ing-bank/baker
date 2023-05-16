@@ -3,8 +3,6 @@ package com.ing.baker.runtime.kotlindsl
 import com.ing.baker.runtime.javadsl.Baker
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.declaredFunctions
-import kotlin.reflect.full.memberFunctions
-import kotlin.reflect.jvm.isAccessible
 
 fun main() {
     val bakerClass = Baker::class
