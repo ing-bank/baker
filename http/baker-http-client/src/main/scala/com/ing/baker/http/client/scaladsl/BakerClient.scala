@@ -228,7 +228,6 @@ final class BakerClient( client: Client[IO],
       (host, prefix) => POST(event, (root(host, prefix) / "instances" / recipeInstanceId / "fire-and-resolve-when-completed")
         .withOptionQueryParam("correlationId", correlationId)), fallbackEndpoint).map { result =>
       logger.info(s"For recipe instance '$recipeInstanceId', fired and completed event '${event.name}', resulting status ${result.sensoryEventStatus}")
-      logger.debug(s"Resulting ingredients ${result.ingredients.map { case (ingredient, value) => s"$ingredient=$value" }.mkString(", ")}")
       result
     }
 
@@ -273,7 +272,6 @@ final class BakerClient( client: Client[IO],
       (host, prefix) => POST(event, (root(host, prefix) / "instances" / recipeInstanceId / "fire-and-resolve-on-event" / onEvent)
         .withOptionQueryParam("correlationId", correlationId)), fallbackEndpoint).map { result =>
       logger.info(s"For recipe instance '$recipeInstanceId', fired event '${event.name}', and resolved on event '$onEvent', resulting status ${result.sensoryEventStatus}")
-      logger.debug(s"Resulting ingredients ${result.ingredients.map { case (ingredient, value) => s"$ingredient=$value" }.mkString(", ")}")
       result
     }
 
@@ -321,13 +319,13 @@ final class BakerClient( client: Client[IO],
   override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] =
     callRemoteBakerServiceFallbackAware[RecipeInstanceState]((host, prefix) => GET(root(host, prefix) / "instances" / recipeInstanceId), fallbackEndpoint)
 
-//  /**
-//    * @param recipeInstanceId
-//    * @param name
-//    * @return
-//    */
-//  override def getIngredient(recipeInstanceId: String, name: String): Future[Value] =
-//    callRemoteBakerServiceFallbackAware[Value]((host, prefix) => GET(root(host, prefix) / "instances" / recipeInstanceId / "ingredient" / name), fallbackEndpoint)
+  /**
+    * @param recipeInstanceId
+    * @param name
+    * @return
+    */
+  override def getIngredient(recipeInstanceId: String, name: String): Future[Value] =
+    callRemoteBakerServiceFallbackAware[Value]((host, prefix) => GET(root(host, prefix) / "instances" / recipeInstanceId / "ingredient" / name), fallbackEndpoint)
 
   /**
     * Returns all provided ingredients for a given RecipeInstance id.
