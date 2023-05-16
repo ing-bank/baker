@@ -16,9 +16,8 @@ import com.ing.baker.runtime.javadsl.RecipeInstanceMetadata
 import com.ing.baker.runtime.javadsl.RecipeInstanceState
 import com.ing.baker.runtime.javadsl.SensoryEventResult
 import com.ing.baker.types.Value
-import java.util.*
 
-interface KBaker {
+interface Baker {
     suspend fun gracefulShutdown()
 
     suspend fun addRecipe(compiledRecipe: CompiledRecipe, validate: Boolean, timeCreated: Long = System.currentTimeMillis()): String

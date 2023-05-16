@@ -24,7 +24,7 @@ import kotlinx.coroutines.withTimeout
 import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
-class CoroutineBaker(private val jBaker: Baker) : KBaker, AutoCloseable {
+class KotlinBaker(private val jBaker: Baker) : com.ing.baker.runtime.kotlindsl.Baker, AutoCloseable {
     override fun close() = runBlocking {
         withTimeout(10.seconds) {
             gracefulShutdown()

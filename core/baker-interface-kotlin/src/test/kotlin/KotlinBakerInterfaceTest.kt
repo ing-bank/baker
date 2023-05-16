@@ -1,12 +1,10 @@
-import com.ing.baker.runtime.common.Baker
-import com.ing.baker.runtime.kotlindsl.KBaker
 import org.junit.Assert.fail
 import org.junit.Test
 import java.lang.reflect.Method
 import kotlin.math.pow
 import kotlin.reflect.full.declaredFunctions
 
-class KBakerInterfaceTest {
+class KotlinBakerInterfaceTest {
 
     @Test
     fun `compare Scala and Kotlin Baker interfaces`() {
@@ -18,7 +16,7 @@ class KBakerInterfaceTest {
         }
     }
 
-    private fun methodsInScalaInterface() = Baker::class.java.declaredMethods
+    private fun methodsInScalaInterface() = com.ing.baker.runtime.common.Baker::class.java.declaredMethods
         .filterNot { it.isSynthetic }
         .map { it.sanitizedName() }
         .filterNot { it == "\$init\$" }
@@ -32,7 +30,7 @@ class KBakerInterfaceTest {
     }
 
     private fun methodsInKotlinInterface(): List<String> {
-        val methodNames = KBaker::class.declaredFunctions
+        val methodNames = com.ing.baker.runtime.kotlindsl.Baker::class.declaredFunctions
             .fold(initial = mutableListOf<String>()) { names, kFunction ->
                 // The Kotlin interface uses default arguments instead of overloads. As a result the Kotlin
                 // interface has fewer methods. We correct that here.
