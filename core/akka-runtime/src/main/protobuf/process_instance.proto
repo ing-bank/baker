@@ -146,6 +146,14 @@ message InstanceState {
     repeated JobState jobs = 4;
 }
 
+message IngredientFound {
+    optional Value value = 1;
+}
+
+message IngredientNotFound {
+
+}
+
 message FireTransition {
     optional int64 transitionId = 1;
     optional SerializedData input = 2;

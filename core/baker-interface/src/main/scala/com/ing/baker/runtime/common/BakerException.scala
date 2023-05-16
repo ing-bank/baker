@@ -47,6 +47,9 @@ object BakerException {
   case class TimeoutException(operationName: String, disableStackTrace: Boolean = false)
     extends BakerException(s"'$operationName' duration exceeded timeout", 10, disableStackTrace = disableStackTrace)
 
+  case class NoSuchIngredientException(name: String, disableStackTrace: Boolean = false)
+    extends BakerException(s"Ingredient '$name' not found", 5, disableStackTrace = disableStackTrace)
+
   // To be used if a serialized baker exception cannot be deserialized into a specific exception.
   // This can happen when a bakery-state version is higher and contains more exceptions than the bakery-client.
   case class UnknownBakerException(underlyingErrorMessage: String, disableStackTrace: Boolean = false)
@@ -65,6 +68,7 @@ object BakerException {
       case e @ UnexpectedException(errorId, _) => (errorId, e.`enum`)
       case e @ TimeoutException(operationName, _) => (operationName, e.`enum`)
       case e @ UnknownBakerException(underlyingErrorMessage, _) => (underlyingErrorMessage, e.`enum`)
+      case e @ NoSuchIngredientException(underlyingErrorMessage, _) => (underlyingErrorMessage, e.`enum`)
       case be if be.isInstanceOf[BakerException] => (be.message, be.`enum`)
     }
 
@@ -81,6 +85,7 @@ object BakerException {
       case 9 => Success(UnexpectedException(message, disableStackTrace = true))
       case 10 => Success(TimeoutException(message, disableStackTrace = true))
       case 11 => Success(UnknownBakerException(message, disableStackTrace = true))
+      case 12 => Success(NoSuchIngredientException(message, disableStackTrace = true))
       case _ => Failure(new IllegalArgumentException(s"No BakerException with enum flag $enum"))
     }
 
