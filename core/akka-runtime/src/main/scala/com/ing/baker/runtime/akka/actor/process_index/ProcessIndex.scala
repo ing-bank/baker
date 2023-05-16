@@ -21,7 +21,8 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol, ProcessInstanceRuntime}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceLogger._
+import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceLogger, ProcessInstanceProtocol, ProcessInstanceRuntime}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
@@ -47,7 +48,8 @@ object ProcessIndex {
             interactions: InteractionManager[IO],
             recipeManager: RecipeManager,
             getIngredientsFilter: Seq[String],
-            providedIngredientFilter: Seq[String]): Props =
+            providedIngredientFilter: Seq[String],
+            blacklistedProcesses: Seq[String]): Props =
     Props(new ProcessIndex(
       recipeInstanceIdleTimeout,
       retentionCheckInterval,
@@ -55,7 +57,8 @@ object ProcessIndex {
       interactions,
       recipeManager,
       getIngredientsFilter,
-      providedIngredientFilter))
+      providedIngredientFilter,
+      blacklistedProcesses))
 
   sealed trait ProcessStatus
 
@@ -110,7 +113,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
                    interactionManager: InteractionManager[IO],
                    recipeManager: RecipeManager,
                    getIngredientsFilter: Seq[String],
-                   providedIngredientFilter: Seq[String]) extends PersistentActor with PersistentActorMetrics {
+                   providedIngredientFilter: Seq[String],
+                   blacklistedProcesses: Seq[String]) extends PersistentActor with PersistentActorMetrics {
 
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(logSource = this)
 
@@ -138,6 +142,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
   private val recipeCache: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
+
+  private val cleanup = new akka.persistence.cassandra.cleanup.Cleanup(context.system)
 
   private val delayedTransitionActor: ActorRef = context.actorOf(
     props = DelayedTransitionActor.props(this.self),
@@ -177,6 +183,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   def getOrCreateProcessActor(recipeInstanceId: String): Option[ActorRef] =
     context.child(recipeInstanceId).orElse(createProcessActor(recipeInstanceId))
 
+  def getProcessActor(recipeInstanceId: String): Option[ActorRef] =
+    context.child(recipeInstanceId)
+
   def createProcessActor(recipeInstanceId: String): Option[ActorRef] =
     getCompiledRecipe(index(recipeInstanceId).recipeId).map(createProcessActor(recipeInstanceId, _))
 
@@ -207,7 +216,6 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           randomFactor = restartRandomFactor)
           .withFinalStopMessage(_.isInstanceOf[ProcessInstanceProtocol.Stop])
       )
-
     val processActor = context.actorOf(props = processActorProps, name = recipeInstanceId)
     context.watch(processActor)
     processActor
@@ -218,6 +226,34 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       getCompiledRecipe(meta.recipeId)
         .flatMap(_.retentionPeriod)
         .exists { p => meta.createdDateTime + p.toMillis < System.currentTimeMillis() }
+  }
+
+  private def deleteProcess(meta: ActorMetadata): Unit = {
+    getProcessActor(meta.recipeInstanceId) match {
+      case Some(actorRef: ActorRef) =>
+        log.debug(s"Deleting ${meta.recipeInstanceId} via actor message")
+        actorRef ! Stop(delete = true)
+      case None =>
+        log.debug(s"Deleting ${meta.recipeInstanceId} via cleanup tool")
+        getCompiledRecipe(meta.recipeId) match {
+          case Some(compiledRecipe) =>
+            val persistenceId = ProcessInstance.recipeInstanceId2PersistenceId(compiledRecipe.name, meta.recipeInstanceId)
+            log.debug(s"Deleting with persistenceId: ${persistenceId}")
+            persistWithSnapshot(ActorDeleted(meta.recipeInstanceId)) { _ =>
+              //Using deleteAllEvents since we do not use Snapshots for ProcessInstances
+              cleanup.deleteAllEvents(persistenceId, neverUsePersistenceIdAgain = false)
+                .map(_ -> {
+                  log.processHistoryDeletionSuccessful(meta.recipeInstanceId, 0)
+                  index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
+                })
+            }
+          case None =>
+            log.debug(s"Recipe not found for ${meta.recipeInstanceId}, marking as deleted")
+            persistWithSnapshot(ActorDeleted(meta.recipeInstanceId)) { _ =>
+              index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
+            }
+        }
+    }
   }
 
   private def withActiveProcess(recipeInstanceId: String)(fn: ActorRef => Unit): Unit = {
@@ -258,8 +294,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       val toBeDeleted = index.values.filter(shouldDelete)
       if (toBeDeleted.nonEmpty)
         log.debug(s"Deleting recipe instance: {}", toBeDeleted.mkString(","))
-
-      toBeDeleted.foreach(meta => getOrCreateProcessActor(meta.recipeInstanceId).foreach(_ ! Stop(delete = true)))
+      toBeDeleted.foreach(meta => deleteProcess(meta))
 
     case Terminated(actorRef) =>
       val recipeInstanceId = actorRef.path.name
@@ -576,6 +611,15 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     case ActorDeleted(recipeInstanceId) =>
       updateWithStatus(recipeInstanceId, Deleted)
     case RecoveryCompleted =>
+      // Delete all blacklisted processes.
+      index.foreach(process =>
+        if(blacklistedProcesses.contains(process._1) && !process._2.isDeleted) {
+          val id = process._1
+          log.debug(s"Deleting blacklistedProcesses $id")
+          deleteProcess(process._2)
+        }
+      )
+      // Start the active processes
       index
         .filter(process => process._2.processStatus == Active ).keys
         .foreach(id => createProcessActor(id))

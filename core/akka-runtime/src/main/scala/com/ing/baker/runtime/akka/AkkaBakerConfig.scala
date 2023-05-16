@@ -81,7 +81,8 @@ object AkkaBakerConfig extends LazyLogging {
         providedIngredientFilter = List.empty,
         actorIdleTimeout = Some(5.minutes),
         configuredEncryption = Encryption.NoEncryption,
-        timeouts = defaultTimeouts
+        timeouts = defaultTimeouts,
+        blacklistedProcesses = List.empty
       )
 
     AkkaBakerConfig(
@@ -108,7 +109,8 @@ object AkkaBakerConfig extends LazyLogging {
         journalInitializeTimeout = 30.seconds,
         seedNodes = ClusterBakerActorProvider.SeedNodesList(seedNodes),
         configuredEncryption = Encryption.NoEncryption,
-        timeouts = defaultTimeouts
+        timeouts = defaultTimeouts,
+        blacklistedProcesses = List.empty
       )
 
     AkkaBakerConfig(
@@ -147,7 +149,8 @@ object AkkaBakerConfig extends LazyLogging {
           providedIngredientFilter = config.as[List[String]]("baker.filtered-ingredient-values") ++ config.as[List[String]]("baker.filtered-ingredient-values-for-stream"),
           actorIdleTimeout = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout"),
           configuredEncryption = encryption,
-          Timeouts.apply(config)
+          Timeouts.apply(config),
+          blacklistedProcesses = config.as[List[String]]("baker.blacklisted-processes")
         )
       case Some("cluster-sharded") =>
         new ClusterBakerActorProvider(
@@ -165,7 +168,8 @@ object AkkaBakerConfig extends LazyLogging {
           getIngredientsFilter = config.as[List[String]]("baker.filtered-ingredient-values") ++ config.as[List[String]]("baker.filtered-ingredient-values-for-get"),
           providedIngredientFilter = config.as[List[String]]("baker.filtered-ingredient-values") ++ config.as[List[String]]("baker.filtered-ingredient-values-for-stream"),
           configuredEncryption = encryption,
-          Timeouts.apply(config)
+          Timeouts.apply(config),
+          blacklistedProcesses = config.as[List[String]]("baker.blacklisted-processes")
         )
       case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
     }

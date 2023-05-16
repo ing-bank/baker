@@ -42,14 +42,14 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
 lazy val scala212 = "2.12.16"
 lazy val scala213 = "2.13.8"
 
-lazy val supportedScalaVersions = List(scala213, scala212)
+lazy val supportedScalaVersions = List(scala213)
 val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
-  javacOptions := Seq("-source", "1.8", "-target", "1.8"),
+  javacOptions := Seq("-source", "17", "-target", "17"),
   scalacOptions := Seq(
-    s"-target:jvm-1.8",
+    s"-target:jvm-17",
     "-unchecked",
     "-deprecation",
     "-feature",
@@ -289,7 +289,7 @@ lazy val `baker-recipe-dsl-kotlin`: Project = project.in(file("core/recipe-dsl-k
   .settings(
     moduleName := "baker-recipe-dsl-kotlin",
     kotlinVersion := "1.7.22",
-    kotlincJvmTarget := "1.8",
+    kotlincJvmTarget := "17",
     kotlinLib("stdlib-jdk8"),
     kotlinLib("reflect"),
     libraryDependencies ++=
@@ -314,7 +314,7 @@ lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compile
   .settings(
     moduleName := "baker-compiler",
     kotlinVersion := "1.7.22",
-    kotlincJvmTarget := "1.8",
+    kotlincJvmTarget := "17",
     libraryDependencies ++=
       testDeps(scalaTest, scalaCheck, junitJupiter)
   )
