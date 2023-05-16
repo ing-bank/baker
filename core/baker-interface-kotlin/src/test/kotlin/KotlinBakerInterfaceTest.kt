@@ -20,7 +20,6 @@ class KotlinBakerInterfaceTest {
         .filterNot { it.isSynthetic }
         .map { it.sanitizedName() }
         .filterNot { it == "\$init\$" }
-        .sorted()
 
     // Scala functions with default arguments have $default$ in their name.
     private fun Method.sanitizedName() = if (name.contains("\$default\$")) {
@@ -45,12 +44,13 @@ class KotlinBakerInterfaceTest {
                 names
             }
 
-        // We removed a couple of nonsensical overloads. We need to add those here so the comparison does not fail.
-        methodNames.add("fireEventAndResolveWhenReceived")
-        methodNames.add("fireEventAndResolveWhenCompleted")
-        methodNames.add("fireEventAndResolveOnEvent")
-        methodNames.add("fireEvent")
-
-        return methodNames.sorted()
+        // The Scala interface contains a couple of nonsensical overloads. These no longer exist in the Kotlin DSL.
+        // We take these cases into account here so the comparison does not fail.
+        return methodNames.apply {
+            add("fireEventAndResolveWhenReceived")
+            add("fireEventAndResolveWhenCompleted")
+            add("fireEventAndResolveOnEvent")
+            add("fireEvent")
+        }
     }
 }
