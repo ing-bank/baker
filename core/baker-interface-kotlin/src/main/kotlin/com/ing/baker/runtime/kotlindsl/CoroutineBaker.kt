@@ -136,16 +136,16 @@ class CoroutineBaker(private val jBaker: Baker) : com.ing.baker.runtime.kotlinds
 
     override suspend fun registerEventListener(
         recipeName: String,
-        listenerFunction: ((RecipeEventMetadata, EventInstance) -> Unit)
+        listenerFunction: (RecipeEventMetadata, EventInstance) -> Unit
     ) {
         jBaker.registerEventListener(recipeName, listenerFunction).await()
     }
 
-    override suspend fun registerEventListener(listenerFunction: ((RecipeEventMetadata, EventInstance) -> Unit)) {
+    override suspend fun registerEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) -> Unit) {
         jBaker.registerEventListener(listenerFunction).await()
     }
 
-    override suspend fun registerBakerEventListener(listenerFunction: ((BakerEvent) -> Unit)) {
+    override suspend fun registerBakerEventListener(listenerFunction: (BakerEvent) -> Unit) {
         jBaker.registerBakerEventListener(listenerFunction).await()
     }
 

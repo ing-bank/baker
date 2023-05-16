@@ -1,4 +1,5 @@
 import com.ing.baker.runtime.common.Baker
+import com.ing.baker.runtime.kotlindsl.CoroutineBaker
 import org.junit.Assert.fail
 import org.junit.Test
 import java.lang.reflect.Method
@@ -9,7 +10,7 @@ class CoroutineBakerInterfaceTest {
 
     @Test
     fun `compare Scala and Kotlin Baker interfaces`() {
-        @Suppress("ConvertArgumentToSet") // Some method names occur multiple times.
+        @Suppress("ConvertArgumentToSet") // Some method names occur multiple times, thus we can't use a set.
         val missingInKotlinInterface = methodsInScalaInterface().minus(methodsInKotlinInterface())
 
         if (missingInKotlinInterface.isNotEmpty()) {
@@ -17,6 +18,7 @@ class CoroutineBakerInterfaceTest {
         }
     }
 
+    // TODO don't convert this to a .java class, so we can get the generic type parameters in the return values.
     private fun methodsInScalaInterface() = Baker::class.java.declaredMethods
         .filterNot { it.isSynthetic }
         .map { it.sanitizedName() }
