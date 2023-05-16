@@ -18,7 +18,7 @@ import com.ing.baker.runtime.javadsl.SensoryEventResult
 import com.ing.baker.types.Value
 import java.util.*
 
-interface Baker {
+interface KBaker {
     suspend fun gracefulShutdown()
 
     suspend fun addRecipe(compiledRecipe: CompiledRecipe, validate: Boolean, timeCreated: Long = System.currentTimeMillis()): String
@@ -70,7 +70,7 @@ interface Baker {
 
     suspend fun getAllRecipes(): Map<String, RecipeInformation>
 
-    suspend fun getInteraction(interactionName: String): Optional<InteractionInstanceDescriptor>
+    suspend fun getInteraction(interactionName: String): InteractionInstanceDescriptor?
 
     suspend fun getAllInteractions(): List<InteractionInstanceDescriptor>
 

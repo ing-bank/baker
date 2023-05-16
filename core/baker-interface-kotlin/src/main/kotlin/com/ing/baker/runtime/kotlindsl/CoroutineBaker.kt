@@ -24,7 +24,7 @@ import kotlinx.coroutines.withTimeout
 import java.util.*
 import kotlin.time.Duration.Companion.seconds
 
-class CoroutineBaker(private val jBaker: Baker) : com.ing.baker.runtime.kotlindsl.Baker, AutoCloseable {
+class CoroutineBaker(private val jBaker: Baker) : KBaker, AutoCloseable {
     override fun close() = runBlocking {
         withTimeout(10.seconds) {
             gracefulShutdown()
@@ -119,8 +119,8 @@ class CoroutineBaker(private val jBaker: Baker) : com.ing.baker.runtime.kotlinds
 
     override suspend fun getAllRecipes(): Map<String, RecipeInformation> = jBaker.allRecipes.await()
 
-    override suspend fun getInteraction(interactionName: String): Optional<InteractionInstanceDescriptor> =
-        jBaker.getInteraction(interactionName).await()
+    override suspend fun getInteraction(interactionName: String): InteractionInstanceDescriptor? =
+        jBaker.getInteraction(interactionName).await().toNullable()
 
     override suspend fun getAllInteractions(): List<InteractionInstanceDescriptor> =
         jBaker.allInteractions.await()
@@ -155,4 +155,6 @@ class CoroutineBaker(private val jBaker: Baker) : com.ing.baker.runtime.kotlinds
     override suspend fun addMetaData(recipeInstanceId: String, metadata: Map<String, String>) {
         jBaker.addMetaData(recipeInstanceId, metadata).await()
     }
+
+    private fun <T> Optional<T>.toNullable(): T? = if(isEmpty) null else get()
 }

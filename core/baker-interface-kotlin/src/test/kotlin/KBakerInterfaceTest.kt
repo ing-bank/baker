@@ -1,15 +1,16 @@
 import com.ing.baker.runtime.common.Baker
+import com.ing.baker.runtime.kotlindsl.KBaker
 import org.junit.Assert.fail
 import org.junit.Test
 import java.lang.reflect.Method
 import kotlin.math.pow
 import kotlin.reflect.full.declaredFunctions
 
-class CoroutineBakerInterfaceTest {
+class KBakerInterfaceTest {
 
     @Test
     fun `compare Scala and Kotlin Baker interfaces`() {
-        @Suppress("ConvertArgumentToSet") // Some method names occur multiple times, thus we can't use a set.
+        @Suppress("ConvertArgumentToSet") // Some method names occur multiple times due to overloads
         val missingInKotlinInterface = methodsInScalaInterface().minus(methodsInKotlinInterface())
 
         if (missingInKotlinInterface.isNotEmpty()) {
@@ -17,7 +18,6 @@ class CoroutineBakerInterfaceTest {
         }
     }
 
-    // TODO don't convert this to a .java class, so we can get the generic type parameters in the return values.
     private fun methodsInScalaInterface() = Baker::class.java.declaredMethods
         .filterNot { it.isSynthetic }
         .map { it.sanitizedName() }
@@ -32,21 +32,19 @@ class CoroutineBakerInterfaceTest {
     }
 
     private fun methodsInKotlinInterface(): List<String> {
-        val methodNames = mutableListOf<String>()
-
-        com.ing.baker.runtime.kotlindsl.Baker::class
-            .declaredFunctions
-            .forEach { function ->
+        val methodNames = KBaker::class.declaredFunctions
+            .fold(initial = mutableListOf<String>()) { names, kFunction ->
                 // The Kotlin interface uses default arguments instead of overloads. As a result the Kotlin
                 // interface has fewer methods. We correct that here.
-                val defaultArgumentsCount = function.parameters.count { param -> param.isOptional }
+                val defaultArgumentsCount = kFunction.parameters.count { param -> param.isOptional }
                 if (defaultArgumentsCount != 0) {
                     repeat(2.toDouble().pow(defaultArgumentsCount.toDouble()).toInt()) {
-                        methodNames.add(function.name)
+                        names.add(kFunction.name)
                     }
                 } else {
-                    methodNames.add(function.name)
+                    names.add(kFunction.name)
                 }
+                names
             }
 
         // We removed a couple of nonsensical overloads. We need to add those here so the comparison does not fail.
