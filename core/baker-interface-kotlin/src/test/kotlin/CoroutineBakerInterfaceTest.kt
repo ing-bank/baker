@@ -1,5 +1,4 @@
 import com.ing.baker.runtime.common.Baker
-import com.ing.baker.runtime.kotlindsl.CoroutineBaker
 import org.junit.Assert.fail
 import org.junit.Test
 import java.lang.reflect.Method
