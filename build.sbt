@@ -39,7 +39,7 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
       state
 })
 
-lazy val scala212 = "2.12.16"
+//lazy val scala212 = "2.12.16"
 lazy val scala213 = "2.13.8"
 
 lazy val supportedScalaVersions = List(scala213)
@@ -634,8 +634,8 @@ lazy val `bakery-integration-tests`: Project = project.in(file("bakery/integrati
     `interaction-example-reserve-items`)
 
 lazy val `sbt-bakery-docker-generate`: Project = project.in(file("docker/sbt-bakery-docker-generate"))
-  .settings(scalaVersion := scala212, crossScalaVersions := Nil)
-  .settings(defaultModuleSettings212)
+  .settings(scalaVersion := scala213, crossScalaVersions := Nil)
+  .settings(defaultModuleSettings)
   .settings(noPublishSettings) // docker plugin can't be published, at least not to azure feed
   .settings(
     crossScalaVersions := Nil,
@@ -646,8 +646,8 @@ lazy val `sbt-bakery-docker-generate`: Project = project.in(file("docker/sbt-bak
       IO.write(file, sourceFile)
       Seq(file)
     }.taskValue,
-    addSbtPlugin(("com.github.sbt" % "sbt-native-packager" % "1.9.9") cross CrossVersion.constant(scala212)),
-    addSbtPlugin(("org.vaslabs.kube" % "sbt-kubeyml" % "0.4.0") cross CrossVersion.constant(scala212))
+    addSbtPlugin(("com.github.sbt" % "sbt-native-packager" % "1.9.9") cross CrossVersion.constant(scala213)),
+    addSbtPlugin(("org.vaslabs.kube" % "sbt-kubeyml" % "0.4.0") cross CrossVersion.constant(scala213))
   )
   .enablePlugins(SbtPlugin)
   .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
