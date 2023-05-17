@@ -30,27 +30,24 @@ class KotlinBakerInterfaceTest {
 
     private fun methodsInKotlinInterface(): List<String> {
         val methodNames = com.ing.baker.runtime.kotlindsl.Baker::class.declaredFunctions
-            .fold(initial = mutableListOf<String>()) { names, kFunction ->
+            .fold(initial = emptyList<String>()) { names, kFunction ->
                 // The Kotlin interface uses default arguments instead of overloads. As a result the Kotlin
                 // interface has fewer methods. We correct that here.
                 val defaultArgumentsCount = kFunction.parameters.count { param -> param.isOptional }
                 if (defaultArgumentsCount != 0) {
-                    repeat(2.toDouble().pow(defaultArgumentsCount.toDouble()).toInt()) {
-                        names.add(kFunction.name)
-                    }
+                    names + List(2.toDouble().pow(defaultArgumentsCount.toDouble()).toInt()) { kFunction.name }
                 } else {
-                    names.add(kFunction.name)
+                    names + kFunction.name
                 }
-                names
             }
 
         // The Scala interface contains a couple of nonsensical overloads. These no longer exist in the Kotlin DSL.
         // We take these cases into account here so the comparison does not fail.
-        return methodNames.apply {
-            add("fireEventAndResolveWhenReceived")
-            add("fireEventAndResolveWhenCompleted")
-            add("fireEventAndResolveOnEvent")
-            add("fireEvent")
-        }
+        return methodNames + listOf(
+            "fireEventAndResolveWhenReceived",
+            "fireEventAndResolveWhenCompleted",
+            "fireEventAndResolveOnEvent",
+            "fireEvent"
+        )
     }
 }
