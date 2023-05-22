@@ -40,7 +40,8 @@ class DelayedTransitionActorSpec  extends TestKit(ActorSystem("DelayedTransition
     "acknowledge the ScheduleDelayedTransition with a TransitionDelayed" in {
       val index = TestProbe("index-probe")
 
-      val delayedTransitionActor = system.actorOf(DelayedTransitionActor.props(index.testActor))
+      val delayedTransitionActor = system.actorOf(
+        DelayedTransitionActor.props(index.testActor, null, 1000, 1000))
 
       val recipeId = UUID.randomUUID().toString
       val jobId: Long = 1
@@ -55,7 +56,7 @@ class DelayedTransitionActorSpec  extends TestKit(ActorSystem("DelayedTransition
     "Fire the FireDelayedTransition when the Time is up" in {
       val index = TestProbe("index-probe")
 
-      val delayedTransitionActor = system.actorOf(DelayedTransitionActor.props(index.testActor))
+      val delayedTransitionActor = system.actorOf(DelayedTransitionActor.props(index.testActor, null, 1000, 1000))
 
       val recipeId = UUID.randomUUID().toString
       val jobId: Long = 1
@@ -74,7 +75,7 @@ class DelayedTransitionActorSpec  extends TestKit(ActorSystem("DelayedTransition
     "Not fire the FireDelayedTransition when the StartTimer is not given" in {
       val index = TestProbe("index-probe")
 
-      val delayedTransitionActor = system.actorOf(DelayedTransitionActor.props(index.testActor))
+      val delayedTransitionActor = system.actorOf(DelayedTransitionActor.props(index.testActor, null, 1000, 1000))
 
       val recipeId = UUID.randomUUID().toString
       val jobId: Long = 1
@@ -91,7 +92,7 @@ class DelayedTransitionActorSpec  extends TestKit(ActorSystem("DelayedTransition
     "Fire old messages after when the StartTimer is not given" in {
       val index = TestProbe("index-probe")
 
-      val delayedTransitionActor = system.actorOf(DelayedTransitionActor.props(index.testActor),
+      val delayedTransitionActor = system.actorOf(DelayedTransitionActor.props(index.testActor, null, 1000, 1000),
         s"DelayedTransitionActor4")
 
       val recipeId = UUID.randomUUID().toString
@@ -112,7 +113,7 @@ class DelayedTransitionActorSpec  extends TestKit(ActorSystem("DelayedTransition
     "Not Fire the FireDelayedTransition multiple times if given" in {
       val index = TestProbe("index-probe")
 
-      val delayedTransitionActor = system.actorOf(DelayedTransitionActor.props(index.testActor))
+      val delayedTransitionActor = system.actorOf(DelayedTransitionActor.props(index.testActor, null, 1000, 1000))
 
       val recipeId = UUID.randomUUID().toString
       val jobId: Long = 1

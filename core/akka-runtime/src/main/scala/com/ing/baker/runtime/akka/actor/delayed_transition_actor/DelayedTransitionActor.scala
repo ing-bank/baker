@@ -1,12 +1,14 @@
 package com.ing.baker.runtime.akka.actor.delayed_transition_actor
 
 import akka.actor.{ActorLogging, ActorRef, Props}
-import akka.persistence.{PersistentActor, RecoveryCompleted}
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.{DelayedTransitionExecuted, DelayedTransitionInstance, DelayedTransitionScheduled, getId, prefix}
+import akka.persistence._
+import akka.persistence.cassandra.cleanup.Cleanup
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.{DelayedTransitionExecuted, DelayedTransitionInstance, DelayedTransitionScheduled, DelayedTransitionSnapshot, getId, prefix}
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransition, FireDelayedTransitionAck, ScheduleDelayedTransition, StartTimer, TickTimer}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{NoSuchProcess, ProcessDeleted}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
+import com.typesafe.config.Config
 
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
@@ -15,7 +17,10 @@ object DelayedTransitionActor {
 
   def prefix(id: String) = s"timer-interaction-$id-"
 
-  def props(processIndex: ActorRef) = Props(new DelayedTransitionActor(processIndex: ActorRef))
+  def props(processIndex: ActorRef,
+            cleanup: Cleanup,
+            snapShotInterval: Int,
+            snapshotCount: Int) = Props(new DelayedTransitionActor(processIndex, cleanup, snapShotInterval, snapshotCount))
 
   case class DelayedTransitionInstance(recipeInstanceId: String,
                                        timeToFire: Long,
@@ -28,13 +33,18 @@ object DelayedTransitionActor {
 
   case class DelayedTransitionExecuted(id: String, delayedTransitionInstance: DelayedTransitionInstance) extends BakerSerializable
 
+  case class DelayedTransitionSnapshot(waitingTransitions: Map[String, DelayedTransitionInstance]) extends BakerSerializable
+
   private def getId(recipeInstanceId: String, jobId: Long): String =
     recipeInstanceId + jobId
 }
 
-class DelayedTransitionActor(processIndex: ActorRef) extends PersistentActor with ActorLogging {
+class DelayedTransitionActor(processIndex: ActorRef,
+                             cleanup: Cleanup,
+                             snapShotInterval: Int,
+                             snapshotCount: Int) extends PersistentActor with ActorLogging {
 
-  private var waitingTimer: Map[String, DelayedTransitionInstance] = Map[String, DelayedTransitionInstance]()
+  private var waitingTransitions: Map[String, DelayedTransitionInstance] = Map[String, DelayedTransitionInstance]()
 
   import context.dispatcher
 
@@ -58,9 +68,9 @@ class DelayedTransitionActor(processIndex: ActorRef) extends PersistentActor wit
       event.eventToFire,
       Some(event.originalSender)
     )
-    persist(DelayedTransitionScheduled(id, instance)) { _ =>
-      if (!waitingTimer.contains(id)) {
-        waitingTimer += (id -> instance)
+    persistWithSnapshot(DelayedTransitionScheduled(id, instance)) { _ =>
+      if (!waitingTransitions.contains(id)) {
+        waitingTransitions += (id -> instance)
         sender() ! ProcessInstanceProtocol.TransitionDelayed(event.jobId, event.transitionId, event.consumed)
       }
       else {
@@ -80,13 +90,22 @@ class DelayedTransitionActor(processIndex: ActorRef) extends PersistentActor wit
       context.become(running)
   }
 
-  // TODO Do not grow indefinitely (Use snapshots/remove old entries)
   def running: Receive = {
+    case SaveSnapshotSuccess(metadata) =>
+      if (metadata.sequenceNr % snapshotCount == 0 && lastSequenceNr > 0) {
+        cleanup.deleteBeforeSnapshot(metadata.persistenceId, snapShotInterval)
+        log.debug("Snapshots cleaned")
+      }
+      log.debug("Snapshot saved")
+
+    case SaveSnapshotFailure(_, _) =>
+      log.info("Saving snapshot failed")
+
     case event@ScheduleDelayedTransition(recipeInstanceId, waitTimeInMillis, jobId, transitionId, consumed, eventToFire, originalSender) =>
       handleScheduleDelayedTransition(event)
 
     case TickTimer =>
-      waitingTimer.foreach { case (id, instance) =>
+      waitingTransitions.foreach { case (id, instance) =>
         if (System.currentTimeMillis() > instance.timeToFire) {
           processIndex ! FireDelayedTransition(instance.recipeInstanceId,
             instance.jobId,
@@ -98,33 +117,47 @@ class DelayedTransitionActor(processIndex: ActorRef) extends PersistentActor wit
 
     case FireDelayedTransitionAck(recipeInstanceId, jobId) =>
       val id = getId(recipeInstanceId, jobId)
-      waitingTimer.get(id) match {
+      waitingTransitions.get(id) match {
         case Some(instance) =>
-          persist(DelayedTransitionExecuted(id, instance)) { _ =>
-            waitingTimer -= id
+          persistWithSnapshot(DelayedTransitionExecuted(id, instance)) { _ =>
+            waitingTransitions -= id
           }
         case None => log.error(s"FireDelayedTransitionAck received for $id but not found")
       }
 
     case ProcessDeleted(recipeInstanceId) =>
       log.error(s"ProcessDeleted received in DelayedTransitionInstance for $recipeInstanceId")
-      waitingTimer --= waitingTimer.filter(d => d._2.recipeInstanceId == recipeInstanceId).keys
+      waitingTransitions --= waitingTransitions.filter(d => d._2.recipeInstanceId == recipeInstanceId).keys
 
     case NoSuchProcess(recipeInstanceId) =>
       log.error(s"NoSuchProcess received in DelayedTransitionInstance for $recipeInstanceId")
-      waitingTimer --= waitingTimer.filter(d => d._2.recipeInstanceId == recipeInstanceId).keys
+      waitingTransitions --= waitingTransitions.filter(d => d._2.recipeInstanceId == recipeInstanceId).keys
   }
 
   override def persistenceId: String = prefix(context.self.path.name)
 
+  def persistWithSnapshot[A](event: A)(handler: A => Unit): Unit = {
+    persist(event)(handler)
+    if (lastSequenceNr % snapShotInterval == 0 && lastSequenceNr != 0) {
+      log.debug("Writing Snapshots")
+      saveSnapshot(DelayedTransitionSnapshot(waitingTransitions))
+    }
+  }
+
   override def receiveRecover: Receive = {
+
+    case SnapshotOffer(_, delayedTransitionSnapshot: DelayedTransitionSnapshot) =>
+      log.debug("Loading Snapshots")
+      waitingTransitions = delayedTransitionSnapshot.waitingTransitions
+    case SnapshotOffer(_, _) =>
+      val message = "could not load snapshot because snapshot was not of type ProcessIndexSnapShot"
+      log.error(message)
+      throw new IllegalArgumentException(message)
     case scheduled: DelayedTransitionScheduled =>
-      waitingTimer += (
+      waitingTransitions += (
         scheduled.id ->
         scheduled.delayedTransitionInstance)
     case fired: DelayedTransitionExecuted =>
-      waitingTimer += (
-        fired.id ->
-        fired.delayedTransitionInstance)
+      waitingTransitions -= fired.id
   }
 }

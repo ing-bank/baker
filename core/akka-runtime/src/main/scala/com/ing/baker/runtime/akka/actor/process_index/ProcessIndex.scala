@@ -132,6 +132,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   private val config: Config = context.system.settings.config
 
   private val snapShotInterval: Int = config.getInt("baker.actor.snapshot-interval")
+  private val snapshotCount: Int = config.getInt("baker.actor.snapshot-count")
 
   private val processInquireTimeout: FiniteDuration = config.getDuration("baker.process-inquire-timeout").toScala
   private val updateCacheTimeout: FiniteDuration =  config.getDuration("baker.process-index-update-cache-timeout").toScala
@@ -143,10 +144,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
   private val recipeCache: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
 
-  private val cleanup = new akka.persistence.cassandra.cleanup.Cleanup(context.system)
+  private val cleanup = new cassandra.cleanup.Cleanup(context.system)
 
   private val delayedTransitionActor: ActorRef = context.actorOf(
-    props = DelayedTransitionActor.props(this.self),
+    props = DelayedTransitionActor.props(this.self, cleanup, snapShotInterval, snapshotCount),
     name = s"${self.path.name}-timer")
 
   // if there is a retention check interval defined we schedule a recurring message
@@ -283,7 +284,12 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   }
 
   override def receiveCommand: Receive = {
-    case SaveSnapshotSuccess(_) => log.debug("Snapshot saved")
+    case SaveSnapshotSuccess(metadata) =>
+      if(metadata.sequenceNr % snapshotCount == 0 && lastSequenceNr > 0) {
+        cleanup.deleteBeforeSnapshot(metadata.persistenceId, snapShotInterval)
+        log.debug("Snapshots cleaned")
+      }
+      log.debug("Snapshot saved")
 
     case SaveSnapshotFailure(_, _) => log.error("Saving snapshot failed")
 
