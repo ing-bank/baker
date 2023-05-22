@@ -5,6 +5,7 @@ import com.ing.baker.recipe.annotations.RequiresIngredient
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
 import com.ing.baker.recipe.javadsl.Interaction
+import com.ing.baker.recipe.kotlindsl.JavaInteraction.ItemsReserved
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -324,9 +325,9 @@ class KotlinDslTest {
 
 
     @Test
-    fun `create a recipe with checkpoint evenst`() {
-        val recipe = recipe("RecipeWithCheckpointEvent"){
-            checkpointEvent("Success"){
+    fun `create a recipe with checkpoint events`() {
+        val recipe = recipe("RecipeWithCheckpointEvent") {
+            checkpointEvent("Success") {
                 requiredEvents {
                     event<Interactions.MakePayment.PaymentSuccessful>()
                     event("myEvent")
@@ -358,6 +359,22 @@ class KotlinDslTest {
         }
     }
 
+    @Test
+    fun `transformEvent should work for Java classes`() {
+        val recipe = recipe("java transform event") {
+            interaction<JavaInteraction> {
+                transformEvent<ItemsReserved>(newName = "ItemsReservedNew") {
+                    "reservedItems" to "reservedItemsNew"
+                }
+            }
+        }
+
+        with(recipe.interactions().apply(0)) {
+            assertEquals(1, eventOutputTransformers().size())
+            assertEquals("ItemsReserved", eventOutputTransformers().toList().get(0)._1.name())
+            assertEquals(EventOutputTransformer("ItemsReservedNew", mapOf("reservedItems" to "reservedItemsNew")), eventOutputTransformers().toList().get(0)._2)
+        }
+    }
 
     object Events {
         class OrderPlaced(val items: List<Ingredients.Item>)
@@ -409,8 +426,8 @@ class KotlinDslTest {
 
     interface KotlinInteractionWithAnnotations : Interaction {
         interface Outcome
-        data class Person(val name: String, val age: Int): Outcome
-        data class Error(val reason: String): Outcome
+        data class Person(val name: String, val age: Int) : Outcome
+        data class Error(val reason: String) : Outcome
 
         @FiresEvent(oneOf = [Person::class, Error::class])
         fun apply(
@@ -420,7 +437,4 @@ class KotlinDslTest {
 
     private fun <T> Seq<T>.get(index: Int): T = apply(index)
     private fun <T> Set<T>.get(index: Int): T = toList().apply(index)
-    private fun <T> Set<T>.firstElement(): T = get(0)
-    private fun <T> Set<T>.secondElement(): T = get(1)
-
 }

@@ -17,10 +17,12 @@ import scala.concurrent.duration._
 
 class LocalBakerActorProvider(
                                retentionCheckInterval: FiniteDuration,
-                               ingredientsFilter: List[String],
+                               getIngredientsFilter: List[String],
+                               providedIngredientFilter: List[String],
                                actorIdleTimeout: Option[FiniteDuration],
                                configuredEncryption: Encryption,
                                timeouts: AkkaBakerConfig.Timeouts,
+                               blacklistedProcesses: List[String]
                              ) extends BakerActorProvider {
   override def initialize(implicit system: ActorSystem): Unit = ()
 
@@ -41,7 +43,9 @@ class LocalBakerActorProvider(
               configuredEncryption,
               interactionManager,
               recipeManager,
-              ingredientsFilter),
+              getIngredientsFilter,
+              providedIngredientFilter,
+              blacklistedProcesses),
             childName = "ProcessIndexActor",
             minBackoff = restartMinBackoff,
             maxBackoff = restartMaxBackoff,

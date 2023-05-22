@@ -13,8 +13,8 @@ import com.ing.baker.types.{PrimitiveValue, Value}
 
 object SensoryEventResponseHandler {
 
-  def apply(receiver: ActorRef, command: ProcessEvent, ingredientsFilter: Seq[String] = Seq.empty): Props =
-    Props(new SensoryEventResponseHandler(receiver, command, ingredientsFilter))
+  def apply(receiver: ActorRef, command: ProcessEvent): Props =
+    Props(new SensoryEventResponseHandler(receiver, command))
 }
 
 /**
@@ -23,7 +23,7 @@ object SensoryEventResponseHandler {
  * - Publishes events to the system event stream
  * - Does involving logging
  */
-class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ingredientsFilter: Seq[String])
+class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent)
   extends Actor with ActorMetrics with ActorLogging {
 
   context.setReceiveTimeout(command.timeout)
@@ -68,7 +68,7 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
     def result = SensoryEventResult(
       sensoryEventStatus = SensoryEventStatus.Completed,
       eventNames = runtimeEvents.map(_.name),
-      ingredients = filterIngredientValues(runtimeEvents.flatMap(_.providedIngredients).toMap)
+      ingredients = runtimeEvents.flatMap(_.providedIngredients).toMap
     )
 
     command.reaction match {
@@ -79,13 +79,6 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
     }
     stopActor()
   }
-
-  private def filterIngredientValues(ingredients: Map[String, Value]): Map[String, Value] =
-    ingredients.map(ingredient =>
-      if (ingredientsFilter.contains(ingredient._1))
-        ingredient._1 -> PrimitiveValue("")
-      else
-        ingredient)
 
   def rejectWith(rejection: FireSensoryEventRejection): Unit = {
     log.debug("Stopping SensoryEventResponseHandler and rejecting request")

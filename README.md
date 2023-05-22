@@ -1,152 +1,228 @@
-# BAKER
+<div align="center">
+<img src="https://github.com/ing-bank/baker/blob/master/baker-logo.png?raw=true" alt="Baker Logo">
 
 [![Build Status](https://dev.azure.com/BakeryOSS/BakeryOSS/_apis/build/status/baker-oss-pr?branchName=master)](https://dev.azure.com/BakeryOSS/BakeryOSS/_build?definitionId=9&_a=summary)
 [![Maven Central](https://img.shields.io/maven-central/v/com.ing.baker/baker-runtime_2.12.svg?label=Maven%20Central&logo=apachemaven)](https://search.maven.org/artifact/com.ing.baker/baker-runtime_2.12)
 [![codecov.io](http://codecov.io/github/ing-bank/baker/coverage.svg?branch=master)](https://codecov.io/gh/ing-bank/baker?branch=master)
+</div>
 
-![](baker-logo.png)
+# Baker
 
-# Overview
+Baker is a library that provides a simple and intuitive way to orchestrate microservice-based process flows.
 
-Baker is a library that reduces the effort to orchestrate (micro)service-based process flows.
-Developers declare the orchestration logic in a recipe.
-A recipe is made out of **interactions** (system calls), **ingredients** (data) and **events**.
-A visual representation (shown below) of the recipe allows product owners, architects and developers to talk the same language.
+You declare your orchestration logic as a recipe using the Java, Kotlin, or Scala DSL. A recipe consists of
+`interactions` (system calls), `ingredients` (data), and `events`.
 
-The official documentation website of Baker: [Official Documentation](https://ing-bank.github.io/baker/).
+Bakers ability to visualize recipes provides a powerful communication tool that helps product owners, architects, and
+engineers to have a common understanding of the business process. This feature allows you to easily share your recipe
+with others, enabling collaboration and feedback.
 
-An introductory presentation of Baker: [Baker talk @ Amsterdam.Scala meetup](https://www.slideshare.net/BekirOguz/designing-process-flows-with-baker).
+Baker allows for the reuse of common interactions across different recipes, promoting consistency and reducing
+duplication. With Baker, you can quickly assemble complex process flows by reusing pre-existing building blocks that
+have been built by other teams within your company.
 
-A talk about Baker at the Scale By the Bay 2017 conference: [Declare, verify and execute microservices-based process flows](https://www.youtube.com/watch?v=0bWQwUmeXHU).
+Use the list below to learn more about Baker:
 
-For an example web-shop recipe in Scala, see the [examples sub-project](examples/baker-example/src/main/scala/webshop/webservice).
-Java developers new to Baker can use this [workshop](https://github.com/nikolakasev/workshop-baker) to get familiar with the library by reading the workshop assignment PDF document and making the unit tests green.
+- [Documentation](https://ing-bank.github.io/baker/)
+    - [Concepts](https://ing-bank.github.io/baker/sections/concepts/): high level concepts and terminology
+    - [Recipe DSL](https://ing-bank.github.io/baker/sections/reference/dsls/): how to use the recipe DSL
+    - [Visualization](https://ing-bank.github.io/baker/sections/reference/visualization/): how to visualize a recipe
+- [Baker Talk @ J-Fall 2021](https://www.youtube.com/watch?v=U4aCUT9zIFk): API orchestration taken to the next level
 
-WebShop Recipe:
-```scala
-  val webShopRecipe: Recipe =
-    Recipe("WebShop")
-      .withInteractions(
-        validateOrder,
-        manufactureGoods
-          .withRequiredEvents(valid, paymentMade),
-        shipGoods,
-        sendInvoice
-          .withRequiredEvent(goodsShipped)
-      )
-      .withSensoryEvents(
-        customerInfoReceived,
-        orderPlaced,
-        paymentMade)
+## A bird's-eye view of Baker
+
+A recipe is the blueprint of your business process. To create this blueprint you use the Java, Kotlin, or Scala DSL. The
+examples below demonstrate a recipe for a simple web shop process.
+
+<details>
+    <summary>Java DSL</summary>
+
+```java
+final Recipe recipe=new Recipe("Web shop")
+        .withSensoryEvents(
+        CustomerInfoReceived.class,
+        OrderPlaced.class,
+        PaymentMade.class
+    )
+            .withInteractions(
+            InteractionDescriptor.of(ValidateOrder.class),
+        InteractionDescriptor.of(ReserveItems.class)
+        .withRequiredEvent(PaymentMade.class),
+        InteractionDescriptor.of(ShipGoods.class),
+        InteractionDescriptor.of(SendInvoice.class)
+        .withRequiredEvent(GoodsShipped.class)
+        )
+        .withDefaultFailureStrategy(
+        new RetryWithIncrementalBackoffBuilder()
+        .withInitialDelay(Duration.ofMillis(100))
+        .withDeadline(Duration.ofHours(24))
+        .withMaxTimeBetweenRetries(Duration.ofMinutes(10))
+        .build());
 ```
-A visual representation of the WebShop recipe looks like the following, where the events are colored in gray, ingredients in orange and interactions in lilac:
+
+</details>
+
+<details>
+    <summary>Kotlin DSL</summary>
+
+```kotlin
+val recipe = recipe("Web shop") {
+    sensoryEvents {
+        event<CustomerInfoReceived>()
+        event<OrderPlaced>()
+        event<PaymentMade>()
+    }
+    interaction<ValidateOrder>()
+    interaction<ReserveItems> {
+        requiredEvents {
+            event<PaymentMade>()
+        }
+    }
+    interaction<ShipGoods>()
+    interaction<SendInvoice> {
+        requiredEvents {
+            event<GoodsShipped>()
+        }
+    }
+    defaultFailureStrategy = retryWithIncrementalBackoff {
+        initialDelay = 100.milliseconds
+        until = deadline(24.hours)
+        maxTimeBetweenRetries = 10.minutes
+    }
+}
+```
+
+</details>
+
+<details>
+    <summary>Scala DSL</summary>
+
+```scala
+val recipe: Recipe = Recipe("Web shop")
+  .withSensoryEvents(
+    Event[CustomerInfoReceived],
+    Event[OrderPlaced],
+    Event[PaymentMade]
+  )
+  .withInteractions(
+    ValidateOrder,
+    ReserveItems
+      .withRequiredEvent(Event[PaymentMade])
+      ShipGoods,
+    SendInvoice
+      .withRequiredEvent(goodsShipped)
+  )
+  .withDefaultFailureStrategy(
+    RetryWithIncrementalBackoff
+      .builder()
+      .withInitialDelay(100 milliseconds)
+      .withUntil(Some(UntilDeadline(24 hours)))
+      .withMaxTimeBetweenRetries(Some(10 minutes))
+      .build()
+  )
+```
+
+</details>
+
+<details>
+    <summary>Visualization</summary>
+
+Events are gray, ingredients orange, and interactions lilac:
 
 ![](docs/images/webshop.svg)
 
+</details>
 
-Baker consists of a DSL that allows developers to choose interactions from a catalogue and re-use them in their own recipes.
-Developers can use Java or Scala as a programming language. 
+## Getting Started
 
-# A Catalogue of Reusable Interactions
-Let's look at three different products that a bank would sell to customers:
+Baker is released to [Maven Central](https://search.maven.org/search?q=g:com.ing.baker). To use Baker you need three
+modules.
 
-Checking Account | Savings Account | Customer Onboarding
---- | --- | ---
-Verify Person's Identity | Verify Person's Identity | Verify Person's Identity
-Register Person | Register Person | Register Person
-Open *Checking* Account | Open *Savings* Account | `n/a`
-Issue Debit Card | `n/a` | `n/a`
-Send Message | Send Message | Send Message
-Register Product Possession | Register Product Possession | `n/a`
+1. recipe-dsl: DSL to describe recipes in a declarative manner
+2. compiler: Compiles recipes into models the runtime can execute
+3. runtime: The runtime to manage and execute recipes
 
-As you can see, there are similarities in the products.
+> **Note**
+> If you want to use the Kotlin DSL add `baker-recipe-dsl-kotlin_2.13` instead of `baker-recipe-dsl_2.13`.
 
-It becomes interesting when you're able to combine the same interactions in different recipes. New functionality can then be built quickly by re-using what's already available.
+### Maven
 
-# How to apply Baker?
-Applying Baker will only be successful if you make sure that:
-1. You've compared the products your company is selling and there are similarities;
-2. You've defined a catalogue of those capabilities necessary to deliver the products from;
-3. Each capability (**interaction** in Baker terms) is accessible via an API of any sort (could be a micro-service, web-service, so on);
+```xml
 
-# Getting Started
-
-To get started with SBT, simply add the following to your build.sbt file:
-
+<dependency>
+    <groupId>com.ing.baker</groupId>
+    <artifactId>baker-recipe-dsl_2.13</artifactId>
+    <version>3.6.3</version>
+</dependency>
+<dependency>
+    <groupId>com.ing.baker</groupId>
+    <artifactId>baker-compiler_2.13</artifactId>
+    <version>3.6.3</version>
+</dependency>
+<dependency>
+    <groupId>com.ing.baker</groupId>
+    <artifactId>baker-runtime_2.13</artifactId>
+    <version>3.6.3</version>
+</dependency>
 ```
-libraryDependencies += "com.ing.baker" %% "baker-recipe-dsl" % version
-libraryDependencies += "com.ing.baker" %% "baker-runtime" % version
-libraryDependencies += "com.ing.baker" %% "baker-compiler" % version
+
+### Gradle
+
+```groovy
+implementation 'com.ing.baker:baker-recipe-dsl_2.13:3.6.3'
+implementation 'com.ing.baker:baker-compiler_2.13:3.6.3'
+implementation 'com.ing.baker:baker-runtime_2.13:3.6.3'
 ```
 
-From 1.3.x to 2.0.x we cross compile to both Scala 2.11 and 2.12. 
+### Scala SBT
 
-Earlier releases are only available for Scala 2.11.
+Baker gets cross compiled and released for both Scala 2.12 and 2.13.
 
-From 3.x.x we support only Scala 2.12.
-
-# How to contribute?
-
-Execute the following commands in your terminal to get started with the development of Baker:
-
+```scala
+libraryDependencies += "com.ing.baker" % "baker-recipe-dsl_2.13" % "3.6.3"
+libraryDependencies += "com.ing.baker" % "baker-compiler_2.13" % "3.6.3"
+libraryDependencies += "com.ing.baker" % "baker-runtime_2.13" % "3.6.3"
 ```
-$ git clone https://github.com/ing-bank/baker.git
-$ cd baker
-$ sbt
+
+## Contributing
+
+We welcome your contributions! The simplest way to contribute to Baker is by creating a branch from a fork. You can then
+create a pull request on GitHub from your branch.
+
+### Compile and test
+
+To compile and test all libraries:
+
+```bash
+sbt 
 > compile
 > test
 ```
 
-# How to visualize your recipe?
-Baker can turn a recipe into a DOT representation. It can then be visualized using the following web-site (http://www.webgraphviz.com).
+To cross compile all libraries for Scala 2.12 and 2.13:
 
-Another way to visualize the recipe is to install [Graphviz](http://www.graphviz.org) on your development machine. On your Mac, install using [brew](https://brew.sh):
-
-```
-brew install graphviz
-```
-
-To test that all works fine, save the following text in a graph.dot file:
-
-```
-digraph d {
-A [label="Hello"]
-B [label="World"]
-C [label="Everyone"]
-A -> { B C }
-}
+```bash
+sbt
+> +compile
+> +test
 ```
 
-Assuming you have the graphviz `dot` command you can create an SVG by running:
+### Compile or test a single project
 
-```
-dot -v -Tsvg -O graph.dot
-```
+To build a single project (baker-akka-runtime, baker-anotations, etc...):
 
-Alternatively you can use [graphviz-java](https://github.com/nidi3/graphviz-java) to generate the SVG in your code:
+1. Find the name of the project by running:
 
-```scala
-import guru.nidi.graphviz.engine.{Format, Graphviz}
-import guru.nidi.graphviz.parse.Parser
-
-val g = Parser.read(getRecipeVisualization)
-Graphviz.fromGraph(g).render(Format.SVG).toString
+```bash
+sbt 
+> projects
 ```
 
+2. Open the desired project via `sbt`:
 
-Preview the results:
-
+```bash
+sbt
+> project <PROJECT_NAME>
+> compile
+> test
 ```
-open graph.dot.svg
-```
-
-You are all set to visualize your recipes now!
-
-To use custom fonts, see <http://www.graphviz.org/doc/fontfaq.txt>.
-
-# References
-1. DOT Graph Description Language (https://en.wikipedia.org/wiki/DOT_(graph_description_language)) - explains more about the format Baker uses to produce a graphical representation of the recipe;
-2. Order fulfillment (https://en.wikipedia.org/wiki/Order_fulfillment) - gives an idea about the theory behind order fulfillment strategies. As you are in the business of producing and selling products to people, you are in the business of fulfillment;
-
-# Security
-Baker uses free open-source license from [Xanitizer](https://www.xanitizer.com/xanitizer) for code security scans.

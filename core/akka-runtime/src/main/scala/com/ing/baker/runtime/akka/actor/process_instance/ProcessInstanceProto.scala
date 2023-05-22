@@ -130,6 +130,35 @@ object ProcessInstanceProto {
         } yield InstanceState(sequenceNr, marking, state, jobMap)
     }
 
+  implicit def ingredientFoundProto(implicit ev0: AnyRefMapping): ProtoMap[IngredientFound, protobuf.IngredientFound] =
+    new ProtoMap[IngredientFound, protobuf.IngredientFound] {
+
+      val companion = protobuf.IngredientFound
+
+      def toProto(a: IngredientFound): protobuf.IngredientFound =
+        protobuf.IngredientFound(Some(ctxToProto(a.value)))
+
+      def fromProto(message: protobuf.IngredientFound): Try[IngredientFound] =
+        for {
+          valueProto <- versioned(message.value, "value")
+          value <- ctxFromProto(valueProto)
+        } yield IngredientFound(value)
+    }
+
+  implicit def ingredientNotFoundProto(implicit ev0: AnyRefMapping): ProtoMap[IngredientNotFound.type, protobuf.IngredientNotFound] =
+    new ProtoMap[IngredientNotFound.type, protobuf.IngredientNotFound] {
+
+      val companion: GeneratedMessageCompanion[protobuf.IngredientNotFound] =
+        protobuf.IngredientNotFound
+
+      override def toProto(a: IngredientNotFound.type): protobuf.IngredientNotFound =
+        protobuf.IngredientNotFound()
+
+      override def fromProto(message: protobuf.IngredientNotFound): Try[IngredientNotFound.type] = {
+        Success(IngredientNotFound)
+      }
+    }
+
   implicit def initializeProto(implicit ev0: AnyRefMapping): ProtoMap[Initialize, protobuf.Initialize] =
     new ProtoMap[Initialize, protobuf.Initialize] {
 

@@ -1,11 +1,12 @@
 package com.ing.baker.runtime.javadsl
 
-import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.il.{CompiledRecipe}
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.{common, scaladsl}
 
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
+import scala.collection.immutable.Set
 
 case class RecipeInformation(compiledRecipe: CompiledRecipe,
                              recipeCreatedTime: Long,
@@ -20,8 +21,12 @@ case class RecipeInformation(compiledRecipe: CompiledRecipe,
 
   def getErrors: java.util.Set[String] = errors
 
+  override val sensoryEvents = compiledRecipe.sensoryEvents.asJava
+
   @nowarn
   def asScala: scaladsl.RecipeInformation =
-    scaladsl.RecipeInformation(compiledRecipe, recipeCreatedTime, errors.asScala.toSet, validate)
+    scaladsl.RecipeInformation(compiledRecipe, recipeCreatedTime, errors.asScala.toSet, validate, sensoryEvents.asScala.toSet)
+
+
 }
 

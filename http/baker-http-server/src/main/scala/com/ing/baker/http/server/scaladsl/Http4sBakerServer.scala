@@ -153,6 +153,8 @@ final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO
 
   private object InteractionName extends RegExpValidator("[A-Za-z0-9_]+")
 
+  private object IngredientName extends RegExpValidator("[A-Za-z0-9_]+")
+
   implicit val recipeDecoder: EntityDecoder[IO, EncodedRecipe] = jsonOf[IO, EncodedRecipe]
 
   implicit val eventInstanceDecoder: EntityDecoder[IO, EventInstance] = jsonOf[IO, EventInstance]
@@ -205,6 +207,8 @@ final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO
     case GET -> Root / RecipeInstanceId(recipeInstanceId) => baker.getRecipeInstanceState(recipeInstanceId).toBakerResultResponseIO
 
     case GET -> Root / RecipeInstanceId(recipeInstanceId) / "events" => baker.getEvents(recipeInstanceId).toBakerResultResponseIO
+
+//    case GET -> Root / RecipeInstanceId(recipeInstanceId) / "ingredient" / IngredientName(name) => baker.getIngredient(recipeInstanceId, name).toBakerResultResponseIO
 
     case GET -> Root / RecipeInstanceId(recipeInstanceId) / "ingredients" => baker.getIngredients(recipeInstanceId).toBakerResultResponseIO
 
