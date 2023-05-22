@@ -18,8 +18,7 @@ object DelayedTransitionProto {
           Some(a.timeToFire),
           Some(a.jobId),
           Some(a.transitionId),
-          Some(a.eventToFire),
-          Some(a.fired)
+          Some(a.eventToFire)
         )
       }
 
@@ -30,8 +29,7 @@ object DelayedTransitionProto {
           jobId <- versioned(message.jobId, "jobId")
           transitionId <- versioned(message.transitionId, "transitionId")
           eventToFire <- versioned(message.eventToFire, "eventToFire")
-          fired <- versioned(message.fired, "fired")
-        } yield DelayedTransitionInstance(recipeInstanceId, timeToFire, jobId, transitionId, eventToFire, fired, None)
+        } yield DelayedTransitionInstance(recipeInstanceId, timeToFire, jobId, transitionId, eventToFire, None)
     }
 
   implicit def delayedTransitionScheduledProto: ProtoMap[DelayedTransitionScheduled, protobuf.DelayedTransitionScheduled] =
