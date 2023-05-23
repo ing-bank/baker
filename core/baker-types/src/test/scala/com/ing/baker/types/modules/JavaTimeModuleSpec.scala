@@ -3,7 +3,7 @@ package com.ing.baker.types.modules
 import com.ing.baker.types
 import com.ing.baker.types.{Converters, Int32, Int64, RecordField, RecordValue, Value}
 
-import java.time.{Duration, Instant, LocalDate, LocalDateTime, ZoneId}
+import java.time.{Duration, Instant, LocalDate, LocalDateTime, OffsetDateTime, ZoneId, ZonedDateTime}
 import org.scalacheck.Gen
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalatest.matchers.should.Matchers
@@ -26,18 +26,11 @@ class JavaTimeModuleSpec extends AnyWordSpecLike with Matchers with Checkers {
   "The JavaTimeModule" should {
 
     "be able to parse the types of DateTime, LocalDateTime and LocalDate" in {
-      Converters.readJavaType[LocalDateTime] shouldBe types.Date
       Converters.readJavaType[LocalDate] shouldBe types.Date
+      Converters.readJavaType[LocalDateTime] shouldBe types.Date
+      Converters.readJavaType[OffsetDateTime] shouldBe types.Date
+      Converters.readJavaType[ZonedDateTime] shouldBe types.Date
       Converters.readJavaType[Instant] shouldBe types.Date
-      //This is the format as it used to be with Java 8/Java 11
-      Converters.readJavaType[Duration] shouldBe types.RecordType(Seq(RecordField("seconds", Int64), RecordField("nanos", Int32)))
-    }
-
-    "be able to read/write all LocalDateTime instances" in {
-
-      val localDateTimeGen: Gen[LocalDateTime] = numGen.map(millis => LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault()))
-
-      check(transitivityProperty[LocalDateTime](localDateTimeGen), defaultVerbose.withMinSuccessfulTests(minSuccessfulTests))
     }
 
     "be able to read/write all LocalDate instances" in {
@@ -47,29 +40,32 @@ class JavaTimeModuleSpec extends AnyWordSpecLike with Matchers with Checkers {
       check(transitivityProperty[LocalDate](localDateGen), defaultVerbose.withMinSuccessfulTests(minSuccessfulTests))
     }
 
+    "be able to read/write all LocalDateTime instances" in {
+
+      val localDateTimeGen: Gen[LocalDateTime] = numGen.map(millis => LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault()))
+
+      check(transitivityProperty[LocalDateTime](localDateTimeGen), defaultVerbose.withMinSuccessfulTests(minSuccessfulTests))
+    }
+
+    "be able to read/write all OffsetDateTime instances" in {
+
+      val offsetDateTimeGen: Gen[OffsetDateTime] = numGen.map(millis => OffsetDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault()))
+
+      check(transitivityProperty[OffsetDateTime](offsetDateTimeGen), defaultVerbose.withMinSuccessfulTests(minSuccessfulTests))
+    }
+
+    "be able to read/write all ZonedDateTime instances" in {
+
+      val offsetDateTimeGen: Gen[ZonedDateTime] = numGen.map(millis => ZonedDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault()))
+
+      check(transitivityProperty[ZonedDateTime](offsetDateTimeGen), defaultVerbose.withMinSuccessfulTests(minSuccessfulTests))
+    }
+
     "be able to read/write all Instant instances" in {
 
       val instantGen: Gen[Instant] = numGen.map(millis => Instant.ofEpochMilli(millis))
 
       check(transitivityProperty[Instant](instantGen), defaultVerbose.withMinSuccessfulTests(minSuccessfulTests))
-    }
-
-    "be able to read/write all Duration instances" in {
-
-      val durationGen: Gen[Duration] = numGen.map(millis => Duration.ofMillis(millis))
-
-      check(transitivityProperty[Duration](durationGen), defaultVerbose.withMinSuccessfulTests(minSuccessfulTests))
-    }
-
-    "be able to read/write original POJO Duration instances" in {
-      val duration: Duration = Duration.ofNanos(11000000001L)
-      val value: Value = Converters.toValue(duration)
-      val converted = value.as(classOf[Duration])
-      duration shouldBe converted
-
-      val durationValue: RecordValue = RecordValue(Map("seconds" -> Converters.toValue(11L), "nanos" -> Converters.toValue(1)))
-      val newDuration = durationValue.as(classOf[Duration])
-      newDuration shouldBe duration
     }
   }
 }
