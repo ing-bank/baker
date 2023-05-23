@@ -94,10 +94,9 @@ class DelayedTransitionActor(processIndex: ActorRef,
     case SaveSnapshotSuccess(metadata) =>
       log.debug("Snapshot saved")
       cleanupSnapshots(metadata.persistenceId, snapshotCount)
-      log.debug("Snapshots cleaned")
 
     case SaveSnapshotFailure(_, _) =>
-      log.info("Saving snapshot failed")
+      log.error("Saving snapshot failed")
 
     case event@ScheduleDelayedTransition(recipeInstanceId, waitTimeInMillis, jobId, transitionId, consumed, eventToFire, originalSender) =>
       handleScheduleDelayedTransition(event)

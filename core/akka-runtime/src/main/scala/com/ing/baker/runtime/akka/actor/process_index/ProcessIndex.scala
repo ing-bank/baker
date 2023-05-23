@@ -287,9 +287,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     case SaveSnapshotSuccess(metadata) =>
       log.debug("Snapshot saved")
       cleanup.deleteBeforeSnapshot(metadata.persistenceId, snapshotCount)
-      log.debug("Snapshots cleaned")
 
-    case SaveSnapshotFailure(_, _) => log.error("Saving snapshot failed")
+    case SaveSnapshotFailure(_, _) =>
+      log.error("Saving snapshot failed")
 
     case GetIndex =>
       sender() ! Index(index.values.filter(_.processStatus == Active).toSeq)
