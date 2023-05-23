@@ -26,12 +26,21 @@ class JavaTimeModuleSpec extends AnyWordSpecLike with Matchers with Checkers {
   "The JavaTimeModule" should {
 
     "be able to parse the types of DateTime, LocalDateTime and LocalDate" in {
+      Converters.readJavaType[java.util.Date] shouldBe types.Date
       Converters.readJavaType[LocalDate] shouldBe types.Date
       Converters.readJavaType[LocalDateTime] shouldBe types.Date
       Converters.readJavaType[OffsetDateTime] shouldBe types.Date
       Converters.readJavaType[ZonedDateTime] shouldBe types.Date
       Converters.readJavaType[Instant] shouldBe types.Date
     }
+
+    "be able to read/write all java.util.Date instances" in {
+
+      val dateGen: Gen[java.util.Date] = numGen.map(millis => java.util.Date.from(Instant.ofEpochMilli(millis)))
+
+      check(transitivityProperty[java.util.Date](dateGen), defaultVerbose.withMinSuccessfulTests(minSuccessfulTests))
+    }
+
 
     "be able to read/write all LocalDate instances" in {
 
