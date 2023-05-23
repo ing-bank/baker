@@ -92,11 +92,9 @@ class DelayedTransitionActor(processIndex: ActorRef,
 
   def running: Receive = {
     case SaveSnapshotSuccess(metadata) =>
-      if (metadata.sequenceNr % snapshotCount == 0 && lastSequenceNr > 0) {
-        cleanup.deleteBeforeSnapshot(metadata.persistenceId, snapShotInterval)
-        log.debug("Snapshots cleaned")
-      }
       log.debug("Snapshot saved")
+      cleanupSnapshots(metadata.persistenceId, snapshotCount)
+      log.debug("Snapshots cleaned")
 
     case SaveSnapshotFailure(_, _) =>
       log.info("Saving snapshot failed")
@@ -142,6 +140,11 @@ class DelayedTransitionActor(processIndex: ActorRef,
       log.debug("Writing Snapshots")
       saveSnapshot(DelayedTransitionSnapshot(waitingTransitions))
     }
+  }
+
+  def cleanupSnapshots(persistenceId: String, snapShotsToKeep: Int) : Unit = {
+    cleanup.deleteBeforeSnapshot(persistenceId, snapShotsToKeep)
+    log.debug("Snapshots cleaned")
   }
 
   override def receiveRecover: Receive = {

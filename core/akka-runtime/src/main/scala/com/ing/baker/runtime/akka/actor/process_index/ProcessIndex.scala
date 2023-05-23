@@ -285,11 +285,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   override def receiveCommand: Receive = {
     case SaveSnapshotSuccess(metadata) =>
-      if(metadata.sequenceNr % snapshotCount == 0 && lastSequenceNr > 0) {
-        cleanup.deleteBeforeSnapshot(metadata.persistenceId, snapShotInterval)
-        log.debug("Snapshots cleaned")
-      }
       log.debug("Snapshot saved")
+      cleanup.deleteBeforeSnapshot(metadata.persistenceId, snapshotCount)
+      log.debug("Snapshots cleaned")
 
     case SaveSnapshotFailure(_, _) => log.error("Saving snapshot failed")
 
