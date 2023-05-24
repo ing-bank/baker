@@ -1,25 +1,25 @@
 # Design a Recipe
 
-_Full project examples including tests and configuration can be found [here](https://github.com/ing-bank/baker/tree/master/examples)._
+Before creating a recipe, we have to translate the business requirements into Baker's three essential building blocks:
+`Ingredients`, `Events`, and `Interactions`.
 
-The _Development Life Cycle_ section provides a "top-down"/"by-example" guide to baker, all of the concepts 
-are introduced through exemplification on hypothetical development situations.
+Ingredients are immutable containers for the data in your process. In this example, `orderId` and the list of 
+`productIds` both qualify as an ingredient. Ingredients serve as input for interactions and are carried through
+the process via events.
 
-## Modeling the order placement process for a webshop using Ingredients, Events and Recipes.
+Events represent something that has happened in your process. Most of the time, events are outputs of interactions. 
+Sometimes events come from outside the process. Those events are called `SensoryEvents`. SensoryEvents are mostly used 
+to start/trigger the process.
 
-The recipe DSL allows you to declaratively describe your business process. The design always starts with the
-business requirements, lets say you are developing a webshop which will have many different microservices on 
-the backend. The initial requirements for the order reservation process reads: 
+Interactions bla blah
 
-_"An order contains an order id and a list of store item identifiers, when an order is placed it must first 
-be validated by reserving the items from the warehouse service, a success scenario yields the ids of the 
-reserved items, but if at least one item is unavailable at the warehouse a failure yields the list of unavailable items 
-and the process stops"_
 
-When developing with Baker we must first translate the requirements into our 3 essential building blocks, 
-`Ingredients` for raw data, `Events` for happenings (that might contain ingredients), and `Interactions` which 
-have ingredients as input, execute actions with other systems, and yield more events. We will do this so that the 
-baker runtime can orchestrate the execution of our process through the underlying microservices.
+
+
+
+Host in a shared repository so other teams could also use this interaction...
+
+
 
 ## Ingredients and Events
 

@@ -20,6 +20,7 @@ nav:
   - 'sections/getting-started.md'
   - 'sections/concepts.md'
   - Development Life Cycle:
+      - 'sections/development-life-cycle/introduction.md'
       - 'sections/development-life-cycle/design-a-recipe.md'
       - 'sections/development-life-cycle/use-visualizations.md'
       - 'sections/development-life-cycle/implement-interactions.md'
