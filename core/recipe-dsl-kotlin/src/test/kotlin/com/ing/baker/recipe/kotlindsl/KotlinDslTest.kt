@@ -173,7 +173,10 @@ class KotlinDslTest {
             assertEquals("reservedItems", inputIngredients().toList().apply(1).name())
 
             assertEquals(2, predefinedIngredients().size())
-            assertEquals("val", (predefinedIngredients().get("foo").get() as com.ing.baker.types.PrimitiveValue).value())
+            assertEquals(
+                "val",
+                (predefinedIngredients().get("foo").get() as com.ing.baker.types.PrimitiveValue).value()
+            )
             assertEquals(true, (predefinedIngredients().get("bar").get() as com.ing.baker.types.PrimitiveValue).value())
 
             assertEquals(2, requiredEvents().size())
@@ -323,7 +326,6 @@ class KotlinDslTest {
         }
     }
 
-
     @Test
     fun `create a recipe with checkpoint events`() {
         val recipe = recipe("RecipeWithCheckpointEvent") {
@@ -372,7 +374,25 @@ class KotlinDslTest {
         with(recipe.interactions().apply(0)) {
             assertEquals(1, eventOutputTransformers().size())
             assertEquals("ItemsReserved", eventOutputTransformers().toList().get(0)._1.name())
-            assertEquals(EventOutputTransformer("ItemsReservedNew", mapOf("reservedItems" to "reservedItemsNew")), eventOutputTransformers().toList().get(0)._2)
+            assertEquals(
+                EventOutputTransformer("ItemsReservedNew", mapOf("reservedItems" to "reservedItemsNew")),
+                eventOutputTransformers().toList().get(0)._2
+            )
+        }
+    }
+
+    @Test
+    fun `a Kotlin interaction without annotations with a generic ingredient container of which the elements are Java types`() {
+        val recipe = recipe("reproduce") {
+            interaction<GenericIngredientContainerWithJavaElements>()
+        }
+
+        with(recipe.interactions().apply(0)) {
+            assertEquals(2, inputIngredients().size())
+            assertEquals(inputIngredients().toList().apply(0).name(), "metaData")
+            assertEquals(inputIngredients().toList().apply(0).ingredientType().toString(), "CharArray")
+            assertEquals(inputIngredients().toList().apply(1).name(), "reservedItems")
+            assertEquals(inputIngredients().toList().apply(1).ingredientType().toString(), "List[Record(name: CharArray, id: Int64)]")
         }
     }
 
@@ -422,6 +442,12 @@ class KotlinDslTest {
 
             fun apply(items: List<Ingredients.Item>): ReserveItemsOutcome
         }
+    }
+
+    interface GenericIngredientContainerWithJavaElements : Interaction {
+        class Result
+
+        fun apply(metaData: String, reservedItems: List<ProductAgreement>): Result
     }
 
     interface KotlinInteractionWithAnnotations : Interaction {

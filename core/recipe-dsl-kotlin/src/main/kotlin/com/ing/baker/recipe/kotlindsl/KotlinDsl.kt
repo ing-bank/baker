@@ -5,11 +5,15 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
 import com.ing.baker.recipe.javadsl.InteractionDescriptor
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy
 import scala.Option
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
+import kotlin.reflect.KParameter
 import kotlin.reflect.full.functions
 import kotlin.reflect.full.primaryConstructor
+import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.javaType
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
@@ -248,7 +252,7 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
             }
 
             val inputIngredients = interactionClass.interactionFunction().parameters.drop(1)
-                .map { Ingredient(it.name, it.type.javaType) }
+                .map { Ingredient(it.name, it.toJavaType()) }
                 .toSet()
 
             Interaction.of(
@@ -466,3 +470,16 @@ private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
 }
 
 private fun KFunction<*>.hasFiresEventAnnotation() = annotations.any { it.annotationClass == FiresEvent::class }
+
+private fun KParameter.toJavaType(): Type {
+    return if (type.arguments.isEmpty()) {
+        type.javaType
+    } else {
+        return object : ParameterizedType {
+            // Not null assertions are 'safe' here. We already validated we are dealing with a generic type.
+            override fun getRawType(): Type = type.classifier?.starProjectedType?.javaType!!
+            override fun getActualTypeArguments(): Array<Type> = type.arguments.map { it.type?.javaType!! }.toTypedArray()
+            override fun getOwnerType(): Type? = null
+        }
+    }
+}
