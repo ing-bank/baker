@@ -175,12 +175,7 @@ lazy val `baker-interface`: Project = project.in(file("core/baker-interface"))
       catsEffect,
       fs2Core,
       fs2Io,
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, n)) if n <= 12 =>
-          scalaJava8Compat091
-        case _ =>
-          scalaJava8Compat100
-      },
+      scalaJava8Compat100,
       javaxInject,
       guava
     ) ++ providedDeps(findbugs) ++ testDeps(
@@ -288,7 +283,7 @@ lazy val `baker-recipe-dsl-kotlin`: Project = project.in(file("core/recipe-dsl-k
   .settings(Publish.settings)
   .settings(
     moduleName := "baker-recipe-dsl-kotlin",
-    kotlinVersion := "1.7.22",
+    kotlinVersion := "1.8.21",
     kotlincJvmTarget := "11",
     kotlinLib("stdlib-jdk8"),
     kotlinLib("reflect"),
@@ -313,7 +308,7 @@ lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compile
   .settings(Publish.settings)
   .settings(
     moduleName := "baker-compiler",
-    kotlinVersion := "1.7.22",
+    kotlinVersion := "1.8.21",
     kotlincJvmTarget := "11",
     libraryDependencies ++=
       testDeps(scalaTest, scalaCheck, junitJupiter)
