@@ -472,7 +472,7 @@ private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
 private fun KFunction<*>.hasFiresEventAnnotation() = annotations.any { it.annotationClass == FiresEvent::class }
 
 private fun KParameter.toJavaType(): Type {
-    return if (type.classifier == null) {
+    return if (type.arguments.isEmpty()) {
         type.javaType
     } else {
         return object : ParameterizedType {

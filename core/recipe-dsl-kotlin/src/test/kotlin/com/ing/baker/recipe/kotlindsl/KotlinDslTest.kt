@@ -388,9 +388,11 @@ class KotlinDslTest {
         }
 
         with(recipe.interactions().apply(0)) {
-            assertEquals(1, inputIngredients().size())
-            assertEquals(inputIngredients().toList().apply(0).name(), "reservedItems")
-            assertEquals(inputIngredients().toList().apply(0).ingredientType().toString(), "List[Record(name: CharArray, id: Int64)]")
+            assertEquals(2, inputIngredients().size())
+            assertEquals(inputIngredients().toList().apply(0).name(), "metaData")
+            assertEquals(inputIngredients().toList().apply(0).ingredientType().toString(), "CharArray")
+            assertEquals(inputIngredients().toList().apply(1).name(), "reservedItems")
+            assertEquals(inputIngredients().toList().apply(1).ingredientType().toString(), "List[Record(name: CharArray, id: Int64)]")
         }
     }
 
@@ -445,7 +447,7 @@ class KotlinDslTest {
     interface GenericIngredientContainerWithJavaElements : Interaction {
         class Result
 
-        fun apply(reservedItems: List<ProductAgreement>): Result
+        fun apply(metaData: String, reservedItems: List<ProductAgreement>): Result
     }
 
     interface KotlinInteractionWithAnnotations : Interaction {
