@@ -113,6 +113,9 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
     suspend fun getIngredients(recipeInstanceId: String): Map<String, Value> =
         jBaker.getIngredients(recipeInstanceId).await()
 
+    suspend fun getIngredient(recipeInstanceId: String, name: String): Value =
+            jBaker.getIngredient(recipeInstanceId, name).await()
+
     suspend fun getEvents(recipeInstanceId: String): List<EventMoment> =
         jBaker.getEvents(recipeInstanceId).await()
 
