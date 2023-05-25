@@ -1,6 +1,6 @@
 package com.ing.baker
 
-import java.lang.reflect.ParameterizedType
+import java.lang.reflect.{ParameterizedType, WildcardType}
 import scala.annotation.tailrec
 import scala.reflect.runtime.universe
 
@@ -23,7 +23,17 @@ package object types {
   }
 
   def getTypeParameter(javaType: java.lang.reflect.Type, index: Int): java.lang.reflect.Type = {
-    javaType.asInstanceOf[ParameterizedType].getActualTypeArguments()(index)
+    val actualTypeArguments = javaType.asInstanceOf[ParameterizedType].getActualTypeArguments()(index)
+
+    actualTypeArguments match {
+      case wildcardType: WildcardType =>
+        val upperBounds = wildcardType.getUpperBounds
+        upperBounds.size match {
+          case 1 => upperBounds.apply(0)
+          case _ => throw new IllegalArgumentException(s"Multiple upper bounds are not supported. Found multiple upper bounds for type: $javaType")
+        }
+      case _ => actualTypeArguments
+    }
   }
 
   def isAssignableToBaseClass(javaType: java.lang.reflect.Type, base: Class[_]): Boolean = base.isAssignableFrom(getBaseClass(javaType))

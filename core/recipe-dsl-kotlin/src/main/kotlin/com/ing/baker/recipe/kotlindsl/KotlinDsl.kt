@@ -252,7 +252,7 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
             }
 
             val inputIngredients = interactionClass.interactionFunction().parameters.drop(1)
-                .map { Ingredient(it.name, it.toJavaType()) }
+                .map { Ingredient(it.name, it.type.javaType) }
                 .toSet()
 
             Interaction.of(
@@ -470,16 +470,3 @@ private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
 }
 
 private fun KFunction<*>.hasFiresEventAnnotation() = annotations.any { it.annotationClass == FiresEvent::class }
-
-private fun KParameter.toJavaType(): Type {
-    return if (type.arguments.isEmpty()) {
-        type.javaType
-    } else {
-        return object : ParameterizedType {
-            // Not null assertions are 'safe' here. We already validated we are dealing with a generic type.
-            override fun getRawType(): Type = type.classifier?.starProjectedType?.javaType!!
-            override fun getActualTypeArguments(): Array<Type> = type.arguments.map { it.type?.javaType!! }.toTypedArray()
-            override fun getOwnerType(): Type? = null
-        }
-    }
-}

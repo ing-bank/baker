@@ -388,11 +388,15 @@ class KotlinDslTest {
         }
 
         with(recipe.interactions().apply(0)) {
-            assertEquals(2, inputIngredients().size())
-            assertEquals(inputIngredients().toList().apply(0).name(), "metaData")
-            assertEquals(inputIngredients().toList().apply(0).ingredientType().toString(), "CharArray")
-            assertEquals(inputIngredients().toList().apply(1).name(), "reservedItems")
-            assertEquals(inputIngredients().toList().apply(1).ingredientType().toString(), "List[Record(name: CharArray, id: Int64)]")
+            assertEquals(4, inputIngredients().size())
+            assertEquals("metaData", inputIngredients().toList().apply(0).name())
+            assertEquals("CharArray", inputIngredients().toList().apply(0).ingredientType().toString())
+            assertEquals("agreements", inputIngredients().toList().apply(1).name())
+            assertEquals("List[Record(name: CharArray, id: Int64)]", inputIngredients().toList().apply(1).ingredientType().toString())
+            assertEquals("uniqueAgreements", inputIngredients().toList().apply(2).name())
+            assertEquals("List[Record(name: CharArray, id: Int64)]", inputIngredients().toList().apply(2).ingredientType().toString())
+            assertEquals("mapOfAgreements", inputIngredients().toList().apply(3).name())
+            assertEquals("Map[Record(name: CharArray, id: Int64)]", inputIngredients().toList().apply(3).ingredientType().toString())
         }
     }
 
@@ -447,7 +451,12 @@ class KotlinDslTest {
     interface GenericIngredientContainerWithJavaElements : Interaction {
         class Result
 
-        fun apply(metaData: String, reservedItems: List<ProductAgreement>): Result
+        fun apply(
+            metaData: String,
+            agreements: List<ProductAgreement>,
+            uniqueAgreements: kotlin.collections.Set<ProductAgreement>,
+            mapOfAgreements: Map<Long, ProductAgreement>
+        ): Result
     }
 
     interface KotlinInteractionWithAnnotations : Interaction {
