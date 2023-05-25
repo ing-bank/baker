@@ -464,7 +464,7 @@ private fun <T : com.ing.baker.recipe.javadsl.Interaction> KClass<T>.interaction
 private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
     return Event(
         simpleName,
-        primaryConstructor?.parameters?.map { Ingredient(it.name, it.type.javaType) },
+        primaryConstructor?.parameters?.map { Ingredient(it.name, it.type.javaType) } ?: emptyList(),
         Optional.ofNullable(maxFiringLimit)
     )
 }

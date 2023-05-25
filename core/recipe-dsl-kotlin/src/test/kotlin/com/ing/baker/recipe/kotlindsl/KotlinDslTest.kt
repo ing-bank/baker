@@ -138,6 +138,9 @@ class KotlinDslTest {
         with(recipe.interactions().toList().apply(2)) {
             assertEquals("ShipItems", name())
 
+            assertEquals("ShippingConfirmed", output().apply(0).name())
+            assertEquals(0, output().apply(0).providedIngredients().size())
+
             assertEquals(1, requiredEvents().size())
             assertEquals("PaymentSuccessful", requiredEvents().toList().apply(0))
 
@@ -421,8 +424,8 @@ class KotlinDslTest {
 
         interface MakePayment : Interaction {
             sealed interface MakePaymentOutcome
-            class PaymentSuccessful : MakePaymentOutcome
-            class PaymentFailed : MakePaymentOutcome
+            object PaymentSuccessful : MakePaymentOutcome
+            object PaymentFailed : MakePaymentOutcome
 
             fun apply(
                 reservedItems: Ingredients.ReservedItems,
@@ -431,7 +434,7 @@ class KotlinDslTest {
         }
 
         interface ShipItems : Interaction {
-            class ShippingConfirmed
+            object ShippingConfirmed
 
             fun apply(
                 shippingAddress: Ingredients.ShippingAddress,
