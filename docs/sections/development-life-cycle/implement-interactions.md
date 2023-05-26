@@ -1,15 +1,32 @@
 # Implement Interactions
 
-After creating a recipe, and before we can even run processes from it, we need to create `InteractionInstances` that the
-Baker runtime will use to execute the real actions of your `Recipe`, these instances must match the `Interactions` in the `Recipe`,
-that means that the name and the input types must match. 
+Before we can run our recipe, we need to create `InteractionInstances` that the Baker runtime will use to execute the
+interactions. In other words, we need to provide implementations for the interactions.
 
-For the Scala DSL you need to create an object of `InteractionImplementation`, or use the reflection API in a similar way
-to the Java DSL.
+=== "Java"
 
-For the Java DSL you need to implement the interface with the `apply` method that you used for the `Interaction` in the `Recipe` 
-and then use the `InteractionImplementation.from(new Implementation())` reflection API, this will create a new `InteractionImplementation`
-that we will later on add to a baker runtime.
+    ```java 
+    public class ReserveItemsInstance implements ReserveItems {
+
+        // The body of this method is going to be executed by the Baker runtime when the ingredients are available.
+        @Override
+        public ReserveItemsOutcome apply(String id, List<String> productIds) {
+            // Add your implementation here.
+            // The body of this function is going to be executed by the Baker runtime when the ingredients are available.
+        }
+    }
+    ```
+
+=== "Kotlin"
+
+    ```kotlin
+    class ReserveItemsInstance : ReserveItems {
+        override fun apply(orderId: String, productIds: List<String>): ReserveItemsOutcome {
+            // Add your implementation here.
+            // The body of this function is going to be executed by the Baker runtime when the ingredients are available.
+        }
+    }
+    ```
 
 === "Scala Reflection API"
 
@@ -19,32 +36,13 @@ that we will later on add to a baker runtime.
     import scala.concurrent.Future
     import scala.concurrent.ExecutionContext.Implicits.global
 
-    trait ReserveItems {
-
-      def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput]
-    }
-
     class ReserveItemsInstance extends ReserveItems {
 
-      override def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput] = {
-
-        // Http call to the Warehouse service
-        val response: Future[Either[List[String], List[String]]] =
-        // This is mocked for the sake of the example
-          Future.successful(Right(items))
-
-        // Build an event instance that Baker understands
-        response.map {
-          case Left(unavailableItems) =>
-            WebshopRecipeReflection.OrderHadUnavailableItems(unavailableItems)
-          case Right(reservedItems) =>
-            WebshopRecipeReflection.ItemsReserved(reservedItems)
+        override def apply(orderId: String, productIds: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput] = {
+            // Add your implementation here.
+            // The body of this function is going to be executed by the Baker runtime when the ingredients are available.
         }
-      }
     }
-
-    val reserveItemsInstance: InteractionInstance =
-      InteractionInstance.unsafeFrom(new ReserveItemsInstance)
     ```
 
 === "Scala"
@@ -62,25 +60,8 @@ that we will later on add to a baker runtime.
         run = handleReserveItems
     )
 
-    def handleReserveItems(input: Seq[IngredientInstance]): Future[Option[EventInstance]] = ???
+    def handleReserveItems(input: Seq[IngredientInstance]): Future[Option[EventInstance]] = {
+        // Add your implementation here.
         // The body of this function is going to be executed by the Baker runtime when the ingredients are available.
-        // ListValue and PrimitiveValue are used in the body
-    ```
-
-=== "Java"
-
-    ```java 
-    import com.ing.baker.runtime.javadsl.InteractionInstance;
-
-    public class ReserveItems implements JWebshopRecipe.ReserveItems {
-
-        // The body of this method is going to be executed by the Baker runtime when the ingredients are available.
-        @Override
-        public ReserveItemsOutcome apply(String id, List<String> items) {
-            return new JWebshopRecipe.ReserveItems.ItemsReserved(items);
-        }
     }
-            
-            
-    InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
     ```
