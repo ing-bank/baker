@@ -4,7 +4,7 @@ The "Development Life Cycle" serves as a "hands-on" tutorial of Baker. In this t
 recipe one step at a time. In other words, it's a practical approach to learning Baker.
 
 ## Setting the stage
-In order to be practical, we need some kind of context in which we can be practical. To that end, imagine you are working
+To be practical, we need some kind of context in which we can be practical. To that end, imagine you are working
 as a software engineer for a modern e-commerce company. They are building a web-shop made up of different microservices. 
 You are responsible for building the order reservation process. The requirements read:
 
