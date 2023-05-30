@@ -275,10 +275,18 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
         val classifier = interactionClass.interactionFunction().returnType.classifier as KClass<*>
         return with(classifier) {
             if (sealedSubclasses.isNotEmpty()) {
-                sealedSubclasses.map { it.toEvent() }.toSet()
+                flattenSealedSubclasses().map { it.toEvent() }.toSet()
             } else {
                 setOf(classifier.toEvent())
             }
+        }
+    }
+
+    private fun KClass<*>.flattenSealedSubclasses(): List<KClass<*>> {
+        return if (sealedSubclasses.isNotEmpty()) {
+            sealedSubclasses.flatMap { it.flattenSealedSubclasses() }.toList()
+        } else {
+            listOf(this)
         }
     }
 }
