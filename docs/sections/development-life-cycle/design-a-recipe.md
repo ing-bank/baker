@@ -22,6 +22,26 @@ as the sensory event. This event will provide the two required ingredients: `ord
 
 === "Java"
 
+    ```java
+    --8<-- "docs-code-snippets/src/main/java/examples/java/Experiment.java"
+    ```
+
+=== "Kotlin"
+
+    ```kotlin
+    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/Experiment.kt"
+    ```
+
+=== "Scala"
+
+    ```scala
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/Experiment.scala"
+    ```
+
+
+
+=== "Java"
+
     ```java 
     
     public class OrderPlaced {

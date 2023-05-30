@@ -20,7 +20,7 @@ lazy val baker: Project = project.in(file("."))
     `bakery-interaction-k8s-interaction-manager`,
     // Examples
     `baker-example`, `bakery-client-example`, `interaction-example-make-payment-and-ship-items`,
-    `interaction-example-reserve-items`, `bakery-kafka-listener-example`
+    `interaction-example-reserve-items`, `bakery-kafka-listener-example`, `docs-code-snippets`
   )
 
 def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = project % "test->test;test->compile"
@@ -720,6 +720,44 @@ lazy val `baker-example`: Project = project
     dockerExposedPorts := Seq(8080)
   )
   .dependsOn(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`)
+
+lazy val `docs-code-snippets`: Project = project
+  .in(file("examples/docs-code-snippets"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
+  .settings(yPartialUnificationSetting)
+  .settings(crossBuildSettings)
+  .settings(
+    moduleName := "docs-code-snippets",
+    kotlinVersion := "1.7.22",
+    kotlincJvmTarget := "1.8",
+    kotlinLib("stdlib-jdk8"),
+    kotlinLib("reflect"),
+    libraryDependencies ++=
+      compileDeps(
+        slf4jApi,
+        http4s,
+        http4sDsl,
+        http4sServer,
+        http4sCirce,
+        circe,
+        circeGeneric,
+        akkaPersistenceCassandra,
+        akkaPersistenceQuery
+      ) ++ testDeps(
+        scalaTest,
+        scalaCheck,
+        mockitoScala,
+        junitInterface,
+        slf4jApi,
+        akkaTestKit
+      )
+  )
+  .settings(
+    coverageEnabled := false
+  )
+  .dependsOn(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl-kotlin`, `baker-intermediate-language`)
 
 lazy val `bakery-client-example`: Project = project
   .in(file("examples/bakery-client-example"))
