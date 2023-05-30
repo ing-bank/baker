@@ -38,8 +38,6 @@ as the sensory event. This event will provide the two required ingredients: `ord
     --8<-- "docs-code-snippets/src/main/scala/examples/scala/Experiment.scala"
     ```
 
-
-
 === "Java"
 
     ```java 
