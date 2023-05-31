@@ -5,6 +5,8 @@ repo_url: 'https://github.com/ing-bank/baker'
 
 theme:
   name: 'material'
+  features:
+    - content.code.copy
 
 extra_css:
   - css/ing.css
