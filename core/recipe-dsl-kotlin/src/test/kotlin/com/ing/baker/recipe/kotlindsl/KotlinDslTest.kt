@@ -403,6 +403,30 @@ class KotlinDslTest {
         }
     }
 
+    @Test
+    fun `nested sealed classes`() {
+
+        val recipe = recipe("RecipeWithNestedSealedClasses") {
+            interaction<ApiInteraction>()
+        }
+
+        with(recipe) {
+            assertEquals("RecipeWithNestedSealedClasses", name())
+            assertEquals(1, interactions().size())
+        }
+
+        with(recipe.interactions().toList().apply(0)) {
+            assertEquals("ApiInteraction", name())
+
+            assertEquals(1, inputIngredients().size())
+            assertEquals("reservedItems", inputIngredients().toList().apply(0).name())
+
+            assertEquals(2, output().size())
+            assertEquals("ResponseSuccessful", output().toList().apply(0).name())
+            assertEquals("ResponseFailed", output().toList().apply(1).name())
+        }
+    }
+
     object Events {
         class OrderPlaced(val items: List<Ingredients.Item>)
         class PaymentInformationReceived(val paymentInformation: Ingredients.PaymentInformation)
@@ -460,6 +484,18 @@ class KotlinDslTest {
             uniqueAgreements: kotlin.collections.Set<ProductAgreement>,
             mapOfAgreements: Map<Long, ProductAgreement>
         ): Result
+    }
+
+    interface ApiInteraction: Interaction {
+        sealed interface Response
+        sealed interface Response200: Response
+        sealed interface Response500: Response
+        class ResponseSuccessful : Response200
+        class ResponseFailed : Response500
+
+        fun apply(
+            reservedItems: Ingredients.ReservedItems,
+        ): Response
     }
 
     interface KotlinInteractionWithAnnotations : Interaction {
