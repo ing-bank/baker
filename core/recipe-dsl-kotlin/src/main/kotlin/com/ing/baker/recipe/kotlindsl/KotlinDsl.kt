@@ -284,7 +284,7 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
 
     private fun KClass<*>.flattenSealedSubclasses(): List<KClass<*>> {
         return if (sealedSubclasses.isNotEmpty()) {
-            sealedSubclasses.flatMap { it.flattenSealedSubclasses() }.toList()
+            sealedSubclasses.flatMap { it.flattenSealedSubclasses() }
         } else {
             listOf(this)
         }
