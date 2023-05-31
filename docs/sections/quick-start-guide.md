@@ -1,7 +1,42 @@
 # Quick start guide
 
-Add the following dependencies to your project. You can find the latest stable version on
-[Maven Central](https://mvnrepository.com/artifact/com.ing.baker).
+## Enable Maven Central repository
+
+Baker is published in [Maven Central](https://mvnrepository.com/artifact/com.ing.baker). So you will need to enable
+Maven Central repository as a source of dependencies in your build.
+
+=== "Maven"
+
+    ```
+    Maven includes the Maven Central repository by default.
+    ```
+
+=== "Gradle (Kotlin)"
+
+    ```kotlin
+    repositories {
+        mavenCentral()
+    }
+    ```
+
+=== "Gradle (Groovy)"
+
+    ```groovy
+    repositories {
+        mavenCentral()
+    }
+    ```
+
+=== "Sbt"
+
+    ```
+    Most of the time Sbt includes the Maven Central repository by default.
+    ```
+
+## Include dependencies
+
+Baker is composed of different modules. For most projects you need to include the three dependencies listed below.
+If you don't require all functionality, simply select the ones you need for your project.
 
 === "Maven"
 
@@ -23,7 +58,15 @@ Add the following dependencies to your project. You can find the latest stable v
     </dependency>
     ```
 
-=== "Gradle"
+=== "Gradle (Kotlin)"
+
+    ```kotlin
+    implementation("com.ing.baker:baker-recipe-dsl-kotlin_2.13:$bakerVersion")
+    implementation("com.ing.baker:baker-compiler_2.13:$bakerVersion")
+    implementation("com.ing.baker:baker-runtime_2.13:$bakerVersion")
+    ```
+
+=== "Gradle (Groovy)"
 
     ```groovy
     implementation 'com.ing.baker:baker-recipe-dsl_2.13:$bakerVersion'
@@ -41,27 +84,22 @@ Add the following dependencies to your project. You can find the latest stable v
 
 !!! note
 
-    If you want to use the Kotlin DSL add `baker-recipe-dsl-kotlin_2.13` instead of `baker-recipe-dsl_2.13`.
+    Kotlin users should include `baker-recipe-dsl-kotlin_2.13` instead of `baker-recipe-dsl_2.13`.
 
-### Modules
+!!! note
 
-An explanation of the baker modules.
+    Make sure to replace the version placeholders with the actual version
+    you want to use. The latest stable version can be found on [Maven Central](https://mvnrepository.com/artifact/com.ing.baker).
 
-| Module | Description |
-| --- | --- |
-| recipe-dsl | [DSL](../reference/dsls) to describe your recipes (process blueprints) *declaritively* |
-| runtime | [Runtime](../reference/runtime/) based on [akka](https://www.akka.io) to manage and execute your recipes |
-| compiler | [Compiles your recipe](../reference/runtime/#recipecompilercompilerecipe) description into a model that the runtime can execute |
-| intermediate-language | Recipe and Petri Net model that the runtime can execute |
+## Module overview
 
-This is the dependency graph between the modules.
+| Module                | Description                                                                                                |
+|-----------------------|------------------------------------------------------------------------------------------------------------|
+| recipe-dsl            | A declarative DSL to describe your recipes.                                                                |
+| runtime               | The Baker runtime to manage and execute your recipes.                                                      |
+| compiler              | A compiler that compiles recipes into a model that the runtime can execute.                                |
+| intermediate-language | Recipe and Petri Net model used by the compiler and runtime. You don't interact with this module directly. |
 
-![](../images/module-dependencies.svg)
+## Dependency graph
 
-## Continuing from here
-
-After adding the dependencies you can continue to:
-
-1. Understand the [high level concepts](../concepts).
-2. If you like learning by doing, go through the [development life cycle section](../development-life-cycle/design-a-recipe).
-3. If you like learning by description, go through the [reference section](../reference/main-abstractions).
+![Dependency graph](../images/module-dependencies.svg)
