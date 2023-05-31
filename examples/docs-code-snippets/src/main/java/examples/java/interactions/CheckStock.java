@@ -6,7 +6,7 @@ import com.ing.baker.recipe.javadsl.Interaction;
 
 import java.util.List;
 
-public interface ReserveItems extends Interaction {
+public interface CheckStock extends Interaction {
 
     interface Outcome {
     }

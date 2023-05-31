@@ -757,7 +757,7 @@ lazy val `docs-code-snippets`: Project = project
   .settings(
     coverageEnabled := false
   )
-  .dependsOn(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl-kotlin`, `baker-intermediate-language`)
+  .dependsOn(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl-kotlin`, `baker-intermediate-language`, `baker-interface-kotlin`)
 
 lazy val `bakery-client-example`: Project = project
   .in(file("examples/bakery-client-example"))

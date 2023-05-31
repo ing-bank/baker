@@ -1,4 +1,4 @@
-# Quick start guide
+# Quickstart guide
 
 ## Enable Maven Central repository
 

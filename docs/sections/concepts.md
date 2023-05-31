@@ -53,5 +53,5 @@ below displays a (naive) recipe implementation to ship orders from a web-shop.
 === "Scala"
 
     ```scala
-    TODO add Scala example
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/SimpleRecipe.scala"
     ```

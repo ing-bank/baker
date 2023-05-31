@@ -22,7 +22,7 @@ markdown_extensions:
 
 nav:
   - Home: 'index.md'
-  - 'sections/quick-start-guide.md'
+  - 'sections/quickstart-guide.md'
   - 'sections/concepts.md'
   - 'sections/tutorial.md'
   - Development Life Cycle:
