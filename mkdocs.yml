@@ -24,6 +24,7 @@ nav:
   - Home: 'index.md'
   - 'sections/quick-start-guide.md'
   - 'sections/concepts.md'
+  - 'sections/tutorial.md'
   - Development Life Cycle:
       - 'sections/development-life-cycle/introduction.md'
       - 'sections/development-life-cycle/design-a-recipe.md'
