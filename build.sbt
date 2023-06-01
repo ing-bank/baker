@@ -47,9 +47,9 @@ val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
-  javacOptions := Seq("-source", "11", "-target", "11"),
+  javacOptions := Seq("-source", "17", "-target", "17"),
   scalacOptions := Seq(
-    s"-target:jvm-11",
+    s"-target:jvm-17",
     "-unchecked",
     "-deprecation",
     "-feature",
@@ -197,8 +197,8 @@ lazy val `baker-interface-kotlin`: Project = project.in(file("core/baker-interfa
   .settings(Publish.settings)
   .settings(
     moduleName := "baker-interface-kotlin",
-    kotlinVersion := "1.7.22",
-    kotlincJvmTarget := "1.8",
+    kotlinVersion := "1.8.21",
+    kotlincJvmTarget := "17",
     kotlinLib("stdlib-jdk8"),
     kotlinLib("reflect"),
     libraryDependencies ++=
@@ -311,7 +311,7 @@ lazy val `baker-recipe-dsl-kotlin`: Project = project.in(file("core/recipe-dsl-k
   .settings(
     moduleName := "baker-recipe-dsl-kotlin",
     kotlinVersion := "1.8.21",
-    kotlincJvmTarget := "11",
+    kotlincJvmTarget := "17",
     kotlinLib("stdlib-jdk8"),
     kotlinLib("reflect"),
     libraryDependencies ++=
@@ -336,7 +336,7 @@ lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compile
   .settings(
     moduleName := "baker-compiler",
     kotlinVersion := "1.8.21",
-    kotlincJvmTarget := "11",
+    kotlincJvmTarget := "17",
     libraryDependencies ++=
       testDeps(scalaTest, scalaCheck, junitJupiter)
   )
@@ -704,8 +704,8 @@ lazy val `docs-code-snippets`: Project = project
   .settings(crossBuildSettings)
   .settings(
     moduleName := "docs-code-snippets",
-    kotlinVersion := "1.7.22",
-    kotlincJvmTarget := "1.8",
+    kotlinVersion := "1.8.21",
+    kotlincJvmTarget := "17",
     kotlinLib("stdlib-jdk8"),
     kotlinLib("reflect"),
     libraryDependencies ++=
