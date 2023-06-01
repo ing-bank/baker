@@ -70,7 +70,7 @@ a recipe. The implementation for these interactions will follow at a later stage
 
 Our stock validation interaction requires two ingredients as input. The `orderId` and a list of `productIds`. The
 interaction won't execute unless these ingredients are available in the process. The interaction will either emit
-a `Success` event, if all products are in stock. Or an `OrderHasUnavailableItems` event otherwise. 
+a `SufficientStock` event, if all products are in stock. Or an `OrderHasUnavailableItems` event otherwise. 
 The `OrderHasUnavailableItems` event carries a list of `unavailableProductIds` as ingredient.
 
 === "Java"
@@ -110,7 +110,7 @@ The `OrderHasUnavailableItems` event carries a list of `unavailableProductIds` a
 ### Ship Order
 
 To ship an order we'll need the `orderId` and an `address`. For the sake of simplicity, this interaction will always 
-result in a `Success` event.
+result in a `OrderShipped` event.
 
 === "Java"
     ```java
@@ -153,9 +153,9 @@ At this point we can compose our sensory event and three interactions into a rec
 as a sensory event. `OrderPlaced` carries all the ingredients required by the `CheckStock` interaction, so once the
 sensory event fires the `CheckStock` interaction will execute.
 
-`CheckStock` will output either a `Success` or `OrderHasUnavailableItems` event. `ShipOrder` will only execute if the
-process contains an event of `CheckStock.Success` and `CancelOrder` will only execute if the process contains an event
-of `CheckStock.OrderHasUnavailableItems`.
+`CheckStock` will output either a `SufficientStock` or `OrderHasUnavailableItems` event. `ShipOrder` will only execute if the
+process contains an event of `SufficientStock` and `CancelOrder` will only execute if the process contains an event
+of `OrderHasUnavailableItems`.
 
 === "Java"
     ```java
