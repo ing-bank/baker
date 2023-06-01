@@ -7,11 +7,11 @@ import examples.java.ingredients.Address;
 
 public interface ShipOrder extends Interaction {
 
-    record Success() {
+    record OrderShipped() {
     }
 
-    @FiresEvent(oneOf = {Success.class})
-    Success apply(@RequiresIngredient("orderId") String orderId,
-                  @RequiresIngredient("address") Address address
+    @FiresEvent(oneOf = {OrderShipped.class})
+    OrderShipped apply(@RequiresIngredient("orderId") String orderId,
+                       @RequiresIngredient("address") Address address
     );
 }

@@ -10,7 +10,7 @@ interface CheckStock : Interaction {
         val unavailableProductIds: List<String>
     ) : Outcome
 
-    object Success : Outcome
+    object SufficientStock : Outcome
 
     fun apply(orderId: String, productIds: List<String>): Outcome
 }

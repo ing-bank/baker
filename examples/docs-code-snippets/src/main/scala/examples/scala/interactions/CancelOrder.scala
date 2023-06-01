@@ -13,7 +13,7 @@ object CancelOrder {
     ),
     output = Seq(
       Event(
-        name = "Success",
+        name = "OrderCancelled",
         providedIngredients = Seq.empty,
         maxFiringLimit = Some(1)
       )

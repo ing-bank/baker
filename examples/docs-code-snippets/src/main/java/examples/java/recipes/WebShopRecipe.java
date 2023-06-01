@@ -14,7 +14,7 @@ public class WebShopRecipe {
             .withInteractions(
                     InteractionDescriptor.of(CheckStock.class),
                     InteractionDescriptor.of(ShipOrder.class)
-                            .withRequiredEvent(CheckStock.Success.class),
+                            .withRequiredEvent(CheckStock.SufficientStock.class),
                     InteractionDescriptor.of(CancelOrder.class)
                             .withRequiredEvent(CheckStock.OrderHasUnavailableItems.class)
             );

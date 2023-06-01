@@ -14,10 +14,10 @@ public interface CheckStock extends Interaction {
     record OrderHasUnavailableItems(List<String> unavailableProductIds) implements Outcome {
     }
 
-    record Success() implements Outcome {
+    record SufficientStock() implements Outcome {
     }
 
-    @FiresEvent(oneOf = {Success.class, OrderHasUnavailableItems.class})
+    @FiresEvent(oneOf = {SufficientStock.class, OrderHasUnavailableItems.class})
     Outcome apply(@RequiresIngredient("orderId") String orderId,
                   @RequiresIngredient("productIds") List<String> productIds
     );

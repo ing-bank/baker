@@ -5,29 +5,40 @@ import com.ing.baker.recipe.kotlindsl.ExperimentalDsl
 import com.ing.baker.runtime.javadsl.EventInstance
 import com.ing.baker.runtime.kotlindsl.InMemoryBaker
 import examples.kotlin.events.OrderPlaced
+import examples.kotlin.ingredients.Address
 import examples.kotlin.interactions.CancelOrderImpl
 import examples.kotlin.interactions.CheckStockImpl
 import examples.kotlin.interactions.ShipOrderImpl
 import examples.kotlin.recipes.WebShopRecipe
+import kotlinx.coroutines.runBlocking
 import java.util.*
 
 @ExperimentalDsl
-suspend fun execute(orderPlaced: OrderPlaced) {
-    val implementations = listOf(CheckStockImpl, CancelOrderImpl, ShipOrderImpl)
-    val baker = InMemoryBaker.kotlin(implementations)
+fun main(): Unit = runBlocking {
+    val baker = InMemoryBaker.kotlin(
+        implementations = listOf(CheckStockImpl, CancelOrderImpl, ShipOrderImpl)
+    )
 
-    // Adds the recipe to the Baker runtime and validates there are interaction instances for each interaction.
     val recipeId = baker.addRecipe(
         compiledRecipe = RecipeCompiler.compileRecipe(WebShopRecipe.recipe),
         validate = true
     )
 
     val recipeInstanceId = UUID.randomUUID().toString()
+    val sensoryEvent = EventInstance.from(orderPlaced)
 
-    // Start one instance of the process by baking the recipe.
     baker.bake(recipeId, recipeInstanceId)
-
-    // Fire the OrderPlaced sensory event
-    baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.from(orderPlaced))
+    baker.fireEventAndResolveWhenCompleted(recipeInstanceId, sensoryEvent)
 }
 
+private val orderPlaced = OrderPlaced(
+    orderId = "123",
+    customerId = "456",
+    productIds = listOf("iPhone", "PlayStation5"),
+    address = Address(
+        street = "Hoofdstraat",
+        city = "Amsterdam",
+        zipCode = "1234AA",
+        country = "The Netherlands"
+    )
+)

@@ -5,7 +5,7 @@ import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction}
 object CheckStock {
 
   val success: Event = Event(
-    name = "Success",
+    name = "SufficientStock",
     providedIngredients = Seq.empty,
     maxFiringLimit = Some(1)
   )

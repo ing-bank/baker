@@ -8,12 +8,11 @@ public class CheckStockImpl implements CheckStock {
     public Outcome apply(String orderId, List<String> productIds) {
         System.out.printf("Checking stock for order: %s and products: %s%n", orderId, productIds);
 
-        // Flip a coin to determine if we have enough stock.
         int random = (int) (Math.random() * (1000 - 1)) + 1;
         if (random < 500) {
-            return new CheckStock.Success();
+            return new SufficientStock();
         } else {
-            return new CheckStock.OrderHasUnavailableItems(productIds);
+            return new OrderHasUnavailableItems(productIds);
         }
     }
 }

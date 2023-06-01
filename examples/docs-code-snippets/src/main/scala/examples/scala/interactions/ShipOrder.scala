@@ -13,7 +13,7 @@ object ShipOrder {
     ),
     output = Seq(
       Event(
-        name = "Success",
+        name = "OrderShipped",
         providedIngredients = Seq.empty,
         maxFiringLimit = Some(1)
       )

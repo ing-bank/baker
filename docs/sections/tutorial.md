@@ -178,11 +178,11 @@ Before we can run our recipe, we need to create InteractionInstances that the Ba
 interactions. In other words, we need to provide implementations for the interactions.
 
 Since this is a tutorial, we'll just create some dummy implementations. In a real solution, this is the part where you
-would implement your API calls to the other systems.
+would implement your actual logic.
 
 !!! tip
-    These examples use a `Impl` suffix for our implementations. In your real solution you might want to use a more 
-    meaningful name. 
+    In these examples we use a `Impl` suffix for the implementation classes. In your real solution you might want to 
+    use a more meaningful name. 
 
 ### Check stock implementation
 
@@ -237,9 +237,49 @@ would implement your API calls to the other systems.
 
 ## Execute the recipe
 
-Add some stuff about recipe execution here.
+To execute the recipe we first need an instance of the `InMemoryBaker`. You can create one by providing the interaction
+implementations to the `InMemoryBaker` static factory.
 
-!!! note
-    Kotlin function is suspending because...
+The next step is to add the recipe to Baker. You can do this via the `addRecipe` method. If the `validate` flag is set
+to `true`, Baker checks if all required interaction implementations are available. Adding the recipe is something you
+only need to do once for each unique recipe.
+
+Before we can fire the sensory event, we need to create a new process instance of the recipe. We do this via the `bake`
+method. You are required to specify a `recipeInstanceId`. Here we use `UUID`, but it can be anything as long as it's 
+unique within your processes.
+
+Finally, we can fire the sensory event via `fireEventAndResolveWhenCompleted`. The moment the event arrives our process
+will start.
+
+=== "Java"
+    ```java
+    --8<-- "docs-code-snippets/src/main/java/examples/java/application/WebShopApp.java"
+    ```
+
+=== "Kotlin"
+    ```kotlin
+    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/application/WebShopApp.kt"
+    ```
+
+=== "Scala"
+    ```scala
+    TODO add Scala example!
+    ```
+
+Run the main function and observe the results. Depending on the outcome of the `CheckStock` interaction you will see
+one of these messages in the console:
+
+!!! quote ""
+    Checking stock for order: 123 and products: [iPhone, PlayStation5]
+    
+    Shipping order 123 to Address(street=Hoofdstraat, city=Amsterdam, zipCode=1234AA, country=The Netherlands)
+
+!!! quote ""
+    Checking stock for order: 123 and products: [iPhone, PlayStation5]
+
+    Canceling order 123. The following products are unavailable: [iPhone, PlayStation5]
 
 ## Wrap-up
+Congratulations! You just build your first Baker process. Of course, this is just a simplified example. To learn more
+about what you can do with Baker, please refer to the cookbook section. There you will find information on things like
+error handling, testing recipes, creating visualizations, and more.
