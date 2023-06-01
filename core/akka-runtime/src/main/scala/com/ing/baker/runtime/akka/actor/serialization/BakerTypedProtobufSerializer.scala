@@ -13,7 +13,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManagerActor, Reci
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.ProtoMap
 import SerializedDataProto._
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.{DelayedTransitionExecuted, DelayedTransitionInstance, DelayedTransitionScheduled}
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.{DelayedTransitionExecuted, DelayedTransitionInstance, DelayedTransitionScheduled, DelayedTransitionSnapshot}
 import com.ing.baker.runtime.akka.actor.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
 
 object BakerTypedProtobufSerializer {
@@ -186,7 +186,9 @@ object BakerTypedProtobufSerializer {
       forType[DelayedTransitionScheduled]
         .register("DelayedTransitionScheduled"),
       forType[DelayedTransitionExecuted]
-        .register("DelayedTransitionExecuted")
+        .register("DelayedTransitionExecuted"),
+      forType[DelayedTransitionSnapshot]
+        .register("DelayedTransitionSnapshot")
     )
   }
 }

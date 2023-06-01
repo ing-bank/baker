@@ -16,7 +16,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.ScheduleDelayedTransition
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransitionAck, ScheduleDelayedTransition}
 import com.ing.baker.runtime.akka.internal.{FatalInteractionException, RecipeRuntime}
 import com.ing.baker.runtime.model.BakerLogging
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, RecipeInstanceState}
@@ -303,12 +303,17 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
               case (updatedInstance, newJobs) =>
                 // the sender is notified of the transition having fired
                 sender() ! TransitionFired(jobId, transitionId, None, null, produced, newJobs.map(_.id), filterIngredientValuesFromEventInstance(out))
+                // The DelayedTransition is acknowledged so that it is removed
+                delayedTransitionActor ! FireDelayedTransitionAck(recipeInstanceId, jobId)
+
                 // the job is removed from the state since it completed
                 context become running(updatedInstance, scheduledRetries - jobId)
             }
         )
       } else {
         log.warning("Ignoring DelayedTransitionFired since there is no open asyncConsumedMarkings")
+        //The DelayedTransition is acknowledged so that it is removed from the DelayedTransitionManager.
+        delayedTransitionActor ! FireDelayedTransitionAck(recipeInstanceId, jobId)
         instance.copy[P, T, S](
           sequenceNr = instance.sequenceNr + 1
         )
@@ -506,7 +511,6 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       case _: EventTransition =>
         BakerLogging.default.firingEvent(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
         executeJobViaExecutor(job, originalSender)
-      //TODO rewrite if statement, this is a very naive implementation, the interface could be wrong!
       case i: InteractionTransition if isDelayedInteraction(i) =>
         startDelayedTransition(i, job, originalSender)
       case i: InteractionTransition if isCheckpointEventInteraction(i) =>
@@ -539,7 +543,10 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       startTime,
       System.currentTimeMillis(),
       job.consume.marshall,
-      RecipeRuntime.createProducedMarking(petriNet.outMarking(job.transition).asInstanceOf[MultiSet[Place]], Some(outputEvent)).marshall,
+
+      RecipeRuntime.createProducedMarking(
+        petriNet.outMarking(job.transition).asInstanceOf[MultiSet[Place]],
+        Some(outputEvent)).marshall,
       outputEvent
     )
   }

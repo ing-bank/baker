@@ -113,7 +113,8 @@ object ProcessIndexProto {
       val companion = protobuf.ProcessIndexSnapShot
 
       override def toProto(processIndexSnapShot: ProcessIndexSnapShot): protobuf.ProcessIndexSnapShot =
-        protobuf.ProcessIndexSnapShot(processIndexSnapShot.index.map(entry => entry._1 -> ctxToProto(entry._2)))
+        protobuf.ProcessIndexSnapShot(processIndexSnapShot.index.map(
+          entry => entry._1 -> ctxToProto(entry._2)))
 
       override def fromProto(message: protobuf.ProcessIndexSnapShot): Try[ProcessIndexSnapShot] = {
         Try {

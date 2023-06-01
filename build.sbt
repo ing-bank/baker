@@ -39,17 +39,17 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
       state
 })
 
-lazy val scala212 = "2.12.16"
+//lazy val scala212 = "2.12.16"
 lazy val scala213 = "2.13.8"
 
-lazy val supportedScalaVersions = List(scala213, scala212)
+lazy val supportedScalaVersions = List(scala213)
 val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
-  javacOptions := Seq("-source", "1.8", "-target", "1.8"),
+  javacOptions := Seq("-source", "11", "-target", "11"),
   scalacOptions := Seq(
-    s"-target:jvm-1.8",
+    s"-target:jvm-11",
     "-unchecked",
     "-deprecation",
     "-feature",
@@ -175,12 +175,7 @@ lazy val `baker-interface`: Project = project.in(file("core/baker-interface"))
       catsEffect,
       fs2Core,
       fs2Io,
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, n)) if n <= 12 =>
-          scalaJava8Compat091
-        case _ =>
-          scalaJava8Compat100
-      },
+      scalaJava8Compat100,
       javaxInject,
       guava
     ) ++ providedDeps(findbugs) ++ testDeps(
@@ -315,8 +310,8 @@ lazy val `baker-recipe-dsl-kotlin`: Project = project.in(file("core/recipe-dsl-k
   .settings(Publish.settings)
   .settings(
     moduleName := "baker-recipe-dsl-kotlin",
-    kotlinVersion := "1.7.22",
-    kotlincJvmTarget := "1.8",
+    kotlinVersion := "1.8.21",
+    kotlincJvmTarget := "11",
     kotlinLib("stdlib-jdk8"),
     kotlinLib("reflect"),
     libraryDependencies ++=
@@ -340,8 +335,8 @@ lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compile
   .settings(Publish.settings)
   .settings(
     moduleName := "baker-compiler",
-    kotlinVersion := "1.7.22",
-    kotlincJvmTarget := "1.8",
+    kotlinVersion := "1.8.21",
+    kotlincJvmTarget := "11",
     libraryDependencies ++=
       testDeps(scalaTest, scalaCheck, junitJupiter)
   )
@@ -660,27 +655,6 @@ lazy val `bakery-integration-tests`: Project = project.in(file("bakery/integrati
     `interaction-example-make-payment-and-ship-items`,
     `interaction-example-reserve-items`)
 
-lazy val `sbt-bakery-docker-generate`: Project = project.in(file("docker/sbt-bakery-docker-generate"))
-  .settings(scalaVersion := scala212, crossScalaVersions := Nil)
-  .settings(defaultModuleSettings212)
-  .settings(noPublishSettings) // docker plugin can't be published, at least not to azure feed
-  .settings(
-    crossScalaVersions := Nil,
-    // workaround to let plugin be used in the same project without publishing it
-    Compile / sourceGenerators += Def.task {
-      val file = (Compile / sourceManaged).value / "bakery" / "sbt" / "BuildInteractionDockerImageSBTPlugin.scala"
-      val sourceFile = IO.readBytes(baseDirectory.value.getParentFile.getParentFile / "project" / "BuildInteractionDockerImageSBTPlugin.scala")
-      IO.write(file, sourceFile)
-      Seq(file)
-    }.taskValue,
-    addSbtPlugin(("com.github.sbt" % "sbt-native-packager" % "1.9.9") cross CrossVersion.constant(scala212)),
-    addSbtPlugin(("org.vaslabs.kube" % "sbt-kubeyml" % "0.4.0") cross CrossVersion.constant(scala212))
-  )
-  .enablePlugins(SbtPlugin)
-  .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
-  .dependsOn(`bakery-interaction`, `bakery-interaction-spring`)
-
-
 lazy val `baker-example`: Project = project
   .in(file("examples/baker-example"))
   .enablePlugins(JavaAppPackaging)
@@ -820,7 +794,6 @@ lazy val `bakery-kafka-listener-example`: Project = project
 
 lazy val `interaction-example-reserve-items`: Project = project.in(file("examples/bakery-interaction-examples/reserve-items"))
   .enablePlugins(JavaAppPackaging)
-  .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .settings(noPublishSettings)
   .settings(defaultModuleSettings)
   .settings(yPartialUnificationSetting)
@@ -842,7 +815,6 @@ lazy val `interaction-example-reserve-items`: Project = project.in(file("example
 
 lazy val `interaction-example-make-payment-and-ship-items`: Project = project.in(file("examples/bakery-interaction-examples/make-payment-and-ship-items"))
   .enablePlugins(JavaAppPackaging)
-  .enablePlugins(bakery.sbt.BuildInteractionDockerImageSBTPlugin)
   .settings(noPublishSettings)
   .settings(defaultModuleSettings)
   .settings(yPartialUnificationSetting)

@@ -252,7 +252,7 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
             }
 
             val inputIngredients = interactionClass.interactionFunction().parameters.drop(1)
-                .map { Ingredient(it.name, it.toJavaType()) }
+                .map { Ingredient(it.name, it.type.javaType) }
                 .toSet()
 
             Interaction.of(
@@ -275,10 +275,18 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
         val classifier = interactionClass.interactionFunction().returnType.classifier as KClass<*>
         return with(classifier) {
             if (sealedSubclasses.isNotEmpty()) {
-                sealedSubclasses.map { it.toEvent() }.toSet()
+                flattenSealedSubclasses().map { it.toEvent() }.toSet()
             } else {
                 setOf(classifier.toEvent())
             }
+        }
+    }
+
+    private fun KClass<*>.flattenSealedSubclasses(): List<KClass<*>> {
+        return if (sealedSubclasses.isNotEmpty()) {
+            sealedSubclasses.flatMap { it.flattenSealedSubclasses() }
+        } else {
+            listOf(this)
         }
     }
 }
@@ -464,22 +472,9 @@ private fun <T : com.ing.baker.recipe.javadsl.Interaction> KClass<T>.interaction
 private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
     return Event(
         simpleName,
-        primaryConstructor?.parameters?.map { Ingredient(it.name, it.type.javaType) },
+        primaryConstructor?.parameters?.map { Ingredient(it.name, it.type.javaType) } ?: emptyList(),
         Optional.ofNullable(maxFiringLimit)
     )
 }
 
 private fun KFunction<*>.hasFiresEventAnnotation() = annotations.any { it.annotationClass == FiresEvent::class }
-
-private fun KParameter.toJavaType(): Type {
-    return if (type.arguments.isEmpty()) {
-        type.javaType
-    } else {
-        return object : ParameterizedType {
-            // Not null assertions are 'safe' here. We already validated we are dealing with a generic type.
-            override fun getRawType(): Type = type.classifier?.starProjectedType?.javaType!!
-            override fun getActualTypeArguments(): Array<Type> = type.arguments.map { it.type?.javaType!! }.toTypedArray()
-            override fun getOwnerType(): Type? = null
-        }
-    }
-}
