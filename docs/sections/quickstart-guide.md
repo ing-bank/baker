@@ -88,8 +88,8 @@ If you don't require all functionality, simply select the ones you need for your
 
 !!! note
 
-    Make sure to replace the version placeholders with the actual version
-    you want to use. The latest stable version can be found on [Maven Central](https://mvnrepository.com/artifact/com.ing.baker).
+    Replace the version placeholders with the actual version you want to use. The latest stable version can be 
+    found on [Maven Central](https://mvnrepository.com/artifact/com.ing.baker).
 
 ## Module overview
 

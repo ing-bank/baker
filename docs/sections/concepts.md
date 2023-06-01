@@ -5,7 +5,7 @@ In Baker, you declare orchestration logic as a `Recipe`. A recipe consists of th
 
 ## Ingredient
 
-An ingredient is a combination of a `name` and `type`. Similar to how a variable in your codebase is a combination
+An ingredient is a combination of a `name` and `type`. Similar to how a variable declaration in your codebase is a combination
 of a name and type. For example, you can have an ingredient with the name `iban` and type `string`. Types are expressed
 via the [Baker type system](../reference/baker-types-and-values/).
 
@@ -19,8 +19,11 @@ events.
 
 Events represent something that has happened in your process. Most of the time, events are outputs of interactions.
 We refer to outputs of interactions as `internal events`. Sometimes events come from outside the process. we refer to 
-events from outside the process as `sensory events`. Sensory events start/trigger the process. Under the hood internal 
-and sensory events are identical, the naming distinction exists for practical reasons only.
+events from outside the process as `sensory events`. Sensory events start/trigger the process. 
+
+!!! note
+    Under the hood `internal events` and `sensory events` are identical. The naming distinction exists for practical 
+    reasons only.
 
 An event has a `name` and (optionally) provides ingredients. In the end, events and ingredients are just data structures
 that describe your process data. A good example would be an `OrderPlaced` event which carries two ingredients:

@@ -7,7 +7,7 @@ this tutorial takes around 20 minutes.
     To follow this tutorial you will need a Java, Kotlin, or Scala project that includes the dependencies mentioned in
     the [quickstart guide](../quickstart-guide).
 
-!!! info
+!!! note
     This tutorial assumes you have a basic understanding of `ingredients`, `events`, `interactions`, and `recipes`. If
     not, please read the [concepts section](../concepts) before starting the tutorial.
 
