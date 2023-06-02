@@ -12,6 +12,7 @@ import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.scalacheck.Checkers
 
 import java.lang
+import java.util.UUID
 import scala.annotation.nowarn
 import scala.reflect.runtime.universe.TypeTag
 
@@ -37,7 +38,7 @@ object PrimitiveModuleSpec {
 
 class PrimitiveModuleSpec extends AnyWordSpecLike with Matchers with Checkers {
 
-  "The primivite module" should {
+  "The primitive module" should {
 
     "correctly parse all the supported primitive types" in {
 
@@ -57,6 +58,7 @@ class PrimitiveModuleSpec extends AnyWordSpecLike with Matchers with Checkers {
       readJavaType[BigDecimal] shouldBe types.FloatBig
       readJavaType[java.math.BigDecimal] shouldBe types.FloatBig
       readJavaType[Array[Byte]] shouldBe types.ByteArray
+      readJavaType[UUID] shouldBe types.CharArray
     }
 
     "read/write all supported primitive types" in {

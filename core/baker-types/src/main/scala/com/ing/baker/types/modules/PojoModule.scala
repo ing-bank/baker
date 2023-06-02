@@ -35,8 +35,9 @@ class PojoModule extends TypeModule {
       fields.foreach { f =>
         entries.get(f.getName).foreach { entryValue =>
 
-          val fieldType = f.getGenericType()
+          val fieldType = f.getGenericType
           try {
+            //this is an illegal action with Java 17 when a record is used, or any final fields
             val value = context.toJava(entryValue, fieldType)
             f.setAccessible(true)
             f.set(pojoInstance, value)
