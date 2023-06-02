@@ -268,3 +268,10 @@ one explicitly. For all available failure strategies, see the [error handling](/
     ```scala
     --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/RecipeWithDefaultFailureStrategy.scala"
     ```
+
+### Retry with incremental back-off
+Incremental back-off allows you to configure a retry mechanism that takes longer for each retry. The idea is that 
+you quickly retry at first but slower over time. To not overload your system but give it time to recover.
+
+
+
