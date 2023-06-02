@@ -14,11 +14,12 @@ extra_css:
 markdown_extensions:
   - codehilite
   - pymdownx.superfences
+  - admonition
+  - pymdownx.details
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.snippets:
       base_path: examples
-  - admonition
 
 nav:
   - Home: 'index.md'

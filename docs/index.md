@@ -7,30 +7,33 @@ You declare your orchestration logic as a recipe using the Java, Kotlin, or Scal
 
 ## Why Baker
 
-Upgrading your business to an agile, adaptive and scalable microservice-based architecture can bring significant
-advantages, but also critical challenges:
+When working with microservice architectures, you encounter various challenges related to distributed systems. Things
+like communication models, consistency management, failure handling, scaling approaches, and more. Baker simplifies
+the development process by offering out-of-the-box solutions with its clustered runtime. Baker nodes can create and 
+distribute instances of recipes, handle failures in interactions using different strategies, restore the state of 
+long-lived processes, and provide additional functionalities to streamline microservice development.
 
-- Coupling of business logic to service technologies
-- Inherent complexities of distributed systems
+??? Abstract "Service composition"
+    Baker allows you to compose complex business processes by combining multiple microservices. It acts as a centralized
+    control mechanism to define the sequence and dependencies between services. Facilitating the execution of
+    orchestrated processes. Enabling you to build more robust and sophisticated applications that span multiple services.
 
-Baker solves these challenges by providing an expressive language to encode your business logic (recipe), and a
-distributed runtime to scale recipe instances with little configuration and no extra development.
+??? Abstract "Decouple business logic from service technologies"
+    Baker forces you to separate business logic from implementation details. Your business logic is expressed as a recipe
+    via the Java, Kotlin, or Scala DSL. The implementation details are contained in the interaction implementations.
 
-### Decouple business logic from your microservices 
-Baker forces you to separate business logic from implementation details. Your business logic is expressed as a recipe
-via the Java, Kotlin, or Scala DSL. The implementation details are contained in the interaction implementations.
+??? Abstract "Retry mechanism"
+    Baker includes a built-in retry mechanism. When a failure occurs in a microservice, Baker can automatically retry 
+    the failed operation. Retrying the operation can help overcome transient errors or temporary network issues. Baker 
+    can be configured with retry policies, including parameters such as the number of retries, delay between retries, 
+    and exponential backoff strategies.
 
-### Ease the friction of distributed systems
-When developing microservices you are confronted with all the inherent
-challenges of distributed systems, topics like communication models, consistency decisions, handling failure, scaling
-models, etc. Baker eases the development by providing out-of-the-box solutions from its clustered runtime. Baker nodes
-are able to create and distribute recipe instances between them, handle failed interactions with several strategies,
-restore the state of long-lived process and more.
-
-### Reason about your business process without the burdens of technology
-Baker can visualize your recipes, enabling developers and business stakeholders to better communicate and reason 
-about the business processes.
-
+??? Abstract "Visualize your business process"
+    Bakers ability to visualize recipes provides a powerful communication tool that helps product owners, architects, and 
+    engineers to have a common understanding of the business process. This feature allows you to easily share your 
+    recipe with others, enabling collaboration and feedback.
+    
 ## Where to go from here?
+
 New to Baker? A good first step is to read more about Baker's [core concepts](sections/concepts). Afterward, you can
 follow this quick [tutorial](sections/tutorial) to build your first Baker process.
