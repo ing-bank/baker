@@ -9,7 +9,7 @@ An ingredient is a combination of a `name` and `type`. Similar to how a variable
 of a name and type. For example, you can have an ingredient with the name `iban` and type `string`. Types are expressed
 via the [Baker type system](../reference/baker-types-and-values/).
 
-Ingredients are _pure_ pieces of data. They are immutable, meaning they do not change once they enter the process or
+Ingredients are pure pieces of data. They are immutable, meaning they do not change once they enter the process or
 workflow. There is no support for hierarchy. Expressing a relationship like `Animal -> Dog -> Labrador` is not possible.
 
 Ingredients serve as input for interactions and are carried through the process via

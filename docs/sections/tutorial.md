@@ -78,10 +78,10 @@ The `OrderHasUnavailableItems` event carries a list of `unavailableProductIds` a
     --8<-- "docs-code-snippets/src/main/java/examples/java/interactions/CheckStock.java"
     ```
     
-    !!! info
+    !!! Note
         The `@FiresEvent` annotation is used to define the possible outcome events.
 
-    !!! info
+    !!! Note
         The `@RequiresIngredient` annotation is used to define the ingredient names that this interaction needs for its
         execution.
 
@@ -94,7 +94,7 @@ The `OrderHasUnavailableItems` event carries a list of `unavailableProductIds` a
     --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/interactions/CheckStock.kt"
     ```
 
-    !!! info
+    !!! Note
         Kotlin's reflection API is more powerful than Java's. There is no need for any annotations when you model the
         possible outcome events as a `sealed` hierarchy.
 

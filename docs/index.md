@@ -33,7 +33,7 @@ long-lived processes, and provide additional functionalities to streamline micro
     engineers to have a common understanding of the business process. This feature allows you to easily share your 
     recipe with others, enabling collaboration and feedback.
     
-## Where to go from here?
+## New to Baker?
 
-New to Baker? A good first step is to read more about Baker's [core concepts](sections/concepts). Afterward, you can
+A good first step is to read more about Baker's [core concepts](sections/concepts). Afterward, you can
 follow this quick [tutorial](sections/tutorial) to build your first Baker process.
