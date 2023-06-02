@@ -26,6 +26,8 @@ nav:
   - 'sections/quickstart-guide.md'
   - 'sections/concepts.md'
   - 'sections/tutorial.md'
+  - Cookbook:
+      - 'sections/cookbook/recipe-dsl.md'
   - Development Life Cycle:
       - 'sections/development-life-cycle/introduction.md'
       - 'sections/development-life-cycle/design-a-recipe.md'
