@@ -29,8 +29,6 @@ fun main(): Unit = runBlocking {
 
     baker.bake(recipeId, recipeInstanceId)
     baker.fireEventAndResolveWhenCompleted(recipeInstanceId, sensoryEvent)
-
-    println(baker.getVisualState(recipeInstanceId))
 }
 
 private val orderPlaced = OrderPlaced(
