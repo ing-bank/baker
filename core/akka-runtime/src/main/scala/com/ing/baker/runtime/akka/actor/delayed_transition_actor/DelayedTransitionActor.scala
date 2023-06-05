@@ -43,7 +43,7 @@ object DelayedTransitionActor {
 class DelayedTransitionActor(processIndex: ActorRef,
                              cleanup: Cleanup,
                              snapShotInterval: Int,
-                             snapshotCount: Int) extends PersistentActor with ActorLogging with PersistentActorMetrics {
+                             snapshotCount: Int) extends PersistentActor with PersistentActorMetrics {
 
   private var waitingTransitions: Map[String, DelayedTransitionInstance] = Map[String, DelayedTransitionInstance]()
 
