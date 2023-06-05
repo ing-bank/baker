@@ -5,7 +5,7 @@ import com.ing.baker.recipe.javadsl.Recipe;
 
 import java.time.Duration;
 
-public class RecipeRetryWithBackOff {
+public class RecipeRetryWithBackOffUntilDeadline {
 
     public final static Recipe recipe = new Recipe("example")
             .withDefaultFailureStrategy(

@@ -1,13 +1,14 @@
 # Error handling
 
-An interaction can fail to achieve its intended purpose. Such failures can be categorized into two types.
+An interaction can fail to achieve its intended purpose. Baker categorizes failures in technical
+failures and functional failures.
 
-The first type is a technical failure. Technical failures are characterized by the possibility of being retried and
+Technical failures are characterized by the possibility of being retried and
 eventually succeeding. Examples of technical failures include timeouts due to an unreliable network, temporary
 unavailability of an external system, and receiving an unexpected response from an external system. These failures
 are unexpected and are handled by throwing an exception from the interaction.
 
-The second type is a functional failure. Functional failures cannot be resolved by retrying the interaction.
+Functional failures cannot be resolved by retrying the interaction.
 Examples of functional failures include cases where there is insufficient stock to ship the order, or there is
 insufficient credit to perform a transfer. These failures are anticipated and considered as potential outcomes of the
 interaction. They are handled by returning an event from the interaction.
@@ -69,32 +70,57 @@ the process continues.
 ### Retry with incremental back-off
 
 Incremental back-off allows you to configure a retry mechanism that exponentially increases the time between each retry.
-You retry quickly at first, but slower over time.
+You retry quickly at first, but slower over time. Retry with incremental back-off keeps retrying until a set deadline
+or the maximum amount of retries is reached.
+
+#### Until deadline
 
 === "Java"
 
     ```java
-    --8<-- "docs-code-snippets/src/main/java/examples/java/recipes/RecipeRetryWithBackOff.java"
+    --8<-- "docs-code-snippets/src/main/java/examples/java/recipes/RecipeRetryWithBackOffUntilDeadline.java"
     ```
 
 === "Kotlin"
 
     ```kotlin
-    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/recipes/RecipeRetryWithBackOff.kt"
+    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/recipes/RecipeRetryWithBackOffUntilDeadline.kt"
     ```
 
 === "Scala"
 
     ```scala
-    --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/RecipeRetryWithBackOff.scala"
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/RecipeRetryWithBackOffUntilDeadline.scala"
     ```
 
-| name                    | meaning                                          |
-|-------------------------|--------------------------------------------------|
-| `initialDelay`          | The delay before retrying for the first time.    |
-| `backoffFactor`         | The backoff factor for the delay, defaults to 2  |
-| `maxTimeBetweenRetries` | The maximum time between retries.                |
-| `deadLine`              | The maximum total amount of time spend retrying. |
+#### Until maximum retries
+
+=== "Java"
+
+    ```java
+    --8<-- "docs-code-snippets/src/main/java/examples/java/recipes/RecipeRetryWithBackOffUntilMaxRetries.java"
+    ```
+
+=== "Kotlin"
+
+    ```kotlin
+    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/recipes/RecipeRetryWithBackOffUntilMaxRetries.kt"
+    ```
+
+=== "Scala"
+
+    ```scala
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/RecipeRetryWithBackOffUntilMaxRetries.scala"
+    ```
+
+
+| name                    | meaning                                         |
+|-------------------------|-------------------------------------------------|
+| `initialDelay`          | The delay before retrying for the first time.   |
+| `backoffFactor`         | The backoff factor for the delay, defaults to 2 |
+| `maxTimeBetweenRetries` | The maximum time between retries.               |
+| `deadLine`              | The total amount of time spend retrying.        |
+| `maximumRetries`        | The maximum amount of retries.                  |
 
 
 Our example results in a retry pattern off: 
@@ -132,4 +158,75 @@ interaction to block after exhausting all the retries, you can continue the proc
 
     ```scala
     --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/RecipeRetryExhaustedEvent.scala"
+    ```
+
+## Manual intervention
+
+Baker allows you to resolve blocked interactions, and to stop retrying interactions via manual intervention.
+
+### Force a retry
+
+This method retries a given interaction a single time. If it succeeds, your process continues. If it fails, the interaction
+stays blocked.
+
+=== "Java"
+
+    ```java
+    --8<-- "docs-code-snippets/src/main/java/examples/java/application/ManualRetryInteraction.java"
+    ```
+
+=== "Kotlin"
+
+    ```kotlin
+    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/application/ManualRetryInteraction.kt"
+    ```
+
+=== "Scala"
+
+    ```scala
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/application/ManualRetryInteraction.scala"
+    ```
+
+### Resolve interaction
+
+This method resolves a blocked interaction by firing an event.
+
+=== "Java"
+
+    ```java
+    --8<-- "docs-code-snippets/src/main/java/examples/java/application/ManualResolveInteraction.java"
+    ```
+
+=== "Kotlin"
+
+    ```kotlin
+    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/application/ManualResolveInteraction.kt"
+    ```
+
+=== "Scala"
+
+    ```scala
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/application/ManualResolveInteraction.scala"
+    ```
+
+### Stop retrying
+
+This method halts the retry process of a failing interaction by blocking the interaction.
+
+=== "Java"
+
+    ```java
+    --8<-- "docs-code-snippets/src/main/java/examples/java/application/ManualStopInteraction.java"
+    ```
+
+=== "Kotlin"
+
+    ```kotlin
+    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/application/ManualStopInteraction.kt"
+    ```
+
+=== "Scala"
+
+    ```scala
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/application/ManualStopInteraction.scala"
     ```

@@ -7,7 +7,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 @ExperimentalDsl
-object RecipeRetryWithBackOff {
+object RecipeRetryWithBackOffUntilDeadline {
     val recipe = recipe("example") {
         defaultFailureStrategy = retryWithIncrementalBackoff {
             initialDelay = 100.milliseconds
