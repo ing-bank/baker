@@ -10,8 +10,8 @@ object RecipeWithCheckpointEvent {
       scaladsl.CheckPointEvent(
         name = "CheckpointReached",
         requiredEvents = Set.apply(
-          PaymentReceived.event,
-          FraudCheckCompleted.event
+          PaymentReceived.event.name,
+          FraudCheckCompleted.event.name
         )
       )
     )
