@@ -21,6 +21,7 @@ import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types
 import com.ing.baker.types.Value
 import com.typesafe.config.{Config, ConfigFactory}
+import io.prometheus.client.CollectorRegistry
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito
 import org.mockito.Mockito.when
@@ -65,7 +66,13 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
     Mockito.reset(otherMsg)
   }
 
+  override def beforeAll() = {
+    super.beforeAll()
+    CollectorRegistry.defaultRegistry.clear()
+  }
+
   override def afterAll(): Unit = {
+    super.afterAll()
     TestKit.shutdownActorSystem(system)
   }
 
