@@ -7,5 +7,5 @@ import java.time.Duration;
 public class RecipeWithEventReceivePeriod {
 
     public final static Recipe recipe = new Recipe("example")
-            .withEventReceivePeriod(Duration.ofHours(5));
+        .withEventReceivePeriod(Duration.ofHours(5));
 }

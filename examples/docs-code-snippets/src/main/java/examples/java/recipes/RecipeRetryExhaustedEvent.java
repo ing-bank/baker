@@ -8,13 +8,13 @@ import java.time.Duration;
 public class RecipeRetryExhaustedEvent {
 
     public final static Recipe recipe = new Recipe("example")
-            .withDefaultFailureStrategy(
-                    new InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder()
-                            .withInitialDelay(Duration.ofMillis(100))
-                            .withBackoffFactor(2.0)
-                            .withMaxTimeBetweenRetries(Duration.ofSeconds(100))
-                            .withDeadline(Duration.ofHours(24))
-                            .withFireRetryExhaustedEvent("RetriesExhausted")
-                            .build()
-            );
+        .withDefaultFailureStrategy(
+            new InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder()
+                .withInitialDelay(Duration.ofMillis(100))
+                .withBackoffFactor(2.0)
+                .withMaxTimeBetweenRetries(Duration.ofSeconds(100))
+                .withDeadline(Duration.ofHours(24))
+                .withFireRetryExhaustedEvent("RetriesExhausted")
+                .build()
+        );
 }

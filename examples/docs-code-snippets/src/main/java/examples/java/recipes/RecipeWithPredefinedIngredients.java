@@ -10,13 +10,13 @@ import java.util.Map;
 public class RecipeWithPredefinedIngredients {
 
     public final static Recipe recipe = new Recipe("example")
-            .withInteractions(
-                    InteractionDescriptor.of(ShipOrder.class)
-                            .withPredefinedIngredients(
-                                    Map.of(
-                                            "shippingCostAmount", new BigDecimal("5.75"),
-                                            "shippingCostCurrency", "EUR"
-                                    )
-                            )
-            );
+        .withInteractions(
+            InteractionDescriptor.of(ShipOrder.class)
+                .withPredefinedIngredients(
+                    Map.of(
+                        "shippingCostAmount", new BigDecimal("5.75"),
+                        "shippingCostCurrency", "EUR"
+                    )
+                )
+        );
 }

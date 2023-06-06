@@ -8,10 +8,10 @@ import examples.java.interactions.ShipOrder;
 public class RecipeWithFailureStrategy {
 
     public final static Recipe recipe = new Recipe("example")
-            .withInteractions(
-                    InteractionDescriptor.of(ShipOrder.class)
-                            .withFailureStrategy(
-                                    InteractionFailureStrategy.FireEvent("shippingFailed")
-                            )
-            );
+        .withInteractions(
+            InteractionDescriptor.of(ShipOrder.class)
+                .withFailureStrategy(
+                        InteractionFailureStrategy.FireEvent("shippingFailed")
+                )
+        );
 }

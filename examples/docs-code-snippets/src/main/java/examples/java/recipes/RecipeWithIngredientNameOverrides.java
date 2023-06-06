@@ -7,8 +7,8 @@ import examples.java.interactions.ShipOrder;
 public class RecipeWithIngredientNameOverrides {
 
     public final static Recipe recipe = new Recipe("example")
-            .withInteractions(
-                    InteractionDescriptor.of(ShipOrder.class)
-                            .renameRequiredIngredient("orderId", "orderNumber")
-            );
+        .withInteractions(
+            InteractionDescriptor.of(ShipOrder.class)
+                .renameRequiredIngredient("orderId", "orderNumber")
+        );
 }

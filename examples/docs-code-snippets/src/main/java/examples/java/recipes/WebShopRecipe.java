@@ -10,12 +10,12 @@ import examples.java.interactions.ShipOrder;
 public class WebShopRecipe {
 
     public final static Recipe recipe = new Recipe("web-shop recipe")
-            .withSensoryEvent(OrderPlaced.class)
-            .withInteractions(
-                    InteractionDescriptor.of(CheckStock.class),
-                    InteractionDescriptor.of(ShipOrder.class)
-                            .withRequiredEvent(CheckStock.SufficientStock.class),
-                    InteractionDescriptor.of(CancelOrder.class)
-                            .withRequiredEvent(CheckStock.OrderHasUnavailableItems.class)
-            );
+        .withSensoryEvent(OrderPlaced.class)
+        .withInteractions(
+            InteractionDescriptor.of(CheckStock.class),
+            InteractionDescriptor.of(ShipOrder.class)
+                .withRequiredEvent(CheckStock.SufficientStock.class),
+            InteractionDescriptor.of(CancelOrder.class)
+                .withRequiredEvent(CheckStock.OrderHasUnavailableItems.class)
+        );
 }

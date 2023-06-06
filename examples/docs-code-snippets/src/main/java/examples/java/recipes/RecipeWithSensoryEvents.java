@@ -8,7 +8,7 @@ import examples.java.events.PaymentReceived;
 public class RecipeWithSensoryEvents {
 
     public final static Recipe recipe = new Recipe("example")
-            .withSensoryEventNoFiringLimit(OrderPlaced.class)
-            .withSensoryEvent(PaymentReceived.class)
-            .withSensoryEvent(FraudCheckCompleted.class, 5);
+        .withSensoryEventNoFiringLimit(OrderPlaced.class)
+        .withSensoryEvent(PaymentReceived.class)
+        .withSensoryEvent(FraudCheckCompleted.class, 5);
 }

@@ -9,6 +9,6 @@ public class RecipeWithMaxInteractionCount {
     public final static Recipe recipe = new Recipe("example")
         .withInteractions(
             InteractionDescriptor.of(ShipOrder.class)
-                    .withMaximumInteractionCount(1)
+                .withMaximumInteractionCount(1)
         );
 }

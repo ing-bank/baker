@@ -8,11 +8,11 @@ import examples.java.events.PaymentReceived;
 public class RecipeWithCheckpointEvent {
 
     public final static Recipe recipe = new Recipe("example")
-            .withCheckpointEvent(
-                    new CheckPointEvent("CheckpointReached")
-                            .withRequiredEvents(
-                                    PaymentReceived.class,
-                                    FraudCheckCompleted.class
-                            )
-            );
+        .withCheckpointEvent(
+            new CheckPointEvent("CheckpointReached")
+                .withRequiredEvents(
+                        PaymentReceived.class,
+                        FraudCheckCompleted.class
+                )
+        );
 }
