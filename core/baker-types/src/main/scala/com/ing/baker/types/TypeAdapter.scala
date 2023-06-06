@@ -1,6 +1,7 @@
 package com.ing.baker.types
 
 import java.lang.reflect.ParameterizedType
+import java.lang.reflect.WildcardType
 
 import com.ing.baker.types.Converters.readJavaType
 import com.ing.baker.types.modules._
@@ -20,6 +21,7 @@ class TypeAdapter(private val modules: Map[Class[_], TypeModule]) {
     val clazz: Class[_] = javaType match {
       case c: Class[_] => c
       case genericType: ParameterizedType => getBaseClass(genericType)
+      case wildcardType: WildcardType => getBaseClass(wildcardType)
       case _ => throw new IllegalArgumentException(s"Incompatible type: $javaType")
     }
 

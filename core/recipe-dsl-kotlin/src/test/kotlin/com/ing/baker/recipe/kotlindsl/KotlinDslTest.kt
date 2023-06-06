@@ -427,6 +427,35 @@ class KotlinDslTest {
         }
     }
 
+    @Test
+    fun `wildcard type impl`() {
+
+
+        val recipe = recipe("WildcardRecipe") {
+            interaction<WildcardInteraction>()
+        }
+
+        with(recipe) {
+            assertEquals("WildcardRecipe", name())
+            assertEquals(1, interactions().size())
+        }
+
+        with(recipe.interactions().toList().apply(0)) {
+            assertEquals("WildcardInteraction", name())
+
+            assertEquals(1, inputIngredients().size())
+            assertEquals("hello", inputIngredients().toList().apply(0).name())
+
+            assertEquals(1, output().size())
+            assertEquals("WildcardIngredient", output().toList().apply(0).name())
+            assertEquals(1, output().toList().apply(0).providedIngredients().size())
+            assertEquals("wildcardMap", output().toList().apply(0).providedIngredients().toList().apply(0).name())
+            assertEquals("Map[List[CharArray]]", output().toList().apply(0).providedIngredients().toList().apply(0).ingredientType().toString())
+
+        }
+
+    }
+
     object Events {
         class OrderPlaced(val items: List<Ingredients.Item>)
         class PaymentInformationReceived(val paymentInformation: Ingredients.PaymentInformation)
@@ -496,6 +525,12 @@ class KotlinDslTest {
         fun apply(
             reservedItems: Ingredients.ReservedItems,
         ): Response
+    }
+
+    interface WildcardInteraction: Interaction {
+        data class WildcardIngredient(val wildcardMap: Map<String, List<String>>)
+
+        fun apply(hello:String): WildcardIngredient
     }
 
     interface KotlinInteractionWithAnnotations : Interaction {
