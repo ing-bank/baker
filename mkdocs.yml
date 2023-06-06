@@ -30,6 +30,7 @@ nav:
       - 'sections/cookbook/recipe-dsl.md'
       - 'sections/cookbook/error-handling.md'
       - 'sections/cookbook/visualizations.md'
+      - 'sections/cookbook/fire-sensory-events.md'
   - Development Life Cycle:
       - 'sections/development-life-cycle/introduction.md'
       - 'sections/development-life-cycle/design-a-recipe.md'
