@@ -37,7 +37,7 @@ _Note: We recommend reviewing also Akka configuration._
     ```
 
 This last code snippet will build a Baker runtime and load all configuration from your default `application.conf` located 
-in the resources directory. You can see more about configuration on [this section](../development-life-cycle/configure.md).
+in the resources directory. You can see more about configuration on [this section](../stores).
 
 Alternatively there is a constructor that will provide the default configuration for a local mode Baker, this 
 is recommended for tests.
@@ -209,7 +209,7 @@ except it comes in a `CompletableFuture` that will help you handle async program
 `Recipes` once built must be converted into a data structure called `CompiledRecipe` that lets `RecipeInstances` 
 to understand, store and run your process. These can be used to create a new `RecipeInstance` from a `baker` 
 runtime that contains both a `CompiledRecipe` and the required `InteractionInstances`, or they can as well be converted
-into a [visualziation](visualization.md).
+into a [visualization](../../cookbook/visualizations).
 
 === "Scala"
 
