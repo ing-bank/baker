@@ -31,6 +31,10 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
         }
     }
 
+    fun getJavaBaker(): Baker {
+        return jBaker
+    }
+
     suspend fun gracefulShutdown() {
         jBaker.gracefulShutdown().await()
     }
