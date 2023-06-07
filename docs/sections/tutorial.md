@@ -198,7 +198,7 @@ would implement your actual logic.
 
 === "Scala"
     ```scala
-    TODO add Scala example!
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/interactions/CheckStockImpl.scala"
     ```
 
 ### Ship order implementation
@@ -215,7 +215,7 @@ would implement your actual logic.
 
 === "Scala"
     ```scala
-    TODO add Scala example!
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/interactions/ShipOrderImpl.scala"
     ```
 
 ### Cancel order implementation
@@ -232,7 +232,7 @@ would implement your actual logic.
 
 === "Scala"
     ```scala
-    TODO add Scala example!
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/interactions/CancelOrderImpl.scala"
     ```
 
 ## Execute the recipe
@@ -263,7 +263,7 @@ will start.
 
 === "Scala"
     ```scala
-    TODO add Scala example!
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/application/WebShopApp.scala"
     ```
 
 Run the main function and observe the results. Depending on the outcome of the `CheckStock` interaction you will see

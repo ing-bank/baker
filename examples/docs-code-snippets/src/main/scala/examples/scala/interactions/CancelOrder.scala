@@ -5,6 +5,8 @@ import examples.scala.ingredients.Address
 
 object CancelOrder {
 
+  case class OrderCancelled()
+
   val interaction: Interaction = Interaction(
     name = "CancelOrder",
     inputIngredients = Seq(
@@ -12,11 +14,7 @@ object CancelOrder {
       Ingredient[List[String]](name = "unavailableProductIds")
     ),
     output = Seq(
-      Event(
-        name = "OrderCancelled",
-        providedIngredients = Seq.empty,
-        maxFiringLimit = Some(1)
-      )
+      Event[OrderCancelled]
     )
   )
 }

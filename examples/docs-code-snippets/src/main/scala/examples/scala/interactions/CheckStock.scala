@@ -4,19 +4,10 @@ import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction}
 
 object CheckStock {
 
-  val success: Event = Event(
-    name = "SufficientStock",
-    providedIngredients = Seq.empty,
-    maxFiringLimit = Some(1)
-  )
+  sealed trait CheckStockOutcome
 
-  val orderHasUnavailableItems: Event = Event(
-    name = "OrderHasUnavailableItems",
-    providedIngredients = Seq(
-      Ingredient[List[String]](name = "unavailableProductIds")
-    ),
-    maxFiringLimit = Some(1)
-  )
+  case class SufficientStock() extends CheckStockOutcome
+  case class OrderHasUnavailableItems(unavailableProductIds: List[String]) extends CheckStockOutcome
 
   val interaction: Interaction = Interaction(
     name = "CheckStock",
@@ -25,8 +16,8 @@ object CheckStock {
       Ingredient[List[String]](name = "productIds")
     ),
     output = Seq(
-      success,
-      orderHasUnavailableItems
+      Event[SufficientStock],
+      Event[OrderHasUnavailableItems]
     )
   )
 }

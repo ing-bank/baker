@@ -5,8 +5,8 @@ import examples.scala.events.OrderPlaced
 
 class FireEventAndResolveOnEvent(val baker: Baker) {
 
-  def example(recipeInstanceId: String): Unit = {
-    val eventInstance = EventInstance.unsafeFrom(OrderPlaced.event)
+  def example(recipeInstanceId: String, orderPlaced: OrderPlaced): Unit = {
+    val eventInstance = EventInstance.unsafeFrom(orderPlaced)
     val sensoryEventResult = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, eventInstance)
   }
 }

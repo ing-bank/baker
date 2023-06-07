@@ -1,17 +1,23 @@
 package examples.scala.recipes
 
-import com.ing.baker.recipe.scaladsl.Recipe
+import com.ing.baker.recipe.scaladsl.{Event, Recipe}
 import examples.scala.events.OrderPlaced
 import examples.scala.interactions.{CancelOrder, CheckStock, ShipOrder}
 
 object WebShopRecipe {
   val recipe: Recipe = Recipe("web-shop recipe")
-    .withSensoryEvent(OrderPlaced.event)
+    .withSensoryEvent(
+      Event[OrderPlaced]
+    )
     .withInteractions(
       CheckStock.interaction,
       ShipOrder.interaction
-        .withRequiredEvent(CheckStock.success),
+        .withRequiredEvent(
+          Event[CheckStock.SufficientStock]
+        ),
       CancelOrder.interaction
-        .withRequiredEvent(CheckStock.orderHasUnavailableItems)
+        .withRequiredEvent(
+          Event[CheckStock.OrderHasUnavailableItems]
+        )
     )
 }
