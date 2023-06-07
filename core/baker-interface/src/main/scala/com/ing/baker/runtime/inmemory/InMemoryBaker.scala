@@ -2,6 +2,7 @@ package com.ing.baker.runtime.inmemory
 
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
 import cats.~>
+import com.ing.baker.runtime.javadsl.BakerConfig
 import com.ing.baker.runtime.model.{BakerComponents, BakerF, InteractionInstance}
 import com.ing.baker.runtime.{defaultinteractions, javadsl}
 
@@ -41,6 +42,10 @@ object InMemoryBaker {
       }
     )
     new javadsl.Baker(bakerF)
+  }
+
+  def java(config: BakerConfig, implementations: JavaList[AnyRef]): javadsl.Baker = {
+    java(config.toBakerFConfig(), implementations)
   }
 
   def java(implementations: JavaList[AnyRef]): javadsl.Baker = {
