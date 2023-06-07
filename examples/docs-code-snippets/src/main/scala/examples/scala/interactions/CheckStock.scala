@@ -4,10 +4,10 @@ import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction}
 
 object CheckStock {
 
-  sealed trait CheckStockOutcome
+  sealed trait Outcome
 
-  case class SufficientStock() extends CheckStockOutcome
-  case class OrderHasUnavailableItems(unavailableProductIds: List[String]) extends CheckStockOutcome
+  case class SufficientStock() extends Outcome
+  case class OrderHasUnavailableItems(unavailableProductIds: List[String]) extends Outcome
 
   val interaction: Interaction = Interaction(
     name = "CheckStock",
