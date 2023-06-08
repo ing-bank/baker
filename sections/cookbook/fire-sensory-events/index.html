@@ -776,7 +776,9 @@ detail.</p>
 <p>This method returns a <code>CompletableFuture&lt;SensoryEventStatus&gt;</code>. It completes right after the event was received, but
 before any interactions are executed. The <code>SensoryEventStatus</code> is an enum containing information about the outcome
 of the event (<code>Received</code>, <code>Completed</code>, <code>FiringLimitMet</code>, etc). </p>
-<div class="tabbed-set" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Java</label><label for="__tabbed_1_2">Kotlin</label><label for="__tabbed_1_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.Baker</span><span class="p">;</span>
@@ -798,7 +800,7 @@ of the event (<code>Received</code>, <code>Completed</code>, <code>FiringLimitMe
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.application</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.EventInstance</span>
@@ -814,7 +816,7 @@ of the event (<code>Received</code>, <code>Completed</code>, <code>FiringLimitMe
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><label for="__tabbed_1_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">application</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.{</span><span class="nc">Baker</span><span class="p">,</span><span class="w"> </span><span class="nc">EventInstance</span><span class="p">}</span>
@@ -830,11 +832,14 @@ of the event (<code>Received</code>, <code>Completed</code>, <code>FiringLimitMe
 </code></pre></div>
 </div>
 </div>
+</div>
 <h3 id="fire-event-and-resolve-when-completed">Fire event and resolve when completed</h3>
 <p>Returns a <code>CompletableFuture&lt;SensoryEventResult&gt;</code>. It completes when additional sensory events are required to continue
 the process, or when the process has finished. The <code>SensoryEventResult</code> contains the <code>SensoryEventStatus</code> and a list
 of all events names triggered as a result of this sensory event.</p>
-<div class="tabbed-set" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Java</label><label for="__tabbed_2_2">Kotlin</label><label for="__tabbed_2_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.Baker</span><span class="p">;</span>
@@ -856,7 +861,7 @@ of all events names triggered as a result of this sensory event.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.application</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.EventInstance</span>
@@ -872,7 +877,7 @@ of all events names triggered as a result of this sensory event.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><label for="__tabbed_2_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">application</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.{</span><span class="nc">Baker</span><span class="p">,</span><span class="w"> </span><span class="nc">EventInstance</span><span class="p">}</span>
@@ -888,12 +893,15 @@ of all events names triggered as a result of this sensory event.</p>
 </code></pre></div>
 </div>
 </div>
+</div>
 <h3 id="fire-event">Fire event</h3>
 <p>This method is useful if you want to do something after the event was received and after all interactions have completed.
 The method returns an <code>EventResolutions</code> object consisting of a <code>CompletableFuture&lt;SensoryEventStatus&gt;</code> and 
 <code>CompletableFuture&lt;SensoryEventResult&gt;</code>. The former completes on receiving the event, the latter on completion of the
 interactions.</p>
-<div class="tabbed-set" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><label for="__tabbed_3_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Java</label><label for="__tabbed_3_2">Kotlin</label><label for="__tabbed_3_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.Baker</span><span class="p">;</span>
@@ -918,7 +926,7 @@ interactions.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><label for="__tabbed_3_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.application</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.EventInstance</span>
@@ -937,7 +945,7 @@ interactions.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><label for="__tabbed_3_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">application</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.{</span><span class="nc">Baker</span><span class="p">,</span><span class="w"> </span><span class="nc">EventInstance</span><span class="p">}</span>
@@ -956,10 +964,13 @@ interactions.</p>
 </code></pre></div>
 </div>
 </div>
+</div>
 <h3 id="fire-event-and-resolve-on-event">Fire event and resolve on event</h3>
 <p>This method returns a <code>CompletableFuture&lt;SensoryEventResult&gt;</code>. It completes when one of the interactions fires an event
 with a specified name. </p>
-<div class="tabbed-set" data-tabs="4:3"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><label for="__tabbed_4_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="4:3"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Java</label><label for="__tabbed_4_2">Kotlin</label><label for="__tabbed_4_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.Baker</span><span class="p">;</span>
@@ -981,7 +992,7 @@ with a specified name. </p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><label for="__tabbed_4_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.application</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.EventInstance</span>
@@ -997,7 +1008,7 @@ with a specified name. </p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><label for="__tabbed_4_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">application</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.{</span><span class="nc">Baker</span><span class="p">,</span><span class="w"> </span><span class="nc">EventInstance</span><span class="p">}</span>
@@ -1013,10 +1024,13 @@ with a specified name. </p>
 </code></pre></div>
 </div>
 </div>
+</div>
 <h2 id="inquiry">Inquiry</h2>
 <p>Baker allows you to query the state of a recipe instance at any given moment. To this end, Baker exposes a couple
 of different methods that allow you to fetch information about events, ingredients, and interactions from a running process.</p>
-<div class="tabbed-set" data-tabs="5:3"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><label for="__tabbed_5_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="5:3"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><input id="__tabbed_5_3" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Java</label><label for="__tabbed_5_2">Kotlin</label><label for="__tabbed_5_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.Baker</span><span class="p">;</span>
@@ -1043,7 +1057,7 @@ of different methods that allow you to fetch information about events, ingredien
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><label for="__tabbed_5_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.application</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.kotlindsl.Baker</span>
@@ -1064,7 +1078,7 @@ of different methods that allow you to fetch information about events, ingredien
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_5_3" name="__tabbed_5" type="radio" /><label for="__tabbed_5_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">application</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Baker</span>
@@ -1084,6 +1098,7 @@ of different methods that allow you to fetch information about events, ingredien
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 

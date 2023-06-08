@@ -698,7 +698,9 @@ logging purposes.</p>
 <h2 id="recipe-instance-events">Recipe instance events</h2>
 <p>The <code>registerEventListener</code> method allows you to declare an event listener which listens to all events of a specific
 recipe instance.</p>
-<div class="tabbed-set" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Java</label><label for="__tabbed_1_2">Kotlin</label><label for="__tabbed_1_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.Baker</span><span class="p">;</span>
@@ -720,7 +722,7 @@ recipe instance.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.application</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.kotlindsl.Baker</span>
@@ -735,7 +737,7 @@ recipe instance.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><label for="__tabbed_1_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">application</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Baker</span>
@@ -751,10 +753,13 @@ recipe instance.</p>
 </code></pre></div>
 </div>
 </div>
+</div>
 <h2 id="all-baker-events">All Baker events</h2>
 <p>The <code>registerBakerEventListener</code> method allows you to declare an event listener which listens to all Baker events. These
 are events that notify what Baker is doing.</p>
-<div class="tabbed-set" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Java</label><label for="__tabbed_2_2">Kotlin</label><label for="__tabbed_2_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.Baker</span><span class="p">;</span>
@@ -776,7 +781,7 @@ are events that notify what Baker is doing.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.application</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.kotlindsl.Baker</span>
@@ -791,7 +796,7 @@ are events that notify what Baker is doing.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><label for="__tabbed_2_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">application</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Baker</span>
@@ -805,6 +810,7 @@ are events that notify what Baker is doing.</p>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 

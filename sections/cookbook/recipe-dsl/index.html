@@ -900,7 +900,9 @@ and vice versa.</p>
 <p>Sensory events can be declared with or without firing limit. The firing limit determines how many times the event is
 allowed to be fired into the process. If you don't want to impose any limits, you have to explicitly declare the event
 as such. If left unspecified, the firing limit defaults to 1.</p>
-<div class="tabbed-set" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Java</label><label for="__tabbed_1_2">Kotlin</label><label for="__tabbed_1_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.Recipe</span><span class="p">;</span>
@@ -917,7 +919,7 @@ as such. If left unspecified, the firing limit defaults to 1.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.ExperimentalDsl</span>
@@ -938,7 +940,7 @@ as such. If left unspecified, the firing limit defaults to 1.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><label for="__tabbed_1_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.{</span><span class="nc">Event</span><span class="p">,</span><span class="w"> </span><span class="nc">Recipe</span><span class="p">}</span>
@@ -960,10 +962,13 @@ found in <a href="../../tutorial#define-the-sensory-event">this section</a> of t
 </div>
 </div>
 </div>
+</div>
 <h3 id="event-receive-period">Event receive period</h3>
 <p>The period during which the process accepts sensory events. This is an optional parameter, defaults to accepting 
 sensory events forever.</p>
-<div class="tabbed-set" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Java</label><label for="__tabbed_2_2">Kotlin</label><label for="__tabbed_2_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.Recipe</span><span class="p">;</span>
@@ -977,7 +982,7 @@ sensory events forever.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.ExperimentalDsl</span>
@@ -992,7 +997,7 @@ sensory events forever.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><label for="__tabbed_2_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Recipe</span>
@@ -1006,11 +1011,14 @@ sensory events forever.</p>
 </code></pre></div>
 </div>
 </div>
+</div>
 <h2 id="interactions">Interactions</h2>
 <h3 id="custom-name">Custom name</h3>
 <p>By default, the name of the interaction matches the name of the interaction class. Optionally, you can specify your
 own name.</p>
-<div class="tabbed-set" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><label for="__tabbed_3_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Java</label><label for="__tabbed_3_2">Kotlin</label><label for="__tabbed_3_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.InteractionDescriptor</span><span class="p">;</span>
@@ -1026,7 +1034,7 @@ own name.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><label for="__tabbed_3_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.ExperimentalDsl</span>
@@ -1043,7 +1051,7 @@ own name.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><label for="__tabbed_3_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Recipe</span>
@@ -1059,9 +1067,12 @@ own name.</p>
 </code></pre></div>
 </div>
 </div>
+</div>
 <h3 id="maximum-interaction-count">Maximum interaction count</h3>
 <p>By default, an interaction can be invoked an unlimited amount of times. Optionally, you can specify a limit.</p>
-<div class="tabbed-set" data-tabs="4:3"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><label for="__tabbed_4_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="4:3"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Java</label><label for="__tabbed_4_2">Kotlin</label><label for="__tabbed_4_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.InteractionDescriptor</span><span class="p">;</span>
@@ -1078,7 +1089,7 @@ own name.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><label for="__tabbed_4_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.ExperimentalDsl</span>
@@ -1095,7 +1106,7 @@ own name.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><label for="__tabbed_4_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Recipe</span>
@@ -1111,9 +1122,12 @@ own name.</p>
 </code></pre></div>
 </div>
 </div>
+</div>
 <h3 id="predefined-ingredients">Predefined ingredients</h3>
 <p>It's possible to register static ingredients to the interaction via predefined ingredients.</p>
-<div class="tabbed-set" data-tabs="5:3"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><label for="__tabbed_5_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="5:3"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><input id="__tabbed_5_3" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Java</label><label for="__tabbed_5_2">Kotlin</label><label for="__tabbed_5_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.InteractionDescriptor</span><span class="p">;</span>
@@ -1138,7 +1152,7 @@ own name.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><label for="__tabbed_5_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.ExperimentalDsl</span>
@@ -1158,7 +1172,7 @@ own name.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_5_3" name="__tabbed_5" type="radio" /><label for="__tabbed_5_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Recipe</span>
@@ -1177,6 +1191,7 @@ own name.</p>
 </code></pre></div>
 </div>
 </div>
+</div>
 <h3 id="required-events">Required events</h3>
 <p>Sometimes an interaction should only execute after a certain event has happened. To achieve this you can specify
 <code>requiredEvents</code> or <code>requiredOneOfEvents</code>. </p>
@@ -1185,7 +1200,9 @@ required one of events works as a logical OR. At least one of those events shoul
 is executed. </p>
 <p>In this example, the <code>ShipOrder</code> interaction will only execute if the <code>FraudCheckCompleted</code> and one of (or both) the 
 <code>PaymentReceived</code> or <code>UsedCouponCode</code> events are available.</p>
-<div class="tabbed-set" data-tabs="6:3"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><label for="__tabbed_6_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="6:3"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><input id="__tabbed_6_3" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Java</label><label for="__tabbed_6_2">Kotlin</label><label for="__tabbed_6_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.InteractionDescriptor</span><span class="p">;</span>
@@ -1204,7 +1221,7 @@ is executed. </p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><label for="__tabbed_6_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.ExperimentalDsl</span>
@@ -1229,7 +1246,7 @@ is executed. </p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_6_3" name="__tabbed_6" type="radio" /><label for="__tabbed_6_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.{</span><span class="nc">Event</span><span class="p">,</span><span class="w"> </span><span class="nc">Recipe</span><span class="p">}</span>
@@ -1252,10 +1269,13 @@ is executed. </p>
 </code></pre></div>
 </div>
 </div>
+</div>
 <h3 id="transform-output-events">Transform output events</h3>
 <p>It's possible to change the name of an output event. Optionally, you can also change names of 
 ingredients.</p>
-<div class="tabbed-set" data-tabs="7:3"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><label for="__tabbed_7_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="7:3"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><input id="__tabbed_7_3" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Java</label><label for="__tabbed_7_2">Kotlin</label><label for="__tabbed_7_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.InteractionDescriptor</span><span class="p">;</span>
@@ -1275,7 +1295,7 @@ ingredients.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><label for="__tabbed_7_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.ExperimentalDsl</span>
@@ -1296,7 +1316,7 @@ ingredients.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_7_3" name="__tabbed_7" type="radio" /><label for="__tabbed_7_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Recipe</span>
@@ -1320,9 +1340,12 @@ ingredients.</p>
 </code></pre></div>
 </div>
 </div>
+</div>
 <h3 id="override-input-ingredients">Override input ingredients</h3>
 <p>It's possible to change the names the input ingredients.</p>
-<div class="tabbed-set" data-tabs="8:3"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><label for="__tabbed_8_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="8:3"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><input id="__tabbed_8_3" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Java</label><label for="__tabbed_8_2">Kotlin</label><label for="__tabbed_8_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.InteractionDescriptor</span><span class="p">;</span>
@@ -1339,7 +1362,7 @@ ingredients.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><label for="__tabbed_8_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.ExperimentalDsl</span>
@@ -1358,7 +1381,7 @@ ingredients.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_8_3" name="__tabbed_8" type="radio" /><label for="__tabbed_8_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Recipe</span>
@@ -1374,11 +1397,14 @@ ingredients.</p>
 </code></pre></div>
 </div>
 </div>
+</div>
 <h3 id="failure-strategy">Failure strategy</h3>
 <p>It's possible to define a failure strategy on interaction level. This failure strategy will only be used for this
 specific interaction. Interaction specific failure strategies take precedence over the default failure strategy. 
 For all available failure strategies, see the <a href="/sections/cookbook/error-handling">error handling</a> section.</p>
-<div class="tabbed-set" data-tabs="9:3"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><label for="__tabbed_9_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="9:3"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><input id="__tabbed_9_3" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Java</label><label for="__tabbed_9_2">Kotlin</label><label for="__tabbed_9_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.InteractionDescriptor</span><span class="p">;</span>
@@ -1398,7 +1424,7 @@ For all available failure strategies, see the <a href="/sections/cookbook/error-
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><label for="__tabbed_9_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.ExperimentalDsl</span>
@@ -1415,7 +1441,7 @@ For all available failure strategies, see the <a href="/sections/cookbook/error-
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_9_3" name="__tabbed_9" type="radio" /><label for="__tabbed_9_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">common</span><span class="p">.</span><span class="nc">InteractionFailureStrategy</span>
@@ -1434,11 +1460,14 @@ For all available failure strategies, see the <a href="/sections/cookbook/error-
 </code></pre></div>
 </div>
 </div>
+</div>
 <h2 id="recipe">Recipe</h2>
 <h3 id="checkpoint-events">Checkpoint events</h3>
 <p>Checkpoints are used to fire an event with a given name whenever certain preconditions are met. The preconditions 
 are specified via <code>requiredEvents</code> or <code>requiredOneOfEvents</code>.</p>
-<div class="tabbed-set" data-tabs="10:3"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><label for="__tabbed_10_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="10:3"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><input id="__tabbed_10_3" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">Java</label><label for="__tabbed_10_2">Kotlin</label><label for="__tabbed_10_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.CheckPointEvent</span><span class="p">;</span>
@@ -1459,7 +1488,7 @@ are specified via <code>requiredEvents</code> or <code>requiredOneOfEvents</code
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><label for="__tabbed_10_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.ExperimentalDsl</span>
@@ -1480,7 +1509,7 @@ are specified via <code>requiredEvents</code> or <code>requiredOneOfEvents</code
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_10_3" name="__tabbed_10" type="radio" /><label for="__tabbed_10_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="n">scaladsl</span>
@@ -1502,10 +1531,13 @@ are specified via <code>requiredEvents</code> or <code>requiredOneOfEvents</code
 </code></pre></div>
 </div>
 </div>
+</div>
 <h3 id="default-failure-strategy">Default failure strategy</h3>
 <p>The default failure strategy allows you to set a failure strategy for interactions that don't specify 
 one explicitly. For all available failure strategies, see the <a href="/sections/cookbook/error-handling">error handling</a> section.</p>
-<div class="tabbed-set" data-tabs="11:3"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><label for="__tabbed_11_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="11:3"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><input id="__tabbed_11_3" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">Java</label><label for="__tabbed_11_2">Kotlin</label><label for="__tabbed_11_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.InteractionFailureStrategy</span><span class="p">;</span>
@@ -1520,7 +1552,7 @@ one explicitly. For all available failure strategies, see the <a href="/sections
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><label for="__tabbed_11_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.ExperimentalDsl</span>
@@ -1535,7 +1567,7 @@ one explicitly. For all available failure strategies, see the <a href="/sections
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_11_3" name="__tabbed_11" type="radio" /><label for="__tabbed_11_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">common</span><span class="p">.</span><span class="nc">InteractionFailureStrategy</span>
@@ -1548,6 +1580,7 @@ one explicitly. For all available failure strategies, see the <a href="/sections
 <span class="w">    </span><span class="p">)</span>
 <span class="p">}</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 

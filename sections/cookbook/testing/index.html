@@ -778,7 +778,9 @@ simplify testing by using the <code>baker-test</code> library.</p>
 <p>A recipe is validated when it's compiled by the <code>RecipeCompiler</code>. Any validation errors that might occur during this
 compilation are available through the resulting <code>CompiledRecipe</code> instance. A simple unit test that checks for
 validation errors in your recipe is essential.</p>
-<div class="tabbed-set" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Java</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Java</label><label for="__tabbed_1_2">Kotlin</label><label for="__tabbed_1_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.compiler.RecipeCompiler</span><span class="p">;</span>
@@ -799,7 +801,7 @@ validation errors in your recipe is essential.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Kotlin</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.compiler.RecipeCompiler</span>
@@ -818,7 +820,7 @@ validation errors in your recipe is essential.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><label for="__tabbed_1_3">Scala</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">recipes</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">compiler</span><span class="p">.</span><span class="nc">RecipeCompiler</span>
@@ -832,6 +834,7 @@ validation errors in your recipe is essential.</p>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 <h2 id="business-logic-tests">Business logic tests</h2>
@@ -859,7 +862,9 @@ execution is involved.</p>
 <p>At the moment <code>baker-test</code> is not compatible with the suspending Kotlin Baker APIs.</p>
 </div>
 <h3 id="adding-the-dependency">Adding the dependency</h3>
-<div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Maven</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Maven</label><label for="__tabbed_2_2">Sbt</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="nt">&lt;dependency&gt;</span>
 <span class="w">  </span><span class="nt">&lt;groupId&gt;</span>com.ing.baker<span class="nt">&lt;/groupId&gt;</span>
 <span class="w">  </span><span class="nt">&lt;artifactId&gt;</span>baker-test_2.13<span class="nt">&lt;/artifactId&gt;</span>
@@ -868,20 +873,23 @@ execution is involved.</p>
 <span class="nt">&lt;/dependency&gt;</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Sbt</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">libraryDependencies</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="s">&quot;com.ing.baker&quot;</span><span class="w"> </span><span class="o">%%</span><span class="w"> </span><span class="s">&quot;baker-test_2.13&quot;</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="n">bakerVersion</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 <h3 id="eventsflow">EventsFlow</h3>
 <p><code>EventsFlow</code> is made to simplify the work with the baker events while testing. <code>EventsFlow</code> is immutable.</p>
 <p>You create a new events flow from events classes:</p>
-<div class="tabbed-set" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><label for="__tabbed_3_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Scala</label><label for="__tabbed_3_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kd">val</span><span class="w"> </span><span class="n">flow</span><span class="p">:</span><span class="w"> </span><span class="nc">EventsFlow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>
 <span class="w">      </span><span class="k">classOf</span><span class="p">[</span><span class="nc">SomeSensoryEvent</span><span class="p">]</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="k">classOf</span><span class="p">[</span><span class="nc">InteractionSucceeded</span><span class="p">]</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="nc">EmptyFlow</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><label for="__tabbed_3_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">EventsFlow</span><span class="w"> </span><span class="n">flow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">EventsFlow</span><span class="p">.</span><span class="na">of</span><span class="p">(</span>
 <span class="w">    </span><span class="n">SomeSensoryEvent</span><span class="p">.</span><span class="na">class</span><span class="p">,</span>
 <span class="w">    </span><span class="n">InteractionSucceeded</span><span class="p">.</span><span class="na">class</span>
@@ -889,26 +897,32 @@ execution is involved.</p>
 </code></pre></div>
 </div>
 </div>
+</div>
 <p>There is also an option to create a new event flow from the existing one:</p>
-<div class="tabbed-set" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><label for="__tabbed_4_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Scala</label><label for="__tabbed_4_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kd">val</span><span class="w"> </span><span class="n">anotherFlow</span><span class="p">:</span><span class="w"> </span><span class="nc">EventsFlow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>
 <span class="w">    </span><span class="n">flow</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="k">classOf</span><span class="p">[</span><span class="nc">SomeSensoryEvent</span><span class="p">]</span><span class="w"> </span><span class="o">++</span><span class="w"> </span><span class="k">classOf</span><span class="p">[</span><span class="nc">AnotherSensoryEvent</span><span class="p">]</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><label for="__tabbed_4_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">EventsFlow</span><span class="w"> </span><span class="n">anotherFlow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">flow</span>
 <span class="w">    </span><span class="p">.</span><span class="na">remove</span><span class="p">(</span><span class="n">SomeSensoryEvent</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
 <span class="w">    </span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="n">AnotherSensoryEvent</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
 </code></pre></div>
 </div>
 </div>
+</div>
 <p>It is also possible to combine classes, strings and other events flows:</p>
-<div class="tabbed-set" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><label for="__tabbed_5_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Scala</label><label for="__tabbed_5_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="n">unhappyFlow</span><span class="p">:</span><span class="w"> </span><span class="nc">EventsFlow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>
 <span class="w">        </span><span class="n">happyFlow</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="k">classOf</span><span class="p">[</span><span class="nc">InteractionSucceeded</span><span class="p">]</span><span class="w"> </span><span class="o">++</span><span class="w"> </span><span class="s">&quot;InteractionExhausted&quot;</span><span class="w"> </span><span class="o">+++</span><span class="w"> </span><span class="n">someErrorFlow</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><label for="__tabbed_5_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">EventsFlow</span><span class="w"> </span><span class="n">unhappyFlow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">happyFlow</span>
 <span class="w">        </span><span class="p">.</span><span class="na">remove</span><span class="p">(</span><span class="n">InteractionSucceeded</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
 <span class="w">        </span><span class="p">.</span><span class="na">add</span><span class="p">(</span><span class="s">&quot;InteractionExhausted&quot;</span><span class="p">)</span>
@@ -916,52 +930,65 @@ execution is involved.</p>
 </code></pre></div>
 </div>
 </div>
+</div>
 <p>Events flows are compared ignoring the order of the events:</p>
-<div class="tabbed-set" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><label for="__tabbed_6_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Scala</label><label for="__tabbed_6_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="w">   </span><span class="s">&quot;EventOne&quot;</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="s">&quot;EventTwo&quot;</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="nc">EmptyFlow</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s">&quot;EventTwo&quot;</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="s">&quot;EventOne&quot;</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="nc">EmptyFlow</span><span class="w"> </span><span class="c1">// true   </span>
 </code></pre></div>
 </div>
-<input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><label for="__tabbed_6_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="w">   </span><span class="n">EventsFlow</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;EventOne&quot;</span><span class="p">,</span><span class="s">&quot;EventTwo&quot;</span><span class="p">).</span><span class="na">equals</span><span class="p">(</span><span class="n">EventsFlow</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;EventTwo&quot;</span><span class="p">,</span><span class="s">&quot;EventOne&quot;</span><span class="p">));</span><span class="w"> </span><span class="c1">// true   </span>
 </code></pre></div>
 </div>
 </div>
+</div>
 <p>While comparing events flows it does not matter if an event is provided as a class or as a string:</p>
-<div class="tabbed-set" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><label for="__tabbed_7_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Scala</label><label for="__tabbed_7_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="w">   </span><span class="k">classOf</span><span class="p">[</span><span class="nc">EventOne</span><span class="p">]</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="nc">EmptyFlow</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s">&quot;EventOne&quot;</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="nc">EmptyFlow</span><span class="w"> </span><span class="c1">// true   </span>
 </code></pre></div>
 </div>
-<input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><label for="__tabbed_7_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="w">   </span><span class="n">EventsFlow</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">EventOne</span><span class="p">.</span><span class="na">class</span><span class="p">).</span><span class="na">equals</span><span class="p">(</span><span class="n">EventsFlow</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;EventOne&quot;</span><span class="p">));</span><span class="w"> </span><span class="c1">// true   </span>
 </code></pre></div>
+</div>
 </div>
 </div>
 <h3 id="recipeassert">RecipeAssert</h3>
 <p><code>RecipeAssert</code> is the starting point of all your assertions for the recipe instance.</p>
 <p>To create a <code>RecipeAssert</code> instance a baker instance and a recipe instance id are required:</p>
-<div class="tabbed-set" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><label for="__tabbed_8_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Scala</label><label for="__tabbed_8_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="n">recipeAssert</span><span class="p">:</span><span class="w"> </span><span class="nc">RecipeAssert</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">RecipeAssert</span><span class="p">(</span><span class="n">baker</span><span class="p">,</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><label for="__tabbed_8_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">RecipeAssert</span><span class="w"> </span><span class="n">recipeAssert</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RecipeAssert</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">baker</span><span class="p">,</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">);</span>
 </code></pre></div>
 </div>
 </div>
+</div>
 <p>There is a simple way to assert if the events flow for this recipe instance is exactly the same as expected:</p>
-<div class="tabbed-set" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><label for="__tabbed_9_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Scala</label><label for="__tabbed_9_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="n">happyFlow</span><span class="p">:</span><span class="w"> </span><span class="nc">EventsFlow</span><span class="w"> </span><span class="o">=</span>
 <span class="w">    </span><span class="k">classOf</span><span class="p">[</span><span class="nc">SomeSensoryEvent</span><span class="p">]</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="k">classOf</span><span class="p">[</span><span class="nc">InteractionSucceeded</span><span class="p">]</span><span class="w"> </span><span class="o">::</span><span class="w"> </span><span class="nc">EmptyFlow</span>
 <span class="w">  </span><span class="nc">RecipeAssert</span><span class="p">(</span><span class="n">baker</span><span class="p">,</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">).</span><span class="n">assertEventsFlow</span><span class="p">(</span><span class="n">happyFlow</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><label for="__tabbed_9_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">EventsFlow</span><span class="w"> </span><span class="n">happyFlow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">EventsFlow</span><span class="p">.</span><span class="na">of</span><span class="p">(</span>
 <span class="w">        </span><span class="n">SomeSensoryEvent</span><span class="p">.</span><span class="na">class</span><span class="p">,</span>
 <span class="w">        </span><span class="n">InteractionSucceeded</span><span class="p">.</span><span class="na">class</span>
 <span class="w">    </span><span class="p">);</span>
 <span class="w">    </span><span class="n">RecipeAssert</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">baker</span><span class="p">,</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">).</span><span class="na">assertEventsFlow</span><span class="p">(</span><span class="n">happyFlow</span><span class="p">);</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 <p>If the assertion fails a clear error message with the difference is provided:</p>
@@ -972,7 +999,9 @@ difference: ++ ItemsNotReserved
             -- ItemsReserved
 </code></pre></div>
 <p>There are multiple methods to assert ingredient values.</p>
-<div class="tabbed-set" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><label for="__tabbed_10_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">Scala</label><label for="__tabbed_10_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="nc">RecipeAssert</span><span class="p">(</span><span class="n">baker</span><span class="p">,</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">)</span>
 <span class="w">  </span><span class="p">.</span><span class="n">assertIngredient</span><span class="p">(</span><span class="s">&quot;ingredientName&quot;</span><span class="p">).</span><span class="n">isEqual</span><span class="p">(</span><span class="n">expectedValue</span><span class="p">)</span><span class="w"> </span><span class="c1">// is equal to the expected value</span>
 <span class="w">  </span><span class="p">.</span><span class="n">assertIngredient</span><span class="p">(</span><span class="s">&quot;nullishIngredient&quot;</span><span class="p">).</span><span class="n">isNull</span><span class="w"> </span><span class="c1">// exists and has `null` value</span>
@@ -980,7 +1009,7 @@ difference: ++ ItemsNotReserved
 <span class="w">  </span><span class="p">.</span><span class="n">assertIngredient</span><span class="p">(</span><span class="s">&quot;someListOfStrings&quot;</span><span class="p">).</span><span class="n">is</span><span class="p">(</span><span class="n">value</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="nc">Assertions</span><span class="p">.</span><span class="n">assert</span><span class="p">(</span><span class="n">value</span><span class="p">.</span><span class="n">asList</span><span class="p">(</span><span class="k">classOf</span><span class="p">[</span><span class="nc">String</span><span class="p">]).</span><span class="n">size</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">2</span><span class="p">))</span><span class="w"> </span><span class="c1">// custom</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><label for="__tabbed_10_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">RecipeAssert</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">baker</span><span class="p">,</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">)</span>
 <span class="w">  </span><span class="p">.</span><span class="na">assertIngredient</span><span class="p">(</span><span class="s">&quot;ingredientName&quot;</span><span class="p">).</span><span class="na">isEqual</span><span class="p">(</span><span class="n">expectedValue</span><span class="p">)</span><span class="w"> </span><span class="c1">// is equal to the expected value</span>
 <span class="w">  </span><span class="p">.</span><span class="na">assertIngredient</span><span class="p">(</span><span class="s">&quot;nullishIngredient&quot;</span><span class="p">).</span><span class="na">isNull</span><span class="p">()</span><span class="w"> </span><span class="c1">// exists and has `null` value</span>
@@ -989,9 +1018,12 @@ difference: ++ ItemsNotReserved
 </code></pre></div>
 </div>
 </div>
+</div>
 <p>You can log some information from the baker recipe instance.</p>
 <p><em>Note: But in most cases you probably should not have to do it because the current state is logged when any of the assertions fail.</em></p>
-<div class="tabbed-set" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><label for="__tabbed_11_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">Scala</label><label for="__tabbed_11_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="nc">RecipeAssert</span><span class="p">(</span><span class="n">baker</span><span class="p">,</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">)</span>
 <span class="w">    </span><span class="p">.</span><span class="n">logIngredients</span><span class="p">()</span><span class="w"> </span><span class="c1">// logs ingredients</span>
 <span class="w">    </span><span class="p">.</span><span class="n">logEventNames</span><span class="p">()</span><span class="w"> </span><span class="c1">// logs event names</span>
@@ -999,7 +1031,7 @@ difference: ++ ItemsNotReserved
 <span class="w">    </span><span class="p">.</span><span class="n">logCurrentState</span><span class="p">()</span><span class="w"> </span><span class="c1">// logs all the information available</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><label for="__tabbed_11_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">RecipeAssert</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">baker</span><span class="p">,</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">)</span>
 <span class="w">    </span><span class="p">.</span><span class="na">logIngredients</span><span class="p">()</span><span class="w"> </span><span class="c1">// logs ingredients</span>
 <span class="w">    </span><span class="p">.</span><span class="na">logEventNames</span><span class="p">()</span><span class="w"> </span><span class="c1">// logs event names</span>
@@ -1008,24 +1040,30 @@ difference: ++ ItemsNotReserved
 </code></pre></div>
 </div>
 </div>
+</div>
 <p>Quite a common task is to wait for a baker process to finish or specific event to fire.
 Therefore, the blocking method was implemented:</p>
-<div class="tabbed-set" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><label for="__tabbed_12_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">Scala</label><label for="__tabbed_12_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="nc">RecipeAssert</span><span class="p">(</span><span class="n">baker</span><span class="p">,</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">).</span><span class="n">waitFor</span><span class="p">(</span><span class="n">happyFlow</span><span class="p">)</span>
 <span class="c1">// on this line all the events within happyFlow have happened</span>
 <span class="c1">// otherwise timeout occurs and an assertion error is thrown</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><label for="__tabbed_12_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">RecipeAssert</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">baker</span><span class="p">,</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">).</span><span class="na">waitFor</span><span class="p">(</span><span class="n">happyFlow</span><span class="p">);</span>
 <span class="c1">// on this line all the events within happyFlow have happened</span>
 <span class="c1">// otherwise timeout occurs and an assertion error is thrown</span>
 </code></pre></div>
 </div>
 </div>
+</div>
 <p>As you have probably already noticed <code>RecipeAssert</code> is chainable
 so the typical usage would probably be something like the following:</p>
-<div class="tabbed-set" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><label for="__tabbed_13_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">Scala</label><label for="__tabbed_13_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="nc">RecipeAssert</span><span class="p">(</span><span class="n">baker</span><span class="p">,</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">)</span>
 <span class="w">    </span><span class="p">.</span><span class="n">waitFor</span><span class="p">(</span><span class="n">happyFlow</span><span class="p">)</span>
 <span class="w">    </span><span class="p">.</span><span class="n">assertEventsFlow</span><span class="p">(</span><span class="n">happyFlow</span><span class="p">)</span>
@@ -1033,13 +1071,14 @@ so the typical usage would probably be something like the following:</p>
 <span class="w">    </span><span class="p">.</span><span class="n">assertIngredient</span><span class="p">(</span><span class="s">&quot;ingredientB&quot;</span><span class="p">).</span><span class="n">isEqual</span><span class="p">(</span><span class="n">ingredientValueB</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><label for="__tabbed_13_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">RecipeAssert</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">baker</span><span class="p">,</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">)</span>
 <span class="w">    </span><span class="p">.</span><span class="na">waitFor</span><span class="p">(</span><span class="n">happyFlow</span><span class="p">)</span>
 <span class="w">    </span><span class="p">.</span><span class="na">assertEventsFlow</span><span class="p">(</span><span class="n">happyFlow</span><span class="p">)</span>
 <span class="w">    </span><span class="p">.</span><span class="na">assertIngredient</span><span class="p">(</span><span class="s">&quot;ingredientA&quot;</span><span class="p">).</span><span class="na">isEqual</span><span class="p">(</span><span class="n">ingredientValueA</span><span class="p">)</span>
 <span class="w">    </span><span class="p">.</span><span class="na">assertIngredient</span><span class="p">(</span><span class="s">&quot;ingredientB&quot;</span><span class="p">).</span><span class="na">isEqual</span><span class="p">(</span><span class="n">ingredientValueB</span><span class="p">);</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 

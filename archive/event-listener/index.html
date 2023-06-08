@@ -680,7 +680,9 @@
 <p>You might be interested which <a href="../concepts/#event">Events</a> are raised for process instances of a recipe.</p>
 <p>For this purpose there is an <a href="https://github.com/ing-bank/baker/blob/master/runtime/src/main/scala/com/ing/baker/runtime/core/EventListener.scala">EventListener</a> interface.</p>
 <p>You may implement this interface and register it to Baker.</p>
-<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Scala</label><label for="__tabbed_1_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kd">val</span><span class="w"> </span><span class="n">listener</span><span class="p">:</span><span class="w"> </span><span class="nc">EventListener</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nc">EventListener</span><span class="w"> </span><span class="p">{</span>
 <span class="w">   </span><span class="k">override</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">processEvent</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">:</span><span class="w"> </span><span class="nc">String</span><span class="p">,</span><span class="w"> </span><span class="n">event</span><span class="p">:</span><span class="w"> </span><span class="nc">RuntimeEvent</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">???</span>
 <span class="p">}</span>
@@ -690,7 +692,7 @@
 <span class="n">baker</span><span class="p">.</span><span class="n">registerEventListener</span><span class="p">(</span><span class="n">listener</span><span class="p">);</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">EventListener</span><span class="w"> </span><span class="n">listener</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">EventListener</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <span class="w">   </span><span class="nd">@Override</span>
 <span class="w">   </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">processEvent</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="n">RuntimeEvent</span><span class="w"> </span><span class="n">event</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
@@ -702,6 +704,7 @@
 
 <span class="n">baker</span><span class="p">.</span><span class="na">registerEventListener</span><span class="p">(</span><span class="n">listener</span><span class="p">);</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 <h2 id="internal-events">Internal events</h2>
@@ -751,7 +754,9 @@
 <p>In java you can register objects that have methods annotated with <code>@Subscribe</code>.</p>
 <p>In case you are interested in <em>ALL</em> events you can register to the general <a href="https://github.com/ing-bank/baker/blob/master/runtime/src/main/scala/com/ing/baker/runtime/core/events/BakerEvent.scala">BakerEvent</a>.</p>
 <p>In the example below a listener is registered that is only interested in <code>EventReceived</code>:</p>
-<div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Scala</label><label for="__tabbed_2_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">core</span><span class="p">.</span><span class="nn">events</span><span class="p">.</span><span class="n">_</span>
 
 <span class="kd">val</span><span class="w"> </span><span class="n">baker</span><span class="p">:</span><span class="w"> </span><span class="n">com</span><span class="p">.</span><span class="n">ing</span><span class="p">.</span><span class="n">baker</span><span class="p">.</span><span class="n">runtime</span><span class="p">.</span><span class="n">scaladsl</span><span class="p">.</span><span class="nc">Baker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">???</span><span class="w"> </span><span class="c1">// initialize baker</span>
@@ -762,7 +767,7 @@
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.core.events.*</span><span class="p">;</span>
 
 <span class="kd">class</span> <span class="nc">Subscriber</span><span class="w"> </span><span class="p">{</span>
@@ -777,6 +782,7 @@
 
 <span class="n">baker</span><span class="p">.</span><span class="na">registerEventListener</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Subscriber</span><span class="p">());</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 

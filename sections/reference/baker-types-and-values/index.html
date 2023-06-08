@@ -786,18 +786,21 @@ transfer recipes and data between nodes and to match over such data, that is why
 They help not just to model your domain but also for Baker to identify when to execute interactions. </p>
 <p>If you are using all of our reflection APIs then you will not use them directly, but it is good to know of their 
 existence.</p>
-<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Scala</label><label for="__tabbed_1_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">types</span><span class="p">.</span><span class="n">_</span>
 
 <span class="kd">val</span><span class="w"> </span><span class="n">data</span><span class="p">:</span><span class="w"> </span><span class="p">(</span><span class="nc">Type</span><span class="p">,</span><span class="w"> </span><span class="nc">Value</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nc">Int32</span><span class="p">,</span><span class="w"> </span><span class="nc">PrimitiveValue</span><span class="p">(</span><span class="mi">42</span><span class="p">))</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.types.*</span><span class="p">;</span>
 
 <span class="n">Type</span><span class="w"> </span><span class="n">dataType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Int32$</span><span class="p">.</span><span class="na">MODULE$</span><span class="p">;</span>
 <span class="n">Value</span><span class="w"> </span><span class="n">dataValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PrimitiveValue</span><span class="p">.</span><span class="na">apply</span><span class="p">(</span><span class="mi">42</span><span class="p">);</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 <p><code>Types</code> are specifically used to describe <code>Ingredients</code>, specifically <code>Ingredients</code> are just a relation between a name and

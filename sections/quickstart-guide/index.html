@@ -714,31 +714,36 @@
 <h2 id="enable-maven-central-repository">Enable Maven Central repository</h2>
 <p>Baker is published in <a href="https://mvnrepository.com/artifact/com.ing.baker">Maven Central</a>. So you will need to enable
 Maven Central repository as a source of dependencies in your build.</p>
-<div class="tabbed-set" data-tabs="1:4"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Maven</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="1:4"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Maven</label><label for="__tabbed_1_2">Gradle (Kotlin)</label><label for="__tabbed_1_3">Gradle (Groovy)</label><label for="__tabbed_1_4">Sbt</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code>Maven includes the Maven Central repository by default.
 </code></pre></div>
 </div>
-<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Gradle (Kotlin)</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">repositories</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="n">mavenCentral</span><span class="p">()</span>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><label for="__tabbed_1_3">Gradle (Groovy)</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">repositories</span><span class="w"> </span><span class="o">{</span>
 <span class="w">    </span><span class="n">mavenCentral</span><span class="o">()</span>
 <span class="o">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><label for="__tabbed_1_4">Sbt</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code>Most of the time Sbt includes the Maven Central repository by default.
 </code></pre></div>
+</div>
 </div>
 </div>
 <h2 id="include-dependencies">Include dependencies</h2>
 <p>Baker is composed of different modules. For most projects you need to include the three dependencies listed below.
 If you don't require all functionality, simply select the ones you need for your project.</p>
-<div class="tabbed-set" data-tabs="2:4"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Maven</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="2:4"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><input id="__tabbed_2_4" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Maven</label><label for="__tabbed_2_2">Gradle (Kotlin)</label><label for="__tabbed_2_3">Gradle (Groovy)</label><label for="__tabbed_2_4">Sbt</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="nt">&lt;dependency&gt;</span>
 <span class="w">   </span><span class="nt">&lt;groupId&gt;</span>com.ing.baker<span class="nt">&lt;/groupId&gt;</span>
 <span class="w">   </span><span class="nt">&lt;artifactId&gt;</span>baker-recipe-dsl_2.13<span class="nt">&lt;/artifactId&gt;</span>
@@ -756,23 +761,24 @@ If you don't require all functionality, simply select the ones you need for your
 <span class="nt">&lt;/dependency&gt;</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Gradle (Kotlin)</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">implementation</span><span class="p">(</span><span class="s">&quot;com.ing.baker:baker-recipe-dsl-kotlin_2.13:</span><span class="si">$</span><span class="n">bakerVersion</span><span class="s">&quot;</span><span class="p">)</span>
 <span class="n">implementation</span><span class="p">(</span><span class="s">&quot;com.ing.baker:baker-compiler_2.13:</span><span class="si">$</span><span class="n">bakerVersion</span><span class="s">&quot;</span><span class="p">)</span>
 <span class="n">implementation</span><span class="p">(</span><span class="s">&quot;com.ing.baker:baker-runtime_2.13:</span><span class="si">$</span><span class="n">bakerVersion</span><span class="s">&quot;</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><label for="__tabbed_2_3">Gradle (Groovy)</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">implementation</span><span class="w"> </span><span class="s1">&#39;com.ing.baker:baker-recipe-dsl_2.13:$bakerVersion&#39;</span>
 <span class="n">implementation</span><span class="w"> </span><span class="s1">&#39;com.ing.baker:baker-compiler_2.13:$bakerVersion&#39;</span>
 <span class="n">implementation</span><span class="w"> </span><span class="s1">&#39;com.ing.baker:baker-runtime_2.13:$bakerVersion&#39;</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_2_4" name="__tabbed_2" type="radio" /><label for="__tabbed_2_4">Sbt</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">dependencies</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="s">&quot;com.ing.baker&quot;</span><span class="w"> </span><span class="o">%%</span><span class="w"> </span><span class="s">&quot;baker-recipe-dsl&quot;</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="n">bakerVersion</span>
 <span class="n">dependencies</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="s">&quot;com.ing.baker&quot;</span><span class="w"> </span><span class="o">%%</span><span class="w"> </span><span class="s">&quot;baker-compiler&quot;</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="n">bakerVersion</span>
 <span class="n">dependencies</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="s">&quot;com.ing.baker&quot;</span><span class="w"> </span><span class="o">%%</span><span class="w"> </span><span class="s">&quot;baker-runtime&quot;</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="n">bakerVersion</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 <div class="admonition note">

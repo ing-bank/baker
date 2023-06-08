@@ -683,14 +683,16 @@ the store the team has tested and used on production, for such you need to use a
 <a href="https://doc.akka.io/docs/akka-persistence-cassandra/current/index.html">plugin like this one.</a></p>
 <h2 id="configuration-examples">Configuration examples</h2>
 <p><code>application.conf</code></p>
-<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Local non-cluster</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Local non-cluster</label><label for="__tabbed_1_2">Cluster with distributed store</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code>include &quot;baker.conf&quot;
 
 akka.cluster.sharding.state-store-mode = persistence
 akka.actor.allow-java-serialization = off
 </code></pre></div>
 </div>
-<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Cluster with distributed store</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code>include &quot;baker.conf&quot;
 
 service {
@@ -756,6 +758,7 @@ akka {
   }
 }
 </code></pre></div>
+</div>
 </div>
 </div>
 

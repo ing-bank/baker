@@ -768,18 +768,21 @@ They help not just to model your domain, but also for Baker to identify when to 
 <p>If you are using all of our reflection APIs then you will not use them directly, but it is good to know of their 
 existence.</p>
 <p>Full documentation about the type system can be found <a href="../../reference/baker-types-and-values/">here</a>.</p>
-<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Scala</label><label for="__tabbed_1_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">types</span><span class="p">.</span><span class="n">_</span>
 
 <span class="kd">val</span><span class="w"> </span><span class="n">data</span><span class="p">:</span><span class="w"> </span><span class="p">(</span><span class="nc">Type</span><span class="p">,</span><span class="w"> </span><span class="nc">Value</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="nc">Int32</span><span class="p">,</span><span class="w"> </span><span class="nc">PrimitiveValue</span><span class="p">(</span><span class="mi">42</span><span class="p">))</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.types.*</span><span class="p">;</span>
 
 <span class="n">Type</span><span class="w"> </span><span class="n">dataType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Int32$</span><span class="p">.</span><span class="na">MODULE$</span><span class="p">;</span>
 <span class="n">Value</span><span class="w"> </span><span class="n">dataValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PrimitiveValue</span><span class="p">.</span><span class="na">apply</span><span class="p">(</span><span class="mi">42</span><span class="p">);</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 <h2 id="ingredient-and-ingredientinstance">Ingredient and IngredientInstance</h2>
@@ -789,7 +792,9 @@ with <code>Events</code>, and are inputs for <code>Interactions</code>.</p>
 <p>For a <code>Recipe</code> there exist <code>Ingredients</code> which are a name and a <code>Type</code>, they are used to model the data of your process.</p>
 <p>For a <code>RecipeInstance</code> there exist <code>IngredientInstance</code>s, which are a name and a <code>Value</code>, they are used to move data 
 through your process. </p>
-<div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Scala</label><label for="__tabbed_2_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Ingredient</span>
 
 <span class="kd">val</span><span class="w"> </span><span class="nc">OrderId</span><span class="p">:</span><span class="w"> </span><span class="nc">Ingredient</span><span class="p">[</span><span class="nc">String</span><span class="p">]</span><span class="w"> </span><span class="o">=</span>
@@ -802,11 +807,12 @@ through your process. </p>
 <span class="w">    </span><span class="nc">IngredientInstance</span><span class="p">(</span><span class="s">&quot;orderId&quot;</span><span class="p">,</span><span class="w"> </span><span class="nc">PrimitiveValue</span><span class="p">(</span><span class="s">&quot;uuid-123456789&quot;</span><span class="p">))</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="c1">// In Java, Ingredients are extracted from a class </span>
 <span class="c1">// representing an Event by using java reflection.</span>
 <span class="c1">// See the full example at the &quot;Recipe and RecipeInstance&quot; section</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 <h2 id="event-and-eventinstance">Event and EventInstance</h2>
@@ -821,7 +827,9 @@ refer to the <a href="../../reference/dsls/">DSLs documentation</a>.</p>
 declared as <code>Events</code> on the <code>Recipe</code>. They notify a baker <code>RecipeInstance</code> of an actual happening and may carry <code>Ingredient</code>
 values; the baker <code>RecipeInstance</code> will then use available <code>Ingredients</code> to execute <code>InteractionInstance</code>s.</p>
 <p><strong>Note: Names of sensory <code>Event</code> and <code>EventInstance</code> must match, so that Baker can correctly execute your process flow.</strong></p>
-<div class="tabbed-set" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><label for="__tabbed_3_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Scala</label><label for="__tabbed_3_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="cm">/** Event */</span>
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Event</span>
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Ingredient</span>
@@ -848,7 +856,7 @@ values; the baker <code>RecipeInstance</code> will then use available <code>Ingr
 <span class="p">)</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><label for="__tabbed_3_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="c1">// In Java, Events and EventInstances are extracted from a </span>
 <span class="c1">// class by using java reflection.</span>
 <span class="c1">// Please check the full recipe example below on the </span>
@@ -875,10 +883,13 @@ values; the baker <code>RecipeInstance</code> will then use available <code>Ingr
 </code></pre></div>
 </div>
 </div>
+</div>
 <p>To fire a <code>SensoryEvent</code> use the <code>bakerRuntime.fireEvent(recipeInstanceId, event)</code> API variations, 
 after creating the baker runtime, adding your recipe to the runtime and <code>baking</code> a <code>RecipeInstance</code>. For full 
 documentation on this please refer to the <a href="../../reference/runtime/">runtime documentation</a>.</p>
-<div class="tabbed-set" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><label for="__tabbed_4_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Scala</label><label for="__tabbed_4_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nn">akka</span><span class="p">.</span><span class="nn">actor</span><span class="p">.</span><span class="nc">ActorSystem</span>
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">common</span><span class="p">.</span><span class="nc">EventResult</span>
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.{</span><span class="nc">Baker</span><span class="p">,</span><span class="w"> </span><span class="nc">EventInstance</span><span class="p">}</span>
@@ -897,7 +908,7 @@ documentation on this please refer to the <a href="../../reference/runtime/">run
 <span class="kd">val</span><span class="w"> </span><span class="n">result</span><span class="p">:</span><span class="w"> </span><span class="nc">Future</span><span class="p">[</span><span class="nc">EventResult</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="n">fireEventAndResolveWhenCompleted</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="nc">FirstOrderPlaced</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><label for="__tabbed_4_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">akka.actor.ActorSystem</span><span class="p">;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.akka.AkkaBaker</span><span class="p">;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.EventInstance</span><span class="p">;</span>
@@ -917,6 +928,7 @@ documentation on this please refer to the <a href="../../reference/runtime/">run
 
 <span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">EventResult</span><span class="o">&gt;</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenCompleted</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="n">firstOrderPlaced</span><span class="p">);</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 <h2 id="interaction-and-interactioninstance">Interaction and InteractionInstance</h2>
@@ -939,7 +951,9 @@ is used by the Baker runtime to find the correct <code>InteractionImplementation
 <p><strong>Note: Names of sensory <code>Event</code> and <code>EventInstance</code> must match, so that Baker can correctly execute your process flow.</strong></p>
 <p><strong>Note: For asynchronous programming, the Scala DSL <code>InteractionInstance</code> can return a <code>Future[A]</code> and the Java DSL can
 return a <code>CompletableFuture&lt;A&gt;</code>, and the Baker runtime will handle the async results of the instances.</strong></p>
-<div class="tabbed-set" data-tabs="5:3"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><label for="__tabbed_5_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="5:3"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><input id="__tabbed_5_3" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Scala</label><label for="__tabbed_5_2">Java</label><label for="__tabbed_5_3">Scala (Reflection API)</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="cm">/** Interaction */</span>
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.{</span><span class="nc">Event</span><span class="p">,</span><span class="w"> </span><span class="nc">Ingredient</span><span class="p">,</span><span class="w"> </span><span class="nc">Interaction</span><span class="p">}</span>
 
@@ -972,7 +986,7 @@ return a <code>CompletableFuture&lt;A&gt;</code>, and the Baker runtime will han
 <span class="w">    </span><span class="c1">// ListValue and PrimitiveValue are used in the body</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><label for="__tabbed_5_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="cm">/** Interaction */</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.annotations.FiresEvent</span><span class="p">;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.annotations.RequiresIngredient</span><span class="p">;</span>
@@ -1020,7 +1034,7 @@ return a <code>CompletableFuture&lt;A&gt;</code>, and the Baker runtime will han
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_5_3" name="__tabbed_5" type="radio" /><label for="__tabbed_5_3">Scala (Reflection API)</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="c1">// See the DSLs documentation for more on the reflection API</span>
 <span class="k">trait</span><span class="w"> </span><span class="nc">ReserveItems</span><span class="w"> </span><span class="p">{</span>
 
@@ -1051,9 +1065,12 @@ return a <code>CompletableFuture&lt;A&gt;</code>, and the Baker runtime will han
 </code></pre></div>
 </div>
 </div>
+</div>
 <p>After creating your <code>InteractionInstance</code>s, you need to add them to the baker runtime so that Baker can match them to the <code>Interactions</code>
 of your <code>Recipe</code> and call them when needed.</p>
-<div class="tabbed-set" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><label for="__tabbed_6_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Scala</label><label for="__tabbed_6_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nn">akka</span><span class="p">.</span><span class="nn">actor</span><span class="p">.</span><span class="nc">ActorSystem</span>
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Baker</span>
 
@@ -1062,7 +1079,7 @@ of your <code>Recipe</code> and call them when needed.</p>
 <span class="kd">val</span><span class="w"> </span><span class="n">done</span><span class="p">:</span><span class="w"> </span><span class="nc">Future</span><span class="p">[</span><span class="nc">Unit</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="n">addInteractionInstance</span><span class="p">(</span><span class="n">reserveItemsInstance</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><label for="__tabbed_6_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">akka.actor.ActorSystem</span><span class="p">;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.akka.AkkaBaker</span><span class="p">;</span>
 
@@ -1076,10 +1093,13 @@ of your <code>Recipe</code> and call them when needed.</p>
 </code></pre></div>
 </div>
 </div>
+</div>
 <h2 id="recipe-and-recipeinstance">Recipe and RecipeInstance</h2>
 <p>All you <code>Ingredients</code>, <code>Events</code> and <code>Interactions</code> must be added to a single unit called the <code>Recipe</code>, which works as the
 "blueprint" of your precess.</p>
-<div class="tabbed-set" data-tabs="7:4"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><label for="__tabbed_7_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="7:4"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><input id="__tabbed_7_3" name="__tabbed_7" type="radio" /><input id="__tabbed_7_4" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Scala</label><label for="__tabbed_7_2">Scala Full Example</label><label for="__tabbed_7_3">Java</label><label for="__tabbed_7_4">Java Full Example</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Recipe</span>
 
 <span class="kd">val</span><span class="w"> </span><span class="n">recipe</span><span class="p">:</span><span class="w"> </span><span class="nc">Recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Recipe</span><span class="p">(</span><span class="s">&quot;Webshop&quot;</span><span class="p">)</span>
@@ -1091,7 +1111,7 @@ of your <code>Recipe</code> and call them when needed.</p>
 <span class="w">    </span><span class="p">)</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><label for="__tabbed_7_2">Scala Full Example</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="n">webshop</span>
 
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.{</span><span class="nc">Event</span><span class="p">,</span><span class="w"> </span><span class="nc">Ingredient</span><span class="p">,</span><span class="w"> </span><span class="nc">Interaction</span><span class="p">,</span><span class="w"> </span><span class="nc">Recipe</span><span class="p">}</span>
@@ -1130,7 +1150,7 @@ of your <code>Recipe</code> and call them when needed.</p>
 <span class="p">}</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_7_3" name="__tabbed_7" type="radio" /><label for="__tabbed_7_3">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.Recipe</span><span class="p">;</span>
 <span class="kn">import static</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.InteractionDescriptor.of</span><span class="p">;</span>
 
@@ -1139,7 +1159,7 @@ of your <code>Recipe</code> and call them when needed.</p>
 <span class="w">        </span><span class="p">.</span><span class="na">withInteractions</span><span class="p">(</span><span class="n">of</span><span class="p">(</span><span class="n">ReserveItems</span><span class="p">.</span><span class="na">class</span><span class="p">));</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_7_4" name="__tabbed_7" type="radio" /><label for="__tabbed_7_4">Java Full Example</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">webshop</span><span class="p">;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.annotations.FiresEvent</span><span class="p">;</span>
@@ -1198,12 +1218,15 @@ of your <code>Recipe</code> and call them when needed.</p>
 </code></pre></div>
 </div>
 </div>
+</div>
 <p>A recipe must be added to a baker runtime so that you can create "bake" a <code>RecipeInstance</code> from it. For that it must be
 first "compiled" by using the provided compiler.</p>
 <p>Here is a full example of creating a baker runtime, adding the <code>InteractionInstances</code> and the compiled <code>Recipe</code> (order matters
 becase baker validates that all recipes have valid implementations when added), and firing an <code>Event</code> that will execute 
 the <code>Interaction</code></p>
-<div class="tabbed-set" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><label for="__tabbed_8_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Scala</label><label for="__tabbed_8_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nn">akka</span><span class="p">.</span><span class="nn">actor</span><span class="p">.</span><span class="nc">ActorSystem</span>
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">compiler</span><span class="p">.</span><span class="nc">RecipeCompiler</span>
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">il</span><span class="p">.</span><span class="nc">CompiledRecipe</span>
@@ -1229,7 +1252,7 @@ the <code>Interaction</code></p>
 <span class="p">))</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><label for="__tabbed_8_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">akka.actor.ActorSystem</span><span class="p">;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.compiler.RecipeCompiler</span><span class="p">;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.il.CompiledRecipe</span><span class="p">;</span>
@@ -1265,6 +1288,7 @@ the <code>Interaction</code></p>
 <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">blockedResult</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="na">join</span><span class="p">();</span>
 <span class="k">assert</span><span class="p">(</span><span class="n">blockedResult</span><span class="p">.</span><span class="na">contains</span><span class="p">(</span><span class="s">&quot;OrderPlaced&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">blockedResult</span><span class="p">.</span><span class="na">contains</span><span class="p">(</span><span class="s">&quot;ReservedItems&quot;</span><span class="p">));</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 

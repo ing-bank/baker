@@ -668,17 +668,20 @@
 <p>Here we explain how to create a visual representation of your recipe like <a href="../#visual-representation">this one</a></p>
 <h2 id="generate-a-dot-representation">Generate a .dot representation</h2>
 <p>Baker can turn a recipe into a .dot representation. <code>.dot</code> is a notation for representing graphs.</p>
-<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Scala</label><label for="__tabbed_1_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kd">val</span><span class="w"> </span><span class="n">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">RecipeCompiler</span><span class="p">.</span><span class="n">compileRecipe</span><span class="p">(</span><span class="nc">Examples</span><span class="p">.</span><span class="n">webshop</span><span class="p">.</span><span class="n">webShopRecipe</span><span class="p">)</span>
 
 <span class="n">println</span><span class="p">(</span><span class="n">recipe</span><span class="p">.</span><span class="n">getRecipeVisualization</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kd">final</span><span class="w"> </span><span class="n">CompiledRecipe</span><span class="w"> </span><span class="n">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RecipeCompiler</span><span class="p">.</span><span class="na">compileRecipe</span><span class="p">(</span><span class="n">Examples</span><span class="p">.</span><span class="na">webshop</span><span class="p">.</span><span class="na">webShopRecipe</span><span class="p">);</span>
 
 <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">recipe</span><span class="p">.</span><span class="na">getRecipeVisualization</span><span class="p">());</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 <p>This should output something like this:</p>
@@ -703,7 +706,9 @@ install it. On mac you can use <code>brew</code>.</p>
 </code></pre></div>
 <h3 id="in-application">In application</h3>
 <p>Alternatively you can use <a href="https://github.com/nidi3/graphviz-java">graphviz-java</a> to generate the SVG in your code:</p>
-<div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Scala</label><label for="__tabbed_2_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nn">guru</span><span class="p">.</span><span class="nn">nidi</span><span class="p">.</span><span class="nn">graphviz</span><span class="p">.</span><span class="nn">engine</span><span class="p">.{</span><span class="nc">Format</span><span class="p">,</span><span class="w"> </span><span class="nc">Graphviz</span><span class="p">}</span>
 <span class="k">import</span><span class="w"> </span><span class="nn">guru</span><span class="p">.</span><span class="nn">nidi</span><span class="p">.</span><span class="nn">graphviz</span><span class="p">.</span><span class="nn">parse</span><span class="p">.</span><span class="nc">Parser</span>
 
@@ -711,7 +716,7 @@ install it. On mac you can use <code>brew</code>.</p>
 <span class="nc">Graphviz</span><span class="p">.</span><span class="n">fromGraph</span><span class="p">(</span><span class="n">graph</span><span class="p">).</span><span class="n">render</span><span class="p">(</span><span class="nc">Format</span><span class="p">.</span><span class="nc">SVG</span><span class="p">).</span><span class="n">toString</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">guru.nidi.graphviz.engine.Format</span><span class="p">;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">guru.nidi.graphviz.engine.Graphviz</span><span class="p">;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">guru.nidi.graphviz.parse.Parser</span><span class="p">;</span>
@@ -720,6 +725,7 @@ install it. On mac you can use <code>brew</code>.</p>
 <span class="n">MutableGraph</span><span class="w"> </span><span class="n">graph</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Parser</span><span class="p">.</span><span class="na">read</span><span class="p">(</span><span class="n">recipe</span><span class="p">.</span><span class="na">getRecipeVisualization</span><span class="p">);</span>
 <span class="n">Graphviz</span><span class="p">.</span><span class="na">fromGraph</span><span class="p">(</span><span class="n">graph</span><span class="p">).</span><span class="na">render</span><span class="p">(</span><span class="n">Format</span><span class="p">.</span><span class="na">SVG</span><span class="p">).</span><span class="na">toString</span><span class="p">;</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 <h2 id="style-customization">Style customization</h2>

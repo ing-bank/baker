@@ -657,60 +657,72 @@
 <p>To execute &amp; manage your recipes you require the <em>Baker Runtime</em>.</p>
 <h2 id="starting-the-baker-runtime">Starting the baker runtime</h2>
 <p>Creating a baker runtime is as easy as calling the empty constructor.</p>
-<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Scala</label><label for="__tabbed_1_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="c1">// Create a Baker Runtime</span>
 <span class="kd">val</span><span class="w"> </span><span class="n">baker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nc">Baker</span><span class="p">();</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="c1">// Create a Baker Runtime</span>
 <span class="n">JBaker</span><span class="w"> </span><span class="n">baker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">JBaker</span><span class="p">();</span>
 </code></pre></div>
 </div>
 </div>
+</div>
 <p>Baker is build on top of <a href="https://www.akka.io">akka</a>.</p>
 <p>It requires an <code>ActorSystem</code> to start. In the previous example the actor system is not provided. In that case baker will create an actor system for you.</p>
 <p>If you already have an actor system then you can give it to Baker.</p>
-<div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Scala</label><label for="__tabbed_2_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kd">val</span><span class="w"> </span><span class="n">actorSystem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ActorSystem</span><span class="p">();</span>
 
 <span class="nc">Baker</span><span class="w"> </span><span class="n">baker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nc">Baker</span><span class="p">(</span><span class="n">actorSystem</span><span class="p">);</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">ActorSystem</span><span class="w"> </span><span class="n">actorSystem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ActorSystem</span><span class="p">.</span><span class="na">create</span><span class="p">();</span>
 
 <span class="n">JBaker</span><span class="w"> </span><span class="n">baker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">JBaker</span><span class="p">(</span><span class="n">actorSystem</span><span class="p">);</span>
 </code></pre></div>
 </div>
 </div>
+</div>
 <h2 id="adding-interaction-implementations">Adding interaction implementations</h2>
 <p>Before you can add a recipe all the interactions for that recipe <em>MUST</em> have an implemention in Baker.</p>
 <p>You can add them like this:</p>
-<div class="tabbed-set" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><label for="__tabbed_3_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Scala</label><label for="__tabbed_3_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kd">val</span><span class="w"> </span><span class="n">validateOrderImpl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nc">ValidateOrderImpl</span><span class="p">()</span>
 
 <span class="n">baker</span><span class="p">.</span><span class="n">addInteractionInstance</span><span class="p">(</span><span class="n">validateOrderImpl</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><label for="__tabbed_3_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">ValidateOrderImpl</span><span class="w"> </span><span class="n">validateOrderImpl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ValidateOrderImpl</span><span class="p">();</span>
 
 <span class="n">baker</span><span class="p">.</span><span class="na">addInteractionInstance</span><span class="p">(</span><span class="n">validateOrderImpl</span><span class="p">);</span>
 </code></pre></div>
 </div>
 </div>
+</div>
 <h2 id="compiling-your-recipe">Compiling your Recipe</h2>
 <p>A recipe is writen in a <code>DSL</code>. This is just a declarative description of your process.</p>
 <p>In order to execute it we need to compile it. This connects all the pieces into a graph (more precisly a <a href="https://en.wikipedia.org/wiki/Petri_net">petri net</a>).</p>
 <p>For this purpose there is the <code>RecipeCompiler</code>.</p>
-<div class="tabbed-set" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><label for="__tabbed_4_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Scala</label><label for="__tabbed_4_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kd">val</span><span class="w"> </span><span class="n">compiledRecipe</span><span class="p">:</span><span class="w"> </span><span class="nc">CompiledRecipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">RecipeCompiler</span><span class="p">.</span><span class="n">compileRecipe</span><span class="p">(</span><span class="n">recipe</span><span class="p">)</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><label for="__tabbed_4_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">CompiledRecipe</span><span class="w"> </span><span class="n">compiledRecipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RecipeCompiler</span><span class="p">.</span><span class="na">compileRecipe</span><span class="p">(</span><span class="n">recipe</span><span class="p">);</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 <div class="admonition hint">
@@ -719,13 +731,16 @@
 </div>
 <h2 id="adding-your-compiled-recipe">Adding your Compiled Recipe</h2>
 <p>Once you have compiled your recipe you can add it to Baker.</p>
-<div class="tabbed-set" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><label for="__tabbed_5_1">Scala</label><div class="tabbed-content">
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Scala</label><label for="__tabbed_5_2">Java</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">baker</span><span class="p">.</span><span class="n">addRecipe</span><span class="p">(</span><span class="nc">RecipeRecord</span><span class="p">.</span><span class="n">of</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">))</span>
 </code></pre></div>
 </div>
-<input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><label for="__tabbed_5_2">Java</label><div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span><span class="n">RecipeRecord</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">));</span>
 </code></pre></div>
+</div>
 </div>
 </div>
 <h2 id="putting-it-all-together">Putting it all together</h2>
