@@ -1,0 +1,1659 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../concepts/">
+      
+      
+        <link rel="next" href="../cookbook/recipe-dsl/">
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
+    
+    
+      
+        <title>Tutorial - Baker</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.26e3688c.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../css/ing.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tutorial" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Baker" class="md-header__button md-logo" aria-label="Baker" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Baker
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Tutorial
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ing-bank/baker" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ing-bank/baker
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Baker" class="md-nav__button md-logo" aria-label="Baker" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Baker
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ing-bank/baker" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ing-bank/baker
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart-guide/" class="md-nav__link">
+        Quickstart guide
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/" class="md-nav__link">
+        Concepts
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Tutorial
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Tutorial
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#setting-the-stage" class="md-nav__link">
+    Setting the stage
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-the-sensory-event" class="md-nav__link">
+    Define the sensory event
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-the-interactions" class="md-nav__link">
+    Define the interactions
+  </a>
+  
+    <nav class="md-nav" aria-label="Define the interactions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#check-stock" class="md-nav__link">
+    Check stock
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ship-order" class="md-nav__link">
+    Ship Order
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cancel-order" class="md-nav__link">
+    Cancel order
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-the-recipe" class="md-nav__link">
+    Define the recipe
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implement-the-interactions" class="md-nav__link">
+    Implement the interactions
+  </a>
+  
+    <nav class="md-nav" aria-label="Implement the interactions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#check-stock-implementation" class="md-nav__link">
+    Check stock implementation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ship-order-implementation" class="md-nav__link">
+    Ship order implementation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cancel-order-implementation" class="md-nav__link">
+    Cancel order implementation
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#execute-the-recipe" class="md-nav__link">
+    Execute the recipe
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wrap-up" class="md-nav__link">
+    Wrap-up
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          Cookbook
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_5">
+          <span class="md-nav__icon md-icon"></span>
+          Cookbook
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cookbook/recipe-dsl/" class="md-nav__link">
+        Recipe DSL
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cookbook/error-handling/" class="md-nav__link">
+        Error handling
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cookbook/visualizations/" class="md-nav__link">
+        Visualizations
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cookbook/fire-sensory-events/" class="md-nav__link">
+        Fire events and inquiry
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cookbook/testing/" class="md-nav__link">
+        Testing
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cookbook/monitoring/" class="md-nav__link">
+        Monitoring
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          Reference
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6">
+          <span class="md-nav__icon md-icon"></span>
+          Reference
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/main-abstractions/" class="md-nav__link">
+        Main Abstractions
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/execution-semantics/" class="md-nav__link">
+        Execution Semantics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/baker-types-and-values/" class="md-nav__link">
+        Baker Types and Values
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/runtime/" class="md-nav__link">
+        The Akka Based Runtime
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/stores/" class="md-nav__link">
+        Event Stores and Cluster Configuration
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          Versions
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_7">
+          <span class="md-nav__icon md-icon"></span>
+          Versions
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../versions/baker-3-release-notes/" class="md-nav__link">
+        Release Notes v3
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../versions/baker-3/" class="md-nav__link">
+        Migration Guide v3
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../versions/baker-2/" class="md-nav__link">
+        Migration Guide v2
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../feature-comparison/" class="md-nav__link">
+        Feature comparison
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#setting-the-stage" class="md-nav__link">
+    Setting the stage
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-the-sensory-event" class="md-nav__link">
+    Define the sensory event
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-the-interactions" class="md-nav__link">
+    Define the interactions
+  </a>
+  
+    <nav class="md-nav" aria-label="Define the interactions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#check-stock" class="md-nav__link">
+    Check stock
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ship-order" class="md-nav__link">
+    Ship Order
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cancel-order" class="md-nav__link">
+    Cancel order
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-the-recipe" class="md-nav__link">
+    Define the recipe
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implement-the-interactions" class="md-nav__link">
+    Implement the interactions
+  </a>
+  
+    <nav class="md-nav" aria-label="Implement the interactions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#check-stock-implementation" class="md-nav__link">
+    Check stock implementation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ship-order-implementation" class="md-nav__link">
+    Ship order implementation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cancel-order-implementation" class="md-nav__link">
+    Cancel order implementation
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#execute-the-recipe" class="md-nav__link">
+    Execute the recipe
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wrap-up" class="md-nav__link">
+    Wrap-up
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="tutorial">Tutorial</h1>
+<p>This guide walks you through the process of creating a Baker orchestration workflow one step at a time. Completing
+this tutorial takes around 20 minutes. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To follow this tutorial you will need a Java, Kotlin, or Scala project that includes the dependencies mentioned in
+the <a href="../quickstart-guide">quickstart guide</a>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This tutorial assumes you have a basic understanding of <code>ingredients</code>, <code>events</code>, <code>interactions</code>, and <code>recipes</code>. If
+not, please read the <a href="../concepts">concepts section</a> before starting the tutorial.</p>
+</div>
+<h2 id="setting-the-stage">Setting the stage</h2>
+<p>Imagine you are working as a software engineer for a modern e-commerce company. They are building a web-shop made up of 
+different microservices. You are responsible for orchestrating the order-flow. The requirements read:</p>
+<div class="admonition quote">
+<p>Once a customer places an order, we need to verify if the
+products are in stock. Stock levels are available via the <code>StockService</code>. If there is enough stock, ship the order
+by calling the <code>ShippingService</code>. If there is insufficient stock, cancel the order by calling the 
+<code>CancellationService</code>.</p>
+</div>
+<h2 id="define-the-sensory-event">Define the sensory event</h2>
+<p>A recipe is always triggered by a <code>sensory event</code>. In this example, our sensory event is the customer placing an order.</p>
+<div class="tabbed-set" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.events</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">examples.java.ingredients.Address</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">java.util.List</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">record</span> <span class="nc">OrderPlaced</span><span class="p">(</span>
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="n">orderId</span><span class="p">,</span>
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="n">customerId</span><span class="p">,</span>
+<span class="w">    </span><span class="n">Address</span><span class="w"> </span><span class="n">address</span><span class="p">,</span>
+<span class="w">    </span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">productIds</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Kotlin</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.events</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.ingredients.Address</span>
+
+<span class="kd">data</span><span class="w"> </span><span class="kd">class</span><span class="w"> </span><span class="nc">OrderPlaced</span><span class="p">(</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">orderId</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="p">,</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">customerId</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="p">,</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">address</span><span class="p">:</span><span class="w"> </span><span class="n">Address</span><span class="p">,</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">productIds</span><span class="p">:</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="kt">String</span><span class="o">&gt;</span>
+<span class="p">)</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><label for="__tabbed_1_3">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">events</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="nn">ingredients</span><span class="p">.</span><span class="nc">Address</span>
+
+<span class="k">case</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">OrderPlaced</span><span class="p">(</span>
+<span class="w">  </span><span class="n">orderId</span><span class="p">:</span><span class="w"> </span><span class="nc">String</span><span class="p">,</span>
+<span class="w">  </span><span class="n">customerId</span><span class="p">:</span><span class="w"> </span><span class="nc">String</span><span class="p">,</span>
+<span class="w">  </span><span class="n">address</span><span class="p">:</span><span class="w"> </span><span class="nc">Address</span><span class="p">,</span>
+<span class="w">  </span><span class="n">productIds</span><span class="p">:</span><span class="w"> </span><span class="nc">List</span><span class="p">[</span><span class="nc">String</span><span class="p">]</span>
+<span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+<p>The <code>OrderPlaced</code> event carries four ingredients. The <code>address</code> ingredient is of type <code>Address</code>, which is just a simple
+data class.</p>
+<div class="tabbed-set" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.ingredients</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">record</span> <span class="nc">Address</span><span class="p">(</span>
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="n">street</span><span class="p">,</span>
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="n">city</span><span class="p">,</span>
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="n">zipCode</span><span class="p">,</span>
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="n">country</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Kotlin</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.ingredients</span>
+
+<span class="kd">data</span><span class="w"> </span><span class="kd">class</span><span class="w"> </span><span class="nc">Address</span><span class="p">(</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">street</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="p">,</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">city</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="p">,</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">zipCode</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="p">,</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">country</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span>
+<span class="p">)</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><label for="__tabbed_2_3">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">ingredients</span>
+
+<span class="k">case</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Address</span><span class="p">(</span>
+<span class="w">  </span><span class="n">street</span><span class="p">:</span><span class="w"> </span><span class="nc">String</span><span class="p">,</span>
+<span class="w">  </span><span class="n">city</span><span class="p">:</span><span class="w"> </span><span class="nc">String</span><span class="p">,</span>
+<span class="w">  </span><span class="n">zipCode</span><span class="p">:</span><span class="w"> </span><span class="nc">String</span><span class="p">,</span>
+<span class="w">  </span><span class="n">country</span><span class="p">:</span><span class="w"> </span><span class="nc">String</span>
+<span class="p">)</span>
+</code></pre></div>
+</div>
+</div>
+<h2 id="define-the-interactions">Define the interactions</h2>
+<p>Next, it's time to model our interactions. We need to create a total of three interactions. One to validate if the products
+are in stock, one to ship the order, and one to cancel the order. </p>
+<p>In this step we will just declare our interaction blueprints as interfaces. That's all we need to be able to declare 
+a recipe. The implementation for these interactions will follow at a later stage.</p>
+<h3 id="check-stock">Check stock</h3>
+<p>Our stock validation interaction requires two ingredients as input. The <code>orderId</code> and a list of <code>productIds</code>. The
+interaction won't execute unless these ingredients are available in the process. The interaction will either emit
+a <code>SufficientStock</code> event, if all products are in stock. Or an <code>OrderHasUnavailableItems</code> event otherwise. 
+The <code>OrderHasUnavailableItems</code> event carries a list of <code>unavailableProductIds</code> as ingredient.</p>
+<div class="tabbed-set" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><label for="__tabbed_3_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.interactions</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.annotations.FiresEvent</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.annotations.RequiresIngredient</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.Interaction</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">java.util.List</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">CheckStock</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">Interaction</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="kd">interface</span> <span class="nc">Outcome</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kd">record</span> <span class="nc">OrderHasUnavailableItems</span><span class="p">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">unavailableProductIds</span><span class="p">)</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">Outcome</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kd">record</span> <span class="nc">SufficientStock</span><span class="p">()</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">Outcome</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@FiresEvent</span><span class="p">(</span><span class="n">oneOf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">SufficientStock</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="n">OrderHasUnavailableItems</span><span class="p">.</span><span class="na">class</span><span class="p">})</span>
+<span class="w">    </span><span class="n">Outcome</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="nd">@RequiresIngredient</span><span class="p">(</span><span class="s">&quot;orderId&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">orderId</span><span class="p">,</span>
+<span class="w">                  </span><span class="nd">@RequiresIngredient</span><span class="p">(</span><span class="s">&quot;productIds&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">productIds</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code>@FiresEvent</code> annotation is used to define the possible outcome events.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code>@RequiresIngredient</code> annotation is used to define the ingredient names that this interaction needs for its
+execution.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The Java implementation makes use of Bakers reflection API. For this to work, the method in the
+interaction must be named <code>apply</code>. Other names won't work.</p>
+</div>
+</div>
+<input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><label for="__tabbed_3_2">Kotlin</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.interactions</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.Interaction</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nc">CheckStock</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Interaction</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="kd">sealed</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nc">Outcome</span>
+
+<span class="w">    </span><span class="kd">data</span><span class="w"> </span><span class="kd">class</span><span class="w"> </span><span class="nc">OrderHasUnavailableItems</span><span class="p">(</span>
+<span class="w">        </span><span class="kd">val</span><span class="w"> </span><span class="nv">unavailableProductIds</span><span class="p">:</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="kt">String</span><span class="o">&gt;</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Outcome</span>
+
+<span class="w">    </span><span class="kd">object</span><span class="w"> </span><span class="nc">SufficientStock</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Outcome</span>
+
+<span class="w">    </span><span class="kd">fun</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="n">orderId</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="p">,</span><span class="w"> </span><span class="n">productIds</span><span class="p">:</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="kt">String</span><span class="o">&gt;</span><span class="p">):</span><span class="w"> </span><span class="n">Outcome</span>
+<span class="p">}</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Kotlin's reflection API is more powerful than Java's. There is no need for any annotations when you model the
+possible outcome events as a <code>sealed</code> hierarchy.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The Kotlin implementation makes use of Bakers reflection API. For this to work, the method in the
+interaction must be named <code>apply</code>. Other names won't work.</p>
+</div>
+</div>
+<input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><label for="__tabbed_3_3">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">interactions</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.{</span><span class="nc">Event</span><span class="p">,</span><span class="w"> </span><span class="nc">Ingredient</span><span class="p">,</span><span class="w"> </span><span class="nc">Interaction</span><span class="p">}</span>
+
+<span class="k">object</span><span class="w"> </span><span class="nc">CheckStock</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">  </span><span class="k">sealed</span><span class="w"> </span><span class="k">trait</span><span class="w"> </span><span class="nc">Outcome</span>
+
+<span class="w">  </span><span class="k">case</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">SufficientStock</span><span class="p">()</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nc">Outcome</span>
+<span class="w">  </span><span class="k">case</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">OrderHasUnavailableItems</span><span class="p">(</span><span class="n">unavailableProductIds</span><span class="p">:</span><span class="w"> </span><span class="nc">List</span><span class="p">[</span><span class="nc">String</span><span class="p">])</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nc">Outcome</span>
+
+<span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="n">interaction</span><span class="p">:</span><span class="w"> </span><span class="nc">Interaction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Interaction</span><span class="p">(</span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;CheckStock&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">inputIngredients</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Seq</span><span class="p">(</span>
+<span class="w">      </span><span class="nc">Ingredient</span><span class="p">[</span><span class="nc">String</span><span class="p">](</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;orderId&quot;</span><span class="p">),</span>
+<span class="w">      </span><span class="nc">Ingredient</span><span class="p">[</span><span class="nc">List</span><span class="p">[</span><span class="nc">String</span><span class="p">]](</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;productIds&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="p">),</span>
+<span class="w">    </span><span class="n">output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Seq</span><span class="p">(</span>
+<span class="w">      </span><span class="nc">Event</span><span class="p">[</span><span class="nc">SufficientStock</span><span class="p">],</span>
+<span class="w">      </span><span class="nc">Event</span><span class="p">[</span><span class="nc">OrderHasUnavailableItems</span><span class="p">]</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+<h3 id="ship-order">Ship Order</h3>
+<p>To ship an order we'll need the <code>orderId</code> and an <code>address</code>. For the sake of simplicity, this interaction will always 
+result in a <code>OrderShipped</code> event.</p>
+<div class="tabbed-set" data-tabs="4:3"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><label for="__tabbed_4_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.interactions</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.annotations.FiresEvent</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.annotations.RequiresIngredient</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.Interaction</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">examples.java.ingredients.Address</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">ShipOrder</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">Interaction</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="kd">record</span> <span class="nc">OrderShipped</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@FiresEvent</span><span class="p">(</span><span class="n">oneOf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">OrderShipped</span><span class="p">.</span><span class="na">class</span><span class="p">})</span>
+<span class="w">    </span><span class="n">OrderShipped</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="nd">@RequiresIngredient</span><span class="p">(</span><span class="s">&quot;orderId&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">orderId</span><span class="p">,</span>
+<span class="w">                       </span><span class="nd">@RequiresIngredient</span><span class="p">(</span><span class="s">&quot;address&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">Address</span><span class="w"> </span><span class="n">address</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><label for="__tabbed_4_2">Kotlin</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.interactions</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.Interaction</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.ingredients.Address</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nc">ShipOrder</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Interaction</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">object</span><span class="w"> </span><span class="nc">OrderShipped</span>
+
+<span class="w">    </span><span class="kd">fun</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="n">orderId</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">:</span><span class="w"> </span><span class="n">Address</span><span class="p">):</span><span class="w"> </span><span class="n">OrderShipped</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><label for="__tabbed_4_3">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">interactions</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.{</span><span class="nc">Event</span><span class="p">,</span><span class="w"> </span><span class="nc">Ingredient</span><span class="p">,</span><span class="w"> </span><span class="nc">Interaction</span><span class="p">}</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="nn">ingredients</span><span class="p">.</span><span class="nc">Address</span>
+
+<span class="k">object</span><span class="w"> </span><span class="nc">ShipOrder</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">  </span><span class="k">case</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">OrderShipped</span><span class="p">()</span>
+
+<span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="n">interaction</span><span class="p">:</span><span class="w"> </span><span class="nc">Interaction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Interaction</span><span class="p">(</span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;ShipOrder&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">inputIngredients</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Seq</span><span class="p">(</span>
+<span class="w">      </span><span class="nc">Ingredient</span><span class="p">[</span><span class="nc">String</span><span class="p">](</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;orderId&quot;</span><span class="p">),</span>
+<span class="w">      </span><span class="nc">Ingredient</span><span class="p">[</span><span class="nc">Address</span><span class="p">](</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;address&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="p">),</span>
+<span class="w">    </span><span class="n">output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Seq</span><span class="p">(</span>
+<span class="w">      </span><span class="nc">Event</span><span class="p">[</span><span class="nc">OrderShipped</span><span class="p">]</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+<h3 id="cancel-order">Cancel order</h3>
+<p>To cancel the order we'll need the <code>orderId</code> and a list of <code>unavailableProductIds</code>. Of course, <code>unavailableProductIds</code>
+will only be available if the stock validation failed.</p>
+<div class="tabbed-set" data-tabs="5:3"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><label for="__tabbed_5_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.interactions</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.annotations.FiresEvent</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.annotations.RequiresIngredient</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.Interaction</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">java.util.List</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">CancelOrder</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">Interaction</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="kd">record</span> <span class="nc">OrderCancelled</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@FiresEvent</span><span class="p">(</span><span class="n">oneOf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">OrderCancelled</span><span class="p">.</span><span class="na">class</span><span class="p">})</span>
+<span class="w">    </span><span class="n">OrderCancelled</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="nd">@RequiresIngredient</span><span class="p">(</span><span class="s">&quot;orderId&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">orderId</span><span class="p">,</span>
+<span class="w">                         </span><span class="nd">@RequiresIngredient</span><span class="p">(</span><span class="s">&quot;unavailableProductIds&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">unavailableProductIds</span>
+<span class="w">    </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><label for="__tabbed_5_2">Kotlin</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.interactions</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.Interaction</span>
+
+<span class="kd">interface</span><span class="w"> </span><span class="nc">CancelOrder</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Interaction</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">object</span><span class="w"> </span><span class="nc">OrderCancelled</span>
+
+<span class="w">    </span><span class="kd">fun</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="n">orderId</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="p">,</span><span class="w"> </span><span class="n">unavailableProductIds</span><span class="p">:</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="kt">String</span><span class="o">&gt;</span><span class="p">):</span><span class="w"> </span><span class="n">OrderCancelled</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_5_3" name="__tabbed_5" type="radio" /><label for="__tabbed_5_3">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">interactions</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.{</span><span class="nc">Event</span><span class="p">,</span><span class="w"> </span><span class="nc">Ingredient</span><span class="p">,</span><span class="w"> </span><span class="nc">Interaction</span><span class="p">}</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="nn">ingredients</span><span class="p">.</span><span class="nc">Address</span>
+
+<span class="k">object</span><span class="w"> </span><span class="nc">CancelOrder</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">  </span><span class="k">case</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">OrderCancelled</span><span class="p">()</span>
+
+<span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="n">interaction</span><span class="p">:</span><span class="w"> </span><span class="nc">Interaction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Interaction</span><span class="p">(</span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;CancelOrder&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">inputIngredients</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Seq</span><span class="p">(</span>
+<span class="w">      </span><span class="nc">Ingredient</span><span class="p">[</span><span class="nc">String</span><span class="p">](</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;orderId&quot;</span><span class="p">),</span>
+<span class="w">      </span><span class="nc">Ingredient</span><span class="p">[</span><span class="nc">List</span><span class="p">[</span><span class="nc">String</span><span class="p">]](</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;unavailableProductIds&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="p">),</span>
+<span class="w">    </span><span class="n">output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Seq</span><span class="p">(</span>
+<span class="w">      </span><span class="nc">Event</span><span class="p">[</span><span class="nc">OrderCancelled</span><span class="p">]</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+<h2 id="define-the-recipe">Define the recipe</h2>
+<p>At this point we can compose our sensory event and three interactions into a recipe. The <code>OrderPlaced</code> event is declared
+as a sensory event. <code>OrderPlaced</code> carries all the ingredients required by the <code>CheckStock</code> interaction, so once the
+sensory event fires the <code>CheckStock</code> interaction will execute.</p>
+<p><code>CheckStock</code> will output either a <code>SufficientStock</code> or <code>OrderHasUnavailableItems</code> event. <code>ShipOrder</code> will only execute if the
+process contains an event of <code>SufficientStock</code> and <code>CancelOrder</code> will only execute if the process contains an event
+of <code>OrderHasUnavailableItems</code>.</p>
+<div class="tabbed-set" data-tabs="6:3"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><label for="__tabbed_6_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.InteractionDescriptor</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.Recipe</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">examples.java.events.OrderPlaced</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">examples.java.interactions.CancelOrder</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">examples.java.interactions.CheckStock</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">examples.java.interactions.ShipOrder</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">WebShopRecipe</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">Recipe</span><span class="w"> </span><span class="n">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Recipe</span><span class="p">(</span><span class="s">&quot;web-shop recipe&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">withSensoryEvent</span><span class="p">(</span><span class="n">OrderPlaced</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">withInteractions</span><span class="p">(</span>
+<span class="w">            </span><span class="n">InteractionDescriptor</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">CheckStock</span><span class="p">.</span><span class="na">class</span><span class="p">),</span>
+<span class="w">            </span><span class="n">InteractionDescriptor</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">ShipOrder</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">withRequiredEvent</span><span class="p">(</span><span class="n">CheckStock</span><span class="p">.</span><span class="na">SufficientStock</span><span class="p">.</span><span class="na">class</span><span class="p">),</span>
+<span class="w">            </span><span class="n">InteractionDescriptor</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">CancelOrder</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">withRequiredEvent</span><span class="p">(</span><span class="n">CheckStock</span><span class="p">.</span><span class="na">OrderHasUnavailableItems</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">        </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><label for="__tabbed_6_2">Kotlin</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.recipes</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.ExperimentalDsl</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.recipe</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.events.OrderPlaced</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.interactions.CancelOrder</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.interactions.CheckStock</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.interactions.CheckStock.*</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.interactions.ShipOrder</span>
+
+<span class="nd">@ExperimentalDsl</span>
+<span class="kd">object</span><span class="w"> </span><span class="nc">WebShopRecipe</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">recipe</span><span class="p">(</span><span class="s">&quot;web-shop recipe&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">sensoryEvents</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">event</span><span class="o">&lt;</span><span class="n">OrderPlaced</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="n">interaction</span><span class="o">&lt;</span><span class="n">CheckStock</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="w">        </span><span class="n">interaction</span><span class="o">&lt;</span><span class="n">ShipOrder</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">requiredEvents</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">event</span><span class="o">&lt;</span><span class="n">SufficientStock</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="n">interaction</span><span class="o">&lt;</span><span class="n">CancelOrder</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">requiredEvents</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">event</span><span class="o">&lt;</span><span class="n">OrderHasUnavailableItems</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_6_3" name="__tabbed_6" type="radio" /><label for="__tabbed_6_3">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">recipes</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.{</span><span class="nc">Event</span><span class="p">,</span><span class="w"> </span><span class="nc">Recipe</span><span class="p">}</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="nn">events</span><span class="p">.</span><span class="nc">OrderPlaced</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="nn">interactions</span><span class="p">.{</span><span class="nc">CancelOrder</span><span class="p">,</span><span class="w"> </span><span class="nc">CheckStock</span><span class="p">,</span><span class="w"> </span><span class="nc">ShipOrder</span><span class="p">}</span>
+
+<span class="k">object</span><span class="w"> </span><span class="nc">WebShopRecipe</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="n">recipe</span><span class="p">:</span><span class="w"> </span><span class="nc">Recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Recipe</span><span class="p">(</span><span class="s">&quot;web-shop recipe&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="n">withSensoryEvent</span><span class="p">(</span>
+<span class="w">      </span><span class="nc">Event</span><span class="p">[</span><span class="nc">OrderPlaced</span><span class="p">]</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="n">withInteractions</span><span class="p">(</span>
+<span class="w">      </span><span class="nc">CheckStock</span><span class="p">.</span><span class="n">interaction</span><span class="p">,</span>
+<span class="w">      </span><span class="nc">ShipOrder</span><span class="p">.</span><span class="n">interaction</span>
+<span class="w">        </span><span class="p">.</span><span class="n">withRequiredEvent</span><span class="p">(</span>
+<span class="w">          </span><span class="nc">Event</span><span class="p">[</span><span class="nc">CheckStock</span><span class="p">.</span><span class="nc">SufficientStock</span><span class="p">]</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">      </span><span class="nc">CancelOrder</span><span class="p">.</span><span class="n">interaction</span>
+<span class="w">        </span><span class="p">.</span><span class="n">withRequiredEvent</span><span class="p">(</span>
+<span class="w">          </span><span class="nc">Event</span><span class="p">[</span><span class="nc">CheckStock</span><span class="p">.</span><span class="nc">OrderHasUnavailableItems</span><span class="p">]</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+<h2 id="implement-the-interactions">Implement the interactions</h2>
+<p>Before we can run our recipe, we need to create InteractionInstances that the Baker runtime will use to execute the 
+interactions. In other words, we need to provide implementations for the interactions.</p>
+<p>Since this is a tutorial, we'll just create some dummy implementations. In a real solution, this is the part where you
+would implement your actual logic.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>In these examples we use a <code>Impl</code> suffix for the implementation classes. In your real solution you might want to 
+use a more meaningful name. </p>
+</div>
+<h3 id="check-stock-implementation">Check stock implementation</h3>
+<div class="tabbed-set" data-tabs="7:3"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><label for="__tabbed_7_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.interactions</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">java.util.List</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">CheckStockImpl</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">CheckStock</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Outcome</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">orderId</span><span class="p">,</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">productIds</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">printf</span><span class="p">(</span><span class="s">&quot;Checking stock for order: %s and products: %s%n&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">orderId</span><span class="p">,</span><span class="w"> </span><span class="n">productIds</span><span class="p">);</span>
+
+<span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">random</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="n">Math</span><span class="p">.</span><span class="na">random</span><span class="p">()</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mi">1000</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">random</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">500</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">SufficientStock</span><span class="p">();</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">OrderHasUnavailableItems</span><span class="p">(</span><span class="n">productIds</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><label for="__tabbed_7_2">Kotlin</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.interactions</span>
+
+<span class="kd">object</span><span class="w"> </span><span class="nc">CheckStockImpl</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">CheckStock</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="n">orderId</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="p">,</span><span class="w"> </span><span class="n">productIds</span><span class="p">:</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="kt">String</span><span class="o">&gt;</span><span class="p">):</span><span class="w"> </span><span class="n">CheckStock</span><span class="p">.</span><span class="na">Outcome</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">println</span><span class="p">(</span><span class="s">&quot;Checking stock for order: </span><span class="si">$</span><span class="n">orderId</span><span class="s"> and products: </span><span class="si">$</span><span class="n">productIds</span><span class="s">&quot;</span><span class="p">)</span>
+
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="m">1.</span><span class="p">.</span><span class="m">1000</span><span class="p">).</span><span class="na">random</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="m">500</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">CheckStock</span><span class="p">.</span><span class="na">SufficientStock</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">CheckStock</span><span class="p">.</span><span class="na">OrderHasUnavailableItems</span><span class="p">(</span><span class="n">productIds</span><span class="p">)</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_7_3" name="__tabbed_7" type="radio" /><label for="__tabbed_7_3">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">interactions</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">scala</span><span class="p">.</span><span class="nn">concurrent</span><span class="p">.</span><span class="nc">Future</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">scala</span><span class="p">.</span><span class="nn">util</span><span class="p">.</span><span class="nc">Random</span>
+
+<span class="k">trait</span><span class="w"> </span><span class="nc">CheckStockTrait</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="n">orderId</span><span class="p">:</span><span class="w"> </span><span class="nc">String</span><span class="p">,</span><span class="w"> </span><span class="n">productIds</span><span class="p">:</span><span class="w"> </span><span class="nc">List</span><span class="p">[</span><span class="nc">String</span><span class="p">]):</span><span class="w"> </span><span class="nc">Future</span><span class="p">[</span><span class="nc">CheckStock</span><span class="p">.</span><span class="nc">Outcome</span><span class="p">]</span>
+<span class="p">}</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CheckStockImpl</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nc">CheckStockTrait</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">override</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="n">orderId</span><span class="p">:</span><span class="w"> </span><span class="nc">String</span><span class="p">,</span><span class="w"> </span><span class="n">productIds</span><span class="p">:</span><span class="w"> </span><span class="nc">List</span><span class="p">[</span><span class="nc">String</span><span class="p">]):</span><span class="w"> </span><span class="nc">Future</span><span class="p">[</span><span class="nc">CheckStock</span><span class="p">.</span><span class="nc">Outcome</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">println</span><span class="p">(</span><span class="s">s&quot;Checking stock for order: </span><span class="si">$</span><span class="n">orderId</span><span class="s"> and products: </span><span class="si">$</span><span class="n">productIds</span><span class="s">&quot;</span><span class="p">)</span>
+
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="n">randomNumber</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="nc">Random</span><span class="p">().</span><span class="n">nextInt</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">randomNumber</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">500</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nc">Future</span><span class="p">.</span><span class="n">successful</span><span class="p">(</span><span class="nc">CheckStock</span><span class="p">.</span><span class="nc">SufficientStock</span><span class="p">())</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nc">Future</span><span class="p">.</span><span class="n">successful</span><span class="p">(</span><span class="nc">CheckStock</span><span class="p">.</span><span class="nc">OrderHasUnavailableItems</span><span class="p">(</span><span class="n">productIds</span><span class="p">))</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+<h3 id="ship-order-implementation">Ship order implementation</h3>
+<div class="tabbed-set" data-tabs="8:3"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><label for="__tabbed_8_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.interactions</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">examples.java.ingredients.Address</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ShipOrderImpl</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ShipOrder</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">OrderShipped</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">orderId</span><span class="p">,</span><span class="w"> </span><span class="n">Address</span><span class="w"> </span><span class="n">address</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">printf</span><span class="p">(</span><span class="s">&quot;Shipping order %s to %s&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">orderId</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">OrderShipped</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><label for="__tabbed_8_2">Kotlin</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.interactions</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.ingredients.Address</span>
+
+<span class="kd">object</span><span class="w"> </span><span class="nc">ShipOrderImpl</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">ShipOrder</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="n">orderId</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">:</span><span class="w"> </span><span class="n">Address</span><span class="p">):</span><span class="w"> </span><span class="n">ShipOrder</span><span class="p">.</span><span class="na">OrderShipped</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">println</span><span class="p">(</span><span class="s">&quot;Shipping order </span><span class="si">$</span><span class="n">orderId</span><span class="s"> to </span><span class="si">$</span><span class="n">address</span><span class="s">&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">ShipOrder</span><span class="p">.</span><span class="na">OrderShipped</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_8_3" name="__tabbed_8" type="radio" /><label for="__tabbed_8_3">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">interactions</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="nn">ingredients</span><span class="p">.</span><span class="nc">Address</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">scala</span><span class="p">.</span><span class="nn">concurrent</span><span class="p">.</span><span class="nc">Future</span>
+
+<span class="k">trait</span><span class="w"> </span><span class="nc">ShipOrderTrait</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="n">orderId</span><span class="p">:</span><span class="w"> </span><span class="nc">String</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">:</span><span class="w"> </span><span class="nc">Address</span><span class="p">):</span><span class="w"> </span><span class="nc">Future</span><span class="p">[</span><span class="nc">ShipOrder</span><span class="p">.</span><span class="nc">OrderShipped</span><span class="p">]</span>
+<span class="p">}</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ShipOrderImpl</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nc">ShipOrderTrait</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">override</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="n">orderId</span><span class="p">:</span><span class="w"> </span><span class="nc">String</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">:</span><span class="w"> </span><span class="nc">Address</span><span class="p">):</span><span class="w"> </span><span class="nc">Future</span><span class="p">[</span><span class="nc">ShipOrder</span><span class="p">.</span><span class="nc">OrderShipped</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">println</span><span class="p">(</span><span class="s">s&quot;Shipping order </span><span class="si">$</span><span class="n">orderId</span><span class="s"> to </span><span class="si">$</span><span class="n">address</span><span class="s">&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="nc">Future</span><span class="p">.</span><span class="n">successful</span><span class="p">(</span><span class="nc">ShipOrder</span><span class="p">.</span><span class="nc">OrderShipped</span><span class="p">())</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+<h3 id="cancel-order-implementation">Cancel order implementation</h3>
+<div class="tabbed-set" data-tabs="9:3"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><label for="__tabbed_9_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.interactions</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">java.util.List</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">CancelOrderImpl</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">CancelOrder</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">OrderCancelled</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">orderId</span><span class="p">,</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="w"> </span><span class="n">unavailableProductIds</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">printf</span><span class="p">(</span><span class="s">&quot;Canceling order %s. The following products are unavailable: %s&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">orderId</span><span class="p">,</span><span class="w"> </span><span class="n">unavailableProductIds</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">OrderCancelled</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><label for="__tabbed_9_2">Kotlin</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.interactions</span>
+
+<span class="kd">object</span><span class="w"> </span><span class="nc">CancelOrderImpl</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">CancelOrder</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="n">orderId</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="p">,</span><span class="w"> </span><span class="n">unavailableProductIds</span><span class="p">:</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="kt">String</span><span class="o">&gt;</span><span class="p">):</span><span class="w"> </span><span class="n">CancelOrder</span><span class="p">.</span><span class="na">OrderCancelled</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">println</span><span class="p">(</span><span class="s">&quot;Canceling order </span><span class="si">$</span><span class="n">orderId</span><span class="s">. The following products are unavailable: </span><span class="si">$</span><span class="n">unavailableProductIds</span><span class="s">&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">CancelOrder</span><span class="p">.</span><span class="na">OrderCancelled</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_9_3" name="__tabbed_9" type="radio" /><label for="__tabbed_9_3">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">interactions</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">scala</span><span class="p">.</span><span class="nn">concurrent</span><span class="p">.</span><span class="nc">Future</span>
+
+<span class="k">trait</span><span class="w"> </span><span class="nc">CancelOrderTrait</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="n">orderId</span><span class="p">:</span><span class="w"> </span><span class="nc">String</span><span class="p">,</span><span class="w"> </span><span class="n">unavailableProductIds</span><span class="p">:</span><span class="w"> </span><span class="nc">List</span><span class="p">[</span><span class="nc">String</span><span class="p">]):</span><span class="w"> </span><span class="nc">Future</span><span class="p">[</span><span class="nc">CancelOrder</span><span class="p">.</span><span class="nc">OrderCancelled</span><span class="p">]</span>
+<span class="p">}</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CancelOrderImpl</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="nc">CancelOrderTrait</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">override</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="n">orderId</span><span class="p">:</span><span class="w"> </span><span class="nc">String</span><span class="p">,</span><span class="w"> </span><span class="n">unavailableProductIds</span><span class="p">:</span><span class="w"> </span><span class="nc">List</span><span class="p">[</span><span class="nc">String</span><span class="p">]):</span><span class="w"> </span><span class="nc">Future</span><span class="p">[</span><span class="nc">CancelOrder</span><span class="p">.</span><span class="nc">OrderCancelled</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">println</span><span class="p">(</span><span class="s">s&quot;Canceling order </span><span class="si">$</span><span class="n">orderId</span><span class="s">. The following products are unavailable: </span><span class="si">$</span><span class="n">unavailableProductIds</span><span class="s">&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="nc">Future</span><span class="p">.</span><span class="n">successful</span><span class="p">(</span><span class="nc">CancelOrder</span><span class="p">.</span><span class="nc">OrderCancelled</span><span class="p">())</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+<h2 id="execute-the-recipe">Execute the recipe</h2>
+<p>To execute the recipe we first need an instance of the <code>InMemoryBaker</code>. You can create one by providing the interaction
+implementations to the <code>InMemoryBaker</code> static factory.</p>
+<p>The next step is to add the recipe to Baker. You can do this via the <code>addRecipe</code> method. If the <code>validate</code> flag is set
+to <code>true</code>, Baker checks if all required interaction implementations are available. Adding the recipe is something you
+only need to do once for each unique recipe.</p>
+<p>Before we can fire the sensory event, we need to create a new process instance of the recipe. We do this via the <code>bake</code>
+method. You are required to specify a <code>recipeInstanceId</code>. Here we use <code>UUID</code>, but it can be anything as long as it's 
+unique within your processes.</p>
+<p>Finally, we can fire the sensory event via <code>fireEventAndResolveWhenCompleted</code>. The moment the event arrives our process
+will start.</p>
+<div class="tabbed-set" data-tabs="10:3"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><label for="__tabbed_10_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.compiler.RecipeCompiler</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.inmemory.InMemoryBaker</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.EventInstance</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">examples.java.events.OrderPlaced</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">examples.java.ingredients.Address</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">examples.java.interactions.CancelOrderImpl</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">examples.java.interactions.CheckStockImpl</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">examples.java.interactions.ShipOrderImpl</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">examples.java.recipes.WebShopRecipe</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">java.util.List</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">java.util.UUID</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">WebShopApp</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="n">baker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">InMemoryBaker</span><span class="p">.</span><span class="na">java</span><span class="p">(</span>
+<span class="w">            </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">CheckStockImpl</span><span class="p">(),</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">CancelOrderImpl</span><span class="p">(),</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ShipOrderImpl</span><span class="p">())</span>
+<span class="w">        </span><span class="p">);</span>
+
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">().</span><span class="na">toString</span><span class="p">();</span>
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="n">sensoryEvent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">EventInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">createOrderPlaced</span><span class="p">());</span>
+
+<span class="w">        </span><span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span><span class="n">RecipeCompiler</span><span class="p">.</span><span class="na">compileRecipe</span><span class="p">(</span><span class="n">WebShopRecipe</span><span class="p">.</span><span class="na">recipe</span><span class="p">),</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<span class="w">            </span><span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">recipeId</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="na">bake</span><span class="p">(</span><span class="n">recipeId</span><span class="p">,</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">))</span>
+<span class="w">            </span><span class="p">.</span><span class="na">thenCompose</span><span class="p">(</span><span class="n">ignored</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenCompleted</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="n">sensoryEvent</span><span class="p">))</span>
+<span class="w">            </span><span class="p">.</span><span class="na">join</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">OrderPlaced</span><span class="w"> </span><span class="nf">createOrderPlaced</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="n">address</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Address</span><span class="p">(</span><span class="s">&quot;Hoofdstraat&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Amsterdam&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;1234AA&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;The Netherlands&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">OrderPlaced</span><span class="p">(</span><span class="s">&quot;123&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;456&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">,</span><span class="w"> </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;iPhone&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Playstation5&quot;</span><span class="p">));</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><label for="__tabbed_10_2">Kotlin</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.application</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.compiler.RecipeCompiler</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.ExperimentalDsl</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.EventInstance</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.kotlindsl.InMemoryBaker</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.events.OrderPlaced</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.ingredients.Address</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.interactions.CancelOrderImpl</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.interactions.CheckStockImpl</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.interactions.ShipOrderImpl</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.recipes.WebShopRecipe</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">kotlinx.coroutines.runBlocking</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">java.util.*</span>
+
+<span class="nd">@ExperimentalDsl</span>
+<span class="kd">fun</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span><span class="w"> </span><span class="kt">Unit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runBlocking</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">baker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">InMemoryBaker</span><span class="p">.</span><span class="na">kotlin</span><span class="p">(</span>
+<span class="w">        </span><span class="n">implementations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="n">CheckStockImpl</span><span class="p">,</span><span class="w"> </span><span class="n">CancelOrderImpl</span><span class="p">,</span><span class="w"> </span><span class="n">ShipOrderImpl</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">recipeId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="na">addRecipe</span><span class="p">(</span>
+<span class="w">        </span><span class="n">compiledRecipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RecipeCompiler</span><span class="p">.</span><span class="na">compileRecipe</span><span class="p">(</span><span class="n">WebShopRecipe</span><span class="p">.</span><span class="na">recipe</span><span class="p">),</span>
+<span class="w">        </span><span class="n">validate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">recipeInstanceId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UUID</span><span class="p">.</span><span class="na">randomUUID</span><span class="p">().</span><span class="na">toString</span><span class="p">()</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">sensoryEvent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">EventInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">orderPlaced</span><span class="p">)</span>
+
+<span class="w">    </span><span class="n">baker</span><span class="p">.</span><span class="na">bake</span><span class="p">(</span><span class="n">recipeId</span><span class="p">,</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">)</span>
+<span class="w">    </span><span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenCompleted</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="n">sensoryEvent</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="kd">private</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">orderPlaced</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OrderPlaced</span><span class="p">(</span>
+<span class="w">    </span><span class="n">orderId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;123&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">customerId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;456&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">productIds</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="s">&quot;iPhone&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;PlayStation5&quot;</span><span class="p">),</span>
+<span class="w">    </span><span class="n">address</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Address</span><span class="p">(</span>
+<span class="w">        </span><span class="n">street</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Hoofdstraat&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="n">city</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Amsterdam&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="n">zipCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;1234AA&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="n">country</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;The Netherlands&quot;</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+</div>
+<input id="__tabbed_10_3" name="__tabbed_10" type="radio" /><label for="__tabbed_10_3">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">application</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">cats</span><span class="p">.</span><span class="nn">effect</span><span class="p">.{</span><span class="nc">ContextShift</span><span class="p">,</span><span class="w"> </span><span class="nc">IO</span><span class="p">,</span><span class="w"> </span><span class="nc">Timer</span><span class="p">}</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">compiler</span><span class="p">.</span><span class="nc">RecipeCompiler</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="nn">events</span><span class="p">.</span><span class="nc">OrderPlaced</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">inmemory</span><span class="p">.</span><span class="nc">InMemoryBaker</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">model</span><span class="p">.</span><span class="nc">InteractionInstance</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">EventInstance</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="nn">ingredients</span><span class="p">.</span><span class="nc">Address</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="nn">interactions</span><span class="p">.{</span><span class="nc">CancelOrderImpl</span><span class="p">,</span><span class="w"> </span><span class="nc">CheckStockImpl</span><span class="p">,</span><span class="w"> </span><span class="nc">ShipOrderImpl</span><span class="p">}</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="nn">recipes</span><span class="p">.</span><span class="nc">WebShopRecipe</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">java</span><span class="p">.</span><span class="nn">util</span><span class="p">.</span><span class="nc">UUID</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">scala</span><span class="p">.</span><span class="nn">concurrent</span><span class="p">.</span><span class="nc">ExecutionContext</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">WebShopApp</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="p">:</span><span class="w"> </span><span class="nc">Array</span><span class="p">[</span><span class="nc">String</span><span class="p">]):</span><span class="w"> </span><span class="nc">Unit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="k">implicit</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="n">timer</span><span class="p">:</span><span class="w"> </span><span class="nc">Timer</span><span class="p">[</span><span class="nc">IO</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">IO</span><span class="p">.</span><span class="n">timer</span><span class="p">(</span><span class="nc">ExecutionContext</span><span class="p">.</span><span class="n">global</span><span class="p">)</span>
+<span class="w">    </span><span class="k">implicit</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="n">contextShift</span><span class="p">:</span><span class="w"> </span><span class="nc">ContextShift</span><span class="p">[</span><span class="nc">IO</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">IO</span><span class="p">.</span><span class="n">contextShift</span><span class="p">(</span><span class="nc">ExecutionContext</span><span class="p">.</span><span class="n">global</span><span class="p">)</span>
+
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="n">interactions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">List</span><span class="p">(</span>
+<span class="w">      </span><span class="k">new</span><span class="w"> </span><span class="nc">CancelOrderImpl</span><span class="p">(),</span>
+<span class="w">      </span><span class="k">new</span><span class="w"> </span><span class="nc">ShipOrderImpl</span><span class="p">(),</span>
+<span class="w">      </span><span class="k">new</span><span class="w"> </span><span class="nc">CheckStockImpl</span><span class="p">(),</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="n">bakerF</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">InMemoryBaker</span><span class="p">.</span><span class="n">build</span><span class="p">(</span><span class="n">implementations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">interactions</span><span class="p">.</span><span class="n">map</span><span class="p">(</span><span class="nc">InteractionInstance</span><span class="p">.</span><span class="n">unsafeFrom</span><span class="p">[</span><span class="nc">IO</span><span class="p">]))</span>
+<span class="w">      </span><span class="p">.</span><span class="n">unsafeRunSync</span><span class="p">()</span>
+
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">UUID</span><span class="p">.</span><span class="n">randomUUID</span><span class="p">().</span><span class="n">toString</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="n">sensoryEvent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">EventInstance</span><span class="p">.</span><span class="n">unsafeFrom</span><span class="p">(</span><span class="n">orderPlaced</span><span class="p">)</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">recipeId</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">bakerF</span><span class="p">.</span><span class="n">addRecipe</span><span class="p">(</span><span class="nc">RecipeCompiler</span><span class="p">.</span><span class="n">compileRecipe</span><span class="p">(</span><span class="n">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">WebShopRecipe</span><span class="p">.</span><span class="n">recipe</span><span class="p">),</span><span class="w"> </span><span class="n">validate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<span class="w">      </span><span class="n">_</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">bakerF</span><span class="p">.</span><span class="n">bake</span><span class="p">(</span><span class="n">recipeId</span><span class="p">,</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">)</span>
+<span class="w">      </span><span class="n">_</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">bakerF</span><span class="p">.</span><span class="n">fireEventAndResolveWhenCompleted</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="n">sensoryEvent</span><span class="p">)</span>
+
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">yield</span><span class="w"> </span><span class="n">recipeId</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">private</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="n">orderPlaced</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">OrderPlaced</span><span class="p">(</span>
+<span class="w">    </span><span class="n">orderId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;123&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">customerId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;456&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">productIds</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">List</span><span class="p">(</span><span class="s">&quot;iPhone&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;PlayStation5&quot;</span><span class="p">),</span>
+<span class="w">    </span><span class="n">address</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Address</span><span class="p">(</span>
+<span class="w">      </span><span class="n">street</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Hoofdstraat&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="n">city</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Amsterdam&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="n">zipCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;1234AA&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="n">country</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;The Netherlands&quot;</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+<p>Run the main function and observe the results. Depending on the outcome of the <code>CheckStock</code> interaction you will see
+one of these messages in the console:</p>
+<div class="admonition quote">
+<p>Checking stock for order: 123 and products: [iPhone, PlayStation5]</p>
+<p>Shipping order 123 to Address(street=Hoofdstraat, city=Amsterdam, zipCode=1234AA, country=The Netherlands)</p>
+</div>
+<div class="admonition quote">
+<p>Checking stock for order: 123 and products: [iPhone, PlayStation5]</p>
+<p>Canceling order 123. The following products are unavailable: [iPhone, PlayStation5]</p>
+</div>
+<h2 id="wrap-up">Wrap-up</h2>
+<p>Congratulations! You just build your first Baker process. Of course, this is just a simplified example. To learn more
+about what you can do with Baker, please refer to the cookbook section. There you will find information on things like
+error handling, testing recipes, creating visualizations, and more.</p>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy"], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.b4d07000.min.js"></script>
+      
+    
+  </body>
+</html>

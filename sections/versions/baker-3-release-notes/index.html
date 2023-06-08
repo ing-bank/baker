@@ -1,6 +1,4 @@
 
-
-
 <!doctype html>
 <html lang="en" class="no-js">
   <head>
@@ -10,8 +8,14 @@
       
       
       
-      <link rel="shortcut icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-5.5.12">
+      
+        <link rel="prev" href="../../reference/stores/">
+      
+      
+        <link rel="next" href="../baker-3/">
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
     
     
       
@@ -19,24 +23,29 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.4dd2dd8d.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.26e3688c.min.css">
       
       
+
     
     
     
       
-        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
-        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
-    
     
     
       <link rel="stylesheet" href="../../../css/ing.css">
     
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
+
+    
     
     
   </head>
@@ -44,6 +53,9 @@
   
     <body dir="ltr">
   
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
@@ -60,48 +72,60 @@
       
     </div>
     
-      <header class="md-header" data-md-component="header">
-  <nav class="md-header-nav md-grid" aria-label="Header">
-    <a href="../../.." title="Baker" class="md-header-nav__button md-logo" aria-label="Baker">
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Baker" class="md-header__button md-logo" aria-label="Baker" data-md-component="logo">
       
   
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
 
     </a>
-    <label class="md-header-nav__button md-icon" for="__drawer">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
     </label>
-    <div class="md-header-nav__title" data-md-component="header-title">
-      
-        <div class="md-header-nav__ellipsis">
-          <span class="md-header-nav__topic md-ellipsis">
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
             Baker
           </span>
-          <span class="md-header-nav__topic md-ellipsis">
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
             
               Release Notes v3
             
           </span>
         </div>
-      
+      </div>
     </div>
     
-      <label class="md-header-nav__button md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
       </label>
-      
-<div class="md-search" data-md-component="search" role="dialog">
+      <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
       </label>
-      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
-      </button>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
     </form>
     <div class="md-search__output">
       <div class="md-search__scrollwrap" data-md-scrollfix>
@@ -109,7 +133,7 @@
           <div class="md-search-result__meta">
             Initializing search
           </div>
-          <ol class="md-search-result__list"></ol>
+          <ol class="md-search-result__list" role="presentation"></ol>
         </div>
       </div>
     </div>
@@ -117,12 +141,11 @@
 </div>
     
     
-      <div class="md-header-nav__source">
-        
-<a href="https://github.com/ing-bank/baker/" title="Go to repository" class="md-source">
+      <div class="md-header__source">
+        <a href="https://github.com/ing-bank/baker" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     ing-bank/baker
@@ -131,39 +154,43 @@
       </div>
     
   </nav>
+  
 </header>
     
     <div class="md-container" data-md-component="container">
       
+      
         
-      
-      
+          
         
       
       <main class="md-main" data-md-component="main">
         <div class="md-main__inner md-grid">
           
             
-              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
-                    <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Baker" class="md-nav__button md-logo" aria-label="Baker">
+    <a href="../../.." title="Baker" class="md-nav__button md-logo" aria-label="Baker" data-md-component="logo">
       
   
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
 
     </a>
     Baker
   </label>
   
     <div class="md-nav__source">
-      
-<a href="https://github.com/ing-bank/baker/" title="Go to repository" class="md-source">
+      <a href="https://github.com/ing-bank/baker" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     ing-bank/baker
@@ -177,280 +204,15 @@
       
       
 
-
-  <li class="md-nav__item">
-    <a href="../../.." title="Home" class="md-nav__link">
-      Home
-    </a>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
-    <a href="../../getting-started/" title="Getting Started" class="md-nav__link">
-      Getting Started
-    </a>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
-    <a href="../../concepts/" title="Concepts" class="md-nav__link">
-      Concepts
-    </a>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
-    
-    <label class="md-nav__link" for="nav-4">
-      Development Life Cycle
-      <span class="md-nav__icon md-icon"></span>
-    </label>
-    <nav class="md-nav" aria-label="Development Life Cycle" data-md-level="1">
-      <label class="md-nav__title" for="nav-4">
-        <span class="md-nav__icon md-icon"></span>
-        Development Life Cycle
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../development-life-cycle/design-a-recipe/" title="Design a Recipe" class="md-nav__link">
-      Design a Recipe
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../development-life-cycle/use-visualizations/" title="Use Visualizations" class="md-nav__link">
-      Use Visualizations
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../development-life-cycle/implement-interactions/" title="Implement Interactions" class="md-nav__link">
-      Implement Interactions
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../development-life-cycle/bake-fire-events-and-inquiry/" title="Bake, Fire Events and Inquiry" class="md-nav__link">
-      Bake, Fire Events and Inquiry
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../development-life-cycle/test/" title="Test" class="md-nav__link">
-      Test
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../development-life-cycle/configure/" title="Configure" class="md-nav__link">
-      Configure
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../development-life-cycle/monitor/" title="Monitor" class="md-nav__link">
-      Monitor
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../development-life-cycle/resolve-failed-recipe-instances/" title="Resolve Failed Recipes" class="md-nav__link">
-      Resolve Failed Recipes
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5">
-    
-    <label class="md-nav__link" for="nav-5">
-      Reference
-      <span class="md-nav__icon md-icon"></span>
-    </label>
-    <nav class="md-nav" aria-label="Reference" data-md-level="1">
-      <label class="md-nav__title" for="nav-5">
-        <span class="md-nav__icon md-icon"></span>
-        Reference
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../reference/main-abstractions/" title="Main Abstractions" class="md-nav__link">
-      Main Abstractions
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../reference/execution-semantics/" title="Execution Semantics" class="md-nav__link">
-      Execution Semantics
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../reference/baker-types-and-values/" title="Baker Types and Values" class="md-nav__link">
-      Baker Types and Values
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../reference/dsls/" title="Recipe DSLs" class="md-nav__link">
-      Recipe DSLs
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../reference/runtime/" title="The Akka Based Runtime" class="md-nav__link">
-      The Akka Based Runtime
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../reference/visualization/" title="Visualization" class="md-nav__link">
-      Visualization
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../reference/event-listener/" title="Event Listener" class="md-nav__link">
-      Event Listener
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../../reference/stores/" title="Event Stores and Cluster Configuration" class="md-nav__link">
-      Event Stores and Cluster Configuration
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
 
     
       
@@ -458,49 +220,329 @@
       
 
   
-
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-    
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-6" type="checkbox" id="nav-6" checked>
-    
-    <label class="md-nav__link" for="nav-6">
-      Versions
-      <span class="md-nav__icon md-icon"></span>
-    </label>
-    <nav class="md-nav" aria-label="Versions" data-md-level="1">
-      <label class="md-nav__title" for="nav-6">
-        <span class="md-nav__icon md-icon"></span>
-        Versions
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart-guide/" class="md-nav__link">
+        Quickstart guide
+      </a>
+    </li>
   
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
     
       
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/" class="md-nav__link">
+        Concepts
+      </a>
+    </li>
+  
+
     
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorial/" class="md-nav__link">
+        Tutorial
+      </a>
+    </li>
+  
+
     
-      <label class="md-nav__link md-nav__link--active" for="__toc">
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          Cookbook
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_5">
+          <span class="md-nav__icon md-icon"></span>
+          Cookbook
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/recipe-dsl/" class="md-nav__link">
+        Recipe DSL
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/error-handling/" class="md-nav__link">
+        Error handling
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/visualizations/" class="md-nav__link">
+        Visualizations
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/fire-sensory-events/" class="md-nav__link">
+        Fire events and inquiry
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/testing/" class="md-nav__link">
+        Testing
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/monitoring/" class="md-nav__link">
+        Monitoring
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          Reference
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6">
+          <span class="md-nav__icon md-icon"></span>
+          Reference
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/main-abstractions/" class="md-nav__link">
+        Main Abstractions
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/execution-semantics/" class="md-nav__link">
+        Execution Semantics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/baker-types-and-values/" class="md-nav__link">
+        Baker Types and Values
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/runtime/" class="md-nav__link">
+        The Akka Based Runtime
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/stores/" class="md-nav__link">
+        Event Stores and Cluster Configuration
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          Versions
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_7">
+          <span class="md-nav__icon md-icon"></span>
+          Versions
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Release Notes v3
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Release Notes v3
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-    
-    <a href="./" title="Release Notes v3" class="md-nav__link md-nav__link--active">
-      Release Notes v3
-    </a>
-    
+      </a>
       
+        
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
   
   
     
@@ -510,7 +552,7 @@
       <span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
-    <ul class="md-nav__list" data-md-scrollfix>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
   <a href="#clearer-and-more-truthful-runtime-interface" class="md-nav__link">
@@ -672,49 +714,59 @@
     </ul>
   
 </nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../baker-3/" class="md-nav__link">
+        Migration Guide v3
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../baker-2/" class="md-nav__link">
+        Migration Guide v2
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
     
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../baker-3/" title="Migration Guide v3" class="md-nav__link">
-      Migration Guide v3
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../baker-2/" title="Migration Guide v2" class="md-nav__link">
-      Migration Guide v2
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-    
       
       
       
 
-
-  <li class="md-nav__item">
-    <a href="../../feature-comparison/" title="Feature comparison" class="md-nav__link">
-      Feature comparison
-    </a>
-  </li>
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../feature-comparison/" class="md-nav__link">
+        Feature comparison
+      </a>
+    </li>
+  
 
     
   </ul>
@@ -724,11 +776,14 @@
               </div>
             
             
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
   
   
     
@@ -738,7 +793,7 @@
       <span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
-    <ul class="md-nav__list" data-md-scrollfix>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
   <a href="#clearer-and-more-truthful-runtime-interface" class="md-nav__link">
@@ -905,19 +960,17 @@
               </div>
             
           
-          <div class="md-content">
-            <article class="md-content__inner md-typeset">
-              
-                
-                  <a href="https://github.com/ing-bank/baker/edit/master/docs/sections/versions/baker-3-release-notes.md" title="Edit this page" class="md-content__button md-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
-                  </a>
-                
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
                 
                   
-                
-                
-                <h1 id="release-notes-v3">Release Notes v3</h1>
+
+  
+  
+
+
+<h1 id="release-notes-v3">Release Notes v3</h1>
 <p>The theme of release 3 is the Baker runtime.
 We have two goals with this release.</p>
 <p>The first goal is to be clearer in what the Baker runtime does.
@@ -1003,23 +1056,21 @@ The difference now is that its clear that Baker uses EventInstances internally.
 Another advantage is that you are now also free to create EventInstances any other way.</p>
 <div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Scala</label><div class="tabbed-content">
 <div class="highlight"><pre><span></span><code><span class="c1">//From any Object</span>
-<span class="k">val</span> <span class="n">orderPlaced</span> <span class="k">=</span> <span class="nc">EventInstance</span>
-      <span class="o">.</span><span class="n">unsafeFrom</span><span class="o">(</span><span class="nc">SimpleWebshopRecipeReflection</span><span class="o">.</span><span class="nc">OrderPlaced</span><span class="o">(</span><span class="n">orderId</span><span class="o">,</span> <span class="n">items</span><span class="o">))</span>
+<span class="kd">val</span><span class="w"> </span><span class="n">orderPlaced</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">EventInstance</span>
+<span class="w">      </span><span class="p">.</span><span class="n">unsafeFrom</span><span class="p">(</span><span class="nc">SimpleWebshopRecipeReflection</span><span class="p">.</span><span class="nc">OrderPlaced</span><span class="p">(</span><span class="n">orderId</span><span class="p">,</span><span class="w"> </span><span class="n">items</span><span class="p">))</span>
 <span class="c1">//Using constructor</span>
-<span class="k">val</span> <span class="n">orderPlace2</span> <span class="k">=</span>
-        <span class="nc">EventInstance</span><span class="o">.</span><span class="n">apply</span><span class="o">(</span><span class="s">&quot;OrderPlaced&quot;</span><span class="o">,</span> <span class="nc">Map</span><span class="o">(</span><span class="s">&quot;orderId&quot;</span><span class="o">-&gt;</span> <span class="nc">Converters</span><span class="o">.</span><span class="n">toValue</span><span class="o">(</span><span class="n">orderId</span><span class="o">),</span> <span class="s">&quot;items&quot;</span> <span class="o">-&gt;</span> <span class="nc">Converters</span><span class="o">.</span><span class="n">toValue</span><span class="o">(</span><span class="n">items</span><span class="o">)))</span>
+<span class="kd">val</span><span class="w"> </span><span class="n">orderPlace2</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="nc">EventInstance</span><span class="p">.</span><span class="n">apply</span><span class="p">(</span><span class="s">&quot;OrderPlaced&quot;</span><span class="p">,</span><span class="w"> </span><span class="nc">Map</span><span class="p">(</span><span class="s">&quot;orderId&quot;</span><span class="o">-&gt;</span><span class="w"> </span><span class="nc">Converters</span><span class="p">.</span><span class="n">toValue</span><span class="p">(</span><span class="n">orderId</span><span class="p">),</span><span class="w"> </span><span class="s">&quot;items&quot;</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nc">Converters</span><span class="p">.</span><span class="n">toValue</span><span class="p">(</span><span class="n">items</span><span class="p">)))</span>
 </code></pre></div>
-
 </div>
 <input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Java</label><div class="tabbed-content">
 <div class="highlight"><pre><span></span><code><span class="c1">//From any Object</span>
-<span class="n">EventInstance</span> <span class="n">firstOrderPlaced</span> <span class="o">=</span>
-                <span class="n">EventInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span> <span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">OrderPlaced</span><span class="p">(</span><span class="n">orderId</span><span class="p">,</span> <span class="n">items</span><span class="p">));</span>
+<span class="n">EventInstance</span><span class="w"> </span><span class="n">firstOrderPlaced</span><span class="w"> </span><span class="o">=</span>
+<span class="w">                </span><span class="n">EventInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">JWebshopRecipe</span><span class="p">.</span><span class="na">OrderPlaced</span><span class="p">(</span><span class="n">orderId</span><span class="p">,</span><span class="w"> </span><span class="n">items</span><span class="p">));</span>
 <span class="c1">//Using constructor</span>
-<span class="n">EventInstance</span> <span class="n">firstOrderPlaced2</span> <span class="o">=</span>
-                <span class="n">EventInstance</span><span class="p">.</span><span class="na">apply</span><span class="p">(</span><span class="s">&quot;OrderPlaced&quot;</span><span class="p">,</span> <span class="n">ImmutableMap</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;orderId&quot;</span><span class="p">,</span> <span class="n">Converters</span><span class="p">.</span><span class="na">toValue</span><span class="p">(</span><span class="n">orderId</span><span class="p">),</span> <span class="s">&quot;items&quot;</span><span class="p">,</span> <span class="n">Converters</span><span class="p">.</span><span class="na">toValue</span><span class="p">(</span><span class="n">items</span><span class="p">)));</span>
+<span class="n">EventInstance</span><span class="w"> </span><span class="n">firstOrderPlaced2</span><span class="w"> </span><span class="o">=</span>
+<span class="w">                </span><span class="n">EventInstance</span><span class="p">.</span><span class="na">apply</span><span class="p">(</span><span class="s">&quot;OrderPlaced&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ImmutableMap</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="s">&quot;orderId&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Converters</span><span class="p">.</span><span class="na">toValue</span><span class="p">(</span><span class="n">orderId</span><span class="p">),</span><span class="w"> </span><span class="s">&quot;items&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Converters</span><span class="p">.</span><span class="na">toValue</span><span class="p">(</span><span class="n">items</span><span class="p">)));</span>
 </code></pre></div>
-
 </div>
 </div>
 <h4 id="decide-on-what-to-be-notified-on-when-firing-the-event">Decide on what to be notified on when firing the event</h4>
@@ -1029,16 +1080,14 @@ New in this release is that you can now specify this when firing the event itsel
 The advantage is that Baker can optimize the resources it uses in those cases.
 This is done using the fireEventAndResolveWhenReceived and fireEventAndResolveWhenCompleted methods.</p>
 <div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Scala</label><div class="tabbed-content">
-<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">result</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">SensoryEventStatus</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveWhenReceived</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">orderPlaced</span><span class="o">)</span>
-<span class="k">val</span> <span class="n">result</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">SensoryEventResult</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveWhenCompleted</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">paymentMade</span><span class="o">)</span>
+<div class="highlight"><pre><span></span><code><span class="kd">val</span><span class="w"> </span><span class="n">result</span><span class="p">:</span><span class="w"> </span><span class="nc">Future</span><span class="p">[</span><span class="nc">SensoryEventStatus</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="n">fireEventAndResolveWhenReceived</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="n">orderPlaced</span><span class="p">)</span>
+<span class="kd">val</span><span class="w"> </span><span class="n">result</span><span class="p">:</span><span class="w"> </span><span class="nc">Future</span><span class="p">[</span><span class="nc">SensoryEventResult</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="n">fireEventAndResolveWhenCompleted</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="n">paymentMade</span><span class="p">)</span>
 </code></pre></div>
-
 </div>
 <input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Java</label><div class="tabbed-content">
-<div class="highlight"><pre><span></span><code><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">SensoryEventStatus</span><span class="o">&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenReceived</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="n">paymentMade</span><span class="p">);</span>
-<span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">SensoryEventResult</span><span class="o">&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenCompleted</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="n">firstOrderPlaced</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">SensoryEventStatus</span><span class="o">&gt;</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenReceived</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="n">paymentMade</span><span class="p">);</span>
+<span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">SensoryEventResult</span><span class="o">&gt;</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveWhenCompleted</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="n">firstOrderPlaced</span><span class="p">);</span>
 </code></pre></div>
-
 </div>
 </div>
 <p>The old way of firing a event where you get both the co</p>
@@ -1048,15 +1097,13 @@ YOu can now ask baker to notify you on a a specific event.
 You can use the fireEventAndResolveOnEvent method for this.</p>
 <p>The returned future will complete when a event with the given name is fired.</p>
 <div class="tabbed-set" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><label for="__tabbed_3_1">Scala</label><div class="tabbed-content">
-<div class="highlight"><pre><span></span><code><span class="k">val</span> <span class="n">result</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">SensoryEventResult</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveOnEvent</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">orderPlaced</span><span class="o">,</span> <span class="s">&quot;eventName&quot;</span><span class="o">)</span>
+<div class="highlight"><pre><span></span><code><span class="kd">val</span><span class="w"> </span><span class="n">result</span><span class="p">:</span><span class="w"> </span><span class="nc">Future</span><span class="p">[</span><span class="nc">SensoryEventResult</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="n">fireEventAndResolveOnEvent</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="n">orderPlaced</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;eventName&quot;</span><span class="p">)</span>
 </code></pre></div>
-
 </div>
 <input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><label for="__tabbed_3_2">Java</label><div class="tabbed-content">
-<div class="highlight"><pre><span></span><code><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">SensoryEventResult</span><span class="o">&gt;</span> <span class="n">result</span> <span class="o">=</span>
-                <span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveOnEvent</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span> <span class="n">firstOrderPlaced</span><span class="p">,</span> <span class="s">&quot;eventName&quot;</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">SensoryEventResult</span><span class="o">&gt;</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span>
+<span class="w">                </span><span class="n">baker</span><span class="p">.</span><span class="na">fireEventAndResolveOnEvent</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="n">firstOrderPlaced</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;eventName&quot;</span><span class="p">);</span>
 </code></pre></div>
-
 </div>
 </div>
 <h4 id="eventresult">EventResult</h4>
@@ -1065,29 +1112,27 @@ This EventResult object contains the SensoryEventStatus, event names and created
 The addition of the event names and ingredients can be very useful if you need to make a decision depending on the state.
 In these cases there is no need to inquire on Baker itself anymore.</p>
 <div class="tabbed-set" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><label for="__tabbed_4_1">Scala</label><div class="tabbed-content">
-<div class="highlight"><pre><span></span><code><span class="k">case</span> <span class="k">class</span> <span class="nc">SensoryEventResult</span><span class="o">(</span>
-                               <span class="n">sensoryEventStatus</span><span class="k">:</span> <span class="kt">SensoryEventStatus</span><span class="o">,</span>
-                               <span class="n">eventNames</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[</span><span class="kt">String</span><span class="o">],</span>
-                               <span class="n">ingredients</span><span class="k">:</span> <span class="kt">Map</span><span class="o">[</span><span class="kt">String</span><span class="p">,</span> <span class="kt">Value</span><span class="o">]</span>
-<span class="o">)</span> <span class="k">extends</span> <span class="n">com</span><span class="o">.</span><span class="n">ing</span><span class="o">.</span><span class="n">baker</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="nc">SensoryEventResult</span> <span class="k">with</span> <span class="nc">ScalaApi</span>
+<div class="highlight"><pre><span></span><code><span class="k">case</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">SensoryEventResult</span><span class="p">(</span>
+<span class="w">                               </span><span class="n">sensoryEventStatus</span><span class="p">:</span><span class="w"> </span><span class="nc">SensoryEventStatus</span><span class="p">,</span>
+<span class="w">                               </span><span class="n">eventNames</span><span class="p">:</span><span class="w"> </span><span class="nc">Seq</span><span class="p">[</span><span class="nc">String</span><span class="p">],</span>
+<span class="w">                               </span><span class="n">ingredients</span><span class="p">:</span><span class="w"> </span><span class="nc">Map</span><span class="p">[</span><span class="nc">String</span><span class="p">,</span><span class="w"> </span><span class="nc">Value</span><span class="p">]</span>
+<span class="p">)</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="n">com</span><span class="p">.</span><span class="n">ing</span><span class="p">.</span><span class="n">baker</span><span class="p">.</span><span class="n">runtime</span><span class="p">.</span><span class="n">common</span><span class="p">.</span><span class="nc">SensoryEventResult</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="nc">ScalaApi</span>
 </code></pre></div>
-
 </div>
 <input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><label for="__tabbed_4_2">Java</label><div class="tabbed-content">
-<div class="highlight"><pre><span></span><code><span class="k">case</span> <span class="kd">class</span> <span class="nf">SensoryEventResult</span><span class="p">(</span>
-                               <span class="n">sensoryEventStatus</span><span class="p">:</span> <span class="n">SensoryEventStatus</span><span class="p">,</span>
-                               <span class="n">eventNames</span><span class="p">:</span> <span class="n">java</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">List</span><span class="o">[</span><span class="n">String</span><span class="o">]</span><span class="p">,</span>
-                               <span class="n">ingredients</span><span class="p">:</span> <span class="n">java</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">Map</span><span class="o">[</span><span class="n">String</span><span class="p">,</span> <span class="n">Value</span><span class="o">]</span>
-<span class="p">)</span> <span class="kd">extends</span> <span class="n">com</span><span class="p">.</span><span class="na">ing</span><span class="p">.</span><span class="na">baker</span><span class="p">.</span><span class="na">runtime</span><span class="p">.</span><span class="na">common</span><span class="p">.</span><span class="na">SensoryEventResult</span> <span class="n">with</span> <span class="n">JavaApi</span> <span class="p">{</span>
+<div class="highlight"><pre><span></span><code><span class="k">case</span><span class="w"> </span><span class="kd">class</span> <span class="nf">SensoryEventResult</span><span class="p">(</span>
+<span class="w">                               </span><span class="n">sensoryEventStatus</span><span class="p">:</span><span class="w"> </span><span class="n">SensoryEventStatus</span><span class="p">,</span>
+<span class="w">                               </span><span class="n">eventNames</span><span class="p">:</span><span class="w"> </span><span class="n">java</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">List</span><span class="o">[</span><span class="n">String</span><span class="o">]</span><span class="p">,</span>
+<span class="w">                               </span><span class="n">ingredients</span><span class="p">:</span><span class="w"> </span><span class="n">java</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">Map</span><span class="o">[</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Value</span><span class="o">]</span>
+<span class="p">)</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">com</span><span class="p">.</span><span class="na">ing</span><span class="p">.</span><span class="na">baker</span><span class="p">.</span><span class="na">runtime</span><span class="p">.</span><span class="na">common</span><span class="p">.</span><span class="na">SensoryEventResult</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="n">JavaApi</span><span class="w"> </span><span class="p">{</span>
 
-  <span class="n">def</span> <span class="n">getSensoryEventStatus</span><span class="p">:</span> <span class="n">SensoryEventStatus</span> <span class="o">=</span> <span class="n">sensoryEventStatus</span>
+<span class="w">  </span><span class="n">def</span><span class="w"> </span><span class="n">getSensoryEventStatus</span><span class="p">:</span><span class="w"> </span><span class="n">SensoryEventStatus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sensoryEventStatus</span>
 
-  <span class="n">def</span> <span class="n">getEventName</span><span class="p">:</span> <span class="n">java</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">List</span><span class="o">[</span><span class="n">String</span><span class="o">]</span> <span class="o">=</span> <span class="n">eventNames</span>
+<span class="w">  </span><span class="n">def</span><span class="w"> </span><span class="n">getEventName</span><span class="p">:</span><span class="w"> </span><span class="n">java</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">List</span><span class="o">[</span><span class="n">String</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eventNames</span>
 
-  <span class="n">def</span> <span class="n">getIngredients</span><span class="p">:</span> <span class="n">java</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">Map</span><span class="o">[</span><span class="n">String</span><span class="p">,</span> <span class="n">Value</span><span class="o">]</span> <span class="o">=</span> <span class="n">ingredients</span>
+<span class="w">  </span><span class="n">def</span><span class="w"> </span><span class="n">getIngredients</span><span class="p">:</span><span class="w"> </span><span class="n">java</span><span class="p">.</span><span class="na">util</span><span class="p">.</span><span class="na">Map</span><span class="o">[</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Value</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ingredients</span>
 <span class="p">}</span>
 </code></pre></div>
-
 </div>
 </div>
 <h3 id="new-eventlistener-functions">New EventListener functions</h3>
@@ -1153,84 +1198,47 @@ Users should not care where ingredients are provided from.
 This could be from an SensoryEvent or as output of a Event from an Interaction.
 This should not matter, only if the ingredient is available should matter.
 This allow users to flexibly recipes without impacting client code.</p>
-                
-              
-              
-                
 
 
-              
-            </article>
-          </div>
+
+
+
+                
+              </article>
+            </div>
+          
+          
         </div>
+        
       </main>
       
-        
-<footer class="md-footer">
-  
-    <div class="md-footer-nav">
-      <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
-        
-          <a href="../../reference/stores/" title="Event Stores and Cluster Configuration" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-            <div class="md-footer-nav__button md-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-            </div>
-            <div class="md-footer-nav__title">
-              <div class="md-ellipsis">
-                <span class="md-footer-nav__direction">
-                  Previous
-                </span>
-                Event Stores and Cluster Configuration
-              </div>
-            </div>
-          </a>
-        
-        
-          <a href="../baker-3/" title="Migration Guide v3" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-footer-nav__title">
-              <div class="md-ellipsis">
-                <span class="md-footer-nav__direction">
-                  Next
-                </span>
-                Migration Guide v3
-              </div>
-            </div>
-            <div class="md-footer-nav__button md-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
-            </div>
-          </a>
-        
-      </nav>
-    </div>
+        <footer class="md-footer">
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
-      <div class="md-footer-copyright">
-        
-        Made with
-        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
-          Material for MkDocs
-        </a>
-      </div>
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
       
     </div>
   </div>
 </footer>
       
     </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
     
-      <script src="../../../assets/javascripts/vendor.3636a4ec.min.js"></script>
-      <script src="../../../assets/javascripts/bundle.e9fe3281.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
-      
-      <script>
-        app = initialize({
-          base: "../../..",
-          features: [],
-          search: Object.assign({
-            worker: "../../../assets/javascripts/worker/search.5eca75d3.min.js"
-          }, typeof search !== "undefined" && search)
-        })
-      </script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.copy"], "search": "../../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.b4d07000.min.js"></script>
       
     
   </body>
