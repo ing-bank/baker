@@ -3,6 +3,7 @@ package com.ing.baker.runtime.akka.actor.delayed_transition_actor
 import akka.actor.{ActorLogging, ActorRef, Props}
 import akka.persistence._
 import akka.persistence.cassandra.cleanup.Cleanup
+import akka.sensors.actor.PersistentActorMetrics
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.{DelayedTransitionExecuted, DelayedTransitionInstance, DelayedTransitionScheduled, DelayedTransitionSnapshot, getId, prefix}
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransition, FireDelayedTransitionAck, ScheduleDelayedTransition, StartTimer, TickTimer}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{NoSuchProcess, ProcessDeleted}
@@ -42,7 +43,7 @@ object DelayedTransitionActor {
 class DelayedTransitionActor(processIndex: ActorRef,
                              cleanup: Cleanup,
                              snapShotInterval: Int,
-                             snapshotCount: Int) extends PersistentActor with ActorLogging {
+                             snapshotCount: Int) extends PersistentActor with PersistentActorMetrics {
 
   private var waitingTransitions: Map[String, DelayedTransitionInstance] = Map[String, DelayedTransitionInstance]()
 
