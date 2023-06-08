@@ -20,7 +20,7 @@ lazy val baker: Project = project.in(file("."))
     `bakery-interaction-k8s-interaction-manager`,
     // Examples
     `baker-example`, `bakery-client-example`, `interaction-example-make-payment-and-ship-items`,
-    `interaction-example-reserve-items`, `bakery-kafka-listener-example`
+    `interaction-example-reserve-items`, `bakery-kafka-listener-example`, `docs-code-snippets`
   )
 
 def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = project % "test->test;test->compile"
@@ -47,9 +47,9 @@ val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
-  javacOptions := Seq("-source", "11", "-target", "11"),
+  javacOptions := Seq("-source", "17", "-target", "17"),
   scalacOptions := Seq(
-    s"-target:jvm-11",
+    s"-target:jvm-17",
     "-unchecked",
     "-deprecation",
     "-feature",
@@ -197,8 +197,8 @@ lazy val `baker-interface-kotlin`: Project = project.in(file("core/baker-interfa
   .settings(Publish.settings)
   .settings(
     moduleName := "baker-interface-kotlin",
-    kotlinVersion := "1.7.22",
-    kotlincJvmTarget := "1.8",
+    kotlinVersion := "1.8.21",
+    kotlincJvmTarget := "17",
     kotlinLib("stdlib-jdk8"),
     kotlinLib("reflect"),
     libraryDependencies ++=
@@ -311,7 +311,7 @@ lazy val `baker-recipe-dsl-kotlin`: Project = project.in(file("core/recipe-dsl-k
   .settings(
     moduleName := "baker-recipe-dsl-kotlin",
     kotlinVersion := "1.8.21",
-    kotlincJvmTarget := "11",
+    kotlincJvmTarget := "17",
     kotlinLib("stdlib-jdk8"),
     kotlinLib("reflect"),
     libraryDependencies ++=
@@ -336,7 +336,7 @@ lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compile
   .settings(
     moduleName := "baker-compiler",
     kotlinVersion := "1.8.21",
-    kotlincJvmTarget := "11",
+    kotlincJvmTarget := "17",
     libraryDependencies ++=
       testDeps(scalaTest, scalaCheck, junitJupiter)
   )
@@ -694,6 +694,44 @@ lazy val `baker-example`: Project = project
     dockerExposedPorts := Seq(8080)
   )
   .dependsOn(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-intermediate-language`)
+
+lazy val `docs-code-snippets`: Project = project
+  .in(file("examples/docs-code-snippets"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
+  .settings(yPartialUnificationSetting)
+  .settings(crossBuildSettings)
+  .settings(
+    moduleName := "docs-code-snippets",
+    kotlinVersion := "1.8.21",
+    kotlincJvmTarget := "17",
+    kotlinLib("stdlib-jdk8"),
+    kotlinLib("reflect"),
+    libraryDependencies ++=
+      compileDeps(
+        slf4jApi,
+        http4s,
+        http4sDsl,
+        http4sServer,
+        http4sCirce,
+        circe,
+        circeGeneric,
+        akkaPersistenceCassandra,
+        akkaPersistenceQuery
+      ) ++ testDeps(
+        scalaTest,
+        scalaCheck,
+        mockitoScala,
+        junitInterface,
+        slf4jApi,
+        akkaTestKit
+      )
+  )
+  .settings(
+    coverageEnabled := false
+  )
+  .dependsOn(`baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl-kotlin`, `baker-intermediate-language`, `baker-interface-kotlin`)
 
 lazy val `bakery-client-example`: Project = project
   .in(file("examples/bakery-client-example"))
