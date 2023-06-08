@@ -11,6 +11,125 @@ These data structures are just that, data, and to ease their construction and im
 we provide an API that uses Java and Scala reflection to generate most of the data from language constructions like case 
 classes or interfaces.
 
+=== "Java"
+
+    ```java 
+
+    import com.ing.baker.recipe.annotations.FiresEvent;
+    import com.ing.baker.recipe.annotations.RequiresIngredient;
+    import com.ing.baker.recipe.javadsl.InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder;
+    import com.ing.baker.recipe.javadsl.Interaction;
+    import com.ing.baker.recipe.javadsl.Recipe;
+
+    import java.time.Duration;
+    import java.util.List;
+
+    import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
+
+    public class JWebshopRecipe {
+
+        public static class OrderPlaced {
+
+            public final String orderId;
+            public final List<String> items;
+
+            public OrderPlaced(String orderId, List<String> items) {
+                this.orderId = orderId;
+                this.items = items;
+            }
+        }
+
+        public static class PaymentMade {}
+
+        public interface ReserveItems extends Interaction {
+
+            interface ReserveItemsOutcome {
+            }
+
+            class OrderHadUnavailableItems implements ReserveItemsOutcome {
+
+                public final List<String> unavailableItems;
+
+                public OrderHadUnavailableItems(List<String> unavailableItems) {
+                    this.unavailableItems = unavailableItems;
+                }
+            }
+
+            class ItemsReserved implements ReserveItemsOutcome {
+
+                public final List<String> reservedItems;
+
+                public ItemsReserved(List<String> reservedItems) {
+                    this.reservedItems = reservedItems;
+                }
+            }
+
+            @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
+            ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") List<String> items);
+        }
+
+        public final static Recipe recipe = new Recipe("WebshopRecipe")
+            .withSensoryEvents(
+                OrderPlaced.class,
+                PaymentMade.class)
+            .withInteractions(
+                of(ReserveItems.class)
+                    .withRequiredEvent(PaymentMade.class))
+            .withDefaultFailureStrategy(
+                new RetryWithIncrementalBackoffBuilder()
+                    .withInitialDelay(Duration.ofMillis(100))
+                    .withDeadline(Duration.ofHours(24))
+                    .withMaxTimeBetweenRetries(Duration.ofMinutes(10))
+                    .build());
+    }
+    ```
+
+=== "Kotlin"
+    ```kotlin
+
+    import com.ing.baker.recipe.kotlindsl.recipe
+    
+    import com.ing.baker.recipe.javadsl.Interaction
+    import kotlin.time.Duration.Companion.hours
+    import kotlin.time.Duration.Companion.milliseconds
+    import kotlin.time.Duration.Companion.minutes
+    
+    data class OrderPlaced(
+        val orderId: String,
+        val productIds: List<String>
+    )
+    
+    object PaymentMade
+    
+    interface ReserveItems : Interaction {
+        sealed interface ReserveItemsOutcome
+        data class OrderHadUnavailableItems(val unavailableItems: List<String>) : ReserveItemsOutcome
+        data class ItemsReserved(val reservedItems: List<String>) : ReserveItemsOutcome
+    
+        fun apply(orderId: String, productIds: List<String>): ReserveItemsOutcome
+    }
+    
+    
+    object WebShopRecipe {
+        val recipe = recipe("web-shop recipe") {
+            sensoryEvents {
+                event<OrderPlaced>()
+                event<PaymentMade>()
+            }
+            interaction<ReserveItems> {
+                requiredEvents {
+                    event<PaymentMade>()
+                }
+            }
+            defaultFailureStrategy = retryWithIncrementalBackoff {
+                until = deadline(24.hours)
+                initialDelay = 100.milliseconds
+                maxTimeBetweenRetries = 10.minutes
+            }
+        }
+    }
+    ```
+
 === "Scala"
 
     ```scala 
@@ -155,89 +274,10 @@ classes or interfaces.
 
     ```
 
-=== "Java (Reflection API)"
-
-    ```java 
-
-    import com.ing.baker.recipe.annotations.FiresEvent;
-    import com.ing.baker.recipe.annotations.RequiresIngredient;
-    import com.ing.baker.recipe.javadsl.InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder;
-    import com.ing.baker.recipe.javadsl.Interaction;
-    import com.ing.baker.recipe.javadsl.Recipe;
-
-    import java.time.Duration;
-    import java.util.List;
-
-    import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
-
-    public class JWebshopRecipe {
-
-        public static class OrderPlaced {
-
-            public final String orderId;
-            public final List<String> items;
-
-            public OrderPlaced(String orderId, List<String> items) {
-                this.orderId = orderId;
-                this.items = items;
-            }
-        }
-
-        public static class PaymentMade {}
-
-        public interface ReserveItems extends Interaction {
-
-            interface ReserveItemsOutcome {
-            }
-
-            class OrderHadUnavailableItems implements ReserveItemsOutcome {
-
-                public final List<String> unavailableItems;
-
-                public OrderHadUnavailableItems(List<String> unavailableItems) {
-                    this.unavailableItems = unavailableItems;
-                }
-            }
-
-            class ItemsReserved implements ReserveItemsOutcome {
-
-                public final List<String> reservedItems;
-
-                public ItemsReserved(List<String> reservedItems) {
-                    this.reservedItems = reservedItems;
-                }
-            }
-
-            @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
-            ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") List<String> items);
-        }
-
-        public final static Recipe recipe = new Recipe("WebshopRecipe")
-            .withSensoryEvents(
-                OrderPlaced.class,
-                PaymentMade.class)
-            .withInteractions(
-                of(ReserveItems.class)
-                    .withRequiredEvent(PaymentMade.class))
-            .withDefaultFailureStrategy(
-                new RetryWithIncrementalBackoffBuilder()
-                    .withInitialDelay(Duration.ofMillis(100))
-                    .withDeadline(Duration.ofHours(24))
-                    .withMaxTimeBetweenRetries(Duration.ofMinutes(10))
-                    .build());
-    }
-    ```
-
 ## Events
 
 [Events](../../reference/main-abstractions/#event-and-eventinstance) are simple `POJO` classes. For example:
 
-=== "Scala"
-
-    ```scala 
-    case class CustomerInfoReceived(customerInfo: CustomerInfo)
-    ```
-    
 === "Java"
 
     ```java 
@@ -248,6 +288,18 @@ classes or interfaces.
             this.customerInfo = customerInfo;
         }
     }
+    ```
+
+=== "Kotlin"
+    
+    ```kotlin
+    data class CustomerInfoReceived(val customerInfo: CustomerInfo)
+    ```
+
+=== "Scala"
+
+    ```scala 
+    case class CustomerInfoReceived(customerInfo: CustomerInfo)
     ```
 
 The field types of the `POJO` class must be compatible with the baker type system.
@@ -271,9 +323,19 @@ This means the event will be rejected with status `FiringLimitMet` after the fir
 
 If you want to send an event more then once you may add it like this:
 
-```java
-   .withSensoryEventsNoFiringLimit(CustomerInfoReceived.class)
-```
+=== "Java"
+    ```java
+       .withSensoryEventsNoFiringLimit(CustomerInfoReceived.class)
+    ```
+
+=== "Kotlin"
+    ```kotlin
+    sensoryEvents {
+        event<PaymentMade>() // max firing limit defaults to 1
+        event<OrderPlaced>(maxFiringLimit = 5)
+        eventWithoutFiringLimit<CustomerInfoReceived>()
+    }
+    ```
 
 In this example the `CustomerInfoReceived` can now be received multiple times by a process instance.
 
@@ -283,30 +345,49 @@ Interactions are interfaces with some requirements. See [here](../../development
 
 You can include interactions in your recipe using the static `of(..)` method.
 
-```java
-import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
+=== "Java"
+    ```java
 
-final Recipe webshopRecipe = new Recipe("webshop")
-    .withInteractions(
-        of(ValidateOrder.class)
-    )
-```
+    import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
+    
+    final Recipe webshopRecipe = new Recipe("webshop")
+        .withInteractions(
+            of(ValidateOrder.class)
+        )
+    ```
+
+=== "Kotlin"
+    ```kotlin
+    val recipe = recipe("web-shop recipe") {
+        interaction<ValidateOrder>()
+    }
+    ```
 
 There are a number of options to tailor an interaction for your recipe.
 
 ### Maximum interaction count
 
-By default there is *no* limit on the number of times an Interaction may fire.
+By default, there is *no* limit on the number of times an Interaction may fire.
 
 Sometimes you may want to set a limit.
 
 For example, to ensure the goods are shipped only once.
 
-```java
+=== "Java"
+    ```java
     .withInteractions(
         of(ShipGoods.class).withMaximumInteractionCount(1)
      )
-```
+    ```
+
+=== "Kotlin"
+    ```kotlin
+    val recipe = recipe("web-shop recipe") {
+        interaction<ReserveItems> {
+            maximumInteractionCount = 1
+        }
+    }
+    ```
 
 ### Predefining ingredients
 
@@ -321,12 +402,24 @@ For example:
 
 This can be done by:
 
-```java
-  .withInteractions(
-    of(SendEmail.class)
-      .withPredefinedIngredient("emailTemplate", "Welcome to ING!")
-  )
-```
+=== "Java"
+    ```java
+      .withInteractions(
+        of(SendEmail.class)
+          .withPredefinedIngredient("emailTemplate", "Welcome to ING!")
+      )
+    ```
+
+=== "Kotlin"
+    ```kotlin
+    val recipe = recipe("web-shop recipe") {
+        interaction<SendEmail> {
+            preDefinedIngredients {
+                "titlePlaceHolder" to "Welcome to ING!"
+            }
+        }
+    }
+    ```
 
 Note that *predefined* ingredients are **always** available and do not have to be provided by an event for each interaction call.
 
@@ -340,16 +433,29 @@ Sometimes it useful to rename an interaction event and/or its ingredients to fit
 
 For example, to rename the `GoodsManufactured` event and its ingredient.
 
-```java
-  .withInteractions(
-    of(ManufactureGoods.class)
-      .withEventTransformation(
-        GoodsManufactured.class, "ManufacturingDone",
-        ImmutableMap.of("goods", "manufacturedGoods")
+=== "Java"
+
+    ```java
+      .withInteractions(
+        of(ManufactureGoods.class)
+          .withEventTransformation(
+            GoodsManufactured.class, "ManufacturingDone",
+            ImmutableMap.of("goods", "manufacturedGoods")
+          )
+        )
       )
-    )
-  )
-```
+    ```
+
+=== "Kotlin"
+    ```kotlin
+    val recipe = recipe("web-shop recipe") {
+        interaction<ManufactureGoods> {
+            transformEvent<GoodsManufactured>(newName = "ManufacturingDone") {
+                "goods" to "manufacturedGoods" // renames the 'goods' ingredient to 'manufacturedGoods'
+            }
+        }
+    }
+    ```
 
 ### Event requirements
 
@@ -359,10 +465,22 @@ However, sometimes data requirements are not enough.
 
 For example, you might want to be sure to only send an invoice (`SendInvoice`) *AFTER* the goods where shipped (`GoodsShipped`).
 
-```java
-    of(SendInvoice.class)
-        .withRequiredEvents(ShipGoods.GoodsShipped.class)
-```
+=== "Java"
+    ```java
+        of(SendInvoice.class)
+            .withRequiredEvents(ShipGoods.GoodsShipped.class)
+    ```
+
+=== "Kotlin"
+    ```kotlin
+    val recipe = recipe("web-shop recipe") {
+        interaction<SendInvoice> {
+            requiredEvents {
+                event<ShipGoods.GoodsShipped>()
+            }
+        }
+    }
+    ```
 
 In this case the `GoodsShipped` event *MUST* happen before the interaction may execute.
 
@@ -370,12 +488,25 @@ You can specify multiple events in a single clause. These are bundled with an `A
 
 You can also require a single event from a number of options.
 
-```java
-    of(SendInvoice.class)
-        .withRequiredOneOfEvents(EventA.class, EventB.class)
-```
+=== "Java"
+    ```java
+        of(SendInvoice.class)
+            .withRequiredOneOfEvents(EventA.class, EventB.class)
+    ```
 
-In this case the interaction may fire if *either* `EventA` OR `EventB` has occured.
+=== "Kotlin"
+    ```kotlin
+    val recipe = recipe("web-shop recipe") {
+        interaction<SendInvoice> {
+            requiredOneOfEvents {
+                event<EventA>()
+                event<EventB>()
+            }
+        }
+    }
+    ```
+
+In this case the interaction may fire if *either* `EventA` OR `EventB` has occurred.
 
 ### Interaction Failure strategy
 
@@ -400,31 +531,56 @@ event to fire. So instead of failing the process continues.
 
 Example:
 
-```java
-  .withInteractions(
-    of(ValidateOrder.class)
-    .withInteractionFailureStrategy(
-       InteractionFailureStrategy.FireEvent("ValidateOrderFailed")
-     )
-   )
-```
+=== "Java"
+    ```java
+      .withInteractions(
+        of(ValidateOrder.class)
+        .withInteractionFailureStrategy(
+           InteractionFailureStrategy.FireEvent("ValidateOrderFailed")
+         )
+       )
+    ```
+
+=== "Kotlin"
+    ```kotlin
+    val recipe = recipe("web-shop recipe") {
+        interaction<ValidateOrder> {
+            failureStrategy = fireEventAfterFailure<ValidateOrderFailed>()
+        }
+    }
+    ```
 
 #### Retry with incremental backoff
 
 Incremental backoff allows you to configure a retry mechanism that takes longer for each retry.
 The idea here is that you quickly retry at first but slower over time. To not overload your system but give it time to recover.
 
-```java
-  .withInteractions(
-    of(ValidateOrder.class)
-      .withDefaultFailureStrategy(new RetryWithIncrementalBackoffBuilder()
-        .withInitialDelay(Duration.ofMillis(100))
-        .withBackoffFactor(2.0)
-        .withMaxTimeBetweenRetries(Duration.ofSeconds(100))
-        .withDeadline(Duration.ofHours(24))
-        .build())
-  )
-```
+=== "Java"
+    ```java
+      .withInteractions(
+        of(ValidateOrder.class)
+          .withDefaultFailureStrategy(new RetryWithIncrementalBackoffBuilder()
+            .withInitialDelay(Duration.ofMillis(100))
+            .withBackoffFactor(2.0)
+            .withMaxTimeBetweenRetries(Duration.ofSeconds(100))
+            .withDeadline(Duration.ofHours(24))
+            .build())
+      )
+    ```
+
+=== "Kotlin"
+    ```kotlin
+    val recipe = recipe("web-shop recipe") {
+        interaction<ValidateOrder> {
+            failureStrategy = retryWithIncrementalBackoff { 
+                until = deadline(24.hours)
+                initialDelay = 100.milliseconds
+                backoffFactor = 2.0
+                maxTimeBetweenRetries = 100.seconds
+            }
+        }
+    }
+    ```
 
 What do these parameters mean?
 
@@ -463,11 +619,22 @@ Either the interaction becomes [blocked(#blocked-interaction).
 
 Or if you configure so, the process continues with a predefined event:
 
-```java
-.withDefaultFailureStrategy(new RetryWithIncrementalBackoffBuilder()
-  .withFireRetryExhaustedEvent(SomeEvent.class))
+=== "Java"
+    ```java
+    .withDefaultFailureStrategy(new RetryWithIncrementalBackoffBuilder()
+      .withFireRetryExhaustedEvent(SomeEvent.class))
+    ```
 
-```
+=== "Kotlin"
+    ```kotlin
+    val recipe = recipe("web-shop recipe") {
+        interaction<ValidateOrder> {
+            failureStrategy = retryWithIncrementalBackoff { 
+                fireRetryExhaustedEvent = "SomeEvent"
+            }
+        }
+    }
+    ```
 
 Note that this event class **requires** an empty constructor to be present and **cannot** provide ingredients.
 
@@ -479,13 +646,26 @@ This then serves as a fallback if none is defined for an interaction.
 
 For example:
 
-```java
-final Recipe webshopRecipe = new Recipe("webshop")
-    .withDefaultFailureStrategy(
-        new RetryWithIncrementalBackoffBuilder()
-            .withInitialDelay(Duration.ofMillis(100))
-            .withDeadline(Duration.ofHours(24))
-            .withMaxTimeBetweenRetries(Duration.ofMinutes(10))
-            .build());
-```
+=== "Java"
+    ```java
+    final Recipe webshopRecipe = new Recipe("webshop")
+        .withDefaultFailureStrategy(
+            new RetryWithIncrementalBackoffBuilder()
+                .withInitialDelay(Duration.ofMillis(100))
+                .withDeadline(Duration.ofHours(24))
+                .withMaxTimeBetweenRetries(Duration.ofMinutes(10))
+                .build());
+    ```
 
+=== "Kotlin"
+    ```kotlin
+    val recipe = recipe("web-shop recipe") {
+        interaction<ValidateOrder>()
+        defaultFailureStrategy = retryWithIncrementalBackoff {
+            until = deadline(24.hours)
+            initialDelay = 100.milliseconds
+            backoffFactor = 2.0
+            maxTimeBetweenRetries = 100.seconds
+        }
+    }
+    ```

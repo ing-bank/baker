@@ -12,7 +12,8 @@ extra_css:
 markdown_extensions:
   - codehilite
   - pymdownx.superfences
-  - pymdownx.tabbed
+  - pymdownx.tabbed:
+      alternate_style: true
   - admonition
 
 nav:
@@ -20,6 +21,7 @@ nav:
   - 'sections/getting-started.md'
   - 'sections/concepts.md'
   - Development Life Cycle:
+      - 'sections/development-life-cycle/introduction.md'
       - 'sections/development-life-cycle/design-a-recipe.md'
       - 'sections/development-life-cycle/use-visualizations.md'
       - 'sections/development-life-cycle/implement-interactions.md'

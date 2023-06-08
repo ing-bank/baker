@@ -1,31 +1,49 @@
 # Design a Recipe
 
-_Full project examples including tests and configuration can be found [here](https://github.com/ing-bank/baker/tree/master/examples)._
+Before creating a recipe, we have to translate the business requirements into Baker's three essential building blocks:
+`Ingredients`, `Events`, and `Interactions`.
 
-The _Development Life Cycle_ section provides a "top-down"/"by-example" guide to baker, all of the concepts 
-are introduced through exemplification on hypothetical development situations.
+Ingredients are immutable containers for the data in your process. In this example, `orderId` and the list of
+`productIds` both qualify as an ingredient. Ingredients serve as input for interactions and are carried through
+the process via events.
 
-## Modeling the order placement process for a webshop using Ingredients, Events and Recipes.
+Events represent something that has happened in your process. Most of the time, events are outputs of interactions.
+Sometimes events come from outside the process. Those events are called `SensoryEvents`. SensoryEvents are used
+to start/trigger the process.
 
-The recipe DSL allows you to declaratively describe your business process. The design always starts with the
-business requirements, lets say you are developing a webshop which will have many different microservices on 
-the backend. The initial requirements for the order reservation process reads: 
-
-_"An order contains an order id and a list of store item identifiers, when an order is placed it must first 
-be validated by reserving the items from the warehouse service, a success scenario yields the ids of the 
-reserved items, but if at least one item is unavailable at the warehouse a failure yields the list of unavailable items 
-and the process stops"_
-
-When developing with Baker we must first translate the requirements into our 3 essential building blocks, 
-`Ingredients` for raw data, `Events` for happenings (that might contain ingredients), and `Interactions` which 
-have ingredients as input, execute actions with other systems, and yield more events. We will do this so that the 
-baker runtime can orchestrate the execution of our process through the underlying microservices.
+An interaction resembles a function. It requires inputs (ingredients) and provides output (events). This means an
+interaction can do many things. For example, you can have interactions that fetch data from another service, or
+an interaction that sends a message to an event broker, etc.
 
 ## Ingredients and Events
 
-A recipe always starts with initial events, also called `Sensory Events`, in the case of our first requirement 
-we could model the placing of an order as an event, which will provide 2 ingredients: the order id and the list
-of items.
+A recipe is always triggered by a sensory event. In this web-shop example we can model the placing of the order
+as the sensory event. This event will provide the two required ingredients: `orderId` and a list of `productIds`.
+
+=== "Java"
+
+    ```java 
+    
+    public class OrderPlaced {
+        public final String orderId;
+        public final List<String> items;
+    
+        public OrderPlaced(String orderId, List<String> items) {
+            this.orderId = orderId;
+            this.items = items;
+        }
+    }
+    ```
+
+=== "Kotlin"
+
+    ```kotlin
+
+    data class OrderPlaced(
+        val orderId: String,
+        val productIds: List<String>
+    )
+    ```
 
 === "Scala"
 
@@ -38,7 +56,7 @@ of items.
         val OrderId: Ingredient[String] =
           Ingredient[String]("orderId")
 
-        val Items: Ingredient[List[String]] =
+        val ProductIds: Ingredient[List[String]] =
           Ingredient[List[String]]("items")
     }
 
@@ -48,53 +66,88 @@ of items.
           name = "OrderPlaced",
           providedIngredients = Seq(
             Ingredients.OrderId,
-            Ingredients.Items
+            Ingredients.ProductIds
           ),
           maxFiringLimit = Some(1)
         )
     }
-
     ```
+
+Ingredients and events are just data structures that describe your process data. In this example `OrderPlaced` is an
+event which carries two ingredients: `orderId` and `productIds`. An ingredient consists of a name and
+type information. For example for the field `String orderId`, Baker creates an ingredient with the name of "orderId" 
+and a type of `CharArray`. More information about Baker types can be found in [this section](../../reference/baker-types-and-values/).
+
+As shown in the Scala example, events have a maximum amount of times they are allowed to fire. The Baker runtime will 
+enforce this limit. For more information about this and other features of events please refer to [this section](../../reference/dsls/#events).
+
+## Interactions
+
+Next, it's time to model our interaction. In our example it's just a simple call to the warehouse service to reserve
+the items.
+
+_Note: Notice that when using the reflection API, the Java/Kotlin interface or Scala trait that will represent your interaction
+must have a method named `apply`, this is the method that the reflection API will convert into Baker
+types/ingredients/events._
 
 === "Java"
 
-    ```java 
-
-    // In Java the data structures to represent Events and Ingredients 
-    // will be extraxted from a class by the reflection API when building 
-    // the Recipe. (see below for full example)
+    ```java
 
     public class JWebshopRecipe {
+        
+        // ... previous event
+        
+        // Interface that will represent our Interaction, notice that it is declaring inner events.
+        
+        public interface ReserveItems extends Interaction {
 
-        public static class OrderPlaced {
-
-            public final String orderId;
-            public final List<String> items;
-
-            public OrderPlaced(String orderId, List<String> items) {
-                this.orderId = orderId;
-                this.items = items;
+            interface ReserveItemsOutcome {
             }
+
+            class OrderHadUnavailableItems implements ReserveItemsOutcome {
+
+                public final List<String> unavailableItems;
+
+                public OrderHadUnavailableItems(List<String> unavailableItems) {
+                    this.unavailableItems = unavailableItems;
+                }
+            }
+
+            class ItemsReserved implements ReserveItemsOutcome {
+
+                public final List<String> reservedItems;
+
+                public ItemsReserved(List<String> reservedItems) {
+                    this.reservedItems = reservedItems;
+                }
+            }
+
+            // The @FireEvent annotation communicates the reflection API about several possible outcome events.
+            @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
+            // The @RequiresIngredient annotation communicates the reflection API about the ingredient names that other events
+            // must provide to execute this interaction.
+            // The method MUST be named `apply`
+            ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("productIds") List<String> productIds);
         }
+        
     }
 
     ```
 
-Depending on your programming language, you might want to import the corresponding dsl, i.e. `scaladsl` vs `javadsl`.
+=== "Kotlin"
 
-Ingredients and events are just data structures that describe your process data, carrying not just the names, but
-also the type information, for example `Ingredient[String]("order-id")` creates an ingredient of name "order-id"
-of type "String", for more information about Baker types please refer to [this section](../../reference/baker-types-and-values/).
-As shown in the code, events might carry ingredients, and have a maximum about of times they are allowed to fire, the 
-runtime will enforce this limit. For more information about this and other features of events please refer to [this section](../../reference/dsls/#events).
+    ```kotlin
+    interface ReserveItems : Interaction {
 
-## Interactions
+        sealed interface ReserveItemsOutcome
+        data class OrderHadUnavailableItems(val unavailableItems: List<String>) : ReserveItemsOutcome
+        data class ItemsReserved(val reservedItems: List<String>) : ReserveItemsOutcome
+    
+        fun apply(orderId: String, productIds: List<String>): ReserveItemsOutcome
+    }
 
-Then, the desired actions can be modeled as `interactions`, in our case we are told that it exists a warehouse service 
-which we need to call to reserve the items, but this might either succeed or fail.
-
-_Note: Notice that when using the reflection API, the Java interface or Scala trait that will represent your interaction
-must have a method named `apply`, this is the method that the reflection API will convert into Baker types/ingredients/events._
+    ```
 
 === "Scala"
 
@@ -106,7 +159,7 @@ must have a method named `apply`, this is the method that the reflection API wil
               name = "ReserveItems",
               inputIngredients = Seq(
                 Ingredients.OrderId,
-                Ingredients.Items,
+                Ingredients.ProductIds,
               ),
               output = Seq(
                 Events.OrderHadUnavailableItems,
@@ -148,69 +201,39 @@ must have a method named `apply`, this is the method that the reflection API wil
     }
 
     ```
-    
-=== "Java (Reflection API)"
+
+## The Recipe
+
+The final step is to create the "blueprint" of our process: the recipe. To define a recipe you can use the Java,
+Kotlin, or Scala DSL.
+
+=== "Java"
 
     ```java
 
     public class JWebshopRecipe {
-        
-        // ... previous event
-        
-        // Interface that will represent our Interaction, notice that it is declaring inner events.
-        
-        public interface ReserveItems extends Interaction {
 
-            interface ReserveItemsOutcome {
+        // ... previous events and interactions.
+
+        public final static Recipe recipe = new Recipe("WebshopRecipe")
+                .withSensoryEvents(OrderPlaced.class)
+                .withInteractions(of(ReserveItems.class));
+    }
+    ```
+
+=== "Kotlin"
+    ```kotlin
+
+    object WebShopRecipe {
+        val recipe = recipe("web-shop reserve items recipe") {
+            sensoryEvents {
+                event<OrderPlaced>()
             }
-
-            class OrderHadUnavailableItems implements ReserveItemsOutcome {
-
-                public final List<String> unavailableItems;
-
-                public OrderHadUnavailableItems(List<String> unavailableItems) {
-                    this.unavailableItems = unavailableItems;
-                }
-            }
-
-            class ItemsReserved implements ReserveItemsOutcome {
-
-                public final List<String> reservedItems;
-
-                public ItemsReserved(List<String> reservedItems) {
-                    this.reservedItems = reservedItems;
-                }
-            }
-
-            // The @FireEvent annotation communicates the reflection API about several possible outcome events.
-            @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
-            // The @RequiresIngredient annotation communicates the reflection API about the ingredient names that other events
-            // must provide to execute this interaction.
-            // The method MUST be named `apply`
-            ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") List<String> items);
+            interaction<ReserveItems>()
         }
-        
     }
 
     ```
-
-An interaction resembles a function, it takes input ingredients and outputs 1 of several possible events. At runtime, when
-an event fires, baker tries to match the provided ingredients of 1 or several events to the input of awaiting interactions,
-as soon as there is a match on data, baker will execute the interactions, creating a cascading effect that will execute
-your business process in an asynchronous manner.
-
-This was a simple example, but you might have already concluded that this can be further composed into bigger processes by
-making new interactions that require events and ingredients which are output of previous interactions. 
-
-You can create also interactions which take no input ingredients but are executed after events (with or without provided 
-ingredients) are fired, for this and other features please refer to the conceptual documentation found [here](../../reference/dsls/#events).
-
-## The Recipe
-
-The final step is to create an object that will hold all of these descriptions into what we call a Recipe, this becomes
-the "blueprint" of your process, it can define failure handling strategies, and will "auto-bind" the interactions, that 
-means it detects the composition between interactions by matching the ingredients provided by events to the input ingredients
-required by interactions.
 
 === "Scala"
 
@@ -227,31 +250,20 @@ required by interactions.
     }
     ```
 
-=== "Java"
+Despite this simple example, you might have realised that this can be further composed into bigger processes by
+making new interactions that require events and ingredients which are outputs of previous interactions. You can also 
+create interactions which take no input ingredients but are executed after certain events are fired. For this and other 
+features please refer to the full DSL documentation [here](../../reference/dsls/#events).
 
-    ```java
+It should come as no surprise that this setup allows `Ingredients`, `Events` and `Interactions` to  be reused in different 
+Recipes. Giving common business verbs that your programs and organisation can use across teams, the same way different 
+cooking recipes share processes (simmering, boiling, cutting).
 
-    public class JWebshopRecipe {
+## Scala reflection API
 
-        // ... previous events and interactions.
-
-        public final static Recipe recipe = new Recipe("WebshopRecipe")
-                .withSensoryEvents(OrderPlaced.class)
-                .withInteractions(of(ReserveItems.class));
-    }
-    ```
-
-Let us remember that this is just a _description_ of what our program across multiple services should do, on the next 
-sections we will see how to visualize it, create runtime `instances` of our recipes and their parts, what common practices
-are there for testing, everything you need to know to deploy and monitor a baker cluster, and how Baker helps you handle
-and resolve failure which is not modeled in the domain (in the recipe).
-
-As you might have realised `Ingredients`, `Events` and `Interactions` could be reused on different Recipes, giving common
-business verbs that your programs and organisation can use across teams, the same way different cooking recipes share
-same processes (simmering, boiling, cutting) you should reuse interactions across your different business recipes.
-
-As a bonus; you might have though that this API is verbose, we agree and that is why we developed an alternative 
-API which uses Java and Scala reflection.
+As you went through the examples you might have found the Scala API quite verbose. This is because the Java and Kotlin
+APIs lean on reflection. We also have a Scala reflection API available, resulting in more concise Scala recipe
+definitions.
 
 === "Scala (Reflection API)"
 
@@ -290,66 +302,4 @@ API which uses Java and Scala reflection.
           ReserveItems)
     }
 
-    ```
-
-=== "Java (Reflection API)"
-
-    ```java 
-
-    package webshop;
-
-    import com.ing.baker.recipe.annotations.FiresEvent;
-    import com.ing.baker.recipe.annotations.RequiresIngredient;
-    import com.ing.baker.recipe.javadsl.Interaction;
-    import com.ing.baker.recipe.javadsl.Recipe;
-
-    import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
-
-    public class JWebshopRecipe {
-
-        public static class OrderPlaced {
-
-            public final String orderId;
-            public final List<String> items;
-
-            public OrderPlaced(String orderId, List<String> items) {
-                this.orderId = orderId;
-                this.items = items;
-            }
-        }
-
-        public interface ReserveItems extends Interaction {
-
-            interface ReserveItemsOutcome {
-            }
-
-            class OrderHadUnavailableItems implements ReserveItemsOutcome {
-
-                public final List<String> unavailableItems;
-
-                public OrderHadUnavailableItems(List<String> unavailableItems) {
-                    this.unavailableItems = unavailableItems;
-                }
-            }
-
-            class ItemsReserved implements ReserveItemsOutcome {
-
-                public final List<String> reservedItems;
-
-                public ItemsReserved(List<String> reservedItems) {
-                    this.reservedItems = reservedItems;
-                }
-            }
-
-            // The @FireEvent annotation communicates the reflection API about several possible outcome events.
-            @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
-            // The @RequiresIngredient annotation communicates the reflection API about the ingredient names that other events
-            // must provide to execute this interaction.
-            ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") List<String> items);
-        }
-
-        public final static Recipe recipe = new Recipe("WebshopRecipe")
-                .withSensoryEvents(OrderPlaced.class)
-                .withInteractions(of(ReserveItems.class));
-    }
     ```
