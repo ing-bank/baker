@@ -129,7 +129,7 @@ Our example results in a retry pattern off:
 
 Which can be visualized like this:
 
-![Visual representation of incremental back-off](/images/incremental-backoff.png)
+![Visual representation of incremental back-off](../../images/incremental-backoff.png)
 
 !!! Note
     Delays do not include the interaction execution time. If the first retry takes 5 seconds (and fails), the second retry will be triggered after:

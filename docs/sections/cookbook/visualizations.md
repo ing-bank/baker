@@ -71,7 +71,7 @@ String:
 The easiest way to convert the Graphviz string into an image is by using an [online converter](http://www.webgraphviz.com/).
 
 ??? example "Web-shop Recipe Visualization"
-    ![WebShop Recipe Visualization](/images/web-shop-visualization.svg)
+    ![WebShop Recipe Visualization](../../images/web-shop-visualization.svg)
 
 The diamonds are events. Light gray for sensory events, dark gray for output events. Ingredients are shown as orange
 circles, and the purple rectangles are interactions. 
@@ -86,4 +86,4 @@ Visualizing the state of a running recipe can also be useful. You can fetch the 
 recipe via `baker.getVisualState(recipeInstanceId)`. 
 
 ??? example "Web-shop recipe instance state visualization"
-    ![WebShop Recipe Visualization](/images/web-shop-visual-state.svg)
+    ![WebShop Recipe Visualization](../../images/web-shop-visual-state.svg)
