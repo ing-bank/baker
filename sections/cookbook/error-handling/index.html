@@ -1144,7 +1144,7 @@ or the maximum amount of retries is reached.</p>
 <p>Our example results in a retry pattern off: </p>
 <p><code>100 millis -&gt; 200 millis -&gt; 400 millis -&gt; ... -&gt; 100 seconds -&gt; 100 seconds</code>.</p>
 <p>Which can be visualized like this:</p>
-<p><img alt="Visual representation of incremental back-off" src="/images/incremental-backoff.png" /></p>
+<p><img alt="Visual representation of incremental back-off" src="../../../images/incremental-backoff.png" /></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Delays do not include the interaction execution time. If the first retry takes 5 seconds (and fails), the second retry will be triggered after:</p>
