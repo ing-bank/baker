@@ -34,6 +34,8 @@ import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 
+import java.util.concurrent.TimeUnit
+import scala.Console.println
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -49,7 +51,8 @@ object ProcessIndex {
             recipeManager: RecipeManager,
             getIngredientsFilter: Seq[String],
             providedIngredientFilter: Seq[String],
-            blacklistedProcesses: Seq[String]): Props =
+            blacklistedProcesses: Seq[String],
+            rememberProcessDuration: Option[Duration]): Props =
     Props(new ProcessIndex(
       recipeInstanceIdleTimeout,
       retentionCheckInterval,
@@ -58,7 +61,8 @@ object ProcessIndex {
       recipeManager,
       getIngredientsFilter,
       providedIngredientFilter,
-      blacklistedProcesses))
+      blacklistedProcesses,
+      rememberProcessDuration))
 
   sealed trait ProcessStatus
 
@@ -114,7 +118,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
                    recipeManager: RecipeManager,
                    getIngredientsFilter: Seq[String],
                    providedIngredientFilter: Seq[String],
-                   blacklistedProcesses: Seq[String]) extends PersistentActor with PersistentActorMetrics {
+                   blacklistedProcesses: Seq[String],
+                   rememberProcessDuration: Option[Duration]) extends PersistentActor with PersistentActorMetrics {
 
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(logSource = this)
 
@@ -164,6 +169,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     log.debug("Added recipe to recipe cache: {}, current size: {}", recipeId, recipeCache.size)
     result.map(r => r.recipe -> r.updated)
   }
+
+  def getRecipeIdFromActor(actorRef: ActorRef) : String = actorRef.path.name
 
   def getRecipeWithTimeStamp(recipeId: String): Option[(CompiledRecipe, Long)] =
     recipeCache.get(recipeId) match {
@@ -257,6 +264,17 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     }
   }
 
+  private def forgetProcesses(): Unit = {
+    rememberProcessDuration.map {
+      duration: Duration =>
+        val currentTime = System.currentTimeMillis()
+        val toBeForgotten = index.filter { case (id, metadata) =>
+          metadata.isDeleted && currentTime >= (metadata.createdDateTime + duration.toMillis)
+        }
+        index --= toBeForgotten.keys
+    }
+  }
+
   private def withActiveProcess(recipeInstanceId: String)(fn: ActorRef => Unit): Unit = {
     context.child(recipeInstanceId) match {
       case None if !index.contains(recipeInstanceId) => sender() ! NoSuchProcess(recipeInstanceId)
@@ -283,10 +301,17 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     } yield (transition, jobId)
   }
 
-  override def receiveCommand: Receive = {
+  override def receiveCommand: Receive =  {
     case SaveSnapshotSuccess(metadata) =>
-      log.debug("Snapshot saved")
-      cleanup.deleteBeforeSnapshot(metadata.persistenceId, snapshotCount)
+      log.debug("Snapshot saved & cleaning old processes")
+      cleanup.deleteBeforeSnapshot(metadata.persistenceId, snapshotCount).map {
+        case Some(snapshotMetadata: SnapshotMetadata) =>
+          //TODO Make this configurable instead of always deleting the message data
+          log.debug("SnapshotMetadata found, starting deleting messages")
+          cleanup.deleteEventsTo(metadata.persistenceId, snapshotMetadata.sequenceNr)
+        case None =>
+          log.debug("SnapshotMetadata not found")
+      }
 
     case SaveSnapshotFailure(_, _) =>
       log.error("Saving snapshot failed")
@@ -299,9 +324,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       if (toBeDeleted.nonEmpty)
         log.debug(s"Deleting recipe instance: {}", toBeDeleted.mkString(","))
       toBeDeleted.foreach(meta => deleteProcess(meta))
+      forgetProcesses()
 
     case Terminated(actorRef) =>
-      val recipeInstanceId = actorRef.path.name
+      val recipeInstanceId = getRecipeIdFromActor(actorRef)
 
       val mdc = Map(
         "processId" -> recipeInstanceId,
