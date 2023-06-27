@@ -208,6 +208,8 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     processIndexActor.ask(CreateProcess(recipeId, recipeInstanceId))(config.timeouts.defaultBakeTimeout).javaTimeoutToBakerTimeout("bake").flatMap {
       case _: Initialized =>
         Future.successful(())
+      case ProcessDeleted =>
+        Future.failed(ProcessDeletedException(recipeInstanceId))
       case ProcessAlreadyExists(_) =>
         Future.failed(ProcessAlreadyExistsException(recipeInstanceId))
       case RecipeManagerProtocol.NoRecipeFound(_) =>
