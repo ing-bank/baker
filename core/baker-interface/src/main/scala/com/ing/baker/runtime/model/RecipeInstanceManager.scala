@@ -24,7 +24,7 @@ object RecipeInstanceManager {
 
   object RecipeInstanceStatus {
 
-    case class Active[F[_]](recipeInstance: RecipeInstance[F]) extends RecipeInstanceStatus[F]
+    case class Active[F[_]](recipeInstance: RecipeInstance[F], lastModified: Long) extends RecipeInstanceStatus[F]
 
     case class Deleted[F[_]](recipeId: String, createdOn: Long, deletedOn: Long) extends RecipeInstanceStatus[F]
   }
@@ -44,21 +44,23 @@ trait RecipeInstanceManager[F[_]] {
 
   def getAllRecipeInstancesMetadata: F[Set[RecipeInstanceMetadata]]
 
-  def startRetentionPeriodStream(interval: FiniteDuration)(implicit effect: Effect[F], timer: Timer[F]): Resource[F, Unit] =
-    Stream.awakeEvery[F](interval).evalMap { _ =>
-      for {
-        allRecipeInstances <- fetchAll
-        _ <- allRecipeInstances.toList.traverse { case (recipeInstanceId, instance) =>
-          computeShouldDelete(instance).flatMap(shouldDelete =>
-            if (shouldDelete) remove(recipeInstanceId) else effect.unit)
-        }
-      } yield ()
-    }.compile.resource.drain
+  //This is not used since the direct usage of IO seems to perform better
+  def startRetentionPeriodStream(interval: FiniteDuration, idleTTL: FiniteDuration)(implicit effect: Effect[F], timer: Timer[F]) =
+    Stream.awakeEvery[F](interval).evalMap { _ => cleanupRecipeInstances(idleTTL) }
+
+  protected def cleanupRecipeInstances(idleTimeOut: FiniteDuration)(implicit effect: Effect[F], timer: Timer[F]): F[Unit] =
+    for {
+      allRecipeInstances <- fetchAll
+      _ <- allRecipeInstances.toList.traverse { case (recipeInstanceId, instance) =>
+        computeShouldDelete(instance, idleTimeOut).flatMap(shouldDelete =>
+          if (shouldDelete) remove(recipeInstanceId) else effect.unit)
+      }
+    } yield ()
 
   def bake(recipeId: String, recipeInstanceId: String, config: RecipeInstance.Config)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[Unit] =
     for {
       _ <- fetch(recipeInstanceId).flatMap[Unit] {
-        case Some(RecipeInstanceStatus.Active(_)) =>
+        case Some(RecipeInstanceStatus.Active(_, _)) =>
           effect.raiseError(ProcessAlreadyExistsException(recipeInstanceId))
         case Some(RecipeInstanceStatus.Deleted(_, _, _)) =>
           effect.raiseError(ProcessDeletedException(recipeInstanceId))
@@ -98,7 +100,7 @@ trait RecipeInstanceManager[F[_]] {
         Left(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId))
       case Some(RecipeInstanceStatus.Deleted(_, _, _)) =>
         Left(FireSensoryEventRejection.RecipeInstanceDeleted(recipeInstanceId))
-      case Some(RecipeInstanceStatus.Active(recipeInstance)) =>
+      case Some(RecipeInstanceStatus.Active(recipeInstance, _)) =>
         Right(recipeInstance)
     }).flatMap(_.fireEventStream(event, correlationId))
   }
@@ -175,7 +177,7 @@ trait RecipeInstanceManager[F[_]] {
 
   private def getExistent(recipeInstanceId: String)(implicit effect: Effect[F]): F[RecipeInstance[F]] =
     fetch(recipeInstanceId).flatMap {
-      case Some(RecipeInstanceStatus.Active(recipeInstance)) => effect.pure(recipeInstance)
+      case Some(RecipeInstanceStatus.Active(recipeInstance, _)) => effect.pure(recipeInstance)
       case Some(RecipeInstanceStatus.Deleted(_, _, _)) => effect.raiseError(BakerException.ProcessDeletedException(recipeInstanceId))
       case None => effect.raiseError(BakerException.NoSuchProcessException(recipeInstanceId))
     }
@@ -225,13 +227,17 @@ trait RecipeInstanceManager[F[_]] {
         f(a)
     }
 
-  private def computeShouldDelete(status: RecipeInstanceStatus[F])(implicit effect: Effect[F], timer: Timer[F]): F[Boolean] =
+  private def computeShouldDelete(status: RecipeInstanceStatus[F], idleTimeOut: FiniteDuration)(implicit effect: Effect[F], timer: Timer[F]): F[Boolean] =
     for {
       currentTime <- timer.clock.realTime(MILLISECONDS)
       result <- status match {
-        case RecipeInstanceStatus.Active(recipeInstance) =>
+        case RecipeInstanceStatus.Active(recipeInstance, lastModified) =>
           recipeInstance.state.get.map { currentState =>
-            currentState.recipe.retentionPeriod.exists(_.toMillis + currentState.createdOn < currentTime)
+            //If the process is Inactive validate on the idleTTL
+            val shouldPassivateOnIdleTTL = currentState.isInactive && currentTime > (lastModified + idleTimeOut.toMillis)
+            //If the retentionPeriod is defined always delete after this time
+            val shouldPassivateOnRetentionPeriod = currentState.recipe.retentionPeriod.exists(_.toMillis + currentState.createdOn < currentTime)
+            shouldPassivateOnIdleTTL || shouldPassivateOnRetentionPeriod
           }
         case RecipeInstanceStatus.Deleted(_, _, _) =>
           effect.pure(false)
