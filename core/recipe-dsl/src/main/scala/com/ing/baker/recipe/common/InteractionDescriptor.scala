@@ -75,9 +75,4 @@ trait InteractionDescriptor {
     * An optional strategy how to deal with failures. Falls back to the default strategy specified in the recipe.
     */
   val failureStrategy: Option[InteractionFailureStrategy]
-
-//  /**
-//    * If this is set to true all incoming ingredients will be reprovided for this interaction after it was executed successfully
-//    */
-//  val isReprovider: Boolean
 }

@@ -32,7 +32,7 @@ final class InMemoryRecipeInstanceManager(inmem: Ref[IO, InMemoryRecipeInstanceM
                                           retentionPeriodCheckInterval: FiniteDuration,
                                           idleTimeOut: FiniteDuration)(implicit timer: Timer[IO]) extends RecipeInstanceManager[IO] {
 
-//  We use this function instead of the fs2 repeat stream since it performs better
+//  We use this function instead of the startRetentionPeriodStream stream since it performs better
   def repeat(io : IO[Unit]) : IO[Nothing] = io >> IO.sleep(retentionPeriodCheckInterval) >> repeat(io)
   val repeatEvaluation = repeat(cleanupRecipeInstances(idleTimeOut)).unsafeRunAsyncAndForget()
 
