@@ -20,7 +20,8 @@ case class InteractionTransition(eventsToFire: Seq[EventDescriptor],
                                  predefinedParameters: Map[String, Value],
                                  maximumInteractionCount: Option[Int],
                                  failureStrategy: InteractionFailureStrategy,
-                                 eventOutputTransformers: Map[String, EventOutputTransformer] = Map.empty)
+                                 eventOutputTransformers: Map[String, EventOutputTransformer] = Map.empty,
+                                 isReprovider: Boolean)
 
   extends Transition with HasCustomToStringForRecipeId {
 
@@ -34,8 +35,13 @@ case class InteractionTransition(eventsToFire: Seq[EventDescriptor],
   val nonProvidedIngredients: Seq[IngredientDescriptor] =
     requiredIngredients.filterNot(i => i.name == recipeInstanceIdName || predefinedParameters.keySet.contains(i.name))
 
-  override def toStringForRecipeId(recipeIdVariant: RecipeIdVariant): String =
+  override def toStringForRecipeId(recipeIdVariant: RecipeIdVariant): String = {
+    val originalId =
     s"InteractionTransition(${eventsToFire.toRecipeIdStringTypeA(recipeIdVariant)},${originalEvents.toRecipeIdStringTypeA(recipeIdVariant)}," +
       s"${requiredIngredients.toRecipeIdStringTypeB(recipeIdVariant)},$interactionName,$originalInteractionName," +
       s"$predefinedParameters,$maximumInteractionCount,$failureStrategy,$eventOutputTransformers)"
+
+    if(isReprovider) originalId + ",isReprovider"
+    else originalId
+  }
 }

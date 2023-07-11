@@ -60,7 +60,8 @@ private[recipeinstance] case class TransitionExecution(
   input: Option[EventInstance],
   ingredients: Map[String, Value],
   correlationId: Option[String],
-  state: TransitionExecution.State = TransitionExecution.State.Active
+  state: TransitionExecution.State = TransitionExecution.State.Active,
+  isReprovider: Boolean
 ) extends LazyLogging {
 
   def isInactive: Boolean =

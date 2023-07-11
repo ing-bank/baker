@@ -126,6 +126,7 @@ object RecipeCompiler {
     else Seq.empty
   }
 
+
   /**
     * Draws an arc from all required ingredients for an interaction
     * If the ingredient has multiple consumers create a multi transition place and create both arcs for it
@@ -138,7 +139,7 @@ object RecipeCompiler {
       t.nonProvidedIngredients.map(_.name).partition(ingredientsWithMultipleConsumers.contains)
 
     // the extra arcs to model multiple output transitions from one place
-    val internalDataInputArcs = fieldNamesWithPrefixMulti flatMap { fieldName =>
+    val internalDataInputArcs: Seq[Arc] = fieldNamesWithPrefixMulti flatMap { fieldName =>
       val multiTransitionPlace = createPlace(s"${t.label}-$fieldName", placeType = MultiTransitionPlace)
       Seq(
         // one arc from multiplier place to the transition
@@ -148,23 +149,37 @@ object RecipeCompiler {
         // one arc from extra added place to transition
         arc(multiTransitionPlace, t, 1))
     }
-    // the data input arcs / places
-    val dataInputArcs = fieldNamesWithoutPrefix.map(fieldName => arc(createPlace(fieldName, IngredientPlace), t, 1))
 
-    val limitInteractionCountArc =
+
+    // the data input arcs / places
+    val dataInputArcs: Seq[Arc] = fieldNamesWithoutPrefix.map(fieldName => arc(createPlace(fieldName, IngredientPlace), t, 1))
+
+    val dataOutputArcs: Seq[Arc] =
+      if(t.isReprovider)
+        fieldNamesWithoutPrefix.map(fieldName => arc(t, createPlace(fieldName, IngredientPlace), 1)) ++
+        fieldNamesWithPrefixMulti.map(fieldName => arc(t, createPlace(s"${t.label}-$fieldName", placeType = MultiTransitionPlace), 1))
+      else
+        Seq.empty
+
+    val limitInteractionCountArc: Option[Arc] =
       t.maximumInteractionCount.map(n => arc(createPlace(s"limit:${t.label}", FiringLimiterPlace(n)), t, 1))
 
-    dataInputArcs ++ internalDataInputArcs ++ limitInteractionCountArc
+    dataInputArcs ++ dataOutputArcs ++ internalDataInputArcs ++ limitInteractionCountArc
   }
 
   private def buildInteractionArcs(multipleOutputFacilitatorTransitions: Seq[Transition],
                                    placeNameWithDuplicateTransitions: Map[String, Seq[InteractionTransition]],
                                    eventTransitions: Seq[EventTransition])
                                   (t: InteractionTransition): Seq[Arc] = {
-    buildInteractionInputArcs(
+
+    val inputArcs: Seq[Arc] = buildInteractionInputArcs(
       t,
       multipleOutputFacilitatorTransitions,
-      placeNameWithDuplicateTransitions) ++ buildInteractionOutputArcs(t, eventTransitions)
+      placeNameWithDuplicateTransitions)
+
+    val outputArcs: Seq[Arc] = buildInteractionOutputArcs(t, eventTransitions)
+
+    inputArcs ++ outputArcs
   }
 
   /**
@@ -223,7 +238,7 @@ object RecipeCompiler {
     val allEventTransitions: Seq[EventTransition] = sensoryEventTransitions ++ interactionEventTransitions
 
     // Given the event classes, it is creating the ingredient places and
-    // connecting a transition to a ingredient place.
+    // connecting a transition to a ingredient place.§
     val internalEventArcs: Seq[Arc] = allInteractionTransitions.flatMap { t =>
       t.eventsToFire.flatMap { event =>
         event.ingredients.map { ingredient =>

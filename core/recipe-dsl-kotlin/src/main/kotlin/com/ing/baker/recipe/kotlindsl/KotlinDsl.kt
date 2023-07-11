@@ -146,6 +146,16 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
      */
     var failureStrategy: InteractionFailureStrategyBuilder? = null
 
+    /**
+     * When this interaction is executed it will fill its own interaction places.
+     * This is usefull if you want to execute this interaction multiple times without providing the ingredient again.
+     * To use this the InteractionDescriptor requires a prerequisite event.
+     *
+     * @param isReprovider
+     * @return
+     */
+    var isReprovider: Boolean = false
+
     @PublishedApi
     internal val eventTransformations: MutableSet<EventTransformation> = mutableSetOf()
 
@@ -153,6 +163,8 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
     private val ingredientNameOverrides = mutableMapOf<String, String>()
     private val requiredEvents: MutableSet<String> = mutableSetOf()
     private val requiredOneOfEvents: MutableSet<Set<String>> = mutableSetOf()
+
+
 
     /**
      * All events specified in this block have to be available for the interaction to be executed (AND precondition).
@@ -244,7 +256,8 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
                 ingredientNameOverrides,
                 eventTransformationsInput,
                 Optional.ofNullable(maximumInteractionCount),
-                Optional.ofNullable(failureStrategy?.build())
+                Optional.ofNullable(failureStrategy?.build()),
+                isReprovider
             )
         } else {
             val eventTransformationsInput = eventTransformations.associate {
@@ -266,7 +279,8 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
                 ingredientNameOverrides,
                 eventTransformationsInput,
                 Optional.ofNullable(maximumInteractionCount),
-                Optional.ofNullable(failureStrategy?.build())
+                Optional.ofNullable(failureStrategy?.build()),
+                isReprovider
             )
         }
     }

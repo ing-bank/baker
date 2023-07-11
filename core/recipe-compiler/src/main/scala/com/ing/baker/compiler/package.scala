@@ -100,7 +100,8 @@ package object compiler {
         maximumInteractionCount = interactionDescriptor.maximumInteractionCount,
         failureStrategy = failureStrategy,
         eventOutputTransformers = interactionDescriptor.eventOutputTransformers.map {
-          case (event, transformer) => event.name -> transformEventOutputTransformer(transformer) })
+          case (event, transformer) => event.name -> transformEventOutputTransformer(transformer) },
+        isReprovider = interactionDescriptor.isReprovider)
     }
   }
 }

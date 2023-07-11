@@ -5,9 +5,10 @@ import akka.event.EventStream
 import cats.effect.{ContextShift, IO}
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
+import com.ing.baker.il.petrinet.Place.IngredientPlace
 import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor}
-import com.ing.baker.petrinet.api._
+import com.ing.baker.petrinet.api.{MultiSet, _}
 import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceRuntime
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
@@ -18,7 +19,7 @@ import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.MDC
 
-import scala.collection.immutable.Seq
+import scala.collection.immutable.{Map, Seq}
 import scala.concurrent.ExecutionContext
 
 object RecipeRuntime {
@@ -223,7 +224,11 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
           // create the output marking for the petri net
           val outputMarking: Marking[Place] = RecipeRuntime.createProducedMarking(outAdjacent, outputEvent)
 
-          (outputMarking, outputEvent.orNull)
+          val reproviderMarkings: Marking[Place] = if (interaction.isReprovider) {
+            outAdjacent.toMarking.filter((input: (Place, MultiSet[Any])) => input._1.placeType == IngredientPlace)
+          } else Map.empty
+
+          (outputMarking ++ reproviderMarkings, outputEvent.orNull)
         }
 
       } finally {
