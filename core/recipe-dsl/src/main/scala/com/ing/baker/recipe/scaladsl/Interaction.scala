@@ -83,6 +83,6 @@ case class Interaction private(override val name: String,
     * @param isReprovider
     * @return
     */
-  def isReprovider(isReprovider: Boolean): InteractionDescriptor =
+  def isReprovider(isReprovider: Boolean): Interaction =
     this.copy(isReprovider = isReprovider)
 }
