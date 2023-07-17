@@ -220,6 +220,14 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)).getMessage.shouldBe("Recipe with a null or empty name found")
         }
       }
+
+      "an Interaction is reprovider, but has no required events" in {
+        val recipe: Recipe = Recipe("LoopingWithReprovider")
+          .withInteraction(interactionOne.isReprovider(true))
+          .withSensoryEvents(initialEvent)
+        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        compiledRecipe.validationErrors shouldBe List("Reprovider interaction InteractionOne needs to have a event precondition")
+      }
     }
 
     "give the interaction an optional ingredient as empty" when {
@@ -335,6 +343,13 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       }
     }
 
+    "give the interaction with Reprovider enabled" when {
+      "it compiles a java recipe and changes recipeId" in {
+        val recipe = TestRecipeJava.getRecipeReprovider("id-test-recipe")
+        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        compiledRecipe.recipeId shouldBe "416e8abc02abcbee"
+      }
+    }
 
     "give the interaction for checkpoint-events" when {
       "it compiles a java recipe" in {
