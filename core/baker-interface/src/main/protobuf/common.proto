@@ -314,6 +314,7 @@ message InteractionTransition {
     optional int32 maximumInteractionCount = 9;
     optional InteractionFailureStrategy failureStrategy = 10;
     map<string, EventOutputTransformer> eventOutputTransformers = 11;
+    optional bool isReprovider = 12;
 }
 
 // END PETRINET

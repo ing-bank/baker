@@ -279,6 +279,40 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
             "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
     }
 
+    "re-execute an interaction when set to reprovider and event is fired two times" in {
+      val recipe =
+        Recipe("IngredientProvidedRecipe")
+          .withInteractions(
+            interactionOne
+              .isReprovider(true)
+              .withRequiredEvents(emptyEvent),
+            //This is added to ensure interactions that do not have reprovider added are fired two times.
+            interactionOne
+              .withName("interactionOne2")
+              .withRequiredEvents(emptyEvent)
+          )
+          .withSensoryEvents(
+            initialEvent,
+            emptyEvent.withMaxFiringLimit(2))
+
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ = when(testInteractionOneMock.apply(anyString(), anyString()))
+          .thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
+          .thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
+          .thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue))))
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(EventInstance.unsafeFrom(EmptyEvent())))
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(EventInstance.unsafeFrom(EmptyEvent())))
+        _ = verify(testInteractionOneMock, times(3)).apply(recipeInstanceId, "initialIngredient")
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+      } yield
+        state.eventNames shouldBe
+          Seq("InitialEvent", "EmptyEvent", "InteractionOneSuccessful", "InteractionOneSuccessful", "EmptyEvent", "InteractionOneSuccessful")
+    }
+
     "execute an interaction when its ingredient is provided in cluster" in {
       val recipe =
         Recipe("IngredientProvidedRecipeCluster")

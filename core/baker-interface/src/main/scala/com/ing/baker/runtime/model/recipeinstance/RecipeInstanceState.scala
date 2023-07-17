@@ -3,6 +3,7 @@ package com.ing.baker.runtime.model.recipeinstance
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.il.petrinet.Place
+import com.ing.baker.il.petrinet.Place.IngredientPlace
 import com.ing.baker.petrinet.api.{Marking, MultiSet}
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment}
 import com.ing.baker.il.petrinet._
@@ -97,6 +98,17 @@ case class RecipeInstanceState(
       !hasFailed(transition) && canBeFiredAutomatically(transition)
     }
     val executions = canFire.map {
+      case (transition: InteractionTransition, markings) =>
+        TransitionExecution(
+          recipeInstanceId = recipeInstanceId,
+          recipe = recipe,
+          transition = transition,
+          consume = markings.head,
+          input = None,
+          ingredients = ingredients,
+          correlationId = None,
+          isReprovider = transition.isReprovider
+        )
       case (transition, markings) =>
         TransitionExecution(
           recipeInstanceId = recipeInstanceId,
@@ -105,7 +117,8 @@ case class RecipeInstanceState(
           consume = markings.head,
           input = None,
           ingredients = ingredients,
-          correlationId = None
+          correlationId = None,
+          isReprovider =  false
         )
     }.toSeq
 
@@ -125,12 +138,20 @@ case class RecipeInstanceState(
     copy(sequenceNumber = sequenceNumber + 1)
 
   private def aggregatePetriNetChanges(transitionExecution: TransitionExecution, output: Option[EventInstance]): RecipeInstanceState = {
-    val producedMarking =
-      recipe.petriNet.outMarking(transitionExecution.transition).keys.map { place =>
+    val outputMarkings: MultiSet[Place] = recipe.petriNet.outMarking(transitionExecution.transition)
+
+    val producedMarking: Marking[Place] = {
+      outputMarkings.keys.map { place: Place =>
         val value: Any = output.map(_.name).orNull
         place -> MultiSet.copyOff(Seq(value))
       }.toMarking
-    copy(marking = (marking |-| transitionExecution.consume) |+| producedMarking)
+    }
+
+    val reproviderMarkings: Marking[Place] = if (transitionExecution.isReprovider) {
+      outputMarkings.toMarking.filter((input: (Place, MultiSet[Any])) => input._1.placeType == IngredientPlace)
+    } else Map.empty
+
+    copy(marking = (marking |-| transitionExecution.consume) |+| producedMarking |+| reproviderMarkings)
   }
 
   private def addCompletedCorrelationId(transitionExecution: TransitionExecution): RecipeInstanceState =
