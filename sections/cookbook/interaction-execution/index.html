@@ -9,17 +9,17 @@
       
       
       
-        <link rel="prev" href="../baker-3/">
+        <link rel="prev" href="../fire-sensory-events/">
       
       
-        <link rel="next" href="../../feature-comparison/">
+        <link rel="next" href="../testing/">
       
       <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
     
     
       
-        <title>Migration Guide v2 - Baker</title>
+        <title>Interaction execution - Baker</title>
       
     
     
@@ -63,7 +63,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#migration-guide-v2" class="md-skip">
+        <a href="#interaction-execution" class="md-skip">
           Skip to content
         </a>
       
@@ -98,7 +98,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Migration Guide v2
+              Interaction execution
             
           </span>
         </div>
@@ -266,14 +266,16 @@
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
       
       
       
@@ -282,7 +284,7 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_5">
           <span class="md-nav__icon md-icon"></span>
           Cookbook
@@ -295,7 +297,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/recipe-dsl/" class="md-nav__link">
+      <a href="../recipe-dsl/" class="md-nav__link">
         Recipe DSL
       </a>
     </li>
@@ -309,7 +311,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/error-handling/" class="md-nav__link">
+      <a href="../error-handling/" class="md-nav__link">
         Error handling
       </a>
     </li>
@@ -323,7 +325,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/visualizations/" class="md-nav__link">
+      <a href="../visualizations/" class="md-nav__link">
         Visualizations
       </a>
     </li>
@@ -337,7 +339,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/fire-sensory-events/" class="md-nav__link">
+      <a href="../fire-sensory-events/" class="md-nav__link">
         Fire events and inquiry
       </a>
     </li>
@@ -349,11 +351,59 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../../cookbook/interaction-execution/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Interaction execution
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Interaction execution
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#when-does-baker-execute-an-interaction" class="md-nav__link">
+    When does Baker execute an interaction
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reprovider-interactions" class="md-nav__link">
+    Reprovider interactions
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -365,7 +415,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/testing/" class="md-nav__link">
+      <a href="../testing/" class="md-nav__link">
         Testing
       </a>
     </li>
@@ -379,7 +429,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cookbook/monitoring/" class="md-nav__link">
+      <a href="../monitoring/" class="md-nav__link">
         Monitoring
       </a>
     </li>
@@ -504,16 +554,14 @@
 
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
       
       
       
@@ -522,7 +570,7 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7">
           <span class="md-nav__icon md-icon"></span>
           Versions
@@ -535,7 +583,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../baker-3-release-notes/" class="md-nav__link">
+      <a href="../../versions/baker-3-release-notes/" class="md-nav__link">
         Release Notes v3
       </a>
     </li>
@@ -549,7 +597,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../baker-3/" class="md-nav__link">
+      <a href="../../versions/baker-3/" class="md-nav__link">
         Migration Guide v3
       </a>
     </li>
@@ -561,79 +609,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Migration Guide v2
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../versions/baker-2/" class="md-nav__link">
         Migration Guide v2
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#from-13x-to-200" class="md-nav__link">
-    From 1.3.x to 2.0.0
-  </a>
-  
-    <nav class="md-nav" aria-label="From 1.3.x to 2.0.0">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#downtime-required-for-clusters-with-state" class="md-nav__link">
-    Downtime required for clusters with state
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#removed-ingredient-interface" class="md-nav__link">
-    Removed Ingredient interface
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#providesingredient-removed" class="md-nav__link">
-    @ProvidesIngredient removed
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -687,36 +667,16 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#from-13x-to-200" class="md-nav__link">
-    From 1.3.x to 2.0.0
-  </a>
-  
-    <nav class="md-nav" aria-label="From 1.3.x to 2.0.0">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#downtime-required-for-clusters-with-state" class="md-nav__link">
-    Downtime required for clusters with state
+  <a href="#when-does-baker-execute-an-interaction" class="md-nav__link">
+    When does Baker execute an interaction
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#removed-ingredient-interface" class="md-nav__link">
-    Removed Ingredient interface
+      
+        <li class="md-nav__item">
+  <a href="#reprovider-interactions" class="md-nav__link">
+    Reprovider interactions
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#providesingredient-removed" class="md-nav__link">
-    @ProvidesIngredient removed
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -738,56 +698,91 @@
   
 
 
-<h1 id="migration-guide-v2">Migration Guide v2</h1>
-<h2 id="from-13x-to-200">From 1.3.x to 2.0.0</h2>
-<p>This guide only describes how to migrate your existing application.</p>
-<p>Summary:</p>
-<ul>
-<li><em>ALL</em> persisted data from baker <code>1.3.x</code> <em>IS COMPATIBLE</em> and can be used with <code>2.0.x</code></li>
-<li>When running a cluster <em>DOWNTIME IS REQUIRED</em> because of binary incompatible changes in the message protocol.</li>
-<li>Some small code refactors are necessary (see below).</li>
-</ul>
-<p>For a full list new features see the <a href="https://github.com/ing-bank/baker/blob/master/CHANGELOG.md">changelog</a>.</p>
-<h3 id="downtime-required-for-clusters-with-state">Downtime required for clusters with state</h3>
-<p>In <code>2.0.0</code> some binary incompatible changes where made in the message protocol.</p>
-<p>This requires you to bring down the entire cluster (<code>1.3.x</code>) and bring it up again (<code>2.0.0</code>).</p>
-<p>A rolling deploy <em>IS NOT</em> tested and <em>NOT</em> recommended.</p>
-<h3 id="removed-ingredient-interface">Removed Ingredient interface</h3>
-<p><code>com.ing.baker.recipe.javadsl.Ingredient</code> was removed.</p>
-<p>This was a tagging interface that was not used in the project.</p>
-<p>You can remove all references to this interface in your project.</p>
-<p>One thing to note is that <code>Ingredient</code> extended from <code>scala.Serializable</code>.</p>
-<p>If you depended on this behaviour just replace <code>Ingredient</code> by <code>scala.Serializable</code>.</p>
-<h3 id="providesingredient-removed">@ProvidesIngredient removed</h3>
-<p>In <code>1.3.x</code> you could directly provide an ingredient from an interaction. For example:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.annotations.ProvidesIngredient</span><span class="p">;</span>
+<h1 id="interaction-execution">Interaction execution</h1>
+<p>This section will give a basic explanation when baker will execute interactions in your Recipe.
+For a more in depth information please see the <a href="../../reference/execution-semantics/">execution-semantics page</a>.</p>
+<h2 id="when-does-baker-execute-an-interaction">When does Baker execute an interaction</h2>
+<p>Baker will execute an interaction when: </p>
+<ol>
+<li>All incoming ingredients are available </li>
+<li>All event preconditions are met.</li>
+</ol>
+<p>After an interaction is executed it will 'consume' the ingredients and events. 
+Interactions get their own copies of events/ingredients to consume. 
+You do not have to worry about one interaction taking the ingredients away from another.</p>
+<p>To execute an interaction again all incoming ingredients need to be provided again and the event preconditions need to be met again.</p>
+<h2 id="reprovider-interactions">Reprovider interactions</h2>
+<p>Interactions can be configured to be reprovider interactions. 
+This means that after execution they will provide their own ingredients again. 
+Reprovider interactions will only need to have their ingredients to be provided once. 
+They will execute everytime their event preconditions are met.</p>
+<p>Reprovider interactions do not update the ingredient data and will always use the latest ingredient data that is available.</p>
+<p>If there are no event preconditions on a reprovider interaction, it will automatically loop its execution. Therefore this is made mandatory in the RecipeCompiler.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Java</label><label for="__tabbed_1_2">Kotlin</label><label for="__tabbed_1_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
 
-<span class="kd">interface</span> <span class="nc">GetEmail</span><span class="w"> </span><span class="p">{</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.InteractionDescriptor</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.Recipe</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">examples.java.events.OrderPlaced</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">examples.java.interactions.ShipOrder</span><span class="p">;</span>
 
-<span class="w">  </span><span class="nd">@ProvidesIngredient</span><span class="p">(</span><span class="s">&quot;email&quot;</span><span class="p">)</span>
-<span class="w">  </span><span class="n">String</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="nd">@RequiresIngredient</span><span class="p">(</span><span class="s">&quot;customer&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">Customer</span><span class="w"> </span><span class="n">customer</span><span class="p">);</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">RecipeWithReproviderInteraction</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">Recipe</span><span class="w"> </span><span class="n">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Recipe</span><span class="p">(</span><span class="s">&quot;Reprovider recipe&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">withSensoryEvent</span><span class="p">(</span><span class="n">OrderPlaced</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">withInteractions</span><span class="p">(</span>
+<span class="w">            </span><span class="n">InteractionDescriptor</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">ShipOrder</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">                    </span><span class="p">.</span><span class="na">isReprovider</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+<span class="w">                    </span><span class="p">.</span><span class="na">withRequiredEvent</span><span class="p">(</span><span class="n">OrderPlaced</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">        </span><span class="p">);</span>
 <span class="p">}</span>
 </code></pre></div>
-<p>This feature has been removed. Internally this was already translated to an implicitly generated event: <code>$interactionName + Successful</code>.</p>
-<p>Now it is required that you do this expclitly to avoid confusion.</p>
-<p>The refactor is very straight forwfard:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.annotations.FiresEvent</span><span class="p">;</span>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.recipes</span>
 
-<span class="kd">interface</span> <span class="nc">GetEmail</span><span class="w"> </span><span class="p">{</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.ExperimentalDsl</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.recipe</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.events.OrderPlaced</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.events.PaymentReceived</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.interactions.ShipOrder</span>
 
-<span class="w">  </span><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">GetEmailSuccessful</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">email</span><span class="p">;</span>
-<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="nf">ExampleInteractionSuccessful</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">email</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="k">this</span><span class="p">.</span><span class="na">email</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">email</span><span class="p">;</span>
+<span class="nd">@ExperimentalDsl</span>
+<span class="kd">object</span><span class="w"> </span><span class="nc">RecipeWithReproviderInteraction</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">recipe</span><span class="p">(</span><span class="s">&quot;Reprovider recipe&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">sensoryEvents</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">event</span><span class="o">&lt;</span><span class="n">OrderPlaced</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="n">interaction</span><span class="o">&lt;</span><span class="n">ShipOrder</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">isReprovider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">            </span><span class="n">requiredEvents</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">event</span><span class="o">&lt;</span><span class="n">OrderPlaced</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
 <span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
-
-<span class="w">  </span><span class="nd">@FiresEvent</span><span class="p">(</span><span class="n">oneOf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">GetEmailSuccessful</span><span class="p">.</span><span class="na">class</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">)</span>
-<span class="w">  </span><span class="n">GetEmailSuccessful</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="nd">@RequiresIngredient</span><span class="p">(</span><span class="s">&quot;customer&quot;</span><span class="p">)</span><span class="w"> </span><span class="n">Customer</span><span class="w"> </span><span class="n">customer</span><span class="p">);</span>
 <span class="p">}</span>
 </code></pre></div>
-<p>If you use <a href="https://projectlombok.org">lombok</a> annotations you can get rid of a lot of the boiler plate by using <code>@Value</code> on the event class.</p>
-<p>In <code>scala</code> it is recommended to use case classes.</p>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">recipes</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.{</span><span class="nc">Event</span><span class="p">,</span><span class="w"> </span><span class="nc">Recipe</span><span class="p">}</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="nn">events</span><span class="p">.</span><span class="nc">OrderPlaced</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="nn">interactions</span><span class="p">.</span><span class="nc">ShipOrder</span>
+
+<span class="k">object</span><span class="w"> </span><span class="nc">RecipeWithReproviderInteraction</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="n">recipe</span><span class="p">:</span><span class="w"> </span><span class="nc">Recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Recipe</span><span class="p">(</span><span class="s">&quot;Reprovider recipe&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="n">withSensoryEvent</span><span class="p">(</span><span class="nc">Event</span><span class="p">[</span><span class="nc">OrderPlaced</span><span class="p">])</span>
+<span class="w">    </span><span class="p">.</span><span class="n">withInteraction</span><span class="p">(</span>
+<span class="w">      </span><span class="nc">ShipOrder</span><span class="p">.</span><span class="n">interaction</span>
+<span class="w">        </span><span class="p">.</span><span class="n">isReprovider</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="n">withRequiredEvent</span><span class="p">(</span><span class="nc">Event</span><span class="p">[</span><span class="nc">OrderPlaced</span><span class="p">])</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 
 
 

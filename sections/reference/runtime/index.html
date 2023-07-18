@@ -19,7 +19,7 @@
     
     
       
-        <title>The Akka Based Runtime - Baker</title>
+        <title>The Baker Runtime - Baker</title>
       
     
     
@@ -63,7 +63,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#the-akka-based-runtime" class="md-skip">
+        <a href="#the-baker-runtime" class="md-skip">
           Skip to content
         </a>
       
@@ -98,7 +98,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              The Akka Based Runtime
+              The Baker Runtime
             
           </span>
         </div>
@@ -351,6 +351,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../cookbook/interaction-execution/" class="md-nav__link">
+        Interaction execution
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../cookbook/testing/" class="md-nav__link">
         Testing
       </a>
@@ -468,12 +482,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          The Akka Based Runtime
+          The Baker Runtime
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        The Akka Based Runtime
+        The Baker Runtime
       </a>
       
         
@@ -492,6 +506,14 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#akka-runtime" class="md-nav__link">
+    Akka Runtime
+  </a>
+  
+    <nav class="md-nav" aria-label="Akka Runtime">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#bakerakkaconfig-actorsystem" class="md-nav__link">
     Baker.akka(config, actorSystem)
   </a>
@@ -503,6 +525,11 @@
   <a href="#advantages-of-the-cluster-mode" class="md-nav__link">
     Advantages of the Cluster Mode
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -791,6 +818,14 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#akka-runtime" class="md-nav__link">
+    Akka Runtime
+  </a>
+  
+    <nav class="md-nav" aria-label="Akka Runtime">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#bakerakkaconfig-actorsystem" class="md-nav__link">
     Baker.akka(config, actorSystem)
   </a>
@@ -802,6 +837,11 @@
   <a href="#advantages-of-the-cluster-mode" class="md-nav__link">
     Advantages of the Cluster Mode
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -960,10 +1000,13 @@
   
 
 
-<h1 id="the-akka-based-runtime">The Akka Based Runtime</h1>
-<h2 id="bakerakkaconfig-actorsystem">Baker.akka(config, actorSystem)</h2>
-<p>Baker provider several constructors to build a runtime to run your Recipes on. The current implementations are o
-<a href="https://akka.io/">Akka</a> based, one in local mode, and another in cluster mode. </p>
+<h1 id="the-baker-runtime">The Baker Runtime</h1>
+<p>Baker provider several constructors to build a runtime to run your Recipes on. The current implementations are an in memory implementation and an
+<a href="https://akka.io/">Akka</a> based implementation. </p>
+<h2 id="akka-runtime">Akka Runtime</h2>
+<p>The Akka based implementation can be configured to run in local mode or in cluster mode.
+We advised to use the in memory Baker instead of the Akka Baker in local mode if you do not require state.</p>
+<h3 id="bakerakkaconfig-actorsystem">Baker.akka(config, actorSystem)</h3>
 <p><em>Note: We recommend reviewing also Akka configuration.</em></p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Scala</label><label for="__tabbed_1_2">Java</label></div>
 <div class="tabbed-content">
@@ -1010,7 +1053,7 @@ is recommended for tests.</p>
 </div>
 </div>
 </div>
-<h3 id="advantages-of-the-cluster-mode">Advantages of the Cluster Mode</h3>
+<h4 id="advantages-of-the-cluster-mode">Advantages of the Cluster Mode</h4>
 <p>The capabilities gained when in cluster mode are:</p>
 <ul>
 <li>Elasticity: by adding/removing nodes to the cluster.</li>
