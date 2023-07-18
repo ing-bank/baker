@@ -208,7 +208,7 @@ except it comes in a `CompletableFuture` that will help you handle async program
 
     ```
 
-### RecipeCompiler.compile(recipe)
+## RecipeCompiler.compile(recipe)
 
 `Recipes` once built must be converted into a data structure called `CompiledRecipe` that lets `RecipeInstances` 
 to understand, store and run your process. These can be used to create a new `RecipeInstance` from a `baker` 
