@@ -31,6 +31,7 @@ nav:
       - 'sections/cookbook/error-handling.md'
       - 'sections/cookbook/visualizations.md'
       - 'sections/cookbook/fire-sensory-events.md'
+      - 'sections/cookbook/interaction-execution.md'
       - 'sections/cookbook/testing.md'
       - 'sections/cookbook/monitoring.md'
   - Reference:
