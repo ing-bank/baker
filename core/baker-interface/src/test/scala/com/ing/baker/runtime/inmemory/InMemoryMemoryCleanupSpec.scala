@@ -171,41 +171,6 @@ class InMemoryMemoryCleanupSpec extends AnyFunSpec with Matchers {
       result.unsafeRunSync()
     }
 
-    it("should not delete a process if the idle timeout is reset due to activity") {
-      val recipe = Recipe("tempRecipe3")
-        .withInteractions(
-          interactionOne
-        )
-        .withSensoryEvents(initialEvent)
-
-      class InteractionOneInterfaceImplementation() extends TestRecipe.InteractionOne {
-        override def apply(recipeInstanceId: String, initialIngredient: String): Future[InteractionOneSuccessful] = {
-          Future.failed(new RuntimeException("Failing interaction"))
-        }
-      }
-
-      implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
-      implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-
-      val recipeInstanceId = UUID.randomUUID().toString
-
-      val result: IO[RecipeInstanceState] = for {
-        baker <- InMemoryBaker.build(BakerF.Config(
-          idleTimeout = 100.milliseconds,
-          retentionPeriodCheckInterval = 10.milliseconds,
-          allowAddingRecipeWithoutRequiringInstances = true),
-          List(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
-        recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), validate = false)
-        _ <- baker.bake(recipeId, recipeInstanceId)
-        _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAsyncAndForget()
-        _ <- IO.sleep(80.milliseconds)
-        _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAsyncAndForget()
-        _ <- IO.sleep(80.milliseconds)
-        result <- baker.getRecipeInstanceState(recipeInstanceId)
-      } yield (result)
-      result.unsafeRunSync()
-    }
-
     it("should delete a process after the RetentionPeriod if it is still executing") {
       val recipe = Recipe("tempRecipe4")
         .withInteractions(

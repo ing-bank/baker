@@ -13,6 +13,7 @@ import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka._
+import com.ing.baker.runtime.akka.actor.{ActorBasedBakerCleanup, BakerCleanup, CassandraBakerCleanup}
 import com.ing.baker.runtime.akka.actor.Util.logging._
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransition, StartTimer}
@@ -149,7 +150,14 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
   private val recipeCache: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
 
-  private val cleanup = new cassandra.cleanup.Cleanup(context.system)
+  //TODO chose if to use the CassandraBakerCleanup or the ActorBasedBakerCleanup
+  private val cleanup: BakerCleanup = {
+    if(config.hasPath("akka.persistence.journal.plugin") &&
+      config.getString("akka.persistence.journal.plugin") == "akka.persistence.cassandra.journal")
+      new CassandraBakerCleanup(context.system)
+    else
+      new ActorBasedBakerCleanup()
+  }
 
   private val delayedTransitionActor: ActorRef = context.actorOf(
     props = DelayedTransitionActor.props(this.self, cleanup, snapShotInterval, snapshotCount),
@@ -237,30 +245,38 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   }
 
   private def deleteProcess(meta: ActorMetadata): Unit = {
-    getProcessActor(meta.recipeInstanceId) match {
-      case Some(actorRef: ActorRef) =>
-        log.debug(s"Deleting ${meta.recipeInstanceId} via actor message")
-        actorRef ! Stop(delete = true)
-      case None =>
-        log.debug(s"Deleting ${meta.recipeInstanceId} via cleanup tool")
-        getCompiledRecipe(meta.recipeId) match {
-          case Some(compiledRecipe) =>
-            val persistenceId = ProcessInstance.recipeInstanceId2PersistenceId(compiledRecipe.name, meta.recipeInstanceId)
-            log.debug(s"Deleting with persistenceId: ${persistenceId}")
-            persistWithSnapshot(ActorDeleted(meta.recipeInstanceId)) { _ =>
-              //Using deleteAllEvents since we do not use Snapshots for ProcessInstances
-              cleanup.deleteAllEvents(persistenceId, neverUsePersistenceIdAgain = false)
-                .map(_ -> {
-                  log.processHistoryDeletionSuccessful(meta.recipeInstanceId, 0)
-                  index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
-                })
-            }
-          case None =>
-            log.debug(s"Recipe not found for ${meta.recipeInstanceId}, marking as deleted")
-            persistWithSnapshot(ActorDeleted(meta.recipeInstanceId)) { _ =>
-              index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
-            }
-        }
+    //The new way of cleaning ProcessInstances, this can only be done if the datastore is Cassandra
+    if(cleanup.supportsCleanupOfStoppedActors) {
+      getProcessActor(meta.recipeInstanceId) match {
+        case Some(actorRef: ActorRef) =>
+          log.debug(s"Deleting ${meta.recipeInstanceId} via actor message")
+          actorRef ! Stop(delete = true)
+        case None =>
+          log.debug(s"Deleting ${meta.recipeInstanceId} via cleanup tool")
+          getCompiledRecipe(meta.recipeId) match {
+            case Some(compiledRecipe) =>
+              val persistenceId = ProcessInstance.recipeInstanceId2PersistenceId(compiledRecipe.name, meta.recipeInstanceId)
+              log.debug(s"Deleting with persistenceId: ${persistenceId}")
+              persistWithSnapshot(ActorDeleted(meta.recipeInstanceId)) { _ =>
+                //Using deleteAllEvents since we do not use Snapshots for ProcessInstances
+                cleanup.deleteAllEvents(persistenceId, neverUsePersistenceIdAgain = false)
+                  .map(_ -> {
+                    log.processHistoryDeletionSuccessful(meta.recipeInstanceId, 0)
+                    index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
+                  })
+              }
+            case None =>
+              log.debug(s"Recipe not found for ${meta.recipeInstanceId}, marking as deleted")
+              persistWithSnapshot(ActorDeleted(meta.recipeInstanceId)) { _ =>
+                index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
+              }
+          }
+      }
+    }
+    // The old way to cleanup ProcessInstances, we will let Akka Persistence handle the cleanup.
+    // This will first start the ProcessInstance actor even if is passivated so will have bigger memory impact and more reads on the datastore.
+    else {
+      getOrCreateProcessActor(meta.recipeInstanceId).foreach(_ ! Stop(delete = true))
     }
   }
 
@@ -304,14 +320,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   override def receiveCommand: Receive =  {
     case SaveSnapshotSuccess(metadata) =>
       log.debug("Snapshot saved & cleaning old processes")
-      cleanup.deleteBeforeSnapshot(metadata.persistenceId, snapshotCount).map {
-        case Some(snapshotMetadata: SnapshotMetadata) =>
-          //TODO Make this configurable instead of always deleting the message data
-          log.debug("SnapshotMetadata found, starting deleting messages")
-          cleanup.deleteEventsTo(metadata.persistenceId, snapshotMetadata.sequenceNr)
-        case None =>
-          log.debug("SnapshotMetadata not found")
-      }
+      cleanup.deleteEventsAndSnapshotBeforeSnapshot(metadata.persistenceId, snapshotCount)
 
     case SaveSnapshotFailure(_, _) =>
       log.error("Saving snapshot failed")
