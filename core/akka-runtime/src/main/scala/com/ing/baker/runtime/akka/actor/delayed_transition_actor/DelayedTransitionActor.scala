@@ -1,17 +1,15 @@
 package com.ing.baker.runtime.akka.actor.delayed_transition_actor
 
-import akka.actor.{ActorLogging, ActorRef, Props}
+import akka.actor.{ActorRef, Props}
 import akka.persistence._
-import akka.persistence.cassandra.cleanup.Cleanup
 import akka.sensors.actor.PersistentActorMetrics
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.{DelayedTransitionExecuted, DelayedTransitionInstance, DelayedTransitionScheduled, DelayedTransitionSnapshot, getId, prefix}
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransition, FireDelayedTransitionAck, ScheduleDelayedTransition, StartTimer, TickTimer}
+import com.ing.baker.runtime.akka.actor.BakerCleanup
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor._
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{NoSuchProcess, ProcessDeleted}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
-import com.typesafe.config.Config
 
-import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 
 object DelayedTransitionActor {
@@ -19,7 +17,7 @@ object DelayedTransitionActor {
   def prefix(id: String) = s"timer-interaction-$id-"
 
   def props(processIndex: ActorRef,
-            cleanup: Cleanup,
+            cleanup:  BakerCleanup,
             snapShotInterval: Int,
             snapshotCount: Int) = Props(new DelayedTransitionActor(processIndex, cleanup, snapShotInterval, snapshotCount))
 
@@ -41,7 +39,7 @@ object DelayedTransitionActor {
 }
 
 class DelayedTransitionActor(processIndex: ActorRef,
-                             cleanup: Cleanup,
+                             cleanup: BakerCleanup,
                              snapShotInterval: Int,
                              snapshotCount: Int) extends PersistentActor with PersistentActorMetrics {
 
@@ -143,7 +141,7 @@ class DelayedTransitionActor(processIndex: ActorRef,
   }
 
   def cleanupSnapshots(persistenceId: String, snapShotsToKeep: Int) : Unit = {
-    cleanup.deleteBeforeSnapshot(persistenceId, snapShotsToKeep)
+    cleanup.deleteEventsAndSnapshotBeforeSnapshot(persistenceId, snapShotsToKeep)
     log.debug("Snapshots cleaned")
   }
 
