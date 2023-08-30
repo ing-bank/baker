@@ -95,7 +95,7 @@ class InMemoryMemoryCleanupSpec extends AnyFunSpec with Matchers {
         recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), validate = false)
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAsyncAndForget()
-        _ <- IO.sleep(120.milliseconds)
+        _ <- IO.sleep(200.milliseconds)
         result <- baker.getRecipeInstanceState(recipeInstanceId)
       } yield (result)
       assertThrows[NoSuchProcessException](result.unsafeRunSync())

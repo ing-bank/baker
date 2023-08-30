@@ -8,6 +8,7 @@ import com.ing.baker.petrinet.api.{Marking, MultiSet}
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment}
 import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.api._
+import com.ing.baker.runtime.common.IngredientInstance
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetaDataName
 import com.ing.baker.types.{CharArray, MapType, Value}
 
@@ -23,6 +24,9 @@ object RecipeInstanceState {
         Option.empty
     })
   }
+
+  def getMetaDataFromIngredients(ingredients: Seq[IngredientInstance]): Option[Map[String, String]] =
+    getMetaDataFromIngredients(ingredients.map(i => i.name -> i.value).toMap)
 
   def empty(recipeInstanceId: String, recipe: CompiledRecipe, createdOn: Long): RecipeInstanceState =
     RecipeInstanceState(
