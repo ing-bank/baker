@@ -10,8 +10,9 @@ public class RecipeWithEventTransformation {
     public final static Recipe recipe = new Recipe("example")
         .withInteractions(
             InteractionDescriptor.of(ShipOrder.class)
-                .withEventTransformation(OrderPlaced.class, "OrderCreated")
-                .renameRequiredIngredient("customerId", "userId")
-                .renameRequiredIngredient("productIds", "skus")
+                .withEventTransformation(OrderPlaced.class, "OrderCreated",
+                        Map.of("customerId", "userId",
+                               "productIds", "skus")
+                )
         );
 }
