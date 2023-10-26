@@ -16,7 +16,7 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-multi-jvm" % "0.4.0")
 
 addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.9")
 
-addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent" % "0.1.6")
+addSbtPlugin("com.github.sbt" % "sbt-javaagent" % "0.1.8")
 
 addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.4.0")
 
