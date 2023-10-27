@@ -121,13 +121,13 @@ object RecipeRuntime {
   }
 }
 
-class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager[IO], eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime[Place, Transition, RecipeInstanceState, EventInstance] {
+class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager[IO], eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime[RecipeInstanceState, EventInstance] {
 
   protected implicit lazy val contextShift: ContextShift[IO] = IO.contextShift(ec)
   /**
     * All transitions except sensory event interactions are auto-fireable by the runtime
     */
-  override def canBeFiredAutomatically(instance: Instance[Place, Transition, RecipeInstanceState], t: Transition): Boolean = t match {
+  override def canBeFiredAutomatically(instance: Instance[RecipeInstanceState], t: Transition): Boolean = t match {
     case EventTransition(_, true, _) => false
     case _ => true
   }
@@ -135,7 +135,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
   /**
     * Tokens which are inhibited by the Edge filter may not be consumed.
     */
-  override def consumableTokens(petriNet: PetriNet[Place, Transition])(marking: Marking[Place], p: Place, t: Transition): MultiSet[Any] = {
+  override def consumableTokens(petriNet: PetriNet)(marking: Marking[Place], p: Place, t: Transition): MultiSet[Any] = {
     val edge = petriNet.findPTEdge(p, t).map(_.asInstanceOf[Edge]).get
 
     marking.get(p) match {
@@ -146,7 +146,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
 
   override val eventSource: Transition => RecipeInstanceState => EventInstance => RecipeInstanceState = recipeEventSourceFn
 
-  override def handleException(job: Job[Place, Transition, RecipeInstanceState])
+  override def handleException(job: Job[RecipeInstanceState])
                               (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]): ExceptionStrategy = {
 
     if (throwable.isInstanceOf[Error])
@@ -176,7 +176,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
       }
   }
 
-  override def transitionTask(petriNet: PetriNet[Place, Transition], t: Transition)(marking: Marking[Place], state: RecipeInstanceState, input: Any): IO[(Marking[Place], EventInstance)] =
+  override def transitionTask(petriNet: PetriNet, t: Transition)(marking: Marking[Place], state: RecipeInstanceState, input: Any): IO[(Marking[Place], EventInstance)] =
     t match {
       case interaction: InteractionTransition => interactionTask(interaction, petriNet.outMarking(t), state)
       case t: EventTransition => IO.pure(petriNet.outMarking(t).toMarking, input.asInstanceOf[EventInstance])

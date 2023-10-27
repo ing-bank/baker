@@ -3,7 +3,9 @@ package com.ing.baker.runtime.akka.actor.process_instance
 import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props, Terminated}
 import akka.testkit.{TestDuration, TestProbe}
 import akka.util.Timeout
+import com.ing.baker.il.petrinet.Place
 import com.ing.baker.petrinet.api._
+import com.ing.baker.runtime.akka.actor.process_instance.dsl.TestUtils
 import com.ing.baker.runtime.akka.actor.AkkaTestBase
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet
@@ -11,6 +13,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstance.Setting
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.BlockTransition
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceSpec._
+import com.ing.baker.runtime.akka.actor.process_instance.dsl.TestUtils.{PlaceMethods, place}
 import com.ing.baker.runtime.akka.actor.process_instance.dsl._
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
@@ -61,10 +64,10 @@ object ProcessInstanceSpec {
   )
 
   def processInstanceProps[S, E](
-                                  topology: PetriNet[Place, Transition],
-                                  runtime: ProcessInstanceRuntime[Place, Transition, S, E],
+                                  topology: PetriNet,
+                                  runtime: ProcessInstanceRuntime[S, E],
                                   settings: Settings): Props = {
-    Props(new ProcessInstance[Place, Transition, S, E](
+    Props(new ProcessInstance[S, E](
       "test",
       topology,
       settings,
@@ -77,7 +80,7 @@ object ProcessInstanceSpec {
     system.actorOf(props, name)
   }
 
-  def createProcessInstance[S, E](petriNet: PetriNet[Place, Transition], runtime: ProcessInstanceRuntime[Place, Transition, S, E], recipeInstanceId: String = UUID.randomUUID().toString)(implicit system: ActorSystem): ActorRef = {
+  def createProcessInstance[S, E](petriNet: PetriNet, runtime: ProcessInstanceRuntime[S, E], recipeInstanceId: String = UUID.randomUUID().toString)(implicit system: ActorSystem): ActorRef = {
 
     createPetriNetActor(processInstanceProps(petriNet, runtime, instanceSettings), recipeInstanceId)
   }
@@ -607,8 +610,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       override val eventSourceFunction: Unit => Unit => Unit = s => e => s
 
-      val p1 = Place(id = 1)
-      val p2 = Place(id = 2)
+      val p1 = place(id = 1)
+      val p2 = place(id = 2)
 
       val t1 = nullTransition(id = 1, automated = false)
       val t2 = stateTransition(id = 2, automated = true)(_ => Thread.sleep(dilatedMillis(500)))

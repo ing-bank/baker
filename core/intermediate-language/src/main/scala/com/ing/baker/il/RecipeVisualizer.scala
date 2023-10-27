@@ -128,14 +128,14 @@ object RecipeVisualizer {
     generateDot(recipe.petriNet.innerGraph, style, filter, eventNames, ingredientNames)
 
 
-  def visualizePetriNet[P, T](graph: PetriNetGraph[P, T], placeLabelFn: P => String = (p: P) => p.toString, transitionLabelFn: T => String = (t: T) => t.toString): String = {
+  def visualizePetriNet(graph: PetriNetGraph, placeLabelFn: Place => String = (p: Place) => p.toString, transitionLabelFn: Transition => String = (t: Transition) => t.toString): String = {
 
-    val nodeLabelFn: Either[P, T] => String = {
+    val nodeLabelFn: Either[Place, Transition] => String = {
       case Left(p) => placeLabelFn(p)
       case Right(t) => transitionLabelFn(t)
     }
 
-    val nodeDotAttrFn: Either[P, T] => List[DotAttr] = {
+    val nodeDotAttrFn: Either[Place, Transition] => List[DotAttr] = {
       case Left(_) => List(DotAttr("shape", "circle"))
       case Right(_) => List(DotAttr("shape", "square"))
     }
@@ -146,11 +146,11 @@ object RecipeVisualizer {
       attrStmts = List.empty,
       attrList = List.empty)
 
-    def myNodeTransformer(innerNode: PetriNetGraph[P, T]#NodeT): Option[(DotGraph, DotNodeStmt)] = {
+    def myNodeTransformer(innerNode: PetriNetGraph#NodeT): Option[(DotGraph, DotNodeStmt)] = {
       Some((myRoot, DotNodeStmt(nodeLabelFn(innerNode.value), nodeDotAttrFn(innerNode.value))))
     }
 
-    def myEdgeTransformer(innerEdge: PetriNetGraph[P, T]#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
+    def myEdgeTransformer(innerEdge: PetriNetGraph#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
 
       val source = innerEdge.edge.sources.head.value
       val target = innerEdge.edge.targets.head.value
