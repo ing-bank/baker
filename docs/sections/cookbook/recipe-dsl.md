@@ -223,6 +223,27 @@ For all available failure strategies, see the [error handling](/sections/cookboo
 
 ## Recipe
 
+### Retention period
+The period during which the process keeps running, the recipe will be deleted AFTER the retention period has passed (measured from the creation time of the Recipe instance. This is an optional parameter, defaults to keep the process forever.
+
+=== "Java"
+
+    ```java
+    --8<-- "docs-code-snippets/src/main/java/examples/java/recipes/RecipeWithRetentionPeriod.java"
+    ```
+
+=== "Kotlin"
+
+    ```kotlin
+    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/recipes/RecipeWithRetentionPeriod.kt"
+    ```
+
+=== "Scala"
+
+    ```scala
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/RecipeWithRetentionPeriod.scala"
+    ```
+
 ### Checkpoint events
 Checkpoints are used to fire an event with a given name whenever certain preconditions are met. The preconditions 
 are specified via `requiredEvents` or `requiredOneOfEvents`.
