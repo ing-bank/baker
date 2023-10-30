@@ -207,13 +207,13 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   // creates a ProcessInstanceActor, does not do any validation
   def createProcessActor(recipeInstanceId: String, compiledRecipe: CompiledRecipe): ActorRef = {
-    val runtime: ProcessInstanceRuntime[Place, Transition, RecipeInstanceState, EventInstance] =
+    val runtime: ProcessInstanceRuntime[RecipeInstanceState, EventInstance] =
       new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream)
 
     val processActorProps =
       BackoffSupervisor.props(
         BackoffOpts.onStop(
-          ProcessInstance.props[Place, Transition, RecipeInstanceState, EventInstance](
+          ProcessInstance.props[RecipeInstanceState, EventInstance](
             compiledRecipe.name,
             compiledRecipe.petriNet,
             runtime,

@@ -6,6 +6,7 @@ import akka.persistence.query.scaladsl.CurrentEventsByPersistenceIdQuery
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.sensors.actor.PersistentActorMetrics
 import akka.stream.scaladsl.Source
+import com.ing.baker.il.petrinet.{Place, Transition}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.Event
 import com.ing.baker.runtime.akka.actor.process_instance.internal.{ExceptionState, ExceptionStrategy, Instance, Job}
@@ -79,19 +80,19 @@ object ProcessInstanceEventSourcing extends LazyLogging {
     */
   case class MetaDataAdded(metaData: Map[String, String]) extends Event
 
-  def apply[P : Identifiable, T : Identifiable, S, E](sourceFn: T => (S => E => S)): Instance[P, T, S] => Event => Instance[P, T, S] = instance => {
+  def apply[S, E](sourceFn: Transition => (S => E => S)): Instance[S] => Event => Instance[S] = instance => {
     case InitializedEvent(initial, initialState) =>
 
-      val initialMarking: Marking[P] = initial.unmarshall(instance.petriNet.places)
+      val initialMarking: Marking[Place] = initial.unmarshall(instance.petriNet.places)
 
-      Instance[P, T, S](instance.petriNet, 1, initialMarking, Map.empty, initialState.asInstanceOf[S], Map.empty, Set.empty)
+      Instance[S](instance.petriNet, 1, initialMarking, Map.empty, initialState.asInstanceOf[S], Map.empty, Set.empty)
     case e: TransitionFiredEvent =>
       val transition = instance.petriNet.transitions.getById(e.transitionId)
       val newState = sourceFn(transition)(instance.state)(e.output.asInstanceOf[E])
-      val consumed: Marking[P] = e.consumed.unmarshall(instance.petriNet.places)
-      val produced: Marking[P] = e.produced.unmarshall(instance.petriNet.places)
+      val consumed: Marking[Place] = e.consumed.unmarshall(instance.petriNet.places)
+      val produced: Marking[Place] = e.produced.unmarshall(instance.petriNet.places)
 
-      instance.copy[P, T, S](
+      instance.copy[S](
         sequenceNr = instance.sequenceNr + 1,
         marking = (instance.marking |-| consumed) |+| produced,
         receivedCorrelationIds = instance.receivedCorrelationIds ++ e.correlationId,
@@ -101,21 +102,21 @@ object ProcessInstanceEventSourcing extends LazyLogging {
     case e: TransitionFailedEvent =>
       val transition = instance.petriNet.transitions.getById(e.transitionId)
 
-      val consumed: Marking[P] = e.consume.unmarshall(instance.petriNet.places)
+      val consumed: Marking[Place] = e.consume.unmarshall(instance.petriNet.places)
 
       val job = instance.jobs.getOrElse(e.jobId, {
-        Job[P, T, S](e.jobId, e.correlationId, instance.state, transition, consumed, e.input, None)
+        Job[S](e.jobId, e.correlationId, instance.state, transition, consumed, e.input, None)
       })
       val failureCount = job.failureCount + 1
-      val updatedJob: Job[P, T, S] = job.copy(failure = Some(ExceptionState(e.timeFailed, failureCount, e.failureReason, e.exceptionStrategy)))
-      instance.copy[P, T, S](jobs = instance.jobs + (job.id -> updatedJob))
+      val updatedJob: Job[S] = job.copy(failure = Some(ExceptionState(e.timeFailed, failureCount, e.failureReason, e.exceptionStrategy)))
+      instance.copy[S](jobs = instance.jobs + (job.id -> updatedJob))
 
     case e: TransitionDelayed =>
-      val consumed: Marking[P] = e.consumed.unmarshall(instance.petriNet.places)
+      val consumed: Marking[Place] = e.consumed.unmarshall(instance.petriNet.places)
 
       val delayedInstanceCount: Int = instance.delayedTransitionIds.getOrElse(e.transitionId, 0)
 
-      instance.copy[P, T, S](
+      instance.copy[S](
         sequenceNr = instance.sequenceNr + 1,
         marking = (instance.marking |-| consumed),
         delayedTransitionIds = instance.delayedTransitionIds + (e.transitionId -> (delayedInstanceCount + 1)), //Claim the consumed tokens
@@ -124,11 +125,11 @@ object ProcessInstanceEventSourcing extends LazyLogging {
 
     case e: DelayedTransitionFired =>
       val delayedInstanceCount: Int = instance.delayedTransitionIds(e.transitionId)
-      val produced: Marking[P] = e.produced.unmarshall(instance.petriNet.places)
+      val produced: Marking[Place] = e.produced.unmarshall(instance.petriNet.places)
       val transition = instance.petriNet.transitions.getById(e.transitionId)
       val newState = sourceFn(transition)(instance.state)(e.output.asInstanceOf[E])
 
-      instance.copy[P, T, S](
+      instance.copy[S](
         sequenceNr = instance.sequenceNr + 1,
         marking = instance.marking |+| produced,
         delayedTransitionIds = instance.delayedTransitionIds + (e.transitionId -> (delayedInstanceCount - 1)),
@@ -159,25 +160,25 @@ object ProcessInstanceEventSourcing extends LazyLogging {
           case state =>
             state
       }
-      instance.copy[P, T, S](state = newState)
+      instance.copy[S](state = newState)
   }
 
-  def eventsForInstance[P : Identifiable, T : Identifiable, S, E](
+  def eventsForInstance[S, E](
       processTypeName: String,
       recipeInstanceId: String,
-      topology: PetriNet[P, T],
+      topology: PetriNet,
       encryption: Encryption,
       readJournal: CurrentEventsByPersistenceIdQuery,
-      eventSourceFn: T => (S => E => S))(implicit actorSystem: ActorSystem): Source[(Instance[P, T, S], Event), NotUsed] = {
+      eventSourceFn: Transition => (S => E => S))(implicit actorSystem: ActorSystem): Source[(Instance[S], Event), NotUsed] = {
 
-    val serializer = new ProcessInstanceSerialization[P, T, S, E](AkkaSerializerProvider(actorSystem, encryption))
+    val serializer = new ProcessInstanceSerialization[S, E](AkkaSerializerProvider(actorSystem, encryption))
 
     val persistentId = ProcessInstance.recipeInstanceId2PersistenceId(processTypeName, recipeInstanceId)
     val src = readJournal.currentEventsByPersistenceId(persistentId, 0, Long.MaxValue)
-    val eventSource = ProcessInstanceEventSourcing.apply[P, T, S, E](eventSourceFn)
+    val eventSource = ProcessInstanceEventSourcing.apply[S, E](eventSourceFn)
 
     // TODO: remove null value
-    src.scan[(Instance[P, T, S], Event)]((Instance.uninitialized[P, T, S](topology), null.asInstanceOf[Event])) {
+    src.scan[(Instance[S], Event)]((Instance.uninitialized[S](topology), null.asInstanceOf[Event])) {
       case ((instance, _), e) =>
         val serializedEvent = e.event.asInstanceOf[AnyRef]
         val deserializedEvent = serializer.deserializeEvent(serializedEvent)(instance)
@@ -187,26 +188,26 @@ object ProcessInstanceEventSourcing extends LazyLogging {
   }
 }
 
-abstract class ProcessInstanceEventSourcing[P : Identifiable, T : Identifiable, S, E](
-    val petriNet: PetriNet[P, T],
+abstract class ProcessInstanceEventSourcing[S, E](
+    val petriNet: PetriNet,
     encryption: Encryption,
-    eventSourceFn: T => (S => E => S)) extends PersistentActor with PersistentActorMetrics {
+    eventSourceFn: Transition => (S => E => S)) extends PersistentActor with PersistentActorMetrics {
 
   protected implicit val system: ActorSystem = context.system
 
-  protected val eventSource: Instance[P, T, S] => Event => Instance[P, T, S] =
-    ProcessInstanceEventSourcing.apply[P, T, S, E](eventSourceFn)
+  protected val eventSource: Instance[S] => Event => Instance[S] =
+    ProcessInstanceEventSourcing.apply[S, E](eventSourceFn)
 
-  private val serializer = new ProcessInstanceSerialization[P, T, S, E](AkkaSerializerProvider(system, encryption))
+  private val serializer = new ProcessInstanceSerialization[S, E](AkkaSerializerProvider(system, encryption))
 
-  def onRecoveryCompleted(state: Instance[P, T, S]): Unit
+  def onRecoveryCompleted(state: Instance[S]): Unit
 
-  def persistEvent[O](instance: Instance[P, T, S], e: Event)(fn: Event => O): Unit = {
+  def persistEvent[O](instance: Instance[S], e: Event)(fn: Event => O): Unit = {
     val serializedEvent = serializer.serializeEvent(e)(instance)
     persist(serializedEvent) { persisted => fn(e) }
   }
 
-  private var recoveringState: Instance[P, T, S] = Instance.uninitialized[P, T, S](petriNet)
+  private var recoveringState: Instance[S] = Instance.uninitialized[S](petriNet)
 
   private def applyToRecoveringState(e: AnyRef): Unit = {
     val deserializedEvent = serializer.deserializeEvent(e)(recoveringState)

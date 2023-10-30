@@ -1,5 +1,6 @@
 package com.ing.baker.runtime.akka.actor.process_instance.internal
 
+import com.ing.baker.il.petrinet.Place
 import com.ing.baker.petrinet.api.Marking
 
 object ExceptionStrategy {
@@ -16,7 +17,7 @@ object ExceptionStrategy {
     require(delay >= 0, "Delay must be greater then zero")
   }
 
-  case class Continue[P, O](marking: Marking[P], output: O) extends ExceptionStrategy
+  case class Continue[X, O](marking: Marking[X], output: O) extends ExceptionStrategy
 }
 
 sealed trait ExceptionStrategy

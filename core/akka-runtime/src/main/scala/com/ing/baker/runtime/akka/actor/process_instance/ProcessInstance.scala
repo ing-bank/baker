@@ -51,11 +51,11 @@ object ProcessInstance {
       None
   }
 
-  def props[P: Identifiable, T: Identifiable, S, E](processType: String, petriNet: PetriNet[P, T],
-                                                    runtime: ProcessInstanceRuntime[P, T, S, E],
+  def props[S, E](processType: String, petriNet: PetriNet,
+                                                    runtime: ProcessInstanceRuntime[S, E],
                                                     settings: Settings,
                                                     delayedTransitionActor: ActorRef): Props =
-    Props(new ProcessInstance[P, T, S, E](
+    Props(new ProcessInstance[S, E](
       processType,
       petriNet,
       settings,
@@ -78,12 +78,12 @@ object ProcessInstance {
 /**
   * This actor is responsible for maintaining the state of a single petri net instance.
   */
-class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
+class ProcessInstance[S, E](
                                                                processType: String,
-                                                               petriNet: PetriNet[P, T],
+                                                               petriNet: PetriNet,
                                                                settings: Settings,
-                                                               runtime: ProcessInstanceRuntime[P, T, S, E],
-                                                               delayedTransitionActor: ActorRef) extends ProcessInstanceEventSourcing[P, T, S, E](petriNet, settings.encryption, runtime.eventSource) {
+                                                               runtime: ProcessInstanceRuntime[S, E],
+                                                               delayedTransitionActor: ActorRef) extends ProcessInstanceEventSourcing[S, E](petriNet, settings.encryption, runtime.eventSource) {
 
   import context.dispatcher
 
@@ -108,9 +108,9 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
 
   override def receiveCommand: Receive = uninitialized
 
-  private def marshallMarking(marking: Marking[Any]): Marking[Id] = marking.asInstanceOf[Marking[P]].marshall
+  private def marshallMarking(marking: Marking[Any]): Marking[Id] = marking.asInstanceOf[Marking[Place]].marshall
 
-  private def mapStateToProtocol(instance: internal.Instance[P, T, S]): protocol.InstanceState = {
+  private def mapStateToProtocol(instance: internal.Instance[S]): protocol.InstanceState = {
     protocol.InstanceState(
       instance.sequenceNr,
       instance.marking.marshall,
@@ -123,7 +123,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     )
   }
 
-  private def mapJobsToProtocol(job: internal.Job[P, T, S]): protocol.JobState =
+  private def mapJobsToProtocol(job: internal.Job[S]): protocol.JobState =
     protocol.JobState(job.id, job.transition.getId, job.consume.marshall, job.input, job.failure.map(mapExceptionTateToProtocol))
 
   private def mapExceptionTateToProtocol(exceptionState: internal.ExceptionState): protocol.ExceptionState =
@@ -132,7 +132,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
   private def mapExceptionStrategyToProtocol(strategy: internal.ExceptionStrategy): protocol.ExceptionStrategy = strategy match {
     case internal.ExceptionStrategy.BlockTransition => protocol.ExceptionStrategy.BlockTransition
     case internal.ExceptionStrategy.RetryWithDelay(delay) => protocol.ExceptionStrategy.RetryWithDelay(delay)
-    case internal.ExceptionStrategy.Continue(marking, output) => protocol.ExceptionStrategy.Continue(marking.asInstanceOf[Marking[P]].marshall, output)
+    case internal.ExceptionStrategy.Continue(marking, output) => protocol.ExceptionStrategy.Continue(marking.asInstanceOf[Marking[Place]].marshall, output)
   }
 
   private def stopMe(): Unit = {
@@ -142,7 +142,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
   def uninitialized: Receive = {
     case Initialize(initialMarking, state) =>
 
-      val uninitialized = Instance.uninitialized[P, T, S](petriNet)
+      val uninitialized = Instance.uninitialized[S](petriNet)
       val event = InitializedEvent(initialMarking, state)
 
       // persist the initialized event
@@ -174,7 +174,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       stopMe()
   }
 
-  def waitForDeleteConfirmation(instance: Instance[P, T, S]): Receive = {
+  def waitForDeleteConfirmation(instance: Instance[S]): Receive = {
     case DeleteMessagesSuccess(toSequenceNr) =>
       log.processHistoryDeletionSuccessful(recipeInstanceId, toSequenceNr)
       context.stop(self)
@@ -205,7 +205,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     }
   }
 
-  def running(instance: Instance[P, T, S],
+  def running(instance: Instance[S],
               scheduledRetries: Map[Long, Cancellable]): Receive = {
     case Stop(deleteHistory) =>
       scheduledRetries.values.foreach(_.cancel())
@@ -275,7 +275,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       // persist the event
       persistEvent(instance, internalEvent)(
         eventSource.apply(instance)
-          .andThen { case updatedInstance: Instance[P, T, S] =>
+          .andThen { case updatedInstance: Instance[S] =>
             if (updatedInstance.activeJobs.isEmpty)
                 startIdleStop(updatedInstance.sequenceNr)
               context become running(updatedInstance, scheduledRetries - jobId)
@@ -314,7 +314,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
         log.warning("Ignoring DelayedTransitionFired since there is no open asyncConsumedMarkings")
         //The DelayedTransition is acknowledged so that it is removed from the DelayedTransitionManager.
         delayedTransitionActor ! FireDelayedTransitionAck(recipeInstanceId, jobId)
-        instance.copy[P, T, S](
+        instance.copy[S](
           sequenceNr = instance.sequenceNr + 1
         )
       }
@@ -409,8 +409,8 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
           val now = System.currentTimeMillis()
 
           // the job is updated so it cannot be retried again
-          val updatedJob: Job[P, T, S] = job.copy(failure = Some(blocked.copy(failureStrategy = internal.ExceptionStrategy.RetryWithDelay(timeout))))
-          val updatedInstance: Instance[P, T, S] = instance.copy(jobs = instance.jobs + (jobId -> updatedJob))
+          val updatedJob: Job[S] = job.copy(failure = Some(blocked.copy(failureStrategy = internal.ExceptionStrategy.RetryWithDelay(timeout))))
+          val updatedInstance: Instance[S] = instance.copy(jobs = instance.jobs + (jobId -> updatedJob))
           val originalSender = sender()
 
           // execute the job immediately if there is no timeout
@@ -438,7 +438,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
         // resolving is only allowed if the interaction is blocked by a failure
         case Some(internal.Job(_, correlationId, _, transition, consumed, _, Some(internal.ExceptionState(_, _, _, internal.ExceptionStrategy.BlockTransition)))) =>
 
-          val producedMarking: Marking[P] = produce.unmarshall[P](petriNet.places)
+          val producedMarking: Marking[Place] = produce.unmarshall(petriNet.places)
 
           // the provided marking must be valid according to the petri net
           if (petriNet.outMarking(transition) != producedMarking.multiplicities)
@@ -495,7 +495,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     *
     * It finds which transitions are enabled and executes those.
     */
-  def step(instance: Instance[P, T, S]): (Instance[P, T, S], Set[Job[P, T, S]]) = {
+  def step(instance: Instance[S]): (Instance[S], Set[Job[S]]) = {
     runtime.allEnabledJobs.run(instance).value match {
       case (updatedInstance, jobs) =>
         if (jobs.isEmpty && updatedInstance.activeJobs.isEmpty)
@@ -505,7 +505,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     }
   }
 
-  def executeJob(job: Job[P, T, S], originalSender: ActorRef): Unit = {
+  def executeJob(job: Job[S], originalSender: ActorRef): Unit = {
     log.fireTransition(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
     job.transition match {
       case _: EventTransition =>
@@ -520,7 +520,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     }
   }
 
-  def executeJobViaExecutor(job: Job[P, T, S], originalSender: ActorRef): Unit = {
+  def executeJobViaExecutor(job: Job[S], originalSender: ActorRef): Unit = {
     // context.self can be potentially throw NullPointerException in non graceful shutdown situations
     Try(context.self).foreach { self =>
       // executes the IO task on the ExecutionContext
@@ -533,7 +533,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     }
   }
 
-  def jobToFinishedInteraction(job: Job[P, T, S], outputEventName: String): TransitionFiredEvent = {
+  def jobToFinishedInteraction(job: Job[S], outputEventName: String): TransitionFiredEvent = {
     val startTime = System.currentTimeMillis()
     val outputEvent: EventInstance = EventInstance.apply(outputEventName)
     com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.TransitionFiredEvent(
@@ -562,7 +562,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     interactionTransition.interactionName.startsWith(checkpointEventInteractionPrefix)
   }
 
-  def startDelayedTransition(interactionTransition: InteractionTransition, job: Job[P, T, S], originalSender: ActorRef): Unit = {
+  def startDelayedTransition(interactionTransition: InteractionTransition, job: Job[S], originalSender: ActorRef): Unit = {
     delayedTransitionActor ! ScheduleDelayedTransition(
       recipeInstanceId,
       getWaitTimeInMillis(interactionTransition, job),
@@ -580,7 +580,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     outputEvents.head.name
   }
 
-  private def getWaitTimeInMillis(interactionTransition: InteractionTransition, job: Job[P, T, S]): Long = {
+  private def getWaitTimeInMillis(interactionTransition: InteractionTransition, job: Job[S]): Long = {
     val state = job.processState.asInstanceOf[RecipeInstanceState]
     val input: immutable.Seq[IngredientInstance] = RecipeRuntime.createInteractionInput(interactionTransition, state)
     if (input.size != 1)
@@ -600,7 +600,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     )
   }
 
-  def scheduleFailedJobsForRetry(instance: Instance[P, T, S]): Map[Long, Cancellable] = {
+  def scheduleFailedJobsForRetry(instance: Instance[S]): Map[Long, Cancellable] = {
     instance.jobs.values.foldLeft(Map.empty[Long, Cancellable]) {
       case (map, j@Job(_, _, _, _, _, _, Some(internal.ExceptionState(failureTime, _, _, RetryWithDelay(delay))))) =>
         val newDelay = failureTime + delay - System.currentTimeMillis()
@@ -618,7 +618,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     }
   }
 
-  override def onRecoveryCompleted(instance: Instance[P, T, S]) = {
+  override def onRecoveryCompleted(instance: Instance[S]) = {
     val scheduledRetries = scheduleFailedJobsForRetry(instance)
     val (updatedInstance, jobs) = step(instance)
     context become running(updatedInstance, scheduledRetries)
