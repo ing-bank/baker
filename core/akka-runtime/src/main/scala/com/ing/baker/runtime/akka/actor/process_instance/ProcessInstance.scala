@@ -6,7 +6,8 @@ import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import cats.effect.IO
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
-import com.ing.baker.il.checkpointEventInteractionPrefix
+import com.ing.baker.il.{EventDescriptor, checkpointEventInteractionPrefix}
+import com.ing.baker.il.failurestrategy.{BlockInteraction, FireEventAfterFailure, InteractionFailureStrategy, RetryWithIncrementalBackoff}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstance._
@@ -71,6 +72,37 @@ object ProcessInstance {
           ingredient._1 -> PrimitiveValue("")
         else
           ingredient
+    }
+  }
+
+  def getOutputEventName(interactionTransition: InteractionTransition,
+                         log: DiagnosticLoggingAdapter): String = {
+    def getOutputEventNameWithRetryStrategyFiltered(fireEvent: EventDescriptor, eventsToFire: Seq[EventDescriptor]): String = {
+      val outputEventsNames: Seq[String] = eventsToFire.map(_.name)
+      if (outputEventsNames.size != 2)
+        throw new FatalInteractionException(s"Delayed transitions must have 2 input ingredients if FireEventAfterFailure strategy is used")
+      outputEventsNames.filter(_ != fireEvent.name).head
+    }
+
+    def getFirstOutputEventName(eventsToFire: Seq[EventDescriptor]): String = {
+      val outputEvents = interactionTransition.eventsToFire
+      if (outputEvents.size != 1)
+        throw new FatalInteractionException(s"Delayed transitions can only have 1 input ingredient")
+      outputEvents.head.name
+    }
+
+    interactionTransition.failureStrategy match {
+      case FireEventAfterFailure(event) =>
+        getOutputEventNameWithRetryStrategyFiltered(event, interactionTransition.eventsToFire)
+      case RetryWithIncrementalBackoff(_, _, _, _, Some(event)) =>
+        getOutputEventNameWithRetryStrategyFiltered(event, interactionTransition.eventsToFire)
+      case RetryWithIncrementalBackoff(_, _, _, _, None) =>
+        getFirstOutputEventName(interactionTransition.eventsToFire)
+      case BlockInteraction =>
+        getFirstOutputEventName(interactionTransition.eventsToFire)
+      case _ =>
+        log.error("Delayed transition firing with unrecognised Failure Strategy")
+        getFirstOutputEventName(interactionTransition.eventsToFire)
     }
   }
 }
@@ -569,15 +601,8 @@ class ProcessInstance[S, E](
       job.id,
       job.transition.getId,
       job.consume.marshall,
-      getOutputEventName(interactionTransition),
+      getOutputEventName(interactionTransition, log),
       originalSender)
-  }
-
-  private def getOutputEventName(interactionTransition: InteractionTransition): String = {
-    val outputEvents = interactionTransition.eventsToFire
-    if (outputEvents.size != 1)
-      throw new FatalInteractionException(s"Delayed transitions can only have 1 input ingredient")
-    outputEvents.head.name
   }
 
   private def getWaitTimeInMillis(interactionTransition: InteractionTransition, job: Job[S]): Long = {

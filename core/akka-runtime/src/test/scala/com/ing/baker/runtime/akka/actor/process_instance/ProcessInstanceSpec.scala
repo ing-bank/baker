@@ -1,11 +1,13 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
 import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props, Terminated}
+import akka.event.DiagnosticLoggingAdapter
 import akka.testkit.{TestDuration, TestProbe}
 import akka.util.Timeout
-import com.ing.baker.il.petrinet.Place
+import com.ing.baker.il.EventDescriptor
+import com.ing.baker.il.failurestrategy.{BlockInteraction, FireEventAfterFailure, InteractionFailureStrategy, RetryWithIncrementalBackoff}
+import com.ing.baker.il.petrinet.{InteractionTransition, Place}
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.akka.actor.process_instance.dsl.TestUtils
 import com.ing.baker.runtime.akka.actor.AkkaTestBase
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet
@@ -17,6 +19,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.dsl.TestUtils.{PlaceMet
 import com.ing.baker.runtime.akka.actor.process_instance.dsl._
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
+import com.ing.baker.runtime.akka.internal.FatalInteractionException
 import com.ing.baker.runtime.akka.namedCachedThreadPool
 import com.ing.baker.runtime.serialization.Encryption.NoEncryption
 import org.mockito.ArgumentMatchers.any
@@ -66,13 +69,14 @@ object ProcessInstanceSpec {
   def processInstanceProps[S, E](
                                   topology: PetriNet,
                                   runtime: ProcessInstanceRuntime[S, E],
-                                  settings: Settings): Props = {
+                                  settings: Settings,
+                                  delayedTransitionActor: ActorRef): Props = {
     Props(new ProcessInstance[S, E](
       "test",
       topology,
       settings,
       runtime,
-      null)
+      delayedTransitionActor)
     )
   }
 
@@ -80,9 +84,12 @@ object ProcessInstanceSpec {
     system.actorOf(props, name)
   }
 
-  def createProcessInstance[S, E](petriNet: PetriNet, runtime: ProcessInstanceRuntime[S, E], recipeInstanceId: String = UUID.randomUUID().toString)(implicit system: ActorSystem): ActorRef = {
+  def createProcessInstance[S, E](petriNet: PetriNet,
+                                  runtime: ProcessInstanceRuntime[S, E],
+                                  recipeInstanceId: String = UUID.randomUUID().toString,
+                                  delayedTransitionActor: ActorRef = null)(implicit system: ActorSystem): ActorRef = {
 
-    createPetriNetActor(processInstanceProps(petriNet, runtime, instanceSettings), recipeInstanceId)
+    createPetriNetActor(processInstanceProps(petriNet, runtime, instanceSettings, delayedTransitionActor), recipeInstanceId)
   }
 }
 
@@ -597,7 +604,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition(automated = false)(_ => Added(2))
       )
 
-      val petriNetActor = createPetriNetActor(processInstanceProps(petriNet, runtime, customSettings), UUID.randomUUID().toString)
+      val petriNetActor = createPetriNetActor(processInstanceProps(petriNet, runtime, customSettings, null), UUID.randomUUID().toString)
       watch(petriNetActor)
 
       implicit val timeout = Timeout(dilatedMillis(2000), MILLISECONDS)
@@ -663,6 +670,160 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       actor.tell(DelayedTransitionFired(jobId = 1, transitionId = 1, "EventToFire"), receiver.testActor)
 
       receiver.expectNoMessage()
+    }
+
+    "Should correctly determine the OutputEventName for Delayed Transitions" in new TestSequenceNet {
+      override val sequence = Seq(
+        transition() { _ => Added(1) })
+
+      val eventName = "originalEvent1"
+
+      val eventsToFire: Seq[EventDescriptor] = Seq(
+        EventDescriptor(eventName, Seq.empty)
+      )
+
+      val failureStrategy: InteractionFailureStrategy = BlockInteraction
+
+      val interactionTransition: InteractionTransition = InteractionTransition(
+        eventsToFire, eventsToFire,
+        Seq.empty,
+        "Name",
+        "Name",
+        Map.empty,
+        Option.empty,
+        failureStrategy, Map.empty, false)
+
+      val logMock = mock[DiagnosticLoggingAdapter]
+
+      val output: String = ProcessInstance.getOutputEventName(interactionTransition, logMock)
+
+      assert(output == eventName)
+    }
+
+    "Should fail to determine the OutputEventName for Delayed Transitions if there are 2 outcomes" in new TestSequenceNet {
+      override val sequence = Seq(
+        transition() { _ => Added(1) })
+
+      val eventName = "originalEvent1"
+      val eventName2 = "orignalEvent2"
+
+      val eventsToFire: Seq[EventDescriptor] = Seq(
+        EventDescriptor(eventName, Seq.empty),
+        EventDescriptor(eventName2, Seq.empty)
+      )
+
+      val failureStrategy: InteractionFailureStrategy = BlockInteraction
+
+      val interactionTransition: InteractionTransition = InteractionTransition(
+        eventsToFire, eventsToFire,
+        Seq.empty,
+        "Name",
+        "Name",
+        Map.empty,
+        Option.empty,
+        failureStrategy, Map.empty, false)
+
+      val logMock = mock[DiagnosticLoggingAdapter]
+
+      var exceptionThrown = false
+
+      try {
+        ProcessInstance.getOutputEventName(interactionTransition, logMock)
+      } catch {
+        case e: FatalInteractionException => exceptionThrown = true
+      }
+      assert(exceptionThrown)
+    }
+
+    "Should correctly determine the OutputEventName for Delayed Transitions if FireEventAfterFailure retry strategy is used" in new TestSequenceNet {
+      override val sequence = Seq(
+        transition() { _ => Added(1) })
+
+      val eventName = "originalEvent1"
+      val exhaustedEvent = "exhaustedEvent"
+
+      val eventsToFire: Seq[EventDescriptor] = Seq(
+        EventDescriptor(eventName, Seq.empty),
+        EventDescriptor(exhaustedEvent, Seq.empty)
+      )
+
+      val failureStrategy: InteractionFailureStrategy = FireEventAfterFailure(EventDescriptor(exhaustedEvent, Seq.empty))
+
+      val interactionTransition: InteractionTransition = InteractionTransition(
+        eventsToFire, eventsToFire,
+        Seq.empty,
+        "Name",
+        "Name",
+        Map.empty,
+        Option.empty,
+        failureStrategy, Map.empty, false)
+
+      val logMock = mock[DiagnosticLoggingAdapter]
+
+      val output: String = ProcessInstance.getOutputEventName(interactionTransition, logMock)
+
+      assert(output == eventName)
+    }
+
+    "Should correctly determine the OutputEventName for Delayed Transitions if RetryWithIncrementalBackoff is used with FireEvent" in new TestSequenceNet {
+      override val sequence = Seq(
+        transition() { _ => Added(1) })
+
+      val eventName = "originalEvent1"
+      val exhaustedEvent = "exhaustedEvent"
+
+      val eventsToFire: Seq[EventDescriptor] = Seq(
+        EventDescriptor(eventName, Seq.empty),
+        EventDescriptor(exhaustedEvent, Seq.empty)
+      )
+
+      val failureStrategy: InteractionFailureStrategy =
+        RetryWithIncrementalBackoff(Duration.Zero, 1.0, 1, Option.empty, Some(EventDescriptor(exhaustedEvent, Seq.empty)))
+
+      val interactionTransition: InteractionTransition = InteractionTransition(
+        eventsToFire, eventsToFire,
+        Seq.empty,
+        "Name",
+        "Name",
+        Map.empty,
+        Option.empty,
+        failureStrategy, Map.empty, false)
+
+      val logMock = mock[DiagnosticLoggingAdapter]
+
+      val output: String = ProcessInstance.getOutputEventName(interactionTransition, logMock)
+
+      assert(output == eventName)
+    }
+
+    "Should correctly determine the OutputEventName for Delayed Transitions if RetryWithIncrementalBackoff is used without FireEvent" in new TestSequenceNet {
+      override val sequence = Seq(
+        transition() { _ => Added(1) })
+
+      val eventName = "originalEvent1"
+      val exhaustedEvent = "exhaustedEvent"
+
+      val eventsToFire: Seq[EventDescriptor] = Seq(
+        EventDescriptor(eventName, Seq.empty)
+      )
+
+      val failureStrategy: InteractionFailureStrategy =
+        RetryWithIncrementalBackoff(Duration.Zero, 1.0, 1, Option.empty, Option.empty)
+
+      val interactionTransition: InteractionTransition = InteractionTransition(
+        eventsToFire, eventsToFire,
+        Seq.empty,
+        "Name",
+        "Name",
+        Map.empty,
+        Option.empty,
+        failureStrategy, Map.empty, false)
+
+      val logMock = mock[DiagnosticLoggingAdapter]
+
+      val output: String = ProcessInstance.getOutputEventName(interactionTransition, logMock)
+
+      assert(output == eventName)
     }
   }
 }
