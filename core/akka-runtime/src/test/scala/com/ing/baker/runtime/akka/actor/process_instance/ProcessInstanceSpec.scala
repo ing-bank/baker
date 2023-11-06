@@ -850,11 +850,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         Option.empty,
         BlockInteraction, Map.empty, false)
 
-      val duration: Duration = Duration.ofMillis(60000L)
-      val value: Value = Converters.toValue(duration)
-
-      val ingredients = Map[String, Value]("waitTime" -> value)
-
+      val ingredients = Map[String, Value]("waitTime" -> Converters.toValue(Duration.ofMillis(60000L)))
       val output: Long = ProcessInstance.getWaitTimeInMillis(interactionTransition, RecipeInstanceState("id", "id", ingredients, Seq.empty))
 
       assert(output == 60000L)
@@ -879,10 +875,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         Option.empty,
         BlockInteraction, Map.empty, false)
 
-      val duration: FiniteDuration = FiniteDuration.apply(60000L, TimeUnit.MILLISECONDS)
-      val value: Value = Converters.toValue(duration)
-
-      val ingredients = Map[String, Value]("waitTime" -> value)
+      val ingredients = Map[String, Value]("waitTime" -> Converters.toValue(FiniteDuration.apply(60000L, TimeUnit.MILLISECONDS)))
 
       val output: Long = ProcessInstance.getWaitTimeInMillis(interactionTransition, RecipeInstanceState("id", "id", ingredients, Seq.empty))
 
@@ -899,22 +892,16 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         EventDescriptor(eventName, Seq.empty)
       )
 
-      val duration: Duration = Duration.ofMillis(60000L)
-      val value: Value = Converters.toValue(duration)
-
       val interactionTransition: InteractionTransition = InteractionTransition(
         eventsToFire, eventsToFire,
         Seq(IngredientDescriptor("waitTime", Converters.readJavaType[Duration])),
         "Name",
         "Name",
-        Map[String, Value]("waitTime" -> value),
+        Map[String, Value]("waitTime" -> Converters.toValue(Duration.ofMillis(60000L))),
         Option.empty,
         BlockInteraction, Map.empty, false)
 
-
-      val duration2: Duration = Duration.ofMillis(1200000L)
-      val value2: Value = Converters.toValue(duration2)
-      val ingredients = Map[String, Value]("waitTime" -> value2)
+      val ingredients = Map[String, Value]("waitTime" -> Converters.toValue(Duration.ofMillis(1200000L)))
 
       val output: Long = ProcessInstance.getWaitTimeInMillis(interactionTransition, RecipeInstanceState("id", "id", ingredients, Seq.empty))
 
@@ -931,9 +918,6 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         EventDescriptor(eventName, Seq.empty)
       )
 
-      val duration: Duration = Duration.ofMillis(60000L)
-      val value: Value = Converters.toValue(duration)
-
       val interactionTransition: InteractionTransition = InteractionTransition(
         eventsToFire, eventsToFire,
         Seq(IngredientDescriptor("waitTime", Converters.readJavaType[Duration]),
@@ -943,7 +927,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         Map.empty,
         Option.empty,
         BlockInteraction, Map.empty, false)
-      val ingredients = Map[String, Value]("waitTime" -> value)
+
+      val ingredients = Map[String, Value]("waitTime" -> Converters.toValue(Duration.ofMillis(60000L)))
 
       var exceptionThrown = false
       try {
@@ -964,8 +949,6 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         EventDescriptor(eventName, Seq.empty)
       )
 
-      val value: Value = Converters.toValue(false)
-
       val interactionTransition: InteractionTransition = InteractionTransition(
         eventsToFire, eventsToFire,
         Seq(IngredientDescriptor("waitTime", types.Bool)),
@@ -974,8 +957,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         Map.empty,
         Option.empty,
         BlockInteraction, Map.empty, false)
-      val ingredients = Map[String, Value]("waitTime" -> value)
 
+      val ingredients = Map[String, Value]("waitTime" -> Converters.toValue(false))
       var exceptionThrown = false
       try {
         ProcessInstance.getWaitTimeInMillis(interactionTransition, RecipeInstanceState("id", "id", ingredients, Seq.empty))
