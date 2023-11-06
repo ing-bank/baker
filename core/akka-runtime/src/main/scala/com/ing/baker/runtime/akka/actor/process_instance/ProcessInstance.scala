@@ -105,6 +105,25 @@ object ProcessInstance {
         getFirstOutputEventName(interactionTransition.eventsToFire)
     }
   }
+
+  def getWaitTimeInMillis(interactionTransition: InteractionTransition, state: RecipeInstanceState): Long = {
+    val input: immutable.Seq[IngredientInstance] = RecipeRuntime.createInteractionInput(interactionTransition, state)
+    if (input.size != 1)
+      throw new FatalInteractionException(s"Delayed transitions can only have 1 input ingredient")
+    val scalaMillis = try {
+      Some(input.head.value.as[FiniteDuration].toMillis)
+    } catch {
+      case _: Exception => None
+    }
+    scalaMillis.getOrElse(
+      try {
+        input.head.value.as[java.time.Duration].toMillis
+      } catch {
+        case _: Exception =>
+          throw new FatalInteractionException(s"Delayed transition ingredient not of type scala.concurrent.duration.FiniteDuration or java.time.Duration")
+      }
+    )
+  }
 }
 
 /**
@@ -597,32 +616,12 @@ class ProcessInstance[S, E](
   def startDelayedTransition(interactionTransition: InteractionTransition, job: Job[S], originalSender: ActorRef): Unit = {
     delayedTransitionActor ! ScheduleDelayedTransition(
       recipeInstanceId,
-      getWaitTimeInMillis(interactionTransition, job),
+      getWaitTimeInMillis(interactionTransition, job.processState.asInstanceOf[RecipeInstanceState]),
       job.id,
       job.transition.getId,
       job.consume.marshall,
       getOutputEventName(interactionTransition, log),
       originalSender)
-  }
-
-  private def getWaitTimeInMillis(interactionTransition: InteractionTransition, job: Job[S]): Long = {
-    val state = job.processState.asInstanceOf[RecipeInstanceState]
-    val input: immutable.Seq[IngredientInstance] = RecipeRuntime.createInteractionInput(interactionTransition, state)
-    if (input.size != 1)
-      throw new FatalInteractionException(s"Delayed transitions can only have 1 input ingredient")
-    val scalaMillis = try {
-      Some(input.head.value.as[FiniteDuration].toMillis)
-    } catch {
-      case _: Exception => None
-    }
-    scalaMillis.getOrElse(
-      try {
-        input.head.value.as[java.time.Duration].toMillis
-      } catch {
-        case _: Exception =>
-          throw new FatalInteractionException(s"Delayed transition ingredient not of type scala.concurrent.duration.FiniteDuration or java.time.Duration")
-      }
-    )
   }
 
   def scheduleFailedJobsForRetry(instance: Instance[S]): Map[Long, Cancellable] = {
