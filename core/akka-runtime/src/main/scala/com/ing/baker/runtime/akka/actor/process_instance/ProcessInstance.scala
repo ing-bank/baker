@@ -22,10 +22,12 @@ import com.ing.baker.runtime.akka.internal.{FatalInteractionException, RecipeRun
 import com.ing.baker.runtime.model.BakerLogging
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
-import com.ing.baker.types.{PrimitiveValue, Value}
+import com.ing.baker.types.{Converters, PrimitiveValue, Value}
 
+import java.time.Duration
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.Duration.Zero
 import scala.concurrent.duration._
 import scala.language.existentials
 import scala.util.Try
@@ -106,23 +108,17 @@ object ProcessInstance {
     }
   }
 
+  private val finiteDurationType = Converters.readJavaType[FiniteDuration]
+  private val durationType = Converters.readJavaType[Duration]
+
   def getWaitTimeInMillis(interactionTransition: InteractionTransition, state: RecipeInstanceState): Long = {
     val input: immutable.Seq[IngredientInstance] = RecipeRuntime.createInteractionInput(interactionTransition, state)
-    if (input.size != 1)
-      throw new FatalInteractionException(s"Delayed transitions can only have 1 input ingredient")
-    val scalaMillis = try {
-      Some(input.head.value.as[FiniteDuration].toMillis)
-    } catch {
-      case _: Exception => None
+    if (input.size != 1) throw new FatalInteractionException(s"Delayed transitions can only have 1 input ingredient")
+    input.head.value match  {
+      case value if value.isInstanceOf(finiteDurationType) => value.as[FiniteDuration].toMillis
+      case value if value.isInstanceOf(durationType) => value.as[java.time.Duration].toMillis
+      case _ => throw new FatalInteractionException(s"Delayed transition ingredient not of type scala.concurrent.duration.FiniteDuration or java.time.Duration")
     }
-    scalaMillis.getOrElse(
-      try {
-        input.head.value.as[java.time.Duration].toMillis
-      } catch {
-        case _: Exception =>
-          throw new FatalInteractionException(s"Delayed transition ingredient not of type scala.concurrent.duration.FiniteDuration or java.time.Duration")
-      }
-    )
   }
 }
 
@@ -269,7 +265,7 @@ class ProcessInstance[S, E](
 
     case IdleStop(n) =>
       if (n == instance.sequenceNr && instance.activeJobs.isEmpty) {
-        log.idleStop(recipeInstanceId, settings.idleTTL.getOrElse(Duration.Zero))
+        log.idleStop(recipeInstanceId, settings.idleTTL.getOrElse(Zero))
         stopMe()
       }
 

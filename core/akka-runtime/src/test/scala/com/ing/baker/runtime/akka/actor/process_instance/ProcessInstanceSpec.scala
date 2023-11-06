@@ -831,7 +831,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       assert(output == eventName)
     }
 
-    "Should get correct wait time from state" in new TestSequenceNet {
+    "Should get correct wait time from state (Java Duration)" in new TestSequenceNet {
       override val sequence = Seq(
         transition() { _ => Added(1) })
 
@@ -843,7 +843,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val interactionTransition: InteractionTransition = InteractionTransition(
         eventsToFire, eventsToFire,
-        Seq(IngredientDescriptor("waitTime", types.RecordType(Seq(RecordField("seconds", Int64), RecordField("nanos", Int32))))),
+        Seq(IngredientDescriptor("waitTime", Converters.readJavaType[Duration])),
         "Name",
         "Name",
         Map.empty,
@@ -851,6 +851,35 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         BlockInteraction, Map.empty, false)
 
       val duration: Duration = Duration.ofMillis(60000L)
+      val value: Value = Converters.toValue(duration)
+
+      val ingredients = Map[String, Value]("waitTime" -> value)
+
+      val output: Long = ProcessInstance.getWaitTimeInMillis(interactionTransition, RecipeInstanceState("id", "id", ingredients, Seq.empty))
+
+      assert(output == 60000L)
+    }
+
+    "Should get correct wait time from state (Scala FiniteDuration)" in new TestSequenceNet {
+      override val sequence = Seq(
+        transition() { _ => Added(1) })
+
+      val eventName = "originalEvent1"
+
+      val eventsToFire: Seq[EventDescriptor] = Seq(
+        EventDescriptor(eventName, Seq.empty)
+      )
+
+      val interactionTransition: InteractionTransition = InteractionTransition(
+        eventsToFire, eventsToFire,
+        Seq(IngredientDescriptor("waitTime", Converters.readJavaType[FiniteDuration])),
+        "Name",
+        "Name",
+        Map.empty,
+        Option.empty,
+        BlockInteraction, Map.empty, false)
+
+      val duration: FiniteDuration = FiniteDuration.apply(60000L, TimeUnit.MILLISECONDS)
       val value: Value = Converters.toValue(duration)
 
       val ingredients = Map[String, Value]("waitTime" -> value)
@@ -875,7 +904,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val interactionTransition: InteractionTransition = InteractionTransition(
         eventsToFire, eventsToFire,
-        Seq(IngredientDescriptor("waitTime", types.RecordType(Seq(RecordField("seconds", Int64), RecordField("nanos", Int32))))),
+        Seq(IngredientDescriptor("waitTime", Converters.readJavaType[Duration])),
         "Name",
         "Name",
         Map[String, Value]("waitTime" -> value),
@@ -907,8 +936,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val interactionTransition: InteractionTransition = InteractionTransition(
         eventsToFire, eventsToFire,
-        Seq(IngredientDescriptor("waitTime", types.RecordType(Seq(RecordField("seconds", Int64), RecordField("nanos", Int32)))),
-          IngredientDescriptor("waitTime2", types.RecordType(Seq(RecordField("seconds", Int64), RecordField("nanos", Int32))))),
+        Seq(IngredientDescriptor("waitTime", Converters.readJavaType[Duration]),
+          IngredientDescriptor("waitTime2", Converters.readJavaType[Duration])),
         "Name",
         "Name",
         Map.empty,
