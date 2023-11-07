@@ -6,7 +6,8 @@ import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import cats.effect.IO
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
-import com.ing.baker.il.checkpointEventInteractionPrefix
+import com.ing.baker.il.{EventDescriptor, checkpointEventInteractionPrefix}
+import com.ing.baker.il.failurestrategy.{BlockInteraction, FireEventAfterFailure, InteractionFailureStrategy, RetryWithIncrementalBackoff}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstance._
@@ -21,10 +22,12 @@ import com.ing.baker.runtime.akka.internal.{FatalInteractionException, RecipeRun
 import com.ing.baker.runtime.model.BakerLogging
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
-import com.ing.baker.types.{PrimitiveValue, Value}
+import com.ing.baker.types.{Converters, PrimitiveValue, Value}
 
+import java.time.Duration
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.Duration.Zero
 import scala.concurrent.duration._
 import scala.language.existentials
 import scala.util.Try
@@ -71,6 +74,50 @@ object ProcessInstance {
           ingredient._1 -> PrimitiveValue("")
         else
           ingredient
+    }
+  }
+
+  def getOutputEventName(interactionTransition: InteractionTransition,
+                         log: DiagnosticLoggingAdapter): String = {
+    def getOutputEventNameWithRetryStrategyFiltered(fireEvent: EventDescriptor, eventsToFire: Seq[EventDescriptor]): String = {
+      val outputEventsNames: Seq[String] = eventsToFire.map(_.name)
+      if (outputEventsNames.size != 2)
+        throw new FatalInteractionException(s"Delayed transitions must have 2 input ingredients if FireEventAfterFailure strategy is used")
+      outputEventsNames.filter(_ != fireEvent.name).head
+    }
+
+    def getFirstOutputEventName(eventsToFire: Seq[EventDescriptor]): String = {
+      val outputEvents = interactionTransition.eventsToFire
+      if (outputEvents.size != 1)
+        throw new FatalInteractionException(s"Delayed transitions can only have 1 input ingredient")
+      outputEvents.head.name
+    }
+
+    interactionTransition.failureStrategy match {
+      case FireEventAfterFailure(event) =>
+        getOutputEventNameWithRetryStrategyFiltered(event, interactionTransition.eventsToFire)
+      case RetryWithIncrementalBackoff(_, _, _, _, Some(event)) =>
+        getOutputEventNameWithRetryStrategyFiltered(event, interactionTransition.eventsToFire)
+      case RetryWithIncrementalBackoff(_, _, _, _, None) =>
+        getFirstOutputEventName(interactionTransition.eventsToFire)
+      case BlockInteraction =>
+        getFirstOutputEventName(interactionTransition.eventsToFire)
+      case _ =>
+        log.error("Delayed transition firing with unrecognised Failure Strategy")
+        getFirstOutputEventName(interactionTransition.eventsToFire)
+    }
+  }
+
+  private val finiteDurationType = Converters.readJavaType[FiniteDuration]
+  private val durationType = Converters.readJavaType[Duration]
+
+  def getWaitTimeInMillis(interactionTransition: InteractionTransition, state: RecipeInstanceState): Long = {
+    val input: immutable.Seq[IngredientInstance] = RecipeRuntime.createInteractionInput(interactionTransition, state)
+    if (input.size != 1) throw new FatalInteractionException(s"Delayed transitions can only have 1 input ingredient")
+    input.head.value match  {
+      case value if value.isInstanceOf(finiteDurationType) => value.as[FiniteDuration].toMillis
+      case value if value.isInstanceOf(durationType) => value.as[java.time.Duration].toMillis
+      case _ => throw new FatalInteractionException(s"Delayed transition ingredient not of type scala.concurrent.duration.FiniteDuration or java.time.Duration")
     }
   }
 }
@@ -218,7 +265,7 @@ class ProcessInstance[S, E](
 
     case IdleStop(n) =>
       if (n == instance.sequenceNr && instance.activeJobs.isEmpty) {
-        log.idleStop(recipeInstanceId, settings.idleTTL.getOrElse(Duration.Zero))
+        log.idleStop(recipeInstanceId, settings.idleTTL.getOrElse(Zero))
         stopMe()
       }
 
@@ -565,39 +612,12 @@ class ProcessInstance[S, E](
   def startDelayedTransition(interactionTransition: InteractionTransition, job: Job[S], originalSender: ActorRef): Unit = {
     delayedTransitionActor ! ScheduleDelayedTransition(
       recipeInstanceId,
-      getWaitTimeInMillis(interactionTransition, job),
+      getWaitTimeInMillis(interactionTransition, job.processState.asInstanceOf[RecipeInstanceState]),
       job.id,
       job.transition.getId,
       job.consume.marshall,
-      getOutputEventName(interactionTransition),
+      getOutputEventName(interactionTransition, log),
       originalSender)
-  }
-
-  private def getOutputEventName(interactionTransition: InteractionTransition): String = {
-    val outputEvents = interactionTransition.eventsToFire
-    if (outputEvents.size != 1)
-      throw new FatalInteractionException(s"Delayed transitions can only have 1 input ingredient")
-    outputEvents.head.name
-  }
-
-  private def getWaitTimeInMillis(interactionTransition: InteractionTransition, job: Job[S]): Long = {
-    val state = job.processState.asInstanceOf[RecipeInstanceState]
-    val input: immutable.Seq[IngredientInstance] = RecipeRuntime.createInteractionInput(interactionTransition, state)
-    if (input.size != 1)
-      throw new FatalInteractionException(s"Delayed transitions can only have 1 input ingredient")
-    val scalaMillis = try {
-      Some(input.head.value.as[FiniteDuration].toMillis)
-    } catch {
-      case _: Exception => None
-    }
-    scalaMillis.getOrElse(
-      try {
-        input.head.value.as[java.time.Duration].toMillis
-      } catch {
-        case _: Exception =>
-          throw new FatalInteractionException(s"Delayed transition ingredient not of type scala.concurrent.duration.FiniteDuration or java.time.Duration")
-      }
-    )
   }
 
   def scheduleFailedJobsForRetry(instance: Instance[S]): Map[Long, Cancellable] = {
