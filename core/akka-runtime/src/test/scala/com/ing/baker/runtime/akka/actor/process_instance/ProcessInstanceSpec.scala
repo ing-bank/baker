@@ -4,7 +4,7 @@ import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props, Terminated}
 import akka.event.DiagnosticLoggingAdapter
 import akka.testkit.{TestDuration, TestProbe}
 import akka.util.Timeout
-import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
 import com.ing.baker.il.failurestrategy.{BlockInteraction, FireEventAfterFailure, InteractionFailureStrategy, RetryWithIncrementalBackoff}
 import com.ing.baker.il.petrinet.{InteractionTransition, Place}
 import com.ing.baker.petrinet.api._
@@ -78,7 +78,7 @@ object ProcessInstanceSpec {
                                   delayedTransitionActor: ActorRef): Props = {
     Props(new ProcessInstance[S, E](
       "test",
-      topology,
+      CompiledRecipe("name", UUID.randomUUID().toString, topology, Marking.empty, Seq.empty, Option.empty, Option.empty),
       settings,
       runtime,
       delayedTransitionActor)

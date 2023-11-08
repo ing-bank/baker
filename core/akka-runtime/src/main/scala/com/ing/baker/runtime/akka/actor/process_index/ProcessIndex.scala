@@ -215,7 +215,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         BackoffOpts.onStop(
           ProcessInstance.props[RecipeInstanceState, EventInstance](
             compiledRecipe.name,
-            compiledRecipe.petriNet,
+            compiledRecipe,
             runtime,
             ProcessInstance.Settings(
               executionContext = bakerExecutionContext,
