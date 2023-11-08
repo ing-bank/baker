@@ -107,8 +107,8 @@ object ProcessInstance {
     }
   }
 
-  private val javaDuration = FromValue[java.time.Duration]
-  private val finiteDuration = FromValue[FiniteDuration]
+  private val javaDuration = FromValue[java.time.Duration]()
+  private val finiteDuration = FromValue[FiniteDuration]()
 
   def getWaitTimeInMillis(interactionTransition: InteractionTransition, state: RecipeInstanceState): Long = {
     val input: immutable.Seq[IngredientInstance] = RecipeRuntime.createInteractionInput(interactionTransition, state)
