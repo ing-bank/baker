@@ -24,7 +24,7 @@ import com.ing.baker.runtime.akka.namedCachedThreadPool
 import com.ing.baker.runtime.scaladsl.RecipeInstanceState
 import com.ing.baker.runtime.serialization.Encryption.NoEncryption
 import com.ing.baker.types
-import com.ing.baker.types.{Converters, Int32, Int64, PrimitiveValue, RecordField, Value}
+import com.ing.baker.types.{Converters, Value}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock

@@ -217,3 +217,14 @@ case class ListValue(entries: List[Value]) extends Value {
 
   override def toString: String = entries.mkString("[", ",", "]")
 }
+
+object FromValue {
+  class FromValueExtractor[T: universe.TypeTag]() {
+    def unapply(v: Value) = Try {
+      v.as[T]
+    }.toOption
+  }
+
+  def apply[T: universe.TypeTag]() = new FromValueExtractor[T]
+}
+
