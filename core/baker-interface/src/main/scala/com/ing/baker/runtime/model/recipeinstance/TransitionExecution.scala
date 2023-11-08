@@ -101,7 +101,7 @@ private[recipeinstance] case class TransitionExecution(
           case _: EventTransition =>
               for {
                 timerstamp <- timer.clock.realTime(MILLISECONDS)
-                _ <- effect.delay(components.logging.firingEvent(recipeInstanceId, "", "", id, transition, timerstamp))
+                _ <- effect.delay(components.logging.firingEvent(recipeInstanceId, "UNKNOWN", "UNKNOWN", id, transition, timerstamp))
               } yield input
           case _ =>
             effect.pure(None)
