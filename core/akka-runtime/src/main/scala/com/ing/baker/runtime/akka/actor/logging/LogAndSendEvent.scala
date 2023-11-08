@@ -46,9 +46,14 @@ object LogAndSendEvent {
     bakerLogging.eventRejected(eventRejected)
   }
 
-  def firingEvent(recipeInstanceId: String, executionId: Long, transition: Transition, timeStarted: Long): Unit = {
+  def firingEvent(recipeInstanceId: String,
+                  recipeId: String,
+                  recipeName: String,
+                  executionId: Long,
+                  transition: Transition,
+                  timeStarted: Long): Unit = {
     //TODO This does not have a corrosponding BakerEvent, this should be created
-    bakerLogging.firingEvent(recipeInstanceId, executionId, transition, timeStarted)
+    bakerLogging.firingEvent(recipeInstanceId, recipeId, recipeName, executionId, transition, timeStarted)
   }
 
 }

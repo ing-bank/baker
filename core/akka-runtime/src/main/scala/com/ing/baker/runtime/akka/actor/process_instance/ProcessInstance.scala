@@ -6,7 +6,7 @@ import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import cats.effect.IO
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
-import com.ing.baker.il.{EventDescriptor, checkpointEventInteractionPrefix}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor, checkpointEventInteractionPrefix}
 import com.ing.baker.il.failurestrategy.{BlockInteraction, FireEventAfterFailure, InteractionFailureStrategy, RetryWithIncrementalBackoff}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
@@ -53,13 +53,13 @@ object ProcessInstance {
       None
   }
 
-  def props[S, E](processType: String, petriNet: PetriNet,
+  def props[S, E](processType: String, compiledRecipe: CompiledRecipe,
                                                     runtime: ProcessInstanceRuntime[S, E],
                                                     settings: Settings,
                                                     delayedTransitionActor: ActorRef): Props =
     Props(new ProcessInstance[S, E](
       processType,
-      petriNet,
+      compiledRecipe,
       settings,
       runtime,
       delayedTransitionActor)
@@ -126,10 +126,10 @@ object ProcessInstance {
   */
 class ProcessInstance[S, E](
                                                                processType: String,
-                                                               petriNet: PetriNet,
+                                                               compiledRecipe: CompiledRecipe,
                                                                settings: Settings,
                                                                runtime: ProcessInstanceRuntime[S, E],
-                                                               delayedTransitionActor: ActorRef) extends ProcessInstanceEventSourcing[S, E](petriNet, settings.encryption, runtime.eventSource) {
+                                                               delayedTransitionActor: ActorRef) extends ProcessInstanceEventSourcing[S, E](compiledRecipe.petriNet, settings.encryption, runtime.eventSource) {
 
   import context.dispatcher
 
@@ -301,7 +301,7 @@ class ProcessInstance[S, E](
     case event@TransitionFiredEvent(jobId, transitionId, correlationId, timeStarted, timeCompleted, consumed, produced, output) =>
 
       val transition = instance.petriNet.transitions.getById(transitionId)
-      log.transitionFired(recipeInstanceId, transition.asInstanceOf[Transition], jobId, timeStarted, timeCompleted)
+      log.transitionFired(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition, jobId, timeStarted, timeCompleted)
       // persist the success event
       persistEvent(instance, event)(
         eventSource.apply(instance)
@@ -340,7 +340,7 @@ class ProcessInstance[S, E](
         ).marshall
         val internalEvent = ProcessInstanceEventSourcing.DelayedTransitionFired(jobId, transitionId, produced, out)
 
-        log.transitionFired(recipeInstanceId, transition.asInstanceOf[Transition], jobId, System.currentTimeMillis(), System.currentTimeMillis())
+        log.transitionFired(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition.asInstanceOf[Transition], jobId, System.currentTimeMillis(), System.currentTimeMillis())
 
         persistEvent(instance, internalEvent)(
           eventSource.apply(instance)
@@ -369,7 +369,7 @@ class ProcessInstance[S, E](
 
       val transition = instance.petriNet.transitions.getById(transitionId)
 
-      log.transitionFailed(recipeInstanceId, transition.asInstanceOf[Transition], jobId, timeStarted, timeFailed, reason)
+      log.transitionFailed(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition.asInstanceOf[Transition], jobId, timeStarted, timeFailed, reason)
 
       strategy match {
         case RetryWithDelay(delay) =>
@@ -437,7 +437,7 @@ class ProcessInstance[S, E](
               context become running(updatedInstance, scheduledRetries)
             case (_, Left(reason)) =>
 
-              log.fireTransitionRejected(recipeInstanceId, transition.asInstanceOf[Transition], reason)
+              log.fireTransitionRejected(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition.asInstanceOf[Transition], reason)
 
               sender() ! FireSensoryEventRejection.FiringLimitMet(recipeInstanceId)
           }
@@ -552,10 +552,10 @@ class ProcessInstance[S, E](
   }
 
   def executeJob(job: Job[S], originalSender: ActorRef): Unit = {
-    log.fireTransition(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
+    log.fireTransition(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
     job.transition match {
       case _: EventTransition =>
-        BakerLogging.default.firingEvent(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
+        BakerLogging.default.firingEvent(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
         executeJobViaExecutor(job, originalSender)
       case i: InteractionTransition if isDelayedInteraction(i) =>
         startDelayedTransition(i, job, originalSender)

@@ -75,7 +75,9 @@ case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
       "recipeInstanceId" -> interactionCompleted.recipeInstanceId,
       "interactionName" -> interactionCompleted.interactionName,
       "duration" -> interactionCompleted.duration.toString,
-      "timeFinished" -> interactionCompleted.timeStamp.toString
+      "timeFinished" -> interactionCompleted.timeStamp.toString,
+      "recipeId" -> interactionCompleted.recipeId,
+      "recipeName" -> interactionCompleted.recipeName
     )
     withMDC(mdc, _.info(msg))
   }
@@ -94,10 +96,17 @@ case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
     withMDC(mdc, _.error(msg, interactionFailed.throwable))
   }
 
-  def firingEvent(recipeInstanceId: String, executionId: Long, transition: Transition, timeStarted: Long): Unit = {
+  def firingEvent(recipeInstanceId: String,
+                  recipeId: String,
+                  recipeName: String,
+                  executionId: Long,
+                  transition: Transition,
+                  timeStarted: Long): Unit = {
     val msg = s"Firing event '${transition.label}'"
     val mdc = Map(
       "recipeInstanceId" -> recipeInstanceId,
+      "recipeId" -> recipeId,
+      "recipeName" -> recipeName,
       "eventName" -> transition.label,
       "runtimeTimestamp" -> timeStarted.toString,
       "executionId" -> executionId.toString
