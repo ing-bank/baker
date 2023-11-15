@@ -27,7 +27,7 @@ export class AppSettingsService {
 //          };
 //          resolve()
 
-        this.http.get("/" + SETTINGS_LOCATION).toPromise().then(response => {
+        this.http.get(SETTINGS_LOCATION).toPromise().then(response => {
            AppSettingsService.settings = <AppSettings>response;
            resolve();
         }).catch((response: any) => {
