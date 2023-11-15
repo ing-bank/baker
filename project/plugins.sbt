@@ -20,7 +20,7 @@ addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent" % "0.1.6")
 
 addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.4.0")
 
-addSbtPlugin("no.arktekk.sbt" % "aether-deploy" % "0.27.0")
+addSbtPlugin("no.arktekk.sbt" % "aether-deploy" % "0.29.1")
 
 addSbtPlugin("community.flock.sbt" % "sbt-kotlin-plugin" % "3.0.1")
 
