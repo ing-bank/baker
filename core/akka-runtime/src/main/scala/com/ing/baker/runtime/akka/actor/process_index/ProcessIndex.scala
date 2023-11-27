@@ -243,8 +243,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         case Some(recipe) =>
           recipe.retentionPeriod.exists { p => meta.createdDateTime + p.toMillis < System.currentTimeMillis() }
         case None =>
-          log.error(s"Could not find recipe: ${meta.recipeId} during deletion for recipeInstanceId: ${meta.recipeInstanceId}")
-          false
+          log.error(s"Could not find recipe: ${meta.recipeId} during deletion for recipeInstanceId: ${meta.recipeInstanceId} using default 14 days")
+          meta.createdDateTime + (14 days).toMillis < System.currentTimeMillis()
       }
     else false
   }
