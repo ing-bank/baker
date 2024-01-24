@@ -12,7 +12,7 @@ addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "4.1.0")
 
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.1.1")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-multi-jvm" % "0.4.0")
+addSbtPlugin("com.github.sbt" % "sbt-multi-jvm" % "0.6.0")
 
 addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.9")
 
