@@ -17,6 +17,25 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.collection.immutable.Seq
 
+case class RecursiveIngredient(recursiveIngredient: RecursiveIngredient)
+object CheckStock {
+  sealed trait Outcome
+  case class SufficientStock() extends Outcome
+  case class OrderHasUnavailableItems(unavailableProductIds: List[String]) extends Outcome
+
+  val interaction: Interaction = Interaction(
+    name = "CheckStock",
+    inputIngredients = Seq(
+      Ingredient[RecursiveIngredient](name = "recursiveIngredient"),
+    ),
+    output = Seq(
+      Event[SufficientStock],
+      Event[OrderHasUnavailableItems]
+    )
+  )
+}
+
+
 class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
 
   "The recipe compiler" should {
@@ -343,6 +362,18 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
             .withRequiredEvent(initialEvent))
         val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
         compiledRecipe.recipeId shouldBe "469441173f91869a"
+        compiledRecipe.petriNet.transitions.count { case i: InteractionTransition => i.interactionName.contains(s"${checkpointEventInteractionPrefix}Success") case _ => false } shouldBe 1
+      }
+    }
+
+    "give the recipe with recursive ingredient" when {
+
+      val recipe = Recipe("RecursiveIngredient")
+        .withInteractions(CheckStock.interaction)
+
+      "it should compile with recursive schema" in {
+        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        compiledRecipe.recipeId shouldBe "d"
         compiledRecipe.petriNet.transitions.count { case i: InteractionTransition => i.interactionName.contains(s"${checkpointEventInteractionPrefix}Success") case _ => false } shouldBe 1
       }
     }
