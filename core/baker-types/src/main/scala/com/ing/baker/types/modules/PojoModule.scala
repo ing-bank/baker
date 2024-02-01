@@ -12,9 +12,32 @@ class PojoModule extends TypeModule {
   override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): Type = {
 
     val pojoClass = getBaseClass(javaType)
-    val fields = pojoClass.getDeclaredFields.toIndexedSeq.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
-    val ingredients = fields.map(f => RecordField(f.getName, context.readType(f.getGenericType)))
-    RecordType(ingredients)
+    val className = pojoClass.getName
+
+    context.loadType(className) match {
+      case Some(t) => t
+      case _       =>
+        var result: Type = null
+        try {
+
+          // we save the type as a reference type to avoid recursion
+          context.saveType(className, ReferenceType(context, className));
+
+          val fields = pojoClass.getDeclaredFields.toIndexedSeq.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
+          val ingredients = fields.map(f => RecordField(f.getName, context.readType(f.getGenericType)))
+          val `type` = RecordType(ingredients)
+          context.saveType(className, `type`);
+          result = RecordType(ingredients)
+
+        } finally {
+
+          if (result != null)
+            context.saveType(className, ReferenceType(context, pojoClass.getName));
+          else
+            context.removeType(className)
+        }
+        result
+    }
   }
 
   override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any = value match {

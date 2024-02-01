@@ -37,6 +37,9 @@ sealed trait Type {
       case (MapType(valueTypeA), MapType(valueTypeB)) => valueTypeA.isAssignableFrom(valueTypeB)
 
       case (RecordType(entriesA), RecordType(entriesB)) =>
+
+        // recursion here
+
         val entriesMap: Map[String, Type] = entriesB.map(f => f.name -> f.`type`).toMap
         entriesA.forall { f =>
           entriesMap.get(f.name) match {
@@ -44,6 +47,15 @@ sealed trait Type {
             case Some(fieldType) => f.`type`.isAssignableFrom(fieldType)
           }
         }
+
+      case (ReferenceType(typeLoaderA, stringA), ReferenceType(typeLoaderB, stringB)) =>
+        typeLoaderA == typeLoaderB && stringA == stringB
+
+      case (ReferenceType(typeLoader, name), otherType) =>
+        typeLoader.loadType(name).map(_.isAssignableFrom(otherType)).getOrElse(false)
+
+      case (otherType, ReferenceType(typeLoader, name)) =>
+        typeLoader.loadType(name).map(otherType.isAssignableFrom).getOrElse(false)
 
       case _ => false
     }
@@ -55,6 +67,8 @@ sealed trait Type {
   def isEnum: Boolean = isInstanceOf[EnumType]
   def isMap: Boolean = isInstanceOf[MapType]
   def isRecord: Boolean = isInstanceOf[RecordType]
+
+//  def getTypeLoader: TypeLoader
 
   override def hashCode(): Int = {
     val p1 = 31
@@ -122,6 +136,11 @@ case class RecordType(fields: Seq[RecordField]) extends Type {
 case class MapType(valueType: Type) extends Type {
 
   override def toString: String = s"Map[$valueType]"
+}
+
+case class ReferenceType(typeLoader: TypeLoader, name: String) extends Type {
+
+  override def toString: String = s"ReferenceType($name)"
 }
 
 sealed trait PrimitiveType extends Type

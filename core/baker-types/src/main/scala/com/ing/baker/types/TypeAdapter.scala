@@ -7,9 +7,13 @@ import com.ing.baker.types.modules._
 
 import scala.reflect.runtime.universe
 
-class TypeAdapter(private val modules: Map[Class[_], TypeModule]) {
+class TypeAdapter(private val modules: Map[Class[_], TypeModule]) extends TypeLoader {
 
   private val primitiveModule = new PrimitiveModule()
+
+  private val typeMap = new java.util.concurrent.ConcurrentHashMap[String, Type]()
+
+  protected[types] def saveType(name: String, t: Type): Unit = typeMap.put(name, t)
 
   /**
     * @param javaType
@@ -70,5 +74,11 @@ class TypeAdapter(private val modules: Map[Class[_], TypeModule]) {
         module.fromJava(this, obj)
     }
   }
+
+  override def loadType(name: String): Option[Type] =
+    Option(typeMap.get(name))
+
+  override def removeType(name: String): Unit =
+    typeMap.remove(name)
 }
 

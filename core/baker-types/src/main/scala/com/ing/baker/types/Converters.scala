@@ -13,7 +13,7 @@ object Converters extends LazyLogging {
 
 
   private val configPathPrefix: String = "baker.types"
-  private val defaultTypeConverter: TypeAdapter = new TypeAdapter(loadDefaultModulesFromConfig())
+  protected[types] val defaultTypeConverter: TypeAdapter = new TypeAdapter(loadDefaultModulesFromConfig())
 
   @nowarn
   def loadDefaultModulesFromConfig(): Map[Class[_], TypeModule] = {
