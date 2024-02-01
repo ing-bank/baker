@@ -1,9 +1,10 @@
 package com.ing.baker.types.modules
 
 import java.lang.reflect.Modifier
-
 import com.ing.baker.types._
 import org.objenesis.ObjenesisStd
+
+import scala.util.{Failure, Success, Try}
 
 class PojoModule extends TypeModule {
 
@@ -17,9 +18,7 @@ class PojoModule extends TypeModule {
     context.loadType(className) match {
       case Some(t) => t
       case _       =>
-        var result: Type = null
-        try {
-
+        Try {
           // we save the type as a reference type to avoid recursion
           context.saveType(className, ReferenceType(context, className));
 
@@ -27,16 +26,17 @@ class PojoModule extends TypeModule {
           val ingredients = fields.map(f => RecordField(f.getName, context.readType(f.getGenericType)))
           val `type` = RecordType(ingredients)
           context.saveType(className, `type`);
-          result = RecordType(ingredients)
+          RecordType(ingredients)
 
-        } finally {
+        } match {
 
-          if (result != null)
-            context.saveType(className, ReferenceType(context, pojoClass.getName));
-          else
+          case Failure(e) =>
             context.removeType(className)
+            throw e
+          case Success(result) =>
+            context.saveType(className, result);
+            result
         }
-        result
     }
   }
 

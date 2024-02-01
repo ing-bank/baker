@@ -234,6 +234,7 @@ class JavaModulesSpec extends AnyWordSpecLike with Matchers {
         RecordField("boolean", types.Bool))
 
       readJavaType[ComplexPOJOExample] shouldBe RecordType(complexPOJOExampleSeq)
+      readJavaType[ComplexPOJOExample] shouldBe RecordType(complexPOJOExampleSeq)
     }
 
     "be able to parse recursive types" in {
