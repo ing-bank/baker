@@ -25,7 +25,7 @@ object Dependencies {
     .exclude("com.typesafe.akka", "akka-protobuf")
 
   val scalaJava8Compat100 = "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.0"
-  val scalaJava8Compat091 = "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
+  val scalaJava8Compat091 = "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
 
   val scalaTest = "org.scalatest" %% "scalatest" % "3.2.12"
   val mockitoScala = "org.mockito" %% "mockito-scala" % mockitoScalaVersion
