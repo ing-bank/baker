@@ -147,6 +147,8 @@ object BakerTypedProtobufSerializer {
         .register("ProcessInstanceProtocol.MetaDataAdded"),
       forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFired]
         .register("TransitionFired")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFired)),
+      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailedWithOutput]
+        .register("TransitionFailedWithOutput")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailedWithOutput)),
       forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailed]
         .register("TransitionFailed")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailed)),
       forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.Initialized]

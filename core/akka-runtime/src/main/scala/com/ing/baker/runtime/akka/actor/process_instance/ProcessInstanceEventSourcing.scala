@@ -41,6 +41,19 @@ object ProcessInstanceEventSourcing extends LazyLogging {
                                   output: Any) extends TransitionEvent
 
   /**
+    * An event describing the fact that a transition failed but was continued with a given event
+    * This does not consume the input and puts the transition in a blocked state but does create the output.
+    */
+  case class TransitionFailedWithOutputEvent(override val jobId: Long,
+                                    override val transitionId: Id,
+                                    correlationId: Option[String],
+                                    timeStarted: Long,
+                                    timeCompleted: Long,
+                                    consumed: Marking[Id],
+                                    produced: Marking[Id],
+                                    output: Any) extends TransitionEvent
+
+  /**
     * An event describing the fact that a transition failed to fire.
     */
   case class TransitionFailedEvent(override val jobId: Long,
@@ -86,6 +99,7 @@ object ProcessInstanceEventSourcing extends LazyLogging {
       val initialMarking: Marking[Place] = initial.unmarshall(instance.petriNet.places)
 
       Instance[S](instance.petriNet, 1, initialMarking, Map.empty, initialState.asInstanceOf[S], Map.empty, Set.empty)
+
     case e: TransitionFiredEvent =>
       val transition = instance.petriNet.transitions.getById(e.transitionId)
       val newState = sourceFn(transition)(instance.state)(e.output.asInstanceOf[E])
@@ -99,6 +113,28 @@ object ProcessInstanceEventSourcing extends LazyLogging {
         state = newState,
         jobs = instance.jobs - e.jobId
       )
+
+    case e: TransitionFailedWithOutputEvent =>
+      val transition = instance.petriNet.transitions.getById(e.transitionId)
+      val newState = sourceFn(transition)(instance.state)(e.output.asInstanceOf[E])
+//      We only have the consumed markings for the job
+      val consumed: Marking[Place] = e.consumed.unmarshall(instance.petriNet.places)
+      val produced: Marking[Place] = e.produced.unmarshall(instance.petriNet.places)
+
+      //TODO determine what to do with the job not found situation
+      val job = instance.jobs.getOrElse(e.jobId, {
+        Job[S](e.jobId, e.correlationId, instance.state, transition, consumed, null, None)
+      })
+      val updatedJob: Job[S] = job.copy(failure = Some(ExceptionState(0, 1, "Blocked after FireEvent retry strategy", ExceptionStrategy.BlockTransition)))
+
+      instance.copy[S](
+        sequenceNr = instance.sequenceNr + 1,
+        marking = instance.marking |+| produced,
+        receivedCorrelationIds = instance.receivedCorrelationIds ++ e.correlationId,
+        state = newState,
+        jobs = instance.jobs + (job.id -> updatedJob)
+      )
+
     case e: TransitionFailedEvent =>
       val transition = instance.petriNet.transitions.getById(e.transitionId)
 
@@ -142,7 +178,7 @@ object ProcessInstanceEventSourcing extends LazyLogging {
             val newBakerMetaData: Map[String, String] =
               state.ingredients.get(RecipeInstanceMetaDataName) match {
                 case Some(value) =>
-                  if(value.isInstanceOf(MapType(CharArray))) {
+                  if (value.isInstanceOf(MapType(CharArray))) {
                     val oldMetaData: Map[String, String] = value.asMap[String, String](classOf[String], classOf[String]).asScala.toMap
                     oldMetaData ++ e.metaData
                   }
@@ -217,6 +253,7 @@ abstract class ProcessInstanceEventSourcing[S, E](
   override def receiveRecover: Receive = {
     case e: protobuf.Initialized      => applyToRecoveringState(e)
     case e: protobuf.TransitionFired  => applyToRecoveringState(e)
+    case e: protobuf.TransitionFailedWithOutput  => applyToRecoveringState(e)
     case e: protobuf.TransitionFailed => applyToRecoveringState(e)
     case e: protobuf.TransitionDelayed => applyToRecoveringState(e)
     case e: protobuf.DelayedTransitionFired => applyToRecoveringState(e)

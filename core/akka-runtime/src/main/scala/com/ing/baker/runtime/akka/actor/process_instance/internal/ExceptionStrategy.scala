@@ -1,6 +1,5 @@
 package com.ing.baker.runtime.akka.actor.process_instance.internal
 
-import com.ing.baker.il.petrinet.Place
 import com.ing.baker.petrinet.api.Marking
 
 object ExceptionStrategy {
