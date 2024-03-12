@@ -52,6 +52,7 @@ package object compiler {
       val inputFields: Seq[(String, Type)] = interactionDescriptor.inputIngredients
         .map { ingredient =>
           if (ingredient.name == common.recipeInstanceIdName) il.recipeInstanceIdName -> ingredient.ingredientType
+          else if(ingredient.name == common.bakerMetaDataName) il.bakerMetaDataName -> ingredient.ingredientType
           else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.ingredientType
         }
 

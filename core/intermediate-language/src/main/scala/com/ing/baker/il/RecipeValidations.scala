@@ -14,10 +14,20 @@ object RecipeValidations {
 
     // check if the process id argument type is correct
     val processIdArgumentTypeValidation : Seq[String] =
-        interactionTransition.requiredIngredients.filter(id => id.name.equals(recipeInstanceIdName)).flatMap {
+        interactionTransition.requiredIngredients.filter(id =>
+          id.name.equals(recipeInstanceIdName)
+        ).flatMap {
           case IngredientDescriptor(_, types.CharArray) => None
           case IngredientDescriptor(_, incompatibleType) => Some(s"Non supported process id type: ${incompatibleType} on interaction: '${interactionTransition.interactionName}'")
         }
+
+    val bakerMetaDataTypeValidation: Seq[String] =
+      interactionTransition.requiredIngredients.filter(id =>
+        id.name.equals(bakerMetaDataName)
+      ).flatMap {
+        case IngredientDescriptor(_, types.MapType(types.CharArray)) => None
+        case IngredientDescriptor(_, incompatibleType) => Some(s"Non supported MetaData type: ${incompatibleType} on interaction: '${interactionTransition.interactionName}'")
+      }
 
     // check if the predefined ingredient is of the expected type
     val predefinedIngredientOfExpectedTypeValidation : Iterable[String] =
@@ -33,7 +43,7 @@ object RecipeValidations {
           }
       }
 
-    interactionWithNoRequirementsValidation ++ processIdArgumentTypeValidation ++ predefinedIngredientOfExpectedTypeValidation
+    interactionWithNoRequirementsValidation ++ processIdArgumentTypeValidation ++ bakerMetaDataTypeValidation ++ predefinedIngredientOfExpectedTypeValidation
   }
 
   def validateInteractions(compiledRecipe: CompiledRecipe): Seq[String] = {

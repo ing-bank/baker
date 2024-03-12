@@ -87,6 +87,21 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       compiledRecipe.validationErrors should contain("Non supported process id type: Int32 on interaction: 'wrongrecipeInstanceIdInteraction'")
     }
 
+    "give an error if the MetaData is required and is not of the Map<String, String> type" in {
+      val wrongMetaDataInteraction =
+        Interaction(
+          name = "wrongMetaDataInteraction",
+          inputIngredients = Seq(new Ingredient[Int](common.bakerMetaDataName), initialIngredient),
+          output = Seq.empty)
+
+      val recipe = Recipe("NonProvidedIngredient")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(wrongMetaDataInteraction)
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.validationErrors should contain("Non supported MetaData type: Int32 on interaction: 'wrongMetaDataInteraction'")
+    }
+
     "give a list of wrong ingredients" when {
       "an ingredient is of the wrong type" in {
         val initialIngredientInt = new common.Ingredient("initialIngredient", RecordType(Seq(RecordField("data", Int32))))

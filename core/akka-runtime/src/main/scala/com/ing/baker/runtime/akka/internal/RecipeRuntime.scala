@@ -16,7 +16,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.internal.RecipeRuntime._
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.scaladsl._
-import com.ing.baker.types.{PrimitiveValue, Value}
+import com.ing.baker.types.{PrimitiveValue, RecordValue, Value}
 import org.slf4j.MDC
 
 import scala.collection.immutable.{Map, Seq}
@@ -96,10 +96,17 @@ object RecipeRuntime {
 
     // the process id is a special ingredient that is always available
     val recipeInstanceId: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(state.recipeInstanceId.toString)
+
+    //TODO create mapping for bakerMetaData
+
+    val metaData: Map[String, String] = com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.getMetaDataFromIngredients(state.ingredients).getOrElse(Map())
+
+    val bakerMetaData: (String, Value) = il.bakerMetaDataName -> RecordValue(metaData.map(e => e._1 -> PrimitiveValue(e._1)))
+
     val processId: (String, Value) = il.processIdName -> PrimitiveValue(state.recipeInstanceId.toString)
 
     // a map of all ingredients, the order is important, the predefined parameters and recipeInstanceId have precedence over the state ingredients.
-    val allIngredients: Map[String, Value] = state.ingredients ++ interaction.predefinedParameters + recipeInstanceId + processId
+    val allIngredients: Map[String, Value] = state.ingredients ++ interaction.predefinedParameters + recipeInstanceId + processId + bakerMetaData
 
     // arranges the ingredients in the expected order
     interaction.requiredIngredients.map {

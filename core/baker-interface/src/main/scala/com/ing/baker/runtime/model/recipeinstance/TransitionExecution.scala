@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.model.recipeinstance
 
 import java.lang.reflect.InvocationTargetException
-
 import cats.effect.{Effect, Timer}
 import cats.implicits._
 import com.ing.baker.il
@@ -12,7 +11,7 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl._
-import com.ing.baker.types.{PrimitiveValue, Value}
+import com.ing.baker.types.{PrimitiveValue, RecordValue, Value}
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.MDC
 
@@ -125,10 +124,14 @@ private[recipeinstance] case class TransitionExecution(
 
   private def executeInteractionInstance[F[_]](interactionTransition: InteractionTransition)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[Option[EventInstance]] = {
 
+    val metaData: Map[String, String] = com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.getMetaDataFromIngredients(ingredients).getOrElse(Map())
+
     def buildInteractionInput: Seq[IngredientInstance] = {
       val recipeInstanceIdIngredient: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(recipeInstanceId)
+      //TODO rewrite, this is very inefficient!
+      val bakerMetaDataIngredient: (String, Value) = il.bakerMetaDataName -> RecordValue(metaData.map(e => e._1 -> PrimitiveValue(e._1)))
       val processIdIngredient: (String, Value) = il.processIdName -> PrimitiveValue(recipeInstanceId)
-      val allIngredients: Map[String, Value] = ingredients ++ interactionTransition.predefinedParameters + recipeInstanceIdIngredient + processIdIngredient
+      val allIngredients: Map[String, Value] = ingredients ++ interactionTransition.predefinedParameters + recipeInstanceIdIngredient + processIdIngredient + bakerMetaDataIngredient
       interactionTransition.requiredIngredients.map {
         case IngredientDescriptor(name, _) =>
           IngredientInstance(name, allIngredients.getOrElse(name, throw new FatalInteractionException(s"Missing parameter '$name'")))
@@ -149,7 +152,8 @@ private[recipeinstance] case class TransitionExecution(
       components.interactions.execute(
         interactionTransition,
         buildInteractionInput,
-        com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.getMetaDataFromIngredients(ingredients))
+        Some(metaData))
+
 
     for {
       startTime <- timer.clock.realTime(MILLISECONDS)
