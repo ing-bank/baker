@@ -5,10 +5,12 @@ import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import cats.effect.IO
+import com.ing.baker.il.failurestrategy.{BlockInteraction, FireEventAfterFailure, RetryWithIncrementalBackoff}
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, checkpointEventInteractionPrefix}
-import com.ing.baker.il.failurestrategy.{BlockInteraction, FireEventAfterFailure, InteractionFailureStrategy, RetryWithIncrementalBackoff}
 import com.ing.baker.petrinet.api._
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransitionAck, ScheduleDelayedTransition}
+import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstance._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
@@ -17,10 +19,9 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransitionAck, ScheduleDelayedTransition}
 import com.ing.baker.runtime.akka.internal.{FatalInteractionException, RecipeRuntime}
 import com.ing.baker.runtime.model.BakerLogging
-import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, RecipeInstanceState}
+import com.ing.baker.runtime.scaladsl.{EventFired, EventInstance, IngredientInstance, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.{FromValue, PrimitiveValue, Value}
 
@@ -28,7 +29,6 @@ import scala.collection.immutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.language.existentials
-import scala.reflect.runtime.universe
 import scala.util.Try
 
 object ProcessInstance {
@@ -356,7 +356,10 @@ class ProcessInstance[S, E](
         ).marshall
         val internalEvent = ProcessInstanceEventSourcing.DelayedTransitionFired(jobId, transitionId, produced, out)
 
-        log.transitionFired(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition.asInstanceOf[Transition], jobId, System.currentTimeMillis(), System.currentTimeMillis())
+        val timestamp = System.currentTimeMillis()
+        log.transitionFired(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition.asInstanceOf[Transition], jobId, timestamp, timestamp)
+
+        LogAndSendEvent.eventFired(EventFired(timestamp, compiledRecipe.name, compiledRecipe.recipeId, recipeInstanceId,  out), context.system.eventStream)
 
         persistEvent(instance, internalEvent)(
           eventSource.apply(instance)
@@ -570,13 +573,17 @@ class ProcessInstance[S, E](
   def executeJob(job: Job[S], originalSender: ActorRef): Unit = {
     log.fireTransition(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
     job.transition match {
-      case _: EventTransition =>
+      case eventTransition: EventTransition =>
         BakerLogging.default.firingEvent(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
         executeJobViaExecutor(job, originalSender)
       case i: InteractionTransition if isDelayedInteraction(i) =>
         startDelayedTransition(i, job, originalSender)
       case i: InteractionTransition if isCheckpointEventInteraction(i) =>
-        val event = jobToFinishedInteraction(job, i.eventsToFire.head.name)
+        val event: TransitionFiredEvent = jobToFinishedInteraction(job, i.eventsToFire.head.name)
+
+        val currentTime = System.currentTimeMillis()
+        LogAndSendEvent.eventFired(EventFired(currentTime, compiledRecipe.name, compiledRecipe.recipeId, recipeInstanceId,  event.output.asInstanceOf[EventInstance]), context.system.eventStream)
+
         self.tell(event, originalSender)
       case _ => executeJobViaExecutor(job, originalSender)
     }

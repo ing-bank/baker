@@ -21,12 +21,22 @@ object RecipeValidations {
           case IngredientDescriptor(_, incompatibleType) => Some(s"Non supported process id type: ${incompatibleType} on interaction: '${interactionTransition.interactionName}'")
         }
 
+    //Check if MetaData is correct type
     val bakerMetaDataTypeValidation: Seq[String] =
       interactionTransition.requiredIngredients.filter(id =>
         id.name.equals(bakerMetaDataName)
       ).flatMap {
         case IngredientDescriptor(_, types.MapType(types.CharArray)) => None
         case IngredientDescriptor(_, incompatibleType) => Some(s"Non supported MetaData type: ${incompatibleType} on interaction: '${interactionTransition.interactionName}'")
+      }
+
+    //Check if BakerEventList is correct type
+    val bakerEventListTypeValidation: Seq[String] =
+      interactionTransition.requiredIngredients.filter(id =>
+        id.name.equals(bakerEventListName)
+      ).flatMap {
+        case IngredientDescriptor(_, types.ListType(types.CharArray)) => None
+        case IngredientDescriptor(_, incompatibleType) => Some(s"Non supported EventList type: ${incompatibleType} on interaction: '${interactionTransition.interactionName}'")
       }
 
     // check if the predefined ingredient is of the expected type

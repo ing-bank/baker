@@ -11,6 +11,7 @@ package object il {
 
   val recipeInstanceIdName = "recipeInstanceId"
   val bakerMetaDataName = "bakerMetaData"
+  val bakerEventListName = "bakerEventList"
   val processIdName = "$ProcessID$" //needed for backwards compatibility with V1 and V2
   val exhaustedEventAppend = "RetryExhausted"
   val checkpointEventInteractionPrefix = "$CheckpointEventInteraction$"

@@ -11,7 +11,7 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl._
-import com.ing.baker.types.{PrimitiveValue, RecordValue, Value}
+import com.ing.baker.types.{ListValue, PrimitiveValue, RecordValue, Value}
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.MDC
 
@@ -128,9 +128,14 @@ private[recipeinstance] case class TransitionExecution(
 
     def buildInteractionInput: Seq[IngredientInstance] = {
       val recipeInstanceIdIngredient: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(recipeInstanceId)
+      val processIdIngredient: (String, Value) = il.processIdName -> PrimitiveValue(recipeInstanceId)
+
       //TODO rewrite, this is very inefficient!
       val bakerMetaDataIngredient: (String, Value) = il.bakerMetaDataName -> RecordValue(metaData.map(e => e._1 -> PrimitiveValue(e._1)))
-      val processIdIngredient: (String, Value) = il.processIdName -> PrimitiveValue(recipeInstanceId)
+
+      //TODO get events from the runtime during execution
+      val bakerEventList: (String, Value) = il.bakerEventListName -> ListValue(List.empty)
+
       val allIngredients: Map[String, Value] = ingredients ++ interactionTransition.predefinedParameters + recipeInstanceIdIngredient + processIdIngredient + bakerMetaDataIngredient
       interactionTransition.requiredIngredients.map {
         case IngredientDescriptor(name, _) =>
@@ -160,20 +165,22 @@ private[recipeinstance] case class TransitionExecution(
       outcome <- {
 
         for {
-          event <- effect.delay(InteractionStarted(startTime, recipe.name, recipe.recipeId, recipeInstanceId, interactionTransition.interactionName))
-          _ <- effect.delay(components.logging.interactionStarted(event))
-          _ <- components.eventStream.publish(event)
+          interactionStarted <- effect.delay(InteractionStarted(startTime, recipe.name, recipe.recipeId, recipeInstanceId, interactionTransition.interactionName))
+          _ <- effect.delay(components.logging.interactionStarted(interactionStarted))
+          _ <- components.eventStream.publish(interactionStarted)
 
           interactionOutput <- effect.bracket(setupMdc)(_ => execute)(_ => cleanMdc)
           _ <- validateInteractionOutput(interactionTransition, interactionOutput)
           transformedOutput = interactionOutput.map(_.transformWith(interactionTransition))
 
           endTime <- timer.clock.realTime(MILLISECONDS)
-          event = InteractionCompleted(
+
+          interactionCompleted = InteractionCompleted(
             endTime, endTime - startTime, recipe.name, recipe.recipeId, recipeInstanceId,
             interactionTransition.interactionName, transformedOutput)
-          _ <- effect.delay(components.logging.interactionFinished(event))
-          _ <- components.eventStream.publish(event)
+          _ <- effect.delay(components.logging.interactionFinished(interactionCompleted))
+          _ <- components.eventStream.publish(interactionCompleted)
+
         } yield transformedOutput
 
       }.onError { case e: Throwable =>
@@ -184,11 +191,11 @@ private[recipeinstance] case class TransitionExecution(
         }
         for {
           endTime <- timer.clock.realTime(MILLISECONDS)
-          event = InteractionFailed(
+          interactionFailed = InteractionFailed(
             endTime, endTime - startTime, recipe.name, recipe.recipeId, recipeInstanceId,
             transition.label, failureCount, throwable, interactionTransition.failureStrategy.apply(failureCount + 1))
-          _ <- effect.delay(components.logging.interactionFailed(event))
-          _ <- components.eventStream.publish(event)
+          _ <- effect.delay(components.logging.interactionFailed(interactionFailed))
+          _ <- components.eventStream.publish(interactionFailed)
         } yield ()
 
       }

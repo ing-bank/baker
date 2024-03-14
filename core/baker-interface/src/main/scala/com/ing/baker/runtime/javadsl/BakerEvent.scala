@@ -71,6 +71,34 @@ case class EventRejected(timeStamp: Long,
 
   def getReason: RejectReason = reason
 }
+
+/**
+  * Event describing the fact that an interaction outcome event was fired for a process
+  *
+  * @param timeStamp The time that the event was received
+  * @param recipeName The name of the recipe that interaction is part of
+  * @param recipeId The recipe id
+  * @param recipeInstanceId The id of the process
+  * @param correlationId The (optional) correlation id of the event
+  * @param event The event
+  */
+case class EventFired(timeStamp: Long,
+                      recipeName: String,
+                      recipeId: String,
+                      recipeInstanceId: String,
+                      event: EventInstance) extends BakerEvent with common.EventFired {
+
+  def getTimeStamp: Long = timeStamp
+
+  def getRecipeName: String = recipeName
+
+  def getRecipeId: String = recipeId
+
+  def getRecipeInstanceId: String = recipeInstanceId
+
+  def getEvent: EventInstance = event
+}
+
 /**
   * Event describing the fact that an interaction failed during execution
   *

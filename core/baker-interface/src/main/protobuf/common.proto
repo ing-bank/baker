@@ -352,6 +352,14 @@ message EventRejectedBakerEvent {
     optional RejectReason reason = 5;
 }
 
+message EventFiredBakerEvent {
+    optional int64 timeStamp = 1;
+    optional string recipeName = 2;
+    optional string recipeId = 3;
+    optional string recipeInstanceId = 4;
+    optional RuntimeEvent event = 6;
+}
+
 message InteractionFailedBakerEvent {
     optional int64 timeStamp = 1;
     optional int64 duration = 2;
@@ -400,6 +408,7 @@ message BakerEvent {
     oneof oneof_baker_event {
         EventReceivedBakerEvent eventReceived = 1;
         EventRejectedBakerEvent eventRejected = 2;
+        EventFiredBakerEvent eventFired = 8;
         InteractionFailedBakerEvent interactionFailed = 3;
         InteractionStartedBakerEvent interactionStarted = 4;
         InteractionCompletedBakerEvent interactionCompleted = 5;
