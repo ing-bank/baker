@@ -160,6 +160,53 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
             "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
     }
 
+    test("execute an interaction when its ingredient is provided with MetaData requirement") { context =>
+      val recipe =
+        Recipe("IngredientProvidedRecipeWithMetaData")
+          .withInteraction(interactionOneWithMetaData)
+          .withSensoryEvent(initialEvent)
+
+      for {
+        bakerWithRecipe <- context.setupBakerWithRecipe(recipe, mockImplementations)
+        (baker, recipeId) = bakerWithRecipe
+        _ = when(testInteractionOneWithMetaDataMock.apply(anyString(), anyString(), any())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        metaData = Map("MetaDataKey" -> "MetaDataValue")
+        _ <- baker.bake(recipeId, recipeInstanceId, metaData)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ = verify(testInteractionOneWithMetaDataMock).apply(recipeInstanceId, "initialIngredient", metaData)
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+      } yield
+        state.ingredients shouldBe
+          ingredientMap(
+            "RecipeInstanceMetaData" -> metaData,
+            "initialIngredient" -> initialIngredientValue,
+            "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
+    }
+
+    test("execute an interaction when its ingredient is provided with EventList requirement") { context =>
+      val recipe =
+        Recipe("IngredientProvidedRecipeWithEventList")
+          .withInteraction(interactionOneWithEventList)
+          .withSensoryEvent(initialEvent)
+
+      for {
+        bakerWithRecipe <- context.setupBakerWithRecipe(recipe, mockImplementations)
+        (baker, recipeId) = bakerWithRecipe
+        _ = when(testInteractionOneWithEventListMock.apply(anyString(), anyString(), any())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        eventList = List()
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ = verify(testInteractionOneWithEventListMock).apply(recipeInstanceId, "initialIngredient", eventList)
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+      } yield
+        state.ingredients shouldBe
+          ingredientMap(
+            "initialIngredient" -> initialIngredientValue,
+            "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
+    }
+
     test("Correctly notify on event") { context =>
 
       val sensoryEvent = Event(

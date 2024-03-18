@@ -185,8 +185,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
         case Some(interactionInstance) =>
           interactionInstance.execute(
               ingredients.filter(ingredientInstance => ingredientInstance.name != RecipeInstanceMetaDataName),
-              getMetaDataFromIngredients(ingredients)
-                .getOrElse(Map.empty))
+              getMetaDataFromIngredients(ingredients).getOrElse(Map.empty))
             .map(executionSuccess => InteractionExecutionResult(Right(InteractionExecutionResult.Success(executionSuccess))))
             .recover {
               case e => InteractionExecutionResult(Left(InteractionExecutionResult.Failure(

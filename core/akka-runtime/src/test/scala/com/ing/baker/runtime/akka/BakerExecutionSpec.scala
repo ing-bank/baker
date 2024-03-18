@@ -13,7 +13,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe, CheckPointEvent}
+import com.ing.baker.recipe.scaladsl.{CheckPointEvent, Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetaDataName
@@ -22,7 +22,7 @@ import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance
 import com.ing.baker.types.{CharArray, Int32, PrimitiveValue, Value}
 import com.typesafe.config.{Config, ConfigFactory}
 import io.prometheus.client.CollectorRegistry
-import org.mockito.ArgumentMatchers.{any, anyString, argThat, eq => mockitoEq}
+import org.mockito.ArgumentMatchers.{any, anyMap, anyString, argThat, eq => mockitoEq}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
@@ -271,6 +271,51 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue))))
         _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, "initialIngredient")
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+      } yield
+        state.ingredients shouldBe
+          ingredientMap(
+            "initialIngredient" -> initialIngredientValue,
+            "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
+    }
+
+    "execute an interaction when its ingredient is provided with MetaData requirement" in {
+      val recipe =
+        Recipe("IngredientProvidedRecipeWithSpecial")
+          .withInteraction(interactionOneWithMetaData)
+          .withSensoryEvent(initialEvent)
+
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ = when(testInteractionOneWithMetaDataMock.apply(anyString(), anyString(), any())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        metaData = Map("MetaDataKey" -> "MetaDataValue")
+        _ <- baker.bake(recipeId, recipeInstanceId, metaData)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue))))
+        _ = verify(testInteractionOneWithMetaDataMock).apply(recipeInstanceId.toString, "initialIngredient", metaData)
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+      } yield
+        state.ingredients shouldBe
+          ingredientMap(
+            "RecipeInstanceMetaData" -> metaData,
+            "initialIngredient" -> initialIngredientValue,
+            "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
+    }
+
+    "execute an interaction when its ingredient is provided with EventList requirement" in {
+      val recipe =
+        Recipe("IngredientProvidedRecipeWithSpecial")
+          .withInteraction(interactionOneWithEventList)
+          .withSensoryEvent(initialEvent)
+
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ = when(testInteractionOneWithEventListMock.apply(anyString(), anyString(), any())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        eventList = List()
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue))))
+        _ = verify(testInteractionOneWithEventListMock).apply(recipeInstanceId.toString, "initialIngredient", eventList)
         state <- baker.getRecipeInstanceState(recipeInstanceId)
       } yield
         state.ingredients shouldBe

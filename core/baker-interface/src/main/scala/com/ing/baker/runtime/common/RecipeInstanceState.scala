@@ -21,5 +21,7 @@ trait RecipeInstanceState extends LanguageApi { self =>
 
   def ingredients: language.Map[String, Value]
 
+  def recipeInstanceMetadata: language.Map[String, String]
+
   def events: language.Seq[EventType]
 }

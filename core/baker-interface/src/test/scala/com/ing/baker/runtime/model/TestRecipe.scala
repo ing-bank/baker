@@ -123,6 +123,30 @@ trait TestRecipe[F[_]] {
     def apply(recipeInstanceId: String, initialIngredient: String): F[InteractionOneSuccessful]
   }
 
+  val interactionOneWithMetaData =
+    Interaction(
+      name = "InteractionOneWithMetaData",
+      inputIngredients = Seq(recipeInstanceId, initialIngredient, bakerMetadata),
+      output = Seq(interactionOneSuccessful))
+
+  trait InteractionOneWithMetaData {
+    def name: String = "InteractionOneWithMetaData"
+
+    def apply(recipeInstanceId: String, initialIngredient: String, bakerMetaData: Map[String, String]): F[InteractionOneSuccessful]
+  }
+
+  val interactionOneWithEventList =
+    Interaction(
+      name = "InteractionOneWithEventList",
+      inputIngredients = Seq(recipeInstanceId, initialIngredient, bakerEventList),
+      output = Seq(interactionOneSuccessful))
+
+  trait InteractionOneWithEventList {
+    def name: String = "InteractionOneWithEventList"
+
+    def apply(recipeInstanceId: String, initialIngredient: String, recipeInstanceEventList: List[String]): F[InteractionOneSuccessful]
+  }
+
   val interactionTwo =
     Interaction(
       name = "InteractionTwo",

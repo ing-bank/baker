@@ -58,6 +58,7 @@ private[recipeinstance] case class TransitionExecution(
   consume: Marking[Place],
   input: Option[EventInstance],
   ingredients: Map[String, Value],
+  recipeInstanceMetadata: Map[String, String],
   correlationId: Option[String],
   state: TransitionExecution.State = TransitionExecution.State.Active,
   isReprovider: Boolean
@@ -124,19 +125,24 @@ private[recipeinstance] case class TransitionExecution(
 
   private def executeInteractionInstance[F[_]](interactionTransition: InteractionTransition)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[Option[EventInstance]] = {
 
-    val metaData: Map[String, String] = com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.getMetaDataFromIngredients(ingredients).getOrElse(Map())
-
     def buildInteractionInput: Seq[IngredientInstance] = {
       val recipeInstanceIdIngredient: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(recipeInstanceId)
       val processIdIngredient: (String, Value) = il.processIdName -> PrimitiveValue(recipeInstanceId)
 
-      //TODO rewrite, this is very inefficient!
-      val bakerMetaDataIngredient: (String, Value) = il.bakerMetaDataName -> RecordValue(metaData.map(e => e._1 -> PrimitiveValue(e._1)))
+      // TODO rewrite, this is very inefficient, should not be needed if we use RecipeInstanceMetaData as ingredient and mapping name
+      val bakerMetaDataIngredient: (String, Value) = il.bakerMetaDataName -> RecordValue(recipeInstanceMetadata.map(e => e._1 -> PrimitiveValue(e._2)))
 
-      //TODO get events from the runtime during execution
+      // TODO get events from the runtime during execution
       val bakerEventList: (String, Value) = il.bakerEventListName -> ListValue(List.empty)
 
-      val allIngredients: Map[String, Value] = ingredients ++ interactionTransition.predefinedParameters + recipeInstanceIdIngredient + processIdIngredient + bakerMetaDataIngredient
+      val allIngredients: Map[String, Value] =
+        ingredients ++
+          interactionTransition.predefinedParameters +
+          recipeInstanceIdIngredient +
+          processIdIngredient +
+          bakerMetaDataIngredient +
+          bakerEventList
+
       interactionTransition.requiredIngredients.map {
         case IngredientDescriptor(name, _) =>
           IngredientInstance(name, allIngredients.getOrElse(name, throw new FatalInteractionException(s"Missing parameter '$name'")))
@@ -157,7 +163,7 @@ private[recipeinstance] case class TransitionExecution(
       components.interactions.execute(
         interactionTransition,
         buildInteractionInput,
-        Some(metaData))
+        Some(recipeInstanceMetadata))
 
 
     for {

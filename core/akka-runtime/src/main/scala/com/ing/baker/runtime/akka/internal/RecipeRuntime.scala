@@ -96,9 +96,8 @@ object RecipeRuntime {
     // the process id is a special ingredient that is always available
     val recipeInstanceId: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(state.recipeInstanceId.toString)
 
-    val metaData: Map[String, String] = com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.getMetaDataFromIngredients(state.ingredients).getOrElse(Map())
-
-    val bakerMetaData: (String, Value) = il.bakerMetaDataName -> RecordValue(metaData.map(e => e._1 -> PrimitiveValue(e._1)))
+    //TODO store this in the RecipeInstanceState instead of creating it every time
+    val bakerMetaData: (String, Value) = il.bakerMetaDataName -> RecordValue(state.recipeInstanceMetadata.map(e => e._1 -> PrimitiveValue(e._2)))
 
     //TODO get events from the runtime during execution
     val bakerEventList: (String, Value) = il.bakerEventListName -> ListValue(List.empty)
@@ -106,7 +105,13 @@ object RecipeRuntime {
     val processId: (String, Value) = il.processIdName -> PrimitiveValue(state.recipeInstanceId.toString)
 
     // a map of all ingredients, the order is important, the predefined parameters and recipeInstanceId have precedence over the state ingredients.
-    val allIngredients: Map[String, Value] = state.ingredients ++ interaction.predefinedParameters + recipeInstanceId + processId + bakerMetaData
+    val allIngredients: Map[String, Value] =
+      state.ingredients ++
+        interaction.predefinedParameters +
+        recipeInstanceId +
+        processId +
+        bakerMetaData +
+        bakerEventList
 
     // arranges the ingredients in the expected order
     interaction.requiredIngredients.map {
@@ -210,8 +215,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
     LogAndSendEvent.interactionStarted(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName), eventStream)
 
     // executes the interaction and obtain the (optional) output event
-    interactionManager.execute(interaction, input,
-      com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.getMetaDataFromIngredients(processState.ingredients)).map { interactionOutput =>
+    interactionManager.execute(interaction, input, Some(processState.recipeInstanceMetadata)).map { interactionOutput =>
 
       // validates the event, throws a FatalInteraction exception if invalid
       RecipeRuntime.validateInteractionOutput(interaction, interactionOutput).foreach { validationError =>

@@ -29,6 +29,8 @@ class RecipeRuntimeSpec extends AnyWordSpecLike with Matchers with MockitoSugar 
       //in V3, process id from V1 and V2 is now called a recipe instance id
       when(mockState.recipeInstanceId).thenReturn(processId)
 
+      when(mockState.recipeInstanceMetadata).thenReturn(Map())
+
       //this call would fail without the fix
       RecipeRuntime.createInteractionInput(mockTransition, mockState)
     }

@@ -98,7 +98,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
     "create the PetriNetInstance actor when Initialize message is received" in {
       val recipeInstanceId = UUID.randomUUID().toString
       val initializeMsg =
-        Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty))
+        Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
@@ -143,7 +143,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
     "not create the PetriNetInstance actor if already created" in {
       val recipeInstanceId = UUID.randomUUID().toString
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
@@ -171,7 +171,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
 
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
       processProbe.expectMsg(initializeMsg)
       Thread.sleep(recipeRetentionPeriod.toMillis)
       // inform the index to check for processes to be cleaned up
@@ -203,7 +203,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
 
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
       processProbe.expectMsg(initializeMsg)
       Thread.sleep(recipeRetentionPeriod.toMillis)
       // inform the index to check for processes to be cleaned up
@@ -242,7 +242,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val recipeInstanceId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
 
 
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
@@ -290,7 +290,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val recipeInstanceId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
 
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
 
@@ -322,7 +322,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val recipeInstanceId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
 
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
 
@@ -354,7 +354,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val recipeInstanceId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
 
 
 
