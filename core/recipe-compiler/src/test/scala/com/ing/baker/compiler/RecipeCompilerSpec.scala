@@ -102,6 +102,35 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       compiledRecipe.validationErrors should contain("Non supported MetaData type: Int32 on interaction: 'wrongMetaDataInteraction'")
     }
 
+    "give an error if the baker internal ingredients are provided" in {
+      val wrongDateEvent = Event("WrongDataEvent",
+        Seq(
+          Ingredient[String]("recipeInstanceId"),
+          Ingredient[String]("RecipeInstanceMetaData")),
+        maxFiringLimit = None)
+
+      val wrongDateEvent2 = Event("WrongDataEvent2",
+        Seq(Ingredient[String]("RecipeInstanceEventList")),
+        maxFiringLimit = None)
+
+      val wrongMetaDataInteraction =
+        Interaction(
+          name = "wrongDataProvidedInteraction",
+          inputIngredients = Seq(new Ingredient[String](common.recipeInstanceIdName), initialIngredient),
+          output = Seq(wrongDateEvent2))
+
+      val recipe = Recipe("WrongDataRecipe")
+        .withSensoryEvents(initialEvent, wrongDateEvent)
+        .withInteractions(wrongMetaDataInteraction)
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.validationErrors shouldBe List(
+        "Ingredient 'recipeInstanceId' is provided and this is a reserved name for internal use in Baker",
+        "Ingredient 'RecipeInstanceMetaData' is provided and this is a reserved name for internal use in Baker",
+        "Ingredient 'RecipeInstanceEventList' is provided and this is a reserved name for internal use in Baker"
+      )
+    }
+
     "give a list of wrong ingredients" when {
       "an ingredient is of the wrong type" in {
         val initialIngredientInt = new common.Ingredient("initialIngredient", RecordType(Seq(RecordField("data", Int32))))

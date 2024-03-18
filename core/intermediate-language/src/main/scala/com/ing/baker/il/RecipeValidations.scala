@@ -53,7 +53,11 @@ object RecipeValidations {
           }
       }
 
-    interactionWithNoRequirementsValidation ++ processIdArgumentTypeValidation ++ bakerMetaDataTypeValidation ++ predefinedIngredientOfExpectedTypeValidation
+    interactionWithNoRequirementsValidation ++
+      processIdArgumentTypeValidation ++
+      bakerMetaDataTypeValidation ++
+      bakerEventListTypeValidation ++
+      predefinedIngredientOfExpectedTypeValidation
   }
 
   def validateInteractions(compiledRecipe: CompiledRecipe): Seq[String] = {
@@ -80,6 +84,15 @@ object RecipeValidations {
       }
     }
   }
+
+  /**
+    * Validates that provided ingredients do not contain reserved names for Baker
+    */
+  def validateSpecialIngredientsNotProvided(compiledRecipe: CompiledRecipe): Seq[String] = {
+    compiledRecipe.allIngredients.filter(i =>
+      i.name == recipeInstanceIdName || i.name == recipeInstanceMetadataName || i.name == recipeInstanceEventListName
+    ).map(i => s"Ingredient '${i.name}' is provided and this is a reserved name for internal use in Baker")
+  }.toSeq
 
   def validateNoCycles(compiledRecipe: CompiledRecipe): Seq[String] = {
     val cycle: Option[compiledRecipe.petriNet.innerGraph.Cycle] = compiledRecipe.petriNet.innerGraph.findCycle
@@ -110,6 +123,7 @@ object RecipeValidations {
 
     val postCompileValidationErrors : Seq[String] = Seq(
       validateInteractionIngredients(compiledRecipe),
+      validateSpecialIngredientsNotProvided(compiledRecipe),
       validateInteractions(compiledRecipe),
       if (!validationSettings.allowCycles) validateNoCycles(compiledRecipe) else Seq(),
       if (!validationSettings.allowDisconnectedness && !compiledRecipe.petriNet.innerGraph.isConnected) Seq("The petrinet topology is not completely connected") else Seq(),
