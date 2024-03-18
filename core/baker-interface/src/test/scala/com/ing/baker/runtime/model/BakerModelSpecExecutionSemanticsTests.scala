@@ -195,7 +195,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
         (baker, recipeId) = bakerWithRecipe
         _ = when(testInteractionOneWithEventListMock.apply(anyString(), anyString(), any())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
         recipeInstanceId = UUID.randomUUID().toString
-        eventList = List()
+        eventList = List("InitialEvent")
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ = verify(testInteractionOneWithEventListMock).apply(recipeInstanceId, "initialIngredient", eventList)

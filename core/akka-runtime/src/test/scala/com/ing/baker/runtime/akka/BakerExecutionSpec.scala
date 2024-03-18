@@ -312,7 +312,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
         _ = when(testInteractionOneWithEventListMock.apply(anyString(), anyString(), any())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
         recipeInstanceId = UUID.randomUUID().toString
-        eventList = List()
+        eventList = List("InitialEvent")
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue))))
         _ = verify(testInteractionOneWithEventListMock).apply(recipeInstanceId.toString, "initialIngredient", eventList)

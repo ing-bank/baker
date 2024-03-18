@@ -31,6 +31,8 @@ class RecipeRuntimeSpec extends AnyWordSpecLike with Matchers with MockitoSugar 
 
       when(mockState.recipeInstanceMetadata).thenReturn(Map())
 
+      when(mockState.events).thenReturn(List())
+
       //this call would fail without the fix
       RecipeRuntime.createInteractionInput(mockTransition, mockState)
     }

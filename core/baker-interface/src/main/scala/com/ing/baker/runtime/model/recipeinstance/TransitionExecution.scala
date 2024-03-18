@@ -15,7 +15,7 @@ import com.ing.baker.types.{ListValue, PrimitiveValue, RecordValue, Value}
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.MDC
 
-import scala.collection.immutable.Seq
+import scala.collection.immutable.{List, Seq}
 import scala.concurrent.duration.MILLISECONDS
 import scala.util.Random
 
@@ -59,6 +59,7 @@ private[recipeinstance] case class TransitionExecution(
   input: Option[EventInstance],
   ingredients: Map[String, Value],
   recipeInstanceMetadata: Map[String, String],
+  eventList: List[EventMoment],
   correlationId: Option[String],
   state: TransitionExecution.State = TransitionExecution.State.Active,
   isReprovider: Boolean
@@ -129,18 +130,19 @@ private[recipeinstance] case class TransitionExecution(
       val recipeInstanceIdIngredient: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(recipeInstanceId)
       val processIdIngredient: (String, Value) = il.processIdName -> PrimitiveValue(recipeInstanceId)
 
-//      // TODO rewrite, this is very inefficient, should not be needed if we use RecipeInstanceMetaData as ingredient and mapping name
-//      val bakerMetaDataIngredient: (String, Value) = il.recipeInstanceMetadataName -> RecordValue(recipeInstanceMetadata.map(e => e._1 -> PrimitiveValue(e._2)))
-
-      // TODO get events from the runtime during execution
-      val bakerEventList: (String, Value) = il.recipeInstanceEventListName -> ListValue(List.empty)
+      // Only map the recipeInstanceEventList if is it required, otherwise give an empty list
+      val recipeInstanceEventList: (String, Value) =
+        if(interactionTransition.requiredIngredients.exists(_.name == il.recipeInstanceEventListName))
+          il.recipeInstanceEventListName -> ListValue(eventList.map(e => PrimitiveValue(e.name)))
+        else
+          il.recipeInstanceEventListName -> ListValue(List())
 
       val allIngredients: Map[String, Value] =
         ingredients ++
           interactionTransition.predefinedParameters +
           recipeInstanceIdIngredient +
           processIdIngredient +
-          bakerEventList
+          recipeInstanceEventList
 
       interactionTransition.requiredIngredients.map {
         case IngredientDescriptor(name, _) =>

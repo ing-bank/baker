@@ -117,6 +117,7 @@ case class RecipeInstanceState(
           input = None,
           ingredients = ingredients,
           recipeInstanceMetadata = recipeInstanceMetadata,
+          eventList = events,
           correlationId = None,
           isReprovider = transition.isReprovider
         )
@@ -129,6 +130,7 @@ case class RecipeInstanceState(
           input = None,
           ingredients = ingredients,
           recipeInstanceMetadata = recipeInstanceMetadata,
+          eventList = events,
           correlationId = None,
           isReprovider =  false
         )

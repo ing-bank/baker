@@ -94,12 +94,16 @@ object RecipeRuntime {
   def createInteractionInput(interaction: InteractionTransition, state: RecipeInstanceState): Seq[IngredientInstance] = {
 
     // the process id is a special ingredient that is always available
-    val recipeInstanceId: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(state.recipeInstanceId.toString)
+    val recipeInstanceId: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(state.recipeInstanceId)
 
-    //TODO get events from the runtime during execution
-    val bakerEventList: (String, Value) = il.recipeInstanceEventListName -> ListValue(List.empty)
+    // Only map the recipeInstanceEventList if is it required, otherwise give an empty list
+    val recipeInstanceEventList: (String, Value) =
+      if(interaction.requiredIngredients.exists(_.name == il.recipeInstanceEventListName))
+        il.recipeInstanceEventListName -> ListValue(state.events.map(e => PrimitiveValue(e.name)).toList)
+      else
+        il.recipeInstanceEventListName -> ListValue(List())
 
-    val processId: (String, Value) = il.processIdName -> PrimitiveValue(state.recipeInstanceId.toString)
+    val processId: (String, Value) = il.processIdName -> PrimitiveValue(state.recipeInstanceId)
 
     // a map of all ingredients, the order is important, the predefined parameters and recipeInstanceId have precedence over the state ingredients.
     val allIngredients: Map[String, Value] =
@@ -107,7 +111,7 @@ object RecipeRuntime {
         interaction.predefinedParameters +
         recipeInstanceId +
         processId +
-        bakerEventList
+        recipeInstanceEventList
 
     // arranges the ingredients in the expected order
     interaction.requiredIngredients.map {
