@@ -96,9 +96,6 @@ object RecipeRuntime {
     // the process id is a special ingredient that is always available
     val recipeInstanceId: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(state.recipeInstanceId.toString)
 
-    //TODO store this in the RecipeInstanceState instead of creating it every time
-    val bakerMetaData: (String, Value) = il.recipeInstanceMetadataName -> RecordValue(state.recipeInstanceMetadata.map(e => e._1 -> PrimitiveValue(e._2)))
-
     //TODO get events from the runtime during execution
     val bakerEventList: (String, Value) = il.recipeInstanceEventListName -> ListValue(List.empty)
 
@@ -110,7 +107,6 @@ object RecipeRuntime {
         interaction.predefinedParameters +
         recipeInstanceId +
         processId +
-        bakerMetaData +
         bakerEventList
 
     // arranges the ingredients in the expected order
