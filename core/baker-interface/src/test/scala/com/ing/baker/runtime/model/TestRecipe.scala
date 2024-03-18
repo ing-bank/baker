@@ -126,7 +126,7 @@ trait TestRecipe[F[_]] {
   val interactionOneWithMetaData =
     Interaction(
       name = "InteractionOneWithMetaData",
-      inputIngredients = Seq(recipeInstanceId, initialIngredient, bakerMetadata),
+      inputIngredients = Seq(recipeInstanceId, initialIngredient, recipeInstanceMetaData),
       output = Seq(interactionOneSuccessful))
 
   trait InteractionOneWithMetaData {
@@ -138,7 +138,7 @@ trait TestRecipe[F[_]] {
   val interactionOneWithEventList =
     Interaction(
       name = "InteractionOneWithEventList",
-      inputIngredients = Seq(recipeInstanceId, initialIngredient, bakerEventList),
+      inputIngredients = Seq(recipeInstanceId, initialIngredient, recipeInstanceEventList),
       output = Seq(interactionOneSuccessful))
 
   trait InteractionOneWithEventList {

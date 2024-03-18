@@ -105,7 +105,7 @@ object TestRecipe {
   val interactionOneWithMetaData =
     Interaction(
       name = "InteractionOneWithMetaData",
-      inputIngredients = Seq(recipeInstanceId, initialIngredient, bakerMetadata),
+      inputIngredients = Seq(recipeInstanceId, initialIngredient, recipeInstanceMetaData),
       output = Seq(interactionOneSuccessful))
 
   trait InteractionOneWithMetaData {
@@ -117,7 +117,7 @@ object TestRecipe {
   val interactionOneWithEventList =
     Interaction(
       name = "InteractionOneWithEventList",
-      inputIngredients = Seq(recipeInstanceId, initialIngredient, bakerEventList),
+      inputIngredients = Seq(recipeInstanceId, initialIngredient, recipeInstanceEventList),
       output = Seq(interactionOneSuccessful))
 
   trait InteractionOneWithEventList {

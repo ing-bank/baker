@@ -91,7 +91,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       val wrongMetaDataInteraction =
         Interaction(
           name = "wrongMetaDataInteraction",
-          inputIngredients = Seq(new Ingredient[Int](common.bakerMetaDataName), initialIngredient),
+          inputIngredients = Seq(new Ingredient[Int](common.recipeInstanceMetadataName), initialIngredient),
           output = Seq.empty)
 
       val recipe = Recipe("NonProvidedIngredient")

@@ -6,7 +6,7 @@ import cats.effect.{ConcurrentEffect, Effect, Resource, Timer}
 import cats.implicits._
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common.BakerException.{ProcessAlreadyExistsException, ProcessDeletedException}
-import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetaDataName
+import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.model.RecipeInstanceManager.RecipeInstanceStatus
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
@@ -154,7 +154,7 @@ trait RecipeInstanceManager[F[_]] {
       recipeInstance.state.update(currentState => {
         val newRecipeInstanceMetaData = currentState.recipeInstanceMetadata ++ metadata
         currentState.copy(
-          ingredients = currentState.ingredients + (RecipeInstanceMetaDataName -> com.ing.baker.types.Converters.toValue(newRecipeInstanceMetaData)),
+          ingredients = currentState.ingredients + (RecipeInstanceMetadataName -> com.ing.baker.types.Converters.toValue(newRecipeInstanceMetaData)),
           recipeInstanceMetadata = newRecipeInstanceMetaData)
       })
     }).flatten

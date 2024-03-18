@@ -4,7 +4,7 @@ import cats.effect.ConcurrentEffect
 import cats.implicits._
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, ProcessAlreadyExistsException}
-import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetaDataName
+import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceInput, RecipeEventMetadata}
 import com.ing.baker.types.{CharArray, Int32, PrimitiveValue, Value}
@@ -37,7 +37,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
         _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value"))
         _ <- baker.addMetaData(id, Map.apply[String, String]("key2" -> "value2"))
         ingredients <- baker.getIngredients(id)
-        metaData = ingredients(RecipeInstanceMetaDataName).asMap(classOf[String], classOf[String])
+        metaData = ingredients(RecipeInstanceMetadataName).asMap(classOf[String], classOf[String])
       } yield assert(
         metaData.containsKey("key") && metaData.get("key") == "value" &&
         metaData.containsKey("key2") && metaData.get("key2") == "value2")
@@ -53,7 +53,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
         _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value"))
         _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value2"))
         ingredients <- baker.getIngredients(id)
-        metaData = ingredients(RecipeInstanceMetaDataName).asMap(classOf[String], classOf[String])
+        metaData = ingredients(RecipeInstanceMetadataName).asMap(classOf[String], classOf[String])
       } yield
         assert(
           metaData.containsKey("key") && metaData.get("key") == "value2")
@@ -67,7 +67,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
         _ <- baker.bake(recipeId, id)
         _ <- baker.addMetaData(id, Map.empty)
         ingredients <- baker.getIngredients(id)
-        metaData = ingredients(RecipeInstanceMetaDataName).asMap(classOf[String], classOf[String])
+        metaData = ingredients(RecipeInstanceMetadataName).asMap(classOf[String], classOf[String])
       } yield
         assert(
           metaData.size() == 0)
@@ -80,7 +80,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
         id = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, id)
         ingredients <- baker.getIngredients(id)
-      } yield assert(!ingredients.contains(RecipeInstanceMetaDataName))
+      } yield assert(!ingredients.contains(RecipeInstanceMetadataName))
     }
 
     test("throw an ProcessAlreadyExistsException if baking a process with the same identifier twice") { context =>

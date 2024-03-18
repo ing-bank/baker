@@ -35,8 +35,8 @@ case class InteractionTransition(eventsToFire: Seq[EventDescriptor],
   val nonProvidedIngredients: Seq[IngredientDescriptor] =
     requiredIngredients.filterNot(i =>
       i.name == recipeInstanceIdName ||
-      i.name == bakerMetaDataName ||
-      i.name == bakerEventListName ||
+      i.name == recipeInstanceMetadataName ||
+      i.name == recipeInstanceEventListName ||
         predefinedParameters.keySet.contains(i.name))
 
   override def toStringForRecipeId(recipeIdVariant: RecipeIdVariant): String = {

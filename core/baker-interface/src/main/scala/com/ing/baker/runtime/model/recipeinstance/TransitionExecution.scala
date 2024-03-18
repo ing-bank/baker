@@ -130,10 +130,10 @@ private[recipeinstance] case class TransitionExecution(
       val processIdIngredient: (String, Value) = il.processIdName -> PrimitiveValue(recipeInstanceId)
 
       // TODO rewrite, this is very inefficient, should not be needed if we use RecipeInstanceMetaData as ingredient and mapping name
-      val bakerMetaDataIngredient: (String, Value) = il.bakerMetaDataName -> RecordValue(recipeInstanceMetadata.map(e => e._1 -> PrimitiveValue(e._2)))
+      val bakerMetaDataIngredient: (String, Value) = il.recipeInstanceMetadataName -> RecordValue(recipeInstanceMetadata.map(e => e._1 -> PrimitiveValue(e._2)))
 
       // TODO get events from the runtime during execution
-      val bakerEventList: (String, Value) = il.bakerEventListName -> ListValue(List.empty)
+      val bakerEventList: (String, Value) = il.recipeInstanceEventListName -> ListValue(List.empty)
 
       val allIngredients: Map[String, Value] =
         ingredients ++

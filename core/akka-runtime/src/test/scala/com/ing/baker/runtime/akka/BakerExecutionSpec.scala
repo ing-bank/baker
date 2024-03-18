@@ -16,7 +16,7 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFail
 import com.ing.baker.recipe.scaladsl.{CheckPointEvent, Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
-import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetaDataName
+import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance, InteractionInstanceInput, RecipeEventMetadata}
 import com.ing.baker.types.{CharArray, Int32, PrimitiveValue, Value}
@@ -144,7 +144,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         id = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, id, Map("key" -> "value"))
         ingredients: Map[String, Value] <- baker.getIngredients(id)
-        metaData = ingredients(RecipeInstanceMetaDataName).asMap(classOf[String], classOf[String])
+        metaData = ingredients(RecipeInstanceMetadataName).asMap(classOf[String], classOf[String])
       } yield
         assert(metaData.containsKey("key") && metaData.get("key") == "value")
     }
@@ -179,7 +179,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value"))
         _ <- baker.addMetaData(id, Map.apply[String, String]("key2" -> "value2"))
         ingredients: Map[String, Value] <- baker.getIngredients(id)
-        metaData = ingredients(RecipeInstanceMetaDataName).asMap(classOf[String], classOf[String])
+        metaData = ingredients(RecipeInstanceMetadataName).asMap(classOf[String], classOf[String])
       } yield assert(
         metaData.containsKey("key") && metaData.get("key") == "value" &&
         metaData.containsKey("key2") && metaData.get("key2") == "value2")
@@ -193,7 +193,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value"))
         _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value2"))
         ingredients: Map[String, Value] <- baker.getIngredients(id)
-        metaData = ingredients(RecipeInstanceMetaDataName).asMap(classOf[String], classOf[String])
+        metaData = ingredients(RecipeInstanceMetadataName).asMap(classOf[String], classOf[String])
       } yield
         assert(
           metaData.containsKey("key") && metaData.get("key") == "value2")
@@ -206,7 +206,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         _ <- baker.bake(recipeId, id)
         _ <- baker.addMetaData(id, Map.empty)
         ingredients: Map[String, Value] <- baker.getIngredients(id)
-        metaData = ingredients(RecipeInstanceMetaDataName).asMap(classOf[String], classOf[String])
+        metaData = ingredients(RecipeInstanceMetadataName).asMap(classOf[String], classOf[String])
       } yield
         assert(
           metaData.size() == 0)
@@ -218,7 +218,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         id = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, id)
         ingredients: Map[String, Value] <- baker.getIngredients(id)
-      } yield assert(!ingredients.contains(RecipeInstanceMetaDataName))
+      } yield assert(!ingredients.contains(RecipeInstanceMetadataName))
     }
 
     "throw a NoSuchProcessException" when {

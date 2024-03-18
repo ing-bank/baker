@@ -11,7 +11,7 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.Event
 import com.ing.baker.runtime.akka.actor.process_instance.internal.{ExceptionState, ExceptionStrategy, Instance, Job}
 import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
-import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetaDataName
+import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.scaladsl.RecipeInstanceState
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.{CharArray, MapType, Value}
@@ -176,7 +176,7 @@ object ProcessInstanceEventSourcing extends LazyLogging {
             val newRecipeInstanceMetaData: Map[String, String] = state.recipeInstanceMetadata ++ e.metaData
             //We still add an ingredient for the metaData since this makes it easier to use it during interaction execution
             val newIngredients: Map[String, Value] = state.ingredients +
-              (RecipeInstanceMetaDataName -> com.ing.baker.types.Converters.toValue(newRecipeInstanceMetaData))
+              (RecipeInstanceMetadataName -> com.ing.baker.types.Converters.toValue(newRecipeInstanceMetaData))
             state.copy(ingredients = newIngredients, recipeInstanceMetadata = newRecipeInstanceMetaData).asInstanceOf[S]
           case state =>
             state

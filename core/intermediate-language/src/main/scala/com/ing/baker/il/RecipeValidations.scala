@@ -24,7 +24,7 @@ object RecipeValidations {
     //Check if MetaData is correct type
     val bakerMetaDataTypeValidation: Seq[String] =
       interactionTransition.requiredIngredients.filter(id =>
-        id.name.equals(bakerMetaDataName)
+        id.name.equals(recipeInstanceMetadataName)
       ).flatMap {
         case IngredientDescriptor(_, types.MapType(types.CharArray)) => None
         case IngredientDescriptor(_, incompatibleType) => Some(s"Non supported MetaData type: ${incompatibleType} on interaction: '${interactionTransition.interactionName}'")
@@ -33,7 +33,7 @@ object RecipeValidations {
     //Check if BakerEventList is correct type
     val bakerEventListTypeValidation: Seq[String] =
       interactionTransition.requiredIngredients.filter(id =>
-        id.name.equals(bakerEventListName)
+        id.name.equals(recipeInstanceEventListName)
       ).flatMap {
         case IngredientDescriptor(_, types.ListType(types.CharArray)) => None
         case IngredientDescriptor(_, incompatibleType) => Some(s"Non supported EventList type: ${incompatibleType} on interaction: '${interactionTransition.interactionName}'")

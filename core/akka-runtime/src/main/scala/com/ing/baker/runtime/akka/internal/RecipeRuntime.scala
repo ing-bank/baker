@@ -97,10 +97,10 @@ object RecipeRuntime {
     val recipeInstanceId: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(state.recipeInstanceId.toString)
 
     //TODO store this in the RecipeInstanceState instead of creating it every time
-    val bakerMetaData: (String, Value) = il.bakerMetaDataName -> RecordValue(state.recipeInstanceMetadata.map(e => e._1 -> PrimitiveValue(e._2)))
+    val bakerMetaData: (String, Value) = il.recipeInstanceMetadataName -> RecordValue(state.recipeInstanceMetadata.map(e => e._1 -> PrimitiveValue(e._2)))
 
     //TODO get events from the runtime during execution
-    val bakerEventList: (String, Value) = il.bakerEventListName -> ListValue(List.empty)
+    val bakerEventList: (String, Value) = il.recipeInstanceEventListName -> ListValue(List.empty)
 
     val processId: (String, Value) = il.processIdName -> PrimitiveValue(state.recipeInstanceId.toString)
 
