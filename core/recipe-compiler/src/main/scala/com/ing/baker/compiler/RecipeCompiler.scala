@@ -8,7 +8,8 @@ import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings, checkpointEventInteractionPrefix}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common._
-import com.ing.baker.recipe.scaladsl.{Interaction, Event}
+import com.ing.baker.recipe.{javadsl, kotlindsl}
+import com.ing.baker.recipe.scaladsl.{Event, Interaction}
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
@@ -126,6 +127,7 @@ object RecipeCompiler {
     else Seq.empty
   }
 
+
   /**
     * Draws an arc from all required ingredients for an interaction
     * If the ingredient has multiple consumers create a multi transition place and create both arcs for it
@@ -138,7 +140,7 @@ object RecipeCompiler {
       t.nonProvidedIngredients.map(_.name).partition(ingredientsWithMultipleConsumers.contains)
 
     // the extra arcs to model multiple output transitions from one place
-    val internalDataInputArcs = fieldNamesWithPrefixMulti flatMap { fieldName =>
+    val internalDataInputArcs: Seq[Arc] = fieldNamesWithPrefixMulti flatMap { fieldName =>
       val multiTransitionPlace = createPlace(s"${t.label}-$fieldName", placeType = MultiTransitionPlace)
       Seq(
         // one arc from multiplier place to the transition
@@ -148,23 +150,37 @@ object RecipeCompiler {
         // one arc from extra added place to transition
         arc(multiTransitionPlace, t, 1))
     }
-    // the data input arcs / places
-    val dataInputArcs = fieldNamesWithoutPrefix.map(fieldName => arc(createPlace(fieldName, IngredientPlace), t, 1))
 
-    val limitInteractionCountArc =
+
+    // the data input arcs / places
+    val dataInputArcs: Seq[Arc] = fieldNamesWithoutPrefix.map(fieldName => arc(createPlace(fieldName, IngredientPlace), t, 1))
+
+    val dataOutputArcs: Seq[Arc] =
+      if(t.isReprovider)
+        fieldNamesWithoutPrefix.map(fieldName => arc(t, createPlace(fieldName, IngredientPlace), 1)) ++
+        fieldNamesWithPrefixMulti.map(fieldName => arc(t, createPlace(s"${t.label}-$fieldName", placeType = MultiTransitionPlace), 1))
+      else
+        Seq.empty
+
+    val limitInteractionCountArc: Option[Arc] =
       t.maximumInteractionCount.map(n => arc(createPlace(s"limit:${t.label}", FiringLimiterPlace(n)), t, 1))
 
-    dataInputArcs ++ internalDataInputArcs ++ limitInteractionCountArc
+    dataInputArcs ++ dataOutputArcs ++ internalDataInputArcs ++ limitInteractionCountArc
   }
 
   private def buildInteractionArcs(multipleOutputFacilitatorTransitions: Seq[Transition],
                                    placeNameWithDuplicateTransitions: Map[String, Seq[InteractionTransition]],
                                    eventTransitions: Seq[EventTransition])
                                   (t: InteractionTransition): Seq[Arc] = {
-    buildInteractionInputArcs(
+
+    val inputArcs: Seq[Arc] = buildInteractionInputArcs(
       t,
       multipleOutputFacilitatorTransitions,
-      placeNameWithDuplicateTransitions) ++ buildInteractionOutputArcs(t, eventTransitions)
+      placeNameWithDuplicateTransitions)
+
+    val outputArcs: Seq[Arc] = buildInteractionOutputArcs(t, eventTransitions)
+
+    inputArcs ++ outputArcs
   }
 
   /**
@@ -306,7 +322,7 @@ object RecipeCompiler {
       ++ internalEventArcs
       ++ multipleOutputFacilitatorArcs)
 
-    val petriNet: PetriNet[Place, Transition] = new PetriNet(Graph(arcs: _*))
+    val petriNet: PetriNet = new PetriNet(Graph(arcs: _*))
 
     val initialMarking: Marking[Place] = petriNet.places.collect {
       case p @ Place(_, FiringLimiterPlace(n)) => p -> Map[Any, Int]((null, n))
@@ -315,9 +331,11 @@ object RecipeCompiler {
     val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
 
     val oldRecipeIdVariant : OldRecipeIdVariant =
-      if (recipe.isInstanceOf[com.ing.baker.recipe.javadsl.Recipe]) Scala212CompatibleJava
-      else if (recipe.isInstanceOf[com.ing.baker.recipe.kotlindsl.Recipe]) Scala212CompatibleKotlin
-      else Scala212CompatibleScala
+      recipe match {
+        case _: javadsl.Recipe => Scala212CompatibleJava
+        case _: kotlindsl.Recipe => Scala212CompatibleKotlin
+        case _ => Scala212CompatibleScala
+      }
 
     val compiledRecipe = CompiledRecipe.build(
       name = recipe.name,

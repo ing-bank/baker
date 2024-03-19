@@ -1,137 +1,60 @@
 # Concepts
 
-Baker introduces *interactions*, *ingredients*, and *events* as a model of abstracting.
-
-With these three components we can create recipes (process blue prints)
+In Baker, you declare orchestration logic as a `Recipe`. A recipe consists of three main building blocks:
+`Ingredients`, `Interactions`, and `Events`. 
 
 ## Ingredient
 
-Ingredients are *pure data*.
+An ingredient is a combination of a `name` and `type`. Similar to how a variable declaration in your codebase is a combination
+of a name and type. For example, you can have an ingredient with the name `iban` and type `string`. Types are expressed
+via the [Baker type system](../reference/baker-types-and-values/).
 
-This data is **immutable** and can not be changed after entering the process.
+Ingredients are pure pieces of data. They are immutable, meaning they do not change once they enter the process or
+workflow. There is no support for hierarchy. Expressing a relationship like `Animal -> Dog -> Labrador` is not possible.
 
-There is **no hierarchy** in this data. (`Animal -> Dog -> Labrador` is not possible to express)
-
-Examples:
-
-- an IBAN
-- a track and trace code
-- a list of phone numbers
-- a customer information object with name, email, etc ...
-
-An ingredient is defined by a *name* and *type*.
-
-The *name* points to the intended meaning of the data. ("customerData", "orderNumber", ...)
-
-The *type* sets limits on the form of data that is accepted. (a number, a list of strings, ...)
-
-This type is expressed by the [Baker type system](../reference/baker-types-and-values/).
-
-## Interaction
-
-An interaction is similar to a function.
-
-It requires *input* ([ingredients](../reference/main-abstractions/#ingredient-and-ingredientinstance)) and
-provides *output* ([events](../reference/main-abstractions/#event-and-eventinstance)).
-
-Within this contract it may do anything. For example:
-
-- query an external system
-- put a message on a bus
-- generate a document or image
-- extract or compose ingredients into others
-
-When finished, an interaction provides an event as its output.
-
-### Interaction failure
-
-An interaction may fail to fulfill its intended purpose.
-
-We distinquish two types of failures.
-
-1. A *technical* failure is one that could be retried and succeed. For example:
-    * Time outs because of an unreliable network or packet loss
-    * External system is temporarily down or unresponsive
-    * External system returned a malformed/unexpected response
-
-    These failures are unexpected and are modeled by throwing an exception from the interaction.
-
-2. A *functional* failure is one that cannot be retried. For example:
-    * The customer is too young for the request.
-    * Not enough credit to perform the transfer.
-
-    These failures are expected possible outcomes of the interaction. They are modelled by returning an event from the interaction.
-
-### Failure mitigation
-
-In case of technical failures, baker offers two mitigation strategies:
-
-1. Retry with incremental back-off
-
-    This retries the interaction with some configurable parameters:
-
-    - `initialTimeout`: The initial delay for the first retry.
-    - `backoffFactor`: The back-off factor.
-    - `maximumInterval`: The maximum interval between retries.
-
-2. Continue with an event.
-
-    This is analagous to a try/catch in Java code. The exception is logged but the process continues with a specified event.
-
-The interaction gets *blocked* when no failure strategy is defined for it.
+Ingredients serve as input for interactions and are carried through the process via
+events.
 
 ## Event
 
-An event has a *name* and can (optionally) provide ingredients.
+Events represent something that has happened in your process. Most of the time, events are outputs of interactions.
+We refer to outputs of interactions as `internal events`. Sometimes events come from outside the process. we refer to 
+events from outside the process as `sensory events`. Sensory events start/trigger the process. 
 
-The purpose of events is therefore twofold.
+!!! note
+    Under the hood `internal events` and `sensory events` are identical. The naming distinction exists for practical 
+    reasons only.
 
-1. It signifies that something of interest has happened for a [recipe instance](../reference/main-abstractions/#recipe-and-recipeinstance).
+An event has a `name` and (optionally) provides ingredients. In the end, events and ingredients are just data structures
+that describe your process data. A good example would be an `OrderPlaced` event which carries two ingredients:
+the `orderId` and a `list of products`.
 
-    Example, *"the customer placed the order"*, *"terms and conditions were accepted"*
+## Interaction
 
-2. The event may provide ingredients required to continue the process.
+Interactions resemble functions. They require input (ingredients) and provide output (events). An
+interaction can do many things. For example, fetch data from another service, do some complex calculation, 
+send a message to an event broker, etc.
 
-    Example, *"OrderPlaced"* -> `<list of products>`
+## Recipe
 
-We distinguish two conceptual types of events.
+A recipe is the blueprint of your business process. You define this process by combining ingredients, events, and
+interactions. Baker provides a recipe DSL, allowing you to define your recipe in Java, Kotlin, or Scala. The example
+below displays a (naive) recipe implementation to ship orders from a web-shop. 
 
-1. Sensory events (*external*)
+=== "Java"
 
-    These events are provided from outside of the process.
+    ```java
+    --8<-- "docs-code-snippets/src/main/java/examples/java/recipes/SimpleRecipe.java"
+    ```
 
-2. Interaction output (*internal*)
+=== "Kotlin"
 
-    These events are a result of an interaction being executed.
-    
-Both of these are still just instances of the `EventInstance` class, and the distinction is only used as practical terms.
+    ```kotlin
+    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/recipes/SimpleRecipe.kt"
+    ```
 
-## **Recipe**
+=== "Scala"
 
-*Events*, *Interactions* and *Ingredients* can be composed into recipes.
-
-Recipes are similar to process blueprints.
-
-Baker provides a [recipe DSL](../reference/dsls/) in which you can declaratively describe your recipe.
-
-A small example:
-``` java
-new Recipe("webshop")
-    .withSensoryEvents(
-        OrderPlaced.class,
-        CustomerInfoReceived.class
-    .withInteractions(
-        of(ValidateOrder.class),
-        of(ManufactureGoods.class));
-```
-
-The main take away is that when declaring your recipe you do not have to think about order.
-
-Everything is automatically linked by the *data* requirements of the interactions.
-
-## Continuing from here
-
-After adding the dependencies you can continue to:
-
-* Go through the [development life cycle section](../development-life-cycle/design-a-recipe) if you like learning by doing;
-* Go through the [reference section](../reference/main-abstractions) if you like learning by description.
+    ```scala
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/SimpleRecipe.scala"
+    ```

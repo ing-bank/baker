@@ -19,6 +19,7 @@ case class RecipeInstanceState(
     recipeId: String,
     recipeInstanceId: String,
     ingredients: Map[String, Value],
+    recipeInstanceMetadata: Map[String, String],
     events: Seq[EventMoment])
   extends common.RecipeInstanceState with ScalaApi {
 
@@ -28,5 +29,5 @@ case class RecipeInstanceState(
 
   @nowarn
   def asJava: javadsl.RecipeInstanceState =
-    new javadsl.RecipeInstanceState(recipeId, recipeInstanceId, ingredients.asJava, events.map(_.asJava()).asJava)
+    new javadsl.RecipeInstanceState(recipeId, recipeInstanceId, ingredients.asJava, recipeInstanceMetadata.asJava, events.map(_.asJava()).asJava)
 }

@@ -138,6 +138,9 @@ class KotlinDslTest {
         with(recipe.interactions().toList().apply(2)) {
             assertEquals("ShipItems", name())
 
+            assertEquals("ShippingConfirmed", output().apply(0).name())
+            assertEquals(0, output().apply(0).providedIngredients().size())
+
             assertEquals(1, requiredEvents().size())
             assertEquals("PaymentSuccessful", requiredEvents().toList().apply(0))
 
@@ -388,11 +391,39 @@ class KotlinDslTest {
         }
 
         with(recipe.interactions().apply(0)) {
-            assertEquals(2, inputIngredients().size())
-            assertEquals(inputIngredients().toList().apply(0).name(), "metaData")
-            assertEquals(inputIngredients().toList().apply(0).ingredientType().toString(), "CharArray")
-            assertEquals(inputIngredients().toList().apply(1).name(), "reservedItems")
-            assertEquals(inputIngredients().toList().apply(1).ingredientType().toString(), "List[Record(name: CharArray, id: Int64)]")
+            assertEquals(4, inputIngredients().size())
+            assertEquals("metaData", inputIngredients().toList().apply(0).name())
+            assertEquals("CharArray", inputIngredients().toList().apply(0).ingredientType().toString())
+            assertEquals("agreements", inputIngredients().toList().apply(1).name())
+            assertEquals("List[Record(name: CharArray, id: Int64)]", inputIngredients().toList().apply(1).ingredientType().toString())
+            assertEquals("uniqueAgreements", inputIngredients().toList().apply(2).name())
+            assertEquals("List[Record(name: CharArray, id: Int64)]", inputIngredients().toList().apply(2).ingredientType().toString())
+            assertEquals("mapOfAgreements", inputIngredients().toList().apply(3).name())
+            assertEquals("Map[Record(name: CharArray, id: Int64)]", inputIngredients().toList().apply(3).ingredientType().toString())
+        }
+    }
+
+    @Test
+    fun `nested sealed classes`() {
+
+        val recipe = recipe("RecipeWithNestedSealedClasses") {
+            interaction<ApiInteraction>()
+        }
+
+        with(recipe) {
+            assertEquals("RecipeWithNestedSealedClasses", name())
+            assertEquals(1, interactions().size())
+        }
+
+        with(recipe.interactions().toList().apply(0)) {
+            assertEquals("ApiInteraction", name())
+
+            assertEquals(1, inputIngredients().size())
+            assertEquals("reservedItems", inputIngredients().toList().apply(0).name())
+
+            assertEquals(2, output().size())
+            assertEquals("ResponseSuccessful", output().toList().apply(0).name())
+            assertEquals("ResponseFailed", output().toList().apply(1).name())
         }
     }
 
@@ -417,8 +448,8 @@ class KotlinDslTest {
 
         interface MakePayment : Interaction {
             sealed interface MakePaymentOutcome
-            class PaymentSuccessful : MakePaymentOutcome
-            class PaymentFailed : MakePaymentOutcome
+            object PaymentSuccessful : MakePaymentOutcome
+            object PaymentFailed : MakePaymentOutcome
 
             fun apply(
                 reservedItems: Ingredients.ReservedItems,
@@ -427,7 +458,7 @@ class KotlinDslTest {
         }
 
         interface ShipItems : Interaction {
-            class ShippingConfirmed
+            object ShippingConfirmed
 
             fun apply(
                 shippingAddress: Ingredients.ShippingAddress,
@@ -447,7 +478,24 @@ class KotlinDslTest {
     interface GenericIngredientContainerWithJavaElements : Interaction {
         class Result
 
-        fun apply(metaData: String, reservedItems: List<ProductAgreement>): Result
+        fun apply(
+            metaData: String,
+            agreements: List<ProductAgreement>,
+            uniqueAgreements: kotlin.collections.Set<ProductAgreement>,
+            mapOfAgreements: Map<Long, ProductAgreement>
+        ): Result
+    }
+
+    interface ApiInteraction: Interaction {
+        sealed interface Response
+        sealed interface Response200: Response
+        sealed interface Response500: Response
+        class ResponseSuccessful : Response200
+        class ResponseFailed : Response500
+
+        fun apply(
+            reservedItems: Ingredients.ReservedItems,
+        ): Response
     }
 
     interface KotlinInteractionWithAnnotations : Interaction {

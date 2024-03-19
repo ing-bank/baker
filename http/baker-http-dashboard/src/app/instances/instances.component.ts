@@ -59,7 +59,7 @@ export class InstancesComponent implements OnInit {
 
     updateInstance(event: Event): void {
         (event.target as HTMLInputElement)?.blur();
-        this.router.navigateByUrl(AppSettingsService.prefix.prefix + `/instances/${this.instanceId}`).then(() => this.instanceChanged());
+        this.router.navigateByUrl(`/instances/${this.instanceId}`).then(() => this.instanceChanged());
     }
 
     instanceChanged (): void {

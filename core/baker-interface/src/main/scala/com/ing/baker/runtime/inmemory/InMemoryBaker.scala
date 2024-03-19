@@ -2,6 +2,7 @@ package com.ing.baker.runtime.inmemory
 
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
 import cats.~>
+import com.ing.baker.runtime.javadsl.BakerConfig
 import com.ing.baker.runtime.model.{BakerComponents, BakerF, InteractionInstance}
 import com.ing.baker.runtime.{defaultinteractions, javadsl}
 
@@ -15,7 +16,7 @@ object InMemoryBaker {
 
   def build(config: BakerF.Config = BakerF.Config(),
             implementations: List[InteractionInstance[IO]])(implicit timer: Timer[IO], cs: ContextShift[IO]): IO[BakerF[IO]] = for {
-    recipeInstanceManager <- InMemoryRecipeInstanceManager.build(config.idleTimeout)
+    recipeInstanceManager <- InMemoryRecipeInstanceManager.build(config.idleTimeout, config.retentionPeriodCheckInterval)
     recipeManager <- InMemoryRecipeManager.build
     eventStream <- InMemoryEventStream.build
     interactions <- InMemoryInteractionManager.build(implementations ++ defaultinteractions.all)
@@ -41,6 +42,10 @@ object InMemoryBaker {
       }
     )
     new javadsl.Baker(bakerF)
+  }
+
+  def java(config: BakerConfig, implementations: JavaList[AnyRef]): javadsl.Baker = {
+    java(config.toBakerFConfig(), implementations)
   }
 
   def java(implementations: JavaList[AnyRef]): javadsl.Baker = {

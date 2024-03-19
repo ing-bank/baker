@@ -1,7 +1,7 @@
 package com.ing.baker
 
-import java.lang.reflect.ParameterizedType
-
+import java.lang.reflect.{ParameterizedType, WildcardType}
+import scala.annotation.tailrec
 import scala.reflect.runtime.universe
 
 package object types {
@@ -15,17 +15,28 @@ package object types {
     * List[String]     -> List
     * Map[String, Int] -> Map
     */
+  @tailrec
   def getBaseClass(javaType: java.lang.reflect.Type): Class[_] = javaType match {
     case c: Class[_] => c
     case t: ParameterizedType => getBaseClass(t.getRawType)
-    case t @ _ => throw new IllegalArgumentException(s"Unsupported type: $javaType")
+    case _ => throw new IllegalArgumentException(s"Unsupported type: $javaType")
   }
 
   def getTypeParameter(javaType: java.lang.reflect.Type, index: Int): java.lang.reflect.Type = {
-    javaType.asInstanceOf[ParameterizedType].getActualTypeArguments()(index)
+    val actualTypeArguments = javaType.asInstanceOf[ParameterizedType].getActualTypeArguments()(index)
+
+    actualTypeArguments match {
+      case wildcardType: WildcardType =>
+        val upperBounds = wildcardType.getUpperBounds
+        upperBounds.size match {
+          case 1 => upperBounds.apply(0)
+          case _ => throw new IllegalArgumentException(s"Multiple upper bounds are not supported. Found multiple upper bounds for type: $javaType")
+        }
+      case _ => actualTypeArguments
+    }
   }
 
-  def isAssignableToBaseClass(javaType: java.lang.reflect.Type, base: Class[_]) = base.isAssignableFrom(getBaseClass(javaType))
+  def isAssignableToBaseClass(javaType: java.lang.reflect.Type, base: Class[_]): Boolean = base.isAssignableFrom(getBaseClass(javaType))
 
   def createJavaType(paramType: universe.Type): java.lang.reflect.Type = {
     val typeConstructor = mirror.runtimeClass(paramType)
@@ -38,7 +49,7 @@ package object types {
         override def getRawType: java.lang.reflect.Type = typeConstructor
         override def getActualTypeArguments: Array[java.lang.reflect.Type] = innerTypes
         override def getOwnerType: java.lang.reflect.Type = null
-        override def toString() = s"ParameterizedType: $typeConstructor[${getActualTypeArguments.mkString(",")}]"
+        override def toString = s"ParameterizedType: $typeConstructor[${getActualTypeArguments.mkString(",")}]"
       }
     }
   }
@@ -102,5 +113,5 @@ package object types {
 
   // TYPES
 
-  def isPrimitiveValue(obj: Any) = supportedPrimitiveClasses.exists(clazz => clazz.isInstance(obj))
+  def isPrimitiveValue(obj: Any): Boolean = supportedPrimitiveClasses.exists(clazz => clazz.isInstance(obj))
 }

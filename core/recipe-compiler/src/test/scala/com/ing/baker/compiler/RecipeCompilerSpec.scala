@@ -87,6 +87,50 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       compiledRecipe.validationErrors should contain("Non supported process id type: Int32 on interaction: 'wrongrecipeInstanceIdInteraction'")
     }
 
+    "give an error if the MetaData is required and is not of the Map<String, String> type" in {
+      val wrongMetaDataInteraction =
+        Interaction(
+          name = "wrongMetaDataInteraction",
+          inputIngredients = Seq(new Ingredient[Int](common.recipeInstanceMetadataName), initialIngredient),
+          output = Seq.empty)
+
+      val recipe = Recipe("NonProvidedIngredient")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(wrongMetaDataInteraction)
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.validationErrors should contain("Non supported MetaData type: Int32 on interaction: 'wrongMetaDataInteraction'")
+    }
+
+    "give an error if the baker internal ingredients are provided" in {
+      val wrongDateEvent = Event("WrongDataEvent",
+        Seq(
+          Ingredient[String]("recipeInstanceId"),
+          Ingredient[String]("RecipeInstanceMetaData")),
+        maxFiringLimit = None)
+
+      val wrongDateEvent2 = Event("WrongDataEvent2",
+        Seq(Ingredient[String]("RecipeInstanceEventList")),
+        maxFiringLimit = None)
+
+      val wrongMetaDataInteraction =
+        Interaction(
+          name = "wrongDataProvidedInteraction",
+          inputIngredients = Seq(new Ingredient[String](common.recipeInstanceIdName), initialIngredient),
+          output = Seq(wrongDateEvent2))
+
+      val recipe = Recipe("WrongDataRecipe")
+        .withSensoryEvents(initialEvent, wrongDateEvent)
+        .withInteractions(wrongMetaDataInteraction)
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.validationErrors shouldBe List(
+        "Ingredient 'recipeInstanceId' is provided and this is a reserved name for internal use in Baker",
+        "Ingredient 'RecipeInstanceMetaData' is provided and this is a reserved name for internal use in Baker",
+        "Ingredient 'RecipeInstanceEventList' is provided and this is a reserved name for internal use in Baker"
+      )
+    }
+
     "give a list of wrong ingredients" when {
       "an ingredient is of the wrong type" in {
         val initialIngredientInt = new common.Ingredient("initialIngredient", RecordType(Seq(RecordField("data", Int32))))
@@ -220,6 +264,14 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)).getMessage.shouldBe("Recipe with a null or empty name found")
         }
       }
+
+      "an Interaction is reprovider, but has no required events" in {
+        val recipe: Recipe = Recipe("LoopingWithReprovider")
+          .withInteraction(interactionOne.isReprovider(true))
+          .withSensoryEvents(initialEvent)
+        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        compiledRecipe.validationErrors shouldBe List("Reprovider interaction InteractionOne needs to have a event precondition")
+      }
     }
 
     "give the interaction an optional ingredient as empty" when {
@@ -335,6 +387,13 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       }
     }
 
+    "give the interaction with Reprovider enabled" when {
+      "it compiles a java recipe and changes recipeId" in {
+        val recipe = TestRecipeJava.getRecipeReprovider("id-test-recipe")
+        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        compiledRecipe.recipeId shouldBe "416e8abc02abcbee"
+      }
+    }
 
     "give the interaction for checkpoint-events" when {
       "it compiles a java recipe" in {

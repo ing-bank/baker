@@ -75,4 +75,9 @@ trait InteractionDescriptor {
     * An optional strategy how to deal with failures. Falls back to the default strategy specified in the recipe.
     */
   val failureStrategy: Option[InteractionFailureStrategy]
+
+  /**
+    * If this is set to true all incoming ingredient place will be provided for this interaction after it was executed
+    */
+  val isReprovider: Boolean
 }

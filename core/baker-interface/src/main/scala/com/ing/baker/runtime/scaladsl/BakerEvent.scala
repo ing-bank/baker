@@ -17,6 +17,8 @@ sealed trait BakerEvent extends common.BakerEvent with ScalaApi {
       javadsl.EventReceived(timeStamp, recipeName, recipeId, recipeInstanceId, Optional.ofNullable(correlationId.orNull), event.asJava)
     case EventRejected(timeStamp, recipeInstanceId, correlationId, event, reason) =>
       javadsl.EventRejected(timeStamp, recipeInstanceId, Optional.ofNullable(correlationId.orNull), event.asJava, reason)
+    case EventFired(timeStamp, recipeName, recipeId, recipeInstanceId, event) =>
+      javadsl.EventFired(timeStamp, recipeName, recipeId, recipeInstanceId, event.asJava)
     case InteractionFailed(timeStamp, duration, recipeName, recipeId, recipeInstanceId, interactionName, failureCount, throwable, exceptionStrategyOutcome) =>
       javadsl.InteractionFailed(timeStamp, duration, recipeName, recipeId, recipeInstanceId, interactionName, failureCount, throwable, exceptionStrategyOutcome)
     case InteractionStarted(timeStamp, recipeName, recipeId, recipeInstanceId, interactionName) =>
@@ -61,6 +63,23 @@ case class EventRejected(timeStamp: Long,
                          correlationId: Option[String],
                          event: EventInstance,
                          reason: RejectReason) extends BakerEvent with common.EventRejected
+
+/**
+  * Event describing the fact that an interaction outcome event was fired for a process
+  *
+  * @param timeStamp The time that the event was received
+  * @param recipeName The name of the recipe that interaction is part of
+  * @param recipeId The recipe id
+  * @param recipeInstanceId The id of the process
+  * @param correlationId The (optional) correlation id of the event
+  * @param event The event
+  */
+case class EventFired(timeStamp: Long,
+                      recipeName: String,
+                      recipeId: String,
+                      recipeInstanceId: String,
+                      event: EventInstance) extends BakerEvent with common.EventFired
+
 /**
   * Event describing the fact that an interaction failed during execution
   *

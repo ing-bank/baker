@@ -5,6 +5,8 @@ repo_url: 'https://github.com/ing-bank/baker'
 
 theme:
   name: 'material'
+  features:
+    - content.code.copy
 
 extra_css:
   - css/ing.css
@@ -12,32 +14,31 @@ extra_css:
 markdown_extensions:
   - codehilite
   - pymdownx.superfences
+  - admonition
+  - pymdownx.details
   - pymdownx.tabbed:
       alternate_style: true
-  - admonition
+  - pymdownx.snippets:
+      base_path: examples
 
 nav:
   - Home: 'index.md'
-  - 'sections/getting-started.md'
+  - 'sections/quickstart-guide.md'
   - 'sections/concepts.md'
-  - Development Life Cycle:
-      - 'sections/development-life-cycle/introduction.md'
-      - 'sections/development-life-cycle/design-a-recipe.md'
-      - 'sections/development-life-cycle/use-visualizations.md'
-      - 'sections/development-life-cycle/implement-interactions.md'
-      - 'sections/development-life-cycle/bake-fire-events-and-inquiry.md'
-      - 'sections/development-life-cycle/test.md'
-      - 'sections/development-life-cycle/configure.md'
-      - 'sections/development-life-cycle/monitor.md'
-      - 'sections/development-life-cycle/resolve-failed-recipe-instances.md'
+  - 'sections/tutorial.md'
+  - Cookbook:
+      - 'sections/cookbook/recipe-dsl.md'
+      - 'sections/cookbook/error-handling.md'
+      - 'sections/cookbook/visualizations.md'
+      - 'sections/cookbook/fire-sensory-events.md'
+      - 'sections/cookbook/interaction-execution.md'
+      - 'sections/cookbook/testing.md'
+      - 'sections/cookbook/monitoring.md'
   - Reference:
       - 'sections/reference/main-abstractions.md'
       - 'sections/reference/execution-semantics.md'
       - 'sections/reference/baker-types-and-values.md'
-      - 'sections/reference/dsls.md'
       - 'sections/reference/runtime.md'
-      - 'sections/reference/visualization.md'
-      - 'sections/reference/event-listener.md'
       - 'sections/reference/stores.md'
   - Versions:
       - 'sections/versions/baker-3-release-notes.md'

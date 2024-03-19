@@ -11,7 +11,7 @@ trait BakerEvent extends LanguageApi {
 }
 
 /**
-  * Event describing the fact that an event was received for a process.
+  * Event describing the fact that a sensory event was received for a process.
   */
 trait EventReceived extends BakerEvent {
   val timeStamp: Long
@@ -23,7 +23,7 @@ trait EventReceived extends BakerEvent {
 }
 
 /**
-  * Event describing the fact that an event was received but rejected for a process
+  * Event describing the fact that an sensory event was received but rejected for a process
   */
 trait EventRejected extends BakerEvent {
   val timeStamp: Long
@@ -31,6 +31,17 @@ trait EventRejected extends BakerEvent {
   val correlationId: language.Option[String]
   val event: Event
   val reason: RejectReason
+}
+
+/**
+  * Event describing the fact that an interaction outcome event was fired for a process
+  */
+trait EventFired extends BakerEvent {
+  val timeStamp: Long
+  val recipeName: String
+  val recipeId: String
+  val recipeInstanceId: String
+  val event: Event
 }
 
 /**

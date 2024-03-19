@@ -20,6 +20,7 @@ class BakerEventMapping extends ProtoMap[BakerEvent, protobuf.BakerEvent] {
     protobuf.BakerEvent(a match {
       case event: EventReceived => protobuf.BakerEvent.OneofBakerEvent.EventReceived(ctxToProto(event)(EventReceivedMapping))
       case event: EventRejected => protobuf.BakerEvent.OneofBakerEvent.EventRejected(ctxToProto(event)(EventRejectedMapping))
+      case event: EventFired => protobuf.BakerEvent.OneofBakerEvent.EventFired(ctxToProto(event)(EventFiredMapping))
       case event: InteractionCompleted => protobuf.BakerEvent.OneofBakerEvent.InteractionCompleted(ctxToProto(event)(InteractionCompletedMapping))
       case event: InteractionFailed => protobuf.BakerEvent.OneofBakerEvent.InteractionFailed(ctxToProto(event)(InteractionFailedMapping))
       case event: InteractionStarted => protobuf.BakerEvent.OneofBakerEvent.InteractionStarted(ctxToProto(event)(InteractionStartedMapping))
@@ -31,6 +32,7 @@ class BakerEventMapping extends ProtoMap[BakerEvent, protobuf.BakerEvent] {
     message.oneofBakerEvent match {
       case event: protobuf.BakerEvent.OneofBakerEvent.EventReceived => ctxFromProto(event.value)(EventReceivedMapping)
       case event: protobuf.BakerEvent.OneofBakerEvent.EventRejected=> ctxFromProto(event.value)(EventRejectedMapping)
+      case event: protobuf.BakerEvent.OneofBakerEvent.EventFired => ctxFromProto(event.value)(EventFiredMapping)
       case event: protobuf.BakerEvent.OneofBakerEvent.InteractionCompleted=> ctxFromProto(event.value)(InteractionCompletedMapping)
       case event: protobuf.BakerEvent.OneofBakerEvent.InteractionFailed => ctxFromProto(event.value)(InteractionFailedMapping)
       case event: protobuf.BakerEvent.OneofBakerEvent.InteractionStarted => ctxFromProto(event.value)(InteractionStartedMapping)
@@ -118,6 +120,36 @@ object BakerEventMapping {
         correlationId = correlationId,
         event = event,
         reason = reason
+      )
+  }
+
+  object EventFiredMapping extends ProtoMap[EventFired, protobuf.EventFiredBakerEvent] {
+
+    override def companion: GeneratedMessageCompanion[protobuf.EventFiredBakerEvent] = protobuf.EventFiredBakerEvent
+
+    override def toProto(a: EventFired): protobuf.EventFiredBakerEvent =
+      protobuf.EventFiredBakerEvent(
+        timeStamp = Some(a.timeStamp),
+        recipeName = Some(a.recipeName),
+        recipeId = Some(a.recipeId),
+        recipeInstanceId = Some(a.recipeInstanceId),
+        event = Some(ctxToProto(a.event))
+      )
+
+    override def fromProto(message: protobuf.EventFiredBakerEvent): Try[EventFired] =
+      for {
+        timeStamp <- versioned(message.timeStamp, "timeStamp")
+        recipeName <- versioned(message.recipeName, "recipeName")
+        recipeId <- versioned(message.recipeId, "recipeId")
+        recipeInstanceId <- versioned(message.recipeInstanceId, "recipeInstanceId")
+        eventProto <- versioned(message.event, "event")
+        event <- ctxFromProto(eventProto)
+      } yield EventFired(
+        timeStamp = timeStamp,
+        recipeName = recipeName,
+        recipeId = recipeId,
+        recipeInstanceId = recipeInstanceId,
+        event = event
       )
   }
 
