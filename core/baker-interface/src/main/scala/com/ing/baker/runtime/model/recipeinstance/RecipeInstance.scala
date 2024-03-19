@@ -8,7 +8,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.model.{BakerComponents, FireSensoryEventRejection}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
-import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, EventRejected, RecipeInstanceCreated}
+import com.ing.baker.runtime.scaladsl.{EventFired, EventInstance, EventReceived, EventRejected, RecipeInstanceCreated}
 import com.typesafe.scalalogging.LazyLogging
 import fs2.Stream
 
@@ -47,6 +47,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
           } yield rejection
         }
       _ <- EitherT.liftF(components.eventStream.publish(EventReceived(currentTime, currentState.recipe.name, currentState.recipe.recipeId, recipeInstanceId, correlationId, input)))
+      _ <- EitherT.liftF(components.eventStream.publish(EventFired(currentTime, currentState.recipe.name, currentState.recipe.recipeId, recipeInstanceId, input)))
     } yield baseCase(initialExecution)
       .collect { case Some(output) => output.filterNot(config.ingredientsFilter) }
 

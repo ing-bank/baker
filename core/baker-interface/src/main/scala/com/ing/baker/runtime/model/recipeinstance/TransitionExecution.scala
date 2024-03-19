@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.model.recipeinstance
 
 import java.lang.reflect.InvocationTargetException
-import cats.effect.{Effect, Timer}
+import cats.effect.{Effect, IO, Timer}
 import cats.implicits._
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -188,6 +188,13 @@ private[recipeinstance] case class TransitionExecution(
           _ <- effect.delay(components.logging.interactionFinished(interactionCompleted))
           _ <- components.eventStream.publish(interactionCompleted)
 
+          _ <- transformedOutput match {
+              case Some(event) =>
+                val eventFired = EventFired(endTime, recipe.name, recipe.recipeId, recipeInstanceId, event)
+                components.logging.eventFired(eventFired)
+                components.eventStream.publish(eventFired)
+              case None => effect.pure()
+            }
         } yield transformedOutput
 
       }.onError { case e: Throwable =>
