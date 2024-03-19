@@ -106,7 +106,11 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
         } yield output -> enabledExecutions
 
       case Left(ExceptionStrategyOutcome.Continue(eventName)) =>
-        handleExecutionOutcome(finishedExecution)(Right(Some(EventInstance(eventName, Map.empty))))
+        val output: EventInstance = EventInstance(eventName, Map.empty)
+        for {
+          enabledExecutions <- state.modify(_.recordFailedWithOutputExecution(finishedExecution, Some(output)))
+          _ <- scheduleIdleStop
+        } yield Some(output) -> enabledExecutions
 
       case Left(strategy @ ExceptionStrategyOutcome.BlockTransition) =>
         state

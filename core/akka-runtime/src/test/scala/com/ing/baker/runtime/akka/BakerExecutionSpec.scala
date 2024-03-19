@@ -1182,6 +1182,34 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           "interactionOneOriginalIngredient" -> "success!")
     }
 
+
+    "retry a blocked interaction after it had the FireEvent retry strategy" in {
+      val recipe =
+        Recipe("RetryBlockedInteractionRecipe")
+          .withInteraction(interactionOne
+            .withFailureStrategy(InteractionFailureStrategy.FireEventAfterFailure(Some("interactionOneSuccessful"))))
+          .withSensoryEvent(initialEvent)
+
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ = when(testInteractionOneMock.apply(anyString(), anyString()))
+          .thenThrow(new RuntimeException("Expected test failure"))
+          .thenReturn(Future.successful(InteractionOneSuccessful("success!")))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        state0 <- baker.getRecipeInstanceState(recipeInstanceId)
+        _ = state0.ingredients shouldBe
+          ingredientMap(
+            "initialIngredient" -> initialIngredientValue)
+        _ <- baker.retryInteraction(recipeInstanceId, interactionOne.name)
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+      } yield state.ingredients shouldBe
+        ingredientMap(
+          "initialIngredient" -> initialIngredientValue,
+          "interactionOneOriginalIngredient" -> "success!")
+    }
+
     "be able to return" when {
       "all occurred events" in {
         for {

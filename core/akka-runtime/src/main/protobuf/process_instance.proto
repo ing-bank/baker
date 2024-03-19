@@ -49,6 +49,19 @@ message TransitionFired {
     optional SerializedData data = 8;
 }
 
+message TransitionFailedWithOutput {
+    option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
+
+    optional int64 job_id = 1;
+    optional string correlation_id = 9;
+    optional int64 transition_id = 3;
+    optional int64 time_started = 4;
+    optional int64 time_completed = 5;
+    repeated ConsumedToken consumed = 6;
+    repeated ProducedToken produced = 7;
+    optional SerializedData data = 8;
+}
+
 message TransitionDelayed {
     option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
     optional int64 job_id = 1;

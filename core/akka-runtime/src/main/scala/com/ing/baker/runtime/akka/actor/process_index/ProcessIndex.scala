@@ -238,10 +238,15 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   }
 
   def shouldDelete(meta: ActorMetadata): Boolean = {
-    meta.processStatus != Deleted &&
-      getCompiledRecipe(meta.recipeId)
-        .flatMap(_.retentionPeriod)
-        .exists { p => meta.createdDateTime + p.toMillis < System.currentTimeMillis() }
+    if(meta.processStatus != Deleted)
+      getCompiledRecipe(meta.recipeId) match {
+        case Some(recipe) =>
+          recipe.retentionPeriod.exists { p => meta.createdDateTime + p.toMillis < System.currentTimeMillis() }
+        case None =>
+          log.error(s"Could not find recipe: ${meta.recipeId} during deletion for recipeInstanceId: ${meta.recipeInstanceId} using default 14 days")
+          meta.createdDateTime + (14 days).toMillis < System.currentTimeMillis()
+      }
+    else false
   }
 
   private def deleteProcess(meta: ActorMetadata): Unit = {

@@ -299,7 +299,23 @@ class ProcessInstance[S, E](
               context become running(instance, scheduledRetries)})
 
     case event@TransitionFiredEvent(jobId, transitionId, correlationId, timeStarted, timeCompleted, consumed, produced, output) =>
+      val transition = instance.petriNet.transitions.getById(transitionId)
+      log.transitionFired(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition, jobId, timeStarted, timeCompleted)
+      // persist the success event
+      persistEvent(instance, event)(
+        eventSource.apply(instance)
+          .andThen(step)
+          .andThen {
+            case (updatedInstance, newJobs) =>
+              // the sender is notified of the transition having fired
+              sender() ! TransitionFired(jobId, transitionId, correlationId, consumed, produced, newJobs.map(_.id), filterIngredientValuesFromEventInstance(output))
 
+              // the job is removed from the state since it completed
+              context become running(updatedInstance, scheduledRetries - jobId)
+          }
+      )
+
+    case event@TransitionFailedWithOutputEvent(jobId, transitionId, correlationId, timeStarted, timeCompleted, consumed, produced, output) =>
       val transition = instance.petriNet.transitions.getById(transitionId)
       log.transitionFired(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition, jobId, timeStarted, timeCompleted)
       // persist the success event
@@ -397,10 +413,10 @@ class ProcessInstance[S, E](
           )
 
         case Continue(produced, out) =>
-          val transitionFiredEvent = TransitionFiredEvent(
+          val TransitionFailedWithOutput = TransitionFailedWithOutputEvent(
             jobId, transitionId, correlationId, timeStarted, timeFailed, consume, marshallMarking(produced), out)
 
-          persistEvent(instance, transitionFiredEvent)(
+          persistEvent(instance, TransitionFailedWithOutput)(
             eventSource.apply(instance)
               .andThen(step)
               .andThen { case (updatedInstance, newJobs) =>

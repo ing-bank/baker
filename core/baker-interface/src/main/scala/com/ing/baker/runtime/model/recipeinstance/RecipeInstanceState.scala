@@ -75,6 +75,14 @@ case class RecipeInstanceState(
   def recordFailedExecution(transitionExecution: TransitionExecution, exceptionStrategy: ExceptionStrategyOutcome): RecipeInstanceState =
     addExecution(transitionExecution.toFailedState(exceptionStrategy))
 
+  def recordFailedWithOutputExecution(transitionExecution: TransitionExecution, output: Option[EventInstance]): (RecipeInstanceState, Set[TransitionExecution]) =
+    aggregateOutputEvent(output)
+      .increaseSequenceNumber
+      .aggregatePetriNetChanges(transitionExecution, output)
+      .addCompletedCorrelationId(transitionExecution)
+      .addExecution(transitionExecution.copy(state = TransitionExecution.State.Failed(transitionExecution.failureCount, ExceptionStrategyOutcome.BlockTransition)))
+      .allEnabledExecutions
+
   def recordCompletedExecution(transitionExecution: TransitionExecution, output: Option[EventInstance]): (RecipeInstanceState, Set[TransitionExecution]) =
     aggregateOutputEvent(output)
       .increaseSequenceNumber
