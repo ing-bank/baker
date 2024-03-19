@@ -102,7 +102,10 @@ object RecipeVisualizer {
 
     // specifies which transitions to compact (remove)
     val transitionsToCompact = (node: RecipePetriNetGraph#NodeT) => node.value match {
-      case Right(transition: Transition) => transition.isInstanceOf[IntermediateTransition] || transition.isInstanceOf[MultiFacilitatorTransition]
+      case Right(transition: Transition) =>
+        transition.isInstanceOf[IntermediateTransition] ||
+          transition.isInstanceOf[MultiFacilitatorTransition] ||
+          transition.label.startsWith(checkpointEventInteractionPrefix)
       case _ => false
     }
 
