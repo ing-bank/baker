@@ -8,7 +8,8 @@ import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings, checkpointEventInteractionPrefix}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common._
-import com.ing.baker.recipe.scaladsl.{Interaction, Event}
+import com.ing.baker.recipe.{javadsl, kotlindsl}
+import com.ing.baker.recipe.scaladsl.{Event, Interaction}
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
@@ -238,7 +239,7 @@ object RecipeCompiler {
     val allEventTransitions: Seq[EventTransition] = sensoryEventTransitions ++ interactionEventTransitions
 
     // Given the event classes, it is creating the ingredient places and
-    // connecting a transition to a ingredient place.§
+    // connecting a transition to a ingredient place.
     val internalEventArcs: Seq[Arc] = allInteractionTransitions.flatMap { t =>
       t.eventsToFire.flatMap { event =>
         event.ingredients.map { ingredient =>
@@ -330,9 +331,11 @@ object RecipeCompiler {
     val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
 
     val oldRecipeIdVariant : OldRecipeIdVariant =
-      if (recipe.isInstanceOf[com.ing.baker.recipe.javadsl.Recipe]) Scala212CompatibleJava
-      else if (recipe.isInstanceOf[com.ing.baker.recipe.kotlindsl.Recipe]) Scala212CompatibleKotlin
-      else Scala212CompatibleScala
+      recipe match {
+        case _: javadsl.Recipe => Scala212CompatibleJava
+        case _: kotlindsl.Recipe => Scala212CompatibleKotlin
+        case _ => Scala212CompatibleScala
+      }
 
     val compiledRecipe = CompiledRecipe.build(
       name = recipe.name,

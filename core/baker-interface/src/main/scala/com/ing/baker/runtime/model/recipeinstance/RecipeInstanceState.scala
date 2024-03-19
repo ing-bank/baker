@@ -1,23 +1,19 @@
 package com.ing.baker.runtime.model.recipeinstance
 
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
-import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
-import com.ing.baker.il.petrinet.Place
 import com.ing.baker.il.petrinet.Place.IngredientPlace
-import com.ing.baker.petrinet.api.{Marking, MultiSet}
-import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment}
 import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.common.IngredientInstance
-import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetaDataName
+import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
+import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment}
 import com.ing.baker.types.{CharArray, MapType, Value}
-
-import scala.collection.immutable
 
 object RecipeInstanceState {
 
   def getMetaDataFromIngredients(ingredients: Map[String, Value]): Option[Map[String, String]] = {
-    ingredients.get(RecipeInstanceMetaDataName).flatMap(value => {
+    ingredients.get(RecipeInstanceMetadataName).flatMap(value => {
       if (value.isInstanceOf(MapType(CharArray)))
         Some(value.as[Map[String, String]])
       else
@@ -36,6 +32,7 @@ object RecipeInstanceState {
       sequenceNumber = 0,
       marking = recipe.initialMarking,
       ingredients = Map.empty,
+      recipeInstanceMetadata = Map.empty,
       events = List.empty,
       completedCorrelationIds = Set.empty,
       executions = Map.empty,
@@ -50,6 +47,7 @@ case class RecipeInstanceState(
                                 sequenceNumber: Long,
                                 marking: Marking[Place],
                                 ingredients: Map[String, Value],
+                                recipeInstanceMetadata: Map[String, String],
                                 events: List[EventMoment],
                                 completedCorrelationIds: Set[String],
                                 executions: Map[Long, TransitionExecution],
@@ -118,6 +116,8 @@ case class RecipeInstanceState(
           consume = markings.head,
           input = None,
           ingredients = ingredients,
+          recipeInstanceMetadata = recipeInstanceMetadata,
+          eventList = events,
           correlationId = None,
           isReprovider = transition.isReprovider
         )
@@ -129,6 +129,8 @@ case class RecipeInstanceState(
           consume = markings.head,
           input = None,
           ingredients = ingredients,
+          recipeInstanceMetadata = recipeInstanceMetadata,
+          eventList = events,
           correlationId = None,
           isReprovider =  false
         )

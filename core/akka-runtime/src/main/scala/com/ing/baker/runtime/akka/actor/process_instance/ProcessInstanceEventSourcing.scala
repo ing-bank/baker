@@ -11,7 +11,7 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.Event
 import com.ing.baker.runtime.akka.actor.process_instance.internal.{ExceptionState, ExceptionStrategy, Instance, Job}
 import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
-import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetaDataName
+import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.scaladsl.RecipeInstanceState
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.{CharArray, MapType, Value}
@@ -117,11 +117,9 @@ object ProcessInstanceEventSourcing extends LazyLogging {
     case e: TransitionFailedWithOutputEvent =>
       val transition = instance.petriNet.transitions.getById(e.transitionId)
       val newState = sourceFn(transition)(instance.state)(e.output.asInstanceOf[E])
-//      We only have the consumed markings for the job
       val consumed: Marking[Place] = e.consumed.unmarshall(instance.petriNet.places)
       val produced: Marking[Place] = e.produced.unmarshall(instance.petriNet.places)
 
-      //TODO determine what to do with the job not found situation
       val job = instance.jobs.getOrElse(e.jobId, {
         Job[S](e.jobId, e.correlationId, instance.state, transition, consumed, null, None)
       })
@@ -175,24 +173,11 @@ object ProcessInstanceEventSourcing extends LazyLogging {
     case e: MetaDataAdded =>
         val newState: S = instance.state match {
           case state: RecipeInstanceState =>
-            val newBakerMetaData: Map[String, String] =
-              state.ingredients.get(RecipeInstanceMetaDataName) match {
-                case Some(value) =>
-                  if (value.isInstanceOf(MapType(CharArray))) {
-                    val oldMetaData: Map[String, String] = value.asMap[String, String](classOf[String], classOf[String]).asScala.toMap
-                    oldMetaData ++ e.metaData
-                  }
-                  else {
-                    //If the old metadata is not of Type[String, String] we overwrite it since this is not allowed.
-                    logger.info("Old RecipeInstanceMetaData was not of type Map[String, String]")
-                    e.metaData
-                  }
-                case None =>
-                  e.metaData
-              }
-            val newIngredients: Map[String, Value] =
-              state.ingredients + (RecipeInstanceMetaDataName -> com.ing.baker.types.Converters.toValue(newBakerMetaData))
-            state.copy(ingredients = newIngredients).asInstanceOf[S]
+            val newRecipeInstanceMetaData: Map[String, String] = state.recipeInstanceMetadata ++ e.metaData
+            //We still add an ingredient for the metaData since this makes it easier to use it during interaction execution
+            val newIngredients: Map[String, Value] = state.ingredients +
+              (RecipeInstanceMetadataName -> com.ing.baker.types.Converters.toValue(newRecipeInstanceMetaData))
+            state.copy(ingredients = newIngredients, recipeInstanceMetadata = newRecipeInstanceMetaData).asInstanceOf[S]
           case state =>
             state
       }

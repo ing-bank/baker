@@ -81,6 +81,8 @@ trait BakerRuntimeTestBase
   )
 
   protected val testInteractionOneMock: InteractionOne = mock[InteractionOne]
+  protected val testInteractionOneWithMetaDataMock: InteractionOneWithMetaData = mock[InteractionOneWithMetaData]
+  protected val testInteractionOneWithEventListMock: InteractionOneWithEventList = mock[InteractionOneWithEventList]
   protected val testInteractionTwoMock: InteractionTwo = mock[InteractionTwo]
   protected val testInteractionThreeMock: InteractionThree = mock[InteractionThree]
   protected val testInteractionFourMock: InteractionFour = mock[InteractionFour]
@@ -98,6 +100,8 @@ trait BakerRuntimeTestBase
   protected val mockImplementations: List[InteractionInstance] =
     List(
       testInteractionOneMock,
+      testInteractionOneWithMetaDataMock,
+      testInteractionOneWithEventListMock,
       testInteractionTwoMock,
       testInteractionThreeMock,
       testInteractionFourMock,

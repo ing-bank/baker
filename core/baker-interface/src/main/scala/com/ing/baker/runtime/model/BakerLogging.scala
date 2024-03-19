@@ -114,6 +114,18 @@ case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
     withMDC(mdc, _.info(msg))
   }
 
+  def eventFired(eventFired: EventFired): Unit = {
+    val msg = s"Firing event '${eventFired.event.name}'"
+    val mdc = Map(
+      "recipeInstanceId" -> eventFired.recipeInstanceId,
+      "recipeId" -> eventFired.recipeId,
+      "recipeName" -> eventFired.recipeName,
+      "eventName" -> eventFired.event.name,
+      "runtimeTimestamp" -> eventFired.timeStamp.toString,
+    )
+    withMDC(mdc, _.info(msg))
+  }
+
   def eventReceived(eventReceived: EventReceived): Unit = {
     val msg = s"Event received '${eventReceived.event.name}'"
     val mdc = Map(

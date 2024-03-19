@@ -6,7 +6,7 @@ import cats.effect.{ConcurrentEffect, Effect, Resource, Timer}
 import cats.implicits._
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common.BakerException.{ProcessAlreadyExistsException, ProcessDeletedException}
-import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetaDataName
+import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.model.RecipeInstanceManager.RecipeInstanceStatus
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
@@ -79,6 +79,7 @@ trait RecipeInstanceManager[F[_]] {
           currentState.recipe.recipeId,
           recipeInstanceId,
           currentState.ingredients,
+          currentState.recipeInstanceMetadata,
           currentState.events
         )
       })
@@ -151,16 +152,10 @@ trait RecipeInstanceManager[F[_]] {
   def addMetaData(recipeInstanceId: String, metadata: Map[String, String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] = {
     getExistent(recipeInstanceId).map((recipeInstance: RecipeInstance[F]) => {
       recipeInstance.state.update(currentState => {
-        val newBakerMetaData = currentState.ingredients.get(RecipeInstanceMetaDataName) match {
-          case Some(value) =>
-            if (value.isInstanceOf(MapType(com.ing.baker.types.CharArray))) {
-              val oldMetaData: Map[String, String] = value.asMap[String, String](classOf[String], classOf[String]).asScala.toMap
-              oldMetaData ++ metadata
-            }
-            else metadata
-          case None => metadata
-        }
-        currentState.copy(ingredients = currentState.ingredients + (RecipeInstanceMetaDataName -> com.ing.baker.types.Converters.toValue(newBakerMetaData)))
+        val newRecipeInstanceMetaData = currentState.recipeInstanceMetadata ++ metadata
+        currentState.copy(
+          ingredients = currentState.ingredients + (RecipeInstanceMetadataName -> com.ing.baker.types.Converters.toValue(newRecipeInstanceMetaData)),
+          recipeInstanceMetadata = newRecipeInstanceMetaData)
       })
     }).flatten
   }
