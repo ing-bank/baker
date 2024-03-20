@@ -124,7 +124,7 @@ object Dependencies {
   val objenisis = "org.objenesis" % "objenesis" % "3.2"
   val jodaTime = "joda-time" % "joda-time" % "2.12.5"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.7"
-  val logback = "ch.qos.logback" % "logback-classic" % "1.4.6"
+  val logback = "ch.qos.logback" % "logback-classic" % "1.4.14"
   val logstash = "net.logstash.logback" % "logstash-logback-encoder" % "7.3"
   val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.17.0"
   val scalaCheckPlus = "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0"
