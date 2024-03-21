@@ -101,8 +101,14 @@ private[recipeinstance] case class TransitionExecution(
             executeInteractionInstance(interactionTransition)
           case _: EventTransition =>
               for {
-                timerstamp <- timer.clock.realTime(MILLISECONDS)
-                _ <- effect.delay(components.logging.firingEvent(recipeInstanceId, "UNKNOWN", "UNKNOWN", id, transition, timerstamp))
+                endTime <- timer.clock.realTime(MILLISECONDS)
+                _ <- input match {
+                  case Some(event) =>
+                    val eventFired = EventFired(endTime, recipe.name, recipe.recipeId, recipeInstanceId, event)
+                    components.logging.eventFired(eventFired)
+                    components.eventStream.publish(eventFired)
+                  case None => effect.unit
+                }
               } yield input
           case _ =>
             effect.pure(None)
@@ -193,7 +199,7 @@ private[recipeinstance] case class TransitionExecution(
                 val eventFired = EventFired(endTime, recipe.name, recipe.recipeId, recipeInstanceId, event)
                 components.logging.eventFired(eventFired)
                 components.eventStream.publish(eventFired)
-              case None => effect.pure()
+              case None => effect.unit
             }
         } yield transformedOutput
 
