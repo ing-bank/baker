@@ -10,6 +10,7 @@ import scala.collection.JavaConverters._
 
 object RecipeVisualStyle extends LazyLogging {
 
+  def d: RecipeVisualStyle = RecipeVisualStyle()
   def default: RecipeVisualStyle = RecipeVisualStyle()
 
   def from(config: Config): RecipeVisualStyle = {
@@ -86,6 +87,12 @@ case class RecipeVisualStyle(
         DotAttr("fontcolor", "white")
       )
     )
+  ),
+
+  recipe: List[DotAttr] = List(
+    DotAttr("shape", "circle"),
+    DotAttr("style", "filled"),
+    DotAttr("color", "\"#000000\"")
   ),
 
   ingredientAttributes: List[DotAttr] = List(

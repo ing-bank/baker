@@ -10,7 +10,6 @@ import scalax.collection.edge.WLDiEdge
 import scalax.collection.io.dot.implicits._
 import scalax.collection.io.dot.{DotAttr, _}
 
-import scala.annotation.nowarn
 import scala.language.higherKinds
 
 object RecipeVisualizer {
@@ -22,23 +21,66 @@ object RecipeVisualizer {
 
   implicit class RecipePetriNetGraphFns(graph: RecipePetriNetGraph) {
 
-    @nowarn
     def compactNode(node: RecipePetriNetGraph#NodeT): RecipePetriNetGraph = {
 
       // create direct edges from all incoming to outgoing nodes
-      val newEdges = node.incomingNodes.flatMap {incomingNode =>
+      val newEdges = node.incomingNodes.flatMap { incomingNode =>
         node.outgoingNodes.map(n => WLDiEdge[Node, String](incomingNode, n)(0, ""))
       }
 
       // remove the node, removes all it's incoming and outgoing edges and add the new direct edges
-      graph - node -- node.incoming -- node.outgoing ++ newEdges
+      graph -- Set(node) -- node.incoming -- node.outgoing ++ newEdges
     }
 
-    def compactAllNodes(fn: RecipePetriNetGraph#NodeT => Boolean): RecipePetriNetGraph =
-      graph.nodes.foldLeft(graph) {
-        case (acc, node) if fn(node) => acc.compactNode(node)
-        case (acc, _) => acc
-      }
+    def compactAllNodes(fn: RecipePetriNetGraph#NodeT => Boolean): RecipePetriNetGraph = {
+      val nodes = graph.nodes.filter(node => fn(node))
+      val newEdges = nodes.flatMap(node => node.incomingNodes.flatMap { incomingNode =>
+        node.outgoingNodes.map(n => WLDiEdge[Node, String](incomingNode, n)(0, ""))
+      })
+      graph -- nodes ++ newEdges
+    }
+
+    def compactSubRecipes: RecipePetriNetGraph = {
+      val nodes = graph.nodes
+        .filter { node =>
+          node.value match {
+            case Left(place) => place.label.startsWith(subRecipePrefix)
+            case Right(transition: Transition) => transition.label.startsWith(subRecipePrefix)
+          }
+        }
+
+      nodes
+        .groupBy { node =>
+          node.value match {
+            case Left(place) => place.label.split('$')(2)
+            case Right(transition: Transition) => transition.label.split('$')(2)
+          }
+        }
+        .foldLeft(graph) { case (acc, (name, nodes)) =>
+          val newNode = Left(Place(name, Place.SubRecipePlace))
+          val selfRef = nodes
+            .flatMap { n =>
+              n.outNeighbors
+                .filter {
+                  event => {
+                    val ingredients = event.outNeighbors.filter(_.value match {
+                      case Left(Place(_, IngredientPlace)) => true
+                      case _ => false
+                    })
+                    val interactions = (event.outNeighbors ++ ingredients.flatMap(_.outNeighbors)).filter(_.value match {
+                      case Right(_: InteractionTransition) => true
+                      case _ => false
+                    })
+                    interactions.diff(nodes).isEmpty
+                  }
+                }
+                .flatMap { event => Set(event) ++ event.outNeighbors }
+            }
+          val inEdges = nodes.flatMap { node => node.inNeighbors.diff(selfRef).map(n => WLDiEdge[Node, String](n, newNode)(0, ""))}
+          val outEdges = nodes.flatMap { node => node.outNeighbors.diff(selfRef).map(n => WLDiEdge[Node, String](newNode, n)(0, "")) }
+          acc -- selfRef -- nodes ++ inEdges ++ outEdges + newNode
+        }
+    }
   }
 
   /**
@@ -57,6 +99,7 @@ object RecipeVisualizer {
   private def nodeDotAttrFn(style: RecipeVisualStyle): (RecipePetriNetGraph#NodeT, Set[String], Set[String]) => List[DotAttr] =
     (node: RecipePetriNetGraph#NodeT, eventNames: Set[String], ingredientNames: Set[String]) =>
       node.value match {
+        case Left(Place(_, SubRecipePlace)) => style.recipe
         case Left(Place(_, InteractionEventOutputPlace)) => style.choiceAttributes
         case Left(Place(_, EventOrPreconditionPlace)) => style.preconditionORAttributes
         case Left(Place(_, EmptyEventIngredientPlace)) => style.emptyEventAttributes
@@ -72,7 +115,7 @@ object RecipeVisualizer {
         case Right(_) => style.eventAttributes
       }
 
-  private def generateDot(graph: RecipePetriNetGraph, style: RecipeVisualStyle, filter: String => Boolean, eventNames: Set[String], ingredientNames: Set[String]): String = {
+  private def generateDot(graph: RecipePetriNetGraph, style: RecipeVisualStyle, filter: String => Boolean, eventNames: Set[String], ingredientNames: Set[String], subRecipe: Boolean): String = {
 
     val myRoot = DotRootGraph(directed = graph.isDirected,
       id = None,
@@ -106,14 +149,22 @@ object RecipeVisualizer {
         transition.isInstanceOf[IntermediateTransition] ||
           transition.isInstanceOf[MultiFacilitatorTransition] ||
           transition.label.startsWith(checkpointEventInteractionPrefix)
+      //          transition.label.startsWith(subRecipePrefix)
       case _ => false
     }
 
     // compacts all nodes that are not of interest to the recipe
-    val compactedGraph = graph
-      .compactAllNodes(placesToCompact)
-      .compactAllNodes(transitionsToCompact)
-
+    val compactedGraph =
+      if (subRecipe) {
+        graph
+          .compactAllNodes(placesToCompact)
+          .compactAllNodes(transitionsToCompact)
+          .compactSubRecipes
+      } else {
+        graph
+          .compactAllNodes(placesToCompact)
+          .compactAllNodes(transitionsToCompact)
+      }
     // filters out all the nodes that match the predicate function
     val filteredGraph = compactedGraph -- compactedGraph.nodes.filter(n => !filter(n.toString))
 
@@ -124,12 +175,18 @@ object RecipeVisualizer {
   }
 
   def visualizeRecipe(recipe: CompiledRecipe,
-    style: RecipeVisualStyle,
-    filter: String => Boolean = _ => true,
-    eventNames: Set[String] = Set.empty,
-    ingredientNames: Set[String] = Set.empty): String =
-    generateDot(recipe.petriNet.innerGraph, style, filter, eventNames, ingredientNames)
+                      style: RecipeVisualStyle,
+                      filter: String => Boolean = _ => true,
+                      eventNames: Set[String] = Set.empty,
+                      ingredientNames: Set[String] = Set.empty): String =
+    generateDot(recipe.petriNet.innerGraph, style, filter, eventNames, ingredientNames, false)
 
+  def visualizeSubRecipe(recipe: CompiledRecipe,
+                         style: RecipeVisualStyle,
+                         filter: String => Boolean = _ => true,
+                         eventNames: Set[String] = Set.empty,
+                         ingredientNames: Set[String] = Set.empty): String =
+    generateDot(recipe.petriNet.innerGraph, style, filter, eventNames, ingredientNames, true)
 
   def visualizePetriNet(graph: PetriNetGraph, placeLabelFn: Place => String = (p: Place) => p.toString, transitionLabelFn: Transition => String = (t: Transition) => t.toString): String = {
 
