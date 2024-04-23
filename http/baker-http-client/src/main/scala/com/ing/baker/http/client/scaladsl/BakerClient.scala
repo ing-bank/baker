@@ -4,9 +4,8 @@ import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.il.RecipeVisualStyle
 import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus, Utils}
 import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EncodedRecipe, EventInstance, EventMoment, EventResolutions, IngredientInstance, InteractionExecutionResult, InteractionInstanceDescriptor, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
-import com.ing.baker.runtime.serialization.InteractionExecution
+import com.ing.baker.runtime.serialization.{AddMetaDataRequest, BakeRequest, InteractionExecution}
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
-import com.ing.baker.runtime.serialization.BakeRequest
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.types.Value
@@ -98,6 +97,7 @@ final class BakerClient( client: Client[IO],
   implicit val eventInstanceResultEntityEncoder: EntityEncoder[IO, EventInstance] = jsonEncoderOf[IO, EventInstance]
   implicit val recipeJsonEncoder: EntityEncoder[IO, EncodedRecipe] = jsonEncoderOf[IO, EncodedRecipe]
   implicit val bakeRequestJsonEncoder: EntityEncoder[IO, BakeRequest] = jsonEncoderOf[IO, BakeRequest]
+  implicit val addMetaDataRequestJsonEncoder: EntityEncoder[IO, AddMetaDataRequest] = jsonEncoderOf[IO, AddMetaDataRequest]
   implicit val interactionRequestEncoder: EntityEncoder[IO, InteractionExecution.ExecutionRequest] = jsonEncoderOf[IO, InteractionExecution.ExecutionRequest]
 
   override def addRecipe(recipe: RecipeRecord): Future[String] =
@@ -295,7 +295,8 @@ final class BakerClient( client: Client[IO],
     *
     */
   override def addMetaData(recipeInstanceId: String, metadata: Map[String,String]): Future[Unit] =
-    throw new NotImplementedError("AddMetaData not implemented for the BakerClient")
+    callRemoteBakerService[Unit](
+      (host, prefix) => POST(AddMetaDataRequest(metadata), root(host, prefix) / "instances" / recipeInstanceId / "add-metadata"))
 
   /**
     * Returns an index of all running processes.
