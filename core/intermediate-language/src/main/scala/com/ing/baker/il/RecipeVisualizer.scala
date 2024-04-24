@@ -163,7 +163,6 @@ object RecipeVisualizer {
         transition.isInstanceOf[IntermediateTransition] ||
           transition.isInstanceOf[MultiFacilitatorTransition] ||
           transition.label.startsWith(checkpointEventInteractionPrefix)
-      //          transition.label.startsWith(subRecipePrefix)
       case _ => false
     }
 
