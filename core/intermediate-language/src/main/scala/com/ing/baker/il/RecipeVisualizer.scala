@@ -70,7 +70,7 @@ object RecipeVisualizer {
             .flatMap { n => n.outNeighbors }
             .filter { e =>
               e.value match {
-                case Right(_: EventTransition) => true
+                case Right(event: EventTransition) => !event.isSensoryEvent
                 case _ => false
               }
             }
