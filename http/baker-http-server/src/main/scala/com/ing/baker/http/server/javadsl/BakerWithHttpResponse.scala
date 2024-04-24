@@ -57,7 +57,7 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
   def getMetaDataFromBakeRequest(bakeRequestJson: String): Map[String, String] = {
     parse(bakeRequestJson) match {
       case Left(_) =>
-        logger.error("Failure parsing bakeRequest")
+        logger.error("Failure parsing json of bakeRequest")
         Map.empty[String, String]
       case Right(json: io.circe.Json) =>
         json.as[BakeRequest] match {
@@ -73,13 +73,13 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
   def getMetaDataFromAddMetaDataRequest(addMetaDataRequestJson: String): Map[String, String] = {
     parse(addMetaDataRequestJson) match {
       case Left(_) =>
-        logger.error("Failure parsing bakeRequest")
-        Map.empty[String, String]
+        logger.error("Failure parsing json of AddMetaDataRequest")
+        throw BakerException.UnexpectedException("Failure parsing json of AddMetaDataRequest")
       case Right(json: io.circe.Json) =>
         json.as[AddMetaDataRequest] match {
           case Left(_) =>
-            logger.error("Failure parsing bakeRequest")
-            Map.empty[String, String]
+            logger.error("Failure parsing of AddMetaDataRequest")
+            throw BakerException.UnexpectedException("Failure parsing of AddMetaDataRequest")
           case Right(addMetaDataRequest: AddMetaDataRequest) =>
             addMetaDataRequest.metadata
         }
