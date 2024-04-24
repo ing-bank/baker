@@ -88,4 +88,6 @@ object JsonEncoders {
   implicit val recipeEncoder: Encoder[EncodedRecipe] = deriveEncoder[EncodedRecipe]
 
   implicit val bakeRequestEncoder: io.circe.Encoder[com.ing.baker.runtime.serialization.BakeRequest] = deriveEncoder[BakeRequest]
+
+  implicit val addMetaDataRequestEncoder: io.circe.Encoder[com.ing.baker.runtime.serialization.AddMetaDataRequest] = deriveEncoder[AddMetaDataRequest]
 }
