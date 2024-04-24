@@ -41,15 +41,13 @@ object RecipeVisualizer {
     }
 
     def compactSubRecipes: RecipePetriNetGraph = {
-      val nodes = graph.nodes
+      graph.nodes
         .filter { node =>
           node.value match {
-            case Left(place) => place.label.startsWith(subRecipePrefix)
             case Right(transition: Transition) => transition.label.startsWith(subRecipePrefix)
+            case _ => false
           }
         }
-
-      nodes
         .groupBy { node =>
           node.value match {
             case Left(place) => place.label.split('$')(2)
