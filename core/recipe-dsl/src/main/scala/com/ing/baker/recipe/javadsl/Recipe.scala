@@ -74,7 +74,7 @@ case class Recipe(
   /**
    * Adds the sub-recipe to the recipe
    *
-   * @param recipe sub-recipe
+   * @param subRecipe sub-recipe
    * @return
    */
   def withSubRecipe(subRecipe: common.Recipe): Recipe =
@@ -84,7 +84,7 @@ case class Recipe(
     * Adds the sensory event to the recipe
     * The firing limit is set to 1 by default
     *
-    * @param newEvent
+    * @param newEvent sensory-event
     * @return
     */
   def withSensoryEvent(newEvent: Class[_]): Recipe =
