@@ -10,7 +10,6 @@ import scala.collection.JavaConverters._
 
 object RecipeVisualStyle extends LazyLogging {
 
-  def d: RecipeVisualStyle = RecipeVisualStyle()
   def default: RecipeVisualStyle = RecipeVisualStyle()
 
   def from(config: Config): RecipeVisualStyle = {
@@ -74,11 +73,11 @@ object RecipeVisualStyle extends LazyLogging {
 
 case class RecipeVisualStyle(
 
-  rootAttributes: List[DotAttr] = List(
+                              rootAttributes: List[DotAttr] = List(
     DotAttr("pad", 0.2)
   ),
 
-  commonNodeAttributes: List[DotAttrStmt] = List(
+                              commonNodeAttributes: List[DotAttrStmt] = List(
     DotAttrStmt(
       Elem.node,
       List(
@@ -89,39 +88,39 @@ case class RecipeVisualStyle(
     )
   ),
 
-  recipe: List[DotAttr] = List(
+                              subRecipe: List[DotAttr] = List(
     DotAttr("shape", "circle"),
     DotAttr("style", "filled"),
     DotAttr("color", "\"#000000\"")
   ),
 
-  ingredientAttributes: List[DotAttr] = List(
+                              ingredientAttributes: List[DotAttr] = List(
     DotAttr("shape", "circle"),
     DotAttr("style", "filled"),
     DotAttr("color", "\"#FF6200\"")
   ),
 
-  providedIngredientAttributes: List[DotAttr] = List(
+                              providedIngredientAttributes: List[DotAttr] = List(
     DotAttr("shape", "circle"),
     DotAttr("style", "filled"),
     DotAttr("color", "\"#3b823a\"")
   ),
 
-  missingIngredientAttributes: List[DotAttr] = List(
+                              missingIngredientAttributes: List[DotAttr] = List(
     DotAttr("shape", "circle"),
     DotAttr("style", "filled"),
     DotAttr("color", "\"#EE0000\""),
     DotAttr("penwidth", "5.0")
   ),
 
-  eventAttributes: List[DotAttr] = List(
+                              eventAttributes: List[DotAttr] = List(
     DotAttr("shape", "diamond"),
     DotAttr("style", "rounded, filled"),
     DotAttr("color", "\"#767676\""),
     DotAttr("margin", 0.3D)
   ),
 
-  sensoryEventAttributes: List[DotAttr] = List(
+                              sensoryEventAttributes: List[DotAttr] = List(
     DotAttr("shape", "diamond"),
     DotAttr("style", "rounded, filled"),
     DotAttr("color", "\"#767676\""),
@@ -131,7 +130,7 @@ case class RecipeVisualStyle(
     DotAttr("margin", 0.3D)
   ),
 
-  interactionAttributes: List[DotAttr] = List(
+                              interactionAttributes: List[DotAttr] = List(
     DotAttr("shape", "rect"),
     DotAttr("style", "rounded, filled"),
     DotAttr("color", "\"#525199\""),
@@ -139,14 +138,14 @@ case class RecipeVisualStyle(
     DotAttr("margin", 0.5D),
   ),
 
-  eventFiredAttributes: List[DotAttr] = List(
+                              eventFiredAttributes: List[DotAttr] = List(
     DotAttr("shape", "diamond"),
     DotAttr("style", "rounded, filled"),
     DotAttr("color", "\"#3b823a\""),
     DotAttr("margin", 0.3D)
   ),
 
-  firedInteractionAttributes: List[DotAttr] = List(
+                              firedInteractionAttributes: List[DotAttr] = List(
     DotAttr("shape", "rect"),
     DotAttr("style", "rounded, filled"),
     DotAttr("color", "\"#3b823a\""),
@@ -154,7 +153,7 @@ case class RecipeVisualStyle(
     DotAttr("margin", 0.5D),
   ),
 
-  eventMissingAttributes: List[DotAttr] = List(
+                              eventMissingAttributes: List[DotAttr] = List(
     DotAttr("shape", "diamond"),
     DotAttr("margin", 0.3D),
     DotAttr("style", "rounded, filled"),
@@ -162,21 +161,21 @@ case class RecipeVisualStyle(
     DotAttr("penwidth", "5.0")
   ),
 
-  choiceAttributes: List[DotAttr] = List(
+                              choiceAttributes: List[DotAttr] = List(
     DotAttr("shape", "point"),
     DotAttr("fillcolor", "\"#D0D93C\""),
     DotAttr("width", 0.3),
     DotAttr("height", 0.3)
   ),
 
-  emptyEventAttributes: List[DotAttr] = List(
+                              emptyEventAttributes: List[DotAttr] = List(
     DotAttr("shape", "point"),
     DotAttr("fillcolor", "\"#D0D93C\""),
     DotAttr("width", 0.1),
     DotAttr("height", 0.1)
   ),
 
-  preconditionORAttributes: List[DotAttr] = List(
+                              preconditionORAttributes: List[DotAttr] = List(
     DotAttr("shape", "circle"),
     DotAttr("fillcolor", "\"#D0D93C\""),
     DotAttr("fontcolor", "black"),
@@ -184,8 +183,8 @@ case class RecipeVisualStyle(
     DotAttr("style", "filled")
   ),
 
-  // this will be removed soon
-  sieveAttributes: List[DotAttr] = List(
+                              // this will be removed soon
+                              sieveAttributes: List[DotAttr] = List(
     DotAttr("shape", "rect"),
     DotAttr("margin", 0.5D),
     DotAttr("color", "\"#7594d6\""),

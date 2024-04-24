@@ -24,12 +24,12 @@ object RecipeVisualizer {
     def compactNode(node: RecipePetriNetGraph#NodeT): RecipePetriNetGraph = {
 
       // create direct edges from all incoming to outgoing nodes
-      val newEdges = node.incomingNodes.flatMap { incomingNode =>
+      val newEdges = node.incomingNodes.flatMap {incomingNode =>
         node.outgoingNodes.map(n => WLDiEdge[Node, String](incomingNode, n)(0, ""))
       }
 
       // remove the node, removes all it's incoming and outgoing edges and add the new direct edges
-      graph -- Set(node) -- node.incoming -- node.outgoing ++ newEdges
+      graph - node -- node.incoming -- node.outgoing ++ newEdges
     }
 
     def compactAllNodes(fn: RecipePetriNetGraph#NodeT => Boolean): RecipePetriNetGraph = {
@@ -113,7 +113,7 @@ object RecipeVisualizer {
   private def nodeDotAttrFn(style: RecipeVisualStyle): (RecipePetriNetGraph#NodeT, Set[String], Set[String]) => List[DotAttr] =
     (node: RecipePetriNetGraph#NodeT, eventNames: Set[String], ingredientNames: Set[String]) =>
       node.value match {
-        case Left(Place(_, SubRecipePlace)) => style.recipe
+        case Left(Place(_, SubRecipePlace)) => style.subRecipe
         case Left(Place(_, InteractionEventOutputPlace)) => style.choiceAttributes
         case Left(Place(_, EventOrPreconditionPlace)) => style.preconditionORAttributes
         case Left(Place(_, EmptyEventIngredientPlace)) => style.emptyEventAttributes

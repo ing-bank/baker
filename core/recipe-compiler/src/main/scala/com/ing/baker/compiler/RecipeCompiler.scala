@@ -8,8 +8,8 @@ import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings, checkpointEventInteractionPrefix, subRecipePrefix}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common._
-import com.ing.baker.recipe.scaladsl.{Event, Interaction}
 import com.ing.baker.recipe.{javadsl, kotlindsl}
+import com.ing.baker.recipe.scaladsl.{Event, Interaction}
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
@@ -33,8 +33,8 @@ object RecipeCompiler {
   }
 
   /**
-   * Creates a transition for a missing event in the recipe.
-   */
+    * Creates a transition for a missing event in the recipe.
+    */
   private def missingEventTransition[E](eventName: String): MissingEventTransition = MissingEventTransition(eventName)
 
   private def buildEventAndPreconditionArcs(interaction: InteractionDescriptor,
@@ -103,7 +103,7 @@ object RecipeCompiler {
         // if so create a event combiner place
         // else link the transition to the event.
         val eventTransitionCount = eventTransitions.count(e => e.event.name == event.name)
-        if (eventTransitionCount > 1) {
+        if(eventTransitionCount > 1) {
           //Create a new intermediate event place
           val eventCombinerPlace: Place = createPlace(label = event.name, placeType = IntermediatePlace)
           //Create a new intermediate event transition
@@ -128,9 +128,9 @@ object RecipeCompiler {
 
 
   /**
-   * Draws an arc from all required ingredients for an interaction
-   * If the ingredient has multiple consumers create a multi transition place and create both arcs for it
-   */
+    * Draws an arc from all required ingredients for an interaction
+    * If the ingredient has multiple consumers create a multi transition place and create both arcs for it
+    */
   private def buildInteractionInputArcs(t: InteractionTransition,
                                         multipleConsumerFacilitatorTransitions: Seq[Transition],
                                         ingredientsWithMultipleConsumers: Map[String, Seq[InteractionTransition]]): Seq[Arc] = {
@@ -155,9 +155,9 @@ object RecipeCompiler {
     val dataInputArcs: Seq[Arc] = fieldNamesWithoutPrefix.map(fieldName => arc(createPlace(fieldName, IngredientPlace), t, 1))
 
     val dataOutputArcs: Seq[Arc] =
-      if (t.isReprovider)
+      if(t.isReprovider)
         fieldNamesWithoutPrefix.map(fieldName => arc(t, createPlace(fieldName, IngredientPlace), 1)) ++
-          fieldNamesWithPrefixMulti.map(fieldName => arc(t, createPlace(s"${t.label}-$fieldName", placeType = MultiTransitionPlace), 1))
+        fieldNamesWithPrefixMulti.map(fieldName => arc(t, createPlace(s"${t.label}-$fieldName", placeType = MultiTransitionPlace), 1))
       else
         Seq.empty
 
@@ -183,12 +183,12 @@ object RecipeCompiler {
   }
 
   /**
-   * Compile the given recipe to a technical recipe that is useful for Baker.
-   *
-   * @param recipe             ; The Recipe to compile and execute
-   * @param validationSettings The validation settings to follow for the validation
-   * @return
-   */
+    * Compile the given recipe to a technical recipe that is useful for Baker.
+    *
+    * @param recipe             ; The Recipe to compile and execute
+    * @param validationSettings The validation settings to follow for the validation
+    * @return
+    */
   def compileRecipe(recipe: Recipe,
                     validationSettings: ValidationSettings): CompiledRecipe = {
 
@@ -343,12 +343,12 @@ object RecipeCompiler {
     val petriNet: PetriNet = new PetriNet(Graph(arcs: _*))
 
     val initialMarking: Marking[Place] = petriNet.places.collect {
-      case p@Place(_, FiringLimiterPlace(n)) => p -> Map[Any, Int]((null, n))
+      case p @ Place(_, FiringLimiterPlace(n)) => p -> Map[Any, Int]((null, n))
     }.toMarking
 
     val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
 
-    val oldRecipeIdVariant: OldRecipeIdVariant =
+    val oldRecipeIdVariant : OldRecipeIdVariant =
       recipe match {
         case _: javadsl.Recipe => Scala212CompatibleJava
         case _: kotlindsl.Recipe => Scala212CompatibleKotlin
@@ -378,11 +378,11 @@ object RecipeCompiler {
   }
 
   /**
-   * Obtains a map of each input place name that is used multiple times and the reflected transitions using it.
-   *
-   * @param actionTransitions Seq of reflected transition.
-   * @return A map from input place name to reflected transitions (where the transitions have as input the place).
-   */
+    * Obtains a map of each input place name that is used multiple times and the reflected transitions using it.
+    *
+    * @param actionTransitions Seq of reflected transition.
+    * @return A map from input place name to reflected transitions (where the transitions have as input the place).
+    */
   private def getIngredientsWithMultipleConsumers(actionTransitions: Seq[InteractionTransition]): Map[String, Seq[InteractionTransition]] = {
     // Obtain a list of field name with their transition
     val placeNameWithTransition: Seq[(String, InteractionTransition)] = for {
@@ -392,8 +392,8 @@ object RecipeCompiler {
 
     // Then obtain the places with multiple out-adjacent transitions
     val ingredientsWithMultipleConsumers = placeNameWithTransition.groupBy {
-        case (placeName, _) => placeName
-      } // Group by place name
+      case (placeName, _) => placeName
+    } // Group by place name
       .filter { case (_, interactions) => interactions.size >= 2 } // Only keep those place names which have more than one out-adjacent transition
       .map { case (placeName, interactions) => (placeName, interactions.map(_._2)) } // Cleanup the data structure
 
