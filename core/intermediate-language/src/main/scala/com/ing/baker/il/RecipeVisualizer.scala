@@ -54,29 +54,45 @@ object RecipeVisualizer {
             case Right(transition: Transition) => transition.label.split('$')(2)
           }
         }
-        .foldLeft(graph) { case (acc, (name, nodes)) =>
+        .foldLeft(graph) { case (acc, (name, subRecipeNodes)) =>
+
+          def hasOnlySubInteractionOutNeighbors(nodes: Set[graph.NodeT]): Boolean = {
+            nodes
+              .filter(_.value match {
+                case Right(_: InteractionTransition) => true
+                case _ => false
+              })
+              .diff(subRecipeNodes)
+              .isEmpty
+          }
+
           val newNode = Left(Place(name, Place.SubRecipePlace))
-          val selfRef = nodes
-            .flatMap { n =>
-              n.outNeighbors
-                .filter {
-                  event => {
-                    val ingredients = event.outNeighbors.filter(_.value match {
-                      case Left(Place(_, IngredientPlace)) => true
-                      case _ => false
-                    })
-                    val interactions = (event.outNeighbors ++ ingredients.flatMap(_.outNeighbors)).filter(_.value match {
-                      case Right(_: InteractionTransition) => true
-                      case _ => false
-                    })
-                    interactions.diff(nodes).isEmpty
-                  }
-                }
-                .flatMap { event => Set(event) ++ event.outNeighbors }
+
+          val firstLayer = subRecipeNodes
+            .flatMap { n => n.outNeighbors }
+            .filter { e =>
+              e.value match {
+                case Right(_: EventTransition) => true
+                case _ => false
+              }
             }
-          val inEdges = nodes.flatMap { node => node.inNeighbors.diff(selfRef).map(n => WLDiEdge[Node, String](n, newNode)(0, ""))}
-          val outEdges = nodes.flatMap { node => node.outNeighbors.diff(selfRef).map(n => WLDiEdge[Node, String](newNode, n)(0, "")) }
-          acc -- selfRef -- nodes ++ inEdges ++ outEdges + newNode
+          val selfRefNodes = firstLayer
+            .flatMap {
+              node => {
+                val secondLayer = node.outNeighbors.filter(_.value match {
+                  case Left(Place(_, IngredientPlace)) => true
+                  case Left(Place(_, EventOrPreconditionPlace)) => true
+                  case _ => false
+                })
+                val eventNodes =
+                  if (hasOnlySubInteractionOutNeighbors(node.outNeighbors ++ secondLayer.flatMap(_.outNeighbors))) Set(node)
+                  else Set.empty
+                eventNodes ++ secondLayer.filter(i => hasOnlySubInteractionOutNeighbors(i.outNeighbors))
+              }
+            }
+          val inEdges = subRecipeNodes.flatMap { node => node.inNeighbors.diff(selfRefNodes).map(n => WLDiEdge[Node, String](n, newNode)(0, "")) }
+          val outEdges = subRecipeNodes.flatMap { node => node.outNeighbors.diff(selfRefNodes).map(n => WLDiEdge[Node, String](newNode, n)(0, "")) }
+          acc -- selfRefNodes -- subRecipeNodes ++ inEdges ++ outEdges + newNode
         }
     }
   }
