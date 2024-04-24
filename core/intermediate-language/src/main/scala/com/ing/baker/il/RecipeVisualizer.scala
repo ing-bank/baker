@@ -66,8 +66,6 @@ object RecipeVisualizer {
               .isEmpty
           }
 
-          val newNode = Left(Place(name, Place.SubRecipePlace))
-
           val firstLayer = subRecipeNodes
             .flatMap { n => n.outNeighbors }
             .filter { e =>
@@ -90,6 +88,8 @@ object RecipeVisualizer {
                 eventNodes ++ secondLayer.filter(i => hasOnlySubInteractionOutNeighbors(i.outNeighbors))
               }
             }
+
+          val newNode = Left(Place(name, Place.SubRecipePlace))
           val inEdges = subRecipeNodes.flatMap { node => node.inNeighbors.diff(selfRefNodes).map(n => WLDiEdge[Node, String](n, newNode)(0, "")) }
           val outEdges = subRecipeNodes.flatMap { node => node.outNeighbors.diff(selfRefNodes).map(n => WLDiEdge[Node, String](newNode, n)(0, "")) }
           acc -- selfRefNodes -- subRecipeNodes ++ inEdges ++ outEdges + newNode
