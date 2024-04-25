@@ -51,4 +51,9 @@ trait Recipe {
     * If Duration.Undefined, process data will be stored indefinitely.
     */
   val retentionPeriod: Option[FiniteDuration]
+
+  /**
+   * Returns all interaction inclusive recursively all sub recipes
+   */
+  def allInteractions: Seq[InteractionDescriptor] = interactions ++ subRecipes.flatMap(_.allInteractions)
 }

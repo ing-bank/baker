@@ -24,6 +24,9 @@ case class Recipe(
   def getInteractions: java.util.List[common.InteractionDescriptor] = interactions.asJava
 
   @nowarn
+  def getAllInteractions: java.util.List[common.InteractionDescriptor] = (interactions ++ subRecipes.flatMap(_.allInteractions)).asJava
+
+  @nowarn
   def getEvents: java.util.List[common.Event] = sensoryEvents.toList.asJava
 
   @nowarn
