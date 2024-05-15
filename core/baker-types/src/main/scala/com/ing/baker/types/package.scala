@@ -1,6 +1,6 @@
 package com.ing.baker
 
-import java.lang.reflect.{ParameterizedType, WildcardType}
+import java.lang.reflect.{ParameterizedType, TypeVariable, WildcardType}
 import scala.annotation.tailrec
 import scala.reflect.runtime.universe
 
@@ -18,7 +18,8 @@ package object types {
   @tailrec
   def getBaseClass(javaType: java.lang.reflect.Type): Class[_] = javaType match {
     case c: Class[_] => c
-    case t: ParameterizedType => getBaseClass(t.getRawType)
+    case parameterizedType: ParameterizedType => getBaseClass(parameterizedType.getRawType)
+    case typeVariable: TypeVariable[_] => getBaseClass(typeVariable.getBounds.head)
     case _ => throw new IllegalArgumentException(s"Unsupported type: $javaType")
   }
 
