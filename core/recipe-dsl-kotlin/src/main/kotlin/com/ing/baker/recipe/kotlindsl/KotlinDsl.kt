@@ -5,15 +5,11 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
 import com.ing.baker.recipe.javadsl.InteractionDescriptor
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy
 import scala.Option
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
-import kotlin.reflect.KParameter
 import kotlin.reflect.full.functions
 import kotlin.reflect.full.primaryConstructor
-import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.jvm.javaType
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
@@ -63,6 +59,9 @@ class RecipeBuilder(private val name: String) {
     @PublishedApi
     internal val interactions: MutableSet<Interaction> = mutableSetOf()
 
+    @PublishedApi
+    internal val subRecipes: MutableSet<Recipe> = mutableSetOf()
+
     private val sensoryEvents: MutableSet<Event> = mutableSetOf()
 
     /**
@@ -86,6 +85,15 @@ class RecipeBuilder(private val name: String) {
     inline fun <reified T : com.ing.baker.recipe.javadsl.Interaction> interaction(configuration: (InteractionBuilder.() -> Unit) = {}) {
         interactions.add(InteractionBuilder(T::class).apply(configuration).build())
     }
+
+    /**
+     * Registers an subrecipe [T] to the recipe. Additional [configuration] can be provided via
+     * the [InteractionBuilder] receiver.
+     */
+    fun subRecipe(recipe:Recipe) {
+        subRecipes.add(recipe)
+    }
+
 
     /**
      * Retries interaction with an incremental backoff on failure.
@@ -119,6 +127,7 @@ class RecipeBuilder(private val name: String) {
         name,
         interactions.toList(),
         sensoryEvents.toList(),
+        subRecipes.toList(),
         defaultFailureStrategy.build(),
         Optional.ofNullable(eventReceivePeriod?.toJavaDuration()),
         Optional.ofNullable(retentionPeriod?.toJavaDuration()),

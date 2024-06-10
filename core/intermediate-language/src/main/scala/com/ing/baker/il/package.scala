@@ -14,7 +14,9 @@ package object il {
   val recipeInstanceEventListName = "RecipeInstanceEventList"
   val processIdName = "$ProcessID$" //needed for backwards compatibility with V1 and V2
   val exhaustedEventAppend = "RetryExhausted"
+
   val checkpointEventInteractionPrefix = "$CheckpointEventInteraction$"
+  val subRecipePrefix = "$SubRecipe$"
 
   def sha256HashCode(str: String): Long = {
     val sha256Digest: MessageDigest = MessageDigest.getInstance("SHA-256")
