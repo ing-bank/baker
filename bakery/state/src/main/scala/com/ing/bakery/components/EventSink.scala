@@ -22,10 +22,7 @@ trait EventSink {
   def attach(baker: AkkaBaker)(implicit cs: ContextShift[IO]): IO[Unit] = {
     IO.fromFuture(IO{baker.registerBakerEventListener {
       event => fire(event).unsafeRunAsyncAndForget()
-    }}).flatMap(_ =>
-      IO.fromFuture(IO{baker.registerEventListener {
-        (_, event) => fire(event).unsafeRunAsyncAndForget()
-      }}))
+    }})
   }
 }
 
@@ -49,16 +46,16 @@ class KafkaEventSink(config: Config) extends EventSink with LazyLogging {
     EventRecord(eventInstance.name, None, "")
 
   private def recordOf(bakerEvent: BakerEvent): EventRecord = bakerEvent match {
-    case EventReceived(_, _, _, recipeInstanceId, _, event) =>
-      EventRecord("EventReceived", Option(recipeInstanceId), event.name)
-    case EventRejected(_, recipeInstanceId, _, event, _) =>
-      EventRecord("EventRejected", Option(recipeInstanceId), event.name)
-    case InteractionFailed(_, _, _, _, recipeInstanceId, interactionName, _, throwable, _) =>
-      EventRecord("InteractionFailed", Option(recipeInstanceId), s"$interactionName: ${throwable.getMessage}")
+    case EventReceived(_, _, _, recipeInstanceId, _, eventName) =>
+      EventRecord("EventReceived", Option(recipeInstanceId), eventName)
+    case EventRejected(_, recipeInstanceId, _, eventName, _) =>
+      EventRecord("EventRejected", Option(recipeInstanceId), eventName)
+    case InteractionFailed(_, _, _, _, recipeInstanceId, interactionName, _, errorMessage, _) =>
+      EventRecord("InteractionFailed", Option(recipeInstanceId), s"$interactionName: $errorMessage")
     case InteractionStarted(_, _, _, recipeInstanceId, interactionName) =>
       EventRecord("InteractionStarted", Option(recipeInstanceId), interactionName)
-    case InteractionCompleted(_, _, _, _, recipeInstanceId, interactionName, event) =>
-      EventRecord("InteractionCompleted", Option(recipeInstanceId),  s"$interactionName: ${event.map(_.name).getOrElse("")}")
+    case InteractionCompleted(_, _, _, _, recipeInstanceId, interactionName, eventName) =>
+      EventRecord("InteractionCompleted", Option(recipeInstanceId),  s"$interactionName: ${eventName.getOrElse("")}")
     case RecipeInstanceCreated(_, recipeId, _, recipeInstanceId) =>
       EventRecord("RecipeInstanceCreated", Option(recipeInstanceId), recipeId)
     case RecipeAdded(recipeName, _, _, _) =>
