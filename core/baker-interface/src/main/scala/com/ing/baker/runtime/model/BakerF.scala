@@ -473,12 +473,12 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.getEventNames(recipeInstanceId))
       override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle): G[String] =
         mapK(self.getVisualState(recipeInstanceId))
-//      override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): G[Unit] =
-//        mapK(self.registerEventListener(recipeName, listenerFunction))
-//      override def registerEventListener(listenerFunction: (RecipeEventMetadata, String) => Unit): G[Unit] =
-//        mapK(self.registerEventListener(listenerFunction))
-//      override def registerBakerEventListener(listenerFunction: String => Unit): G[Unit] =
-//        mapK(self.registerBakerEventListener(listenerFunction))
+      override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, String) => Unit): G[Unit] =
+        mapK(self.registerEventListener(recipeName, listenerFunction))
+      override def registerEventListener(listenerFunction: (RecipeEventMetadata, String) => Unit): G[Unit] =
+        mapK(self.registerEventListener(listenerFunction))
+      override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): G[Unit] =
+        mapK(self.registerBakerEventListener(listenerFunction))
       override def gracefulShutdown(): G[Unit] =
         mapK(self.gracefulShutdown())
       override def retryInteraction(recipeInstanceId: String, interactionName: String): G[Unit] =
