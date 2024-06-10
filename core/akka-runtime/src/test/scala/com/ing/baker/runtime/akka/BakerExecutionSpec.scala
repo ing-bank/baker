@@ -755,25 +755,25 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       } yield state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue, "missingJavaOptional" -> initialIngredientValue, "missingScalaOption" -> initialIngredientValue)
     }
 
-//    "notify a registered event listener of events" in {
-//      val listenerMock = mock[(RecipeEventMetadata, EventInstance) => Unit]
-//      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
-//      val recipe =
-//        Recipe("EventListenerRecipe")
-//          .withInteraction(interactionOne)
-//          .withSensoryEvent(initialEvent)
-//
-//      for {
-//        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
-//        _ <- baker.registerEventListener("EventListenerRecipe", listenerMock)
-//        recipeInstanceId = UUID.randomUUID().toString
-//        _ <- baker.bake(recipeId, recipeInstanceId)
-//        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
-//        _ = Thread.sleep(100) //Added a 100 wait before veryfing needed due to the asyn nature of calling event listeners.
-//        _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), argThat(new RuntimeEventMatcher(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))))
-//        _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), argThat(new RuntimeEventMatcher(EventInstance.unsafeFrom(InteractionOneSuccessful(interactionOneIngredientValue)))))
-//      } yield succeed
-//    }
+    "notify a registered event listener of events" in {
+      val listenerMock = mock[(RecipeEventMetadata, String) => Unit]
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
+      val recipe =
+        Recipe("EventListenerRecipe")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
+
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ <- baker.registerEventListener("EventListenerRecipe", listenerMock)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ = Thread.sleep(100) //Added a 100 wait before veryfing needed due to the asyn nature of calling event listeners.
+        _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), mockitoEq("InitialEvent"))
+        _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), mockitoEq("InteractionOneSuccessful"))
+      } yield succeed
+    }
 
     "return a list of events that where caused by a sensory event" in {
       for {
