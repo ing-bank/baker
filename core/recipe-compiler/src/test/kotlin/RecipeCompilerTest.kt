@@ -68,4 +68,21 @@ class RecipeCompilerTest {
         assertEquals("796a3cb3eb68b35d", compiled.recipeId())
     }
 
+
+    @Test
+    fun `should compile dsl to recipe sieve`() {
+
+        val recipe = recipe("recipe") {
+            sensoryEvents {
+                event<EventA>()
+            }
+            interaction<InteractionA>()
+            sieve<String, String>("extract"){"Hello123"}
+        }
+
+        val compiled = RecipeCompiler.compileRecipe(recipe)
+
+        assertEquals("796a3cb3eb68b35d", compiled.recipeId())
+    }
+
 }

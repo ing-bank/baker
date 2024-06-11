@@ -82,6 +82,9 @@ object InteractionInstance {
   }
 
   def unsafeFrom[F[_]](implementation: AnyRef)(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): InteractionInstance[F] = {
+
+
+
     val method: Method = {
       val unmockedClass = common.unmock(implementation.getClass)
       unmockedClass.getMethods.count(_.getName == "apply") match {

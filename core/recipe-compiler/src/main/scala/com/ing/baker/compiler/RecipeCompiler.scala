@@ -5,7 +5,7 @@ import com.ing.baker.il.CompiledRecipe.{OldRecipeIdVariant, Scala212CompatibleJa
 import com.ing.baker.il.RecipeValidations.postCompileValidations
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
-import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings, checkpointEventInteractionPrefix, subRecipePrefix}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings, checkpointEventInteractionPrefix, sieveInteractionPrefix, subRecipePrefix}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common._
 import com.ing.baker.recipe.{javadsl, kotlindsl}
@@ -200,6 +200,15 @@ object RecipeCompiler {
         requiredEvents = e.requiredEvents,
         requiredOneOfEvents = e.requiredOneOfEvents)
 
+    def convertSieveToInteraction(s: Sieve) =
+      Interaction(
+        name = s"${sieveInteractionPrefix}${s.name}",
+        inputIngredients = s.inputIngredients,
+        output = s.output,
+        requiredEvents = Set.empty,
+        requiredOneOfEvents = Set.empty
+      )
+
     def flattenSubRecipesToInteraction(recipe: Recipe): Set[InteractionDescriptor] = {
       def copyInteraction(i: InteractionDescriptor) = Interaction(
         name = s"${subRecipePrefix}${recipe.name}$$${i.name}",
@@ -224,7 +233,8 @@ object RecipeCompiler {
     // Extend the interactions with the checkpoint event interactions and sub-recipes
     val actionDescriptors: Seq[InteractionDescriptor] = recipe.interactions ++
       recipe.checkpointEvents.map(convertCheckpointEventToInteraction) ++
-      recipe.subRecipes.flatMap(flattenSubRecipesToInteraction)
+      recipe.subRecipes.flatMap(flattenSubRecipesToInteraction) ++
+      recipe.sieves.map(convertSieveToInteraction)
 
     //All ingredient names provided by sensory events or by interactions
     val allIngredientNames: Set[String] =

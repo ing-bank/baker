@@ -4,7 +4,6 @@ import com.ing.baker.runtime.inmemory.InMemoryBaker
 
 object InMemoryBaker {
     fun kotlin(implementations: List<Any> = emptyList()) = Baker(InMemoryBaker.java(implementations))
-
     /**
      * Creates a InMemoryBaker with the com.ing.baker.runtime.kotlindsl.InMemoryBaker.Config.
      */
