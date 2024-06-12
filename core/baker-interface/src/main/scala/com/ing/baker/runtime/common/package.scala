@@ -18,15 +18,7 @@ package object common {
     */
   private[runtime] def unmock(clazz: Class[_]) = {
 
-
-    if(clazz.getName.contains("com.ing.baker.recipe.kotlindsl.Sieve")) {
-      println("++++")
-      println(clazz.getName)
-      println(clazz.getDeclaredField("function").getType.getDeclaredMethods.toList)
-      println("++++")
-      clazz.getDeclaredField("function").getClass
-    }
-    else if (clazz.getName.contains("$$EnhancerByMockitoWithCGLIB$$")) {
+    if (clazz.getName.contains("$$EnhancerByMockitoWithCGLIB$$")) {
       val originalName: String = clazz.getName.split("\\$\\$EnhancerByMockitoWithCGLIB\\$\\$")(0)
       clazz.getClassLoader.loadClass(originalName)
     } else  if (clazz.getName.contains("$MockitoMock$")) {

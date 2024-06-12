@@ -34,33 +34,33 @@ case class Recipe(
   def getSubRecipes: java.util.List[common.Recipe] = subRecipes.toList.asJava
 
   /**
-   * This adds all interactions of the recipe to this recipe
-   * Sensory Events are not added and are expected to be given by the recipe itself
-   *
-   * @param recipe
-   * @return
-   */
+    * This adds all interactions of the recipe to this recipe
+    * Sensory Events are not added and are expected to be given by the recipe itself
+    *
+    * @param recipe
+    * @return
+    */
   def withRecipe(recipe: common.Recipe) = {
     copy(interactions = interactions ++ recipe.interactions)
   }
 
   /**
-   * Adds the interaction to the recipe.
-   * To get a JInteractionDescriptor from a JInteraction call the of method on JInteractionDescriptor
-   *
-   * @param newInteraction the interaction to add
-   * @return
-   */
+    * Adds the interaction to the recipe.
+    * To get a JInteractionDescriptor from a JInteraction call the of method on JInteractionDescriptor
+    *
+    * @param newInteraction the interaction to add
+    * @return
+    */
   def withInteraction(newInteraction: common.InteractionDescriptor): Recipe =
     withInteractions(Seq(newInteraction): _*)
 
   /**
-   * Adds the interactions to the recipe.
-   * To get a JInteractionDescriptor from a JInteraction call the of method on JInteractionDescriptor
-   *
-   * @param newInteractions The interactions to add
-   * @return
-   */
+    * Adds the interactions to the recipe.
+    * To get a JInteractionDescriptor from a JInteraction call the of method on JInteractionDescriptor
+    *
+    * @param newInteractions The interactions to add
+    * @return
+    */
   @SafeVarargs
   @varargs
   def withInteractions(newInteractions: common.InteractionDescriptor*): Recipe =
@@ -85,83 +85,83 @@ case class Recipe(
     copy(subRecipes = subRecipes + subRecipe)
 
   /**
-   * Adds the sensory event to the recipe
-   * The firing limit is set to 1 by default
-   *
-   * @param newEvent sensory-event
-   * @return
-   */
+    * Adds the sensory event to the recipe
+    * The firing limit is set to 1 by default
+    *
+    * @param newEvent sensory-event
+    * @return
+    */
   def withSensoryEvent(newEvent: Class[_]): Recipe =
     withSensoryEvents(newEvent)
 
   /**
-   * Adds the sensory event to the recipe
-   * The firing limit is set to what is given
-   *
-   * @param newEvent
-   * @param maxFiringLimit
-   * @return
-   */
+    * Adds the sensory event to the recipe
+    * The firing limit is set to what is given
+    *
+    * @param newEvent
+    * @param maxFiringLimit
+    * @return
+    */
   def withSensoryEvent(newEvent: Class[_], maxFiringLimit: Int): Recipe =
     copy(sensoryEvents = sensoryEvents + eventClassToCommonEvent(newEvent, Some(maxFiringLimit)))
 
   /**
-   * Adds the sensory events to the recipe with the firing limit set to 1
-   *
-   * @param eventsToAdd
-   * @return
-   */
+    * Adds the sensory events to the recipe with the firing limit set to 1
+    *
+    * @param eventsToAdd
+    * @return
+    */
   @SafeVarargs
   @varargs
   def withSensoryEvents(eventsToAdd: Class[_]*): Recipe =
     copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent(_, Some(1))))
 
   /**
-   * Adds the sensory event to the recipe with firing limit set to unlimited
-   *
-   * @param newEvent
-   * @return
-   */
+    * Adds the sensory event to the recipe with firing limit set to unlimited
+    *
+    * @param newEvent
+    * @return
+    */
   def withSensoryEventNoFiringLimit(newEvent: Class[_]): Recipe =
     withSensoryEventsNoFiringLimit(newEvent)
 
 
   /**
-   * Adds the sensory events to the recipe with firing limit set to unlimited
-   *
-   * @param eventsToAdd
-   * @return
-   */
+    * Adds the sensory events to the recipe with firing limit set to unlimited
+    *
+    * @param eventsToAdd
+    * @return
+    */
   @SafeVarargs
   @varargs
   def withSensoryEventsNoFiringLimit(eventsToAdd: Class[_]*): Recipe =
     copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent(_, None)))
 
   /**
-   * This set the failure strategy as default for this recipe.
-   * If a failure strategy is set for the Interaction itself that is taken.
-   *
-   * @param interactionFailureStrategy The failure strategy to follow
-   * @return
-   */
+    * This set the failure strategy as default for this recipe.
+    * If a failure strategy is set for the Interaction itself that is taken.
+    *
+    * @param interactionFailureStrategy The failure strategy to follow
+    * @return
+    */
   def withDefaultFailureStrategy(interactionFailureStrategy: common.InteractionFailureStrategy): Recipe =
     copy(defaultFailureStrategy = interactionFailureStrategy)
 
   /**
-   * Sets the event receive period. This is the period for which processes can receive sensory events.
-   *
-   * @param recivePeriod The period
-   * @return
-   */
+    * Sets the event receive period. This is the period for which processes can receive sensory events.
+    *
+    * @param recivePeriod The period
+    * @return
+    */
   def withEventReceivePeriod(recivePeriod: java.time.Duration) =
     copy(eventReceivePeriod = Some(Duration(recivePeriod.toMillis, duration.MILLISECONDS)))
 
   /**
-   * Sets the process retention period. This is the period for which data & history for processes is kept.
-   *
-   * @param retentionPeriod The retention period.
-   * @return
-   */
+    * Sets the process retention period. This is the period for which data & history for processes is kept.
+    *
+    * @param retentionPeriod The retention period.
+    * @return
+    */
   def withRetentionPeriod(retentionPeriod: java.time.Duration) =
     copy(retentionPeriod = Some(Duration(retentionPeriod.toMillis, duration.MILLISECONDS)))
 
