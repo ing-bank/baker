@@ -374,7 +374,7 @@ class KotlinDslTest {
                 failureStrategy = fireEventAfterFailure("OrderPlaced")
             }
 
-            sieve("extractDate"){ reservedItems: Ingredients.ReservedItems ->  reservedItems.date }
+            ingredient("extractDate"){ reservedItems: Ingredients.ReservedItems ->  reservedItems.date }
         }
 
         with(recipe) {

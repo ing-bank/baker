@@ -12,7 +12,6 @@ import java.lang.reflect.{Method, Parameter}
 import java.security.MessageDigest
 import java.util.Base64
 import java.util.concurrent.CompletableFuture
-import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 import scala.util.Try

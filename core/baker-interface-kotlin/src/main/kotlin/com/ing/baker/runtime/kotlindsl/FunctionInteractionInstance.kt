@@ -51,7 +51,7 @@ inline fun <reified T1, reified R> functionInteractionInstance(
                 }
 
         override fun name(): String {
-            return "\$SieveInteraction\$address" ?: error("Cannot read class name")
+            return "\$SieveInteraction\$${name}" ?: error("Cannot read class name")
         }
 
         override fun run(input: MutableList<IngredientInstance>): CompletableFuture<Optional<EventInstance>> {
@@ -107,7 +107,7 @@ inline fun <reified T1, reified T2, reified R> functionInteractionInstance(
                 }
 
         override fun name(): String {
-            return "\$SieveInteraction\$address" ?: error("Cannot read class name")
+            return "\$SieveInteraction\$${name}" ?: error("Cannot read class name")
         }
 
         override fun run(input: MutableList<IngredientInstance>): CompletableFuture<Optional<EventInstance>> {
@@ -165,7 +165,7 @@ inline fun <reified T1, reified T2, reified T3, reified R> functionInteractionIn
                 }
 
         override fun name(): String {
-            return "\$SieveInteraction\$address" ?: error("Cannot read class name")
+            return "\$SieveInteraction\$${name}" ?: error("Cannot read class name")
         }
 
         override fun run(input: MutableList<IngredientInstance>): CompletableFuture<Optional<EventInstance>> {
