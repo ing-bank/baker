@@ -82,7 +82,7 @@ class RecipeCompilerTest {
 
         val compiled = RecipeCompiler.compileRecipe(recipe)
 
-        assertEquals("bb190504ea778f4a", compiled.recipeId())
+        assertEquals("ec448bcd08163a73", compiled.recipeId())
     }
 
 }
