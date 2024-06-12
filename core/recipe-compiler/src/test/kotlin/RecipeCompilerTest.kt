@@ -70,14 +70,14 @@ class RecipeCompilerTest {
 
 
     @Test
-    fun `should compile dsl to recipe sieve`() {
+    fun `should compile dsl to recipe ingredient`() {
 
         val recipe = recipe("recipe") {
             sensoryEvents {
                 event<EventA>()
             }
             interaction<InteractionA>()
-            sieve<String, String>("extract"){"Hello123"}
+            ingredient<String, String>("extract"){"Hello123"}
         }
 
         val compiled = RecipeCompiler.compileRecipe(recipe)
