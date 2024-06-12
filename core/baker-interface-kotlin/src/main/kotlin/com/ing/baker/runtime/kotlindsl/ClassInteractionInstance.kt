@@ -15,7 +15,7 @@ import kotlin.reflect.full.functions
 import kotlin.reflect.javaType
 import kotlin.reflect.jvm.javaMethod
 
-inline fun <reified T: Any> kotlinInteractionInstance(): InteractionInstance {
+inline fun <reified T: Any> classInteractionInstance(): InteractionInstance {
 
     return object : InteractionInstance() {
 

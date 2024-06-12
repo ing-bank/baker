@@ -7,9 +7,11 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
 import com.ing.baker.recipe.javadsl.InteractionDescriptor
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy
 import scala.Option
+import java.lang.reflect.Type
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
+import kotlin.reflect.KParameter
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.functions
 import kotlin.reflect.full.primaryConstructor
@@ -97,53 +99,52 @@ class RecipeBuilder(private val name: String) {
         interactions.add(InteractionBuilder(T::class).apply(configuration).build())
     }
 
+
     /**
-     * Registers an sieve [T0, T1, R] to the recipe.
+     * Registers an sieve [T1, T2, R] to the recipe.
      */
-    inline fun <reified T1, reified T2, reified R> sieve(name: String, noinline function: (T1, T2) -> R) {
-        val (param1, param2) = function.reflect()?.parameters ?: error("Cannot read parameters")
+    inline fun <reified T1,reified R> ingredient(name: String, noinline function: (T1) -> R) {
+        val parameters = function.reflect()?.parameters ?: error("Cannot read parameters")
+        val ingredients = listOf(T1::class)
+            .zip(parameters)
+            .map { (clazz, param) ->  Ingredient(param.name, clazz.createType().javaType) }
+        addSieve(name, ingredients, R::class.createType().javaType, function)
+    }
+
+    /**
+     * Registers an sieve [T1, T2, R] to the recipe.
+     */
+    inline fun <reified T1, reified T2, reified R> ingredient(name: String, noinline function: (T1, T2) -> R) {
+        val parameters = function.reflect()?.parameters ?: error("Cannot read parameters")
+        val ingredients = listOf(T1::class, T2::class)
+            .zip(parameters)
+            .map { (clazz, param) ->  Ingredient(param.name, clazz.createType().javaType) }
+        addSieve(name, ingredients, R::class.createType().javaType, function)
+    }
+
+    /**
+     * Registers an sieve [T1, T2, R] to the recipe.
+     */
+    inline fun <reified T1, reified T2, reified T3, reified R> ingredient(name: String, noinline function: (T1, T2, T3) -> R) {
+        val parameters = function.reflect()?.parameters ?: error("Cannot read parameters")
+        val ingredients = listOf(T1::class, T2::class, T3::class)
+            .zip(parameters)
+            .map { (clazz, param) ->  Ingredient(param.name, clazz.createType().javaType) }
+        addSieve(name, ingredients, R::class.createType().javaType, function)
+    }
+
+    fun addSieve(name:String, ingredients:List<Ingredient>, returnType:Type, function:Any){
         sieves.add(
             Sieve(
                 name,
-                listOf(
-                    Ingredient(param1.name, T1::class.createType().javaType),
-                    Ingredient(param2.name, T2::class.createType().javaType)
-                ),
+                ingredients,
                 listOf(
                     Event(
                         "Sieve\$$name",
                         listOf(
                             Ingredient(
                                 name,
-                                R::class.createType().javaType
-                            )
-                        ),
-                        Optional.empty()
-                    )
-                ),
-                function
-            )
-        )
-    }
-
-    /**
-     * Registers an sieve [T, R] to the recipe.
-     */
-    inline fun <reified T1, reified R> sieve(name: String, noinline function: (T1) -> R) {
-        val (param1) = function.reflect()?.parameters ?: error("Cannot read parameters")
-        sieves.add(
-            Sieve(
-                name,
-                listOf(
-                    Ingredient(param1.name, T1::class.createType().javaType)
-                ),
-                listOf(
-                    Event(
-                        "SieveWrapper",
-                        listOf(
-                            Ingredient(
-                                name,
-                                R::class.createType().javaType
+                                returnType
                             )
                         ),
                         Optional.empty()

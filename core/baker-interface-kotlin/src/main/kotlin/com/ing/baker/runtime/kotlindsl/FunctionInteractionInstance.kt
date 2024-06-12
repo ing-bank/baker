@@ -17,7 +17,7 @@ import kotlin.reflect.jvm.ExperimentalReflectionOnLambdas
 import kotlin.reflect.jvm.javaType
 import kotlin.reflect.jvm.reflect
 
-inline fun <reified T1, reified R> sieveInteractionInstance(
+inline fun <reified T1, reified R> functionInteractionInstance(
     name: String,
     noinline function: (T1) -> R
 ): InteractionInstance {
@@ -72,7 +72,7 @@ inline fun <reified T1, reified R> sieveInteractionInstance(
     }
 }
 
-inline fun <reified T1, reified T2, reified R> sieveInteractionInstance(
+inline fun <reified T1, reified T2, reified R> functionInteractionInstance(
     name: String,
     noinline function: (T1, T2) -> R
 ): InteractionInstance {
@@ -129,7 +129,7 @@ inline fun <reified T1, reified T2, reified R> sieveInteractionInstance(
     }
 }
 
-inline fun <reified T1, reified T2, reified T3, reified R> sieveInteractionInstance(
+inline fun <reified T1, reified T2, reified T3, reified R> functionInteractionInstance(
     name: String,
     noinline function: (T1, T2, T3) -> R
 ): InteractionInstance {
