@@ -63,7 +63,7 @@ inline fun <reified T1, reified R> functionInteractionInstance(
                     args[0] as T1
                 )
                 val event = EventInstance.from(mapOf(name to res))
-                val eventInstance = EventInstance("Sieve\$$name", event.providedIngredients)
+                val eventInstance = EventInstance("\$SieveEvent\$$name", event.providedIngredients)
                 return CompletableFuture.completedFuture(Optional.ofNullable(eventInstance))
             } catch (e: Exception) {
                 return CompletableFuture.failedFuture(e)
@@ -120,7 +120,7 @@ inline fun <reified T1, reified T2, reified R> functionInteractionInstance(
                     args[1] as T2
                 )
                 val event = EventInstance.from(mapOf(name to res))
-                val eventInstance = EventInstance("Sieve\$$name", event.providedIngredients)
+                val eventInstance = EventInstance("\$SieveEvent\$$name", event.providedIngredients)
                 return CompletableFuture.completedFuture(Optional.ofNullable(eventInstance))
             } catch (e: Exception) {
                 return CompletableFuture.failedFuture(e)
@@ -179,7 +179,7 @@ inline fun <reified T1, reified T2, reified T3, reified R> functionInteractionIn
                     args[2] as T3,
                 )
                 val event = EventInstance.from(mapOf(name to res))
-                val eventInstance = EventInstance("Sieve\$$name", event.providedIngredients)
+                val eventInstance = EventInstance("\$SieveEvent\$$name", event.providedIngredients)
                 return CompletableFuture.completedFuture(Optional.ofNullable(eventInstance))
             } catch (e: Exception) {
                 return CompletableFuture.failedFuture(e)

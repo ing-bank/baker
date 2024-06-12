@@ -139,7 +139,7 @@ class RecipeBuilder(private val name: String) {
                 ingredients,
                 listOf(
                     Event(
-                        "Sieve\$$name",
+                        "\$SieveEvent\$$name",
                         listOf(
                             Ingredient(
                                 name,

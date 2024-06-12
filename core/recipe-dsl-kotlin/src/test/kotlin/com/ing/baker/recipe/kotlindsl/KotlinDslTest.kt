@@ -390,7 +390,7 @@ class KotlinDslTest {
             assertEquals(1, sieves().get(0).inputIngredients().size())
             assertEquals("reservedItems", sieves().get(0).inputIngredients().get(0).name())
             assertEquals(1, sieves().get(0).output().size())
-            assertEquals("Sieve\$extractDate", sieves().get(0).output().get(0).name())
+            assertEquals("\$SieveEvent\$extractDate", sieves().get(0).output().get(0).name())
         }
     }
 
