@@ -238,7 +238,7 @@ object RecipeCompiler {
 
     //All ingredient names provided by sensory events or by interactions
     val allIngredientNames: Set[String] =
-      recipe.sensoryEvents.flatMap(e => e.providedIngredients.map(i => i.name)) ++
+      (recipe.sensoryEvents ++ recipe.subRecipes.flatMap(_.sensoryEvents)).flatMap(e => e.providedIngredients.map(i => i.name)) ++
         actionDescriptors.flatMap(i => i.output.flatMap { e =>
           // check if the event was renamed (check if there is a transformer for this event)
           i.eventOutputTransformers.get(e) match {
@@ -255,7 +255,7 @@ object RecipeCompiler {
     val allInteractionTransitions: Seq[InteractionTransition] = interactionTransitions
 
     // events provided from outside
-    val sensoryEventTransitions: Seq[EventTransition] = recipe.sensoryEvents.map {
+    val sensoryEventTransitions: Seq[EventTransition] = (recipe.sensoryEvents ++ recipe.subRecipes.flatMap(_.sensoryEvents)).map {
       event => EventTransition(eventToCompiledEvent(event), isSensoryEvent = true, event.maxFiringLimit)
     }.toIndexedSeq
 
