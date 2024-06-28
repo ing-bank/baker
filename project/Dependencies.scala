@@ -31,7 +31,7 @@ object Dependencies {
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
   val mockServer = "org.mock-server" % "mockserver-netty" % "5.14.0"
   val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
-  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.9.3"
+  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.10.3"
 
   val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
 
