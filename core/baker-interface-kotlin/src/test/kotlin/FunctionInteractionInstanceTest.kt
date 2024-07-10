@@ -12,4 +12,12 @@ class FunctionInteractionInstanceTest {
 
         assertEquals(interaction.name(), "\$SieveInteraction\$test")
     }
+
+    @Test
+    fun `should handle function interaction list`() {
+        val func = { test: String -> listOf("") }
+        val interaction = functionInteractionInstance("test", func)
+
+        assertEquals(interaction.name(), "\$SieveInteraction\$test")
+    }
 }
