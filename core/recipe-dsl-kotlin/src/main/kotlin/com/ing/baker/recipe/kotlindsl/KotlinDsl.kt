@@ -17,6 +17,7 @@ import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.ExperimentalReflectionOnLambdas
 import kotlin.reflect.jvm.javaType
 import kotlin.reflect.jvm.reflect
+import kotlin.reflect.typeOf
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
@@ -100,36 +101,36 @@ class RecipeBuilder(private val name: String) {
 
 
     /**
-     * Registers an sieve [T1, T2, R] to the recipe.
+     * Registers a sieve [T1, T2, R] to the recipe.
      */
     inline fun <reified T1,reified R> ingredient(name: String, noinline function: (T1) -> R) {
         val parameters = function.reflect()?.parameters ?: error("Cannot read parameters")
         val ingredients = listOf(T1::class)
             .zip(parameters)
             .map { (clazz, param) ->  Ingredient(param.name, clazz.createType().javaType) }
-        addSieve(name, ingredients, R::class.createType().javaType, function)
+        addSieve(name, ingredients, typeOf<R>().javaType, function)
     }
 
     /**
-     * Registers an sieve [T1, T2, R] to the recipe.
+     * Registers a sieve [T1, T2, R] to the recipe.
      */
     inline fun <reified T1, reified T2, reified R> ingredient(name: String, noinline function: (T1, T2) -> R) {
         val parameters = function.reflect()?.parameters ?: error("Cannot read parameters")
         val ingredients = listOf(T1::class, T2::class)
             .zip(parameters)
             .map { (clazz, param) ->  Ingredient(param.name, clazz.createType().javaType) }
-        addSieve(name, ingredients, R::class.createType().javaType, function)
+        addSieve(name, ingredients, typeOf<R>().javaType, function)
     }
 
     /**
-     * Registers an sieve [T1, T2, R] to the recipe.
+     * Registers a sieve [T1, T2, R] to the recipe.
      */
     inline fun <reified T1, reified T2, reified T3, reified R> ingredient(name: String, noinline function: (T1, T2, T3) -> R) {
         val parameters = function.reflect()?.parameters ?: error("Cannot read parameters")
         val ingredients = listOf(T1::class, T2::class, T3::class)
             .zip(parameters)
             .map { (clazz, param) ->  Ingredient(param.name, clazz.createType().javaType) }
-        addSieve(name, ingredients, R::class.createType().javaType, function)
+        addSieve(name, ingredients, typeOf<R>().javaType, function)
     }
 
     fun addSieve(name:String, ingredients:List<Ingredient>, returnType:Type, function:Any){
