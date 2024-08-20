@@ -454,8 +454,7 @@ lazy val `baker-http-dashboard`: Project = project.in(file("http/baker-http-dash
       val targetZipFile = target.value / "dashboard.zip"
       IO.zip(
         sources = (inputDirectory ** "*").get().map(f => (f, inputDirectory.relativize(f).get.toString)),
-        outputZip = targetZipFile,
-        time = None)
+        outputZip = targetZipFile)
       targetZipFile
     },
     prefixedDashboardResources := {
