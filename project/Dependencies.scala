@@ -140,7 +140,7 @@ object Dependencies {
 
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.15.1"
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.15.1"
-  val jawnParser = "org.typelevel" %% "jawn-parser" % "1.4.0"
+  val jawnParser = "org.typelevel" %% "jawn-parser" % "1.6.0"
   val nettyHandler = "io.netty" % "netty-handler" % "4.1.112.Final"
 
   private val bouncycastleVersion = "1.70"
