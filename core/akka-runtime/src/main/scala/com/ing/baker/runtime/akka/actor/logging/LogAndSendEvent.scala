@@ -31,9 +31,9 @@ object LogAndSendEvent {
     bakerLogging.interactionFinished(interactionCompleted)
   }
 
-  def interactionFailed(interactionFailed: InteractionFailed, eventStream: EventStream): Unit = {
+  def interactionFailed(interactionFailed: InteractionFailed, reason: Throwable, eventStream: EventStream): Unit = {
     eventStream.publish(interactionFailed)
-    bakerLogging.interactionFailed(interactionFailed)
+    bakerLogging.interactionFailed(interactionFailed, reason)
   }
 
   def eventReceived(eventReceived: EventReceived, eventStream: EventStream): Unit = {

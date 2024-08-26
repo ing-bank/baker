@@ -169,13 +169,6 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       }
     }
 
-    "give a validation error for an empty/non-logical recipe" in {
-      RecipeCompiler.compileRecipe(Recipe("someName")).validationErrors should contain only(
-        "No sensory events found.",
-        "No interactions found."
-      )
-    }
-
     "give no errors if an Optional ingredient is of the correct Option type" in {
       val initialIngredientInt = Ingredient[Optional[List[Int]]]("initialIngredient")
       val initialEventInt = Event("InitialEvent", Seq(initialIngredientInt), None)

@@ -408,7 +408,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
 
 
     test("notify a registered event listener of events") { context =>
-      val listenerMock = mock[(RecipeEventMetadata, EventInstance) => Unit]
+      val listenerMock = mock[(RecipeEventMetadata, String) => Unit]
       when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
       val recipe =
         Recipe("EventListenerRecipe")
@@ -416,20 +416,20 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
           .withSensoryEvent(initialEvent)
 
       for {
-        bakerAndRecipeId<- context.setupBakerWithRecipe(recipe, mockImplementations)
+        bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, mockImplementations)
         (baker, recipeId) = bakerAndRecipeId
         _ <- baker.registerEventListener("EventListenerRecipe", listenerMock)
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
-        _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), argThat(new RuntimeEventMatcher(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))))
-        _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), argThat(new RuntimeEventMatcher(EventInstance.unsafeFrom(InteractionOneSuccessful(interactionOneIngredientValue)))))
+        _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), mockitoEq("InitialEvent"))
+        _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), mockitoEq("InteractionOneSuccessful"))
       } yield succeed
     }
 
     test("return a list of events that were caused by a sensory event") { context =>
       for {
-        bakerAndRecipeId<- context.setupBakerWithRecipe("SensoryEventDeltaRecipe")
+        bakerAndRecipeId <- context.setupBakerWithRecipe("SensoryEventDeltaRecipe")
         (baker, recipeId) = bakerAndRecipeId
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
