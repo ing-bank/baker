@@ -8,13 +8,13 @@ object Dependencies {
   val akkaPersistenceCassandraVersion = "1.0.6"
   val akkaHttpVersion = "10.2.9"
   val http4sVersion = "0.21.34"
-  val fs2Version = "2.5.10"
+  val fs2Version = "2.5.12"
   val circeVersion = "0.14.2"
-  val mockitoScalaVersion = "1.17.14"
+  val mockitoScalaVersion = "1.17.37"
   val catsEffectVersion = "2.5.5"
   val catsCoreVersion = "2.8.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "5.3.27"
+  val springVersion = "5.3.39"
   val springBootVersion = "2.6.1"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
@@ -26,12 +26,12 @@ object Dependencies {
 
   val scalaJava8Compat100 = "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
 
-  val scalaTest = "org.scalatest" %% "scalatest" % "3.2.15"
+  val scalaTest = "org.scalatest" %% "scalatest" % "3.2.19"
   val mockitoScala = "org.mockito" %% "mockito-scala" % mockitoScalaVersion
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
-  val mockServer = "org.mock-server" % "mockserver-netty" % "5.14.0"
+  val mockServer = "org.mock-server" % "mockserver-netty" % "5.15.0"
   val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
-  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.9.3"
+  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.11.0"
 
   val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
 
@@ -59,7 +59,7 @@ object Dependencies {
   val akkaClusterBoostrap = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
   val akkaDiscoveryKube = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaManagementVersion
 
-  val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.4.0"
+  val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.4.1"
   val fs2Core = "co.fs2" %% "fs2-core" % fs2Version
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Version
   val fs2kafka = "com.github.fd4s" %% "fs2-kafka" % "1.0.0"
@@ -80,7 +80,7 @@ object Dependencies {
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.15.0"
   val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.15.0"
-  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.18"
+  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.27"
 
   val skuber = "io.skuber" %% "skuber" % "2.6.7"
   val play = "com.typesafe.play" %% "play-json" % "2.9.4"
@@ -111,23 +111,23 @@ object Dependencies {
   val paranamer = "com.thoughtworks.paranamer" % "paranamer" % "2.8"
   val findbugs = "com.google.code.findbugs" % "jsr305" % "1.3.9"
 
-  val scalaCollectionCompat = "org.scala-lang.modules" %% "scala-collection-compat" % "2.10.0"
+  val scalaCollectionCompat = "org.scala-lang.modules" %% "scala-collection-compat" % "2.12.0"
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.22.2"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.22.5"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
 
   val typeSafeConfig = "com.typesafe" % "config" % "1.4.2"
 
   val objenisis = "org.objenesis" % "objenesis" % "3.2"
-  val jodaTime = "joda-time" % "joda-time" % "2.12.5"
-  val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.7"
-  val logback = "ch.qos.logback" % "logback-classic" % "1.4.6"
+  val jodaTime = "joda-time" % "joda-time" % "2.12.7"
+  val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.16"
+  val logback = "ch.qos.logback" % "logback-classic" % "1.4.14"
   val logstash = "net.logstash.logback" % "logstash-logback-encoder" % "7.3"
-  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.17.0"
-  val scalaCheckPlus = "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0"
+  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.17.1"
+  val scalaCheckPlus = "org.scalatestplus" %% "scalacheck-1-17" % "3.2.18.0"
   val scalaCheckPlusMockito = "org.scalatestplus" %% "mockito-3-12" % "3.2.10.0"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
 
@@ -136,19 +136,19 @@ object Dependencies {
   val springCore = "org.springframework" % "spring-core" % springVersion
   val springBootStarter = "org.springframework.boot" % "spring-boot-starter" % springBootVersion
 
-  val snakeYaml = "org.yaml" % "snakeyaml" % "2.0"
+  val snakeYaml = "org.yaml" % "snakeyaml" % "2.2"
 
-  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.15.1"
-  val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.15.1"
-  val jawnParser = "org.typelevel" %% "jawn-parser" % "1.4.0"
-  val nettyHandler = "io.netty" % "netty-handler" % "4.1.92.Final"
+  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.15.4"
+  val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.15.4"
+  val jawnParser = "org.typelevel" %% "jawn-parser" % "1.6.0"
+  val nettyHandler = "io.netty" % "netty-handler" % "4.1.112.Final"
 
   private val bouncycastleVersion = "1.70"
 
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % bouncycastleVersion
   val bouncyCastleBcpkix = "org.bouncycastle" % "bcpkix-jdk15on" % bouncycastleVersion
 
-  val guava = "com.google.guava" % "guava" % "31.1-jre"
+  val guava = "com.google.guava" % "guava" % "33.3.0-jre"
 
   val kotlinXCoroutinesCore = "org.jetbrains.kotlinx" % "kotlinx-coroutines-core" % "1.7.1" pomOnly()
   val kotlinXCoroutinesJdk8 = "org.jetbrains.kotlinx" % "kotlinx-coroutines-jdk8" % "1.7.1"
