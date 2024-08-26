@@ -77,3 +77,6 @@ testem.log
 .DS_Store
 Thumbs.db
 /http/baker-http-dashboard/dashboard.zip
+
+# Git Files
+.gitconfig

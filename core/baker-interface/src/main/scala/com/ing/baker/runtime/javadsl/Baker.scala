@@ -378,7 +378,7 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
   def registerEventListener(@Nonnull eventListener: EventListener): Future[Unit] =
     baker.registerEventListener((recipeEventMetadata: scaladsl.RecipeEventMetadata, event: String) =>
       eventListener.processEvent(recipeEventMetadata.recipeInstanceId, event))
-1
+
   /**
     * Registers a listener that listens to all Baker events
     *

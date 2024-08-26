@@ -1,9 +1,8 @@
-trigger:
-  batch: true
+pr:
   branches:
     include:
-      - master
-      - feature*
+    - master
+    - ing-bank:master
 
 parameters:
   - name: ForcePublish

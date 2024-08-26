@@ -8,16 +8,14 @@ import com.ing.baker.runtime.javadsl.InteractionInstance
 import com.ing.baker.runtime.javadsl.InteractionInstanceInput
 import com.ing.baker.types.Converters
 import scala.collection.immutable.Map
-import java.lang.reflect.Type
-import java.util.Optional
+import java.util.*
 import java.util.concurrent.CompletableFuture
-import kotlin.reflect.KParameter
 import kotlin.reflect.full.createType
 import kotlin.reflect.jvm.ExperimentalReflectionOnLambdas
 import kotlin.reflect.jvm.javaType
 import kotlin.reflect.jvm.reflect
 
-inline fun <reified T1, reified R> functionInteractionInstance(
+inline fun <reified T1, R> functionInteractionInstance(
     name: String,
     noinline function: (T1) -> R
 ): InteractionInstance {
@@ -72,7 +70,7 @@ inline fun <reified T1, reified R> functionInteractionInstance(
     }
 }
 
-inline fun <reified T1, reified T2, reified R> functionInteractionInstance(
+inline fun <reified T1, reified T2, R> functionInteractionInstance(
     name: String,
     noinline function: (T1, T2) -> R
 ): InteractionInstance {
@@ -129,7 +127,7 @@ inline fun <reified T1, reified T2, reified R> functionInteractionInstance(
     }
 }
 
-inline fun <reified T1, reified T2, reified T3, reified R> functionInteractionInstance(
+inline fun <reified T1, reified T2, reified T3, R> functionInteractionInstance(
     name: String,
     noinline function: (T1, T2, T3) -> R
 ): InteractionInstance {
