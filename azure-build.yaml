@@ -1,5 +1,7 @@
 pr:
-- master
+ branches:
+   include:
+     - master
 
 parameters:
   - name: ForcePublish
