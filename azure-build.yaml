@@ -1,7 +1,8 @@
 pr:
- branches:
-   include:
-     - master
+  branches:
+    include:
+    - master
+    - ing-bank:master
 
 parameters:
   - name: ForcePublish
