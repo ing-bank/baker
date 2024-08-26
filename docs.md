@@ -1,6 +1,6 @@
 # Developer documentation
 
-This documentation is for developers of Baker.
+This documentation is for developers of Baker. test
 
 ## Creating a release
 
