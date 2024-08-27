@@ -56,8 +56,12 @@ package object javadsl {
               if (!method.getReturnType.isAssignableFrom(implicitly[ClassTag[CompletableFuture[_]]].runtimeClass))
                 throw new common.RecipeValidationException(s"Interaction $name is declared to be async, but it doesn't return a CompletableFuture")
             } else {
-              if (!method.getReturnType.isAssignableFrom(eventClass))
-                throw new common.RecipeValidationException(s"Interaction $name provides event '${eventClass.getName}' that is incompatible with it's return type")
+              if (!method.getReturnType.isAssignableFrom(eventClass)) {
+                if(method.getReturnType.isAssignableFrom(implicitly[ClassTag[CompletableFuture[_]]].runtimeClass)) {
+                  throw new common.RecipeValidationException(s"Interaction $name is declared to be sync but returns a CompletableFuture. If you have written an Async interaction remember to add @AsyncInteraction annotation")
+                }
+                throw new common.RecipeValidationException(s"Interaction $name provides event '${eventClass.getName}' that is incompatible with it's return type.")
+              }
             }
         }
 
@@ -66,6 +70,6 @@ package object javadsl {
       else Seq.empty
     }
 
-    InteractionDescriptor(name, inputIngredients, output, Set.empty, Set.empty, Map.empty, Map.empty, None, None, None, Map.empty, newName)
+    InteractionDescriptor(name, inputIngredients, output, Set.empty, Set.empty, Map.empty, Map.empty, None, None, None, Map.empty, isReprovider = false, newName)
   }
 }

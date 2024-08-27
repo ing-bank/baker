@@ -13,12 +13,17 @@ import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka._
+import com.ing.baker.runtime.akka.actor.{ActorBasedBakerCleanup, BakerCleanup, CassandraBakerCleanup}
 import com.ing.baker.runtime.akka.actor.Util.logging._
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransition, StartTimer}
+import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol, ProcessInstanceRuntime}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceLogger._
+import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceLogger, ProcessInstanceProtocol, ProcessInstanceRuntime}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
@@ -30,6 +35,8 @@ import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 
+import java.util.concurrent.TimeUnit
+import scala.Console.println
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -43,14 +50,20 @@ object ProcessIndex {
             configuredEncryption: Encryption,
             interactions: InteractionManager[IO],
             recipeManager: RecipeManager,
-            ingredientsFilter: Seq[String]): Props =
+            getIngredientsFilter: Seq[String],
+            providedIngredientFilter: Seq[String],
+            blacklistedProcesses: Seq[String],
+            rememberProcessDuration: Option[Duration]): Props =
     Props(new ProcessIndex(
       recipeInstanceIdleTimeout,
       retentionCheckInterval,
       configuredEncryption,
       interactions,
       recipeManager,
-      ingredientsFilter))
+      getIngredientsFilter,
+      providedIngredientFilter,
+      blacklistedProcesses,
+      rememberProcessDuration))
 
   sealed trait ProcessStatus
 
@@ -104,7 +117,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
                    configuredEncryption: Encryption,
                    interactionManager: InteractionManager[IO],
                    recipeManager: RecipeManager,
-                   ingredientsFilter: Seq[String]) extends PersistentActor with PersistentActorMetrics {
+                   getIngredientsFilter: Seq[String],
+                   providedIngredientFilter: Seq[String],
+                   blacklistedProcesses: Seq[String],
+                   rememberProcessDuration: Option[Duration]) extends PersistentActor with PersistentActorMetrics {
 
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(logSource = this)
 
@@ -119,10 +135,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   import context.dispatcher
 
-
   private val config: Config = context.system.settings.config
 
   private val snapShotInterval: Int = config.getInt("baker.actor.snapshot-interval")
+  private val snapshotCount: Int = config.getInt("baker.actor.snapshot-count")
 
   private val processInquireTimeout: FiniteDuration = config.getDuration("baker.process-inquire-timeout").toScala
   private val updateCacheTimeout: FiniteDuration =  config.getDuration("baker.process-index-update-cache-timeout").toScala
@@ -133,6 +149,19 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
   private val recipeCache: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
+
+  //TODO chose if to use the CassandraBakerCleanup or the ActorBasedBakerCleanup
+  private val cleanup: BakerCleanup = {
+    if(config.hasPath("akka.persistence.journal.plugin") &&
+      config.getString("akka.persistence.journal.plugin") == "akka.persistence.cassandra.journal")
+      new CassandraBakerCleanup(context.system)
+    else
+      new ActorBasedBakerCleanup()
+  }
+
+  private val delayedTransitionActor: ActorRef = context.actorOf(
+    props = DelayedTransitionActor.props(this.self, cleanup, snapShotInterval, snapshotCount),
+    name = s"${self.path.name}-timer")
 
   // if there is a retention check interval defined we schedule a recurring message
   retentionCheckInterval.foreach { interval =>
@@ -148,6 +177,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     log.debug("Added recipe to recipe cache: {}, current size: {}", recipeId, recipeCache.size)
     result.map(r => r.recipe -> r.updated)
   }
+
+  def getRecipeIdFromActor(actorRef: ActorRef) : String = actorRef.path.name
 
   def getRecipeWithTimeStamp(recipeId: String): Option[(CompiledRecipe, Long)] =
     recipeCache.get(recipeId) match {
@@ -168,26 +199,32 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   def getOrCreateProcessActor(recipeInstanceId: String): Option[ActorRef] =
     context.child(recipeInstanceId).orElse(createProcessActor(recipeInstanceId))
 
+  def getProcessActor(recipeInstanceId: String): Option[ActorRef] =
+    context.child(recipeInstanceId)
+
   def createProcessActor(recipeInstanceId: String): Option[ActorRef] =
     getCompiledRecipe(index(recipeInstanceId).recipeId).map(createProcessActor(recipeInstanceId, _))
 
   // creates a ProcessInstanceActor, does not do any validation
   def createProcessActor(recipeInstanceId: String, compiledRecipe: CompiledRecipe): ActorRef = {
-    val runtime: ProcessInstanceRuntime[Place, Transition, RecipeInstanceState, EventInstance] =
+    val runtime: ProcessInstanceRuntime[RecipeInstanceState, EventInstance] =
       new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream)
 
     val processActorProps =
       BackoffSupervisor.props(
         BackoffOpts.onStop(
-          ProcessInstance.props[Place, Transition, RecipeInstanceState, EventInstance](
+          ProcessInstance.props[RecipeInstanceState, EventInstance](
             compiledRecipe.name,
-            compiledRecipe.petriNet,
+            compiledRecipe,
             runtime,
             ProcessInstance.Settings(
               executionContext = bakerExecutionContext,
               encryption = configuredEncryption,
               idleTTL = recipeInstanceIdleTimeout,
-              ingredientsFilter = ingredientsFilter)
+              getIngredientsFilter = getIngredientsFilter,
+              providedIngredientFilter = providedIngredientFilter,
+            ),
+            delayedTransitionActor = delayedTransitionActor
           ),
           childName = recipeInstanceId,
           minBackoff = restartMinBackoff,
@@ -195,17 +232,68 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           randomFactor = restartRandomFactor)
           .withFinalStopMessage(_.isInstanceOf[ProcessInstanceProtocol.Stop])
       )
-
     val processActor = context.actorOf(props = processActorProps, name = recipeInstanceId)
     context.watch(processActor)
     processActor
   }
 
   def shouldDelete(meta: ActorMetadata): Boolean = {
-    meta.processStatus != Deleted &&
-      getCompiledRecipe(meta.recipeId)
-        .flatMap(_.retentionPeriod)
-        .exists { p => meta.createdDateTime + p.toMillis < System.currentTimeMillis() }
+    if(meta.processStatus != Deleted)
+      getCompiledRecipe(meta.recipeId) match {
+        case Some(recipe) =>
+          recipe.retentionPeriod.exists { p => meta.createdDateTime + p.toMillis < System.currentTimeMillis() }
+        case None =>
+          log.error(s"Could not find recipe: ${meta.recipeId} during deletion for recipeInstanceId: ${meta.recipeInstanceId} using default 14 days")
+          meta.createdDateTime + (14 days).toMillis < System.currentTimeMillis()
+      }
+    else false
+  }
+
+  private def deleteProcess(meta: ActorMetadata): Unit = {
+    //The new way of cleaning ProcessInstances, this can only be done if the datastore is Cassandra
+    if(cleanup.supportsCleanupOfStoppedActors) {
+      getProcessActor(meta.recipeInstanceId) match {
+        case Some(actorRef: ActorRef) =>
+          log.debug(s"Deleting ${meta.recipeInstanceId} via actor message")
+          actorRef ! Stop(delete = true)
+        case None =>
+          log.debug(s"Deleting ${meta.recipeInstanceId} via cleanup tool")
+          getCompiledRecipe(meta.recipeId) match {
+            case Some(compiledRecipe) =>
+              val persistenceId = ProcessInstance.recipeInstanceId2PersistenceId(compiledRecipe.name, meta.recipeInstanceId)
+              log.debug(s"Deleting with persistenceId: ${persistenceId}")
+              persistWithSnapshot(ActorDeleted(meta.recipeInstanceId)) { _ =>
+                //Using deleteAllEvents since we do not use Snapshots for ProcessInstances
+                cleanup.deleteAllEvents(persistenceId, neverUsePersistenceIdAgain = false)
+                  .map(_ -> {
+                    log.processHistoryDeletionSuccessful(meta.recipeInstanceId, 0)
+                    index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
+                  })
+              }
+            case None =>
+              log.debug(s"Recipe not found for ${meta.recipeInstanceId}, marking as deleted")
+              persistWithSnapshot(ActorDeleted(meta.recipeInstanceId)) { _ =>
+                index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
+              }
+          }
+      }
+    }
+    // The old way to cleanup ProcessInstances, we will let Akka Persistence handle the cleanup.
+    // This will first start the ProcessInstance actor even if is passivated so will have bigger memory impact and more reads on the datastore.
+    else {
+      getOrCreateProcessActor(meta.recipeInstanceId).foreach(_ ! Stop(delete = true))
+    }
+  }
+
+  private def forgetProcesses(): Unit = {
+    rememberProcessDuration.map {
+      duration: Duration =>
+        val currentTime = System.currentTimeMillis()
+        val toBeForgotten = index.filter { case (id, metadata) =>
+          metadata.isDeleted && currentTime >= (metadata.createdDateTime + duration.toMillis)
+        }
+        index --= toBeForgotten.keys
+    }
   }
 
   private def withActiveProcess(recipeInstanceId: String)(fn: ActorRef => Unit): Unit = {
@@ -234,10 +322,13 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     } yield (transition, jobId)
   }
 
-  override def receiveCommand: Receive = {
-    case SaveSnapshotSuccess(_) => log.debug("Snapshot saved")
+  override def receiveCommand: Receive =  {
+    case SaveSnapshotSuccess(metadata) =>
+      log.debug("Snapshot saved & cleaning old processes")
+      cleanup.deleteEventsAndSnapshotBeforeSnapshot(metadata.persistenceId, snapshotCount)
 
-    case SaveSnapshotFailure(_, _) => log.error("Saving snapshot failed")
+    case SaveSnapshotFailure(_, _) =>
+      log.error("Saving snapshot failed")
 
     case GetIndex =>
       sender() ! Index(index.values.filter(_.processStatus == Active).toSeq)
@@ -246,11 +337,11 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       val toBeDeleted = index.values.filter(shouldDelete)
       if (toBeDeleted.nonEmpty)
         log.debug(s"Deleting recipe instance: {}", toBeDeleted.mkString(","))
-
-      toBeDeleted.foreach(meta => getOrCreateProcessActor(meta.recipeInstanceId).foreach(_ ! Stop(delete = true)))
+      toBeDeleted.foreach(meta => deleteProcess(meta))
+      forgetProcesses()
 
     case Terminated(actorRef) =>
-      val recipeInstanceId = actorRef.path.name
+      val recipeInstanceId = getRecipeIdFromActor(actorRef)
 
       val mdc = Map(
         "processId" -> recipeInstanceId,
@@ -288,14 +379,18 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
               persistWithSnapshot(ActorCreated(recipeId, recipeInstanceId, createdTime)) { _ =>
 
                 // after that we actually create the ProcessInstance actor
-                val processState = RecipeInstanceState(recipeInstanceId, Map.empty[String, Value], List.empty)
+                val processState = RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty)
                 val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
 
-                createProcessActor(recipeInstanceId, compiledRecipe).forward(initializeCmd)
+                //TODO ensure the initialiseCMD is accepted before we add it ot the index
+                createProcessActor(recipeInstanceId, compiledRecipe)
+                  .forward(initializeCmd)
 
                 val actorMetadata = ActorMetadata(recipeId, recipeInstanceId, createdTime, Active)
 
-                context.system.eventStream.publish(RecipeInstanceCreated(System.currentTimeMillis(), recipeId, compiledRecipe.name, recipeInstanceId))
+                LogAndSendEvent.recipeInstanceCreated(
+                  RecipeInstanceCreated(System.currentTimeMillis(), recipeId, compiledRecipe.name, recipeInstanceId),
+                  context.system.eventStream)
 
                 index += recipeInstanceId -> actorMetadata
               }
@@ -306,126 +401,51 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
         case _ if index(recipeInstanceId).isDeleted =>
           sender() ! ProcessDeleted(recipeInstanceId)
-        case _ =>
-          sender() ! ProcessAlreadyExists(recipeInstanceId)
+        case None =>
+          //Temporary solution for the situation that the initializeCmd is not send in the original Bake
+          getCompiledRecipe(recipeId) match {
+            case Some(compiledRecipe) =>
+              val processState = RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty)
+              val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
+              createProcessActor(recipeInstanceId, compiledRecipe) ! initializeCmd
+              sender() ! ProcessAlreadyExists(recipeInstanceId)
+            case None =>
+              //Kept the ProcessAlreadyExists since this was the original error
+              sender() ! ProcessAlreadyExists(recipeInstanceId)
+          }
+        case Some(actorRef: ActorRef) =>
+          //Temporary solution for the situation that the initializeCmd is not send in the original Bake
+          getCompiledRecipe(recipeId) match {
+            case Some(compiledRecipe) =>
+              val processState = RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty)
+              val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
+              actorRef ! initializeCmd
+              sender() ! ProcessAlreadyExists(recipeInstanceId)
+            case None =>
+              sender() ! NoRecipeFound(recipeId)
+          }
       }
 
     case command@ProcessEvent(recipeInstanceId, event, correlationId, _, _) =>
-
-      run { responseHandler =>
+      run ({ responseHandler =>
         for {
-          instanceAndMeta <- fetchInstance
+          instanceAndMeta <- fetchInstance(recipeInstanceId)
           (processInstance, metadata) = instanceAndMeta
           recipe <- fetchRecipe(metadata)
           _ <- initializeResponseHandler(recipe, responseHandler)
-          transitionAndDescriptor <- validateEventIsInRecipe(recipe)
+          transitionAndDescriptor <- validateEventIsInRecipe(recipe, event, recipeInstanceId)
           (transition, descriptor) = transitionAndDescriptor
-          _ <- validateEventIsSound(descriptor)
-          _ <- validateWithinReceivePeriod(recipe, metadata)
+          _ <- validateEventIsSound(descriptor, event, recipeInstanceId)
+          _ <- validateWithinReceivePeriod(recipe, metadata, recipeInstanceId)
           fireTransitionCommand = FireTransition(transition.id, event, correlationId)
           _ <- forwardToProcessInstance(fireTransitionCommand, processInstance, responseHandler)
         } yield ()
+      }, command)
+
+    case FireDelayedTransition(recipeInstanceId, jobId, transitionId, eventToFire, originalSender) =>
+      withActiveProcess(recipeInstanceId) { processActor =>
+        processActor.tell(DelayedTransitionFired(jobId, transitionId, eventToFire), originalSender)
       }
-
-      type FireEventIO[A] = EitherT[IO, FireSensoryEventRejection, A]
-
-      def run(program: ActorRef => FireEventIO[Unit]): Unit = {
-        val responseHandler = context.actorOf(
-          SensoryEventResponseHandler(sender(), command, ingredientsFilter))
-        program(responseHandler).value.unsafeRunAsync {
-          case Left(exception) =>
-            throw exception // TODO decide what to do, might never happen, except if we generalize it as a runtime for the actor
-          case Right(Left(rejection)) =>
-            responseHandler ! rejection
-          case Right(Right(())) =>
-            ()
-        }
-      }
-
-      def reject[A](rejection: FireSensoryEventRejection): FireEventIO[A] =
-        EitherT.leftT(rejection)
-
-      def accept[A](a: A): FireEventIO[A] =
-        EitherT.rightT(a)
-
-      def continue: FireEventIO[Unit] =
-        accept(())
-
-      def sync[A](thunk: => A): FireEventIO[A] =
-        EitherT.liftF(IO(thunk))
-
-      def async[A](callback: (Either[Throwable, A] => Unit) => Unit): FireEventIO[A] =
-        EitherT.liftF(IO.async(callback))
-
-      def fetchCurrentTime: FireEventIO[Long] =
-        EitherT.liftF(IO {
-          System.currentTimeMillis()
-        })
-
-      def fetchInstance: FireEventIO[(ActorRef, ActorMetadata)] =
-        context.child(recipeInstanceId) match {
-          case Some(process) =>
-            accept(process -> index(recipeInstanceId))
-          case None if !index.contains(recipeInstanceId) =>
-            reject(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId))
-          case None if index(recipeInstanceId).isDeleted =>
-            reject(FireSensoryEventRejection.RecipeInstanceDeleted(recipeInstanceId))
-          case None =>
-            async { callback =>
-              createProcessActor(recipeInstanceId).foreach { actor =>
-                persistWithSnapshot(ActorActivated(recipeInstanceId)) { _ =>
-                  callback(Right(actor -> index(recipeInstanceId)))
-                }
-              }
-            }
-        }
-
-      def fetchRecipe(metadata: ActorMetadata): FireEventIO[CompiledRecipe] =
-        accept(getCompiledRecipe(metadata.recipeId).get)
-
-      def initializeResponseHandler(recipe: CompiledRecipe, handler: ActorRef): FireEventIO[Unit] =
-        sync(handler ! recipe)
-
-      def validateEventIsInRecipe(recipe: CompiledRecipe): FireEventIO[(Transition, EventDescriptor)] = {
-        val transition0 = recipe.petriNet.transitions.find(_.label == event.name)
-        val sensoryEvent0 = recipe.sensoryEvents.find(_.name == event.name)
-        (transition0, sensoryEvent0) match {
-          case (Some(transition), Some(sensoryEvent)) =>
-            accept(transition -> sensoryEvent)
-          case _ =>
-            reject(FireSensoryEventRejection.InvalidEvent(
-              recipeInstanceId,
-              s"No event with name '${event.name}' found in recipe '${recipe.name}'"
-            ))
-        }
-      }
-
-      def validateEventIsSound(descriptor: EventDescriptor): FireEventIO[Unit] = {
-        val eventValidationErrors = event.validate(descriptor)
-        if (eventValidationErrors.nonEmpty)
-          reject(FireSensoryEventRejection.InvalidEvent(
-            recipeInstanceId,
-            s"Invalid event: " + eventValidationErrors.mkString(",")
-          ))
-        else continue
-      }
-
-      def validateWithinReceivePeriod(recipe: CompiledRecipe, metadata: ActorMetadata): FireEventIO[Unit] = {
-        def outOfReceivePeriod(current: Long, period: FiniteDuration): Boolean =
-          current - metadata.createdDateTime > period.toMillis
-
-        for {
-          currentTime <- fetchCurrentTime
-          _ <- recipe.eventReceivePeriod match {
-            case Some(receivePeriod) if outOfReceivePeriod(currentTime, receivePeriod) =>
-              reject(FireSensoryEventRejection.ReceivePeriodExpired(recipeInstanceId))
-            case _ => continue
-          }
-        } yield ()
-      }
-
-      def forwardToProcessInstance(fireTransitionCommand: FireTransition, processInstance: ActorRef, responseHandler: ActorRef): FireEventIO[Unit] =
-        sync(processInstance.tell(fireTransitionCommand, responseHandler))
 
     case StopRetryingInteraction(recipeInstanceId, interactionName) =>
 
@@ -479,8 +499,16 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         }
       }
 
+    case AddRecipeInstanceMetaData(recipeInstanceId, metaData) =>
+      withActiveProcess(recipeInstanceId) { actorRef =>
+        actorRef.forward(AddMetaData(metaData))
+      }
+
     case GetProcessState(recipeInstanceId) =>
       withActiveProcess(recipeInstanceId) { actorRef => actorRef.forward(GetState) }
+
+    case GetProcessIngredient(recipeInstanceId, name) =>
+      withActiveProcess(recipeInstanceId) { actorRef => actorRef.forward(GetIngredient(name)) }
 
     case GetCompiledRecipe(recipeInstanceId) =>
       index.get(recipeInstanceId) match {
@@ -498,11 +526,112 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
     case StopProcessIndexShard =>
       log.debug("StopProcessIndexShard received, stopping self")
+      context.stop(delayedTransitionActor)
       context.stop(self)
 
     case cmd =>
       log.error(s"Unrecognized command $cmd")
   }
+
+  type FireEventIO[A] = EitherT[IO, FireSensoryEventRejection, A]
+
+  def run(program: ActorRef => FireEventIO[Unit], command: ProcessEvent): Unit = {
+    val responseHandler = context.actorOf(
+      SensoryEventResponseHandler(sender(), command))
+    program(responseHandler).value.unsafeRunAsync {
+      case Left(exception) =>
+        throw exception // TODO decide what to do, might never happen, except if we generalize it as a runtime for the actor
+      case Right(Left(rejection)) =>
+        responseHandler ! rejection
+      case Right(Right(())) =>
+        ()
+    }
+  }
+
+  def reject[A](rejection: FireSensoryEventRejection): FireEventIO[A] =
+    EitherT.leftT(rejection)
+
+  def accept[A](a: A): FireEventIO[A] =
+    EitherT.rightT(a)
+
+  def continue: FireEventIO[Unit] =
+    accept(())
+
+  def sync[A](thunk: => A): FireEventIO[A] =
+    EitherT.liftF(IO(thunk))
+
+  def async[A](callback: (Either[Throwable, A] => Unit) => Unit): FireEventIO[A] =
+    EitherT.liftF(IO.async(callback))
+
+  def fetchCurrentTime: FireEventIO[Long] =
+    EitherT.liftF(IO {
+      System.currentTimeMillis()
+    })
+
+  def fetchInstance(recipeInstanceId: String): FireEventIO[(ActorRef, ActorMetadata)] =
+    context.child(recipeInstanceId) match {
+      case Some(process) =>
+        accept(process -> index(recipeInstanceId))
+      case None if !index.contains(recipeInstanceId) =>
+        reject(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId))
+      case None if index(recipeInstanceId).isDeleted =>
+        reject(FireSensoryEventRejection.RecipeInstanceDeleted(recipeInstanceId))
+      case None =>
+        async { callback =>
+          createProcessActor(recipeInstanceId).foreach { actor =>
+            persistWithSnapshot(ActorActivated(recipeInstanceId)) { _ =>
+              callback(Right(actor -> index(recipeInstanceId)))
+            }
+          }
+        }
+    }
+
+  def fetchRecipe(metadata: ActorMetadata): FireEventIO[CompiledRecipe] =
+    accept(getCompiledRecipe(metadata.recipeId).get)
+
+  def initializeResponseHandler(recipe: CompiledRecipe, handler: ActorRef): FireEventIO[Unit] =
+    sync(handler ! recipe)
+
+  def validateEventIsInRecipe(recipe: CompiledRecipe, event: EventInstance, recipeInstanceId: String): FireEventIO[(Transition, EventDescriptor)] = {
+    val transition0 = recipe.petriNet.transitions.find(_.label == event.name)
+    val sensoryEvent0 = recipe.sensoryEvents.find(_.name == event.name)
+    (transition0, sensoryEvent0) match {
+      case (Some(transition), Some(sensoryEvent)) =>
+        accept(transition -> sensoryEvent)
+      case _ =>
+        reject(FireSensoryEventRejection.InvalidEvent(
+          recipeInstanceId,
+          s"No event with name '${event.name}' found in recipe '${recipe.name}'"
+        ))
+    }
+  }
+
+  def validateEventIsSound(descriptor: EventDescriptor, event: EventInstance, recipeInstanceId: String): FireEventIO[Unit] = {
+    val eventValidationErrors = event.validate(descriptor)
+    if (eventValidationErrors.nonEmpty)
+      reject(FireSensoryEventRejection.InvalidEvent(
+        recipeInstanceId,
+        s"Invalid event: " + eventValidationErrors.mkString(",")
+      ))
+    else continue
+  }
+
+  def validateWithinReceivePeriod(recipe: CompiledRecipe, metadata: ActorMetadata, recipeInstanceId: String): FireEventIO[Unit] = {
+    def outOfReceivePeriod(current: Long, period: FiniteDuration): Boolean =
+      current - metadata.createdDateTime > period.toMillis
+
+    for {
+      currentTime <- fetchCurrentTime
+      _ <- recipe.eventReceivePeriod match {
+        case Some(receivePeriod) if outOfReceivePeriod(currentTime, receivePeriod) =>
+          reject(FireSensoryEventRejection.ReceivePeriodExpired(recipeInstanceId))
+        case _ => continue
+      }
+    } yield ()
+  }
+
+  def forwardToProcessInstance(command: Any, processInstance: ActorRef, responseHandler: ActorRef): FireEventIO[Unit] =
+    sync(processInstance.tell(command, responseHandler))
 
   private def updateWithStatus(recipeInstanceId: String, processStatus: ProcessStatus): Unit = {
     index.get(recipeInstanceId)
@@ -526,9 +655,19 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     case ActorDeleted(recipeInstanceId) =>
       updateWithStatus(recipeInstanceId, Deleted)
     case RecoveryCompleted =>
+      // Delete all blacklisted processes.
+      index.foreach(process =>
+        if(blacklistedProcesses.contains(process._1) && !process._2.isDeleted) {
+          val id = process._1
+          log.debug(s"Deleting blacklistedProcesses $id")
+          deleteProcess(process._2)
+        }
+      )
+      // Start the active processes
       index
         .filter(process => process._2.processStatus == Active ).keys
         .foreach(id => createProcessActor(id))
+      delayedTransitionActor ! StartTimer
   }
 
   def persistWithSnapshot[A](event: A)(handler: A => Unit): Unit = {

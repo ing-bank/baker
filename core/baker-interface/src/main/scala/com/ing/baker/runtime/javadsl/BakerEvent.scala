@@ -24,14 +24,13 @@ sealed trait BakerEvent extends common.BakerEvent with JavaApi {
   * @param recipeId The recipe id
   * @param recipeInstanceId The id of the process
   * @param correlationId The (optional) correlation id of the event
-  * @param event The event
   */
 case class EventReceived(timeStamp: Long,
                          recipeName: String,
                          recipeId: String,
                          recipeInstanceId: String,
                          correlationId: Optional[String],
-                         event: EventInstance) extends BakerEvent with common.EventReceived {
+                         eventName: String) extends BakerEvent with common.EventReceived {
 
   def getTimeStamp: Long = timeStamp
 
@@ -43,7 +42,8 @@ case class EventReceived(timeStamp: Long,
 
   def getCorrelationId: Optional[String] = correlationId
 
-  def getEvent: EventInstance = event
+  def getEventName: String = eventName
+
 }
 
 /**
@@ -52,13 +52,12 @@ case class EventReceived(timeStamp: Long,
   * @param timeStamp The time that the event was received
   * @param recipeInstanceId The id of the process
   * @param correlationId The (optional) correlation id of the event
-  * @param event The event
   * @param reason The reason that the event was rejected
   */
 case class EventRejected(timeStamp: Long,
                          recipeInstanceId: String,
                          correlationId: Optional[String],
-                         event: EventInstance,
+                         eventName: String,
                          reason: RejectReason) extends BakerEvent with common.EventRejected {
 
   def getTimeStamp: Long = timeStamp
@@ -67,10 +66,38 @@ case class EventRejected(timeStamp: Long,
 
   def getCorrelationId: Optional[String] = correlationId
 
-  def getEvent: EventInstance = event
+  def getEventName: String = eventName
 
   def getReason: RejectReason = reason
 }
+
+/**
+  * Event describing the fact that an interaction outcome event was fired for a process
+  *
+  * @param timeStamp The time that the event was received
+  * @param recipeName The name of the recipe that interaction is part of
+  * @param recipeId The recipe id
+  * @param recipeInstanceId The id of the process
+  * @param correlationId The (optional) correlation id of the event
+  * @param event The event
+  */
+case class EventFired(timeStamp: Long,
+                      recipeName: String,
+                      recipeId: String,
+                      recipeInstanceId: String,
+                      eventName: String) extends BakerEvent with common.EventFired {
+
+  def getTimeStamp: Long = timeStamp
+
+  def getRecipeName: String = recipeName
+
+  def getRecipeId: String = recipeId
+
+  def getRecipeInstanceId: String = recipeInstanceId
+
+  def getEventName: String = eventName
+}
+
 /**
   * Event describing the fact that an interaction failed during execution
   *
@@ -81,7 +108,6 @@ case class EventRejected(timeStamp: Long,
   * @param recipeInstanceId The id of the process the interaction is executed for
   * @param interactionName The name of the interaction
   * @param failureCount The number of times that this interaction execution failed
-  * @param throwable The exception that was thrown by the interaction
   * @param exceptionStrategyOutcome The strategy that was applied as a result of the failure
   */
 case class InteractionFailed(timeStamp: Long,
@@ -91,7 +117,7 @@ case class InteractionFailed(timeStamp: Long,
                              recipeInstanceId: String,
                              interactionName: String,
                              failureCount: Int,
-                             throwable: Throwable,
+                             errorMessage: String,
                              exceptionStrategyOutcome: ExceptionStrategyOutcome) extends BakerEvent with common.InteractionFailed {
 
   def getTimeStamp: Long = timeStamp
@@ -107,8 +133,6 @@ case class InteractionFailed(timeStamp: Long,
   def getInteractionName: String = interactionName
 
   def getFailureCount: Int = failureCount
-
-  def getThrowable: Throwable = throwable
 
   def getExceptionStrategyOutcome: ExceptionStrategyOutcome = exceptionStrategyOutcome
 }
@@ -157,7 +181,7 @@ case class InteractionCompleted(timeStamp: Long,
                                 recipeId: String,
                                 recipeInstanceId: String,
                                 interactionName: String,
-                                event: Optional[EventInstance]) extends BakerEvent with common.InteractionCompleted {
+                                eventName: Optional[String]) extends BakerEvent with common.InteractionCompleted {
 
   def getTimeStamp: Long = timeStamp
 
@@ -171,7 +195,7 @@ case class InteractionCompleted(timeStamp: Long,
 
   def getInteractionName: String = interactionName
 
-  def getEvent: Optional[EventInstance] = event
+  def getEvent: Optional[String] = eventName
 }
 
 /**

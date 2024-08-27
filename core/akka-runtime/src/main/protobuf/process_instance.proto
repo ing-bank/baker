@@ -25,6 +25,17 @@ message Initialized {
     optional SerializedData initial_state = 2;
 }
 
+message MetaDataAddedRecord {
+    optional string key = 1;
+    optional string value = 2;
+}
+
+message MetaDataAdded {
+    option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
+
+    repeated MetaDataAddedRecord metaData = 1;
+}
+
 message TransitionFired {
     option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
 
@@ -33,6 +44,35 @@ message TransitionFired {
     optional int64 transition_id = 3;
     optional int64 time_started = 4;
     optional int64 time_completed = 5;
+    repeated ConsumedToken consumed = 6;
+    repeated ProducedToken produced = 7;
+    optional SerializedData data = 8;
+}
+
+message TransitionFailedWithOutput {
+    option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
+
+    optional int64 job_id = 1;
+    optional string correlation_id = 9;
+    optional int64 transition_id = 3;
+    optional int64 time_started = 4;
+    optional int64 time_completed = 5;
+    repeated ConsumedToken consumed = 6;
+    repeated ProducedToken produced = 7;
+    optional SerializedData data = 8;
+}
+
+message TransitionDelayed {
+    option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
+    optional int64 job_id = 1;
+    optional int64 transition_id = 3;
+    repeated ConsumedToken consumed = 6;
+}
+
+message DelayedTransitionFired {
+    option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
+    optional int64 job_id = 1;
+    optional int64 transition_id = 3;
     repeated ConsumedToken consumed = 6;
     repeated ProducedToken produced = 7;
     optional SerializedData data = 8;
@@ -117,6 +157,14 @@ message InstanceState {
     repeated MarkingData marking = 2;
     optional SerializedData state = 3;
     repeated JobState jobs = 4;
+}
+
+message IngredientFound {
+    optional Value value = 1;
+}
+
+message IngredientNotFound {
+
 }
 
 message FireTransition {
