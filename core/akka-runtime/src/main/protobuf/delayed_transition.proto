@@ -14,7 +14,7 @@ message DelayedTransitionInstance {
   optional int64 jobId = 3;
   optional int64 transitionId = 4;
   optional string eventToFire = 5;
-  optional bool fired = 6;
+  optional bool fired = 6; //REMOVED
 }
 
 message DelayedTransitionScheduled {
@@ -25,4 +25,8 @@ message DelayedTransitionScheduled {
 message DelayedTransitionExecuted {
   optional string id = 1;
   optional DelayedTransitionInstance delayedTransitionInstance = 2;
+}
+
+message DelayedTransitionSnapshot {
+  map<string, DelayedTransitionInstance> waitingTransitions = 1;
 }

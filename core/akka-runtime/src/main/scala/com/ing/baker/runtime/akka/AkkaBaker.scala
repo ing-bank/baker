@@ -14,7 +14,9 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
+import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.{InteractionExecutionFailureReason, RecipeRecord, SensoryEventStatus}
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.getMetaDataFromIngredients
 import com.ing.baker.runtime.recipe_manager.{ActorBasedRecipeManager, DefaultRecipeManager, RecipeManager}
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.{javadsl, scaladsl}
@@ -181,7 +183,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
         case None => cats.effect.IO.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
           InteractionExecutionFailureReason.INTERACTION_NOT_FOUND, None, None))))
         case Some(interactionInstance) =>
-          interactionInstance.execute(ingredients, Map())
+          interactionInstance.execute(
+              ingredients.filter(ingredientInstance => ingredientInstance.name != RecipeInstanceMetadataName),
+              getMetaDataFromIngredients(ingredients).getOrElse(Map.empty))
             .map(executionSuccess => InteractionExecutionResult(Right(InteractionExecutionResult.Success(executionSuccess))))
             .recover {
               case e => InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
@@ -208,6 +212,8 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     processIndexActor.ask(CreateProcess(recipeId, recipeInstanceId))(config.timeouts.defaultBakeTimeout).javaTimeoutToBakerTimeout("bake").flatMap {
       case _: Initialized =>
         Future.successful(())
+      case ProcessDeleted =>
+        Future.failed(ProcessDeletedException(recipeInstanceId))
       case ProcessAlreadyExists(_) =>
         Future.failed(ProcessAlreadyExistsException(recipeInstanceId))
       case RecipeManagerProtocol.NoRecipeFound(_) =>
@@ -423,22 +429,22 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
         case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
       }
 
-//  /**
-//    * @param recipeInstanceId The recipeInstance Id.
-//    * @param name The name of the ingredient.
-//    *  @return The provided ingredients.
-//    */
-//  override def getIngredient(recipeInstanceId: String, name: String): Future[Value] =
-//    processIndexActor
-//      .ask(GetProcessIngredient(recipeInstanceId, name))(Timeout.durationToTimeout(config.timeouts.defaultInquireTimeout))
-//      .javaTimeoutToBakerTimeout("getRecipeInstanceState")
-//      .flatMap {
-//        case ingredientFound: IngredientFound => Future.successful(ingredientFound.value)
-//        case IngredientNotFound  => Future.failed(NoSuchIngredientException(name))
-//        case Uninitialized(id) => Future.failed(NoSuchProcessException(id))
-//        case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
-//        case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
-//      }
+  /**
+    * @param recipeInstanceId The recipeInstance Id.
+    * @param name The name of the ingredient.
+    *  @return The provided ingredients.
+    */
+  override def getIngredient(recipeInstanceId: String, name: String): Future[Value] =
+    processIndexActor
+      .ask(GetProcessIngredient(recipeInstanceId, name))(Timeout.durationToTimeout(config.timeouts.defaultInquireTimeout))
+      .javaTimeoutToBakerTimeout("getRecipeInstanceState")
+      .flatMap {
+        case ingredientFound: IngredientFound => Future.successful(ingredientFound.value)
+        case IngredientNotFound  => Future.failed(NoSuchIngredientException(name))
+        case Uninitialized(id) => Future.failed(NoSuchProcessException(id))
+        case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
+        case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
+      }
 
   /**
     * Returns all provided ingredients for a given process id.
@@ -494,14 +500,14 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     } yield response
   }
 
-  private def doRegisterEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit, processFilter: String => Boolean): Future[Unit] = {
+  private def doRegisterEventListener(listenerFunction: (RecipeEventMetadata, String) => Unit, processFilter: String => Boolean): Future[Unit] = {
     registerBakerEventListener {
       case EventReceived(_, recipeName, recipeId, recipeInstanceId, _, event) if processFilter(recipeName) =>
         listenerFunction.apply(RecipeEventMetadata(recipeId = recipeId, recipeName = recipeName, recipeInstanceId = recipeInstanceId), event)
       case InteractionCompleted(_, _, recipeName, recipeId, recipeInstanceId, _, Some(event)) if processFilter(recipeName) =>
         listenerFunction.apply(RecipeEventMetadata(recipeId = recipeId, recipeName = recipeName, recipeInstanceId = recipeInstanceId), event)
       case InteractionFailed(_, _, recipeName, recipeId, recipeInstanceId, _, _, _, ExceptionStrategyOutcome.Continue(eventName)) if processFilter(recipeName) =>
-        listenerFunction.apply(RecipeEventMetadata(recipeId = recipeId, recipeName = recipeName, recipeInstanceId = recipeInstanceId), EventInstance(eventName, Map.empty))
+        listenerFunction.apply(RecipeEventMetadata(recipeId = recipeId, recipeName = recipeName, recipeInstanceId = recipeInstanceId), eventName)
       case _ => ()
     }
   }
@@ -511,7 +517,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Future[Unit] =
+  override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, String) => Unit): Future[Unit] =
     doRegisterEventListener(listenerFunction, _ == recipeName)
 
   /**
@@ -520,7 +526,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
   //  @deprecated("Use event bus instead", "1.4.0")
-  override def registerEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Future[Unit] =
+  override def registerEventListener(listenerFunction: (RecipeEventMetadata, String) => Unit): Future[Unit] =
     doRegisterEventListener(listenerFunction, _ => true)
 
   /**

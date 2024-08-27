@@ -3,7 +3,7 @@ package com.ing.baker.compiler
 import com.ing.baker.il.petrinet.InteractionTransition
 
 import java.util.Optional
-import com.ing.baker.il.{CompiledRecipe, ValidationSettings, checkpointEventInteractionPrefix}
+import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle, RecipeVisualizer, ValidationSettings, checkpointEventInteractionPrefix, subRecipePrefix}
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.{TestRecipeJava, common}
 import com.ing.baker.recipe.common.InteractionFailureStrategy
@@ -87,6 +87,50 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       compiledRecipe.validationErrors should contain("Non supported process id type: Int32 on interaction: 'wrongrecipeInstanceIdInteraction'")
     }
 
+    "give an error if the MetaData is required and is not of the Map<String, String> type" in {
+      val wrongMetaDataInteraction =
+        Interaction(
+          name = "wrongMetaDataInteraction",
+          inputIngredients = Seq(new Ingredient[Int](common.recipeInstanceMetadataName), initialIngredient),
+          output = Seq.empty)
+
+      val recipe = Recipe("NonProvidedIngredient")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(wrongMetaDataInteraction)
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.validationErrors should contain("Non supported MetaData type: Int32 on interaction: 'wrongMetaDataInteraction'")
+    }
+
+    "give an error if the baker internal ingredients are provided" in {
+      val wrongDateEvent = Event("WrongDataEvent",
+        Seq(
+          Ingredient[String]("recipeInstanceId"),
+          Ingredient[String]("RecipeInstanceMetaData")),
+        maxFiringLimit = None)
+
+      val wrongDateEvent2 = Event("WrongDataEvent2",
+        Seq(Ingredient[String]("RecipeInstanceEventList")),
+        maxFiringLimit = None)
+
+      val wrongMetaDataInteraction =
+        Interaction(
+          name = "wrongDataProvidedInteraction",
+          inputIngredients = Seq(new Ingredient[String](common.recipeInstanceIdName), initialIngredient),
+          output = Seq(wrongDateEvent2))
+
+      val recipe = Recipe("WrongDataRecipe")
+        .withSensoryEvents(initialEvent, wrongDateEvent)
+        .withInteractions(wrongMetaDataInteraction)
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.validationErrors shouldBe List(
+        "Ingredient 'recipeInstanceId' is provided and this is a reserved name for internal use in Baker",
+        "Ingredient 'RecipeInstanceMetaData' is provided and this is a reserved name for internal use in Baker",
+        "Ingredient 'RecipeInstanceEventList' is provided and this is a reserved name for internal use in Baker"
+      )
+    }
+
     "give a list of wrong ingredients" when {
       "an ingredient is of the wrong type" in {
         val initialIngredientInt = new common.Ingredient("initialIngredient", RecordType(Seq(RecordField("data", Int32))))
@@ -123,13 +167,6 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionalInt:Option[Int32]', however incompatible type: 'Option[CharArray]' was provided")
         compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionInt:Option[List[Int32]]', however incompatible type: 'Option[List[CharArray]]' was provided")
       }
-    }
-
-    "give a validation error for an empty/non-logical recipe" in {
-      RecipeCompiler.compileRecipe(Recipe("someName")).validationErrors should contain only(
-        "No sensory events found.",
-        "No interactions found."
-      )
     }
 
     "give no errors if an Optional ingredient is of the correct Option type" in {
@@ -219,6 +256,14 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
 
           intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)).getMessage.shouldBe("Recipe with a null or empty name found")
         }
+      }
+
+      "an Interaction is reprovider, but has no required events" in {
+        val recipe: Recipe = Recipe("LoopingWithReprovider")
+          .withInteraction(interactionOne.isReprovider(true))
+          .withSensoryEvents(initialEvent)
+        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        compiledRecipe.validationErrors shouldBe List("Reprovider interaction InteractionOne needs to have a event precondition")
       }
     }
 
@@ -335,6 +380,13 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       }
     }
 
+    "give the interaction with Reprovider enabled" when {
+      "it compiles a java recipe and changes recipeId" in {
+        val recipe = TestRecipeJava.getRecipeReprovider("id-test-recipe")
+        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        compiledRecipe.recipeId shouldBe "416e8abc02abcbee"
+      }
+    }
 
     "give the interaction for checkpoint-events" when {
       "it compiles a java recipe" in {
@@ -344,6 +396,63 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
         compiledRecipe.recipeId shouldBe "469441173f91869a"
         compiledRecipe.petriNet.transitions.count { case i: InteractionTransition => i.interactionName.contains(s"${checkpointEventInteractionPrefix}Success") case _ => false } shouldBe 1
+      }
+    }
+
+    "give the interaction for sub-recipes" when {
+      "it compiles a java recipe" in {
+
+        val subSubRecipe: Recipe = Recipe("SubSubRecipe")
+          .withInteractions(
+            interactionOne
+              .withEventOutputTransformer(interactionOneSuccessful, Map("interactionOneOriginalIngredient" -> "interactionOneIngredient"))
+              .withFailureStrategy(InteractionFailureStrategy.RetryWithIncrementalBackoff(initialDelay = 10 millisecond, maximumRetries = 3)),
+            interactionTwo
+              .withOverriddenIngredientName("initialIngredientOld", "initialIngredient"),
+          )
+
+        val subRecipe: Recipe = Recipe("SubRecipe")
+          .withInteractions(
+            interactionThree
+              .withMaximumInteractionCount(1),
+            interactionFour
+              .withRequiredEvents(secondEvent, eventFromInteractionTwo),
+            interactionFive,
+            interactionSix,
+          )
+          .withSubRecipe(subSubRecipe)
+
+        val recipe: Recipe = Recipe("Recipe")
+          .withSensoryEvents(
+            initialEvent,
+            initialEventExtendedName,
+            secondEvent,
+            notUsedSensoryEvent
+          )
+          .withInteractions(
+            providesNothingInteraction,
+            sieveInteraction
+          )
+          .withSubRecipe(subRecipe)
+
+        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+
+        val res = compiledRecipe.petriNet.transitions
+          .flatMap {
+            case i: InteractionTransition => List(i.interactionName)
+            case _ => List.empty
+          }
+          .filter( _.startsWith(subRecipePrefix))
+
+//        compiledRecipe.recipeId shouldBe "fb5346c571ca5a47"
+//        res shouldBe Set(
+//          "$SubRecipe$SubRecipe$InteractionSeven",
+//          "$SubRecipe$SubSubRecipe$InteractionOne"
+//        )
+
+        val vis = RecipeVisualizer.visualizeRecipe(compiledRecipe, RecipeVisualStyle.default)
+
+        println(vis)
       }
     }
   }

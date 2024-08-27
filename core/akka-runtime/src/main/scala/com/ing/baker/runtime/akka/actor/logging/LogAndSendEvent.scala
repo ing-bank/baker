@@ -2,7 +2,7 @@ package com.ing.baker.runtime.akka.actor.logging
 
 import akka.event.EventStream
 import com.ing.baker.il.petrinet.Transition
-import com.ing.baker.runtime.common.{EventReceived, EventRejected, InteractionCompleted, InteractionFailed, InteractionStarted, RecipeAdded, RecipeInstanceCreated}
+import com.ing.baker.runtime.common.{EventFired, EventReceived, EventRejected, InteractionCompleted, InteractionFailed, InteractionStarted, RecipeAdded, RecipeInstanceCreated}
 import com.ing.baker.runtime.model.BakerLogging
 
 object LogAndSendEvent {
@@ -31,9 +31,9 @@ object LogAndSendEvent {
     bakerLogging.interactionFinished(interactionCompleted)
   }
 
-  def interactionFailed(interactionFailed: InteractionFailed, eventStream: EventStream): Unit = {
+  def interactionFailed(interactionFailed: InteractionFailed, reason: Throwable, eventStream: EventStream): Unit = {
     eventStream.publish(interactionFailed)
-    bakerLogging.interactionFailed(interactionFailed)
+    bakerLogging.interactionFailed(interactionFailed, reason)
   }
 
   def eventReceived(eventReceived: EventReceived, eventStream: EventStream): Unit = {
@@ -46,9 +46,9 @@ object LogAndSendEvent {
     bakerLogging.eventRejected(eventRejected)
   }
 
-  def firingEvent(recipeInstanceId: String, executionId: Long, transition: Transition, timeStarted: Long): Unit = {
-    //TODO This does not have a corrosponding BakerEvent, this should be created
-    bakerLogging.firingEvent(recipeInstanceId, executionId, transition, timeStarted)
+  def eventFired(eventFired: EventFired,
+                  eventStream: EventStream): Unit = {
+    eventStream.publish(eventFired)
+    bakerLogging.eventFired(eventFired)
   }
-
 }

@@ -102,6 +102,30 @@ object TestRecipe {
     def apply(recipeInstanceId: String, initialIngredient: String): Future[InteractionOneSuccessful]
   }
 
+  val interactionOneWithMetaData =
+    Interaction(
+      name = "InteractionOneWithMetaData",
+      inputIngredients = Seq(recipeInstanceId, initialIngredient, recipeInstanceMetaData),
+      output = Seq(interactionOneSuccessful))
+
+  trait InteractionOneWithMetaData {
+    def name: String = "InteractionOneWithMetaData"
+
+    def apply(recipeInstanceId: String, initialIngredient: String, bakerMetaData: Map[String, String]): Future[InteractionOneSuccessful]
+  }
+
+  val interactionOneWithEventList =
+    Interaction(
+      name = "InteractionOneWithEventList",
+      inputIngredients = Seq(recipeInstanceId, initialIngredient, recipeInstanceEventList),
+      output = Seq(interactionOneSuccessful))
+
+  trait InteractionOneWithEventList {
+    def name: String = "InteractionOneWithEventList"
+
+    def apply(recipeInstanceId: String, initialIngredient: String, recipeInstanceEventList: List[String]): Future[InteractionOneSuccessful]
+  }
+
   val interactionTwo =
     Interaction(
       name = "InteractionTwo",
