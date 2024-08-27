@@ -75,12 +75,14 @@ case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
       "recipeInstanceId" -> interactionCompleted.recipeInstanceId,
       "interactionName" -> interactionCompleted.interactionName,
       "duration" -> interactionCompleted.duration.toString,
-      "timeFinished" -> interactionCompleted.timeStamp.toString
+      "timeFinished" -> interactionCompleted.timeStamp.toString,
+      "recipeId" -> interactionCompleted.recipeId,
+      "recipeName" -> interactionCompleted.recipeName
     )
     withMDC(mdc, _.info(msg))
   }
 
-  def interactionFailed(interactionFailed: InteractionFailed): Unit = {
+  def interactionFailed(interactionFailed: InteractionFailed, failureReason: Throwable): Unit = {
     val msg = s"Interaction failed '${interactionFailed.interactionName}'"
     val mdc = Map(
       "recipeInstanceId" -> interactionFailed.recipeInstanceId,
@@ -91,13 +93,20 @@ case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
       "recipeName" -> interactionFailed.recipeName,
       "failureCount" -> interactionFailed.failureCount.toString
     )
-    withMDC(mdc, _.error(msg, interactionFailed.throwable))
+    withMDC(mdc, _.error(msg, failureReason))
   }
 
-  def firingEvent(recipeInstanceId: String, executionId: Long, transition: Transition, timeStarted: Long): Unit = {
+  def firingEvent(recipeInstanceId: String,
+                  recipeId: String,
+                  recipeName: String,
+                  executionId: Long,
+                  transition: Transition,
+                  timeStarted: Long): Unit = {
     val msg = s"Firing event '${transition.label}'"
     val mdc = Map(
       "recipeInstanceId" -> recipeInstanceId,
+      "recipeId" -> recipeId,
+      "recipeName" -> recipeName,
       "eventName" -> transition.label,
       "runtimeTimestamp" -> timeStarted.toString,
       "executionId" -> executionId.toString
@@ -105,10 +114,22 @@ case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
     withMDC(mdc, _.info(msg))
   }
 
-  def eventReceived(eventReceived: EventReceived): Unit = {
-    val msg = s"Event received '${eventReceived.event.name}'"
+  def eventFired(eventFired: EventFired): Unit = {
+    val msg = s"Firing event '${eventFired.eventName}'"
     val mdc = Map(
-      "event" -> eventReceived.event.name,
+      "recipeInstanceId" -> eventFired.recipeInstanceId,
+      "recipeId" -> eventFired.recipeId,
+      "recipeName" -> eventFired.recipeName,
+      "eventName" -> eventFired.eventName,
+      "runtimeTimestamp" -> eventFired.timeStamp.toString,
+    )
+    withMDC(mdc, _.info(msg))
+  }
+
+  def eventReceived(eventReceived: EventReceived): Unit = {
+    val msg = s"Event received '${eventReceived.eventName}'"
+    val mdc = Map(
+      "event" -> eventReceived.eventName,
       "recipeInstanceId" -> eventReceived.recipeInstanceId,
       "recipeId" -> eventReceived.recipeId,
       "recipeName" -> eventReceived.recipeName,
@@ -118,9 +139,9 @@ case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
   }
 
   def eventRejected(eventRejected: EventRejected): Unit = {
-    val msg = s"Event rejected '${eventRejected.event.name}' because: ${eventRejected.reason}"
+    val msg = s"Event rejected '${eventRejected.eventName}' because: ${eventRejected.reason}"
     val mdc = Map(
-      "event" -> eventRejected.event.name,
+      "event" -> eventRejected.eventName,
       "recipeInstanceId" -> eventRejected.recipeInstanceId,
       "timeReceived" -> eventRejected.timeStamp.toString,
     )

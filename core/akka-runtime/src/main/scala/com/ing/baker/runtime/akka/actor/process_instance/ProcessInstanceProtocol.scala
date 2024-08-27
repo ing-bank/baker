@@ -1,5 +1,6 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
+import com.ing.baker.il.petrinet.Place
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.types.Value
@@ -40,9 +41,9 @@ object ProcessInstanceProtocol {
 
   object Initialize {
 
-    def apply[P : Identifiable](marking: Marking[P]): Initialize = Initialize(marking.marshall, null)
+    def apply[P : Identifiable](marking: Marking[Place]): Initialize = Initialize(marking.marshall, null)
 
-    def apply[P : Identifiable](marking: Marking[P], state: Any): Initialize = Initialize(marking.marshall, state)
+    def apply[P : Identifiable](marking: Marking[Place], state: Any): Initialize = Initialize(marking.marshall, state)
   }
 
   /**
@@ -102,9 +103,9 @@ object ProcessInstanceProtocol {
 
   object Initialized {
 
-    def apply[P : Identifiable](marking: Marking[P]): Initialized = Initialized(marking.marshall, null)
+    def apply[P : Identifiable](marking: Marking[Place]): Initialized = Initialized(marking.marshall, null)
 
-    def apply[P : Identifiable](marking: Marking[P], state: Any): Initialized = Initialized(marking.marshall, state)
+    def apply[P : Identifiable](marking: Marking[Place], state: Any): Initialized = Initialized(marking.marshall, state)
   }
 
   /**

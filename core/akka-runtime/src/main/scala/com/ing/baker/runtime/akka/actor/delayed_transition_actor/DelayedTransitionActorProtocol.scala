@@ -14,5 +14,7 @@ object DelayedTransitionActorProtocol {
 
   case class FireDelayedTransition(recipeInstanceId: String, jobId: Long, transitionId: Long, eventToFire: String, originalSender: ActorRef) extends DelayedTransitionActorProtocol
 
+  case class FireDelayedTransitionAck(recipeInstanceId: String, jobId: Long) extends DelayedTransitionActorProtocol
+
   case object TickTimer extends DelayedTransitionActorProtocol
 }

@@ -10,7 +10,6 @@ class PojoModule extends TypeModule {
   override def isApplicable(javaType: java.lang.reflect.Type): Boolean = true
 
   override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): Type = {
-
     val pojoClass = getBaseClass(javaType)
     val fields = pojoClass.getDeclaredFields.toIndexedSeq.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
     val ingredients = fields.map(f => RecordField(f.getName, context.readType(f.getGenericType)))
@@ -35,8 +34,9 @@ class PojoModule extends TypeModule {
       fields.foreach { f =>
         entries.get(f.getName).foreach { entryValue =>
 
-          val fieldType = f.getGenericType()
+          val fieldType = f.getGenericType
           try {
+            //this is an illegal action with Java 17 when a record is used, or any final fields
             val value = context.toJava(entryValue, fieldType)
             f.setAccessible(true)
             f.set(pojoInstance, value)
