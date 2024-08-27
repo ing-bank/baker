@@ -101,8 +101,14 @@ private[recipeinstance] case class TransitionExecution(
             executeInteractionInstance(interactionTransition)
           case _: EventTransition =>
               for {
-                timerstamp <- timer.clock.realTime(MILLISECONDS)
-                _ <- effect.delay(components.logging.firingEvent(recipeInstanceId, "UNKNOWN", "UNKNOWN", id, transition, timerstamp))
+                endTime <- timer.clock.realTime(MILLISECONDS)
+                _ <- input match {
+                  case Some(event) =>
+                    val eventFired = EventFired(endTime, recipe.name, recipe.recipeId, recipeInstanceId, event.name)
+                    components.logging.eventFired(eventFired)
+                    components.eventStream.publish(eventFired)
+                  case None => effect.unit
+                }
               } yield input
           case _ =>
             effect.pure(None)
@@ -178,22 +184,22 @@ private[recipeinstance] case class TransitionExecution(
 
           interactionOutput <- effect.bracket(setupMdc)(_ => execute)(_ => cleanMdc)
           _ <- validateInteractionOutput(interactionTransition, interactionOutput)
-          transformedOutput = interactionOutput.map(_.transformWith(interactionTransition))
+          transformedOutput: Option[EventInstance] = interactionOutput.map(_.transformWith(interactionTransition))
 
           endTime <- timer.clock.realTime(MILLISECONDS)
 
           interactionCompleted = InteractionCompleted(
             endTime, endTime - startTime, recipe.name, recipe.recipeId, recipeInstanceId,
-            interactionTransition.interactionName, transformedOutput)
+            interactionTransition.interactionName, transformedOutput.map(_.name))
           _ <- effect.delay(components.logging.interactionFinished(interactionCompleted))
           _ <- components.eventStream.publish(interactionCompleted)
 
           _ <- transformedOutput match {
               case Some(event) =>
-                val eventFired = EventFired(endTime, recipe.name, recipe.recipeId, recipeInstanceId, event)
+                val eventFired = EventFired(endTime, recipe.name, recipe.recipeId, recipeInstanceId, event.name)
                 components.logging.eventFired(eventFired)
                 components.eventStream.publish(eventFired)
-              case None => effect.pure()
+              case None => effect.unit
             }
         } yield transformedOutput
 
@@ -207,8 +213,8 @@ private[recipeinstance] case class TransitionExecution(
           endTime <- timer.clock.realTime(MILLISECONDS)
           interactionFailed = InteractionFailed(
             endTime, endTime - startTime, recipe.name, recipe.recipeId, recipeInstanceId,
-            transition.label, failureCount, throwable, interactionTransition.failureStrategy.apply(failureCount + 1))
-          _ <- effect.delay(components.logging.interactionFailed(interactionFailed))
+            transition.label, failureCount, throwable.getMessage, interactionTransition.failureStrategy.apply(failureCount + 1))
+          _ <- effect.delay(components.logging.interactionFailed(interactionFailed, throwable))
           _ <- components.eventStream.publish(interactionFailed)
         } yield ()
 

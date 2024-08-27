@@ -150,4 +150,16 @@ public class RecipeTest {
         assertEquals(recipe.getEvents().size(), 0);
         assertEquals(recipe.getInteractions().size(), 1);
     }
+
+    @Test
+    public void shouldSetupRecipeWithSubRecipe() {
+
+        Recipe subRecipe = new Recipe("OneInteractionRecipe");
+
+        Recipe recipe = new Recipe("OneInteractionRecipe")
+                .withInteraction(of(SimpleInteraction.class))
+                .withSubRecipe(subRecipe);
+        assertEquals(recipe.getEvents().size(), 0);
+        assertEquals(recipe.getSubRecipes().size(), 1);
+    }
 }

@@ -8,6 +8,7 @@ object Place {
 
   sealed trait PlaceType {def labelPrepend: String = ""}
 
+  case object SubRecipePlace extends PlaceType
   case object IngredientPlace extends PlaceType
   case object InteractionEventOutputPlace extends PlaceType
   case class  FiringLimiterPlace(maxLimit: Int) extends PlaceType
