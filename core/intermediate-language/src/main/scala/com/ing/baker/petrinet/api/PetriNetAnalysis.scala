@@ -1,5 +1,7 @@
 package com.ing.baker.petrinet.api
 
+import com.ing.baker.il.petrinet.{Place, Transition}
+
 object PetriNetAnalysis {
 
   // indicates an unbounded token count in a place
@@ -16,8 +18,8 @@ object PetriNetAnalysis {
     }
   }
 
-  implicit class PetriNetOps[P, T](petriNet: PetriNet[P, T]) {
-    def removeTransitions(transitions: Iterable[T]): PetriNet[P, T] = {
+  implicit class PetriNetOps(petriNet: PetriNet) {
+    def removeTransitions(transitions: Iterable[Transition]): PetriNet = {
       val graph = transitions.foldLeft(petriNet.innerGraph) {
         case (acc, t) => acc.-(Right(t))
       }
@@ -28,13 +30,13 @@ object PetriNetAnalysis {
   /**
    * A node in the coverability tree
    */
-  class Node[P, T](
-      var marking: MultiSet[P],
-      var isNew: Boolean,
-      var children: Map[T, Node[P, T]]) {
+  class Node(
+              var marking: MultiSet[Place],
+              var isNew: Boolean,
+              var children: Map[Transition, Node]) {
 
     // returns the path to a new node
-    def newNode: Option[List[Node[P, T]]] =
+    def newNode: Option[List[Node]] =
       if (isNew)
         Some(List(this))
       else
@@ -45,7 +47,7 @@ object PetriNetAnalysis {
       s"marking: $markingString, children: $children"
     }
 
-    def isCoverable(target: MultiSet[P]): Boolean = {
+    def isCoverable(target: MultiSet[Place]): Boolean = {
       if (marking >= target)
         true
       else
@@ -55,7 +57,7 @@ object PetriNetAnalysis {
     def maxNrTokens: Int = (marking.values ++ children.values.map(_.maxNrTokens)).max
   }
 
-  def optimize[P, T](petrinet: PetriNet[P, T], m0: MultiSet[P]): (PetriNet[P, T], MultiSet[P]) = {
+  def optimize(petrinet: PetriNet, m0: MultiSet[Place]): (PetriNet, MultiSet[Place]) = {
 
     val unboundedTransitions = unboundedEnabled(petrinet, m0)
 
@@ -65,7 +67,7 @@ object PetriNetAnalysis {
       // remove the cold transitions to simplify things
       val updatedPetriNet = petrinet.removeTransitions(unboundedTransitions)
 
-      val unboundedOut = unboundedTransitions.foldLeft(MultiSet.empty[P]) {
+      val unboundedOut = unboundedTransitions.foldLeft(MultiSet.empty[Place]) {
         case (acc, t) => acc.multisetSum(petrinet.outMarking(t))
       }.map {
         case (p, _) => p -> W
@@ -75,7 +77,7 @@ object PetriNetAnalysis {
     }
   }
 
-  def unboundedEnabled[P, T](petrinet: PetriNet[P, T], m0: MultiSet[P]): Iterable[T] = {
+  def unboundedEnabled(petrinet: PetriNet, m0: MultiSet[Place]): Iterable[Transition] = {
 
     val coldTransitions = petrinet.transitions.filter(t => petrinet.incomingPlaces(t).isEmpty)
     val unboundedMarking = m0.filter { case (_, n) => n == W }
@@ -88,7 +90,7 @@ object PetriNetAnalysis {
   /**
    * Implements page 47 of http://cpntools.org/_media/book/covgraph.pdf
    */
-  def calculateCoverabilityTree[P, T](petrinet: PetriNet[P, T], m0: MultiSet[P]): Node[P, T] = {
+  def calculateCoverabilityTree(petrinet: PetriNet, m0: MultiSet[Place]): Node = {
 
     val (pn, initialMarking) = optimize(petrinet, m0)
 
@@ -96,7 +98,7 @@ object PetriNetAnalysis {
     val inMarking = pn.transitions.map(t => t -> petrinet.inMarking(t)).toMap
     val outMarking = pn.transitions.map(t => t -> petrinet.outMarking(t)).toMap
 
-    def fire(m0: MultiSet[P], t: T): MultiSet[P] = {
+    def fire(m0: MultiSet[Place], t: Transition): MultiSet[Place] = {
       // unbounded places stay unchanged
       val (unbounded, bounded) = m0.partition { case (_, n) => n == W }
 
@@ -105,7 +107,7 @@ object PetriNetAnalysis {
         .multisetSum(outMarking(t)) ++ unbounded
     }
 
-    def enabledTransitions(m0: MultiSet[P]): Iterator[T] = {
+    def enabledTransitions(m0: MultiSet[Place]): Iterator[Transition] = {
 
       val outAdjacent = m0.keys.map(pn.outgoingTransitions).reduceOption(_ ++ _).getOrElse(Set.empty).
         filter(t => m0 >= inMarking(t))
@@ -114,7 +116,7 @@ object PetriNetAnalysis {
     }
 
     // 1. Label the initial marking M0 as the root and tag it 'new'
-    val root = new Node[P, T](initialMarking, true, Map.empty)
+    val root = new Node(initialMarking, true, Map.empty)
 
     var newNode = root.newNode
 
@@ -136,13 +138,13 @@ object PetriNetAnalysis {
           enabledTransitions(M).foreach { t =>
 
             // i. obtain the marking that results from firing t at M
-            val postT: MultiSet[P] = fire(M, t)
+            val postT: MultiSet[Place] = fire(M, t)
 
             // ii. if on the path to m there exists a marking that is covered by M1
-            val coverableM: Option[MultiSet[P]] =
+            val coverableM: Option[MultiSet[Place]] =
               pathToM.map(_.marking).find(M11 => postT >= M11 && postT != M11)
 
-            val M1: MultiSet[P] = coverableM.map { M11 =>
+            val M1: MultiSet[Place] = coverableM.map { M11 =>
               postT.map {
                 case (p, n) if n > M11.getOrElse(p, 0) => p -> W
                 case (p, n)                            => p -> n
@@ -150,7 +152,7 @@ object PetriNetAnalysis {
             }.getOrElse(postT)
 
             // iii. introduce M1 as a node
-            val newNode: Node[P, T] = new Node[P, T](M1, true, Map.empty)
+            val newNode: Node = new Node(M1, true, Map.empty)
             node.children += t -> newNode
           }
         }

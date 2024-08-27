@@ -3,6 +3,7 @@ package com.ing.baker.runtime.akka.actor.process_index
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, ReceiveTimeout}
 import akka.sensors.actor.ActorMetrics
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
@@ -12,8 +13,8 @@ import com.ing.baker.types.{PrimitiveValue, Value}
 
 object SensoryEventResponseHandler {
 
-  def apply(receiver: ActorRef, command: ProcessEvent, ingredientsFilter: Seq[String] = Seq.empty): Props =
-    Props(new SensoryEventResponseHandler(receiver, command, ingredientsFilter))
+  def apply(receiver: ActorRef, command: ProcessEvent): Props =
+    Props(new SensoryEventResponseHandler(receiver, command))
 }
 
 /**
@@ -22,7 +23,7 @@ object SensoryEventResponseHandler {
  * - Publishes events to the system event stream
  * - Does involving logging
  */
-class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ingredientsFilter: Seq[String])
+class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent)
   extends Actor with ActorMetrics with ActorLogging {
 
   context.setReceiveTimeout(command.timeout)
@@ -34,24 +35,27 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
     case FireSensoryEventReaction.NotifyOnEvent(waitForRetries0, _) => waitForRetries0
   }
 
-  def notifyReceive(recipe: CompiledRecipe): Unit = {
-    context.system.eventStream.publish(
+  def notifyReceive(recipe: CompiledRecipe, firstEvent: TransitionFired): Unit = {
+    LogAndSendEvent.eventReceived(
       EventReceived(
         System.currentTimeMillis(),
         recipe.name,
         recipe.recipeId,
         command.recipeInstanceId,
         command.correlationId,
-        command.event))
+        command.event.name), context.system.eventStream)
+
     command.reaction match {
       case FireSensoryEventReaction.NotifyWhenCompleted(_) =>
-        ()
+        context.become(streaming(firstEvent.newJobsIds - firstEvent.jobId, List(firstEvent)))
       case FireSensoryEventReaction.NotifyOnEvent(_, _) =>
-        ()
+        context.become(streaming(firstEvent.newJobsIds - firstEvent.jobId, List(firstEvent)))
       case FireSensoryEventReaction.NotifyWhenReceived =>
         receiver ! ProcessEventReceivedResponse(SensoryEventStatus.Received)
+        stopActor()
       case FireSensoryEventReaction.NotifyBoth(_, _) =>
         receiver ! ProcessEventReceivedResponse(SensoryEventStatus.Received)
+        context.become(streaming(firstEvent.newJobsIds - firstEvent.jobId, List(firstEvent)))
     }
   }
 
@@ -64,7 +68,7 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
     def result = SensoryEventResult(
       sensoryEventStatus = SensoryEventStatus.Completed,
       eventNames = runtimeEvents.map(_.name),
-      ingredients = filterIngredientValues(runtimeEvents.flatMap(_.providedIngredients).toMap)
+      ingredients = runtimeEvents.flatMap(_.providedIngredients).toMap
     )
 
     command.reaction match {
@@ -76,24 +80,18 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
     stopActor()
   }
 
-  private def filterIngredientValues(ingredients: Map[String, Value]): Map[String, Value] =
-    ingredients.map(ingredient =>
-      if (ingredientsFilter.contains(ingredient._1))
-        ingredient._1 -> PrimitiveValue("")
-      else
-        ingredient)
-
   def rejectWith(rejection: FireSensoryEventRejection): Unit = {
     log.debug("Stopping SensoryEventResponseHandler and rejecting request")
     log.debug("Reject reason: " + rejection.asReason)
     log.debug("message: " + rejection)
-    context.system.eventStream.publish(
+    LogAndSendEvent.eventRejected(
       EventRejected(
         System.currentTimeMillis(),
         command.recipeInstanceId,
         command.correlationId,
-        command.event,
-        rejection.asReason))
+        command.event.name,
+        rejection.asReason), context.system.eventStream)
+
     command.reaction match {
       case FireSensoryEventReaction.NotifyBoth(_, completeReceiver) =>
         receiver ! rejection; completeReceiver ! rejection
@@ -138,11 +136,9 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
   def waitForFirstEvent(recipe: CompiledRecipe): Receive =
     handleRejections orElse {
       case firstEvent: TransitionFired =>
-        notifyReceive(recipe)
-        context.become(streaming(firstEvent.newJobsIds - firstEvent.jobId, List(firstEvent)))
+        notifyReceive(recipe, firstEvent)
       case ReceiveTimeout =>
         log.debug("Timeout on SensoryEventResponseHandler when expecting the first transition fired event")
-        stopActor()
       case message =>
         log.debug(s"Unexpected message $message on SensoryEventResponseHandler when expecting the first transition fired event")
         stopActor()

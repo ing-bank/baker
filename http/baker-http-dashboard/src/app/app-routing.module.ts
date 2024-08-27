@@ -4,6 +4,7 @@ import {InstancesComponent} from "./instances/instances.component";
 import {InteractionsComponent} from "./interactions/interactions.component";
 import {NgModule} from "@angular/core";
 import {NotFoundComponent} from "./notfound/notfound.component";
+import {AppSettingsService} from "./app.settings";
 
 import {RecipesComponent} from "./recipes/recipes.component";
 

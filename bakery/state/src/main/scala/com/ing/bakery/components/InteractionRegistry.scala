@@ -7,7 +7,10 @@ import cats.syntax.all._
 import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
 import com.ing.baker.runtime.defaultinteractions
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
+import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
+import com.ing.baker.types.Type
 import com.ing.bakery.interaction.{BaseRemoteInteractionClient, RemoteInteractionClient}
+import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import org.http4s.client.Client
@@ -16,19 +19,21 @@ import org.http4s.{Headers, Uri}
 import scalax.collection.ChainingOps
 
 import java.io.IOException
+import scala.collection.immutable.Seq
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 object InteractionRegistry extends LazyLogging {
 
-  def resource(externalContext: Option[Any], config: Config, actorSystem: ActorSystem): Resource[IO, InteractionRegistry] =
+  def resource(externalContext: Option[Any], metricService: MetricService, config: Config, actorSystem: ActorSystem): Resource[IO, InteractionRegistry] = {
     readInteractionClassName(config)
       .map(Class.forName)
       .getOrElse(classOf[BaseInteractionRegistry])
       .tap(c => logger.info(s"Interaction registry: ${c.getName}"))
-      .getDeclaredConstructor(classOf[Config], classOf[ActorSystem])
-      .newInstance(config, actorSystem)
+      .getDeclaredConstructor(classOf[Config], classOf[MetricService], classOf[ActorSystem])
+      .newInstance(config, metricService, actorSystem)
       .asInstanceOf[InteractionRegistry]
       .resource(externalContext)
+  }
 
   private def readInteractionClassName(config: Config): Option[String] = {
     Some(config.getString("baker.interactions.class")).filterNot(_.isEmpty)
@@ -60,7 +65,7 @@ trait TraversingInteractionRegistry extends InteractionRegistry {
 /**
   * Base implementation of interaction registry
   */
-class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
+class BaseInteractionRegistry(config: Config, metricService: MetricService, actorSystem: ActorSystem)
   extends TraversingInteractionRegistry
     with LazyLogging {
 
@@ -76,7 +81,7 @@ class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
   override def resource(externalContext: Option[Any]): Resource[IO, InteractionRegistry] = {
     for {
       client <- BlazeClientBuilder[IO](actorSystem.dispatcher).resource
-      interactionManagers <- interactionManagersResource(client)
+      interactionManagers <- interactionManagersResource(client, metricService)
     } yield {
       managers = interactionManagers
       logger.info(s"Initialised interaction registry with managers: ${managers.map(_.getClass.getName).mkString(",")}")
@@ -84,9 +89,9 @@ class BaseInteractionRegistry(config: Config, actorSystem: ActorSystem)
     }
   }
 
-  protected def interactionManagersResource(client: Client[IO]): Resource[IO, List[InteractionManager[IO]]] = {
+  protected def interactionManagersResource(client: Client[IO], metricService: MetricService): Resource[IO, List[InteractionManager[IO]]] = {
 
-    val interactionClient = new BaseRemoteInteractionClient(client, Headers.empty)
+    val interactionClient = new BaseRemoteInteractionClient(client, Headers.empty, metricService)
 
     def getRemoteInteractions: Option[DynamicInteractionManager] = {
       val path = "baker.interactions.remote.class"
@@ -151,13 +156,15 @@ trait RemoteInteractionDiscovery extends LazyLogging {
         val interfaces = response.interactions
         if (interfaces.isEmpty) logger.warn(s"${uri.toString} provides no interactions")
         RemoteInteractions(response.startedAt,
-          interfaces.map(interaction => {
-            InteractionInstance.build[IO](
-              _name = interaction.name,
-              _input = interaction.input,
-              _output = interaction.output,
-              _run = input => remoteInteractions.execute(uri, interaction.id, input),
-            )
+          interfaces.map(interface => {
+            new InteractionInstance[IO] {
+              override val name: String = interface.name
+              override val input: Seq[InteractionInstanceInput] = interface.input
+              override val run: Seq[IngredientInstance] => IO[Option[EventInstance]] = _ => IO.pure(Option.empty) //Ignoring the run since the execute does not use it
+              override val output: Option[Map[String, Map[String, Type]]] = interface.output
+              override def execute(input: Seq[IngredientInstance], metadata: Map[String, String]): IO[Option[EventInstance]] =
+                remoteInteractions.execute(uri, interface.id, input, metadata)
+            }
           }))
       }
       }

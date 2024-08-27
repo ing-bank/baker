@@ -5,8 +5,12 @@ import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import cats.effect.IO
-import com.ing.baker.il.petrinet.Transition
+import com.ing.baker.il.failurestrategy.{BlockInteraction, FireEventAfterFailure, RetryWithIncrementalBackoff}
+import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor, checkpointEventInteractionPrefix}
 import com.ing.baker.petrinet.api._
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransitionAck, ScheduleDelayedTransition}
+import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstance._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
@@ -15,10 +19,13 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
-import com.ing.baker.runtime.scaladsl.RecipeInstanceState
+import com.ing.baker.runtime.akka.internal.{FatalInteractionException, RecipeRuntime}
+import com.ing.baker.runtime.model.BakerLogging
+import com.ing.baker.runtime.scaladsl.{EventFired, EventInstance, IngredientInstance, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
-import com.ing.baker.types.PrimitiveValue
+import com.ing.baker.types.{FromValue, PrimitiveValue, Value}
 
+import scala.collection.immutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.language.existentials
@@ -29,7 +36,8 @@ object ProcessInstance {
   case class Settings(executionContext: ExecutionContext,
                       idleTTL: Option[FiniteDuration],
                       encryption: Encryption,
-                      ingredientsFilter: Seq[String])
+                      getIngredientsFilter: Seq[String],
+                      providedIngredientFilter: Seq[String])
 
   case class IdleStop(seq: Long) extends NoSerializationVerificationNeeded
 
@@ -45,23 +53,83 @@ object ProcessInstance {
       None
   }
 
-  def props[P: Identifiable, T: Identifiable, S, E](processType: String, petriNet: PetriNet[P, T], runtime: ProcessInstanceRuntime[P, T, S, E], settings: Settings): Props =
-    Props(new ProcessInstance[P, T, S, E](
+  def props[S, E](processType: String, compiledRecipe: CompiledRecipe,
+                                                    runtime: ProcessInstanceRuntime[S, E],
+                                                    settings: Settings,
+                                                    delayedTransitionActor: ActorRef): Props =
+    Props(new ProcessInstance[S, E](
       processType,
-      petriNet,
+      compiledRecipe,
       settings,
-      runtime)
+      runtime,
+      delayedTransitionActor)
     )
+
+  private def filterIngredients(ingredients: Map[String, Value], ingredientFilter: Seq[String]) = {
+    val filterAll: Boolean = ingredientFilter.contains("*")
+    ingredients.map {
+      ingredient =>
+        if (filterAll || ingredientFilter.contains(ingredient._1))
+          ingredient._1 -> PrimitiveValue("")
+        else
+          ingredient
+    }
+  }
+
+  def getOutputEventName(interactionTransition: InteractionTransition,
+                         log: DiagnosticLoggingAdapter): String = {
+    def getOutputEventNameWithRetryStrategyFiltered(fireEvent: EventDescriptor, eventsToFire: Seq[EventDescriptor]): String = {
+      val outputEventsNames: Seq[String] = eventsToFire.map(_.name)
+      if (outputEventsNames.size != 2)
+        throw new FatalInteractionException(s"Delayed transitions must have 2 input ingredients if FireEventAfterFailure strategy is used")
+      outputEventsNames.filter(_ != fireEvent.name).head
+    }
+
+    def getFirstOutputEventName(eventsToFire: Seq[EventDescriptor]): String = {
+      val outputEvents = interactionTransition.eventsToFire
+      if (outputEvents.size != 1)
+        throw new FatalInteractionException(s"Delayed transitions can only have 1 input ingredient")
+      outputEvents.head.name
+    }
+
+    interactionTransition.failureStrategy match {
+      case FireEventAfterFailure(event) =>
+        getOutputEventNameWithRetryStrategyFiltered(event, interactionTransition.eventsToFire)
+      case RetryWithIncrementalBackoff(_, _, _, _, Some(event)) =>
+        getOutputEventNameWithRetryStrategyFiltered(event, interactionTransition.eventsToFire)
+      case RetryWithIncrementalBackoff(_, _, _, _, None) =>
+        getFirstOutputEventName(interactionTransition.eventsToFire)
+      case BlockInteraction =>
+        getFirstOutputEventName(interactionTransition.eventsToFire)
+      case _ =>
+        log.error("Delayed transition firing with unrecognised Failure Strategy")
+        getFirstOutputEventName(interactionTransition.eventsToFire)
+    }
+  }
+
+  private val javaDuration = FromValue[java.time.Duration]()
+  private val finiteDuration = FromValue[FiniteDuration]()
+
+  def getWaitTimeInMillis(interactionTransition: InteractionTransition, state: RecipeInstanceState): Long = {
+    val input: immutable.Seq[IngredientInstance] = RecipeRuntime.createInteractionInput(interactionTransition, state)
+    if (input.size != 1) throw new FatalInteractionException(s"Delayed transitions can only have 1 input ingredient")
+    input.head.value match {
+      case javaDuration(d) => d.toMillis
+      case finiteDuration(fd) => fd.toMillis
+      case _ => throw new FatalInteractionException(s"Delayed transition ingredient not of type scala.concurrent.duration.FiniteDuration or java.time.Duration")
+    }
+  }
 }
 
 /**
   * This actor is responsible for maintaining the state of a single petri net instance.
   */
-class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
+class ProcessInstance[S, E](
                                                                processType: String,
-                                                               petriNet: PetriNet[P, T],
+                                                               compiledRecipe: CompiledRecipe,
                                                                settings: Settings,
-                                                               runtime: ProcessInstanceRuntime[P, T, S, E]) extends ProcessInstanceEventSourcing[P, T, S, E](petriNet, settings.encryption, runtime.eventSource) {
+                                                               runtime: ProcessInstanceRuntime[S, E],
+                                                               delayedTransitionActor: ActorRef) extends ProcessInstanceEventSourcing[S, E](compiledRecipe.petriNet, settings.encryption, runtime.eventSource) {
 
   import context.dispatcher
 
@@ -86,22 +154,22 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
 
   override def receiveCommand: Receive = uninitialized
 
-  private def marshallMarking(marking: Marking[Any]): Marking[Id] = marking.asInstanceOf[Marking[P]].marshall
+  private def marshallMarking(marking: Marking[Any]): Marking[Id] = marking.asInstanceOf[Marking[Place]].marshall
 
-  private def mapStateToProtocol(instance: internal.Instance[P, T, S]): protocol.InstanceState = {
+  private def mapStateToProtocol(instance: internal.Instance[S]): protocol.InstanceState = {
     protocol.InstanceState(
       instance.sequenceNr,
       instance.marking.marshall,
       instance.state match {
         case state: RecipeInstanceState =>
-          filterIngredientValues(state, settings.ingredientsFilter)
+          filterIngredientValuesFromState(state)
         case _ => instance.state
       },
       instance.jobs.view.map { case (key, value) => (key, mapJobsToProtocol(value))}.toMap
     )
   }
 
-  private def mapJobsToProtocol(job: internal.Job[P, T, S]): protocol.JobState =
+  private def mapJobsToProtocol(job: internal.Job[S]): protocol.JobState =
     protocol.JobState(job.id, job.transition.getId, job.consume.marshall, job.input, job.failure.map(mapExceptionTateToProtocol))
 
   private def mapExceptionTateToProtocol(exceptionState: internal.ExceptionState): protocol.ExceptionState =
@@ -110,7 +178,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
   private def mapExceptionStrategyToProtocol(strategy: internal.ExceptionStrategy): protocol.ExceptionStrategy = strategy match {
     case internal.ExceptionStrategy.BlockTransition => protocol.ExceptionStrategy.BlockTransition
     case internal.ExceptionStrategy.RetryWithDelay(delay) => protocol.ExceptionStrategy.RetryWithDelay(delay)
-    case internal.ExceptionStrategy.Continue(marking, output) => protocol.ExceptionStrategy.Continue(marking.asInstanceOf[Marking[P]].marshall, output)
+    case internal.ExceptionStrategy.Continue(marking, output) => protocol.ExceptionStrategy.Continue(marking.asInstanceOf[Marking[Place]].marshall, output)
   }
 
   private def stopMe(): Unit = {
@@ -120,7 +188,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
   def uninitialized: Receive = {
     case Initialize(initialMarking, state) =>
 
-      val uninitialized = Instance.uninitialized[P, T, S](petriNet)
+      val uninitialized = Instance.uninitialized[S](petriNet)
       val event = InitializedEvent(initialMarking, state)
 
       // persist the initialized event
@@ -152,7 +220,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       stopMe()
   }
 
-  def waitForDeleteConfirmation(instance: Instance[P, T, S]): Receive = {
+  def waitForDeleteConfirmation(instance: Instance[S]): Receive = {
     case DeleteMessagesSuccess(toSequenceNr) =>
       log.processHistoryDeletionSuccessful(recipeInstanceId, toSequenceNr)
       context.stop(self)
@@ -166,17 +234,25 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       context.stop(context.self)
   }
 
+  private def filterIngredientValuesFromState(state: RecipeInstanceState): RecipeInstanceState = {
+    state.copy(ingredients = filterIngredients(state.ingredients, settings.getIngredientsFilter))
+  }
 
-  def filterIngredientValues(state: RecipeInstanceState, ingredientFilter: Seq[String]): RecipeInstanceState =
-    state.copy(ingredients = state.ingredients.map(ingredient =>
-      if (ingredientFilter.contains(ingredient._1))
-        ingredient._1 -> PrimitiveValue("")
-      else
-        ingredient))
+  private def filterIngredientValuesFromEventInstance(eventInstance: Any): Any = {
+    if(eventInstance == null) {
+      eventInstance
+    } else eventInstance match {
+      case casted: EventInstance =>
+        if (casted.providedIngredients != null && casted.providedIngredients.nonEmpty)
+          casted.copy(providedIngredients = filterIngredients(casted.providedIngredients, settings.providedIngredientFilter))
+        else
+          casted
+      case _ => eventInstance
+    }
+  }
 
-  def running(instance: Instance[P, T, S],
+  def running(instance: Instance[S],
               scheduledRetries: Map[Long, Cancellable]): Receive = {
-
     case Stop(deleteHistory) =>
       scheduledRetries.values.foreach(_.cancel())
       if (deleteHistory) {
@@ -197,45 +273,122 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
         log.warning(s"Process $persistenceId has been stopped by idle timeout")
         stopMe()
       } else {
-        log.warning("Receive timeout happened but jobs are still active: will wait for another receive timeout")
+        log.debug("Receive timeout happened but jobs are still active: will wait for another receive timeout")
       }
 
     case GetState =>
-      val instanceState: InstanceState = mapStateToProtocol(instance)
-      instanceState.state match {
+      sender() ! mapStateToProtocol(instance)
+
+    case GetIngredient(name) =>
+      instance.state match {
         case state: RecipeInstanceState =>
-          sender() ! instanceState.copy(state = filterIngredientValues(state, settings.ingredientsFilter))
+          state.ingredients.get(name) match {
+            case Some(value) => sender() ! IngredientFound(value)
+            case None => sender() ! IngredientNotFound
+          }
         case _ =>
-          sender() ! instanceState
+          sender() ! IngredientNotFound
       }
 
+    case AddMetaData(metaData: Map[String, String]) =>
+      persistEvent(instance, ProcessInstanceEventSourcing.MetaDataAdded(metaData))(
+        eventSource.apply(instance)
+          .andThen {
+            case (instance) =>
+              sender() ! ProcessInstanceProtocol.MetaDataAdded
+              context become running(instance, scheduledRetries)})
 
     case event@TransitionFiredEvent(jobId, transitionId, correlationId, timeStarted, timeCompleted, consumed, produced, output) =>
-
       val transition = instance.petriNet.transitions.getById(transitionId)
-
-      log.transitionFired(recipeInstanceId, transition.asInstanceOf[Transition], jobId, timeStarted, timeCompleted)
-
+      log.transitionFired(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition, jobId, timeStarted, timeCompleted)
       // persist the success event
       persistEvent(instance, event)(
         eventSource.apply(instance)
           .andThen(step)
           .andThen {
             case (updatedInstance, newJobs) =>
-
               // the sender is notified of the transition having fired
-              sender() ! TransitionFired(jobId, transitionId, correlationId, consumed, produced, newJobs.map(_.id), output)
+              sender() ! TransitionFired(jobId, transitionId, correlationId, consumed, produced, newJobs.map(_.id), filterIngredientValuesFromEventInstance(output))
 
               // the job is removed from the state since it completed
               context become running(updatedInstance, scheduledRetries - jobId)
           }
       )
 
+    case event@TransitionFailedWithOutputEvent(jobId, transitionId, correlationId, timeStarted, timeCompleted, consumed, produced, output) =>
+      val transition = instance.petriNet.transitions.getById(transitionId)
+      log.transitionFired(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition, jobId, timeStarted, timeCompleted)
+      // persist the success event
+      persistEvent(instance, event)(
+        eventSource.apply(instance)
+          .andThen(step)
+          .andThen {
+            case (updatedInstance, newJobs) =>
+              // the sender is notified of the transition having fired
+              sender() ! TransitionFired(jobId, transitionId, correlationId, consumed, produced, newJobs.map(_.id), filterIngredientValuesFromEventInstance(output))
+
+              // the job is removed from the state since it completed
+              context become running(updatedInstance, scheduledRetries - jobId)
+          }
+      )
+
+    case ProcessInstanceProtocol.TransitionDelayed(jobId, transitionId, consumed) =>
+      val internalEvent = ProcessInstanceEventSourcing.TransitionDelayed(jobId, transitionId, consumed)
+      // persist the event
+      persistEvent(instance, internalEvent)(
+        eventSource.apply(instance)
+          .andThen { case updatedInstance: Instance[S] =>
+            if (updatedInstance.activeJobs.isEmpty)
+                startIdleStop(updatedInstance.sequenceNr)
+              context become running(updatedInstance, scheduledRetries - jobId)
+          }
+      )
+
+    case ProcessInstanceProtocol.DelayedTransitionFired(jobId, transitionId, eventToFire) =>
+      if(instance.delayedTransitionIds.contains(transitionId) && instance.delayedTransitionIds(transitionId) > 0) {
+        val transition = petriNet.transitions.getById(transitionId, "transition in petrinet")
+        val out: EventInstance = EventInstance.apply(eventToFire)
+
+        //TODO create a better way to get the outgoing places (not by directly calling the RecipeRuntime)
+        val produced = RecipeRuntime.createProducedMarking(
+          petriNet.outMarking(transition).asInstanceOf[MultiSet[Place]],
+          Some(out)
+        ).marshall
+        val internalEvent = ProcessInstanceEventSourcing.DelayedTransitionFired(jobId, transitionId, produced, out)
+
+        val timestamp = System.currentTimeMillis()
+        log.transitionFired(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition.asInstanceOf[Transition], jobId, timestamp, timestamp)
+
+        LogAndSendEvent.eventFired(EventFired(timestamp, compiledRecipe.name, compiledRecipe.recipeId, recipeInstanceId,  out.name), context.system.eventStream)
+
+        persistEvent(instance, internalEvent)(
+          eventSource.apply(instance)
+            .andThen(step)
+            .andThen {
+              case (updatedInstance, newJobs) =>
+                // the sender is notified of the transition having fired
+                sender() ! TransitionFired(jobId, transitionId, None, null, produced, newJobs.map(_.id), filterIngredientValuesFromEventInstance(out))
+                // The DelayedTransition is acknowledged so that it is removed
+                delayedTransitionActor ! FireDelayedTransitionAck(recipeInstanceId, jobId)
+
+                // the job is removed from the state since it completed
+                context become running(updatedInstance, scheduledRetries - jobId)
+            }
+        )
+      } else {
+        log.warning("Ignoring DelayedTransitionFired since there is no open asyncConsumedMarkings")
+        //The DelayedTransition is acknowledged so that it is removed from the DelayedTransitionManager.
+        delayedTransitionActor ! FireDelayedTransitionAck(recipeInstanceId, jobId)
+        instance.copy[S](
+          sequenceNr = instance.sequenceNr + 1
+        )
+      }
+
     case event@TransitionFailedEvent(jobId, transitionId, correlationId, timeStarted, timeFailed, consume, input, reason, strategy) =>
 
       val transition = instance.petriNet.transitions.getById(transitionId)
 
-      log.transitionFailed(recipeInstanceId, transition.asInstanceOf[Transition], jobId, timeStarted, timeFailed, reason)
+      log.transitionFailed(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition.asInstanceOf[Transition], jobId, timeStarted, timeFailed, reason)
 
       strategy match {
         case RetryWithDelay(delay) =>
@@ -263,14 +416,14 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
           )
 
         case Continue(produced, out) =>
-          val transitionFiredEvent = TransitionFiredEvent(
+          val TransitionFailedWithOutput = TransitionFailedWithOutputEvent(
             jobId, transitionId, correlationId, timeStarted, timeFailed, consume, marshallMarking(produced), out)
 
-          persistEvent(instance, transitionFiredEvent)(
+          persistEvent(instance, TransitionFailedWithOutput)(
             eventSource.apply(instance)
               .andThen(step)
               .andThen { case (updatedInstance, newJobs) =>
-                sender() ! TransitionFired(jobId, transitionId, correlationId, consume, marshallMarking(produced), newJobs.map(_.id), out)
+                sender() ! TransitionFired(jobId, transitionId, correlationId, consume, marshallMarking(produced), newJobs.map(_.id), filterIngredientValuesFromEventInstance(out))
                 context become running(updatedInstance, scheduledRetries - jobId)
               })
 
@@ -303,7 +456,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
               context become running(updatedInstance, scheduledRetries)
             case (_, Left(reason)) =>
 
-              log.fireTransitionRejected(recipeInstanceId, transition.asInstanceOf[Transition], reason)
+              log.fireTransitionRejected(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition.asInstanceOf[Transition], reason)
 
               sender() ! FireSensoryEventRejection.FiringLimitMet(recipeInstanceId)
           }
@@ -321,8 +474,8 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
           val now = System.currentTimeMillis()
 
           // the job is updated so it cannot be retried again
-          val updatedJob: Job[P, T, S] = job.copy(failure = Some(blocked.copy(failureStrategy = internal.ExceptionStrategy.RetryWithDelay(timeout))))
-          val updatedInstance: Instance[P, T, S] = instance.copy(jobs = instance.jobs + (jobId -> updatedJob))
+          val updatedJob: Job[S] = job.copy(failure = Some(blocked.copy(failureStrategy = internal.ExceptionStrategy.RetryWithDelay(timeout))))
+          val updatedInstance: Instance[S] = instance.copy(jobs = instance.jobs + (jobId -> updatedJob))
           val originalSender = sender()
 
           // execute the job immediately if there is no timeout
@@ -350,7 +503,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
         // resolving is only allowed if the interaction is blocked by a failure
         case Some(internal.Job(_, correlationId, _, transition, consumed, _, Some(internal.ExceptionState(_, _, _, internal.ExceptionStrategy.BlockTransition)))) =>
 
-          val producedMarking: Marking[P] = produce.unmarshall[P](petriNet.places)
+          val producedMarking: Marking[Place] = produce.unmarshall(petriNet.places)
 
           // the provided marking must be valid according to the petri net
           if (petriNet.outMarking(transition) != producedMarking.multiplicities)
@@ -396,46 +549,100 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       }
   }
 
+  private def startIdleStop(sequenceNr: Long): Unit = {
+    settings.idleTTL.foreach { ttl =>
+      system.scheduler.scheduleOnce(ttl, context.self, IdleStop(sequenceNr))
+    }
+  }
+
   /**
     * This functions 'steps' the execution of the instance.
     *
     * It finds which transitions are enabled and executes those.
     */
-  def step(instance: Instance[P, T, S]): (Instance[P, T, S], Set[Job[P, T, S]]) = {
-
+  def step(instance: Instance[S]): (Instance[S], Set[Job[S]]) = {
     runtime.allEnabledJobs.run(instance).value match {
       case (updatedInstance, jobs) =>
-
         if (jobs.isEmpty && updatedInstance.activeJobs.isEmpty)
-          settings.idleTTL.foreach { ttl =>
-            system.scheduler.scheduleOnce(ttl, context.self, IdleStop(updatedInstance.sequenceNr))
-          }
-
+          startIdleStop(updatedInstance.sequenceNr)
         jobs.foreach(job => executeJob(job, sender()))
         (updatedInstance, jobs)
     }
   }
 
+  def executeJob(job: Job[S], originalSender: ActorRef): Unit = {
+    log.fireTransition(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
+    job.transition match {
+      case eventTransition: EventTransition =>
+        BakerLogging.default.firingEvent(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
+        executeJobViaExecutor(job, originalSender)
+      case i: InteractionTransition if isDelayedInteraction(i) =>
+        startDelayedTransition(i, job, originalSender)
+      case i: InteractionTransition if isCheckpointEventInteraction(i) =>
+        val event: TransitionFiredEvent = jobToFinishedInteraction(job, i.eventsToFire.head.name)
 
-  def executeJob(job: Job[P, T, S], originalSender: ActorRef): Unit = {
+        val currentTime = System.currentTimeMillis()
+        LogAndSendEvent.eventFired(EventFired(currentTime, compiledRecipe.name, compiledRecipe.recipeId, recipeInstanceId,  i.eventsToFire.head.name), context.system.eventStream)
 
-    log.firingInteraction(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
+        self.tell(event, originalSender)
+      case _ => executeJobViaExecutor(job, originalSender)
+    }
+  }
 
+  def executeJobViaExecutor(job: Job[S], originalSender: ActorRef): Unit = {
     // context.self can be potentially throw NullPointerException in non graceful shutdown situations
     Try(context.self).foreach { self =>
-
       // executes the IO task on the ExecutionContext
       val io = IO.shift(settings.executionContext) *> executor(job)
-
       // pipes the result back this actor
       io.unsafeRunAsync {
-        case Right(event) => self.tell(event, originalSender)
+        case Right(event: TransitionEvent) => self.tell(event, originalSender)
         case Left(exception) => self.tell(Status.Failure(exception), originalSender)
       }
     }
   }
 
-  def scheduleFailedJobsForRetry(instance: Instance[P, T, S]): Map[Long, Cancellable] = {
+  def jobToFinishedInteraction(job: Job[S], outputEventName: String): TransitionFiredEvent = {
+    val startTime = System.currentTimeMillis()
+    val outputEvent: EventInstance = EventInstance.apply(outputEventName)
+    com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.TransitionFiredEvent(
+      job.id,
+      job.transition.getId,
+      job.correlationId,
+      startTime,
+      System.currentTimeMillis(),
+      job.consume.marshall,
+
+      RecipeRuntime.createProducedMarking(
+        petriNet.outMarking(job.transition).asInstanceOf[MultiSet[Place]],
+        Some(outputEvent)).marshall,
+      outputEvent
+    )
+  }
+
+  //TODO rewrite if statement,
+  // This is a very naive implementation, the interface of the Interaction is not validated.
+  // This only recognises the TimerInteractions as delayed interaction
+  private def isDelayedInteraction(interactionTransition: InteractionTransition): Boolean = {
+    interactionTransition.originalInteractionName == "TimerInteraction"
+  }
+
+  private def isCheckpointEventInteraction(interactionTransition: InteractionTransition): Boolean = {
+    interactionTransition.interactionName.startsWith(checkpointEventInteractionPrefix)
+  }
+
+  def startDelayedTransition(interactionTransition: InteractionTransition, job: Job[S], originalSender: ActorRef): Unit = {
+    delayedTransitionActor ! ScheduleDelayedTransition(
+      recipeInstanceId,
+      getWaitTimeInMillis(interactionTransition, job.processState.asInstanceOf[RecipeInstanceState]),
+      job.id,
+      job.transition.getId,
+      job.consume.marshall,
+      getOutputEventName(interactionTransition, log),
+      originalSender)
+  }
+
+  def scheduleFailedJobsForRetry(instance: Instance[S]): Map[Long, Cancellable] = {
     instance.jobs.values.foldLeft(Map.empty[Long, Cancellable]) {
       case (map, j@Job(_, _, _, _, _, _, Some(internal.ExceptionState(failureTime, _, _, RetryWithDelay(delay))))) =>
         val newDelay = failureTime + delay - System.currentTimeMillis()
@@ -453,7 +660,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     }
   }
 
-  override def onRecoveryCompleted(instance: Instance[P, T, S]) = {
+  override def onRecoveryCompleted(instance: Instance[S]) = {
     val scheduledRetries = scheduleFailedJobsForRetry(instance)
     val (updatedInstance, jobs) = step(instance)
     context become running(updatedInstance, scheduledRetries)

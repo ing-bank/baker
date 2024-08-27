@@ -60,7 +60,8 @@ keytool -gencert -v \
   -ext KeyUsage:critical="digitalSignature,keyEncipherment" \
   -ext EKU="serverAuth" \
   -ext SAN="dns:localhost,ip:127.0.0.1,ip:::1" \
-  -rfc
+  -rfc \
+  -validity 9999
 
 # Tell interaction.ing-bank.github.io.jks it can trust interactionca as a signer.
 keytool -import -v \
@@ -125,7 +126,8 @@ keytool -gencert -v \
   -infile client.interaction.ing-bank.github.io.csr \
   -outfile client.interaction.ing-bank.github.io.crt \
   -ext EKU="clientAuth" \
-  -rfc
+  -rfc \
+  -validity 9999
 
 # Export the interactionclientca certificate from the keystore.  This goes on the http server
 # and is presented in the CertificateRequest.

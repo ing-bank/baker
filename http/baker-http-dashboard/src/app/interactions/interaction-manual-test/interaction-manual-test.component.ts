@@ -5,15 +5,15 @@ import {
     OnInit,
 } from "@angular/core";
 import {
-    ExecuteInteractionInformation,
-    Interaction, NameAndValue,
-    ServiceError
+  ServiceInformation,
+  Interaction, NameAndValue,
+  ServiceError, ExecuteInteractionResponse
 } from "../../bakery.api";
 import {BakerConversionService} from "../../baker-conversion.service";
 import {BakeryService} from "../../bakery.service";
 
 type SuccessOrServiceError = {
-    "serviceResponse": ExecuteInteractionInformation | null,
+    "serviceResponse": ServiceInformation<ExecuteInteractionResponse> | null,
     "serviceError" : ServiceError | null,
     "requestSentAt" : Date,
     "durationInMilliseconds": number,
@@ -88,7 +88,7 @@ export class InteractionManualTestComponent implements OnInit, OnChanges {
         return `${this.addLeadingZeros(date.getHours(), 2)}:${this.addLeadingZeros(date.getMinutes(), 2)}:${this.addLeadingZeros(date.getSeconds(), 2)}.${this.addLeadingZeros(date.getMilliseconds(), 3)}`;
     }
 
-    toSuccessOrServiceError(response: ExecuteInteractionInformation | ServiceError) : SuccessOrServiceError {
+    toSuccessOrServiceError(response: ServiceInformation<ExecuteInteractionResponse> | ServiceError) : SuccessOrServiceError {
         if (Object.keys(response).includes("error")) {
             return {
                 "serviceResponse": null,
@@ -98,7 +98,7 @@ export class InteractionManualTestComponent implements OnInit, OnChanges {
             };
         }
         return {
-            "serviceResponse": response as ExecuteInteractionInformation,
+            "serviceResponse": response as ServiceInformation<ExecuteInteractionResponse>,
             "serviceError": null,
             "requestSentAt": response.requestSentAt,
             "durationInMilliseconds": response.durationInMilliseconds,

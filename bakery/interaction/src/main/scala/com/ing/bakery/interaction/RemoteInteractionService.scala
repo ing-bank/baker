@@ -1,6 +1,7 @@
 package com.ing.bakery.interaction
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
+import com.ing.baker.runtime.model.BakerLogging
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 import com.ing.baker.runtime.serialization.{InteractionExecution => I}
@@ -34,7 +35,8 @@ object RemoteInteractionService {
                interactionPerTypeMetricsEnabled: Boolean = true,
                metricsPort: Int = 9096,
                metricsEnabled: Boolean = false,
-               apiUrlPrefix: String = "/api/bakery/interactions")(implicit timer: Timer[IO], cs: ContextShift[IO], executionContext: ExecutionContext): Resource[IO, Server[IO]] = {
+               apiUrlPrefix: String = "/api/bakery/interactions",
+               registry: Option[CollectorRegistry] = None)(implicit timer: Timer[IO], cs: ContextShift[IO], executionContext: ExecutionContext): Resource[IO, Server[IO]] = {
 
     val idToNameMap = interactions.map(i => URLEncoder.encode(i.shaBase64, "UTF-8").take(8) -> i.name).toMap
 
@@ -51,8 +53,10 @@ object RemoteInteractionService {
       (if (p.length == 4) Some(p(2)) else None).map(v => idToNameMap.getOrElse(v.take(8), "unknown"))
     } else None
 
+    val collectorRegistry = registry.getOrElse(CollectorRegistry.defaultRegistry)
+
     for {
-      metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_interactions")
+      metrics <- Prometheus.metricsOps[IO](collectorRegistry, "http_interactions")
       app = BlazeServerBuilder[IO](ExecutionContext.global)
         .bindSocketAddress(address)
         .withHttpApp(
@@ -67,9 +71,10 @@ object RemoteInteractionService {
         case Some((sslConfig, sslParams)) => app.withSslContextAndParameters(sslConfig, sslParams)
         case None => app
       }).resource
-      _ <- if (metricsEnabled)
+      _ <- if (metricsEnabled) {
         MetricService
-          .resource(InetSocketAddress.createUnresolved("0.0.0.0", metricsPort), ExecutionContext.global) (cs, timer)
+          .resourceServer(InetSocketAddress.createUnresolved("0.0.0.0", metricsPort), collectorRegistry, ExecutionContext.global)(cs, timer)
+      }
       else Resource.eval(IO.unit)
 
     } yield server
@@ -84,6 +89,8 @@ abstract class InteractionExecutor extends LazyLogging {
   implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
   implicit val timer: Timer[IO] = IO.timer(executionContext)
 
+  val bakerLogging: BakerLogging = BakerLogging(logger)
+
   protected val CurrentInteractions: I.Interactions =
     I.Interactions(System.currentTimeMillis,
       interactions.map(interaction =>
@@ -96,28 +103,29 @@ abstract class InteractionExecutor extends LazyLogging {
       message = Option(message).getOrElse("NullPointerException"))
     ))))
 
-
   protected def execute(request: I.ExecutionRequest): IO[I.ExecutionResult] = {
-    logger.debug(s"Trying to execute interaction: ${request.id}")
+    val metadata = request.metaData.getOrElse(Map())
+    bakerLogging.withMDC(metadata, _.debug(s"Trying to execute interaction: ${request.id}"))
     interactions.find(_.shaBase64 == request.id) match {
       case Some(interaction) =>
-        logger.info(s"Executing interaction: ${interaction.name}")
-        IO.fromFuture(IO(interaction.run(request.ingredients))).attempt.flatMap {
-          case Right(value) => {
-            logger.info(s"Interaction ${interaction.name} executed correctly")
+        bakerLogging.withMDC(metadata, _.info(s"Executing interaction: ${interaction.name}"))
+        IO.fromFuture(IO(interaction.execute(request.ingredients, request.metaData.getOrElse(Map())))).attempt.flatMap {
+          case Right(value) =>
+            bakerLogging.withMDC(metadata, _.info(s"Interaction ${interaction.name} executed correctly"))
             IO(I.ExecutionResult(Right(I.Success(value))))
-          }
           case Left(e) =>
             val rootCause = e match {
               case _: InvocationTargetException if Option(e.getCause).isDefined => e.getCause
               case _ => e
             }
-            logger.error(s"Interaction ${interaction.name} failed with an exception: ${rootCause.getMessage}", rootCause)
+            bakerLogging.withMDC(metadata, _.error(s"Interaction ${interaction.name} failed with an exception: ${rootCause.getMessage}", rootCause))
             executionFailure(interaction.name, rootCause.getMessage)
+
         }
       case None =>
-        logger.error(s"No implementation found for execution for id: ${request.id}")
+        bakerLogging.withMDC(metadata, _.error(s"No implementation found for execution for id: ${request.id}"))
         IO(I.ExecutionResult(Left(I.Failure(I.NoInstanceFound))))
+
     }
   }
 }

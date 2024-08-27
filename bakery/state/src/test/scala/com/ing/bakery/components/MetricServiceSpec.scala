@@ -3,6 +3,7 @@ package com.ing.bakery.components
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.ConfigFactory
+import io.prometheus.client.CollectorRegistry
 import org.http4s.Status.Ok
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.scalatest.funsuite.AnyFunSuite
@@ -24,8 +25,9 @@ class MetricServiceSpec extends AnyFunSuite with Matchers {
     val metricsPort = bakery.getInt("metrics-port")
     val mainResource  =
       for {
-        metricsService <- MetricService.resource(
+        metricsService <- MetricService.resourceServer(
           InetSocketAddress.createUnresolved("0.0.0.0", metricsPort),
+          CollectorRegistry.defaultRegistry,
           executionContext
         )
         httpClient <- BlazeClientBuilder[IO](executionContext).resource

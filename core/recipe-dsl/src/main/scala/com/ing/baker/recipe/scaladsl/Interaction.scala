@@ -30,7 +30,9 @@ case class Interaction private(override val name: String,
                                override val maximumInteractionCount: Option[Int] = None,
                                override val failureStrategy: Option[InteractionFailureStrategy] = None,
                                override val eventOutputTransformers: Map[common.Event, common.EventOutputTransformer] = Map.empty,
-                               oldName: Option[String] = None)
+                               override val isReprovider: Boolean = false,
+                               oldName: Option[String] = None,
+                              )
   extends common.InteractionDescriptor {
 
   override val originalName: String = oldName.getOrElse(name)
@@ -72,4 +74,15 @@ case class Interaction private(override val name: String,
 
   def withEventOutputTransformer(event: common.Event, newEventName: String, ingredientRenames: Map[String, String]): Interaction =
     copy(eventOutputTransformers = eventOutputTransformers + (event -> EventOutputTransformer(newEventName, ingredientRenames)))
+
+  /**
+    * When this interaction is executed it will fill its own interaction places.
+    * This is usefull if you want to execute this interaction multiple times without providing the ingredient again.
+    * To use this the InteractionDescriptor requires a prerequisite event.
+    *
+    * @param isReprovider
+    * @return
+    */
+  def isReprovider(isReprovider: Boolean): Interaction =
+    this.copy(isReprovider = isReprovider)
 }
