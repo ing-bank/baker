@@ -1,5 +1,7 @@
 package com.ing.baker.recipe.scaladsl
 
+import com.ing.baker.recipe.scaladsl.Examples.open_account.{assignAccount, getAccount, individualInformationSubmitted, registerIndividual, termsAndConditionsAccepted}
+
 import scala.collection.immutable.Seq
 
 object Examples {
@@ -214,6 +216,38 @@ object Examples {
         )
         .withCheckpointEvent(
           successResult
+        )
+  }
+
+  object subRecipeExample {
+
+    val subRecipe = Recipe("SubRecipe")
+
+    //Ingredients
+    val tomato = Ingredient[String]("tomato")
+    val cheese = Ingredient[String]("cheese")
+
+    //Events
+    val ingredientsProvided = Event("IngredientsProvided", tomato, cheese)
+    val bakePizzaSuccessful = Event("CreateCustomerSuccessful")
+
+    //Interactions
+    val bakePizza = Interaction(
+      name = "BakePizza",
+      inputIngredients = Seq(tomato, cheese),
+      output = Seq(bakePizzaSuccessful))
+
+    //Recipe
+    val pizzaRecipe: Recipe =
+      Recipe("checkpointEventEvent")
+        .withInteractions(
+          bakePizza
+        )
+        .withSensoryEvents(
+          ingredientsProvided,
+        )
+        .withSubRecipe(
+          subRecipe
         )
   }
 }

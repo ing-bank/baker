@@ -54,9 +54,9 @@ object RecipeVisualStyle extends LazyLogging {
           readAttributes("common")
         )),
       ingredientAttributes =
-        DotAttr("shape", "circle") +: readAttributes("ingredient"),
+        DotAttr("shape", "ellipse") +: readAttributes("ingredient"),
       providedIngredientAttributes =
-        DotAttr("shape", "circle") +: readAttributes("ingredient", "fired"),
+        DotAttr("shape", "ellipse") +: readAttributes("ingredient", "fired"),
       eventAttributes =
         DotAttr("shape", "diamond") +: readAttributes("event"),
       sensoryEventAttributes =
@@ -88,23 +88,34 @@ case class RecipeVisualStyle(
     )
   ),
 
-  ingredientAttributes: List[DotAttr] = List(
-    DotAttr("shape", "circle"),
+  subRecipe: List[DotAttr] = List(
+    DotAttr("shape", "rect"),
     DotAttr("style", "filled"),
-    DotAttr("color", "\"#FF6200\"")
+    DotAttr("color", "\"#000000\""),
+    DotAttr("penwidth", 2),
+    DotAttr("margin", 0.5D)
+  ),
+
+  ingredientAttributes: List[DotAttr] = List(
+    DotAttr("shape", "ellipse"),
+    DotAttr("style", "filled"),
+    DotAttr("color", "\"#FF6200\""),
+    DotAttr("margin", 0.3D)
   ),
 
   providedIngredientAttributes: List[DotAttr] = List(
-    DotAttr("shape", "circle"),
+    DotAttr("shape", "ellipse"),
     DotAttr("style", "filled"),
-    DotAttr("color", "\"#3b823a\"")
+    DotAttr("color", "\"#3b823a\""),
+    DotAttr("margin", 0.3D)
   ),
 
   missingIngredientAttributes: List[DotAttr] = List(
-    DotAttr("shape", "circle"),
+    DotAttr("shape", "ellipse"),
     DotAttr("style", "filled"),
     DotAttr("color", "\"#EE0000\""),
-    DotAttr("penwidth", "5.0")
+    DotAttr("penwidth", "5.0"),
+    DotAttr("margin", 0.3D)
   ),
 
   eventAttributes: List[DotAttr] = List(

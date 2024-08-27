@@ -174,7 +174,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
           val currentTime = System.currentTimeMillis()
 
           LogAndSendEvent.interactionFailed(InteractionFailed(currentTime, currentTime - startTime, recipe.name, recipe.recipeId,
-            job.processState.recipeInstanceId, job.transition.label, failureCount, throwable, failureStrategyOutcome), eventStream)
+            job.processState.recipeInstanceId, job.transition.label, failureCount, throwable.toString, failureStrategyOutcome), throwable, eventStream)
 
           // translates the recipe failure strategy to a petri net failure strategy
           failureStrategyOutcome match {
@@ -195,7 +195,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
       case eventTransition: EventTransition =>
         if(input != null) {
           // Send EventFired for SensoryEvents
-          LogAndSendEvent.eventFired(EventFired(System.currentTimeMillis(), recipe.name, recipe.recipeId, state.recipeInstanceId,  input.asInstanceOf[EventInstance]), eventStream)
+          LogAndSendEvent.eventFired(EventFired(System.currentTimeMillis(), recipe.name, recipe.recipeId, state.recipeInstanceId,  input.asInstanceOf[EventInstance].name), eventStream)
         }
         IO.pure(petriNet.outMarking(eventTransition).toMarking, input.asInstanceOf[EventInstance])
       case t => IO.pure(petriNet.outMarking(t).toMarking, null.asInstanceOf[EventInstance])
@@ -229,14 +229,14 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
       val timeCompleted = System.currentTimeMillis()
 
       // publish the fact that the interaction completed
-      LogAndSendEvent.interactionCompleted(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName, outputEvent), eventStream)
+      LogAndSendEvent.interactionCompleted(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName, outputEvent.map(_.name)), eventStream)
 
       // create the output marking for the petri net
       val outputMarking: Marking[Place] = RecipeRuntime.createProducedMarking(outAdjacent, outputEvent)
 
       outputEvent.foreach { event: EventInstance =>
         // Send EventFired for Interaction output events
-        LogAndSendEvent.eventFired(EventFired(timeCompleted, recipe.name, recipe.recipeId, processState.recipeInstanceId, event), eventStream)
+        LogAndSendEvent.eventFired(EventFired(timeCompleted, recipe.name, recipe.recipeId, processState.recipeInstanceId, event.name), eventStream)
       }
 
       val reproviderMarkings: Marking[Place] = if (interaction.isReprovider) {

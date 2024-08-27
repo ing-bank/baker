@@ -55,7 +55,7 @@ object BakerEventMapping {
         recipeId = Some(a.recipeId),
         recipeInstanceId = Some(a.recipeInstanceId),
         correlationId = a.correlationId,
-        event = Some(ctxToProto(a.event))
+        eventName = Some(a.eventName)
       )
 
     override def fromProto(message: protobuf.EventReceivedBakerEvent): Try[EventReceived] =
@@ -65,15 +65,14 @@ object BakerEventMapping {
         recipeId <- versioned(message.recipeId, "recipeId")
         recipeInstanceId <- versioned(message.recipeInstanceId, "recipeInstanceId")
         correlationId = message.correlationId
-        eventProto <- versioned(message.event, "event")
-        event <- ctxFromProto(eventProto)
+        eventName <- versioned(message.eventName, "eventName")
       } yield EventReceived(
         timeStamp = timeStamp,
         recipeName = recipeName,
         recipeId = recipeId,
         recipeInstanceId = recipeInstanceId,
         correlationId = correlationId,
-        event = event
+        eventName = eventName
       )
   }
 
@@ -86,7 +85,7 @@ object BakerEventMapping {
         timeStamp = Some(a.timeStamp),
         recipeInstanceId = Some(a.recipeInstanceId),
         correlationId = a.correlationId,
-        event = Some(ctxToProto(a.event)),
+        eventName = Some(a.eventName),
         reason = Some(a.reason match {
           case RejectReason.NoSuchProcess => protobuf.RejectReason.NO_SUCH_PROCESS_REASON
           case RejectReason.ProcessDeleted => protobuf.RejectReason.PROCESS_DELETED_REASON
@@ -102,8 +101,7 @@ object BakerEventMapping {
         timeStamp <- versioned(message.timeStamp, "timeStamp")
         recipeInstanceId <- versioned(message.recipeInstanceId, "recipeInstanceId")
         correlationId = message.correlationId
-        eventProto <- versioned(message.event, "event")
-        event <- ctxFromProto(eventProto)
+        eventName <- versioned(message.eventName, "eventName")
         reason0 <- versioned(message.reason, "reason")
         reason <- reason0 match {
           case protobuf.RejectReason.NO_SUCH_PROCESS_REASON => Success(RejectReason.NoSuchProcess)
@@ -118,7 +116,7 @@ object BakerEventMapping {
         timeStamp = timeStamp,
         recipeInstanceId = recipeInstanceId,
         correlationId = correlationId,
-        event = event,
+        eventName = eventName,
         reason = reason
       )
   }
@@ -133,7 +131,7 @@ object BakerEventMapping {
         recipeName = Some(a.recipeName),
         recipeId = Some(a.recipeId),
         recipeInstanceId = Some(a.recipeInstanceId),
-        event = Some(ctxToProto(a.event))
+        eventName = Some(a.eventName)
       )
 
     override def fromProto(message: protobuf.EventFiredBakerEvent): Try[EventFired] =
@@ -142,14 +140,13 @@ object BakerEventMapping {
         recipeName <- versioned(message.recipeName, "recipeName")
         recipeId <- versioned(message.recipeId, "recipeId")
         recipeInstanceId <- versioned(message.recipeInstanceId, "recipeInstanceId")
-        eventProto <- versioned(message.event, "event")
-        event <- ctxFromProto(eventProto)
+        eventName <- versioned(message.eventName, "eventName")
       } yield EventFired(
         timeStamp = timeStamp,
         recipeName = recipeName,
         recipeId = recipeId,
         recipeInstanceId = recipeInstanceId,
-        event = event
+        eventName = eventName
       )
   }
 
@@ -166,7 +163,6 @@ object BakerEventMapping {
         recipeInstanceId = Some(a.recipeInstanceId),
         interactionName = Some(a.interactionName),
         failureCount = Some(a.failureCount),
-        throwable = Some(a.throwable.getMessage + "\n\n" + a.throwable.getStackTrace.toString),
         exceptionStrategyOutcome = Some(a.exceptionStrategyOutcome match {
           case ExceptionStrategyOutcome.BlockTransition => protobuf.ExceptionStrategyOutcome(eventName = None, delay = None)
           case ExceptionStrategyOutcome.Continue(eventName) => protobuf.ExceptionStrategyOutcome(eventName = Some(eventName), delay = None)
@@ -183,7 +179,7 @@ object BakerEventMapping {
         recipeInstanceId <- versioned(message.recipeInstanceId, "recipeInstanceId")
         interactionName <- versioned(message.interactionName, "interactionName")
         failureCount <- versioned(message.failureCount, "failureCount")
-        throwable <- versioned(message.throwable, "throwable")
+        errorMessage <- versioned(message.throwable, "throwable")
         exceptionStrategyOutcome <- versioned(message.exceptionStrategyOutcome, "exceptionStrategyOutcome")
       } yield InteractionFailed(
         timeStamp = timeStamp,
@@ -193,7 +189,7 @@ object BakerEventMapping {
         recipeInstanceId = recipeInstanceId,
         interactionName = interactionName,
         failureCount = failureCount,
-        throwable = new RuntimeException(throwable),
+        errorMessage = errorMessage,
         exceptionStrategyOutcome = exceptionStrategyOutcome match {
           case protobuf.ExceptionStrategyOutcome(Some(eventName), None) => ExceptionStrategyOutcome.Continue(eventName)
           case protobuf.ExceptionStrategyOutcome(None, Some(delay)) => ExceptionStrategyOutcome.RetryWithDelay(delay)
@@ -243,7 +239,7 @@ object BakerEventMapping {
         recipeId = Some(a.recipeId),
         recipeInstanceId = Some(a.recipeInstanceId),
         interactionName = Some(a.interactionName),
-        event = a.event.map(ctxToProto(_))
+        eventName = a.eventName
       )
 
     override def fromProto(message: protobuf.InteractionCompletedBakerEvent): Try[InteractionCompleted] =
@@ -254,7 +250,7 @@ object BakerEventMapping {
         recipeId <- versioned(message.recipeId, "recipeId")
         recipeInstanceId <- versioned(message.recipeInstanceId, "recipeInstanceId")
         interactionName <- versioned(message.interactionName, "interactionName")
-        event <- message.event.traverse(ctxFromProto(_))
+        eventName <- versioned(message.eventName, "eventName")
       } yield InteractionCompleted(
         timeStamp = timeStamp,
         duration = duration,
@@ -262,7 +258,7 @@ object BakerEventMapping {
         recipeId = recipeId,
         recipeInstanceId = recipeInstanceId,
         interactionName = interactionName,
-        event = event
+        eventName = Some(eventName)
       )
   }
 

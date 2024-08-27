@@ -5,7 +5,7 @@ import com.ing.baker.il.CompiledRecipe.{OldRecipeIdVariant, Scala212CompatibleJa
 import com.ing.baker.il.RecipeValidations.postCompileValidations
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
-import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings, checkpointEventInteractionPrefix}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings, checkpointEventInteractionPrefix, sieveInteractionPrefix, subRecipePrefix}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common._
 import com.ing.baker.recipe.{javadsl, kotlindsl}
@@ -14,7 +14,6 @@ import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
 import scala.annotation.nowarn
-import scala.collection.immutable.Seq
 import scala.language.postfixOps
 
 object RecipeCompiler {
@@ -201,33 +200,62 @@ object RecipeCompiler {
         requiredEvents = e.requiredEvents,
         requiredOneOfEvents = e.requiredOneOfEvents)
 
+    def convertSieveToInteraction(s: Sieve) =
+      Interaction(
+        name = s"${sieveInteractionPrefix}${s.name}",
+        inputIngredients = s.inputIngredients,
+        output = s.output,
+        requiredEvents = Set.empty,
+        requiredOneOfEvents = Set.empty
+      )
+
+    def flattenSubRecipesToInteraction(recipe: Recipe): Set[InteractionDescriptor] = {
+      def copyInteraction(i: InteractionDescriptor) = Interaction(
+        name = s"${subRecipePrefix}${recipe.name}$$${i.name}",
+        inputIngredients = i.inputIngredients,
+        output = i.output,
+        requiredEvents = i.requiredEvents,
+        requiredOneOfEvents = i.requiredOneOfEvents,
+        predefinedIngredients = i.predefinedIngredients,
+        overriddenIngredientNames = i.overriddenIngredientNames,
+        overriddenOutputIngredientName = i.overriddenOutputIngredientName,
+        maximumInteractionCount = i.maximumInteractionCount,
+        failureStrategy = i.failureStrategy,
+        eventOutputTransformers = i.eventOutputTransformers,
+        isReprovider = i.isReprovider,
+        oldName = Option(i.originalName)
+      )
+      recipe.interactions.map(copyInteraction).toSet ++ recipe.sieves.map(convertSieveToInteraction) ++ recipe.subRecipes.flatMap(flattenSubRecipesToInteraction)
+    }
+
     val precompileErrors: Seq[String] = Assertions.preCompileAssertions(recipe)
 
-    // Extend the interactions with the checkpoint event interactions
-    val allInteractions = recipe.interactions ++ recipe.checkpointEvents.map(convertCheckpointEventToInteraction)
+    // Extend the interactions with the checkpoint event interactions and sub-recipes
+    val actionDescriptors: Seq[InteractionDescriptor] = recipe.interactions ++
+      recipe.checkpointEvents.map(convertCheckpointEventToInteraction) ++
+      recipe.subRecipes.flatMap(flattenSubRecipesToInteraction) ++
+      recipe.sieves.map(convertSieveToInteraction)
 
     //All ingredient names provided by sensory events or by interactions
     val allIngredientNames: Set[String] =
-      recipe.sensoryEvents.flatMap(e => e.providedIngredients.map(i => i.name)) ++
-        allInteractions.flatMap(i => i.output.flatMap { e =>
-            // check if the event was renamed (check if there is a transformer for this event)
-            i.eventOutputTransformers.get(e) match {
-              case Some(transformer) => e.providedIngredients.map(ingredient => transformer.ingredientRenames.getOrElse(ingredient.name, ingredient.name))
-              case None => e.providedIngredients.map(_.name)
-            }
+      (recipe.sensoryEvents ++ recipe.subRecipes.flatMap(_.sensoryEvents)).flatMap(e => e.providedIngredients.map(i => i.name)) ++
+        actionDescriptors.flatMap(i => i.output.flatMap { e =>
+          // check if the event was renamed (check if there is a transformer for this event)
+          i.eventOutputTransformers.get(e) match {
+            case Some(transformer) => e.providedIngredients.map(ingredient => transformer.ingredientRenames.getOrElse(ingredient.name, ingredient.name))
+            case None => e.providedIngredients.map(_.name)
           }
+        }
         )
-
-    val actionDescriptors: Seq[InteractionDescriptor] = allInteractions
 
     // For inputs for which no matching output cannot be found, we do not want to generate a place.
     // It should be provided at runtime from outside the active petri net (marking)
-    val interactionTransitions = allInteractions.map(_.toInteractionTransition(recipe.defaultFailureStrategy, allIngredientNames))
+    val interactionTransitions = actionDescriptors.map(_.toInteractionTransition(recipe.defaultFailureStrategy, allIngredientNames))
 
     val allInteractionTransitions: Seq[InteractionTransition] = interactionTransitions
 
     // events provided from outside
-    val sensoryEventTransitions: Seq[EventTransition] = recipe.sensoryEvents.map {
+    val sensoryEventTransitions: Seq[EventTransition] = (recipe.sensoryEvents ++ recipe.subRecipes.flatMap(_.sensoryEvents)).map {
       event => EventTransition(eventToCompiledEvent(event), isSensoryEvent = true, event.maxFiringLimit)
     }.toIndexedSeq
 

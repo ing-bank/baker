@@ -41,12 +41,12 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
       initialExecution <- EitherT.fromEither[F](currentState.validateExecution(input, correlationId, currentTime))
         .leftSemiflatMap { case (rejection, reason)  =>
           for {
-            eventRejected <- effect.delay(EventRejected(currentTime, recipeInstanceId, correlationId, input, rejection.asReason))
+            eventRejected <- effect.delay(EventRejected(currentTime, recipeInstanceId, correlationId, input.name, rejection.asReason))
             _ <- effect.delay(components.logging.eventRejected(eventRejected))
             _ <- components.eventStream.publish(eventRejected)
           } yield rejection
         }
-      _ <- EitherT.liftF(components.eventStream.publish(EventReceived(currentTime, currentState.recipe.name, currentState.recipe.recipeId, recipeInstanceId, correlationId, input)))
+      _ <- EitherT.liftF(components.eventStream.publish(EventReceived(currentTime, currentState.recipe.name, currentState.recipe.recipeId, recipeInstanceId, correlationId, input.name)))
     } yield baseCase(initialExecution)
       .collect { case Some(output) => output.filterNot(config.ingredientsFilter) }
 
