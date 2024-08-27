@@ -6,7 +6,9 @@ import com.ing.baker.runtime.model.InteractionManager
 import com.ing.bakery.baker.mocks.{KubeApiServer, RemoteInteraction}
 import com.ing.bakery.components.{BaseInteractionRegistry, LocalhostInteractions}
 import com.ing.bakery.interaction.BaseRemoteInteractionClient
+import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.{Config, ConfigValueFactory}
+import io.prometheus.client.CollectorRegistry
 import org.http4s.Headers
 import org.http4s.client.Client
 import org.mockserver.integration.ClientAndServer
@@ -32,17 +34,18 @@ object TestInteractionRegistry {
 
 }
 
-class TestInteractionRegistry(c: Config, system: ActorSystem) extends BaseInteractionRegistry(c, system) {
+class TestInteractionRegistry(config: Config, metricService: MetricService, system: ActorSystem)
+  extends BaseInteractionRegistry(config, metricService, system) {
 
   import TestInteractionRegistry._
 
-  override protected def interactionManagersResource(client: Client[IO]): Resource[IO, List[InteractionManager[IO]]] = {
-    val config = c.withValue("baker.interactions.localhost.port", ConfigValueFactory.fromAnyRef(mockServerLocalhost.getLocalPort))
+  override protected def interactionManagersResource(client: Client[IO], metricService: MetricService): Resource[IO, List[InteractionManager[IO]]] = {
+    val overrideConfig = config.withValue("baker.interactions.localhost.port", ConfigValueFactory.fromAnyRef(mockServerLocalhost.getLocalPort))
     for {
-      localhost <- new LocalhostInteractions(config, system,
-        new BaseRemoteInteractionClient(client, Headers.empty)).resource
+      localhost <- new LocalhostInteractions(overrideConfig, system,
+        new BaseRemoteInteractionClient(client, Headers.empty, metricService)).resource
       kubernetes <- new KubernetesInteractions(
-        config, system, new BaseRemoteInteractionClient(client, Headers.empty),
+        overrideConfig, system, new BaseRemoteInteractionClient(client, Headers.empty, MetricService.defaultInstance),
         Some(skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServerKubernetes.getLocalPort))(system))
       ).resource
     } yield List(kubernetes, localhost)

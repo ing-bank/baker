@@ -9,6 +9,7 @@ trait SensoryEventResult extends LanguageApi {
 
   def eventNames: language.Seq[String]
 
+  @deprecated("This will be removed in the next version, use Baker.getIngredients instead.", "3.8.0")
   def ingredients: language.Map[String, Value]
 }
 

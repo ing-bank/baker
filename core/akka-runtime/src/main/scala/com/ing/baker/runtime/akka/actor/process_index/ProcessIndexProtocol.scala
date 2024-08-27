@@ -22,6 +22,8 @@ object ProcessIndexProtocol {
 
   case class GetProcessState(recipeInstanceId: String) extends ProcessIndexMessage
 
+  case class GetProcessIngredient(recipeInstanceId: String, name: String) extends ProcessIndexMessage
+
   case class GetCompiledRecipe(recipeInstanceId: String) extends ProcessIndexMessage
 
   case class RetryBlockedInteraction(recipeInstanceId: String, interactionName: String) extends ProcessIndexMessage
@@ -29,6 +31,8 @@ object ProcessIndexProtocol {
   case class StopRetryingInteraction(recipeInstanceId: String, interactionName: String) extends ProcessIndexMessage
 
   case class ResolveBlockedInteraction(recipeInstanceId: String, interactionName: String, output: EventInstance) extends ProcessIndexMessage
+
+  case class AddRecipeInstanceMetaData(recipeInstanceId: String, metaData: Map[String, String]) extends ProcessIndexMessage
 
   /**
     * Failure when attempting to resolve a blocked interaction, the event is not of valid type according with the recipe

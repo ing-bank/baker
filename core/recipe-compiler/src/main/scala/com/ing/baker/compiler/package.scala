@@ -47,11 +47,15 @@ package object compiler {
           event.providedIngredients.map(ingredientToCompiledIngredient))
       }
 
-      //Replace RecipeInstanceId to recipeInstanceIdName tag as know in compiledRecipe-
-      //Replace ingredient tags with overridden tags
+      // Replace RecipeInstanceId to recipeInstanceIdName tag as know in compiledRecipe
+      // Replace BakerMetaData to BakerMetaData tag as know in compiledRecipe
+      // Replace BakerEventList to BakerEventList tag as know in compiledRecipe
+      // Replace ingredient tags with overridden tags
       val inputFields: Seq[(String, Type)] = interactionDescriptor.inputIngredients
         .map { ingredient =>
           if (ingredient.name == common.recipeInstanceIdName) il.recipeInstanceIdName -> ingredient.ingredientType
+          else if(ingredient.name == common.recipeInstanceMetadataName) il.recipeInstanceMetadataName -> ingredient.ingredientType
+          else if(ingredient.name == common.recipeInstanceEventListName) il.recipeInstanceEventListName -> ingredient.ingredientType
           else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.ingredientType
         }
 
@@ -100,7 +104,8 @@ package object compiler {
         maximumInteractionCount = interactionDescriptor.maximumInteractionCount,
         failureStrategy = failureStrategy,
         eventOutputTransformers = interactionDescriptor.eventOutputTransformers.map {
-          case (event, transformer) => event.name -> transformEventOutputTransformer(transformer) })
+          case (event, transformer) => event.name -> transformEventOutputTransformer(transformer) },
+        isReprovider = interactionDescriptor.isReprovider)
     }
   }
 }

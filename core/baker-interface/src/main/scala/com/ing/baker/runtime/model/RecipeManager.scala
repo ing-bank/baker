@@ -38,8 +38,9 @@ trait RecipeManager[F[_]] extends LazyLogging {
           for {
             timestamp <- timer.clock.realTime(duration.MILLISECONDS)
             _ <- store(compiledRecipe, timestamp)
-            _ <- components.logging.addedRecipe(compiledRecipe, timestamp)
-            _ <- components.eventStream.publish(RecipeAdded(compiledRecipe.name, compiledRecipe.recipeId, timestamp, compiledRecipe))
+            recipeAdded = RecipeAdded(compiledRecipe.name, compiledRecipe.recipeId, timestamp, compiledRecipe)
+            _ <- effect.delay(components.logging.addedRecipe(recipeAdded))
+            _ <- components.eventStream.publish(recipeAdded)
           } yield ()
     } yield compiledRecipe.recipeId
 
@@ -47,7 +48,7 @@ trait RecipeManager[F[_]] extends LazyLogging {
     fetch(recipeId).flatMap[RecipeInformation] {
       case Some(r: RecipeRecord) =>
         getImplementationErrors(r.recipe).map( errors =>
-          RecipeInformation(r.recipe, r.updated, errors, r.validate))
+          RecipeInformation(r.recipe, r.updated, errors, r.validate, r.recipe.sensoryEvents))
       case None =>
         effect.raiseError(NoSuchRecipeException(recipeId))
     }
@@ -56,7 +57,7 @@ trait RecipeManager[F[_]] extends LazyLogging {
     fetchAll.flatMap(_.toList
       .traverse { case (recipeId, r) =>
         getImplementationErrors(r.recipe)
-          .map(errors => recipeId -> RecipeInformation(r.recipe, r.updated, errors, r.validate))
+          .map(errors => recipeId -> RecipeInformation(r.recipe, r.updated, errors, r.validate, r.recipe.sensoryEvents))
       }
       .map(_.toMap))
 
