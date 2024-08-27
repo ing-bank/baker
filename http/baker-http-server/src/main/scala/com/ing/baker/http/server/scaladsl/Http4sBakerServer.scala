@@ -208,7 +208,7 @@ final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO
 
     case GET -> Root / RecipeInstanceId(recipeInstanceId) / "events" => baker.getEvents(recipeInstanceId).toBakerResultResponseIO
 
-//    case GET -> Root / RecipeInstanceId(recipeInstanceId) / "ingredient" / IngredientName(name) => baker.getIngredient(recipeInstanceId, name).toBakerResultResponseIO
+    case GET -> Root / RecipeInstanceId(recipeInstanceId) / "ingredient" / IngredientName(name) => baker.getIngredient(recipeInstanceId, name).toBakerResultResponseIO
 
     case GET -> Root / RecipeInstanceId(recipeInstanceId) / "ingredients" => baker.getIngredients(recipeInstanceId).toBakerResultResponseIO
 

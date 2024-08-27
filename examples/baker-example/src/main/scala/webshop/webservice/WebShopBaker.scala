@@ -25,9 +25,6 @@ object WebShopBaker {
     IO.fromFuture(IO(for {
       checkoutRecipeId <- baker.addRecipe(RecipeRecord.of(checkoutFlowCompiledRecipe))
       _ = println(Console.GREEN + "V3 Checkout Recipe ID :: " + checkoutRecipeId + Console.RESET)
-      _ <- baker.registerEventListener((name, event) => {
-        logger.info(s"$name => ${event.providedIngredients}")
-      })
     } yield checkoutRecipeId))
   }
 }

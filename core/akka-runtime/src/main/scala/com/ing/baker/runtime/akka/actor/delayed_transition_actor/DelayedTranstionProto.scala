@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.actor.delayed_transition_actor
 
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.{DelayedTransitionExecuted, DelayedTransitionInstance, DelayedTransitionScheduled}
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.{DelayedTransitionExecuted, DelayedTransitionInstance, DelayedTransitionScheduled, DelayedTransitionSnapshot}
 import com.ing.baker.runtime.serialization.ProtoMap
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionProto._
@@ -18,8 +18,7 @@ object DelayedTransitionProto {
           Some(a.timeToFire),
           Some(a.jobId),
           Some(a.transitionId),
-          Some(a.eventToFire),
-          Some(a.fired)
+          Some(a.eventToFire)
         )
       }
 
@@ -30,8 +29,7 @@ object DelayedTransitionProto {
           jobId <- versioned(message.jobId, "jobId")
           transitionId <- versioned(message.transitionId, "transitionId")
           eventToFire <- versioned(message.eventToFire, "eventToFire")
-          fired <- versioned(message.fired, "fired")
-        } yield DelayedTransitionInstance(recipeInstanceId, timeToFire, jobId, transitionId, eventToFire, fired, None)
+        } yield DelayedTransitionInstance(recipeInstanceId, timeToFire, jobId, transitionId, eventToFire, None)
     }
 
   implicit def delayedTransitionScheduledProto: ProtoMap[DelayedTransitionScheduled, protobuf.DelayedTransitionScheduled] =
@@ -70,5 +68,23 @@ object DelayedTransitionProto {
           delayedTransitionInstanceProto <- versioned(message.delayedTransitionInstance, " delayedTransitionInstance")
           delayedTransitionInstance <- DelayedTransitionProto.delayedTransitionInstanceProto.fromProto(delayedTransitionInstanceProto)
         } yield DelayedTransitionExecuted(id, delayedTransitionInstance)
+    }
+
+  implicit def delayedTransitionSnapshotProto: ProtoMap[DelayedTransitionSnapshot, protobuf.DelayedTransitionSnapshot] =
+    new ProtoMap[DelayedTransitionSnapshot, protobuf.DelayedTransitionSnapshot] {
+      val companion = protobuf.DelayedTransitionSnapshot
+
+      def toProto(a: DelayedTransitionSnapshot): protobuf.DelayedTransitionSnapshot = {
+        protobuf.DelayedTransitionSnapshot(
+          a.waitingTransitions.map(
+            entry => entry._1 -> ctxToProto(entry._2)
+          )
+        )
+      }
+
+      def fromProto(message: protobuf.DelayedTransitionSnapshot): Try[DelayedTransitionSnapshot] =
+        Try {
+          DelayedTransitionSnapshot(message.waitingTransitions.map(entry => entry._1 -> ctxFromProto(entry._2).get))
+        }
     }
 }
