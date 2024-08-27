@@ -1,6 +1,6 @@
 package com.ing.baker.recipe.kotlindsl
 
-import com.ing.baker.recipe.common
+import com.ing.baker.recipe.{common, javadsl}
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionDescriptor
 import com.ing.baker.types.{Converters, Value}
@@ -23,7 +23,8 @@ class Interaction private(
   overriddenIngredientNamesInput: Map[String, String],
   eventOutputTransformersInput: Map[common.Event, common.EventOutputTransformer],
   maximumInteractionCountInput: Option[Int],
-  failureStrategyInput: Option[common.InteractionFailureStrategy]
+  failureStrategyInput: Option[common.InteractionFailureStrategy],
+  isReproviderInput: Boolean
 ) extends common.InteractionDescriptor {
 
   override val name: String = nameInput
@@ -38,6 +39,7 @@ class Interaction private(
   override val eventOutputTransformers: Map[common.Event, common.EventOutputTransformer] = eventOutputTransformersInput
   override val maximumInteractionCount: Option[Int] = maximumInteractionCountInput
   override val failureStrategy: Option[common.InteractionFailureStrategy] = failureStrategyInput
+  override val isReprovider: Boolean = isReproviderInput
 }
 
 object Interaction {
@@ -47,9 +49,10 @@ object Interaction {
          requiredOneOfEvents: java.util.Set[java.util.Set[String]],
          predefinedIngredients: java.util.Map[String, Object],
          overriddenIngredientNames: java.util.Map[String, String],
-         eventOutputTransformers: java.util.Map[Event, EventOutputTransformer],
+         eventOutputTransformers: java.util.Map[javadsl.Event, EventOutputTransformer],
          maximumInteractionCount: java.util.Optional[Int],
-         failureStrategy: java.util.Optional[common.InteractionFailureStrategy]) = new Interaction(
+         failureStrategy: java.util.Optional[common.InteractionFailureStrategy],
+         isReprovider: Boolean) = new Interaction(
     name,
     interactionDescriptor.originalName,
     interactionDescriptor.inputIngredients,
@@ -60,7 +63,8 @@ object Interaction {
     overriddenIngredientNames.asScala.toMap,
     eventOutputTransformers.asScala.toMap.map { case (k, v) => k -> v },
     maximumInteractionCount.map[Option[Int]](Option.apply(_)).orElse(None),
-    failureStrategy.map[Option[InteractionFailureStrategy]](Option.apply(_)).orElse(None)
+    failureStrategy.map[Option[InteractionFailureStrategy]](Option.apply(_)).orElse(None),
+    isReprovider
   )
 
   def of(name: String,
@@ -73,7 +77,8 @@ object Interaction {
          overriddenIngredientNames: java.util.Map[String, String],
          eventOutputTransformers: java.util.Map[Event, EventOutputTransformer],
          maximumInteractionCount: java.util.Optional[Int],
-         failureStrategy: java.util.Optional[common.InteractionFailureStrategy]) = new Interaction(
+         failureStrategy: java.util.Optional[common.InteractionFailureStrategy],
+         isReprovider: Boolean) = new Interaction(
     name,
     originalName,
     new ArraySeq.ofRef(inputIngredients.asScala.toArray),
@@ -84,6 +89,7 @@ object Interaction {
     overriddenIngredientNames.asScala.toMap,
     eventOutputTransformers.asScala.toMap.map { case (k, v) => k -> v },
     maximumInteractionCount.map[Option[Int]](Option.apply(_)).orElse(None),
-    failureStrategy.map[Option[InteractionFailureStrategy]](Option.apply(_)).orElse(None)
+    failureStrategy.map[Option[InteractionFailureStrategy]](Option.apply(_)).orElse(None),
+    isReprovider
   )
 }

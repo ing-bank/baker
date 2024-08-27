@@ -10,9 +10,15 @@ import scala.collection.immutable.Seq
 package object il {
 
   val recipeInstanceIdName = "recipeInstanceId"
+  val recipeInstanceMetadataName = "RecipeInstanceMetaData" //Cannot rename to RecipeInstanceMetadata since this will break backwards compatibility
+  val recipeInstanceEventListName = "RecipeInstanceEventList"
   val processIdName = "$ProcessID$" //needed for backwards compatibility with V1 and V2
   val exhaustedEventAppend = "RetryExhausted"
+
   val checkpointEventInteractionPrefix = "$CheckpointEventInteraction$"
+  val subRecipePrefix = "$SubRecipe$"
+  val sieveInteractionPrefix = "$SieveInteraction$"
+  val sieveEventPrefix = "$SieveEvent$"
 
   def sha256HashCode(str: String): Long = {
     val sha256Digest: MessageDigest = MessageDigest.getInstance("SHA-256")

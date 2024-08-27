@@ -19,6 +19,12 @@ object Assertions {
       Some("No interactions found.").filter(_ => recipe.interactions.isEmpty)
     ).flatten
 
+  private def assertRequiredEventForReprovider(recipe: Recipe): Seq[String] = {
+    recipe.interactions.filter(interaction => {
+      interaction.isReprovider && interaction.requiredEvents.isEmpty && interaction.requiredOneOfEvents.isEmpty
+    }).map(interaction => s"Reprovider interaction ${interaction.name} needs to have a event precondition")
+  }
+
   private def assertSensoryEventsNegativeFiringLimits(recipe: Recipe): Seq[String] =
     Seq(
       Some("MaxFiringLimit should be greater than 0").filter(_ =>
@@ -34,6 +40,6 @@ object Assertions {
     assertValidNames[Ingredient](_.name, allIngredients, "Ingredient")
     assertNoDuplicateElementsExist[InteractionDescriptor](_.name, recipe.interactions.toSet)
     assertNoDuplicateElementsExist[Event](_.name, recipe.sensoryEvents)
-    assertNonEmptyRecipe(recipe) ++ assertSensoryEventsNegativeFiringLimits(recipe)
+    assertSensoryEventsNegativeFiringLimits(recipe) ++ assertRequiredEventForReprovider(recipe)
   }
 }

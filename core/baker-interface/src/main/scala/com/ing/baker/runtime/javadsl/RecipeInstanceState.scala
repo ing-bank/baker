@@ -16,8 +16,10 @@ import scala.collection.JavaConverters._
   * @param events           The events that have occurred so far
   */
 case class RecipeInstanceState(
+    recipeId: String,
     recipeInstanceId: String,
     ingredients: java.util.Map[String, Value],
+    recipeInstanceMetadata: java.util.Map[String, String],
     events: java.util.List[EventMoment]
   ) extends common.RecipeInstanceState with JavaApi {
 
@@ -29,6 +31,13 @@ case class RecipeInstanceState(
     * @return The accumulated ingredients
     */
   def getIngredients: java.util.Map[String, Value] = ingredients
+
+  /**
+    * Returns the accumulated ingredients.
+    *
+    * @return The accumulated ingredients
+    */
+  def getRecipeInstanceMetadata: java.util.Map[String, String] = recipeInstanceMetadata
 
   /**
     * Returns the RuntimeEvents
@@ -53,5 +62,5 @@ case class RecipeInstanceState(
 
   @nowarn
   def asScala: scaladsl.RecipeInstanceState =
-    scaladsl.RecipeInstanceState(recipeInstanceId, ingredients.asScala.toMap, events.asScala.map(_.asScala).toIndexedSeq)
+    scaladsl.RecipeInstanceState(recipeId, recipeInstanceId, ingredients.asScala.toMap, recipeInstanceMetadata.asScala.toMap, events.asScala.map(_.asScala).toIndexedSeq)
 }

@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalReflectionOnLambdas::class)
+
 package com.ing.baker.recipe.kotlindsl
 
 import com.ing.baker.recipe.annotations.FiresEvent
@@ -5,12 +7,17 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction
 import com.ing.baker.recipe.javadsl.InteractionDescriptor
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy
 import scala.Option
+import java.lang.reflect.Type
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
+import kotlin.reflect.full.createType
 import kotlin.reflect.full.functions
 import kotlin.reflect.full.primaryConstructor
+import kotlin.reflect.jvm.ExperimentalReflectionOnLambdas
 import kotlin.reflect.jvm.javaType
+import kotlin.reflect.jvm.reflect
+import kotlin.reflect.typeOf
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
@@ -56,8 +63,17 @@ class RecipeBuilder(private val name: String) {
      */
     private val checkpointEvents: MutableSet<CheckPointEvent> = mutableSetOf()
 
+    /**
+     * Collects sieve interactions.
+     */
+    @PublishedApi
+    internal val sieves: MutableSet<Sieve> = mutableSetOf()
+
     @PublishedApi
     internal val interactions: MutableSet<Interaction> = mutableSetOf()
+
+    @PublishedApi
+    internal val subRecipes: MutableSet<Recipe> = mutableSetOf()
 
     private val sensoryEvents: MutableSet<Event> = mutableSetOf()
 
@@ -82,6 +98,71 @@ class RecipeBuilder(private val name: String) {
     inline fun <reified T : com.ing.baker.recipe.javadsl.Interaction> interaction(configuration: (InteractionBuilder.() -> Unit) = {}) {
         interactions.add(InteractionBuilder(T::class).apply(configuration).build())
     }
+
+
+    /**
+     * Registers a sieve [T1, T2, R] to the recipe.
+     */
+    inline fun <reified T1,reified R> ingredient(name: String, noinline function: (T1) -> R) {
+        val parameters = function.reflect()?.parameters ?: error("Cannot read parameters")
+        val ingredients = listOf(T1::class)
+            .zip(parameters)
+            .map { (clazz, param) ->  Ingredient(param.name, clazz.createType().javaType) }
+        addSieve(name, ingredients, typeOf<R>().javaType, function)
+    }
+
+    /**
+     * Registers a sieve [T1, T2, R] to the recipe.
+     */
+    inline fun <reified T1, reified T2, reified R> ingredient(name: String, noinline function: (T1, T2) -> R) {
+        val parameters = function.reflect()?.parameters ?: error("Cannot read parameters")
+        val ingredients = listOf(T1::class, T2::class)
+            .zip(parameters)
+            .map { (clazz, param) ->  Ingredient(param.name, clazz.createType().javaType) }
+        addSieve(name, ingredients, typeOf<R>().javaType, function)
+    }
+
+    /**
+     * Registers a sieve [T1, T2, R] to the recipe.
+     */
+    inline fun <reified T1, reified T2, reified T3, reified R> ingredient(name: String, noinline function: (T1, T2, T3) -> R) {
+        val parameters = function.reflect()?.parameters ?: error("Cannot read parameters")
+        val ingredients = listOf(T1::class, T2::class, T3::class)
+            .zip(parameters)
+            .map { (clazz, param) ->  Ingredient(param.name, clazz.createType().javaType) }
+        addSieve(name, ingredients, typeOf<R>().javaType, function)
+    }
+
+    fun addSieve(name:String, ingredients:List<Ingredient>, returnType:Type, function:Any){
+        sieves.add(
+            Sieve(
+                name,
+                ingredients,
+                listOf(
+                    Event(
+                        "\$SieveEvent\$$name",
+                        listOf(
+                            Ingredient(
+                                name,
+                                returnType
+                            )
+                        ),
+                        Optional.empty()
+                    )
+                ),
+                function
+            )
+        )
+    }
+
+    /**
+     * Registers an subrecipe [T] to the recipe. Additional [configuration] can be provided via
+     * the [InteractionBuilder] receiver.
+     */
+    fun subRecipe(recipe: Recipe) {
+        subRecipes.add(recipe)
+    }
+
 
     /**
      * Retries interaction with an incremental backoff on failure.
@@ -115,10 +196,12 @@ class RecipeBuilder(private val name: String) {
         name,
         interactions.toList(),
         sensoryEvents.toList(),
+        subRecipes.toList(),
         defaultFailureStrategy.build(),
         Optional.ofNullable(eventReceivePeriod?.toJavaDuration()),
         Optional.ofNullable(retentionPeriod?.toJavaDuration()),
-        checkpointEvents
+        checkpointEvents,
+        sieves
     )
 }
 
@@ -142,6 +225,16 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
      */
     var failureStrategy: InteractionFailureStrategyBuilder? = null
 
+    /**
+     * When this interaction is executed it will fill its own interaction places.
+     * This is usefull if you want to execute this interaction multiple times without providing the ingredient again.
+     * To use this the InteractionDescriptor requires a prerequisite event.
+     *
+     * @param isReprovider
+     * @return
+     */
+    var isReprovider: Boolean = false
+
     @PublishedApi
     internal val eventTransformations: MutableSet<EventTransformation> = mutableSetOf()
 
@@ -149,6 +242,7 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
     private val ingredientNameOverrides = mutableMapOf<String, String>()
     private val requiredEvents: MutableSet<String> = mutableSetOf()
     private val requiredOneOfEvents: MutableSet<Set<String>> = mutableSetOf()
+
 
     /**
      * All events specified in this block have to be available for the interaction to be executed (AND precondition).
@@ -227,10 +321,10 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
 
     @PublishedApi
     internal fun build(): Interaction {
-        val eventTransformationsInput: Map<Event, EventOutputTransformer> =
-            eventTransformations.associate { it.from.toEvent() to EventOutputTransformer(it.to, it.ingredientRenames) }
-
         return if (interactionClass.interactionFunction().hasFiresEventAnnotation()) {
+            val eventTransformationsInput = eventTransformations.associate {
+                com.ing.baker.recipe.javadsl.Event(it.from.java, Option.empty()) to it.toEventOutputTransformer()
+            }
             Interaction.of(
                 name,
                 InteractionDescriptor.of(interactionClass.java),
@@ -240,9 +334,14 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
                 ingredientNameOverrides,
                 eventTransformationsInput,
                 Optional.ofNullable(maximumInteractionCount),
-                Optional.ofNullable(failureStrategy?.build())
+                Optional.ofNullable(failureStrategy?.build()),
+                isReprovider
             )
         } else {
+            val eventTransformationsInput = eventTransformations.associate {
+                it.from.toEvent() to it.toEventOutputTransformer()
+            }
+
             val inputIngredients = interactionClass.interactionFunction().parameters.drop(1)
                 .map { Ingredient(it.name, it.type.javaType) }
                 .toSet()
@@ -258,7 +357,8 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
                 ingredientNameOverrides,
                 eventTransformationsInput,
                 Optional.ofNullable(maximumInteractionCount),
-                Optional.ofNullable(failureStrategy?.build())
+                Optional.ofNullable(failureStrategy?.build()),
+                isReprovider
             )
         }
     }
@@ -267,10 +367,18 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
         val classifier = interactionClass.interactionFunction().returnType.classifier as KClass<*>
         return with(classifier) {
             if (sealedSubclasses.isNotEmpty()) {
-                sealedSubclasses.map { it.toEvent() }.toSet()
+                flattenSealedSubclasses().map { it.toEvent() }.toSet()
             } else {
                 setOf(classifier.toEvent())
             }
+        }
+    }
+
+    private fun KClass<*>.flattenSealedSubclasses(): List<KClass<*>> {
+        return if (sealedSubclasses.isNotEmpty()) {
+            sealedSubclasses.flatMap { it.flattenSealedSubclasses() }
+        } else {
+            listOf(this)
         }
     }
 }
@@ -446,7 +554,9 @@ internal data class EventTransformation(
     val from: KClass<*>,
     val to: String,
     val ingredientRenames: Map<String, String>
-)
+) {
+    fun toEventOutputTransformer() = EventOutputTransformer(to, ingredientRenames)
+}
 
 private fun <T : com.ing.baker.recipe.javadsl.Interaction> KClass<T>.interactionFunction() =
     functions.single { it.name == "apply" }
@@ -454,7 +564,7 @@ private fun <T : com.ing.baker.recipe.javadsl.Interaction> KClass<T>.interaction
 private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
     return Event(
         simpleName,
-        primaryConstructor?.parameters?.map { Ingredient(it.name, it.type.javaType) },
+        primaryConstructor?.parameters?.map { Ingredient(it.name, it.type.javaType) } ?: emptyList(),
         Optional.ofNullable(maxFiringLimit)
     )
 }

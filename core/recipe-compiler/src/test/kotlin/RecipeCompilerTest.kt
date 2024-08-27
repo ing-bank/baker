@@ -21,39 +21,6 @@ class RecipeCompilerTest {
     }
 
     @Test
-    fun `should compile dsl to recipe without interactions`() {
-
-        val recipe = recipe("recipe") {
-            sensoryEvents {
-                event<EventA>(maxFiringLimit = 1)
-            }
-        }
-
-        val compiled = RecipeCompiler.compileRecipe(recipe)
-
-        assertEquals(compiled.validationErrors.size, 1)
-        assertEquals(compiled.validationErrors[0], "No interactions found.")
-        assertEquals("bb928e13daf86557", compiled.recipeId())
-    }
-
-    @Test
-    fun `should compile with negative firing limit and give validation error`() {
-
-        val recipe = recipe("recipe") {
-            sensoryEvents {
-                event<EventA>(maxFiringLimit = -1)
-            }
-        }
-
-        val compiled = RecipeCompiler.compileRecipe(recipe)
-
-        assertEquals(compiled.validationErrors.size, 2)
-        assertEquals(compiled.validationErrors[0], "No interactions found.")
-        assertEquals(compiled.validationErrors[1], "MaxFiringLimit should be greater than 0")
-        assertEquals("5142418ff252df08", compiled.recipeId())
-    }
-
-    @Test
     fun `should compile dsl to recipe`() {
 
         val recipe = recipe("recipe") {
@@ -66,6 +33,23 @@ class RecipeCompilerTest {
         val compiled = RecipeCompiler.compileRecipe(recipe)
 
         assertEquals("796a3cb3eb68b35d", compiled.recipeId())
+    }
+
+
+    @Test
+    fun `should compile dsl to recipe ingredient`() {
+
+        val recipe = recipe("recipe") {
+            sensoryEvents {
+                event<EventA>()
+            }
+            interaction<InteractionA>()
+            ingredient<String, String>("extract"){"Hello123"}
+        }
+
+        val compiled = RecipeCompiler.compileRecipe(recipe)
+
+        assertEquals("ec448bcd08163a73", compiled.recipeId())
     }
 
 }

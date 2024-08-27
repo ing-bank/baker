@@ -13,7 +13,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManagerActor, Reci
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.ProtoMap
 import SerializedDataProto._
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.{DelayedTransitionExecuted, DelayedTransitionInstance, DelayedTransitionScheduled}
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.{DelayedTransitionExecuted, DelayedTransitionInstance, DelayedTransitionScheduled, DelayedTransitionSnapshot}
 import com.ing.baker.runtime.akka.actor.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
 
 object BakerTypedProtobufSerializer {
@@ -83,6 +83,8 @@ object BakerTypedProtobufSerializer {
         .register("ProcessIndexProtocol.ProcessEventResponse"),
       forType[ProcessIndexProtocol.GetProcessState]
         .register("ProcessIndexProtocol.GetProcessState"),
+      forType[ProcessIndexProtocol.GetProcessIngredient]
+        .register("ProcessIndexProtocol.GetProcessIngredientc"),
       forType[ProcessIndexProtocol.GetCompiledRecipe]
         .register("ProcessIndexProtocol.GetCompiledRecipe"),
       forType[ProcessIndexProtocol.ProcessEvent]
@@ -115,6 +117,10 @@ object BakerTypedProtobufSerializer {
         .register("ProcessInstanceProtocol.GetState"),
       forType[ProcessInstanceProtocol.InstanceState]
         .register("ProcessInstanceProtocol.InstanceState"),
+      forType[ProcessInstanceProtocol.IngredientFound]
+        .register("ProcessInstanceProtocol.IngredientFound"),
+      forType[ProcessInstanceProtocol.IngredientNotFound.type]
+        .register("ProcessInstanceProtocol.IngredientNotFound"),
       forType[ProcessInstanceProtocol.Initialize]
         .register("ProcessInstanceProtocol.Initialize"),
       forType[ProcessInstanceProtocol.Initialized]
@@ -141,6 +147,8 @@ object BakerTypedProtobufSerializer {
         .register("ProcessInstanceProtocol.MetaDataAdded"),
       forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFired]
         .register("TransitionFired")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFired)),
+      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailedWithOutput]
+        .register("TransitionFailedWithOutput")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailedWithOutput)),
       forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailed]
         .register("TransitionFailed")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailed)),
       forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.Initialized]
@@ -180,7 +188,9 @@ object BakerTypedProtobufSerializer {
       forType[DelayedTransitionScheduled]
         .register("DelayedTransitionScheduled"),
       forType[DelayedTransitionExecuted]
-        .register("DelayedTransitionExecuted")
+        .register("DelayedTransitionExecuted"),
+      forType[DelayedTransitionSnapshot]
+        .register("DelayedTransitionSnapshot")
     )
   }
 }

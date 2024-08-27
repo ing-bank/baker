@@ -1,7 +1,9 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
+import com.ing.baker.il.petrinet.Place
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
+import com.ing.baker.types.Value
 
 /**
  * Describes the messages to and from a PetriNetInstance actor.
@@ -19,6 +21,15 @@ object ProcessInstanceProtocol {
   case object GetState extends Command
 
   /**
+    * Command to request the current ingredient
+    */
+  case class GetIngredient(name: String) extends Command
+
+  case class IngredientFound(value: Value) extends Response
+
+  case object IngredientNotFound extends Response
+
+  /**
     * Command to stop and optionally delete the process instance.
     */
   case class Stop(delete: Boolean = false) extends Command
@@ -30,9 +41,9 @@ object ProcessInstanceProtocol {
 
   object Initialize {
 
-    def apply[P : Identifiable](marking: Marking[P]): Initialize = Initialize(marking.marshall, null)
+    def apply[P : Identifiable](marking: Marking[Place]): Initialize = Initialize(marking.marshall, null)
 
-    def apply[P : Identifiable](marking: Marking[P], state: Any): Initialize = Initialize(marking.marshall, state)
+    def apply[P : Identifiable](marking: Marking[Place], state: Any): Initialize = Initialize(marking.marshall, state)
   }
 
   /**
@@ -92,9 +103,9 @@ object ProcessInstanceProtocol {
 
   object Initialized {
 
-    def apply[P : Identifiable](marking: Marking[P]): Initialized = Initialized(marking.marshall, null)
+    def apply[P : Identifiable](marking: Marking[Place]): Initialized = Initialized(marking.marshall, null)
 
-    def apply[P : Identifiable](marking: Marking[P], state: Any): Initialized = Initialized(marking.marshall, state)
+    def apply[P : Identifiable](marking: Marking[Place], state: Any): Initialized = Initialized(marking.marshall, state)
   }
 
   /**

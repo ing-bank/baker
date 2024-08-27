@@ -142,6 +142,11 @@ message GetProcessState {
     optional string recipeInstanceId = 1;
 }
 
+message GetProcessIngredient {
+    optional string recipeInstanceId = 1;
+    optional string name = 2;
+}
+
 message GetCompiledRecipe {
     optional string recipeId = 1;
 }

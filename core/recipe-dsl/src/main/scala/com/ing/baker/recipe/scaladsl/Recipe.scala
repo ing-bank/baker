@@ -11,7 +11,7 @@ object Recipe {
   def apply() : Recipe = macro CommonMacros.recipeImpl
 
   def apply(name: String): Recipe = {
-    Recipe(name, Seq.empty, Set.empty, Set.empty, new common.InteractionFailureStrategy.BlockInteraction, None, None)
+    Recipe(name, Seq.empty, Set.empty, Set.empty, Set.empty,Set.empty, new common.InteractionFailureStrategy.BlockInteraction, None, None)
   }
 }
 
@@ -22,6 +22,8 @@ case class Recipe private(override val name: String,
                           override val interactions: Seq[common.InteractionDescriptor],
                           override val sensoryEvents: Set[common.Event],
                           override val checkpointEvents: Set[common.CheckPointEvent],
+                          override val subRecipes: Set[common.Recipe],
+                          override val sieves: Set[common.Sieve],
                           override val defaultFailureStrategy: InteractionFailureStrategy,
                           override val eventReceivePeriod: Option[FiniteDuration],
                           override val retentionPeriod: Option[FiniteDuration])
@@ -30,6 +32,8 @@ case class Recipe private(override val name: String,
   def withInteraction(newInteraction: common.InteractionDescriptor): Recipe = copy(interactions = interactions :+ newInteraction)
 
   def withInteractions(newInteractions: common.InteractionDescriptor*): Recipe = copy(interactions = interactions ++ newInteractions)
+
+  def withSubRecipe(subRecipe: common.Recipe): Recipe = copy(subRecipes = subRecipes + subRecipe)
 
   def withSensoryEvent(newEvent: common.Event): Recipe = copy(sensoryEvents = sensoryEvents + newEvent)
 

@@ -1,5 +1,7 @@
 package com.ing.baker.petrinet.api
 
+import com.ing.baker.il.petrinet.{IntermediateTransition, Place, Transition}
+import com.ing.baker.il.petrinet.Place.IngredientPlace
 import com.ing.baker.petrinet.api.DSL._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -17,21 +19,20 @@ object DSL {
     */
   type Arc = WLDiEdge[Node]
 
-  type Place = Int
-
-  type Transition = Int
-
   type MarkingLike[T] = T => SimpleMarking
 
-  type SimpleMarking = MultiSet[Int]
+  type SimpleMarking = MultiSet[Place]
 
   case class TransitionAdjacency(in: SimpleMarking, out: SimpleMarking)
 
-  implicit def toSimpleMarking1(p: Int): SimpleMarking = Map(p -> 1)
-  implicit def toSimpleMarking2(p: (Int, Int)): SimpleMarking = Map(p._1 -> 1, p._2 -> 1)
-  implicit def toSimpleMarking3(p: (Int, Int, Int)): SimpleMarking = Map(p._1 -> 1, p._2 -> 1, p._3 -> 1)
-  implicit def toSimpleMarkingSeq(p: Seq[Int]): SimpleMarking = p.map(_ -> 1).toMap
-
+  implicit def toPlace(p:Int): Place = Place(p.toString, IngredientPlace)
+  implicit def toPlace(m: (Int, Int)): (Place, Int) = m match { case (k,v) => toPlace(k) -> v }
+  implicit def toTransition(p:Int): Transition = new IntermediateTransition(p.toString)
+  implicit def toSimpleMarking1(p: Place): SimpleMarking = Map(p -> 1)
+  implicit def toSimpleMarking1(p: Int): SimpleMarking = Map(toPlace(p) -> 1)
+  implicit def toSimpleMarking2(p: (Int, Int)): SimpleMarking = Map(toPlace(p._1) -> 1, toPlace(p._2) -> 1)
+  implicit def toSimpleMarking3(p: (Int, Int, Int)): SimpleMarking = Map(toPlace(p._1) -> 1, toPlace(p._2) -> 1, toPlace(p._3) -> 1)
+  implicit def toSimpleMarkingSeq(p: Seq[Int]): SimpleMarking = p.map(toPlace(_) -> 1).toMap
   implicit class ADJ[In: MarkingLike](in: In) {
     def ~|~>[Out: MarkingLike](out: Out): TransitionAdjacency = TransitionAdjacency(implicitly[MarkingLike[In]].apply(in), implicitly[MarkingLike[Out]].apply(out))
   }
@@ -50,7 +51,7 @@ object DSL {
       val b = branch(branchFactor, start)
       b.out.keys.foldLeft(Seq(b)) {
         case (accTree, n) =>
-          val subTreeRoot = accTree.flatMap(a => a.in.keys ++ a.out.keys).max + 1
+          val subTreeRoot = accTree.flatMap(a => a.in.keys ++ a.out.keys).map(_.getId).max.toInt + 1
           val subTree = tree(branchFactor, depth - 1, subTreeRoot)
           val connection = n ~|~> subTreeRoot
           accTree ++ subTree :+ connection
@@ -58,11 +59,11 @@ object DSL {
     }
   }
 
-  def createPetriNet(adjacencies: TransitionAdjacency*): PetriNet[Place, Transition] = {
+  def createPetriNet(adjacencies: TransitionAdjacency*): PetriNet = {
     val params: Seq[Arc] = adjacencies.toSeq.zipWithIndex.flatMap {
-      case (a, t) =>
-        a.in.map { case (p, weight) => WLDiEdge[Node, String](Left(p), Right(t + 1))(weight, "") }.toSeq ++
-          a.out.map { case (p, weight) => WLDiEdge[Node, String](Right(t + 1), Left(p))(weight, "") }.toSeq
+      case (a: TransitionAdjacency, t) =>
+        a.in.map { case (p, weight) => WLDiEdge[Node, String](Left(p), Right(toTransition(t + 1)))(weight, "") }.toSeq ++
+          a.out.map { case (p, weight) => WLDiEdge[Node, String](Right(toTransition(t + 1)), Left(p))(weight, "") }.toSeq
     }
 
     new PetriNet(Graph(params: _*))
@@ -83,7 +84,7 @@ class PetriNetAnalysisSpec extends AnyWordSpec with Matchers {
         1 ~|~> 7
       )
 
-      val initialMarking = Map(1 -> 1)
+      val initialMarking: SimpleMarking = Map(1 -> 1)
 
       val tree = PetriNetAnalysis.calculateCoverabilityTree(boundedNet, initialMarking)
 
