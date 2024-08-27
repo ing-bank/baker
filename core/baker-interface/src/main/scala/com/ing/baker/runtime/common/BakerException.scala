@@ -48,7 +48,7 @@ object BakerException {
     extends BakerException(s"'$operationName' duration exceeded timeout", 10, disableStackTrace = disableStackTrace)
 
   case class NoSuchIngredientException(name: String, disableStackTrace: Boolean = false)
-    extends BakerException(s"Ingredient '$name' not found", 5, disableStackTrace = disableStackTrace)
+    extends BakerException(s"Ingredient '$name' not found", 12, disableStackTrace = disableStackTrace)
 
   // To be used if a serialized baker exception cannot be deserialized into a specific exception.
   // This can happen when a bakery-state version is higher and contains more exceptions than the bakery-client.
