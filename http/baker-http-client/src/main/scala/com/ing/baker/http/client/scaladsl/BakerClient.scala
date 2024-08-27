@@ -4,7 +4,7 @@ import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.il.RecipeVisualStyle
 import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus, Utils}
 import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EncodedRecipe, EventInstance, EventMoment, EventResolutions, IngredientInstance, InteractionExecutionResult, InteractionInstanceDescriptor, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
-import com.ing.baker.runtime.serialization.InteractionExecution
+import com.ing.baker.runtime.serialization.{AddMetaDataRequest, BakeRequest, InteractionExecution}
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
@@ -95,7 +95,9 @@ final class BakerClient( client: Client[IO],
                        (implicit ec: ExecutionContext) extends ScalaBaker with LazyLogging {
 
   implicit val eventInstanceResultEntityEncoder: EntityEncoder[IO, EventInstance] = jsonEncoderOf[IO, EventInstance]
-  implicit val recipeEncoder: EntityEncoder[IO, EncodedRecipe] = jsonEncoderOf[IO, EncodedRecipe]
+  implicit val recipeJsonEncoder: EntityEncoder[IO, EncodedRecipe] = jsonEncoderOf[IO, EncodedRecipe]
+  implicit val bakeRequestJsonEncoder: EntityEncoder[IO, BakeRequest] = jsonEncoderOf[IO, BakeRequest]
+  implicit val addMetaDataRequestJsonEncoder: EntityEncoder[IO, AddMetaDataRequest] = jsonEncoderOf[IO, AddMetaDataRequest]
   implicit val interactionRequestEncoder: EntityEncoder[IO, InteractionExecution.ExecutionRequest] = jsonEncoderOf[IO, InteractionExecution.ExecutionRequest]
 
   override def addRecipe(recipe: RecipeRecord): Future[String] =
@@ -186,6 +188,11 @@ final class BakerClient( client: Client[IO],
       logger.info(s"Baked recipe instance '$recipeInstanceId' from recipe '$recipeId'")
     }
 
+  override def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] =
+    callRemoteBakerService[Unit]((host, prefix) =>
+      POST(BakeRequest(Some(metadata)), root(host, prefix) / "instances" / recipeInstanceId / "bake" / recipeId)).map { _ =>
+      logger.info(s"Baked recipe instance '$recipeInstanceId' from recipe '$recipeId'")
+    }
 
   override def getInteraction(interactionName: String): Future[Option[InteractionInstanceDescriptor]] =
     callRemoteBakerService[Option[InteractionInstanceDescriptor]]((host, prefix) => GET(root(host, prefix) / "app" / "interactions" / interactionName))
@@ -196,7 +203,7 @@ final class BakerClient( client: Client[IO],
 
   override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): Future[InteractionExecutionResult] =
     callRemoteBakerService[InteractionExecution.ExecutionResult]((host, prefix) =>
-      POST(InteractionExecution.ExecutionRequest(interactionId, ingredients.toList), root(host, prefix) / "app" / "interactions" / "execute")).map{ result =>
+      POST(InteractionExecution.ExecutionRequest(interactionId, ingredients.toList, Option.empty), root(host, prefix) / "app" / "interactions" / "execute")).map{ result =>
         result.outcome match {
           case Left(failure) => InteractionExecutionResult(Left(failure.toBakerInteractionExecutionFailure))
           case Right(success) => InteractionExecutionResult(Right(success.toBakerInteractionExecutionSuccess))
@@ -221,7 +228,6 @@ final class BakerClient( client: Client[IO],
       (host, prefix) => POST(event, (root(host, prefix) / "instances" / recipeInstanceId / "fire-and-resolve-when-completed")
         .withOptionQueryParam("correlationId", correlationId)), fallbackEndpoint).map { result =>
       logger.info(s"For recipe instance '$recipeInstanceId', fired and completed event '${event.name}', resulting status ${result.sensoryEventStatus}")
-      logger.debug(s"Resulting ingredients ${result.ingredients.map { case (ingredient, value) => s"$ingredient=$value" }.mkString(", ")}")
       result
     }
 
@@ -266,7 +272,6 @@ final class BakerClient( client: Client[IO],
       (host, prefix) => POST(event, (root(host, prefix) / "instances" / recipeInstanceId / "fire-and-resolve-on-event" / onEvent)
         .withOptionQueryParam("correlationId", correlationId)), fallbackEndpoint).map { result =>
       logger.info(s"For recipe instance '$recipeInstanceId', fired event '${event.name}', and resolved on event '$onEvent', resulting status ${result.sensoryEventStatus}")
-      logger.debug(s"Resulting ingredients ${result.ingredients.map { case (ingredient, value) => s"$ingredient=$value" }.mkString(", ")}")
       result
     }
 
@@ -290,7 +295,8 @@ final class BakerClient( client: Client[IO],
     *
     */
   override def addMetaData(recipeInstanceId: String, metadata: Map[String,String]): Future[Unit] =
-    throw new NotImplementedError("AddMetaData not implemented for the BakerClient")
+    callRemoteBakerService[Unit](
+      (host, prefix) => POST(AddMetaDataRequest(metadata), root(host, prefix) / "instances" / recipeInstanceId / "add-metadata"))
 
   /**
     * Returns an index of all running processes.
@@ -313,6 +319,14 @@ final class BakerClient( client: Client[IO],
     */
   override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] =
     callRemoteBakerServiceFallbackAware[RecipeInstanceState]((host, prefix) => GET(root(host, prefix) / "instances" / recipeInstanceId), fallbackEndpoint)
+
+  /**
+    * @param recipeInstanceId
+    * @param name
+    * @return
+    */
+  override def getIngredient(recipeInstanceId: String, name: String): Future[Value] =
+    callRemoteBakerServiceFallbackAware[Value]((host, prefix) => GET(root(host, prefix) / "instances" / recipeInstanceId / "ingredient" / name), fallbackEndpoint)
 
   /**
     * Returns all provided ingredients for a given RecipeInstance id.
@@ -355,7 +369,7 @@ final class BakerClient( client: Client[IO],
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Future[Unit] =
+  override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, String) => Unit): Future[Unit] =
     throw new NotImplementedError("registerEventListener is not implemented for client bakers")
 
   /**
@@ -363,7 +377,7 @@ final class BakerClient( client: Client[IO],
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Future[Unit] =
+  override def registerEventListener(listenerFunction: (RecipeEventMetadata, String) => Unit): Future[Unit] =
     throw new NotImplementedError("registerEventListener is not implemented for client bakers")
 
   /**

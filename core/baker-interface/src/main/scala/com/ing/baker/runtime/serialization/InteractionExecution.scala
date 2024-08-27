@@ -39,7 +39,7 @@ object InteractionExecution {
 
   case class Interactions(startedAt: Long, interactions: List[Descriptor])
   case class Descriptor(id: String, name: String, input: Seq[InteractionInstanceInput], output: Option[Map[String, Map[String, Type]]])
-  case class ExecutionRequest(id: String, ingredients: List[IngredientInstance])
+  case class ExecutionRequest(id: String, ingredients: List[IngredientInstance], metaData: Option[Map[String, String]])
   case class ExecutionResult(outcome: Either[Failure, Success])
 
   sealed trait Result

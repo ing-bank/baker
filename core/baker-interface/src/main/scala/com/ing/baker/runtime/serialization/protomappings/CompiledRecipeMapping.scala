@@ -6,7 +6,7 @@ import com.ing.baker.il.CompiledRecipe.Scala212CompatibleJava
 import com.ing.baker.il.petrinet.{Node, Place, RecipePetriNet, Transition}
 import com.ing.baker.petrinet.api.{Marking, _}
 import com.ing.baker.runtime.akka.actor.protobuf
-import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
+import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned, versionedOptional}
 import com.ing.baker.runtime.serialization.{ProtoMap, TokenIdentifier}
 import com.ing.baker.types.Value
 import scalax.collection.GraphEdge
@@ -98,7 +98,8 @@ class CompiledRecipeMapping extends ProtoMap[il.CompiledRecipe, protobuf.Compile
             predefinedParameters = t.predefinedParameters.view.map { case (key, value) => (key, ctxToProto(value))}.toMap,
             maximumInteractionCount = t.maximumInteractionCount,
             failureStrategy = Option(ctxToProto(t.failureStrategy)),
-            eventOutputTransformers = t.eventOutputTransformers.view.map { case (key, value) => (key, ctxToProto(value))}.toMap
+            eventOutputTransformers = t.eventOutputTransformers.view.map { case (key, value) => (key, ctxToProto(value))}.toMap,
+            isReprovider = Some(t.isReprovider)
           )
 
           protobuf.Node(protobuf.Node.OneofNode.InteractionTransition(pt))
@@ -195,6 +196,7 @@ class CompiledRecipeMapping extends ProtoMap[il.CompiledRecipe, protobuf.Compile
               .traverse[Try, (String, il.EventOutputTransformer)]
               { case (k, v) => ctxFromProto(v).map(k -> _) }
               .map(_.toMap)
+            isReprovider = versionedOptional(transition.value.isReprovider, false)
           } yield
             Right(il.petrinet.InteractionTransition(
               eventsToFire = eventDescriptor ++ providedIngredientEvent,
@@ -205,7 +207,8 @@ class CompiledRecipeMapping extends ProtoMap[il.CompiledRecipe, protobuf.Compile
               predefinedParameters = predefinedparameters,
               maximumInteractionCount = transition.value.maximumInteractionCount,
               failureStrategy = failureStrategy,
-              eventOutputTransformers = eventOutputTransformers
+              eventOutputTransformers = eventOutputTransformers,
+              isReprovider = isReprovider
             ))
 
         case other =>

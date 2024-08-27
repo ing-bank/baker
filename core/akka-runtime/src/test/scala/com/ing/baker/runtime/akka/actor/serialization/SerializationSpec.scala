@@ -268,6 +268,7 @@ object SerializationSpec {
     implicit val eventNameGen: Gen[String] = Gen.alphaStr
     implicit val ingredientNameGen: Gen[String] = Gen.alphaStr
     implicit val ingredientsGen: Gen[(String, Value)] = GenUtil.tuple(ingredientNameGen, Types.anyValueGen)
+    implicit val metaDataGen: Gen[(String, String)] = GenUtil.tuple(ingredientNameGen, ingredientNameGen)
 
     implicit val runtimeEventGen: Gen[EventInstance] = for {
       eventName <- eventNameGen
@@ -281,9 +282,11 @@ object SerializationSpec {
 
     implicit val processStateGen: Gen[RecipeInstanceState] = for {
       recipeInstanceId <- recipeInstanceIdGen
+      recipeId <- recipeIdGen
       ingredients <- Gen.mapOf(ingredientsGen)
+      recipeInstanceMetadata <- Gen.mapOf(metaDataGen)
       events <- Gen.listOf(eventMomentsGen)
-    } yield RecipeInstanceState(recipeInstanceId, ingredients, events)
+    } yield RecipeInstanceState(recipeId, recipeInstanceId, ingredients, recipeInstanceMetadata, events)
 
     implicit val messagesGen: Gen[AnyRef] = Gen.oneOf(runtimeEventGen, processStateGen)
 
