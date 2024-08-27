@@ -25,8 +25,8 @@ Use the list below to learn more about Baker:
 
 - [Documentation](https://ing-bank.github.io/baker/)
     - [Concepts](https://ing-bank.github.io/baker/sections/concepts/): high level concepts and terminology
-    - [Recipe DSL](https://ing-bank.github.io/baker/sections/reference/dsls/): how to use the recipe DSL
-    - [Visualization](https://ing-bank.github.io/baker/sections/reference/visualization/): how to visualize a recipe
+    - [Recipe DSL](https://ing-bank.github.io/baker/sections/cookbook/recipe-dsl/): how to use the recipe DSL
+    - [Visualization](https://ing-bank.github.io/baker/sections/cookbook/visualizations/): how to visualize a recipe
 - [Baker Talk @ J-Fall 2021](https://www.youtube.com/watch?v=U4aCUT9zIFk): API orchestration taken to the next level
 
 ## A bird's-eye view of Baker

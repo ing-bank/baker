@@ -4,24 +4,25 @@ import java.lang.reflect.ParameterizedType
 
 import com.ing.baker.types
 import com.ing.baker.types._
+import java.lang.reflect.{Type => JType}
 
 class PrimitiveModule extends TypeModule {
 
-  def isByteArray(javaType: java.lang.reflect.Type) = javaType match {
+  private def isByteArray(javaType: JType) = javaType match {
     case clazz: Class[_] =>
       clazz == classOf[Array[Byte]]
     case t: ParameterizedType =>
       classOf[scala.Array[_]].isAssignableFrom(getBaseClass(t)) && classOf[Byte].isAssignableFrom(getBaseClass(t.getActualTypeArguments()(0)))
   }
 
-  override def isApplicable(javaType: java.lang.reflect.Type): Boolean = {
+  override def isApplicable(javaType: JType): Boolean = {
     javaType match {
       case clazz: Class[_] => primitiveMappings.contains(clazz)
       case other           => isByteArray(other)
     }
   }
 
-  override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): Type = {
+  override def readType(context: TypeAdapter, javaType: JType): Type = {
     javaType match {
       case clazz: Class[_] => primitiveMappings(clazz)
       case other if isByteArray(other) => types.ByteArray
@@ -31,7 +32,7 @@ class PrimitiveModule extends TypeModule {
 
   override def fromJava(context: TypeAdapter, obj: Any): Value = PrimitiveValue(obj)
 
-  override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any = {
+  override def toJava(context: TypeAdapter, value: Value, javaType: JType): Any = {
 
     (value, javaType) match {
       case (p @ PrimitiveValue(obj), clazz: Class[_]) if p.isAssignableTo(clazz) => obj

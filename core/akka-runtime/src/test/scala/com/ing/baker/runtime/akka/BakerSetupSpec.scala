@@ -11,6 +11,7 @@ import com.ing.baker.runtime.common.BakerException.{ImplementationsException, Re
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.typesafe.config.ConfigFactory
+import io.prometheus.client.CollectorRegistry
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.when
 
@@ -25,6 +26,10 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
   before {
     resetMocks()
+  }
+
+  override def beforeAll() = {
+    CollectorRegistry.defaultRegistry.clear()
   }
 
   "The Baker execution engine during setup" should {
