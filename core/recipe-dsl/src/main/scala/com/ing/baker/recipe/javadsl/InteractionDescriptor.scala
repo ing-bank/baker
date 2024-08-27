@@ -19,6 +19,7 @@ case class InteractionDescriptor private(
                           override val maximumInteractionCount: Option[Int],
                           override val failureStrategy: Option[common.InteractionFailureStrategy] = None,
                           override val eventOutputTransformers: Map[common.Event, common.EventOutputTransformer] = Map.empty,
+                          override val isReprovider: Boolean = false,
                           newName: Option[String] = None)
   extends common.InteractionDescriptor {
 
@@ -239,6 +240,16 @@ case class InteractionDescriptor private(
     */
   def withMaximumInteractionCount(times: Int): InteractionDescriptor =
     this.copy(maximumInteractionCount = Some(times))
+
+  /**
+    * When this interaction is executed it will fill its own interaction places.
+    * This is usefull if you want to execute this interaction multiple times without providing the ingredient again.
+    * To use this the InteractionDescriptor requires a prerequisite event.
+    * @param isReprovider
+    * @return
+    */
+  def isReprovider(isReprovider: Boolean): InteractionDescriptor =
+    this.copy(isReprovider = isReprovider)
 }
 
 object InteractionDescriptor {

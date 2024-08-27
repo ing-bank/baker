@@ -7,6 +7,7 @@ import cats.~>
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common
+import com.ing.baker.runtime.common.BakerException.NoSuchIngredientException
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.common.{BakerException, InteractionExecutionFailureReason, RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
@@ -29,7 +30,7 @@ object BakerF {
                     retentionPeriodCheckInterval: FiniteDuration = 10.seconds,
                     bakeTimeout: FiniteDuration = 10.seconds,
                     processEventTimeout: FiniteDuration = 10.seconds,
-                    inquireTimeout: FiniteDuration = 10.seconds,
+                    inquireTimeout: FiniteDuration = 60.seconds,
                     shutdownTimeout: FiniteDuration = 10.seconds,
                     addRecipeTimeout: FiniteDuration = 10.seconds,
                     executeSingleInteractionTimeout: FiniteDuration = 60.seconds,
@@ -132,7 +133,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         case None => effect.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
           InteractionExecutionFailureReason.INTERACTION_NOT_FOUND, None, None))))
         case Some(interactionInstance) =>
-          interactionInstance.execute(ingredients)
+          interactionInstance.execute(ingredients, Map.empty)
             .map(executionSuccess => InteractionExecutionResult(Right(InteractionExecutionResult.Success(executionSuccess))))
             .recover {
               case e => InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
@@ -162,6 +163,19 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     components.recipeInstanceManager.bake(recipeId, recipeInstanceId, config.recipeInstanceConfig)
       .timeout(config.bakeTimeout)
       .recoverWith(javaTimeoutToBakerTimeout("bake"))
+
+  /**
+    *
+    * @param recipeId         The recipeId for the recipe to bake
+    * @param recipeInstanceId The identifier for the newly baked process
+    * @param metadata
+    *  @return
+    */
+  override def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): F[Unit] =
+    components.recipeInstanceManager.bake(recipeId, recipeInstanceId, config.recipeInstanceConfig)
+      .timeout(config.bakeTimeout)
+      .recoverWith(javaTimeoutToBakerTimeout("bake"))
+      .flatMap(_ => components.recipeInstanceManager.addMetaData(recipeInstanceId, metadata))
 
   /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
@@ -261,6 +275,10 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
   override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: String): EventResolutionsType =
     fireEvent(recipeInstanceId, event, Some(correlationId))
 
+  override def addMetaData(recipeInstanceId: String, metadata: Map[String, String]): F[Unit] =
+    components.recipeInstanceManager.addMetaData(recipeInstanceId, metadata)
+
+
   /**
     * Returns an index of all running processes.
     *
@@ -286,6 +304,20 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     components.recipeInstanceManager.getRecipeInstanceState(recipeInstanceId)
       .timeout(config.inquireTimeout)
       .recoverWith(javaTimeoutToBakerTimeout("getRecipeInstanceState"))
+
+  /**
+    * Returns all provided ingredients for a given RecipeInstance id.
+    *
+    * @param recipeInstanceId The process id.
+    * @return The provided ingredients.
+    */
+  override def getIngredient(recipeInstanceId: String, name: String): F[Value] = {
+    getRecipeInstanceState(recipeInstanceId).map(_.ingredients)
+      .map(x => x.get(name) match {
+        case Some(value) => value
+        case None => throw NoSuchIngredientException(name)
+      })
+  }
 
   /**
     * Returns all provided ingredients for a given RecipeInstance id.
@@ -325,14 +357,14 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
       .timeout(config.inquireTimeout)
       .recoverWith(javaTimeoutToBakerTimeout("getVisualState"))
 
-  private def doRegisterEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit, processFilter: String => Boolean): F[Unit] =
+  private def doRegisterEventListener(listenerFunction: (RecipeEventMetadata, String) => Unit, processFilter: String => Boolean): F[Unit] =
     registerBakerEventListener {
       case EventReceived(_, recipeName, recipeId, recipeInstanceId, _, event) if processFilter(recipeName) =>
         listenerFunction.apply(RecipeEventMetadata(recipeId = recipeId, recipeName = recipeName, recipeInstanceId = recipeInstanceId), event)
       case InteractionCompleted(_, _, recipeName, recipeId, recipeInstanceId, _, Some(event)) if processFilter(recipeName) =>
         listenerFunction.apply(RecipeEventMetadata(recipeId = recipeId, recipeName = recipeName, recipeInstanceId = recipeInstanceId), event)
       case InteractionFailed(_, _, recipeName, recipeId, recipeInstanceId, _, _, _, ExceptionStrategyOutcome.Continue(eventName)) if processFilter(recipeName) =>
-        listenerFunction.apply(RecipeEventMetadata(recipeId = recipeId, recipeName = recipeName, recipeInstanceId = recipeInstanceId), EventInstance(eventName, Map.empty))
+        listenerFunction.apply(RecipeEventMetadata(recipeId = recipeId, recipeName = recipeName, recipeInstanceId = recipeInstanceId), eventName)
       case _ => ()
     }
 
@@ -341,7 +373,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): F[Unit] =
+  override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, String) => Unit): F[Unit] =
     doRegisterEventListener(listenerFunction, _ == recipeName)
 
   /**
@@ -349,7 +381,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): F[Unit] =
+  override def registerEventListener(listenerFunction: (RecipeEventMetadata, String) => Unit): F[Unit] =
     doRegisterEventListener(listenerFunction, _ => true)
 
   /**
@@ -431,6 +463,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.getAllRecipeInstancesMetadata)
       override def getRecipeInstanceState(recipeInstanceId: String): G[RecipeInstanceState] =
         mapK(self.getRecipeInstanceState(recipeInstanceId))
+      override def getIngredient(recipeInstanceId: String, name: String): G[Value] =
+        mapK(self.getIngredient(recipeInstanceId, name))
       override def getIngredients(recipeInstanceId: String): G[Map[String, Value]] =
         mapK(self.getIngredients(recipeInstanceId))
       override def getEvents(recipeInstanceId: String): G[Seq[EventMoment]] =
@@ -439,9 +473,9 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.getEventNames(recipeInstanceId))
       override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle): G[String] =
         mapK(self.getVisualState(recipeInstanceId))
-      override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): G[Unit] =
+      override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, String) => Unit): G[Unit] =
         mapK(self.registerEventListener(recipeName, listenerFunction))
-      override def registerEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): G[Unit] =
+      override def registerEventListener(listenerFunction: (RecipeEventMetadata, String) => Unit): G[Unit] =
         mapK(self.registerEventListener(listenerFunction))
       override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): G[Unit] =
         mapK(self.registerBakerEventListener(listenerFunction))
@@ -473,6 +507,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.executeSingleInteraction(interactionId, ingredients))
       override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] =
         mapK(self.bake(recipeId, recipeInstanceId))
+      override def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] =
+        mapK(self.bake(recipeId, recipeInstanceId, metadata))
       override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] =
         mapK(self.fireEventAndResolveWhenReceived(recipeInstanceId, event, correlationId))
       override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventResult] =
@@ -487,6 +523,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.getAllRecipeInstancesMetadata)
       override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] =
         mapK(self.getRecipeInstanceState(recipeInstanceId))
+      override def getIngredient(recipeInstanceId: String, name: String): Future[Value] =
+        mapK(self.getIngredient(recipeInstanceId, name))
       override def getIngredients(recipeInstanceId: String): Future[Map[String, Value]] =
         mapK(self.getIngredients(recipeInstanceId))
       override def getEvents(recipeInstanceId: String): Future[Seq[EventMoment]] =
@@ -495,9 +533,9 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.getEventNames(recipeInstanceId))
       override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle): Future[String] =
         mapK(self.getVisualState(recipeInstanceId, style))
-      override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Future[Unit] =
+      override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, String) => Unit): Future[Unit] =
         mapK(self.registerEventListener(recipeName, listenerFunction))
-      override def registerEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Future[Unit] =
+      override def registerEventListener(listenerFunction: (RecipeEventMetadata, String) => Unit): Future[Unit] =
         mapK(self.registerEventListener(listenerFunction))
       override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): Future[Unit] =
         mapK(self.registerBakerEventListener(listenerFunction))
@@ -509,6 +547,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.resolveInteraction(recipeInstanceId, interactionName, event))
       override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
         mapK(self.stopRetryingInteraction(recipeInstanceId, interactionName))
+      override def addMetaData(recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] =
+        mapK(self.addMetaData(recipeInstanceId, metadata))
     }
 
 }

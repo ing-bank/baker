@@ -42,7 +42,7 @@ public class TestRecipeJava {
         }
     }
 
-    private static final class EventFromInteractionTwo {
+    public static final class EventFromInteractionTwo {
         private String interactionTwoIngredient;
 
         public EventFromInteractionTwo(String interactionTwoIngredient) {
@@ -58,7 +58,7 @@ public class TestRecipeJava {
         }
     }
 
-    private static class InteractionTwo implements Interaction {
+    public static class InteractionTwo implements Interaction {
         @FiresEvent(oneOf = EventFromInteractionTwo.class)
         EventFromInteractionTwo apply(
                 @RequiresIngredient("initialIngredient") final String initialIngredient) {
@@ -66,7 +66,7 @@ public class TestRecipeJava {
         }
     }
 
-    private static final class InteractionThreeSuccessful {
+    public static final class InteractionThreeSuccessful {
         private String interactionThreeIngredientA;
         private String interactionThreeIngredientB;
 
@@ -133,6 +133,26 @@ public class TestRecipeJava {
                                         .build()
                                 ),
                         of(InteractionTwo.class),
+                        of(SupplierInteraction.class)
+                                .withRequiredEvent(EmptyEvent.class),
+                        of(InteractionThree.class)
+                                .withRequiredEvent(SupplierInteractionSuccessful.class)
+                )
+                .withSensoryEvent(InitialEvent.class)
+                .withSensoryEvent(EmptyEvent.class);
+    }
+
+    public static Recipe getRecipeReprovider(String name) {
+        return new Recipe(name)
+                .withInteractions(
+                        of(InteractionOne.class)
+                                .withFailureStrategy(new InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder()
+                                        .withInitialDelay(Duration.ofMillis(10))
+                                        .withMaximumRetries(3)
+                                        .build()
+                                ),
+                        of(InteractionTwo.class)
+                                .isReprovider(true),
                         of(SupplierInteraction.class)
                                 .withRequiredEvent(EmptyEvent.class),
                         of(InteractionThree.class)

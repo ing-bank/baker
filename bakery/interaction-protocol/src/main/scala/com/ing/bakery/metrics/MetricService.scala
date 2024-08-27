@@ -10,36 +10,43 @@ import org.http4s.dsl.io._
 import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.{Router, Server}
-import org.http4s.{HttpRoutes, _}
+import org.http4s._
+
 import java.io.CharArrayWriter
 import java.net.InetSocketAddress
-
 import scala.concurrent.ExecutionContext
 import scala.io.Source
 
-object MetricService extends LazyLogging {
+class MetricService(val registry: CollectorRegistry) extends LazyLogging {
+  try {
+    DefaultExports.register(registry)
+    registry.register(new JmxCollector(Source.fromResource("prometheus-jmx-collector.yaml").mkString))
+  } catch {
+    case e: Exception =>
+      logger.error(s"No prometheus-jmx-collector.yaml found in classpath, JMX export is not enabled: ${e.getMessage}")
+  }
 
-  val registry: CollectorRegistry = CollectorRegistry.defaultRegistry
-  DefaultExports.register(registry)
+  val interactionSuccessCounter: Counter = counter("bakery_interaction_success", "Successful interaction calls")
+  val interactionFailureCounter: Counter = counter("bakery_interaction_failure", "Failed interaction calls")
 
-  def counter(name: String, help: String): Counter =
+  def counter(name: String, help: String): Counter = {
     Counter
       .build()
       .name(name)
       .help(help)
       .create()
       .register(registry)
-
-  try {
-    registry.register(new JmxCollector(Source.fromResource("prometheus-jmx-collector.yaml").mkString))
-  } catch {
-    case e: Exception =>
-      logger.info(s"No prometheus-jmx-collector.yaml found in classpath, JMX export is not enabled: ${e.getMessage}")
   }
 
   def register(collector: Collector): Unit = registry.register(collector)
+}
 
-  def resource(socketAddress: InetSocketAddress, ec: ExecutionContext)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
+object MetricService extends LazyLogging {
+
+  def defaultInstance = new MetricService(new CollectorRegistry(true))
+
+  def resourceServer(socketAddress: InetSocketAddress, registry: CollectorRegistry, ec: ExecutionContext)
+                    (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
     val encoder = EntityEncoder.stringEncoder
 
     def fromPrometheus: String = {
@@ -68,6 +75,4 @@ object MetricService extends LazyLogging {
           ) orNotFound).resource
     } yield server
   }
-
 }
-

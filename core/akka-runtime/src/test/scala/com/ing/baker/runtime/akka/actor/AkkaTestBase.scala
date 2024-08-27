@@ -12,6 +12,11 @@ abstract class AkkaTestBase(actorSystemName: String = "testActorSystem") extends
     with ImplicitSender
     with BeforeAndAfterAll {
 
+  override def beforeAll() = {
+    super.beforeAll()
+    CollectorRegistry.defaultRegistry.clear()
+  }
+
   override def afterAll() = {
     super.afterAll()
     shutdown(system)

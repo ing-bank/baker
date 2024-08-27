@@ -12,7 +12,6 @@ import java.lang.reflect.{Method, Parameter}
 import java.security.MessageDigest
 import java.util.Base64
 import java.util.concurrent.CompletableFuture
-import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -22,7 +21,7 @@ import scala.runtime.ScalaRunTime
 abstract class InteractionInstance[F[_]] extends common.InteractionInstance[F] with ScalaApi {
   self =>
 
-  val run: Seq[IngredientInstance] => F[Option[EventInstance]]
+  val run: Seq[IngredientInstance]=> F[Option[EventInstance]]
 
   override type Event = EventInstance
 
@@ -30,7 +29,8 @@ abstract class InteractionInstance[F[_]] extends common.InteractionInstance[F] w
 
   override type Input = InteractionInstanceInput
 
-  override def execute(input: Seq[IngredientInstance]): F[Option[Event]] =
+  //By default the metadata is not used but is given so implementation can overwrite it
+  override def execute(input: Seq[IngredientInstance], metadata: Map[String, String]): F[Option[Event]] =
     run(input)
 
   def shaBase64: String = {

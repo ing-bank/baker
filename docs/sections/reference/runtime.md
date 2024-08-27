@@ -1,9 +1,13 @@
-# The Akka Based Runtime
+# The Baker Runtime
 
-## Baker.akka(config, actorSystem)
+Baker provider several constructors to build a runtime to run your Recipes on. The current implementations are an in memory implementation and an
+[Akka](https://akka.io/) based implementation. 
 
-Baker provider several constructors to build a runtime to run your Recipes on. The current implementations are o
-[Akka](https://akka.io/) based, one in local mode, and another in cluster mode. 
+## Akka Runtime
+The Akka based implementation can be configured to run in local mode or in cluster mode.
+We advised to use the in memory Baker instead of the Akka Baker in local mode if you do not require state.
+
+### Baker.akka(config, actorSystem)
 
 _Note: We recommend reviewing also Akka configuration._
 
@@ -37,7 +41,7 @@ _Note: We recommend reviewing also Akka configuration._
     ```
 
 This last code snippet will build a Baker runtime and load all configuration from your default `application.conf` located 
-in the resources directory. You can see more about configuration on [this section](../development-life-cycle/configure.md).
+in the resources directory. You can see more about configuration on [this section](../stores).
 
 Alternatively there is a constructor that will provide the default configuration for a local mode Baker, this 
 is recommended for tests.
@@ -58,7 +62,7 @@ is recommended for tests.
 
     ```
 
-### Advantages of the Cluster Mode
+#### Advantages of the Cluster Mode
 
 The capabilities gained when in cluster mode are:
 
@@ -209,7 +213,7 @@ except it comes in a `CompletableFuture` that will help you handle async program
 `Recipes` once built must be converted into a data structure called `CompiledRecipe` that lets `RecipeInstances` 
 to understand, store and run your process. These can be used to create a new `RecipeInstance` from a `baker` 
 runtime that contains both a `CompiledRecipe` and the required `InteractionInstances`, or they can as well be converted
-into a [visualziation](visualization.md).
+into a [visualization](../../cookbook/visualizations).
 
 === "Scala"
 
