@@ -342,14 +342,14 @@ message EventReceivedBakerEvent {
     optional string recipeId = 3;
     optional string recipeInstanceId = 4;
     optional string correlationId = 5;
-    optional RuntimeEvent event = 6;
+    optional string eventName = 6;
 }
 
 message EventRejectedBakerEvent {
     optional int64 timeStamp = 1;
     optional string recipeInstanceId = 2;
     optional string correlationId = 3;
-    optional RuntimeEvent event = 4;
+    optional string eventName = 4;
     optional RejectReason reason = 5;
 }
 
@@ -358,7 +358,7 @@ message EventFiredBakerEvent {
     optional string recipeName = 2;
     optional string recipeId = 3;
     optional string recipeInstanceId = 4;
-    optional RuntimeEvent event = 6;
+    optional string eventName = 5;
 }
 
 message InteractionFailedBakerEvent {
@@ -388,7 +388,7 @@ message InteractionCompletedBakerEvent {
     optional string recipeId = 4;
     optional string recipeInstanceId = 5;
     optional string interactionName = 6;
-    optional RuntimeEvent event = 7;
+    optional string eventName = 7;
 }
 
 message RecipeInstanceCreatedBakerEvent {

@@ -365,6 +365,82 @@ class KotlinDslTest {
     }
 
     @Test
+    fun `create a recipe with sieve events`() {
+        val recipe = recipe("RecipeWithSieve") {
+            interaction<Interactions.MakePayment> {
+                failureStrategy = fireEventAfterFailure<Events.OrderPlaced>()
+            }
+            interaction<Interactions.ReserveItems> {
+                failureStrategy = fireEventAfterFailure("OrderPlaced")
+            }
+
+            ingredient("extractDate"){ reservedItems: Ingredients.ReservedItems ->  reservedItems.date }
+        }
+
+        with(recipe) {
+            assertEquals("RecipeWithSieve", name())
+            assertEquals(Option.empty<FiniteDuration>(), retentionPeriod())
+            assertEquals(Option.empty<FiniteDuration>(), eventReceivePeriod())
+            assertEquals(BlockInteraction::class.java, defaultFailureStrategy().javaClass)
+            assertEquals(2, interactions().size())
+            assertEquals("MakePayment", interactions().get(0).name())
+            assertEquals("ReserveItems", interactions().get(1).name())
+            assertEquals(1, sieves().size())
+            assertEquals("extractDate", sieves().get(0).name())
+            assertEquals(1, sieves().get(0).inputIngredients().size())
+            assertEquals("reservedItems", sieves().get(0).inputIngredients().get(0).name())
+            assertEquals(1, sieves().get(0).output().size())
+            assertEquals("\$SieveEvent\$extractDate", sieves().get(0).output().get(0).name())
+        }
+    }
+
+    @Test
+    fun `create a recipe with subrecipe`() {
+        val fulfillment = recipe("Fulfillment") {
+            interaction<Interactions.ReserveItems> {
+                failureStrategy = fireEventAfterFailure("OrderPlaced")
+            }
+            interaction<Interactions.ShipItems> {
+                failureStrategy = retryWithIncrementalBackoff {
+                    initialDelay = 1.0.seconds
+                    maxTimeBetweenRetries = 2.0.seconds
+                    backoffFactor = 3.0
+                    fireRetryExhaustedEvent = "TestEvent1"
+                    until = maximumRetries(20)
+                }
+                requiredEvents {
+                    event<Interactions.MakePayment.PaymentSuccessful>()
+                }
+            }
+        }
+
+        val webshop = recipe("Webshop") {
+
+            sensoryEvents {
+                eventWithoutFiringLimit<Events.OrderPlaced>()
+                event<Events.PaymentInformationReceived>(maxFiringLimit = 5)
+                event<Events.ShippingAddressReceived>()
+            }
+
+            subRecipe(fulfillment)
+
+            interaction<Interactions.MakePayment> {
+                failureStrategy = fireEventAfterFailure<Events.OrderPlaced>()
+            }
+
+        }
+
+        with(webshop) {
+            assertEquals("Webshop", name())
+            assertEquals(Option.empty<FiniteDuration>(), retentionPeriod())
+            assertEquals(Option.empty<FiniteDuration>(), eventReceivePeriod())
+            assertEquals(BlockInteraction::class.java, defaultFailureStrategy().javaClass)
+            assertEquals(1, subRecipes().size())
+            assertEquals("Fulfillment", subRecipes().get(0).name())
+        }
+    }
+
+    @Test
     fun `transformEvent should work for Java classes`() {
         val recipe = recipe("java transform event") {
             interaction<JavaInteraction> {
@@ -395,11 +471,20 @@ class KotlinDslTest {
             assertEquals("metaData", inputIngredients().toList().apply(0).name())
             assertEquals("CharArray", inputIngredients().toList().apply(0).ingredientType().toString())
             assertEquals("agreements", inputIngredients().toList().apply(1).name())
-            assertEquals("List[Record(name: CharArray, id: Int64)]", inputIngredients().toList().apply(1).ingredientType().toString())
+            assertEquals(
+                "List[Record(name: CharArray, id: Int64)]",
+                inputIngredients().toList().apply(1).ingredientType().toString()
+            )
             assertEquals("uniqueAgreements", inputIngredients().toList().apply(2).name())
-            assertEquals("List[Record(name: CharArray, id: Int64)]", inputIngredients().toList().apply(2).ingredientType().toString())
+            assertEquals(
+                "List[Record(name: CharArray, id: Int64)]",
+                inputIngredients().toList().apply(2).ingredientType().toString()
+            )
             assertEquals("mapOfAgreements", inputIngredients().toList().apply(3).name())
-            assertEquals("Map[Record(name: CharArray, id: Int64)]", inputIngredients().toList().apply(3).ingredientType().toString())
+            assertEquals(
+                "Map[Record(name: CharArray, id: Int64)]",
+                inputIngredients().toList().apply(3).ingredientType().toString()
+            )
         }
     }
 
@@ -486,10 +571,10 @@ class KotlinDslTest {
         ): Result
     }
 
-    interface ApiInteraction: Interaction {
+    interface ApiInteraction : Interaction {
         sealed interface Response
-        sealed interface Response200: Response
-        sealed interface Response500: Response
+        sealed interface Response200 : Response
+        sealed interface Response500 : Response
         class ResponseSuccessful : Response200
         class ResponseFailed : Response500
 
