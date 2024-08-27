@@ -16,17 +16,21 @@ class Recipe(
   nameInput: String,
   interactionsInput: java.util.List[Interaction],
   sensoryEventsInput: java.util.List[Event],
+  subRecipesInput: java.util.List[Recipe],
   defaultFailureStrategyInput: common.InteractionFailureStrategy,
   eventReceivePeriodInput: java.util.Optional[java.time.Duration],
   retentionPeriodInput: java.util.Optional[java.time.Duration],
-  checkpointEventsInput: java.util.Set[CheckPointEvent]
+  checkpointEventsInput: java.util.Set[CheckPointEvent],
+  sieveInteractionsInput: java.util.Set[Sieve]
 ) extends common.Recipe {
 
   override val name: String = nameInput
   override val interactions: Seq[Interaction] = new ArraySeq.ofRef(interactionsInput.asScala.toArray)
   override val sensoryEvents: Set[common.Event] = sensoryEventsInput.asScala.toSet
+  override val subRecipes: Set[common.Recipe] =subRecipesInput.asScala.toSet
   override val defaultFailureStrategy: common.InteractionFailureStrategy = defaultFailureStrategyInput
   override val eventReceivePeriod: Option[FiniteDuration] = eventReceivePeriodInput.map[Option[FiniteDuration]](d => Option.apply(FiniteDuration(d.toNanos, TimeUnit.NANOSECONDS))).orElse(None)
   override val retentionPeriod: Option[FiniteDuration] = retentionPeriodInput.map[Option[FiniteDuration]](d => Option.apply(FiniteDuration(d.toNanos, TimeUnit.NANOSECONDS))).orElse(None)
   override val checkpointEvents: Set[common.CheckPointEvent] = checkpointEventsInput.asScala.toSet
+  override val sieves: Set[common.Sieve] = sieveInteractionsInput.asScala.toSet
 }

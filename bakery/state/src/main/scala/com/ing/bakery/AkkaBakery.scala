@@ -9,6 +9,7 @@ import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.bakery.components.AkkaBakeryComponents
+import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.prometheus.client.CollectorRegistry
@@ -78,10 +79,10 @@ object Bakery {
                  externalContext: Option[Any] = None,
                  interactionManager: Option[InteractionManager[IO]] = None,
                  recipeManager: Option[RecipeManager] = None,
-                 registry: CollectorRegistry = CollectorRegistry.defaultRegistry): Resource[IO, AkkaBakery] = {
+                 metricService: MetricService = new MetricService(CollectorRegistry.defaultRegistry)): Resource[IO, AkkaBakery] = {
 
     val akkaBakeryComponents: AkkaBakeryComponents =
-      new AkkaBakeryComponents(optionalConfig, externalContext, registry) {
+      new AkkaBakeryComponents(optionalConfig, externalContext, metricService) {
 
         override def interactionManagerResource(config: Config,
                                                 actorSystem: ActorSystem,

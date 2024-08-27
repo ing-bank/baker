@@ -5,7 +5,7 @@ import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance}
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
-import com.ing.baker.runtime.serialization.BakeRequest
+import com.ing.baker.runtime.serialization.{AddMetaDataRequest, BakeRequest}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import io.circe.generic.auto._
@@ -57,7 +57,7 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
   def getMetaDataFromBakeRequest(bakeRequestJson: String): Map[String, String] = {
     parse(bakeRequestJson) match {
       case Left(_) =>
-        logger.error("Failure parsing bakeRequest")
+        logger.error("Failure parsing json of bakeRequest")
         Map.empty[String, String]
       case Right(json: io.circe.Json) =>
         json.as[BakeRequest] match {
@@ -66,6 +66,22 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
             Map.empty[String, String]
           case Right(bakeRequest: BakeRequest) =>
             bakeRequest.metadata.getOrElse(Map.empty[String, String])
+        }
+    }
+  }
+
+  def getMetaDataFromAddMetaDataRequest(addMetaDataRequestJson: String): Map[String, String] = {
+    parse(addMetaDataRequestJson) match {
+      case Left(_) =>
+        logger.error("Failure parsing json of AddMetaDataRequest")
+        throw BakerException.UnexpectedException("Failure parsing json of AddMetaDataRequest")
+      case Right(json: io.circe.Json) =>
+        json.as[AddMetaDataRequest] match {
+          case Left(_) =>
+            logger.error("Failure parsing of AddMetaDataRequest")
+            throw BakerException.UnexpectedException("Failure parsing of AddMetaDataRequest")
+          case Right(addMetaDataRequest: AddMetaDataRequest) =>
+            addMetaDataRequest.metadata
         }
     }
   }
@@ -80,7 +96,7 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
 
     def getEvents: JFuture[String] = baker.getEvents(recipeInstanceId).toBakerResult
 
-//    def getIngredient(name: String): JFuture[String] = baker.getIngredient(recipeInstanceId, name).toBakerResult
+    def getIngredient(name: String): JFuture[String] = baker.getIngredient(recipeInstanceId, name).toBakerResult
 
     def getIngredients: JFuture[String] = baker.getIngredients(recipeInstanceId).toBakerResult
 
@@ -94,6 +110,10 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
 
     def fireAndResolveOnEvent(eventJson: String, event: String, maybeCorrelationId: Optional[String]): JFuture[String] =
       parseEventAndExecute(eventJson, baker.fireEventAndResolveOnEvent(recipeInstanceId, _, event, toOption(maybeCorrelationId)))
+
+    def addMetaData(addMetaDataRequestJson: String): JFuture[String] =
+      baker.addMetaData(recipeInstanceId, getMetaDataFromAddMetaDataRequest(addMetaDataRequestJson))
+        .toBakerResult
 
     def retryInteraction(interactionName: String): JFuture[String] =
       baker.retryInteraction(recipeInstanceId, interactionName).toBakerResult

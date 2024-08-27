@@ -6,11 +6,13 @@ import akka.persistence.query.scaladsl._
 import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.TestProbe
 import akka.util.Timeout
+import com.ing.baker.il.petrinet.Place
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.AkkaTestBase
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceSpec._
+import com.ing.baker.runtime.akka.actor.process_instance.dsl.TestUtils.{PlaceMethods, place}
 import com.ing.baker.runtime.akka.actor.process_instance.dsl._
 import com.ing.baker.runtime.serialization.Encryption.NoEncryption
 import org.scalatest.BeforeAndAfterEach
@@ -42,9 +44,9 @@ class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") 
 
       val readJournal = PersistenceQuery(system).readJournalFor[ReadJournal with CurrentEventsByPersistenceIdQuery]("inmemory-read-journal")
 
-      val p1 = Place(id = 1)
-      val p2 = Place(id = 2)
-      val p3 = Place(id = 3)
+      val p1 = place(1)
+      val p2 = place(2)
+      val p3 = place(3)
       val t1 = nullTransition(id = 1, automated = true)
       val t2 = nullTransition(id = 2, automated = true)
 
@@ -58,7 +60,7 @@ class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") 
       expectMsgPF(timeOut) { case TransitionFired(_, 1, _, _, _, _, _) => }
       expectMsgPF(timeOut) { case TransitionFired(_, 2, _, _, _, _, _) => }
 
-      ProcessInstanceEventSourcing.eventsForInstance[Place, Transition, Unit, Unit](
+      ProcessInstanceEventSourcing.eventsForInstance[Unit, Unit](
         processTypeName = "test",
         recipeInstanceId = recipeInstanceId,
         topology = petriNet,

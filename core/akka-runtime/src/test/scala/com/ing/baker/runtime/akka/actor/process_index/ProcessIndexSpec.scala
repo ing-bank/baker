@@ -21,6 +21,7 @@ import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types
 import com.ing.baker.types.Value
 import com.typesafe.config.{Config, ConfigFactory}
+import io.prometheus.client.CollectorRegistry
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito
 import org.mockito.Mockito.when
@@ -65,7 +66,13 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
     Mockito.reset(otherMsg)
   }
 
+  override def beforeAll() = {
+    super.beforeAll()
+    CollectorRegistry.defaultRegistry.clear()
+  }
+
   override def afterAll(): Unit = {
+    super.afterAll()
     TestKit.shutdownActorSystem(system)
   }
 
@@ -91,7 +98,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
     "create the PetriNetInstance actor when Initialize message is received" in {
       val recipeInstanceId = UUID.randomUUID().toString
       val initializeMsg =
-        Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty))
+        Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
@@ -136,7 +143,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
     "not create the PetriNetInstance actor if already created" in {
       val recipeInstanceId = UUID.randomUUID().toString
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
@@ -146,9 +153,12 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       expectMsg(ProcessAlreadyExists(recipeInstanceId))
     }
 
-    "delete a process if a retention period is defined, stop command is received" in {
+    "delete a process if a retention period is defined, CheckForProcessesToBeDeleted received" in {
+      val recipeInstanceId = UUID.randomUUID().toString
+
       val recipeRetentionPeriod = 500.milliseconds
-      val processProbe = TestProbe()
+      val processProbe = TestProbe(recipeInstanceId)
+
       val recipeManager = mock[RecipeManager]
 
       when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(
@@ -158,15 +168,59 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       ))))
 
       val actorIndex = createActorIndex(processProbe.ref, recipeManager)
-      val recipeInstanceId = UUID.randomUUID().toString
+
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
 
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
       processProbe.expectMsg(initializeMsg)
       Thread.sleep(recipeRetentionPeriod.toMillis)
       // inform the index to check for processes to be cleaned up
       actorIndex ! CheckForProcessesToBeDeleted
       processProbe.expectMsg(15.seconds, Stop(delete = true))
+
+      processProbe.testActor ! PoisonPill
+
+      val probe2 = TestProbe()
+      probe2.send(actorIndex, GetProcessState(recipeInstanceId))
+      probe2.expectMsg(10.seconds, ProcessDeleted(recipeInstanceId))
+    }
+
+    "forget a process if a remember duration is defined and this is passed" in {
+      val recipeInstanceId = UUID.randomUUID().toString
+
+      val recipeRetentionPeriod = 500.milliseconds
+      val processProbe = TestProbe(recipeInstanceId)
+
+      val recipeManager = mock[RecipeManager]
+
+      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(
+        CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty,
+          Option.empty, Some(recipeRetentionPeriod)),
+        updated = 0L
+      ))))
+
+      val actorIndex = createActorIndex(processProbe.ref, recipeManager, Some(1.milliseconds))
+
+      actorIndex ! CreateProcess(recipeId, recipeInstanceId)
+
+      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
+      processProbe.expectMsg(initializeMsg)
+      Thread.sleep(recipeRetentionPeriod.toMillis)
+      // inform the index to check for processes to be cleaned up
+      actorIndex ! CheckForProcessesToBeDeleted
+      processProbe.expectMsg(15.seconds, Stop(delete = true))
+
+      processProbe.testActor ! PoisonPill
+
+      //Wait for 100 millis to give the Index time to stop the actor
+      Thread.sleep(100)
+
+      // Second trigger to cleanup this time after the process was deleted
+      actorIndex ! CheckForProcessesToBeDeleted
+
+      val probe2 = TestProbe()
+      probe2.send(actorIndex, GetProcessState(recipeInstanceId))
+      probe2.expectMsg(10.seconds, NoSuchProcess(recipeInstanceId))
     }
 
     "Forward the FireTransition command when a valid HandleEvent is sent" in {
@@ -188,7 +242,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val recipeInstanceId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
 
 
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
@@ -236,7 +290,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val recipeInstanceId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
 
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
 
@@ -268,7 +322,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val recipeInstanceId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
 
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
 
@@ -300,7 +354,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val recipeInstanceId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
 
 
 
@@ -352,7 +406,9 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
     }
   }
 
-  private def createActorIndex(petriNetActorRef: ActorRef, recipeManager: RecipeManager): ActorRef = {
+  private def createActorIndex(petriNetActorRef: ActorRef,
+                               recipeManager: RecipeManager,
+                               rememberProcessDuration: Option[Duration] = None): ActorRef = {
     val props = Props(new ProcessIndex(
       recipeInstanceIdleTimeout = None,
       retentionCheckInterval = None,
@@ -361,13 +417,18 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       recipeManager = recipeManager,
       Seq.empty,
       Seq.empty,
-      Seq.empty) {
+      Seq.empty,
+      rememberProcessDuration) {
       override def createProcessActor(id: String, compiledRecipe: CompiledRecipe) = {
         context.watch(petriNetActorRef)
         petriNetActorRef
       }
       override def getProcessActor(recipeInstanceId: String): Option[ActorRef] = {
         Some(petriNetActorRef)
+      }
+      override def getRecipeIdFromActor(actorRef: ActorRef): String = {
+        val result = if (petriNetActorRef.path.name.size >= 36) petriNetActorRef.path.name.substring(0, 36) else petriNetActorRef.path.name
+        result
       }
     })
     system.actorOf(props, s"actorIndex-${UUID.randomUUID().toString}")

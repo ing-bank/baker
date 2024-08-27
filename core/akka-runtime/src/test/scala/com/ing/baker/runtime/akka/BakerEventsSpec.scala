@@ -1,16 +1,17 @@
 package com.ing.baker.runtime.akka
 
 import akka.actor.ActorRef
-import akka.persistence.inmemory.extension.{ InMemoryJournalStorage, StorageExtension }
+import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.testkit.TestProbe
 import com.ing.baker._
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
-import com.ing.baker.recipe.scaladsl.Recipe
+import com.ing.baker.recipe.scaladsl.{CheckPointEvent, Event, Recipe}
 import com.ing.baker.runtime.common.RejectReason._
-import com.ing.baker.runtime.scaladsl.{ EventInstance, _ }
+import com.ing.baker.runtime.scaladsl.{EventInstance, _}
 import com.ing.baker.types.PrimitiveValue
 import com.typesafe.scalalogging.LazyLogging
+
 import java.util.UUID
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -57,6 +58,8 @@ object BakerEventsSpec extends LazyLogging {
         providesNothingInteraction,
         sieveInteraction
       )
+      .withCheckpointEvent(CheckPointEvent("CheckPointEvent")
+        .withRequiredEvents(Event[InteractionOneSuccessful], Event[EventFromInteractionTwo], Event[InteractionThreeSuccessful]))
       .withSensoryEvents(
         initialEvent.withMaxFiringLimit(1),
         initialEventExtendedName,
@@ -97,18 +100,24 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")
         // TODO check the order of the timestamps later
         _ = expectMsgInAnyOrderPF(listenerProbe,
-        {case msg@RecipeInstanceCreated(_, `recipeId`, `recipeName`, `recipeInstanceId`) => msg},
-        {case msg@EventReceived(_, _, _, `recipeInstanceId`, Some("someId"), EventInstance("InitialEvent", ingredients)) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg},
-        {case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "SieveInteraction") => msg},
-        {case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "InteractionOne") => msg},
-        {case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "InteractionTwo") => msg},
-        {case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "InteractionThree") => msg},
-        {case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "ProvidesNothingInteraction") => msg},
-        {case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "InteractionOne", Some(EventInstance("InteractionOneSuccessful", ingredients))) if ingredients == Map("interactionOneIngredient" -> PrimitiveValue("interactionOneIngredient")) => msg},
-        {case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "InteractionTwo", Some(EventInstance("EventFromInteractionTwo", ingredients))) if ingredients == Map("interactionTwoIngredient" -> PrimitiveValue("interactionTwoIngredient")) => msg},
-        {case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "InteractionThree", Some(EventInstance("InteractionThreeSuccessful", ingredients))) if ingredients == Map("interactionThreeIngredient" -> PrimitiveValue("interactionThreeIngredient")) => msg},
-        {case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "ProvidesNothingInteraction", None) => msg},
-        {case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "SieveInteraction", Some(EventInstance("SieveInteractionSuccessful", ingredients))) if ingredients == Map("sievedIngredient" -> PrimitiveValue("sievedIngredient")) => msg}
+          {case msg@RecipeInstanceCreated(_, `recipeId`, `recipeName`, `recipeInstanceId`) => msg},
+          {case msg@EventReceived(_, _, _, `recipeInstanceId`, Some("someId"), "InitialEvent") => msg},
+          {case msg@EventFired(_, _, _, `recipeInstanceId`, "InitialEvent") => msg},
+          {case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "SieveInteraction") => msg},
+          {case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "InteractionOne") => msg},
+          {case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "InteractionTwo") => msg},
+          {case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "InteractionThree") => msg},
+          {case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "ProvidesNothingInteraction") => msg},
+          {case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "InteractionOne", Some("InteractionOneSuccessful")) => msg},
+          {case msg@EventFired(_, _, _, `recipeInstanceId`, "InteractionOneSuccessful") => msg},
+          {case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "InteractionTwo", Some("EventFromInteractionTwo")) => msg},
+          {case msg@EventFired(_, _, _, `recipeInstanceId`, "EventFromInteractionTwo") => msg},
+          {case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "InteractionThree", Some("InteractionThreeSuccessful")) => msg},
+          {case msg@EventFired(_, _, _, `recipeInstanceId`, "InteractionThreeSuccessful") => msg},
+          {case msg@EventFired(_, _, _, `recipeInstanceId`, "CheckPointEvent") => msg},
+          {case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "ProvidesNothingInteraction", None) => msg},
+          {case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "SieveInteraction", Some("SieveInteractionSuccessful")) => msg},
+          {case msg@EventFired(_, _, _, `recipeInstanceId`, "SieveInteractionSuccessful") => msg}
         )
         _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
       } yield succeed
@@ -126,7 +135,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         // We used async function here because ThirdEvent is not part of the recipe and throws exception
         _ = baker.fireEventAndResolveWhenReceived(recipeInstanceId, EventInstance.unsafeFrom(ThirdEvent()), "someId")
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-          case msg@EventRejected(_, `recipeInstanceId`, Some("someId"), EventInstance("ThirdEvent", ingredients), InvalidEvent) if ingredients.isEmpty => msg
+          case msg@EventRejected(_, `recipeInstanceId`, Some("someId"), "ThirdEvent", InvalidEvent) => msg
         }
         _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
       } yield succeed
@@ -144,7 +153,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), "someId") // Same correlationId cannot be used twice
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-          case msg@EventRejected(_, `recipeInstanceId`, Some("someId"), EventInstance("InitialEvent", ingredients), AlreadyReceived) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg
+          case msg@EventRejected(_, `recipeInstanceId`, Some("someId"), "InitialEvent", AlreadyReceived) => msg
         }
         _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
       } yield succeed
@@ -162,7 +171,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue))) // Firing limit is set to 1 in the recipe
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-          case msg@EventRejected(_, `recipeInstanceId`, None, EventInstance("InitialEvent", ingredients), FiringLimitMet) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg
+          case msg@EventRejected(_, `recipeInstanceId`, None, "InitialEvent", FiringLimitMet) => msg
         }
         _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
       } yield succeed
@@ -182,7 +191,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         }
         _ = baker.fireEventAndResolveWhenReceived(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-          case msg@EventRejected(_, `recipeInstanceId`, Some("someId"), EventInstance("InitialEvent", ingredients), ReceivePeriodExpired) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg
+          case msg@EventRejected(_, `recipeInstanceId`, Some("someId"), "InitialEvent", ReceivePeriodExpired) => msg
         }
         _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
       } yield succeed
@@ -200,7 +209,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         // use a different RecipeInstanceId and use async function because the sync version throws NoSuchProcessException
         _ = baker.fireEventAndResolveWhenReceived(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-          case msg@EventRejected(_, `recipeInstanceId`, Some("someId"), EventInstance("InitialEvent", ingredients), NoSuchProcess) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg
+          case msg@EventRejected(_, `recipeInstanceId`, Some("someId"), "InitialEvent", NoSuchProcess) => msg
         }
         _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
       } yield succeed
