@@ -6,12 +6,10 @@ import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 
 // TODO: rename subtypes of BakerEvent to resamble the new names
 trait BakerEvent extends LanguageApi {
-  self =>
-  type Event <: EventInstance {type Language <: self.Language}
 }
 
 /**
-  * Event describing the fact that an event was received for a process.
+  * Event describing the fact that a sensory event was received for a process.
   */
 trait EventReceived extends BakerEvent {
   val timeStamp: Long
@@ -19,18 +17,29 @@ trait EventReceived extends BakerEvent {
   val recipeId: String
   val recipeInstanceId: String
   val correlationId: language.Option[String]
-  val event: Event
+  val eventName: String
 }
 
 /**
-  * Event describing the fact that an event was received but rejected for a process
+  * Event describing the fact that an sensory event was received but rejected for a process
   */
 trait EventRejected extends BakerEvent {
   val timeStamp: Long
   val recipeInstanceId: String
   val correlationId: language.Option[String]
-  val event: Event
+  val eventName: String
   val reason: RejectReason
+}
+
+/**
+  * Event describing the fact that an interaction outcome event was fired for a process
+  */
+trait EventFired extends BakerEvent {
+  val timeStamp: Long
+  val recipeName: String
+  val recipeId: String
+  val recipeInstanceId: String
+  val eventName: String
 }
 
 /**
@@ -44,7 +53,7 @@ trait InteractionFailed extends BakerEvent {
   val recipeInstanceId: String
   val interactionName: String
   val failureCount: Int
-  val throwable: Throwable
+  val errorMessage: String
   val exceptionStrategyOutcome: ExceptionStrategyOutcome
 }
 
@@ -69,7 +78,7 @@ trait InteractionCompleted extends BakerEvent {
   val recipeId: String
   val recipeInstanceId: String
   val interactionName: String
-  val event: language.Option[Event]
+  val eventName: language.Option[String]
 }
 
 /**

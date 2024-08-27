@@ -2,8 +2,8 @@ package com.ing.baker.petrinet.api
 
 trait MultiSetOps {
 
-  implicit class MultiSetFunctions[T](mset: MultiSet[T]) {
-    def multisetDifference(other: MultiSet[T]): MultiSet[T] =
+  implicit class MultiSetFunctions[X](mset: MultiSet[X]) {
+    def multisetDifference(other: MultiSet[X]): MultiSet[X] =
       other.foldLeft(mset) {
         case (result, (p, count)) => result.get(p) match {
           case None                  => result
@@ -12,7 +12,7 @@ trait MultiSetOps {
         }
       }
 
-    def multisetSum(other: MultiSet[T]): MultiSet[T] =
+    def multisetSum(other: MultiSet[X]): MultiSet[X] =
       other.foldLeft(mset) {
         case (m, (p, count)) => m.get(p) match {
           case None    => m + (p -> count)
@@ -26,7 +26,7 @@ trait MultiSetOps {
       * @param other
       * @return
       */
-    def isSubSet(other: MultiSet[T]): Boolean =
+    def isSubSet(other: MultiSet[X]): Boolean =
       !other.exists {
         case (element, count) => mset.get(element) match {
           case None                 => true
@@ -37,22 +37,22 @@ trait MultiSetOps {
 
     def multisetSize: Int = mset.values.sum
 
-    def setMultiplicity(map: Map[T, Int])(element: T, m: Int) = map + (element -> m)
+    def setMultiplicity(map: Map[X, Int])(element: X, m: Int) = map + (element -> m)
 
-    def allElements: Iterable[T] = mset.foldLeft(List.empty[T]) {
-      case (list, (e, count)) => List.fill[T](count)(e) ::: list
+    def allElements: Iterable[X] = mset.foldLeft(List.empty[X]) {
+      case (list, (e, count)) => List.fill[X](count)(e) ::: list
     }
 
-    def multisetDecrement(element: T, count: Int): MultiSet[T] =
+    def multisetDecrement(element: X, count: Int): MultiSet[X] =
       mset.get(element) match {
         case None                  => mset
         case Some(n) if n <= count => mset - element
         case Some(n)               => mset + (element -> (n - count))
       }
 
-    def multisetIncrement(element: T, count: Int): MultiSet[T] = mset + (element -> (count + mset.getOrElse(element, 0)))
+    def multisetIncrement(element: X, count: Int): MultiSet[X] = mset + (element -> (count + mset.getOrElse(element, 0)))
 
-    def multisetIntersects(other: MultiSet[T]): Boolean = {
+    def multisetIntersects(other: MultiSet[X]): Boolean = {
       mset.exists { case (p, n) => other.getOrElse(p, 0) > 0 }
     }
   }

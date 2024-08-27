@@ -51,11 +51,18 @@ object ProcessInstanceLogger {
       log.errorWithMDC(msg, mdc, cause)
     }
 
-    def fireTransition(recipeInstanceId: String, jobId: Long, transition: Transition, timeStarted: Long): Unit = {
+    def fireTransition(recipeInstanceId: String,
+                       recipeId: String,
+                       recipeName: String,
+                       jobId: Long,
+                       transition: Transition,
+                       timeStarted: Long): Unit = {
       val mdc = Map(
         "processEvent" -> "FiringTransition",
         "processId" -> recipeInstanceId,
         "recipeInstanceId" -> recipeInstanceId,
+        "recipeName" -> recipeName,
+        "recipeId" -> recipeId,
         "jobId" -> jobId,
         "transitionId" -> transition.label,
         "timeStarted" -> timeStarted
@@ -65,6 +72,8 @@ object ProcessInstanceLogger {
     }
 
     def transitionFired(recipeInstanceId: String,
+                        recipeId: String,
+                        recipeName: String,
                         transition: Transition,
                         jobId: Long,
                         timeStarted: Long,
@@ -73,6 +82,8 @@ object ProcessInstanceLogger {
       val mdc = Map(
         "processEvent" -> "TransitionFired",
         "processId" -> recipeInstanceId,
+        "recipeName" -> recipeName,
+        "recipeId" -> recipeId,
         "recipeInstanceId" -> recipeInstanceId,
         "jobId" -> jobId,
         "transitionId" -> transition.label,
@@ -86,6 +97,8 @@ object ProcessInstanceLogger {
     }
 
     def transitionFailed(recipeInstanceId: String,
+                         recipeId: String,
+                         recipeName: String,
                          transition: Transition,
                          jobId: Long,
                          timeStarted: Long,
@@ -95,6 +108,8 @@ object ProcessInstanceLogger {
         "processEvent" -> "TransitionFailed",
         "processId" -> recipeInstanceId,
         "recipeInstanceId" -> recipeInstanceId,
+        "recipeName" -> recipeName,
+        "recipeId" -> recipeId,
         "jobId" -> jobId,
         "timeStarted" -> timeStarted,
         "timeFailed" -> timeFailed,
@@ -107,10 +122,16 @@ object ProcessInstanceLogger {
       log.logWithMDC(Logging.ErrorLevel, msg, mdc)
     }
 
-    def fireTransitionRejected(recipeInstanceId: String, transition: Transition, rejectReason: String): Unit = {
+    def fireTransitionRejected(recipeInstanceId: String,
+                               recipeId: String,
+                               recipeName: String,
+                               transition: Transition,
+                               rejectReason: String): Unit = {
       val mdc = Map(
         "processEvent" -> "FireTransitionRejected",
         "recipeInstanceEvent" -> "FireInteractionRejected",
+        "recipeName" -> recipeName,
+        "recipeId" -> recipeId,
         "processId" -> recipeInstanceId,
         "recipeInstanceId" -> recipeInstanceId,
         "transitionId" -> transition.label,

@@ -8,7 +8,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.model.{BakerComponents, FireSensoryEventRejection}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
-import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, EventRejected, RecipeInstanceCreated}
+import com.ing.baker.runtime.scaladsl.{EventFired, EventInstance, EventReceived, EventRejected, RecipeInstanceCreated}
 import com.typesafe.scalalogging.LazyLogging
 import fs2.Stream
 
@@ -41,12 +41,12 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
       initialExecution <- EitherT.fromEither[F](currentState.validateExecution(input, correlationId, currentTime))
         .leftSemiflatMap { case (rejection, reason)  =>
           for {
-            event <- effect.delay(EventRejected(currentTime, recipeInstanceId, correlationId, input, rejection.asReason))
-            _ <- effect.delay(components.logging.eventRejected(event))
-            _ <- components.eventStream.publish(event)
+            eventRejected <- effect.delay(EventRejected(currentTime, recipeInstanceId, correlationId, input.name, rejection.asReason))
+            _ <- effect.delay(components.logging.eventRejected(eventRejected))
+            _ <- components.eventStream.publish(eventRejected)
           } yield rejection
         }
-      _ <- EitherT.liftF(components.eventStream.publish(EventReceived(currentTime, currentState.recipe.name, currentState.recipe.recipeId, recipeInstanceId, correlationId, input)))
+      _ <- EitherT.liftF(components.eventStream.publish(EventReceived(currentTime, currentState.recipe.name, currentState.recipe.recipeId, recipeInstanceId, correlationId, input.name)))
     } yield baseCase(initialExecution)
       .collect { case Some(output) => output.filterNot(config.ingredientsFilter) }
 
@@ -106,7 +106,11 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
         } yield output -> enabledExecutions
 
       case Left(ExceptionStrategyOutcome.Continue(eventName)) =>
-        handleExecutionOutcome(finishedExecution)(Right(Some(EventInstance(eventName, Map.empty))))
+        val output: EventInstance = EventInstance(eventName, Map.empty)
+        for {
+          enabledExecutions <- state.modify(_.recordFailedWithOutputExecution(finishedExecution, Some(output)))
+          _ <- scheduleIdleStop
+        } yield Some(output) -> enabledExecutions
 
       case Left(strategy @ ExceptionStrategyOutcome.BlockTransition) =>
         state
