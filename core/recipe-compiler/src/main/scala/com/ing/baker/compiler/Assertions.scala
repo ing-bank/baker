@@ -40,6 +40,6 @@ object Assertions {
     assertValidNames[Ingredient](_.name, allIngredients, "Ingredient")
     assertNoDuplicateElementsExist[InteractionDescriptor](_.name, recipe.interactions.toSet)
     assertNoDuplicateElementsExist[Event](_.name, recipe.sensoryEvents)
-    assertNonEmptyRecipe(recipe) ++ assertSensoryEventsNegativeFiringLimits(recipe) ++ assertRequiredEventForReprovider(recipe)
+    assertSensoryEventsNegativeFiringLimits(recipe) ++ assertRequiredEventForReprovider(recipe)
   }
 }

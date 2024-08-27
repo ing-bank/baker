@@ -17,6 +17,8 @@ package object il {
 
   val checkpointEventInteractionPrefix = "$CheckpointEventInteraction$"
   val subRecipePrefix = "$SubRecipe$"
+  val sieveInteractionPrefix = "$SieveInteraction$"
+  val sieveEventPrefix = "$SieveEvent$"
 
   def sha256HashCode(str: String): Long = {
     val sha256Digest: MessageDigest = MessageDigest.getInstance("SHA-256")
