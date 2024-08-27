@@ -369,7 +369,7 @@ final class BakerClient( client: Client[IO],
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Future[Unit] =
+  override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, String) => Unit): Future[Unit] =
     throw new NotImplementedError("registerEventListener is not implemented for client bakers")
 
   /**
@@ -377,7 +377,7 @@ final class BakerClient( client: Client[IO],
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Future[Unit] =
+  override def registerEventListener(listenerFunction: (RecipeEventMetadata, String) => Unit): Future[Unit] =
     throw new NotImplementedError("registerEventListener is not implemented for client bakers")
 
   /**

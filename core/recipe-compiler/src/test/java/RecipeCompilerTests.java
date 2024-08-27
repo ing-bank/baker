@@ -1,5 +1,8 @@
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
+import com.ing.baker.il.RecipeVisualStyle;
+import com.ing.baker.il.RecipeVisualStyle$;
+import com.ing.baker.il.RecipeVisualizer;
 import com.ing.baker.recipe.annotations.FiresEvent;
 import com.ing.baker.recipe.annotations.RequiresIngredient;
 import com.ing.baker.recipe.javadsl.Interaction;
@@ -33,6 +36,36 @@ public class RecipeCompilerTests {
     }
 
     public interface InteractionA extends Interaction {
+
+        interface ReserveItemsOutcome {
+        }
+
+        class OrderHadUnavailableItems implements ReserveItemsOutcome {
+
+            public final List<String> unavailableItems;
+
+            public OrderHadUnavailableItems(List<String> unavailableItems) {
+                this.unavailableItems = unavailableItems;
+            }
+        }
+
+        class ItemsReserved implements ReserveItemsOutcome {
+
+            public final List<String> reservedItems;
+
+            public ItemsReserved(List<String> reservedItems) {
+                this.reservedItems = reservedItems;
+            }
+        }
+
+        @FiresEvent(oneOf = { ItemsReserved.class, OrderHadUnavailableItems.class })
+        ReserveItemsOutcome apply(
+                @RequiresIngredient("orderId") String id,
+                @RequiresIngredient("items") List<String> items
+        );
+    }
+
+    public interface InteractionB extends Interaction {
 
         interface ReserveItemsOutcome {
         }
@@ -128,6 +161,35 @@ public class RecipeCompilerTests {
 
         Assertions.assertEquals(java.util.List.of("$CheckpointEventInteraction$Success"), actual);
 
+    }
+
+    @Test
+    public void shouldAddSubRecipe() {
+
+        Recipe subSubRecipe = new Recipe("SubSubRecipe")
+                .withInteraction(InteractionDescriptor.of(InteractionB.class));
+
+        Recipe subRecipe = new Recipe("SubRecipe")
+                .withSubRecipe(subSubRecipe)
+                .withInteraction(InteractionDescriptor.of(InteractionA.class));
+
+
+        Recipe recipe = new Recipe("recipe")
+                .withSensoryEvents(EventB.class, EventC.class)
+                .withSubRecipe(subRecipe);
+
+
+        CompiledRecipe compiled = RecipeCompiler.compileRecipe(recipe);
+
+        Object actual = convertList(compiled.petriNet().transitions())
+                .stream()
+                .filter(InteractionTransition.class::isInstance)
+                .map(i -> ((InteractionTransition) i).interactionName())
+                .collect(Collectors.toUnmodifiableList());
+
+        List<String> expected = java.util.List.of("$SubRecipe$SubRecipe$InteractionA", "$SubRecipe$SubSubRecipe$InteractionB");
+
+        Assertions.assertEquals(expected, actual);
     }
 
     private java.util.List convertList(scala.collection.immutable.Set list) {
