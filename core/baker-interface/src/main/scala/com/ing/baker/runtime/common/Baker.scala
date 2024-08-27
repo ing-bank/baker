@@ -97,6 +97,18 @@ trait Baker[F[_]] extends LanguageApi {
     */
   def bake(recipeId: String, recipeInstanceId: String): F[Unit]
 
+
+  /**
+    * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
+    * This variant also gets a metadata map added on bake.
+    * This is similar to calling addMetaData after doing the regular bake but depending on the implementation this can be more optimized.
+    * @param recipeId         The recipeId for the recipe to bake
+    * @param recipeInstanceId The identifier for the newly baked process
+    * @param metadata
+    * @return
+    */
+  def bake(recipeId: String, recipeInstanceId: String, metadata: language.Map[String, String]): F[Unit]
+
   /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
     *
@@ -284,6 +296,15 @@ trait Baker[F[_]] extends LanguageApi {
   def getRecipeInstanceState(recipeInstanceId: String): F[RecipeInstanceStateType]
 
   /**
+    * Returns a specific ingredient for a given RecipeInstance id.
+    *
+    * @param recipeInstanceId The recipeInstance Id.
+    * @param name The name of the ingredient.
+    * @return The provided ingredients.
+    */
+  def getIngredient(recipeInstanceId: String, name: String): F[Value]
+
+  /**
     * Returns all provided ingredients for a given RecipeInstance id.
     *
     * @param recipeInstanceId The process id.
@@ -320,14 +341,14 @@ trait Baker[F[_]] extends LanguageApi {
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  def registerEventListener(recipeName: String, listenerFunction: language.BiConsumerFunction[RecipeMetadataType, EventInstanceType]): F[Unit]
+  def registerEventListener(recipeName: String, listenerFunction: language.BiConsumerFunction[RecipeMetadataType, String]): F[Unit]
 
   /**
     * Registers a listener to all runtime events for all recipes that run in this Baker instance.
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  def registerEventListener(listenerFunction: language.BiConsumerFunction[RecipeMetadataType, EventInstanceType]): F[Unit]
+  def registerEventListener(listenerFunction: language.BiConsumerFunction[RecipeMetadataType, String]): F[Unit]
 
   /**
     * Registers a listener function that listens to all BakerEvents

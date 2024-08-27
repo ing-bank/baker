@@ -7,5 +7,5 @@ object Marking {
     *
     * @return The empty marking.
     */
-  def empty[P]: Marking[P] = Map.empty[P, MultiSet[Any]]
+  def empty[X]: Marking[X] = Map.empty[X, MultiSet[Any]]
 }

@@ -25,10 +25,8 @@ import scala.concurrent.ExecutionContext
   */
 class AkkaBakeryComponents(optionalConfig: Option[Config] = None,
                            externalContext: Option[Any] = None,
-                           registry: CollectorRegistry = CollectorRegistry.defaultRegistry
+                           metricService: MetricService = new MetricService(CollectorRegistry.defaultRegistry)
                           ) extends LazyLogging {
-
-  val metricService: MetricService = new MetricService(registry)
 
   def configResource: Resource[IO, Config] = Resource.eval(IO {
     val configPath = sys.env.getOrElse("CONFIG_DIRECTORY", "/opt/docker/conf")

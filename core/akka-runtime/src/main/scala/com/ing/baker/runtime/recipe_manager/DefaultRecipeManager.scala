@@ -5,7 +5,7 @@ import com.ing.baker.runtime.common.RecipeRecord
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 
-private class DefaultRecipeManager(implicit val ex: ExecutionContext) extends RecipeManager {
+class DefaultRecipeManager(implicit val ex: ExecutionContext) extends RecipeManager {
 
   val state:TrieMap[String, RecipeRecord] = TrieMap.empty
 

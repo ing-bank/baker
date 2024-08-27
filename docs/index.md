@@ -1,63 +1,39 @@
-# Introduction
+# Baker
 
-Baker is a library that reduces the effort to orchestrate (micro)service-based process flows.
+Baker is a library that provides a simple and intuitive way to orchestrate microservice-based process flows.
 
-Developers declare the orchestration logic in a `Recipe` (process blueprint).
-
-A `Recipe` is made out of:
-
-- `Interactions` (functions)
-- `Ingredients` (containers for data)
-- `Events`
-
-The Baker runtime on the other hand runs instances of the `Recipe` across a cluster of nodes in an asynchronous fashion.
-
-### Baker allows you to
-
-- *Declaratively* design your business processes using a [recipe Domain Specific Language (DSL)](sections/reference/dsls).
-- [Visualize](sections/reference/visualization) your recipe allowing product owners, architects and developers to talk the same language.
-- Manage your recipes using the [Baker runtime](sections/reference/runtime).
-- [Create process instances](sections/development-life-cycle/bake-fire-events-and-inquiry#bake) of your recipes.
-- [Fire sensory events](sections/development-life-cycle/bake-fire-events-and-inquiry#fire-events).
-- [Inquire the state](sections/development-life-cycle/bake-fire-events-and-inquiry#inquiry) of your recipe instances.
+You declare your orchestration logic as a recipe using the Java, Kotlin, or Scala DSL. A recipe consists of
+`interactions` (system calls), `ingredients` (data), and `events` (things that have happened in your process).
 
 ## Why Baker
 
-Upgrading your business to an agile, adaptive and scalable microservice-based architecture does bring significant advantages, 
-but also critical challenges that must be resolved:
+When working with microservice architectures, you encounter various challenges related to distributed systems. Things
+like communication models, consistency management, failure handling, scaling approaches, and more. Baker simplifies
+the development process by offering out-of-the-box solutions with its clustered runtime. Baker nodes can create and 
+distribute instances of recipes, handle failures in interactions using different strategies, restore the state of 
+long-lived processes, and provide additional functionalities to streamline microservice development.
 
-- the coupling of business logic to service technologies
-- and the inherent complexities of distributed systems
+??? Abstract "Service composition"
+    Baker allows you to compose complex business processes by combining multiple microservices. It acts as a centralized
+    control mechanism to define the sequence and dependencies between services. Facilitating the execution of
+    orchestrated processes. Enabling you to build more robust and sophisticated applications that span multiple services.
 
-Baker solves these challenges by providing an expressive language to encode your business logic _(recipe)_, and a distributed runtime to scale _recipe instances_ with little 
-configuration and no extra development. 
+??? Abstract "Decouple business logic from service technologies"
+    Baker forces you to separate business logic from implementation details. Your business logic is expressed as a recipe
+    via the Java, Kotlin, or Scala DSL. The implementation details are contained in the interaction implementations.
 
-**Decouple your business logic from your microservices**: When developing microservices it is easy to fall into bad practices 
-where developers encode essential business logic into code which might get polluted with implementation details, and even worse, 
-distributed over many independent projects/repositories. Baker, in contrast, requires the developer to _express the business 
-logic as a Recipe_ by using the provided language DSL, and separately _code implementations of the data (events) and the 
-process steps (interactions)_, enforcing decoupling of business from technology.
+??? Abstract "Retry mechanism"
+    Baker includes a built-in retry mechanism. When a failure occurs in a microservice, Baker can automatically retry 
+    the failed operation. Retrying the operation can help overcome transient errors or temporary network issues. Baker 
+    can be configured with retry policies, including parameters such as the number of retries, delay between retries, 
+    and exponential backoff strategies.
 
-**Ease the friction of distributed systems**: When developing microservices you are confronted with all the inherent 
-challenges of distributed systems, topics like communication models, consistency decisions, handling failure, scaling 
-models, etc. Baker eases the development by providing out-of-the-box solutions from its clusterized runtime. Baker nodes 
-are able to create and distribute _recipe instances_ between them, handle _failed interactions_ with several strategies, 
-restore the state of long-lived process and more, allowing the developer to focus on what it matters for the business.
+??? Abstract "Visualize your business process"
+    Bakers ability to visualize recipes provides a powerful communication tool that helps product owners, architects, and 
+    engineers to have a common understanding of the business process. This feature allows you to easily share your 
+    recipe with others, enabling collaboration and feedback.
+    
+## New to Baker?
 
-**Reason about your business process without the burdens of technology**: Baker can _visualize your recipes_, enabling developers 
-and business stakeholders to better communicate and reason about the business processes.
-
-## Example of a simple web shop recipe:
-
-![](images/webshop.svg)
-
-## How to read these docs
-
-There are two big sections:
-
-* The _Development Life Cycle_: works like a big tutorial of Baker, it is a "learning by making" type of documentation, it is 
-for those who like a top-down approach to learning.
-
-* The _Reference_: has descriptions of every part of Baker, it is a "dictionary/reference" type of documentation, it is for 
-those who like a bottom-up approach to learning, and also works as a reference for quickly reviewing concepts in the future.
-
+A good first step is to read more about Baker's [core concepts](sections/concepts). Afterward, you can
+follow this quick [tutorial](sections/tutorial) to build your first Baker process.

@@ -50,6 +50,8 @@ trait BakerModelFixtures[F[_]] extends TestRecipe[F] with MockitoSugar {
   )
 
   val testInteractionOneMock: InteractionOne = mock[InteractionOne]
+  val testInteractionOneWithMetaDataMock: InteractionOneWithMetaData = mock[InteractionOneWithMetaData]
+  val testInteractionOneWithEventListMock: InteractionOneWithEventList = mock[InteractionOneWithEventList]
   val testInteractionTwoMock: InteractionTwo = mock[InteractionTwo]
   val testInteractionThreeMock: InteractionThree = mock[InteractionThree]
   val testInteractionFourMock: InteractionFour = mock[InteractionFour]
@@ -67,6 +69,8 @@ trait BakerModelFixtures[F[_]] extends TestRecipe[F] with MockitoSugar {
   def mockImplementations(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): List[InteractionInstance[F]] =
     List(
       testInteractionOneMock,
+      testInteractionOneWithMetaDataMock,
+      testInteractionOneWithEventListMock,
       testInteractionTwoMock,
       testInteractionThreeMock,
       testInteractionFourMock,

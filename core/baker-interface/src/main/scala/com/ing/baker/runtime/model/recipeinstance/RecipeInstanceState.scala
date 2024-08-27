@@ -1,27 +1,28 @@
 package com.ing.baker.runtime.model.recipeinstance
 
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
-import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
-import com.ing.baker.il.petrinet.Place
-import com.ing.baker.petrinet.api.{Marking, MultiSet}
-import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment}
+import com.ing.baker.il.petrinet.Place.IngredientPlace
 import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetaDataName
+import com.ing.baker.runtime.common.IngredientInstance
+import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
+import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment}
 import com.ing.baker.types.{CharArray, MapType, Value}
-
-import scala.collection.immutable
 
 object RecipeInstanceState {
 
   def getMetaDataFromIngredients(ingredients: Map[String, Value]): Option[Map[String, String]] = {
-    ingredients.get(RecipeInstanceMetaDataName).flatMap(value => {
+    ingredients.get(RecipeInstanceMetadataName).flatMap(value => {
       if (value.isInstanceOf(MapType(CharArray)))
         Some(value.as[Map[String, String]])
       else
         Option.empty
     })
   }
+
+  def getMetaDataFromIngredients(ingredients: Seq[IngredientInstance]): Option[Map[String, String]] =
+    getMetaDataFromIngredients(ingredients.map(i => i.name -> i.value).toMap)
 
   def empty(recipeInstanceId: String, recipe: CompiledRecipe, createdOn: Long): RecipeInstanceState =
     RecipeInstanceState(
@@ -31,6 +32,7 @@ object RecipeInstanceState {
       sequenceNumber = 0,
       marking = recipe.initialMarking,
       ingredients = Map.empty,
+      recipeInstanceMetadata = Map.empty,
       events = List.empty,
       completedCorrelationIds = Set.empty,
       executions = Map.empty,
@@ -45,6 +47,7 @@ case class RecipeInstanceState(
                                 sequenceNumber: Long,
                                 marking: Marking[Place],
                                 ingredients: Map[String, Value],
+                                recipeInstanceMetadata: Map[String, String],
                                 events: List[EventMoment],
                                 completedCorrelationIds: Set[String],
                                 executions: Map[Long, TransitionExecution],
@@ -69,6 +72,14 @@ case class RecipeInstanceState(
 
   def recordFailedExecution(transitionExecution: TransitionExecution, exceptionStrategy: ExceptionStrategyOutcome): RecipeInstanceState =
     addExecution(transitionExecution.toFailedState(exceptionStrategy))
+
+  def recordFailedWithOutputExecution(transitionExecution: TransitionExecution, output: Option[EventInstance]): (RecipeInstanceState, Set[TransitionExecution]) =
+    aggregateOutputEvent(output)
+      .increaseSequenceNumber
+      .aggregatePetriNetChanges(transitionExecution, output)
+      .addCompletedCorrelationId(transitionExecution)
+      .addExecution(transitionExecution.copy(state = TransitionExecution.State.Failed(transitionExecution.failureCount, ExceptionStrategyOutcome.BlockTransition)))
+      .allEnabledExecutions
 
   def recordCompletedExecution(transitionExecution: TransitionExecution, output: Option[EventInstance]): (RecipeInstanceState, Set[TransitionExecution]) =
     aggregateOutputEvent(output)
@@ -97,6 +108,19 @@ case class RecipeInstanceState(
       !hasFailed(transition) && canBeFiredAutomatically(transition)
     }
     val executions = canFire.map {
+      case (transition: InteractionTransition, markings) =>
+        TransitionExecution(
+          recipeInstanceId = recipeInstanceId,
+          recipe = recipe,
+          transition = transition,
+          consume = markings.head,
+          input = None,
+          ingredients = ingredients,
+          recipeInstanceMetadata = recipeInstanceMetadata,
+          eventList = events,
+          correlationId = None,
+          isReprovider = transition.isReprovider
+        )
       case (transition, markings) =>
         TransitionExecution(
           recipeInstanceId = recipeInstanceId,
@@ -105,7 +129,10 @@ case class RecipeInstanceState(
           consume = markings.head,
           input = None,
           ingredients = ingredients,
-          correlationId = None
+          recipeInstanceMetadata = recipeInstanceMetadata,
+          eventList = events,
+          correlationId = None,
+          isReprovider =  false
         )
     }.toSeq
 
@@ -125,12 +152,20 @@ case class RecipeInstanceState(
     copy(sequenceNumber = sequenceNumber + 1)
 
   private def aggregatePetriNetChanges(transitionExecution: TransitionExecution, output: Option[EventInstance]): RecipeInstanceState = {
-    val producedMarking =
-      recipe.petriNet.outMarking(transitionExecution.transition).keys.map { place =>
+    val outputMarkings: MultiSet[Place] = recipe.petriNet.outMarking(transitionExecution.transition)
+
+    val producedMarking: Marking[Place] = {
+      outputMarkings.keys.map { place: Place =>
         val value: Any = output.map(_.name).orNull
         place -> MultiSet.copyOff(Seq(value))
       }.toMarking
-    copy(marking = (marking |-| transitionExecution.consume) |+| producedMarking)
+    }
+
+    val reproviderMarkings: Marking[Place] = if (transitionExecution.isReprovider) {
+      outputMarkings.toMarking.filter((input: (Place, MultiSet[Any])) => input._1.placeType == IngredientPlace)
+    } else Map.empty
+
+    copy(marking = (marking |-| transitionExecution.consume) |+| producedMarking |+| reproviderMarkings)
   }
 
   private def addCompletedCorrelationId(transitionExecution: TransitionExecution): RecipeInstanceState =

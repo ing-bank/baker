@@ -14,6 +14,7 @@ object CompiledRecipe {
   sealed trait OldRecipeIdVariant extends RecipeIdVariant
   case object Scala212CompatibleJava extends OldRecipeIdVariant
   case object Scala212CompatibleScala extends OldRecipeIdVariant
+  case object Scala212CompatibleKotlin extends OldRecipeIdVariant
   case object Improved extends RecipeIdVariant
 
   def build(name: String, petriNet: RecipePetriNet, initialMarking: Marking[Place], validationErrors: Seq[String],
@@ -98,6 +99,22 @@ case class CompiledRecipe(name: String,
     */
   def getRecipeVisualization(style: RecipeVisualStyle): String =
     RecipeVisualizer.visualizeRecipe(this, style)
+
+  /**
+   * Visualise the compiled recipe in DOT format
+   *
+   * @return
+   */
+  def getSubRecipeVisualization: String =
+    RecipeVisualizer.visualizeSubRecipe(this, RecipeVisualStyle.default)
+
+  /**
+   * Visualise the compiled recipe in DOT format
+   *
+   * @return
+   */
+  def getSubRecipeVisualization(style: RecipeVisualStyle): String =
+    RecipeVisualizer.visualizeSubRecipe(this, style)
 
   /**
     * Visualise the compiled recipe in DOT format
