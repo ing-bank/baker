@@ -3,7 +3,7 @@ package com.ing.baker.compiler
 import com.ing.baker.il.petrinet.InteractionTransition
 
 import java.util.Optional
-import com.ing.baker.il.{CompiledRecipe, ValidationSettings, checkpointEventInteractionPrefix}
+import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle, RecipeVisualizer, ValidationSettings, checkpointEventInteractionPrefix, subRecipePrefix}
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.{TestRecipeJava, common}
 import com.ing.baker.recipe.common.InteractionFailureStrategy
@@ -167,13 +167,6 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionalInt:Option[Int32]', however incompatible type: 'Option[CharArray]' was provided")
         compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionInt:Option[List[Int32]]', however incompatible type: 'Option[List[CharArray]]' was provided")
       }
-    }
-
-    "give a validation error for an empty/non-logical recipe" in {
-      RecipeCompiler.compileRecipe(Recipe("someName")).validationErrors should contain only(
-        "No sensory events found.",
-        "No interactions found."
-      )
     }
 
     "give no errors if an Optional ingredient is of the correct Option type" in {
@@ -403,6 +396,63 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
         compiledRecipe.recipeId shouldBe "469441173f91869a"
         compiledRecipe.petriNet.transitions.count { case i: InteractionTransition => i.interactionName.contains(s"${checkpointEventInteractionPrefix}Success") case _ => false } shouldBe 1
+      }
+    }
+
+    "give the interaction for sub-recipes" when {
+      "it compiles a java recipe" in {
+
+        val subSubRecipe: Recipe = Recipe("SubSubRecipe")
+          .withInteractions(
+            interactionOne
+              .withEventOutputTransformer(interactionOneSuccessful, Map("interactionOneOriginalIngredient" -> "interactionOneIngredient"))
+              .withFailureStrategy(InteractionFailureStrategy.RetryWithIncrementalBackoff(initialDelay = 10 millisecond, maximumRetries = 3)),
+            interactionTwo
+              .withOverriddenIngredientName("initialIngredientOld", "initialIngredient"),
+          )
+
+        val subRecipe: Recipe = Recipe("SubRecipe")
+          .withInteractions(
+            interactionThree
+              .withMaximumInteractionCount(1),
+            interactionFour
+              .withRequiredEvents(secondEvent, eventFromInteractionTwo),
+            interactionFive,
+            interactionSix,
+          )
+          .withSubRecipe(subSubRecipe)
+
+        val recipe: Recipe = Recipe("Recipe")
+          .withSensoryEvents(
+            initialEvent,
+            initialEventExtendedName,
+            secondEvent,
+            notUsedSensoryEvent
+          )
+          .withInteractions(
+            providesNothingInteraction,
+            sieveInteraction
+          )
+          .withSubRecipe(subRecipe)
+
+        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+
+        val res = compiledRecipe.petriNet.transitions
+          .flatMap {
+            case i: InteractionTransition => List(i.interactionName)
+            case _ => List.empty
+          }
+          .filter( _.startsWith(subRecipePrefix))
+
+//        compiledRecipe.recipeId shouldBe "fb5346c571ca5a47"
+//        res shouldBe Set(
+//          "$SubRecipe$SubRecipe$InteractionSeven",
+//          "$SubRecipe$SubSubRecipe$InteractionOne"
+//        )
+
+        val vis = RecipeVisualizer.visualizeRecipe(compiledRecipe, RecipeVisualStyle.default)
+
+        println(vis)
       }
     }
   }

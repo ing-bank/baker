@@ -6,7 +6,7 @@ class RegisterEventListener(private val baker: Baker) {
 
     suspend fun example() {
         baker.registerEventListener { recipeInstanceId, eventInstance ->
-            println("Recipe Instance: $recipeInstanceId, processed event: ${eventInstance.name} ")
+            println("Recipe Instance: $recipeInstanceId, processed event: $eventInstance ")
         }
     }
 }

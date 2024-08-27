@@ -111,5 +111,13 @@ class JsonEncodersSpec extends AnyFunSpec with Matchers {
       val bakeRequestWithData = BakeRequest(Option.apply(Map("Key1"-> "Value1")))
       bakeRequestWithData.asJson.noSpaces shouldEqual """{"metadata":{"Key1":"Value1"}}"""
     }
+
+    it("should encode AddMetaDataRequest") {
+      val addMetaDataRequestWithEmptyMap= AddMetaDataRequest(Map())
+      addMetaDataRequestWithEmptyMap.asJson.noSpaces shouldEqual """{"metadata":{}}"""
+
+      val addMetaDataRequestWithData = AddMetaDataRequest(Map("Key1"-> "Value1"))
+      addMetaDataRequestWithData.asJson.noSpaces shouldEqual """{"metadata":{"Key1":"Value1"}}"""
+    }
   }
 }
