@@ -365,6 +365,36 @@ class KotlinDslTest {
     }
 
     @Test
+    fun `create a recipe with sieve events`() {
+        val recipe = recipe("RecipeWithSieve") {
+            interaction<Interactions.MakePayment> {
+                failureStrategy = fireEventAfterFailure<Events.OrderPlaced>()
+            }
+            interaction<Interactions.ReserveItems> {
+                failureStrategy = fireEventAfterFailure("OrderPlaced")
+            }
+
+            ingredient("extractDate"){ reservedItems: Ingredients.ReservedItems ->  reservedItems.date }
+        }
+
+        with(recipe) {
+            assertEquals("RecipeWithSieve", name())
+            assertEquals(Option.empty<FiniteDuration>(), retentionPeriod())
+            assertEquals(Option.empty<FiniteDuration>(), eventReceivePeriod())
+            assertEquals(BlockInteraction::class.java, defaultFailureStrategy().javaClass)
+            assertEquals(2, interactions().size())
+            assertEquals("MakePayment", interactions().get(0).name())
+            assertEquals("ReserveItems", interactions().get(1).name())
+            assertEquals(1, sieves().size())
+            assertEquals("extractDate", sieves().get(0).name())
+            assertEquals(1, sieves().get(0).inputIngredients().size())
+            assertEquals("reservedItems", sieves().get(0).inputIngredients().get(0).name())
+            assertEquals(1, sieves().get(0).output().size())
+            assertEquals("\$SieveEvent\$extractDate", sieves().get(0).output().get(0).name())
+        }
+    }
+
+    @Test
     fun `create a recipe with subrecipe`() {
         val fulfillment = recipe("Fulfillment") {
             interaction<Interactions.ReserveItems> {

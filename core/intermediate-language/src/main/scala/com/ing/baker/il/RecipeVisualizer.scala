@@ -157,12 +157,22 @@ object RecipeVisualizer {
       case _ => false
     }
 
+    val sievesInteractionToCompact = (node: RecipePetriNetGraph#NodeT) => node.value match {
+      case Right(transition: Transition) => transition.label.startsWith(sieveInteractionPrefix)
+      case _ => false
+    }
+    val sievesEventsToCompact = (node: RecipePetriNetGraph#NodeT) => node.value match {
+      case Right(transition: Transition) => transition.label.startsWith(sieveEventPrefix)
+      case _ => false
+    }
+
     // specifies which transitions to compact (remove)
     val transitionsToCompact = (node: RecipePetriNetGraph#NodeT) => node.value match {
       case Right(transition: Transition) =>
         transition.isInstanceOf[IntermediateTransition] ||
           transition.isInstanceOf[MultiFacilitatorTransition] ||
           transition.label.startsWith(checkpointEventInteractionPrefix)
+
       case _ => false
     }
 
@@ -173,10 +183,14 @@ object RecipeVisualizer {
           .compactAllNodes(placesToCompact)
           .compactAllNodes(transitionsToCompact)
           .compactSubRecipes
+          .compactAllNodes(sievesInteractionToCompact)
+          .compactAllNodes(sievesEventsToCompact)
       } else {
         graph
           .compactAllNodes(placesToCompact)
           .compactAllNodes(transitionsToCompact)
+          .compactAllNodes(sievesInteractionToCompact)
+          .compactAllNodes(sievesEventsToCompact)
       }
     // filters out all the nodes that match the predicate function
     val filteredGraph = compactedGraph -- compactedGraph.nodes.filter(n => !filter(n.toString))

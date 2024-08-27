@@ -34,6 +34,11 @@ trait Recipe {
   val checkpointEvents: Set[CheckPointEvent]
 
   /**
+   * The set of sieves.
+   */
+  val sieves: Set[Sieve]
+
+  /**
     * The default interaction failure strategy.
     */
   val defaultFailureStrategy: InteractionFailureStrategy

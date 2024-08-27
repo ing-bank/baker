@@ -4,7 +4,6 @@ import com.ing.baker.recipe.common
 
 import scala.annotation.{nowarn, varargs}
 import scala.collection.JavaConverters._
-import scala.collection.immutable.Seq
 import scala.concurrent.duration
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -14,11 +13,13 @@ case class Recipe(
                    override val sensoryEvents: Set[common.Event],
                    override val checkpointEvents: Set[common.CheckPointEvent],
                    override val subRecipes: Set[common.Recipe],
+                   override val sieves: Set[common.Sieve],
                    override val defaultFailureStrategy: common.InteractionFailureStrategy,
                    override val eventReceivePeriod: Option[FiniteDuration],
-                   override val retentionPeriod: Option[FiniteDuration]) extends common.Recipe {
+                   override val retentionPeriod: Option[FiniteDuration]
+                 ) extends common.Recipe {
 
-  def this(name: String) = this(name, Seq.empty, Set.empty, Set.empty, Set.empty, InteractionFailureStrategy.BlockInteraction(), None, None)
+  def this(name: String) = this(name, Seq.empty, Set.empty, Set.empty, Set.empty, Set.empty, InteractionFailureStrategy.BlockInteraction(), None, None)
 
   @nowarn
   def getInteractions: java.util.List[common.InteractionDescriptor] = interactions.asJava
