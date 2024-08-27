@@ -4,9 +4,10 @@ import cats.effect.ConcurrentEffect
 import cats.implicits._
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, ProcessAlreadyExistsException}
+import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceInput, RecipeEventMetadata}
-import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
+import com.ing.baker.types.{CharArray, Int32, PrimitiveValue, Value}
 import org.mockito.ArgumentMatchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
 
@@ -25,6 +26,61 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
         id = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, id)
       } yield succeed
+    }
+
+    test("allows adding metadata to an RecipeInstance") { context =>
+      for {
+        bakerAndRecipeId <- context.setupBakerWithRecipe("MetaDataOne")
+        (baker: BakerF[F], recipeId) = bakerAndRecipeId
+        id = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, id)
+        _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value"))
+        _ <- baker.addMetaData(id, Map.apply[String, String]("key2" -> "value2"))
+        ingredients <- baker.getIngredients(id)
+        metaData = ingredients(RecipeInstanceMetadataName).asMap(classOf[String], classOf[String])
+      } yield assert(
+        metaData.containsKey("key") && metaData.get("key") == "value" &&
+        metaData.containsKey("key2") && metaData.get("key2") == "value2")
+    }
+
+
+    test("allows updating metadata to an RecipeInstance") { context =>
+      for {
+        bakerAndRecipeId <- context.setupBakerWithRecipe("MetaDataTwo")
+        (baker: BakerF[F], recipeId) = bakerAndRecipeId
+        id = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, id)
+        _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value"))
+        _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value2"))
+        ingredients <- baker.getIngredients(id)
+        metaData = ingredients(RecipeInstanceMetadataName).asMap(classOf[String], classOf[String])
+      } yield
+        assert(
+          metaData.containsKey("key") && metaData.get("key") == "value2")
+    }
+
+    test("allows empty metadata to an RecipeInstance") { context =>
+      for {
+        bakerAndRecipeId <- context.setupBakerWithRecipe("MetaDataThree")
+        (baker: BakerF[F], recipeId) = bakerAndRecipeId
+        id = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, id)
+        _ <- baker.addMetaData(id, Map.empty)
+        ingredients <- baker.getIngredients(id)
+        metaData = ingredients(RecipeInstanceMetadataName).asMap(classOf[String], classOf[String])
+      } yield
+        assert(
+          metaData.size() == 0)
+    }
+
+    test("has no metaData if not given") { context =>
+      for {
+        bakerAndRecipeId <- context.setupBakerWithRecipe("MetaDataFour")
+        (baker: BakerF[F], recipeId) = bakerAndRecipeId
+        id = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, id)
+        ingredients <- baker.getIngredients(id)
+      } yield assert(!ingredients.contains(RecipeInstanceMetadataName))
     }
 
     test("throw an ProcessAlreadyExistsException if baking a process with the same identifier twice") { context =>
@@ -96,6 +152,53 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ = verify(testInteractionOneMock).apply(recipeInstanceId, "initialIngredient")
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+      } yield
+        state.ingredients shouldBe
+          ingredientMap(
+            "initialIngredient" -> initialIngredientValue,
+            "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
+    }
+
+    test("execute an interaction when its ingredient is provided with MetaData requirement") { context =>
+      val recipe =
+        Recipe("IngredientProvidedRecipeWithMetaData")
+          .withInteraction(interactionOneWithMetaData)
+          .withSensoryEvent(initialEvent)
+
+      for {
+        bakerWithRecipe <- context.setupBakerWithRecipe(recipe, mockImplementations)
+        (baker, recipeId) = bakerWithRecipe
+        _ = when(testInteractionOneWithMetaDataMock.apply(anyString(), anyString(), any())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        metaData = Map("MetaDataKey" -> "MetaDataValue")
+        _ <- baker.bake(recipeId, recipeInstanceId, metaData)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ = verify(testInteractionOneWithMetaDataMock).apply(recipeInstanceId, "initialIngredient", metaData)
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+      } yield
+        state.ingredients shouldBe
+          ingredientMap(
+            "RecipeInstanceMetaData" -> metaData,
+            "initialIngredient" -> initialIngredientValue,
+            "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
+    }
+
+    test("execute an interaction when its ingredient is provided with EventList requirement") { context =>
+      val recipe =
+        Recipe("IngredientProvidedRecipeWithEventList")
+          .withInteraction(interactionOneWithEventList)
+          .withSensoryEvent(initialEvent)
+
+      for {
+        bakerWithRecipe <- context.setupBakerWithRecipe(recipe, mockImplementations)
+        (baker, recipeId) = bakerWithRecipe
+        _ = when(testInteractionOneWithEventListMock.apply(anyString(), anyString(), any())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        eventList = List("InitialEvent")
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ = verify(testInteractionOneWithEventListMock).apply(recipeInstanceId, "initialIngredient", eventList)
         state <- baker.getRecipeInstanceState(recipeInstanceId)
       } yield
         state.ingredients shouldBe
@@ -305,7 +408,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
 
 
     test("notify a registered event listener of events") { context =>
-      val listenerMock = mock[(RecipeEventMetadata, EventInstance) => Unit]
+      val listenerMock = mock[(RecipeEventMetadata, String) => Unit]
       when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
       val recipe =
         Recipe("EventListenerRecipe")
@@ -313,20 +416,20 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
           .withSensoryEvent(initialEvent)
 
       for {
-        bakerAndRecipeId<- context.setupBakerWithRecipe(recipe, mockImplementations)
+        bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, mockImplementations)
         (baker, recipeId) = bakerAndRecipeId
         _ <- baker.registerEventListener("EventListenerRecipe", listenerMock)
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
-        _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), argThat(new RuntimeEventMatcher(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))))
-        _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), argThat(new RuntimeEventMatcher(EventInstance.unsafeFrom(InteractionOneSuccessful(interactionOneIngredientValue)))))
+        _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), mockitoEq("InitialEvent"))
+        _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), mockitoEq("InteractionOneSuccessful"))
       } yield succeed
     }
 
     test("return a list of events that were caused by a sensory event") { context =>
       for {
-        bakerAndRecipeId<- context.setupBakerWithRecipe("SensoryEventDeltaRecipe")
+        bakerAndRecipeId <- context.setupBakerWithRecipe("SensoryEventDeltaRecipe")
         (baker, recipeId) = bakerAndRecipeId
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)

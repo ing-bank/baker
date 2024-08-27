@@ -130,6 +130,35 @@ object ProcessInstanceProto {
         } yield InstanceState(sequenceNr, marking, state, jobMap)
     }
 
+  implicit def ingredientFoundProto(implicit ev0: AnyRefMapping): ProtoMap[IngredientFound, protobuf.IngredientFound] =
+    new ProtoMap[IngredientFound, protobuf.IngredientFound] {
+
+      val companion = protobuf.IngredientFound
+
+      def toProto(a: IngredientFound): protobuf.IngredientFound =
+        protobuf.IngredientFound(Some(ctxToProto(a.value)))
+
+      def fromProto(message: protobuf.IngredientFound): Try[IngredientFound] =
+        for {
+          valueProto <- versioned(message.value, "value")
+          value <- ctxFromProto(valueProto)
+        } yield IngredientFound(value)
+    }
+
+  implicit def ingredientNotFoundProto(implicit ev0: AnyRefMapping): ProtoMap[IngredientNotFound.type, protobuf.IngredientNotFound] =
+    new ProtoMap[IngredientNotFound.type, protobuf.IngredientNotFound] {
+
+      val companion: GeneratedMessageCompanion[protobuf.IngredientNotFound] =
+        protobuf.IngredientNotFound
+
+      override def toProto(a: IngredientNotFound.type): protobuf.IngredientNotFound =
+        protobuf.IngredientNotFound()
+
+      override def fromProto(message: protobuf.IngredientNotFound): Try[IngredientNotFound.type] = {
+        Success(IngredientNotFound)
+      }
+    }
+
   implicit def initializeProto(implicit ev0: AnyRefMapping): ProtoMap[Initialize, protobuf.Initialize] =
     new ProtoMap[Initialize, protobuf.Initialize] {
 
@@ -288,6 +317,22 @@ object ProcessInstanceProto {
           strategy <- ctxFromProto(strategyProto)
         } yield  TransitionFailed(jobId, transitionId, message.correlationId, consume, input, reason, strategy)
     }
+
+  implicit def metaDataAddedProto(implicit ev0: AnyRefMapping): ProtoMap[MetaDataAdded.type, protobuf.MetaDataAdded] =
+    new ProtoMap[MetaDataAdded.type, protobuf.MetaDataAdded] {
+
+      val companion: GeneratedMessageCompanion[protobuf.MetaDataAdded] =
+        protobuf.MetaDataAdded
+
+      override def toProto(a: MetaDataAdded.type): protobuf.MetaDataAdded =
+        protobuf.MetaDataAdded()
+
+      override def fromProto(message: protobuf.MetaDataAdded): Try[MetaDataAdded.type] = {
+        Success(MetaDataAdded)
+      }
+    }
+
+
 
   implicit def transitionFiredProto(implicit ev0: AnyRefMapping): ProtoMap[TransitionFired, protobuf.TransitionFiredMessage] =
     new ProtoMap[TransitionFired, protobuf.TransitionFiredMessage] {

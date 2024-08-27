@@ -177,7 +177,7 @@ trait BakerModelSpecFailureTests[F[_]] { self: BakerModelSpec[F] =>
         bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, mockImplementations)
         (baker, recipeId) = bakerAndRecipeId
 
-        listenerMock = mock[(RecipeEventMetadata, EventInstance) => Unit]
+        listenerMock = mock[(RecipeEventMetadata, String) => Unit]
         _ <- baker.registerEventListener("ImmediateFailureEvent", listenerMock)
 
         recipeInstanceId = UUID.randomUUID().toString
@@ -185,8 +185,8 @@ trait BakerModelSpecFailureTests[F[_]] { self: BakerModelSpec[F] =>
 
         //Handle first event
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
-        _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), argThat(new RuntimeEventMatcher(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))))
-        _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), argThat(new RuntimeEventMatcher(EventInstance(interactionOne.retryExhaustedEventName, Map.empty))))
+        _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), mockitoEq("InitialEvent"))
+        _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), mockitoEq(interactionOne.retryExhaustedEventName))
 
         state <- baker.getRecipeInstanceState(recipeInstanceId)
       } yield state.eventNames should contain(interactionOne.retryExhaustedEventName)

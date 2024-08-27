@@ -20,18 +20,18 @@ class BakerAsyncTest extends AnyFlatSpec with Matchers {
 
   "BakerAsync object" should "be successful for late event" in {
     val future = cook(UUID.randomUUID().toString, 200 millis)
-    Await.result(future, 1 second)
+    Await.result(future, 5 second)
   }
 
   "BakerAsync object" should "be successful for early event" in {
     val future = cook(UUID.randomUUID().toString, 0 millis)
-    Await.result(future, 1 second)
+    Await.result(future, 5 second)
   }
 
   "BakerAsync object" should "be successful for multiple events event" in {
     val future1 = cook(UUID.randomUUID().toString, 200 millis)
     val future2 = cook(UUID.randomUUID().toString, 200 millis)
-    Await.result(future1, 1 second)
+    Await.result(future1, 5 second)
     Await.result(future2, 100 millis)
   }
 

@@ -113,7 +113,8 @@ object ProcessIndexProto {
       val companion = protobuf.ProcessIndexSnapShot
 
       override def toProto(processIndexSnapShot: ProcessIndexSnapShot): protobuf.ProcessIndexSnapShot =
-        protobuf.ProcessIndexSnapShot(processIndexSnapShot.index.map(entry => entry._1 -> ctxToProto(entry._2)))
+        protobuf.ProcessIndexSnapShot(processIndexSnapShot.index.map(
+          entry => entry._1 -> ctxToProto(entry._2)))
 
       override def fromProto(message: protobuf.ProcessIndexSnapShot): Try[ProcessIndexSnapShot] = {
         Try {
@@ -360,6 +361,24 @@ object ProcessIndexProto {
         } yield ProcessEventResponse(recipeInstanceId)
     }
 
+  implicit def addRecipeInstanceMetaDataProto(implicit provider: AkkaSerializerProvider): ProtoMap[AddRecipeInstanceMetaData, protobuf.AddRecipeInstanceMetaData] =
+    new ProtoMap[AddRecipeInstanceMetaData, protobuf.AddRecipeInstanceMetaData] {
+
+      val companion = protobuf.AddRecipeInstanceMetaData
+
+      def toProto(a: AddRecipeInstanceMetaData): protobuf.AddRecipeInstanceMetaData =
+        protobuf.AddRecipeInstanceMetaData(
+          Some(a.recipeInstanceId),
+          a.metaData.map(record => {
+            protobuf.AddRecipeInstanceMetaDataRecord(Some(record._1), Some(record._2))}).toSeq)
+
+      def fromProto(message: protobuf.AddRecipeInstanceMetaData): Try[AddRecipeInstanceMetaData] =
+        for {
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+          metaData = message.metaData.map(record => (record.getKey -> record.getValue)).toMap
+        } yield AddRecipeInstanceMetaData(recipeInstanceId, metaData)
+    }
+
   implicit def getProcessStateProto: ProtoMap[GetProcessState, protobuf.GetProcessState] =
     new ProtoMap[GetProcessState, protobuf.GetProcessState] {
 
@@ -372,6 +391,21 @@ object ProcessIndexProto {
         for {
           recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
         } yield GetProcessState(recipeInstanceId)
+    }
+
+  implicit def getIngredient: ProtoMap[GetProcessIngredient, protobuf.GetProcessIngredient] =
+    new ProtoMap[GetProcessIngredient, protobuf.GetProcessIngredient] {
+
+      val companion = protobuf.GetProcessIngredient
+
+      def toProto(a: GetProcessIngredient): protobuf.GetProcessIngredient =
+        protobuf.GetProcessIngredient(Some(a.recipeInstanceId), Some(a.name))
+
+      def fromProto(message: protobuf.GetProcessIngredient): Try[GetProcessIngredient] =
+        for {
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+          name <- versioned(message.name, "Name")
+        } yield GetProcessIngredient(recipeInstanceId, name)
     }
 
   implicit def getCompiledRecipeProto: ProtoMap[GetCompiledRecipe, protobuf.GetCompiledRecipe] =
