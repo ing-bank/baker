@@ -12,8 +12,8 @@ public class RegisterEventListener {
     }
 
     public void example() {
-        baker.registerEventListener((String recipeInstanceId, EventInstance event) ->
-            System.out.println("Recipe Instance " + recipeInstanceId + " processed event " + event.name())
+        baker.registerEventListener((String recipeInstanceId, String event) ->
+            System.out.println("Recipe Instance " + recipeInstanceId + " processed event " + event)
         );
     }
 }

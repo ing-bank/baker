@@ -359,7 +359,7 @@ class ProcessInstance[S, E](
         val timestamp = System.currentTimeMillis()
         log.transitionFired(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition.asInstanceOf[Transition], jobId, timestamp, timestamp)
 
-        LogAndSendEvent.eventFired(EventFired(timestamp, compiledRecipe.name, compiledRecipe.recipeId, recipeInstanceId,  out), context.system.eventStream)
+        LogAndSendEvent.eventFired(EventFired(timestamp, compiledRecipe.name, compiledRecipe.recipeId, recipeInstanceId,  out.name), context.system.eventStream)
 
         persistEvent(instance, internalEvent)(
           eventSource.apply(instance)
@@ -582,7 +582,7 @@ class ProcessInstance[S, E](
         val event: TransitionFiredEvent = jobToFinishedInteraction(job, i.eventsToFire.head.name)
 
         val currentTime = System.currentTimeMillis()
-        LogAndSendEvent.eventFired(EventFired(currentTime, compiledRecipe.name, compiledRecipe.recipeId, recipeInstanceId,  event.output.asInstanceOf[EventInstance]), context.system.eventStream)
+        LogAndSendEvent.eventFired(EventFired(currentTime, compiledRecipe.name, compiledRecipe.recipeId, recipeInstanceId,  i.eventsToFire.head.name), context.system.eventStream)
 
         self.tell(event, originalSender)
       case _ => executeJobViaExecutor(job, originalSender)

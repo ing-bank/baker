@@ -151,12 +151,12 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
 
     suspend fun registerEventListener(
         recipeName: String,
-        listenerFunction: (RecipeEventMetadata, EventInstance) -> Unit
+        listenerFunction: (RecipeEventMetadata, String) -> Unit
     ) {
         jBaker.registerEventListener(recipeName, listenerFunction).await()
     }
 
-    suspend fun registerEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) -> Unit) {
+    suspend fun registerEventListener(listenerFunction: (RecipeEventMetadata, String) -> Unit) {
         jBaker.registerEventListener(listenerFunction).await()
     }
 

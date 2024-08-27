@@ -112,4 +112,6 @@ object JsonDecoders extends LazyLogging {
   implicit val interactionInstanceDescriptorDecoder: Decoder[InteractionInstanceDescriptor] = deriveDecoder[InteractionInstanceDescriptor]
 
   implicit val bakeRequestDecoder: Decoder[BakeRequest] = deriveDecoder[BakeRequest]
+
+  implicit val addMetaDataRequest: Decoder[AddMetaDataRequest] = deriveDecoder[AddMetaDataRequest]
 }
