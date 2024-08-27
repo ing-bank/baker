@@ -43,7 +43,7 @@ trait InteractionManager[F[_]] {
   def execute(interaction: InteractionTransition, input: Seq[IngredientInstance], metadata: Option[Map[String, String]])(implicit sync: Sync[F], effect: MonadError[F, Throwable]): F[Option[EventInstance]] = {
     if(interaction.interactionName.startsWith(checkpointEventInteractionPrefix)){
       effect.pure(Some(EventInstance(interaction.interactionName.stripPrefix(checkpointEventInteractionPrefix))))
-    }else{
+    } else{
       findFor(interaction)
         .flatMap {
           case Some(implementation) => implementation.execute(input, metadata.getOrElse(Map()))

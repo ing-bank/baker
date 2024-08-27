@@ -1,5 +1,6 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
+import com.ing.baker.il.petrinet.{Place, Transition}
 import com.ing.baker.petrinet.api.{MultiSet, PetriNet}
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy
 import scalax.collection.edge.WLDiEdge
@@ -40,8 +41,8 @@ package object dsl {
   @nowarn
   def arc(p: Place, t: Transition, weight: Long): Arc = WLDiEdge[Node, String](Left(p), Right(t))(weight, "")
 
-  def requireUniqueElements[T](i: Iterable[T], name: String = "Element"): Unit = {
-    (i foldLeft Set.empty[T]) { (set, e) =>
+  def requireUniqueElements[X](i: Iterable[X], name: String = "Element"): Unit = {
+    (i foldLeft Set.empty[X]) { (set, e) =>
       if (set.contains(e))
         throw new IllegalArgumentException(s"$name '$e' is not unique!")
       else
@@ -49,7 +50,7 @@ package object dsl {
     }
   }
 
-  def createPetriNet[S](params: Arc*): PetriNet[Place, Transition] = {
+  def createPetriNet[S](params: Arc*): PetriNet = {
     val petriNet = new PetriNet(Graph(params: _*))
 
     requireUniqueElements(petriNet.places.toSeq.map(_.id), "Place identifier")

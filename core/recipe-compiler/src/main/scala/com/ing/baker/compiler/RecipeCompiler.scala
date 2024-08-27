@@ -5,15 +5,15 @@ import com.ing.baker.il.CompiledRecipe.{OldRecipeIdVariant, Scala212CompatibleJa
 import com.ing.baker.il.RecipeValidations.postCompileValidations
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
-import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings, checkpointEventInteractionPrefix}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings, checkpointEventInteractionPrefix, sieveInteractionPrefix, subRecipePrefix}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common._
-import com.ing.baker.recipe.scaladsl.{Interaction, Event}
+import com.ing.baker.recipe.{javadsl, kotlindsl}
+import com.ing.baker.recipe.scaladsl.{Event, Interaction}
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
 import scala.annotation.nowarn
-import scala.collection.immutable.Seq
 import scala.language.postfixOps
 
 object RecipeCompiler {
@@ -126,6 +126,7 @@ object RecipeCompiler {
     else Seq.empty
   }
 
+
   /**
     * Draws an arc from all required ingredients for an interaction
     * If the ingredient has multiple consumers create a multi transition place and create both arcs for it
@@ -138,7 +139,7 @@ object RecipeCompiler {
       t.nonProvidedIngredients.map(_.name).partition(ingredientsWithMultipleConsumers.contains)
 
     // the extra arcs to model multiple output transitions from one place
-    val internalDataInputArcs = fieldNamesWithPrefixMulti flatMap { fieldName =>
+    val internalDataInputArcs: Seq[Arc] = fieldNamesWithPrefixMulti flatMap { fieldName =>
       val multiTransitionPlace = createPlace(s"${t.label}-$fieldName", placeType = MultiTransitionPlace)
       Seq(
         // one arc from multiplier place to the transition
@@ -148,23 +149,37 @@ object RecipeCompiler {
         // one arc from extra added place to transition
         arc(multiTransitionPlace, t, 1))
     }
-    // the data input arcs / places
-    val dataInputArcs = fieldNamesWithoutPrefix.map(fieldName => arc(createPlace(fieldName, IngredientPlace), t, 1))
 
-    val limitInteractionCountArc =
+
+    // the data input arcs / places
+    val dataInputArcs: Seq[Arc] = fieldNamesWithoutPrefix.map(fieldName => arc(createPlace(fieldName, IngredientPlace), t, 1))
+
+    val dataOutputArcs: Seq[Arc] =
+      if(t.isReprovider)
+        fieldNamesWithoutPrefix.map(fieldName => arc(t, createPlace(fieldName, IngredientPlace), 1)) ++
+        fieldNamesWithPrefixMulti.map(fieldName => arc(t, createPlace(s"${t.label}-$fieldName", placeType = MultiTransitionPlace), 1))
+      else
+        Seq.empty
+
+    val limitInteractionCountArc: Option[Arc] =
       t.maximumInteractionCount.map(n => arc(createPlace(s"limit:${t.label}", FiringLimiterPlace(n)), t, 1))
 
-    dataInputArcs ++ internalDataInputArcs ++ limitInteractionCountArc
+    dataInputArcs ++ dataOutputArcs ++ internalDataInputArcs ++ limitInteractionCountArc
   }
 
   private def buildInteractionArcs(multipleOutputFacilitatorTransitions: Seq[Transition],
                                    placeNameWithDuplicateTransitions: Map[String, Seq[InteractionTransition]],
                                    eventTransitions: Seq[EventTransition])
                                   (t: InteractionTransition): Seq[Arc] = {
-    buildInteractionInputArcs(
+
+    val inputArcs: Seq[Arc] = buildInteractionInputArcs(
       t,
       multipleOutputFacilitatorTransitions,
-      placeNameWithDuplicateTransitions) ++ buildInteractionOutputArcs(t, eventTransitions)
+      placeNameWithDuplicateTransitions)
+
+    val outputArcs: Seq[Arc] = buildInteractionOutputArcs(t, eventTransitions)
+
+    inputArcs ++ outputArcs
   }
 
   /**
@@ -185,33 +200,62 @@ object RecipeCompiler {
         requiredEvents = e.requiredEvents,
         requiredOneOfEvents = e.requiredOneOfEvents)
 
+    def convertSieveToInteraction(s: Sieve) =
+      Interaction(
+        name = s"${sieveInteractionPrefix}${s.name}",
+        inputIngredients = s.inputIngredients,
+        output = s.output,
+        requiredEvents = Set.empty,
+        requiredOneOfEvents = Set.empty
+      )
+
+    def flattenSubRecipesToInteraction(recipe: Recipe): Set[InteractionDescriptor] = {
+      def copyInteraction(i: InteractionDescriptor) = Interaction(
+        name = s"${subRecipePrefix}${recipe.name}$$${i.name}",
+        inputIngredients = i.inputIngredients,
+        output = i.output,
+        requiredEvents = i.requiredEvents,
+        requiredOneOfEvents = i.requiredOneOfEvents,
+        predefinedIngredients = i.predefinedIngredients,
+        overriddenIngredientNames = i.overriddenIngredientNames,
+        overriddenOutputIngredientName = i.overriddenOutputIngredientName,
+        maximumInteractionCount = i.maximumInteractionCount,
+        failureStrategy = i.failureStrategy,
+        eventOutputTransformers = i.eventOutputTransformers,
+        isReprovider = i.isReprovider,
+        oldName = Option(i.originalName)
+      )
+      recipe.interactions.map(copyInteraction).toSet ++ recipe.sieves.map(convertSieveToInteraction) ++ recipe.subRecipes.flatMap(flattenSubRecipesToInteraction)
+    }
+
     val precompileErrors: Seq[String] = Assertions.preCompileAssertions(recipe)
 
-    // Extend the interactions with the checkpoint event interactions
-    val allInteractions = recipe.interactions ++ recipe.checkpointEvents.map(convertCheckpointEventToInteraction)
+    // Extend the interactions with the checkpoint event interactions and sub-recipes
+    val actionDescriptors: Seq[InteractionDescriptor] = recipe.interactions ++
+      recipe.checkpointEvents.map(convertCheckpointEventToInteraction) ++
+      recipe.subRecipes.flatMap(flattenSubRecipesToInteraction) ++
+      recipe.sieves.map(convertSieveToInteraction)
 
     //All ingredient names provided by sensory events or by interactions
     val allIngredientNames: Set[String] =
-      recipe.sensoryEvents.flatMap(e => e.providedIngredients.map(i => i.name)) ++
-        allInteractions.flatMap(i => i.output.flatMap { e =>
-            // check if the event was renamed (check if there is a transformer for this event)
-            i.eventOutputTransformers.get(e) match {
-              case Some(transformer) => e.providedIngredients.map(ingredient => transformer.ingredientRenames.getOrElse(ingredient.name, ingredient.name))
-              case None => e.providedIngredients.map(_.name)
-            }
+      (recipe.sensoryEvents ++ recipe.subRecipes.flatMap(_.sensoryEvents)).flatMap(e => e.providedIngredients.map(i => i.name)) ++
+        actionDescriptors.flatMap(i => i.output.flatMap { e =>
+          // check if the event was renamed (check if there is a transformer for this event)
+          i.eventOutputTransformers.get(e) match {
+            case Some(transformer) => e.providedIngredients.map(ingredient => transformer.ingredientRenames.getOrElse(ingredient.name, ingredient.name))
+            case None => e.providedIngredients.map(_.name)
           }
+        }
         )
-
-    val actionDescriptors: Seq[InteractionDescriptor] = allInteractions
 
     // For inputs for which no matching output cannot be found, we do not want to generate a place.
     // It should be provided at runtime from outside the active petri net (marking)
-    val interactionTransitions = allInteractions.map(_.toInteractionTransition(recipe.defaultFailureStrategy, allIngredientNames))
+    val interactionTransitions = actionDescriptors.map(_.toInteractionTransition(recipe.defaultFailureStrategy, allIngredientNames))
 
     val allInteractionTransitions: Seq[InteractionTransition] = interactionTransitions
 
     // events provided from outside
-    val sensoryEventTransitions: Seq[EventTransition] = recipe.sensoryEvents.map {
+    val sensoryEventTransitions: Seq[EventTransition] = (recipe.sensoryEvents ++ recipe.subRecipes.flatMap(_.sensoryEvents)).map {
       event => EventTransition(eventToCompiledEvent(event), isSensoryEvent = true, event.maxFiringLimit)
     }.toIndexedSeq
 
@@ -306,7 +350,7 @@ object RecipeCompiler {
       ++ internalEventArcs
       ++ multipleOutputFacilitatorArcs)
 
-    val petriNet: PetriNet[Place, Transition] = new PetriNet(Graph(arcs: _*))
+    val petriNet: PetriNet = new PetriNet(Graph(arcs: _*))
 
     val initialMarking: Marking[Place] = petriNet.places.collect {
       case p @ Place(_, FiringLimiterPlace(n)) => p -> Map[Any, Int]((null, n))
@@ -315,9 +359,11 @@ object RecipeCompiler {
     val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
 
     val oldRecipeIdVariant : OldRecipeIdVariant =
-      if (recipe.isInstanceOf[com.ing.baker.recipe.javadsl.Recipe]) Scala212CompatibleJava
-      else if (recipe.isInstanceOf[com.ing.baker.recipe.kotlindsl.Recipe]) Scala212CompatibleKotlin
-      else Scala212CompatibleScala
+      recipe match {
+        case _: javadsl.Recipe => Scala212CompatibleJava
+        case _: kotlindsl.Recipe => Scala212CompatibleKotlin
+        case _ => Scala212CompatibleScala
+      }
 
     val compiledRecipe = CompiledRecipe.build(
       name = recipe.name,

@@ -18,7 +18,7 @@ class ProcessStateMapping extends ProtoMap[RecipeInstanceState, proto.ProcessSta
       val protoIngredients = a.ingredients.toSeq.map { case (name, value) =>
         proto.Ingredient(Some(name), None, Some(ctxToProto(value)))
       }
-      proto.ProcessState(Some(a.recipeId), Some(a.recipeInstanceId), protoIngredients, a.events.map(ctxToProto(_)))
+      proto.ProcessState(Some(a.recipeId), Some(a.recipeInstanceId), protoIngredients, a.recipeInstanceMetadata,  a.events.map(ctxToProto(_)))
     }
 
     def fromProto(message: proto.ProcessState): Try[RecipeInstanceState] =
@@ -32,7 +32,8 @@ class ProcessStateMapping extends ProtoMap[RecipeInstanceState, proto.ProcessSta
             value <- ctxFromProto(protoValue)
           } yield (name, value)
         }
+        recipeInstanceMetaData = message.recipeInstanceMetadata
         events <- message.events.toList.traverse (ctxFromProto(_))
 
-      } yield RecipeInstanceState(recipeId, recipeInstanceId, ingredients.toMap, events)
+      } yield RecipeInstanceState(recipeId, recipeInstanceId, ingredients.toMap, recipeInstanceMetaData, events)
 }
