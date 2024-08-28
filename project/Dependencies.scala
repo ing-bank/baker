@@ -126,7 +126,7 @@ object Dependencies {
   val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.16"
   val logback = "ch.qos.logback" % "logback-classic" % "1.4.14"
   val logstash = "net.logstash.logback" % "logstash-logback-encoder" % "7.3"
-  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.17.1"
+  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.18.0"
   val scalaCheckPlus = "org.scalatestplus" %% "scalacheck-1-17" % "3.2.18.0"
   val scalaCheckPlusMockito = "org.scalatestplus" %% "mockito-3-12" % "3.2.10.0"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
@@ -138,8 +138,8 @@ object Dependencies {
 
   val snakeYaml = "org.yaml" % "snakeyaml" % "2.2"
 
-  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.15.4"
-  val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.15.4"
+  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.17.2"
+  val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.17.2"
   val jawnParser = "org.typelevel" %% "jawn-parser" % "1.6.0"
   val nettyHandler = "io.netty" % "netty-handler" % "4.1.112.Final"
 
