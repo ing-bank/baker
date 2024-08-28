@@ -126,7 +126,7 @@ object Dependencies {
   val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.16"
   val logback = "ch.qos.logback" % "logback-classic" % "1.4.14"
   val logstash = "net.logstash.logback" % "logstash-logback-encoder" % "7.3"
-  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.17.1"
+  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.18.0"
   val scalaCheckPlus = "org.scalatestplus" %% "scalacheck-1-17" % "3.2.18.0"
   val scalaCheckPlusMockito = "org.scalatestplus" %% "mockito-3-12" % "3.2.10.0"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
