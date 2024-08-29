@@ -82,7 +82,8 @@ object AkkaBakerConfig extends LazyLogging {
         actorIdleTimeout = Some(5.minutes),
         configuredEncryption = Encryption.NoEncryption,
         timeouts = defaultTimeouts,
-        blacklistedProcesses = List.empty
+        blacklistedProcesses = List.empty,
+        rememberProcessDuration = None
       )
 
     AkkaBakerConfig(
@@ -110,7 +111,8 @@ object AkkaBakerConfig extends LazyLogging {
         seedNodes = ClusterBakerActorProvider.SeedNodesList(seedNodes),
         configuredEncryption = Encryption.NoEncryption,
         timeouts = defaultTimeouts,
-        blacklistedProcesses = List.empty
+        blacklistedProcesses = List.empty,
+        rememberProcessDuration = None
       )
 
     AkkaBakerConfig(
@@ -150,7 +152,8 @@ object AkkaBakerConfig extends LazyLogging {
           actorIdleTimeout = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout"),
           configuredEncryption = encryption,
           Timeouts.apply(config),
-          blacklistedProcesses = config.as[List[String]]("baker.blacklisted-processes")
+          blacklistedProcesses = config.as[List[String]]("baker.blacklisted-processes"),
+          rememberProcessDuration = config.as[Option[FiniteDuration]]("baker.process-index.remember-process-duration")
         )
       case Some("cluster-sharded") =>
         new ClusterBakerActorProvider(
@@ -169,7 +172,8 @@ object AkkaBakerConfig extends LazyLogging {
           providedIngredientFilter = config.as[List[String]]("baker.filtered-ingredient-values") ++ config.as[List[String]]("baker.filtered-ingredient-values-for-stream"),
           configuredEncryption = encryption,
           Timeouts.apply(config),
-          blacklistedProcesses = config.as[List[String]]("baker.blacklisted-processes")
+          blacklistedProcesses = config.as[List[String]]("baker.blacklisted-processes"),
+          rememberProcessDuration = config.as[Option[FiniteDuration]]("baker.process-index.remember-process-duration")
         )
       case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
     }

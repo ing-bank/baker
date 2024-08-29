@@ -33,7 +33,10 @@ trait RecipeInstanceEventValidation { recipeInstance: RecipeInstanceState =>
         consume = params.head,
         input = Some(input),
         ingredients = recipeInstance.ingredients,
-        correlationId = correlationId
+        recipeInstanceMetadata = recipeInstance.recipeInstanceMetadata,
+        eventList = events,
+        correlationId = correlationId,
+        isReprovider =  false
       )
     } yield execution
   }

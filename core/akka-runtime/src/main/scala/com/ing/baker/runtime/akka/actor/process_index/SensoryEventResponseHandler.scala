@@ -43,7 +43,7 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent)
         recipe.recipeId,
         command.recipeInstanceId,
         command.correlationId,
-        command.event), context.system.eventStream)
+        command.event.name), context.system.eventStream)
 
     command.reaction match {
       case FireSensoryEventReaction.NotifyWhenCompleted(_) =>
@@ -89,7 +89,7 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent)
         System.currentTimeMillis(),
         command.recipeInstanceId,
         command.correlationId,
-        command.event,
+        command.event.name,
         rejection.asReason), context.system.eventStream)
 
     command.reaction match {

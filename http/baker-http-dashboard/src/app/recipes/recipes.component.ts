@@ -47,7 +47,7 @@ export class RecipesComponent implements OnInit {
     bakeRecipe(recipeId: string): void {
         const instanceId = this.randomId(8)
         this.bakeryService.postBake(instanceId, recipeId).subscribe(() => {
-          window.location.href = AppSettingsService.prefix.prefix + `/instances/${instanceId}`
+          window.location.href = `/instances/${instanceId}`
         });
     }
 

@@ -30,26 +30,6 @@ const routes: Routes = [
         "path": "instances/:recipeInstanceId",
     },
     {
-        "component": HomeComponent,
-        "path": ":prefix"
-    },
-    {
-        "component": RecipesComponent,
-        "path": ":prefix/recipes"
-    },
-    {
-        "component": InteractionsComponent,
-        "path": ":prefix/interactions",
-    },
-    {
-        "component": InstancesComponent,
-        "path": ":prefix/instances",
-    },
-    {
-        "component": InstancesComponent,
-        "path": ":prefix/instances/:recipeInstanceId",
-    },
-    {
         "component": NotFoundComponent,
         "path": "**",
     }

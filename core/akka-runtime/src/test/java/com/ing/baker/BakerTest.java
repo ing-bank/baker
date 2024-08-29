@@ -184,7 +184,7 @@ public class BakerTest {
                 assertEquals(recipeId, event0.getRecipeId());
                 assertEquals(requestId, event0.getRecipeInstanceId());
                 assertTrue(event0.getTimeStamp() > 0);
-                String eventName = event0.getEvent().getName();
+                String eventName = event0.getEventName();
                 assertTrue("EventOne".equals(eventName) || "EventTwo".equals(eventName));
                 assertEquals(Optional.empty(), event0.getCorrelationId());
             } else if (event instanceof InteractionStarted) {

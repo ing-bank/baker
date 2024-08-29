@@ -101,6 +101,22 @@ case class CompiledRecipe(name: String,
     RecipeVisualizer.visualizeRecipe(this, style)
 
   /**
+   * Visualise the compiled recipe in DOT format
+   *
+   * @return
+   */
+  def getSubRecipeVisualization: String =
+    RecipeVisualizer.visualizeSubRecipe(this, RecipeVisualStyle.default)
+
+  /**
+   * Visualise the compiled recipe in DOT format
+   *
+   * @return
+   */
+  def getSubRecipeVisualization(style: RecipeVisualStyle): String =
+    RecipeVisualizer.visualizeSubRecipe(this, style)
+
+  /**
     * Visualise the compiled recipe in DOT format
     *
     * @param filterFunc
