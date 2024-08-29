@@ -62,7 +62,7 @@ object Dependencies {
   val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.8.0"
   val fs2Core = "co.fs2" %% "fs2-core" % fs2Version
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Version
-  val fs2kafka = "com.github.fd4s" %% "fs2-kafka" % "1.11.0"
+  val fs2kafka = "com.github.fd4s" %% "fs2-kafka" % "3.5.1"
   val levelDB = "org.iq80.leveldb" % "leveldb" % "0.12"
 
   val levelDBJni = "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
