@@ -14,7 +14,7 @@ object Dependencies {
   val catsEffectVersion = "2.5.5"
   val catsCoreVersion = "2.12.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "5.3.39"
+  val springVersion = "6.1.12"
   val springBootVersion = "2.6.1"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
@@ -59,10 +59,10 @@ object Dependencies {
   val akkaClusterBoostrap = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
   val akkaDiscoveryKube = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaManagementVersion
 
-  val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.4.1"
+  val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.8.0"
   val fs2Core = "co.fs2" %% "fs2-core" % fs2Version
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Version
-  val fs2kafka = "com.github.fd4s" %% "fs2-kafka" % "1.0.0"
+  val fs2kafka = "com.github.fd4s" %% "fs2-kafka" % "1.11.0"
   val levelDB = "org.iq80.leveldb" % "leveldb" % "0.12"
 
   val levelDBJni = "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
@@ -126,7 +126,7 @@ object Dependencies {
   val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.16"
   val logback = "ch.qos.logback" % "logback-classic" % "1.4.14"
   val logstash = "net.logstash.logback" % "logstash-logback-encoder" % "7.3"
-  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.17.1"
+  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.18.0"
   val scalaCheckPlus = "org.scalatestplus" %% "scalacheck-1-17" % "3.2.18.0"
   val scalaCheckPlusMockito = "org.scalatestplus" %% "mockito-3-12" % "3.2.10.0"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
@@ -138,8 +138,8 @@ object Dependencies {
 
   val snakeYaml = "org.yaml" % "snakeyaml" % "2.2"
 
-  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.15.4"
-  val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.15.4"
+  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.17.2"
+  val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.17.2"
   val jawnParser = "org.typelevel" %% "jawn-parser" % "1.6.0"
   val nettyHandler = "io.netty" % "netty-handler" % "4.1.112.Final"
 
