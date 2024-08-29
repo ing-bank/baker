@@ -544,7 +544,7 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
   .settings(Publish.settings)
   .settings(yPartialUnificationSetting)
   .settings(
-    Compile / mainClass := Some("com.ing.bakery.baker.Main"),
+    Compile / mainClass := Some("com.ing.bakery.Main"),
     dockerExposedPorts ++= Seq(8080),
     Docker / packageName := "bakery-state",
     dockerBaseImage := "adoptopenjdk/openjdk11",
