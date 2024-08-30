@@ -94,7 +94,7 @@ object Dependencies {
   val circe = "io.circe" %% "circe-core" % circeVersion
   val circeParser = "io.circe" %% "circe-parser" % circeVersion
   val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
-  val circeGenericExtras = "io.circe" %% "circe-generic-extras" % circeVersion
+  val circeGenericExtras = "io.circe" %% "circe-generic-extras" % "0.14.4"
 
   val catsEffect = "org.typelevel" %% "cats-effect" % catsEffectVersion
   val catsEffectTesting = "com.codecommit" %% "cats-effect-testing-scalatest" % "0.5.4"
