@@ -8,9 +8,10 @@ import io.prometheus.client.{Collector, CollectorRegistry, Counter}
 import io.prometheus.jmx.JmxCollector
 import org.http4s.dsl.io._
 import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.{Router, Server}
 import org.http4s._
+import org.typelevel.ci._
 
 import java.io.CharArrayWriter
 import java.net.InetSocketAddress
@@ -46,7 +47,7 @@ object MetricService extends LazyLogging {
   def defaultInstance = new MetricService(new CollectorRegistry(true))
 
   def resourceServer(socketAddress: InetSocketAddress, registry: CollectorRegistry, ec: ExecutionContext)
-                    (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
+                    (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server] = {
     val encoder = EntityEncoder.stringEncoder
 
     def fromPrometheus: String = {
@@ -68,7 +69,7 @@ object MetricService extends LazyLogging {
                   Response(
                     status = Ok,
                     body = encoder.toEntity(exportMetrics).body,
-                    headers = Headers.of(Header("Content-Type", TextFormat.CONTENT_TYPE_004))
+                    headers = Headers(Header.Raw(ci"Content-Type", TextFormat.CONTENT_TYPE_004))
                   )
                 }
             }

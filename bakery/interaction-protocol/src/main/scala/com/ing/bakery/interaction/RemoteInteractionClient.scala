@@ -9,7 +9,7 @@ import com.ing.bakery.metrics.MetricService
 import io.prometheus.client.Counter
 import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.dsl.io._
 import org.http4s._
 
@@ -23,11 +23,14 @@ object RemoteInteractionClient {
   def resource(headers: Headers,
                pool: ExecutionContext,
                metricService: MetricService,
-               tlsConfig: Option[BakeryHttp.TLSConfig])(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, RemoteInteractionClient] =
-    BlazeClientBuilder[IO](pool, tlsConfig.map(BakeryHttp.loadSSLContext))
-      .withCheckEndpointAuthentication(false)
-      .resource
-      .map(new BaseRemoteInteractionClient(_, headers, metricService))
+               tlsConfig: Option[BakeryHttp.TLSConfig])(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, RemoteInteractionClient] = {
+    
+    tlsConfig.map(BakeryHttp.loadSSLContext)
+    .fold(BlazeClientBuilder[IO](pool))(BlazeClientBuilder[IO](pool).withSslContext)
+    .withCheckEndpointAuthentication(false)
+    .resource
+    .map(new BaseRemoteInteractionClient(_, headers, metricService))
+  }
 }
 
 trait RemoteInteractionClient {
@@ -49,12 +52,15 @@ class BaseRemoteInteractionClient(
   import RemoteInteractionClient._
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
   import com.ing.baker.runtime.serialization.JsonCodec._
-  def entityCodecs: (EntityEncoder[IO, ExecutionRequest], EntityDecoder[IO, ExecutionResult], EntityDecoder[IO, Interactions]) =
+  override def entityCodecs: (EntityEncoder[IO, ExecutionRequest], EntityDecoder[IO, ExecutionResult], EntityDecoder[IO, Interactions]) =
     (jsonEncoderOf[IO, ExecutionRequest],
       jsonOf[IO, ExecutionResult],
       jsonOf[IO, Interactions])
 
-  private implicit lazy val (interactionEntityDecoder, executeRequestEntityEncoder, executeResponseEntityDecoder) = entityCodecs
+  private implicit lazy val (
+    interactionEntityDecoder: EntityEncoder[IO, ExecutionRequest], 
+    executeRequestEntityEncoder: EntityDecoder[IO, ExecutionResult], 
+    executeResponseEntityDecoder: EntityDecoder[IO, Interactions]) = entityCodecs
 
   def interfaces(uri: Uri): IO[Interactions] =
     client.expect[Interactions](

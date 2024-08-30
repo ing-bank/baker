@@ -17,7 +17,7 @@ import org.http4s.Method._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.client.blaze._
+import org.http4s.blaze.client._
 import org.http4s.client.dsl.io._
 
 import scala.collection.immutable.Seq
@@ -33,11 +33,12 @@ object BakerClient {
                                         (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
     implicit val ex: ExecutionContext = executionContext
 
-    BlazeClientBuilder[IO](executionContext, tlsConfig.map(_.loadSSLContext))
-      .resource
-      .map(client => {
-        new BakerClient(client, endpointConfig, fallbackEndpointConfig, filters)
-      })
+    tlsConfig.map(_.loadSSLContext)
+    .fold(BlazeClientBuilder[IO](ex))(BlazeClientBuilder[IO](ex).withSslContext)
+    .resource
+    .map(client => {
+      new BakerClient(client, endpointConfig, fallbackEndpointConfig, filters)
+    })
   }
 
   def resourceBalanced(endpointConfig: EndpointConfig,

@@ -3,7 +3,7 @@ package com.ing.bakery.smoke
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.bakery.smoke.k8s.{DefinitionFile, Namespace, Pod}
 import org.http4s.Uri
-import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.blaze.client.BlazeClientBuilder
 
 import scala.concurrent.ExecutionContext
 

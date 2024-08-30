@@ -14,7 +14,7 @@ import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.metrics.prometheus.Prometheus
-import org.http4s.server.blaze._
+import org.http4s.blaze.server._
 import org.http4s.server.middleware.{Logger, Metrics}
 import org.http4s.server.{Router, Server}
 
@@ -36,7 +36,7 @@ object RemoteInteractionService {
                metricsPort: Int = 9096,
                metricsEnabled: Boolean = false,
                apiUrlPrefix: String = "/api/bakery/interactions",
-               registry: Option[CollectorRegistry] = None)(implicit timer: Timer[IO], cs: ContextShift[IO], executionContext: ExecutionContext): Resource[IO, Server[IO]] = {
+               registry: Option[CollectorRegistry] = None)(implicit timer: Timer[IO], cs: ContextShift[IO], executionContext: ExecutionContext): Resource[IO, Server] = {
 
     val idToNameMap = interactions.map(i => URLEncoder.encode(i.shaBase64, "UTF-8").take(8) -> i.name).toMap
 
@@ -49,8 +49,8 @@ object RemoteInteractionService {
     val service = new RemoteInteractionService(interactions)
 
     def interactionRequestClassifier(request: Request[IO]): Option[String] = if (interactionPerTypeMetricsEnabled) {
-      val p = request.pathInfo.split('/') // ... /interactions/<id>/execute - we take ID part we care most about
-      (if (p.length == 4) Some(p(2)) else None).map(v => idToNameMap.getOrElse(v.take(8), "unknown"))
+      val segments = request.pathInfo.segments // ... /interactions/<id>/execute - we take ID part we care most about
+      (if (segments.length == 4) Some(segments(2)) else None).map(v => idToNameMap.getOrElse(v.toString.take(8), "unknown"))
     } else None
 
     val collectorRegistry = registry.getOrElse(CollectorRegistry.defaultRegistry)
