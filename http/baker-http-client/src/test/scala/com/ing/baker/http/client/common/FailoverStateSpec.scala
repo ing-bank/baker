@@ -1,7 +1,9 @@
 package com.ing.baker.http.client.common
 
+import org.http4s._
+import org.http4s.implicits._
+
 import com.ing.baker.http.client.scaladsl.EndpointConfig
-import org.http4s.Uri
 import org.scalatest.funspec.AnyFunSpec
 
 import scala.concurrent.duration._
@@ -10,10 +12,10 @@ import scala.concurrent.{Await, Future}
 
 class FailoverStateSpec extends AnyFunSpec {
 
-  private val uriA = Uri(path = "baker-a-host")
-  private val uriB = Uri(path = "baker-b-host")
-  private val uriC = Uri(path = "baker-c-host")
-  private val uriD = Uri(path = "baker-d-host")
+  private val uriA = uri"baker-a-host"
+  private val uriB = uri"baker-b-host"
+  private val uriC = uri"baker-c-host"
+  private val uriD = uri"baker-d-host"
 
   describe("Balancer") {
 

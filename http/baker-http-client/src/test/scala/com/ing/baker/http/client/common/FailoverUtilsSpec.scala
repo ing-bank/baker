@@ -117,7 +117,7 @@ class FailoverUtilsSpec extends FixtureAsyncFunSpec   {
       val fos = new FailoverState(EndpointConfig(IndexedSeq(context.server500, context.server200)))
       for {
         result <- callWithFailOver(fos, context.client,
-          (uri, _) => GET(uri / "app" / "recipes"), Seq.empty,
+          (uri, _) => IO(GET(uri / "app" / "recipes")), Seq.empty,
           FailoverUtils.handleHttpErrors, None)(executionContext, bakerResultDecoder)
       } yield {
         assert(result == BakerResult(List.empty[Int]))
@@ -130,7 +130,7 @@ class FailoverUtilsSpec extends FixtureAsyncFunSpec   {
       val fos = new FailoverState(EndpointConfig(IndexedSeq(context.server400, context.server500)))
       for {
         _ <- callWithFailOver(fos, context.client,
-          (uri, _) => GET(uri / "app" / "recipes"), Seq.empty,
+          (uri, _) => IO(GET(uri / "app" / "recipes")), Seq.empty,
           FailoverUtils.handleFallbackAwareErrors, Some(EndpointConfig(IndexedSeq(context.server200))))(executionContext, bakerResultDecoder)
       } yield {
         assert(callbackCollector.toList == List("400", "200"))
@@ -142,7 +142,7 @@ class FailoverUtilsSpec extends FixtureAsyncFunSpec   {
       val fos = new FailoverState(EndpointConfig(IndexedSeq(context.server500, context.server400)))
       for {
         result <- callWithFailOver(fos, context.client,
-          (uri, _) => GET(uri / "app" / "recipes"), Seq.empty,
+          (uri, _) => IO(GET(uri / "app" / "recipes")), Seq.empty,
           FailoverUtils.handleFallbackAwareErrors, Some(EndpointConfig(IndexedSeq(context.server200))))(executionContext, bakerResultDecoder)
       } yield {
         assert(result == BakerResult(List.empty[Int]))
@@ -156,7 +156,7 @@ class FailoverUtilsSpec extends FixtureAsyncFunSpec   {
 
       for {
         either <- callWithFailOver(fos, context.client,
-          (uri, _) => GET(uri / "app" / "recipes"), Seq.empty,
+          (uri, _) => IO(GET(uri / "app" / "recipes")), Seq.empty,
           FailoverUtils.handleFallbackAwareErrors, None)(executionContext, bakerResultDecoder).attempt
       } yield {
         assert(either.left.get.isInstanceOf[NoSuchProcessException])
@@ -169,7 +169,7 @@ class FailoverUtilsSpec extends FixtureAsyncFunSpec   {
 
       for {
         either <- callWithFailOver(fos, context.client,
-          (uri, _) => GET(uri / "app" / "recipes"), Seq.empty,
+          (uri, _) => IO(GET(uri / "app" / "recipes")), Seq.empty,
           FailoverUtils.handleFallbackAwareErrors,
             Some(EndpointConfig(IndexedSeq(context.server404, context.server404))))(executionContext, bakerResultDecoder).attempt
       } yield {

@@ -102,11 +102,11 @@ final class BakerClient( client: Client[IO],
   implicit val interactionRequestEncoder: EntityEncoder[IO, InteractionExecution.ExecutionRequest] = jsonEncoderOf[IO, InteractionExecution.ExecutionRequest]
 
   override def addRecipe(recipe: RecipeRecord): Future[String] =
-    callRemoteBakerService[String]((host, prefix) => POST(
+    callRemoteBakerService[String]((host, prefix) => IO(POST(
       EncodedRecipe(
         base64 = new String(java.util.Base64.getEncoder.encode(Utils.recipeToByteArray(recipe.recipe)), "UTF-8"),
         createdAt = recipe.updated),
-      root(host, prefix) / "app" / "recipes")).map { r =>
+      root(host, prefix) / "app" / "recipes"))).map { r =>
       logger.info(s"Result of adding a recipe: $r")
       r
     }
@@ -164,10 +164,10 @@ final class BakerClient( client: Client[IO],
     * @return
     */
   override def getRecipe(recipeId: String): Future[RecipeInformation] =
-    callRemoteBakerService[RecipeInformation]((host, prefix) => GET(root(host, prefix) / "app" / "recipes" / recipeId))
+    callRemoteBakerService[RecipeInformation]((host, prefix) => IO(GET(root(host, prefix) / "app" / "recipes" / recipeId)))
 
   override def getRecipeVisual(recipeId: String, style: RecipeVisualStyle): Future[String] =
-    callRemoteBakerService[String]((host, prefix) => GET(root(host, prefix) / "app" / "recipes" / recipeId / "visual"))
+    callRemoteBakerService[String]((host, prefix) => IO(GET(root(host, prefix) / "app" / "recipes" / recipeId / "visual")))
 
   /**
     * Returns all recipes added to this baker instance.
@@ -175,7 +175,7 @@ final class BakerClient( client: Client[IO],
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
   override def getAllRecipes: Future[Map[String, RecipeInformation]] =
-    callRemoteBakerService[Map[String, RecipeInformation]]( (host, prefix) => GET(root(host, prefix) / "app" / "recipes"))
+    callRemoteBakerService[Map[String, RecipeInformation]]( (host, prefix) => IO(GET(root(host, prefix) / "app" / "recipes")))
 
   /**
     * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
@@ -185,26 +185,26 @@ final class BakerClient( client: Client[IO],
     * @return
     */
   override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] =
-    callRemoteBakerService[Unit]((host, prefix) => POST(root(host, prefix) / "instances" / recipeInstanceId / "bake" / recipeId)).map { _ =>
+    callRemoteBakerService[Unit]((host, prefix) => IO(POST(root(host, prefix) / "instances" / recipeInstanceId / "bake" / recipeId))).map { _ =>
       logger.info(s"Baked recipe instance '$recipeInstanceId' from recipe '$recipeId'")
     }
 
   override def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] =
     callRemoteBakerService[Unit]((host, prefix) =>
-      POST(BakeRequest(Some(metadata)), root(host, prefix) / "instances" / recipeInstanceId / "bake" / recipeId)).map { _ =>
+      IO(POST(BakeRequest(Some(metadata)), root(host, prefix) / "instances" / recipeInstanceId / "bake" / recipeId))).map { _ =>
       logger.info(s"Baked recipe instance '$recipeInstanceId' from recipe '$recipeId'")
     }
 
   override def getInteraction(interactionName: String): Future[Option[InteractionInstanceDescriptor]] =
-    callRemoteBakerService[Option[InteractionInstanceDescriptor]]((host, prefix) => GET(root(host, prefix) / "app" / "interactions" / interactionName))
+    callRemoteBakerService[Option[InteractionInstanceDescriptor]]((host, prefix) => IO(GET(root(host, prefix) / "app" / "interactions" / interactionName)))
 
 
   override def getAllInteractions: Future[List[InteractionInstanceDescriptor]] =
-    callRemoteBakerService[List[InteractionInstanceDescriptor]]((host, prefix) => GET(root(host, prefix) / "app" / "interactions"))
+    callRemoteBakerService[List[InteractionInstanceDescriptor]]((host, prefix) => IO(GET(root(host, prefix) / "app" / "interactions")))
 
   override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): Future[InteractionExecutionResult] =
     callRemoteBakerService[InteractionExecution.ExecutionResult]((host, prefix) =>
-      POST(InteractionExecution.ExecutionRequest(interactionId, ingredients.toList, Option.empty), root(host, prefix) / "app" / "interactions" / "execute")).map{ result =>
+      IO(POST(InteractionExecution.ExecutionRequest(interactionId, ingredients.toList, Option.empty), root(host, prefix) / "app" / "interactions" / "execute"))).map{ result =>
         result.outcome match {
           case Left(failure) => InteractionExecutionResult(Left(failure.toBakerInteractionExecutionFailure))
           case Right(success) => InteractionExecutionResult(Right(success.toBakerInteractionExecutionSuccess))
@@ -226,8 +226,8 @@ final class BakerClient( client: Client[IO],
                                                 event: EventInstance,
                                                 correlationId: Option[String]): Future[SensoryEventResult] =
     callRemoteBakerServiceFallbackAware[SensoryEventResult](
-      (host, prefix) => POST(event, (root(host, prefix) / "instances" / recipeInstanceId / "fire-and-resolve-when-completed")
-        .withOptionQueryParam("correlationId", correlationId)), fallbackEndpoint).map { result =>
+      (host, prefix) => IO(POST(event, (root(host, prefix) / "instances" / recipeInstanceId / "fire-and-resolve-when-completed")
+        .withOptionQueryParam("correlationId", correlationId))), fallbackEndpoint).map { result =>
       logger.info(s"For recipe instance '$recipeInstanceId', fired and completed event '${event.name}', resulting status ${result.sensoryEventStatus}")
       result
     }
@@ -247,8 +247,8 @@ final class BakerClient( client: Client[IO],
                                                event: EventInstance,
                                                correlationId: Option[String]): Future[SensoryEventStatus] =
     callRemoteBakerServiceFallbackAware[SensoryEventStatus](
-      (host, prefix) => POST(event, (root(host, prefix) / "instances" / recipeInstanceId / "fire-and-resolve-when-received")
-        .withOptionQueryParam("correlationId", correlationId)), fallbackEndpoint).map { result =>
+      (host, prefix) => IO(POST(event, (root(host, prefix) / "instances" / recipeInstanceId / "fire-and-resolve-when-received")
+        .withOptionQueryParam("correlationId", correlationId))), fallbackEndpoint).map { result =>
       logger.info(s"For recipe instance '$recipeInstanceId', fired and received event '${event.name}', resulting status $result")
       result
     }
@@ -270,8 +270,8 @@ final class BakerClient( client: Client[IO],
                                           onEvent: String,
                                           correlationId: Option[String]): Future[SensoryEventResult] =
     callRemoteBakerServiceFallbackAware[SensoryEventResult](
-      (host, prefix) => POST(event, (root(host, prefix) / "instances" / recipeInstanceId / "fire-and-resolve-on-event" / onEvent)
-        .withOptionQueryParam("correlationId", correlationId)), fallbackEndpoint).map { result =>
+      (host, prefix) => IO(POST(event, (root(host, prefix) / "instances" / recipeInstanceId / "fire-and-resolve-on-event" / onEvent)
+        .withOptionQueryParam("correlationId", correlationId))), fallbackEndpoint).map { result =>
       logger.info(s"For recipe instance '$recipeInstanceId', fired event '${event.name}', and resolved on event '$onEvent', resulting status ${result.sensoryEventStatus}")
       result
     }
@@ -297,7 +297,7 @@ final class BakerClient( client: Client[IO],
     */
   override def addMetaData(recipeInstanceId: String, metadata: Map[String,String]): Future[Unit] =
     callRemoteBakerService[Unit](
-      (host, prefix) => POST(AddMetaDataRequest(metadata), root(host, prefix) / "instances" / recipeInstanceId / "add-metadata"))
+      (host, prefix) => IO(POST(AddMetaDataRequest(metadata), root(host, prefix) / "instances" / recipeInstanceId / "add-metadata")))
 
   /**
     * Returns an index of all running processes.
@@ -310,7 +310,7 @@ final class BakerClient( client: Client[IO],
     * @return An index of all processes
     */
   override def getAllRecipeInstancesMetadata: Future[Set[RecipeInstanceMetadata]] =
-    callRemoteBakerServiceFallbackAware[Set[RecipeInstanceMetadata]]((host, prefix) => GET(root(host, prefix) / "instances"), fallbackEndpoint)
+    callRemoteBakerServiceFallbackAware[Set[RecipeInstanceMetadata]]((host, prefix) => IO(GET(root(host, prefix) / "instances")), fallbackEndpoint)
 
   /**
     * Returns the process state.
@@ -319,7 +319,7 @@ final class BakerClient( client: Client[IO],
     * @return The process state.
     */
   override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] =
-    callRemoteBakerServiceFallbackAware[RecipeInstanceState]((host, prefix) => GET(root(host, prefix) / "instances" / recipeInstanceId), fallbackEndpoint)
+    callRemoteBakerServiceFallbackAware[RecipeInstanceState]((host, prefix) => IO(GET(root(host, prefix) / "instances" / recipeInstanceId)), fallbackEndpoint)
 
   /**
     * @param recipeInstanceId
@@ -327,7 +327,7 @@ final class BakerClient( client: Client[IO],
     * @return
     */
   override def getIngredient(recipeInstanceId: String, name: String): Future[Value] =
-    callRemoteBakerServiceFallbackAware[Value]((host, prefix) => GET(root(host, prefix) / "instances" / recipeInstanceId / "ingredient" / name), fallbackEndpoint)
+    callRemoteBakerServiceFallbackAware[Value]((host, prefix) => IO(GET(root(host, prefix) / "instances" / recipeInstanceId / "ingredient" / name)), fallbackEndpoint)
 
   /**
     * Returns all provided ingredients for a given RecipeInstance id.
@@ -336,7 +336,7 @@ final class BakerClient( client: Client[IO],
     * @return The provided ingredients.
     */
   override def getIngredients(recipeInstanceId: String): Future[Map[String, Value]] =
-    callRemoteBakerServiceFallbackAware[Map[String, Value]]((host, prefix) => GET(root(host, prefix) / "instances" / recipeInstanceId / "ingredients"), fallbackEndpoint)
+    callRemoteBakerServiceFallbackAware[Map[String, Value]]((host, prefix) => IO(GET(root(host, prefix) / "instances" / recipeInstanceId / "ingredients")), fallbackEndpoint)
 
   /**
     * Returns all fired events for a given RecipeInstance id.
@@ -345,7 +345,7 @@ final class BakerClient( client: Client[IO],
     * @return The events
     */
   override def getEvents(recipeInstanceId: String): Future[Seq[EventMoment]] =
-    callRemoteBakerServiceFallbackAware[List[EventMoment]]((host, prefix) => GET(root(host, prefix) / "instances" / recipeInstanceId / "events"), fallbackEndpoint)
+    callRemoteBakerServiceFallbackAware[List[EventMoment]]((host, prefix) => IO(GET(root(host, prefix) / "instances" / recipeInstanceId / "events")), fallbackEndpoint)
 
   /**
     * Returns all names of fired events for a given RecipeInstance id.
@@ -363,7 +363,7 @@ final class BakerClient( client: Client[IO],
     * @return A visual (.dot) representation of the process state.
     */
   override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle): Future[String] =
-    callRemoteBakerServiceFallbackAware[String]((host, prefix) => GET(root(host, prefix) / "instances" / recipeInstanceId / "visual"), fallbackEndpoint)
+    callRemoteBakerServiceFallbackAware[String]((host, prefix) => IO(GET(root(host, prefix) / "instances" / recipeInstanceId / "visual")), fallbackEndpoint)
 
   /**
     * Registers a listener to all runtime events for recipes with the given name run in this baker instance.
@@ -404,7 +404,7 @@ final class BakerClient( client: Client[IO],
     * @return
     */
   override def retryInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
-    callRemoteBakerServiceFallbackAware[Unit]((host, apiUrlPrefix) => POST(root(host, apiUrlPrefix) / "instances" / recipeInstanceId / "interaction" / interactionName / "retry"), fallbackEndpoint)
+    callRemoteBakerServiceFallbackAware[Unit]((host, apiUrlPrefix) => IO(POST(root(host, apiUrlPrefix) / "instances" / recipeInstanceId / "interaction" / interactionName / "retry")), fallbackEndpoint)
 
   /**
     * Resolves a blocked interaction by specifying it's output.
@@ -414,7 +414,7 @@ final class BakerClient( client: Client[IO],
     * @return
     */
   override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): Future[Unit] =
-    callRemoteBakerServiceFallbackAware[Unit]((host, prefix) => POST(event, root(host, prefix) / "instances" / recipeInstanceId / "interaction" / interactionName / "resolve"), fallbackEndpoint)
+    callRemoteBakerServiceFallbackAware[Unit]((host, prefix) => IO(POST(event, root(host, prefix) / "instances" / recipeInstanceId / "interaction" / interactionName / "resolve")), fallbackEndpoint)
 
   /**
     * Stops the retrying of an interaction.
@@ -422,5 +422,5 @@ final class BakerClient( client: Client[IO],
     * @return
     */
   override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
-    callRemoteBakerServiceFallbackAware[Unit]((host, prefix) => POST(root(host, prefix) / "instances" / recipeInstanceId / "interaction" / interactionName / "stop-retrying"), fallbackEndpoint)
+    callRemoteBakerServiceFallbackAware[Unit]((host, prefix) => IO(POST(root(host, prefix) / "instances" / recipeInstanceId / "interaction" / interactionName / "stop-retrying")), fallbackEndpoint)
 }

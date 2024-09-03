@@ -36,8 +36,9 @@ import java.util.concurrent.CompletableFuture
 import scala.compat.java8.FutureConverters
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
+import com.ing.baker.il.RecipeVisualizer.logger
 
-object Http4sBakerServer {
+object Http4sBakerServer extends LazyLogging {
 
   def resource(baker: Baker, ec: ExecutionContext, hostname: InetSocketAddress, apiUrlPrefix: String,
                dashboardConfiguration: DashboardConfiguration, loggingEnabled: Boolean)
@@ -48,6 +49,7 @@ object Http4sBakerServer {
       val apiLogger = LoggerFactory.getLogger("API")
       Some(s => IO(apiLogger.info(s)))
     } else None
+    
     for {
       metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_api")
       blocker <- Blocker[IO]
@@ -126,10 +128,8 @@ object Http4sBakerServer {
             `Content-Length`.unsafeFromLong(bodyText.length)
           )
         ))
-        //TODO: Change to Dashboard.indexPattern.matches(req.pathInfo) once support for scala_2.12 is removed.
-      case req if req.method == GET && req.pathInfo.matches(Dashboard.indexPattern.regex) => dashboardFile(req, blocker, "index.html").getOrElseF(NotFound())
-      case req if req.method == GET && Dashboard.files.contains(req.pathInfo.substring(1)) =>
-        dashboardFile(req, blocker, req.pathInfo.substring(1)).getOrElseF(NotFound())
+      case req if req.method == GET && Dashboard.indexPattern.matches(req.pathInfo.toRelative.renderString) => dashboardFile(req, blocker, "index.html").getOrElseF(NotFound())
+      case req if req.method == GET && Dashboard.files.contains(req.pathInfo.toRelative.renderString) => dashboardFile(req, blocker, req.pathInfo.toRelative.renderString).getOrElseF(NotFound())
     }
 
   private def dashboardFile(request: Request[IO], blocker: Blocker, filename: String)
@@ -252,8 +252,8 @@ final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO
   })
 
   def metricsClassifier(apiUrlPrefix: String): Request[IO] => Option[String] = { request =>
-    val uriPath = request.uri.path
-    val p = uriPath.takeRight(uriPath.length - apiUrlPrefix.length)
+    val uriPathRendered = request.uri.path.renderString
+    val p = uriPathRendered.takeRight(uriPathRendered.length - apiUrlPrefix.length)
 
     if (p.startsWith("/app")) Some(p) // cardinality is low, we don't care
     else if (p.startsWith("/instances")) {
