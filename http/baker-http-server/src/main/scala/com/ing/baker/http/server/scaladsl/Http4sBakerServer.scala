@@ -24,7 +24,7 @@ import org.http4s.headers.{`Content-Length`, `Content-Type`}
 import org.http4s.implicits._
 import org.http4s.metrics.MetricsOps
 import org.http4s.metrics.prometheus.Prometheus
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.middleware.{CORS, Logger, Metrics}
 import org.http4s.server.{Router, Server}
 import org.slf4j.LoggerFactory
@@ -36,18 +36,20 @@ import java.util.concurrent.CompletableFuture
 import scala.compat.java8.FutureConverters
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
+import com.ing.baker.il.RecipeVisualizer.logger
 
-object Http4sBakerServer {
+object Http4sBakerServer extends LazyLogging {
 
   def resource(baker: Baker, ec: ExecutionContext, hostname: InetSocketAddress, apiUrlPrefix: String,
                dashboardConfiguration: DashboardConfiguration, loggingEnabled: Boolean)
-              (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
+              (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server] = {
 
 
     val apiLoggingAction: Option[String => IO[Unit]] = if (loggingEnabled) {
       val apiLogger = LoggerFactory.getLogger("API")
       Some(s => IO(apiLogger.info(s)))
     } else None
+    
     for {
       metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_api")
       blocker <- Blocker[IO]
@@ -71,7 +73,7 @@ object Http4sBakerServer {
                http4sBakerServerConfiguration: Http4sBakerServerConfiguration,
                dashboardConfiguration: DashboardConfiguration,
                ec: ExecutionContext = ExecutionContext.global)
-              (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] =
+              (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server] =
     resource(baker, ec,
       hostname = InetSocketAddress.createUnresolved(http4sBakerServerConfiguration.apiHost, http4sBakerServerConfiguration.apiPort),
       apiUrlPrefix = http4sBakerServerConfiguration.apiUrlPrefix,
@@ -89,7 +91,7 @@ object Http4sBakerServer {
       .allocated
       .unsafeToFuture()
       .map {
-        case (server: Server[IO], closeEffect: IO[Unit]) => new ClosableBakerServer(server, closeEffect)
+        case (server: Server, closeEffect: IO[Unit]) => new ClosableBakerServer(server, closeEffect)
       }(ExecutionContext.global)
     FutureConverters.toJava(serverStarted).toCompletableFuture
   }
@@ -99,7 +101,7 @@ object Http4sBakerServer {
     java(baker, Http4sBakerServerConfiguration.fromConfig(config), DashboardConfiguration.fromConfig(config))
   }
 
-  class ClosableBakerServer(val server : Server[IO], closeEffect : IO[Unit]) extends Closeable {
+  class ClosableBakerServer(val server : Server, closeEffect : IO[Unit]) extends Closeable {
     override def close(): Unit = closeEffect.unsafeRunSync()
   }
   def routes(baker: Baker, apiUrlPrefix: String, metrics: MetricsOps[IO],
@@ -126,10 +128,8 @@ object Http4sBakerServer {
             `Content-Length`.unsafeFromLong(bodyText.length)
           )
         ))
-        //TODO: Change to Dashboard.indexPattern.matches(req.pathInfo) once support for scala_2.12 is removed.
-      case req if req.method == GET && req.pathInfo.matches(Dashboard.indexPattern.regex) => dashboardFile(req, blocker, "index.html").getOrElseF(NotFound())
-      case req if req.method == GET && Dashboard.files.contains(req.pathInfo.substring(1)) =>
-        dashboardFile(req, blocker, req.pathInfo.substring(1)).getOrElseF(NotFound())
+      case req if req.method == GET && Dashboard.indexPattern.matches(req.pathInfo.toRelative.renderString) => dashboardFile(req, blocker, "index.html").getOrElseF(NotFound())
+      case req if req.method == GET && Dashboard.files.contains(req.pathInfo.toRelative.renderString) => dashboardFile(req, blocker, req.pathInfo.toRelative.renderString).getOrElseF(NotFound())
     }
 
   private def dashboardFile(request: Request[IO], blocker: Blocker, filename: String)
@@ -252,8 +252,8 @@ final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO
   })
 
   def metricsClassifier(apiUrlPrefix: String): Request[IO] => Option[String] = { request =>
-    val uriPath = request.uri.path
-    val p = uriPath.takeRight(uriPath.length - apiUrlPrefix.length)
+    val uriPathRendered = request.uri.path.renderString
+    val p = uriPathRendered.takeRight(uriPathRendered.length - apiUrlPrefix.length)
 
     if (p.startsWith("/app")) Some(p) // cardinality is low, we don't care
     else if (p.startsWith("/instances")) {

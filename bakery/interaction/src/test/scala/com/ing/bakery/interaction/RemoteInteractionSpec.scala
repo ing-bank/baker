@@ -141,7 +141,7 @@ class RemoteInteractionSpec extends BakeryFunSpec {
         val result: IO[Option[String]] = client.execute(uri, implementation0.shaBase64, Seq(ingredient0, ingredient1), Map.empty)
           .map(_ => None)
           .handleErrorWith {
-            case _: java.net.ConnectException | Command.EOF => IO.pure(Some("connection error"))
+            case _: java.net.SocketException | Command.EOF => IO.pure(Some("connection error"))
             case e => IO.raiseError(e)
           }
         result.map(result => assert(result === Some("connection error")))

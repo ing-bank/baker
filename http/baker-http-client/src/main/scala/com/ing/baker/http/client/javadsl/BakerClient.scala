@@ -4,7 +4,7 @@ import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.http.client.common.TLSConfig
 import com.ing.baker.http.client.scaladsl.{BakerClient => ScalaClient, EndpointConfig}
 import com.ing.baker.runtime.javadsl.{Baker => JavaBaker}
-import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.{Request, Uri}
 
 import java.util.concurrent.CompletableFuture
@@ -45,9 +45,8 @@ object BakerClient {
     implicit val contextShift: ContextShift[IO] = IO.contextShift(ec)
     implicit val timer: Timer[IO] = IO.timer(ec)
 
-    val future = BlazeClientBuilder[IO](
-      executionContext = connectionPool,
-      sslContext = sslContext)
+    val future = sslContext
+      .fold(BlazeClientBuilder[IO](connectionPool))(BlazeClientBuilder[IO](connectionPool).withSslContext)
       .resource
       .map { client =>
         new ScalaClient(
