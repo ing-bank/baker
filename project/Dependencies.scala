@@ -119,7 +119,7 @@ object Dependencies {
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
 
-  val typeSafeConfig = "com.typesafe" % "config" % "1.4.2"
+  val typeSafeConfig = "com.typesafe" % "config" % "1.4.3"
 
   val objenisis = "org.objenesis" % "objenesis" % "3.4"
   val jodaTime = "joda-time" % "joda-time" % "2.12.7"
