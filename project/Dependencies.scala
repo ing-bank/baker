@@ -1,12 +1,12 @@
 import sbt._
+import sbt.Opts.resolver
 
 //noinspection TypeAnnotation
 object Dependencies {
-
-  val akkaVersion = "2.6.20"
-  val akkaManagementVersion = "1.1.4"
-  val akkaPersistenceCassandraVersion = "1.0.6"
-  val akkaHttpVersion = "10.2.9"
+  val akkaVersion = "2.9.5"
+  val akkaManagementVersion = "1.5.3"
+  val akkaPersistenceCassandraVersion = "1.2.1"
+  val akkaHttpVersion = "10.6.3"
   val http4sVersion = "0.22.15"
   val circeVersion = "0.14.9"
   val fs2Version = "2.5.12"
@@ -74,8 +74,8 @@ object Dependencies {
   val graphvizJava = "guru.nidi" % "graphviz-java" % "0.18.1"
 
   val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.16.0"
-  val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.18.0"
-  val sensors = "nl.pragmasoft.sensors" %% "sensors-core" % "0.4.1"
+  val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.20.0"
+  val sensors = "nl.pragmasoft.sensors" %% "sensors-core" % "0.8.0"
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.17.0"

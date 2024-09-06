@@ -65,7 +65,8 @@ val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
       "Build-Time" -> new java.util.Date().toString,
       "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
     ),
-  versionScheme := Some("semver-spec")
+  versionScheme := Some("semver-spec"),
+  resolvers += "Akka library repository".at("https://repo.akka.io/maven")
 )
 
 val dockerSettings: Seq[Setting[_]] = Seq(
@@ -229,6 +230,7 @@ lazy val `baker-akka-runtime`: Project = project.in(file("core/akka-runtime"))
         akkaActor,
         akkaPersistence,
         akkaPersistenceQuery,
+        akkaPersistenceCassandra,
         akkaCluster,
         akkaClusterTools,
         akkaClusterSharding,
@@ -253,7 +255,6 @@ lazy val `baker-akka-runtime`: Project = project.in(file("core/akka-runtime"))
         akkaTestKit,
         akkaMultiNodeTestkit,
         akkaStreamTestKit,
-        akkaPersistenceCassandra,
         levelDB,
         levelDBJni,
         betterFiles,
