@@ -21,7 +21,7 @@ inline fun <reified T1, R> functionInteractionInstance(
 ): InteractionInstance {
 
     val types = listOf(
-        typeOf<T1>().javaType
+        javaTypeOf<T1>()
     )
 
     val params = function.reflect()?.parameters ?: error("Cannot read parameters")
@@ -76,8 +76,8 @@ inline fun <reified T1, reified T2, R> functionInteractionInstance(
 ): InteractionInstance {
 
     val types = listOf(
-        typeOf<T1>().javaType,
-        typeOf<T2>().javaType
+        javaTypeOf<T1>(),
+        javaTypeOf<T2>()
     )
 
     val params = function.reflect()?.parameters ?: error("Cannot read parameters")
@@ -133,9 +133,9 @@ inline fun <reified T1, reified T2, reified T3, R> functionInteractionInstance(
 ): InteractionInstance {
 
     val types = listOf(
-        typeOf<T1>().javaType,
-        typeOf<T2>().javaType,
-        typeOf<T3>().javaType,
+        javaTypeOf<T1>(),
+        javaTypeOf<T2>(),
+        javaTypeOf<T3>()
     )
 
     val params = function.reflect()?.parameters ?: error("Cannot read parameters")
@@ -185,3 +185,5 @@ inline fun <reified T1, reified T2, reified T3, R> functionInteractionInstance(
         }
     }
 }
+
+inline fun <reified T> javaTypeOf() = typeOf<T>().javaType
