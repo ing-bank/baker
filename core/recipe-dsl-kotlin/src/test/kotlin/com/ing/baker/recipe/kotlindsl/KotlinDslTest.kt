@@ -35,6 +35,9 @@ class KotlinDslTest {
                 until = deadline(20.0.seconds)
             }
 
+            // Ingredient definition failed with optionals
+            ingredient("test", { test: Optional<String> -> "" })
+
             sensoryEvents {
                 eventWithoutFiringLimit<Events.OrderPlaced>()
                 event<Events.PaymentInformationReceived>(maxFiringLimit = 5)
