@@ -10,10 +10,10 @@ import com.ing.baker.types.Converters
 import scala.collection.immutable.Map
 import java.util.*
 import java.util.concurrent.CompletableFuture
-import kotlin.reflect.full.createType
 import kotlin.reflect.jvm.ExperimentalReflectionOnLambdas
 import kotlin.reflect.jvm.javaType
 import kotlin.reflect.jvm.reflect
+import kotlin.reflect.typeOf
 
 inline fun <reified T1, R> functionInteractionInstance(
     name: String,
@@ -21,7 +21,7 @@ inline fun <reified T1, R> functionInteractionInstance(
 ): InteractionInstance {
 
     val types = listOf(
-        T1::class.createType().javaType
+        typeOf<T1>().javaType
     )
 
     val params = function.reflect()?.parameters ?: error("Cannot read parameters")
@@ -76,8 +76,8 @@ inline fun <reified T1, reified T2, R> functionInteractionInstance(
 ): InteractionInstance {
 
     val types = listOf(
-        T1::class.createType().javaType,
-        T2::class.createType().javaType
+        typeOf<T1>().javaType,
+        typeOf<T2>().javaType
     )
 
     val params = function.reflect()?.parameters ?: error("Cannot read parameters")
@@ -133,9 +133,9 @@ inline fun <reified T1, reified T2, reified T3, R> functionInteractionInstance(
 ): InteractionInstance {
 
     val types = listOf(
-        T1::class.createType().javaType,
-        T2::class.createType().javaType,
-        T3::class.createType().javaType,
+        typeOf<T1>().javaType,
+        typeOf<T2>().javaType,
+        typeOf<T3>().javaType,
     )
 
     val params = function.reflect()?.parameters ?: error("Cannot read parameters")

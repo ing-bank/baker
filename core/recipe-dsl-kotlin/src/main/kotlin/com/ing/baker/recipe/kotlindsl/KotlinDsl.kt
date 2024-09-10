@@ -105,9 +105,9 @@ class RecipeBuilder(private val name: String) {
      */
     inline fun <reified T1,reified R> ingredient(name: String, noinline function: (T1) -> R) {
         val parameters = function.reflect()?.parameters ?: error("Cannot read parameters")
-        val ingredients = listOf(T1::class)
+        val ingredients = listOf(typeOf<T1>().javaType)
             .zip(parameters)
-            .map { (clazz, param) ->  Ingredient(param.name, clazz.createType().javaType) }
+            .map { (clazz, param) ->  Ingredient(param.name, clazz)}
         addSieve(name, ingredients, typeOf<R>().javaType, function)
     }
 
@@ -116,9 +116,9 @@ class RecipeBuilder(private val name: String) {
      */
     inline fun <reified T1, reified T2, reified R> ingredient(name: String, noinline function: (T1, T2) -> R) {
         val parameters = function.reflect()?.parameters ?: error("Cannot read parameters")
-        val ingredients = listOf(T1::class, T2::class)
+        val ingredients = listOf(typeOf<T1>().javaType, typeOf<T2>().javaType)
             .zip(parameters)
-            .map { (clazz, param) ->  Ingredient(param.name, clazz.createType().javaType) }
+            .map { (clazz, param) ->  Ingredient(param.name, clazz) }
         addSieve(name, ingredients, typeOf<R>().javaType, function)
     }
 
@@ -127,9 +127,9 @@ class RecipeBuilder(private val name: String) {
      */
     inline fun <reified T1, reified T2, reified T3, reified R> ingredient(name: String, noinline function: (T1, T2, T3) -> R) {
         val parameters = function.reflect()?.parameters ?: error("Cannot read parameters")
-        val ingredients = listOf(T1::class, T2::class, T3::class)
+        val ingredients = listOf(typeOf<T1>().javaType, typeOf<T2>().javaType, typeOf<T3>().javaType)
             .zip(parameters)
-            .map { (clazz, param) ->  Ingredient(param.name, clazz.createType().javaType) }
+            .map { (clazz, param) ->  Ingredient(param.name, clazz) }
         addSieve(name, ingredients, typeOf<R>().javaType, function)
     }
 
