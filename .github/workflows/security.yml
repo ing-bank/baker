@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up JDK 17
-      uses: actions/setup-java@v2
+      uses: actions/setup-java@v4
       with:
         distribution: adopt
         java-version: 17
@@ -25,16 +25,5 @@ jobs:
 # Dependency check is broken now
 #     - name: Dependency check
 #       run: sbt dependencyCheck test:compile updateClassifiers
-#
-#     - name: Xanitizer Security Analysis
-#       uses: RIGS-IT/xanitizer-action@v1
-#       with:
-#         license: ${{ secrets.XANITIZER_LICENSE }}
-#         configFile: .github/workflows/baker.XanitizerConfig
 
-    - uses: actions/upload-artifact@v2
-      with:
-        name: Xanitizer-Reports
-        path: |
-          *-Findings-List.pdf
-          *-Findings-List.sarif
+
