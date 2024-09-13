@@ -394,6 +394,8 @@ class KotlinDslTest {
             assertEquals("reservedItems", sieves().get(0).inputIngredients().get(0).name())
             assertEquals(1, sieves().get(0).output().size())
             assertEquals("\$SieveEvent\$extractDate", sieves().get(0).output().get(0).name())
+            assertEquals("1981-01-07", (sieves()[0].function() as Function1<Ingredients.ReservedItems, String>).invoke(
+                Ingredients.ReservedItems(emptyList(), "1981-01-07")))
         }
     }
 
@@ -597,6 +599,6 @@ class KotlinDslTest {
         ): Outcome
     }
 
-    private fun <T> Seq<T>.get(index: Int): T = apply(index)
-    private fun <T> Set<T>.get(index: Int): T = toList().apply(index)
+    private operator fun <T> Seq<T>.get(index: Int): T = apply(index)
+    private operator fun <T> Set<T>.get(index: Int): T = toList().apply(index)
 }

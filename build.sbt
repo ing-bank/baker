@@ -216,7 +216,9 @@ lazy val `baker-interface-kotlin`: Project = project.in(file("core/baker-interfa
           junitInterface,
           slf4jApi
         )
-  ).dependsOn(`baker-interface`)
+  ).dependsOn(
+    `baker-interface`,
+    `baker-recipe-dsl`)
 
 lazy val `baker-akka-runtime`: Project = project.in(file("core/akka-runtime"))
   .settings(defaultModuleSettings)
