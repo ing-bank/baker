@@ -11,7 +11,6 @@ import java.lang.reflect.Type
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
-import kotlin.reflect.full.createType
 import kotlin.reflect.full.functions
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.ExperimentalReflectionOnLambdas
@@ -103,12 +102,12 @@ class RecipeBuilder(private val name: String) {
     /**
      * Registers a sieve [T1, T2, R] to the recipe.
      */
-    inline fun <reified T1,reified R> ingredient(name: String, noinline function: (T1) -> R) {
+    inline fun <reified T1, reified R> ingredient(name: String, noinline function: (T1) -> R) {
         val parameters = function.reflect()?.parameters ?: error("Cannot read parameters")
-        val ingredients = listOf(T1::class)
+        val ingredients = listOf(javaTypeOf<T1>())
             .zip(parameters)
-            .map { (clazz, param) ->  Ingredient(param.name, clazz.createType().javaType) }
-        addSieve(name, ingredients, typeOf<R>().javaType, function)
+            .map { (clazz, param) -> Ingredient(param.name, clazz) }
+        addSieve(name, ingredients, javaTypeOf<R>(), function)
     }
 
     /**
@@ -116,24 +115,27 @@ class RecipeBuilder(private val name: String) {
      */
     inline fun <reified T1, reified T2, reified R> ingredient(name: String, noinline function: (T1, T2) -> R) {
         val parameters = function.reflect()?.parameters ?: error("Cannot read parameters")
-        val ingredients = listOf(T1::class, T2::class)
+        val ingredients = listOf(javaTypeOf<T1>(), javaTypeOf<T2>())
             .zip(parameters)
-            .map { (clazz, param) ->  Ingredient(param.name, clazz.createType().javaType) }
-        addSieve(name, ingredients, typeOf<R>().javaType, function)
+            .map { (clazz, param) -> Ingredient(param.name, clazz) }
+        addSieve(name, ingredients, javaTypeOf<R>(), function)
     }
 
     /**
      * Registers a sieve [T1, T2, R] to the recipe.
      */
-    inline fun <reified T1, reified T2, reified T3, reified R> ingredient(name: String, noinline function: (T1, T2, T3) -> R) {
+    inline fun <reified T1, reified T2, reified T3, reified R> ingredient(
+        name: String,
+        noinline function: (T1, T2, T3) -> R
+    ) {
         val parameters = function.reflect()?.parameters ?: error("Cannot read parameters")
-        val ingredients = listOf(T1::class, T2::class, T3::class)
+        val ingredients = listOf(javaTypeOf<T1>(), javaTypeOf<T2>(), javaTypeOf<T3>())
             .zip(parameters)
-            .map { (clazz, param) ->  Ingredient(param.name, clazz.createType().javaType) }
-        addSieve(name, ingredients, typeOf<R>().javaType, function)
+            .map { (clazz, param) -> Ingredient(param.name, clazz) }
+        addSieve(name, ingredients, javaTypeOf<R>(), function)
     }
 
-    fun addSieve(name:String, ingredients:List<Ingredient>, returnType:Type, function:Any){
+    fun addSieve(name: String, ingredients: List<Ingredient>, returnType: Type, function: Any) {
         sieves.add(
             Sieve(
                 name,
@@ -570,3 +572,5 @@ private fun KClass<*>.toEvent(maxFiringLimit: Int? = null): Event {
 }
 
 private fun KFunction<*>.hasFiresEventAnnotation() = annotations.any { it.annotationClass == FiresEvent::class }
+
+inline fun <reified T> javaTypeOf() = typeOf<T>().javaType
