@@ -100,7 +100,7 @@ class RecipeBuilder(private val name: String) {
 
 
     /**
-     * Registers a sieve [T1, T2, R] to the recipe.
+     * Registers a sieve [T1, R] to the recipe.
      */
     inline fun <reified T1, reified R> ingredient(name: String, noinline function: (T1) -> R) {
         val parameters = function.reflect()?.parameters ?: error("Cannot read parameters")
@@ -124,7 +124,7 @@ class RecipeBuilder(private val name: String) {
     }
 
     /**
-     * Registers a sieve [T1, T2, R] to the recipe.
+     * Registers a sieve [T1, T2, T3, R] to the recipe.
      */
     inline fun <reified T1, reified T2, reified T3, reified R> ingredient(
         name: String,
@@ -138,7 +138,7 @@ class RecipeBuilder(private val name: String) {
         addSieve(name, ingredients, javaTypeOf<R>(), function, javaTypes)
     }
 
-    fun addSieve(name: String, ingredients: List<Ingredient>, returnType: Type, function: Any, javaType: List<Type>) {
+    fun addSieve(name: String, ingredients: List<Ingredient>, returnType: Type, function: Any, javaTypes: List<Type>) {
         sieves.add(
             Sieve(
                 name,
@@ -156,7 +156,7 @@ class RecipeBuilder(private val name: String) {
                     )
                 ),
                 function,
-                javaType
+                javaTypes
             )
         )
     }
