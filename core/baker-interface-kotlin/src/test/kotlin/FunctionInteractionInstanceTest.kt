@@ -2,6 +2,7 @@ import com.ing.baker.runtime.javadsl.IngredientInstance
 import com.ing.baker.runtime.javadsl.InteractionInstance
 import com.ing.baker.runtime.kotlindsl.functionInteractionInstance
 import com.ing.baker.types.Converters
+import com.ing.baker.types.Value
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.util.*
@@ -9,10 +10,22 @@ import java.util.*
 class FunctionInteractionInstanceTest {
     @Test
     fun `should handle function interaction with optional`() {
-        val func = { test: Optional<String> -> "" }
+        val func = { test: Optional<String> -> "Empty: ${test.isEmpty}" }
         val interaction = functionInteractionInstance("test", func)
 
-        assertEquals(interaction.name(), "\$SieveInteraction\$test")
+        assertEquals("\$SieveInteraction\$test", interaction.name())
+        assertEquals("Empty: false", callInteraction<String>(mapOf("test" to Optional.of("test")), interaction))
+
+    }
+
+    @Test
+    fun `should handle function interaction with empty optional`() {
+        val func = { test: Optional<String> -> "Empty: ${test.isEmpty}" }
+        val interaction = functionInteractionInstance("test", func)
+
+        assertEquals("\$SieveInteraction\$test", interaction.name())
+        assertEquals("Empty: true", callInteraction<String>(mapOf("test" to Optional.empty<String>()), interaction))
+
     }
 
     @Test
@@ -20,8 +33,8 @@ class FunctionInteractionInstanceTest {
         val func = { test: String -> "Output: $test" }
         val interaction = functionInteractionInstance("test", func)
 
-        assertEquals(interaction.name(), "\$SieveInteraction\$test")
-        assertEquals(callInteraction<String>(mapOf("test" to "value"), interaction), "Output: value")
+        assertEquals("\$SieveInteraction\$test", interaction.name())
+        assertEquals("Output: value", callInteraction<String>(mapOf("test" to "value"), interaction))
     }
 
     @Test
@@ -29,17 +42,19 @@ class FunctionInteractionInstanceTest {
         val func = { test1: String, test2: Int, test3: Boolean -> "$test1: ${if (test3) 2*test2 else test2}" }
         val interaction = functionInteractionInstance("test", func)
 
-        assertEquals(interaction.name(), "\$SieveInteraction\$test")
-        assertEquals(callInteraction<String>(mapOf("test1" to "calculation", "test2" to 5, "test3" to true), interaction), "calculation: 10")
+        assertEquals("\$SieveInteraction\$test", interaction.name())
+        assertEquals("calculation: 10", callInteraction<String>(mapOf("test1" to "calculation", "test2" to 5, "test3" to true), interaction))
     }
 
 
     @Test
     fun `should handle function interaction list`() {
-        val func = { test: String -> listOf("") }
+        val func = { test: String -> listOf(test, test) }
         val interaction = functionInteractionInstance("test", func)
 
-        assertEquals(interaction.name(), "\$SieveInteraction\$test")
+        assertEquals("\$SieveInteraction\$test", interaction.name(), )
+        assertEquals(listOf("input", "input"), callInteractionList<String>(mapOf("test" to "input"), interaction))
+
     }
 
     private val emptyMetaMap = scala.collection.immutable.Map.from(
@@ -47,10 +62,17 @@ class FunctionInteractionInstanceTest {
             emptyMap<String, String>()
         ).asScala())
 
-    private inline fun <reified T: Any> callInteraction(ingredients: Map<String, Any>, interaction: InteractionInstance): T? =
+    private inline fun <reified T: Any> callInteraction(ingredients: Map<String, Any>, interaction: InteractionInstance): T? {
+        return executeInteraction(interaction, ingredients).`as`(T::class.java)
+    }
+
+    private inline fun <reified T: Any> callInteractionList(ingredients: Map<String, Any>, interaction: InteractionInstance): List<T>? {
+        return executeInteraction(interaction, ingredients).asList(T::class.java)
+    }
+
+    private fun executeInteraction(interaction: InteractionInstance, ingredients: Map<String, Any>): Value =
         interaction.execute(
             ingredients.map { IngredientInstance(it.key, Converters.toValue(it.value)) }, emptyMetaMap
-        ).get().get().providedIngredients.values.first().`as`(T::class.java)
-
+    ).get().get().providedIngredients.values.first()
 
 }
