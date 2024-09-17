@@ -4,7 +4,7 @@ addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.2.0")
 
 addSbtPlugin("com.github.sbt" % "sbt-release" % "1.4.0")
 
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.1.1")
+addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.2.0")
 
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.11.3")
 
@@ -24,6 +24,6 @@ addSbtPlugin("no.arktekk.sbt" % "aether-deploy" % "0.29.1")
 
 addSbtPlugin("community.flock.sbt" % "sbt-kotlin-plugin" % "3.0.1")
 
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.11.1")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.12.1")
 
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "2.0.16"

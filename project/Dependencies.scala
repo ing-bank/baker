@@ -8,13 +8,13 @@ object Dependencies {
   val akkaPersistenceCassandraVersion = "1.0.6"
   val akkaHttpVersion = "10.2.9"
   val http4sVersion = "0.22.15"
-  val circeVersion = "0.14.9"
+  val circeVersion = "0.14.10"
   val fs2Version = "2.5.12"
   val mockitoScalaVersion = "1.17.37"
   val catsEffectVersion = "2.5.5"
   val catsCoreVersion = "2.12.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "6.1.12"
+  val springVersion = "6.1.13"
   val springBootVersion = "2.6.1"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
@@ -122,11 +122,11 @@ object Dependencies {
   val typeSafeConfig = "com.typesafe" % "config" % "1.4.3"
 
   val objenisis = "org.objenesis" % "objenesis" % "3.4"
-  val jodaTime = "joda-time" % "joda-time" % "2.12.7"
+  val jodaTime = "joda-time" % "joda-time" % "2.13.0"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.16"
-  val logback = "ch.qos.logback" % "logback-classic" % "1.5.7"
+  val logback = "ch.qos.logback" % "logback-classic" % "1.5.8"
   val logstash = "net.logstash.logback" % "logstash-logback-encoder" % "7.3"
-  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.18.0"
+  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.18.1"
   val scalaCheckPlus = "org.scalatestplus" %% "scalacheck-1-17" % "3.2.18.0"
   val scalaCheckPlusMockito = "org.scalatestplus" %% "mockito-3-12" % "3.2.10.0"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
@@ -136,12 +136,12 @@ object Dependencies {
   val springCore = "org.springframework" % "spring-core" % springVersion
   val springBootStarter = "org.springframework.boot" % "spring-boot-starter" % springBootVersion
 
-  val snakeYaml = "org.yaml" % "snakeyaml" % "2.2"
+  val snakeYaml = "org.yaml" % "snakeyaml" % "2.3"
 
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.17.2"
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.17.2"
   val jawnParser = "org.typelevel" %% "jawn-parser" % "1.6.0"
-  val nettyHandler = "io.netty" % "netty-handler" % "4.1.112.Final"
+  val nettyHandler = "io.netty" % "netty-handler" % "4.1.113.Final"
 
   private val bouncycastleVersion = "1.78.1"
 
