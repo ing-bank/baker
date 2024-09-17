@@ -24,4 +24,8 @@ trait Sieve {
    */
   val function: Any
 
+  /**
+   * javaTypes Java types of the input parameters of the function
+   */
+  val javaTypes: Seq[java.lang.reflect.Type]
 }
