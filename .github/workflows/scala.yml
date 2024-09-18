@@ -1,0 +1,51 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Define branch name"     
+        required: true
+        default: "master"  
+    
+permissions:
+  contents: read
+
+jobs:
+  sbt:
+    name: sbt publish
+    runs-on: ubuntu-22.04
+    if: github.repository == 'bekiroguz/baker'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'sbt'
+
+      - name: Publish
+        run: |-
+          cp .jvmopts-ci .jvmopts
+          
+          echo "Will build on branch ${SOURCE_BRANCH_NAME}."        
+          git checkout "${SOURCE_BRANCH_NAME}"
+          git config --global user.email "bakery-release@github.com"
+          git config --global user.name "baker release pipeline"
+          git remote set-url origin "https://${GITHUB_AUTH_USER}:${GITHUB_AUTH_TOKEN}@github.com/ing-bank/baker"
+          
+          sbt release cross with-defaults
+        env:
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          USERNAME: ${{ secrets.PUBLISH_USERNAME }}
+          PASSWORD: ${{ secrets.PUBLISH_PASSWORD }}
+          GITHUB_AUTH_USER: ${{ secrets.GITHUB_AUTH_USER }}
+          GITHUB_AUTH_TOKEN: ${{ secrets.GITHUB_AUTH_TOKEN }}
+          SOURCE_BRANCH_NAME: ${{ github.event.inputs.branch }}
