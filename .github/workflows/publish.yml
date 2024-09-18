@@ -36,7 +36,7 @@ jobs:
           
           sbt release cross with-defaults
         env:
-          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
-          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          # PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          # PGP_SECRET: ${{ secrets.PGP_SECRET }}
           USERNAME: ${{ secrets.PUBLISH_USERNAME }}
           PASSWORD: ${{ secrets.PUBLISH_PASSWORD }}
