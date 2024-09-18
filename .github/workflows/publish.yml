@@ -32,7 +32,7 @@ jobs:
           git checkout "$SourceBranchName"
           git config --global user.email "bakery-release@github.com"
           git config --global user.name "baker release pipeline"
-          git remote set-url origin "https://${GITHUB_AUTH_USER}:${GITHUB_AUTH_TOKEN}@github.com/ing-bank/baker"
+          git remote set-url origin "https://github.com/ing-bank/baker"
           
           sbt release cross with-defaults
         env:
@@ -40,5 +40,3 @@ jobs:
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
           USERNAME: ${{ secrets.PUBLISH_USERNAME }}
           PASSWORD: ${{ secrets.PUBLISH_PASSWORD }}
-          GITHUB_AUTH_USER: ${{ secrets.GITHUB_AUTH_USER }}
-          GITHUB_AUTH_TOKEN: ${{ secrets.GITHUB_AUTH_TOKEN }}
