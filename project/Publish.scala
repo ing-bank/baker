@@ -78,7 +78,7 @@ object Publish {
       setReleaseVersion,
       commitReleaseVersion,
       tagRelease,
-      releaseStepCommandAndRemaining("+publishSigned"),
+      releaseStepCommandAndRemaining("+publish"),
       setNextVersion,
       commitNextVersion,
       releaseStepCommand("sonatypeReleaseAll"),
