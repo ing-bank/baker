@@ -2,11 +2,6 @@ name: Publish
 
 on:
   workflow_dispatch:
-    inputs:
-      branch:
-        description: "Define branch name"     
-        required: true
-        default: "master"  
     
 permissions:
   contents: read
@@ -15,7 +10,6 @@ jobs:
   sbt:
     name: sbt publish
     runs-on: ubuntu-22.04
-    if: github.repository == 'bekiroguz/baker'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,9 +27,9 @@ jobs:
       - name: Publish
         run: |-
           cp .jvmopts-ci .jvmopts
-          
-          echo "Will build on branch ${SOURCE_BRANCH_NAME}."        
-          git checkout "${SOURCE_BRANCH_NAME}"
+          export SourceBranchName=`echo "$GITHUB_REF" | cut -b 12-`  # cuts the first 12 characters, namely "refs/heads/"
+          echo "Will build on branch $SourceBranchName."        
+          git checkout "$SourceBranchName"
           git config --global user.email "bakery-release@github.com"
           git config --global user.name "baker release pipeline"
           git remote set-url origin "https://${GITHUB_AUTH_USER}:${GITHUB_AUTH_TOKEN}@github.com/ing-bank/baker"
@@ -48,4 +42,3 @@ jobs:
           PASSWORD: ${{ secrets.PUBLISH_PASSWORD }}
           GITHUB_AUTH_USER: ${{ secrets.GITHUB_AUTH_USER }}
           GITHUB_AUTH_TOKEN: ${{ secrets.GITHUB_AUTH_TOKEN }}
-          SOURCE_BRANCH_NAME: ${{ github.event.inputs.branch }}
