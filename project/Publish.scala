@@ -27,14 +27,6 @@ object Publish {
   val ReleaseToSonatype = inThisBuild(List(
     organization := "com.ing",
     homepage := Some(url("https://github.com/ing-bank/baker")),
-    licenses := List(License.MIT),
-    developers := List(
-      Developer(
-        "Apollo",
-        "Squad Apollo",
-        "ML-DBZ-Service-Apollo@ing.nl",
-        url("https://ing-bank.github.io/baker/")
-      )
-    )
+    licenses := List(License.MIT)
   ))
 }
