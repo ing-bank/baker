@@ -30,6 +30,7 @@ object Publish {
     organization := "io.github.bekiroguz",
     homepage := Some(url("https://github.com/bekiroguz/baker")),
     licenses := List(License.MIT),
-    sonatypeCredentialHost := sonatypeCentralHost
+    sonatypeCredentialHost := sonatypeCentralHost,
+    publishTo := sonatypePublishToBundle.value
   ))
 }
