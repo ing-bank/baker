@@ -72,24 +72,24 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           CI_SONATYPE_RELEASE: 'sonatypeReleaseAll com.ing'
-      - name: Extract version from commit message
-        run: |
-          version=${GITHUB_REF/refs\/tags\/v/}
-          echo "github ref = $GITHUB_REF"
-          echo "extracted version = $version"
-          echo "VERSION=$version" >> $GITHUB_ENV
-        env:
-          COMMIT_MSG: ${{ github.event.head_commit.message }}
-      - name: Publish release notes
-        uses: release-drafter/release-drafter@v6
-        with:
-          config-name: release-drafter.yml
-          publish: false
-          name: "v${{ env.VERSION }}"
-          tag: "v${{ env.VERSION }}"
-          version: "v${{ env.VERSION }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Extract version from commit message
+      #   run: |
+      #     version=${GITHUB_REF/refs\/tags\/v/}
+      #     echo "github ref = $GITHUB_REF"
+      #     echo "extracted version = $version"
+      #     echo "VERSION=$version" >> $GITHUB_ENV
+      #   env:
+      #     COMMIT_MSG: ${{ github.event.head_commit.message }}
+      # - name: Publish release notes
+      #   uses: release-drafter/release-drafter@v6
+      #   with:
+      #     config-name: release-drafter.yml
+      #     publish: false
+      #     name: "v${{ env.VERSION }}"
+      #     tag: "v${{ env.VERSION }}"
+      #     version: "v${{ env.VERSION }}"
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # dependency-submission:
   #   name: Submit dependency graph
   #   needs: [ci]
