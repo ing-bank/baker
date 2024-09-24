@@ -48,7 +48,7 @@ jobs:
     name: Publish release
     # needs: [ci]
     # run on 1) tags starting with v, 2) manual trigger, 3) pushes/merges to master, 4) pull requests
-    if: ! (startsWith(github.ref, 'refs/tags/vref')) && (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || github.event_name == 'push')
+    if: (! startsWith(github.ref, 'refs/tags/vref')) && (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || github.event_name == 'push')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
