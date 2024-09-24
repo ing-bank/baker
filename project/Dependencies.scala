@@ -115,7 +115,7 @@ object Dependencies {
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.25.4" % "protobuf"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.25.5" % "protobuf"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
 
@@ -148,7 +148,7 @@ object Dependencies {
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk18on" % bouncycastleVersion
   val bouncyCastleBcpkix = "org.bouncycastle" % "bcpkix-jdk18on" % bouncycastleVersion
 
-  val guava = "com.google.guava" % "guava" % "33.3.0-jre"
+  val guava = "com.google.guava" % "guava" % "33.3.1-jre"
 
   val kotlinXCoroutinesCore = "org.jetbrains.kotlinx" % "kotlinx-coroutines-core" % "1.7.3" pomOnly()
   val kotlinXCoroutinesJdk8 = "org.jetbrains.kotlinx" % "kotlinx-coroutines-jdk8" % "1.7.3"
