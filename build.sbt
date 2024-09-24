@@ -43,7 +43,6 @@ lazy val scala213 = "2.13.14"
 
 lazy val supportedScalaVersions = List(scala213)
 val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
-  organization := "com.ing.baker",
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
   javacOptions := Seq("-source", "17", "-target", "17"),
@@ -65,7 +64,8 @@ val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
       "Build-Time" -> new java.util.Date().toString,
       "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
     ),
-  versionScheme := Some("semver-spec")
+  versionScheme := Some("semver-spec"),
+  publish / skip := true,
 )
 
 val dockerSettings: Seq[Setting[_]] = Seq(
@@ -133,6 +133,7 @@ lazy val scalaPBSettings: Seq[Setting[_]] = Seq(Compile / PB.targets := Seq(scal
 lazy val `baker-types`: Project = project.in(file("core/baker-types"))
   .settings(defaultModuleSettings)
   .settings(Publish.settings)
+  .settings(publish / skip := false)
   .settings(
     moduleName := "baker-types",
     libraryDependencies ++= compileDeps(
@@ -650,7 +651,7 @@ lazy val `bakery-integration-tests`: Project = project.in(file("bakery/integrati
         scalaCheck
       )
   )
-  .dependsOn(
+  .dependsOn( 
     `baker-http-client`,
     `bakery-client-example`,
     `interaction-example-make-payment-and-ship-items`,
