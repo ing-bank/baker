@@ -19,7 +19,7 @@ object Publish {
   )
 
   val StableToAzureFeed = Seq(
-    organization := "com.ing.baker",
+    organization := "io.github.bekiroguz",
     credentials += Credentials(Path.userHome / ".credentials"),
     publishTo := Some("pkgs.dev.azure.com" at sys.env.getOrElse("FEEDURL", "")),
     publishMavenStyle := true,
@@ -27,8 +27,9 @@ object Publish {
   )
 
   val ReleaseToSonatype = inThisBuild(List(
-    organization := "com.ing.baker",
-    homepage := Some(url("https://github.com/ing-bank/baker")),
-    licenses := List(License.MIT)
+    organization := "io.github.bekiroguz",
+    homepage := Some(url("https://github.com/bekiroguz/baker")),
+    licenses := List(License.MIT),
+    sonatypeCredentialHost := sonatypeCentralHost
   ))
 }
