@@ -31,6 +31,6 @@ object Publish {
     homepage := Some(url("https://github.com/bekiroguz/baker")),
     licenses := List(License.MIT),
     sonatypeCredentialHost := sonatypeCentralHost,
-    publishTo := sonatypePublishToBundle.value
+    sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
   ))
 }
