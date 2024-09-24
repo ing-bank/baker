@@ -148,7 +148,7 @@ object Dependencies {
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk18on" % bouncycastleVersion
   val bouncyCastleBcpkix = "org.bouncycastle" % "bcpkix-jdk18on" % bouncycastleVersion
 
-  val guava = "com.google.guava" % "guava" % "33.3.0-jre"
+  val guava = "com.google.guava" % "guava" % "33.3.1-jre"
 
   val kotlinXCoroutinesCore = "org.jetbrains.kotlinx" % "kotlinx-coroutines-core" % "1.7.3" pomOnly()
   val kotlinXCoroutinesJdk8 = "org.jetbrains.kotlinx" % "kotlinx-coroutines-jdk8" % "1.7.3"
