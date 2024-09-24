@@ -71,7 +71,7 @@ jobs:
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          CI_SONATYPE_RELEASE: 'sonatypeReleaseAll com.ing'
+          # CI_SONATYPE_RELEASE: 'sonatypeReleaseAll com.ing'
       # - name: Extract version from commit message
       #   run: |
       #     version=${GITHUB_REF/refs\/tags\/v/}
