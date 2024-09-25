@@ -108,26 +108,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-            fetch-depth: 0
+          fetch-depth: 0
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-            distribution: temurin
-            java-version: 17
-            cache: sbt
+          distribution: temurin
+          java-version: 17
+          cache: sbt
       - name: Publish to Azure
         run: |-
-            echo "Prepare credentials"
-            echo "realm=pkgs.dev.azure.com\nhost=pkgs.dev.azure.com\nuser=${AZURE_FEEDUSER}\npassword=${AZURE_FEEDPASSWORD}\n" > ~/.credentials
-            cat ~/.credentials
+          echo "Prepare credentials"
+          CONTENTS=$(cat << EOF
+          realm=pkgs.dev.azure.com
+          host=pkgs.dev.azure.com
+          user=$AZURE_FEEDUSER
+          password=$AZURE_FEEDPASSWORD
+          EOF
+          )
+          echo "$CONTENTS" > ~/.credentials
+          cat ~/.credentials
 
-            sbt "clean; +aetherDeploy; project interaction-example-make-payment-and-ship-items; +aetherDeploy; project interaction-example-reserve-items; +aetherDeploy; project bakery-client-example; +aetherDeploy; project bakery-kafka-listener-example; +aetherDeploy"
+          sbt "clean; +aetherDeploy; project interaction-example-make-payment-and-ship-items; +aetherDeploy; project interaction-example-reserve-items; +aetherDeploy; project bakery-client-example; +aetherDeploy; project bakery-kafka-listener-example; +aetherDeploy"
 
-            rm ~/.credentials
+          rm ~/.credentials
         env:
-            AZURE_FEEDUSER: ${{ secrets.AZURE_FEEDUSER }}
-            AZURE_FEEDPASSWORD: ${{ secrets.AZURE_FEEDPASSWORD }}
-            AZURE_FEEDURL: ${{ secrets.AZURE_FEEDURL }}
+          AZURE_FEEDUSER: ${{ secrets.AZURE_FEEDUSER }}
+          AZURE_FEEDPASSWORD: ${{ secrets.AZURE_FEEDPASSWORD }}
+          AZURE_FEEDURL: ${{ secrets.AZURE_FEEDURL }}
 
 
   # dependency-submission:
