@@ -1,14 +1,14 @@
 import sbt._
 import Keys._
 import xerial.sbt.Sonatype.SonatypeKeys._
+import sbtdynver.DynVerPlugin.autoImport._
 
 object Publish {
 
-  lazy val settings = ReleaseToSonatype
-  // lazy val settings = 
-  //   if (sys.env.contains("FEEDURL")) StableToAzureFeed
-  //   else if ( (sys.env.contains("SONATYPE_USERNAME"))) ReleaseToSonatype
-  //   else SuppressJavaDocs
+  lazy val settings = 
+    if (sys.env.contains("AZURE_FEEDURL")) PublishToAzure
+    else if ( (sys.env.contains("SONATYPE_USERNAME"))) ReleaseToSonatype
+    else SuppressJavaDocs
 
   import aether.AetherKeys._
 
@@ -18,18 +18,19 @@ object Publish {
     packageSrc / publishArtifact  := true
   )
 
-  val StableToAzureFeed = Seq(
-    organization := "com.ing.baker",
+  val PublishToAzure = inThisBuild(List(
+        dynverSeparator := "-"
+  )) ++ List(
     credentials += Credentials(Path.userHome / ".credentials"),
-    publishTo := Some("pkgs.dev.azure.com" at sys.env.getOrElse("FEEDURL", "")),
+    publishTo := Some("pkgs.dev.azure.com" at sys.env.getOrElse("AZURE_FEEDURL", "")),
     publishMavenStyle := true,
-    aetherDeploy / logLevel  := Level.Info
+    aetherDeploy / logLevel := Level.Info
   )
 
   val ReleaseToSonatype = inThisBuild(List(
-    organization := "com.ing.baker",
     homepage := Some(url("https://github.com/ing-bank/baker")),
-    licenses := List(License.MIT)
+    licenses := List(License.MIT),
+    dynverSeparator := "-",
   )) ++ List(
     sonatypeProfileName := "com.ing",
     pomExtra := (

@@ -2,45 +2,45 @@ name: CI
 on:
   workflow_dispatch:
   pull_request:
-    branches: ['master']
+    branches: ["master"]
   push:
-    branches: ['master', 'fix-ci-release-pipeline-v2']
-    tags: ['v*']
+    branches: ["master", "fix-ci-release-pipeline-v2"]
+    tags: ["v*"]
 
 permissions:
   contents: read
 
 jobs:
-  # ci:
-  #   # run on 1) push, 2) manual trigger, 3) external PRs
-  #   # do not run on internal since those will be run by push to branch
-  #   if: |
-  #     github.event_name == 'push' || 
-  #     github.event_name == 'workflow_dispatch' || 
-  #     github.event.pull_request.head.repo.full_name != github.repository
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
+  ci:
+    # run on 1) push, 2) manual trigger, 3) external PRs
+    # do not run on internal since those will be run by push to branch
+    if: |
+      github.event_name == 'push' || 
+      github.event_name == 'workflow_dispatch' || 
+      github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-  #     - name: Set up JDK 17
-  #       uses: actions/setup-java@v4
-  #       with:
-  #         distribution: temurin
-  #         java-version: 17
-  #         cache: sbt
-  #     - name: Run tests and generate coverage report
-  #       run: |-
-  #         cp .jvmopts-ci .jvmopts
-  #         sbt coverage compile coverageReport && bash <(curl -s https://codecov.io/bash)  
-  #     - name: Prepare release notes
-  #       uses: release-drafter/release-drafter@v5
-  #       with:
-  #         config-name: release-drafter.yml
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   - name: Set up JDK 17
+    #     uses: actions/setup-java@v4
+    #     with:
+    #       distribution: temurin
+    #       java-version: 17
+    #       cache: sbt
+    #   - name: Run tests and generate coverage report
+    #     run: |-
+    #       cp .jvmopts-ci .jvmopts
+    #       sbt coverage compile coverageReport && bash <(curl -s https://codecov.io/bash)  
+      - name: Prepare release notes
+        uses: release-drafter/release-drafter@v5
+        with:
+          config-name: release-drafter.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   publish:
     permissions:
       contents: write
@@ -48,7 +48,9 @@ jobs:
     name: Publish release
     # needs: [ci]
     # run on 1) tags starting with v, 2) manual trigger, 3) pushes/merges to master, 4) pull requests
-    if: (! startsWith(github.ref, 'refs/tags/vref')) && (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request')
+    if: |
+      (! startsWith(github.ref, 'refs/tags/vref')) && 
+      (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -63,7 +65,7 @@ jobs:
           cache: sbt
       # - name: Compile
       #   run: sbt compile
-      - name: Publish artifacts
+      - name: Publish to Sonatype
         run: |-
           sbt ci-release
         env:
@@ -71,31 +73,44 @@ jobs:
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          # CI_SONATYPE_RELEASE: 'sonatypeReleaseAll com.ing'
-      # - name: Extract version from commit message
-      #   run: |
-      #     version=${GITHUB_REF/refs\/tags\/v/}
-      #     echo "github ref = $GITHUB_REF"
-      #     echo "extracted version = $version"
-      #     echo "VERSION=$version" >> $GITHUB_ENV
-      #   env:
-      #     COMMIT_MSG: ${{ github.event.head_commit.message }}
-      # - name: Publish release notes
-      #   uses: release-drafter/release-drafter@v6
-      #   with:
-      #     config-name: release-drafter.yml
-      #     publish: false
-      #     name: "v${{ env.VERSION }}"
-      #     tag: "v${{ env.VERSION }}"
-      #     version: "v${{ env.VERSION }}"
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish to Azure
+        run: |-
+            echo "Prepare credentials"
+            echo "realm=pkgs.dev.azure.com\nhost=pkgs.dev.azure.com\nuser=$AZURE_FEEDUSER\npassword=$AZURE_FEEDPASSWORD\n" > ~/.credentials
+
+            sbt "clean; +aetherDeploy; project interaction-example-make-payment-and-ship-items; +aetherDeploy; project interaction-example-reserve-items; +aetherDeploy; project bakery-client-example; +aetherDeploy; project bakery-kafka-listener-example; +aetherDeploy"
+
+            rm ~/.credentials
+        env:
+            AZURE_FEEDUSER: ${{ secrets.AZURE_FEEDUSER }}
+            AZURE_FEEDPASSWORD: ${{ secrets.AZURE_FEEDPASSWORD }}
+            AZURE_FEEDURL: ${{ secrets.AZURE_FEEDURL }}
+      - name: Extract version from github tag ref
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version=${GITHUB_REF/refs\/tags\/v/}
+          echo "github ref = $GITHUB_REF"
+          echo "extracted version = $version"
+          echo "VERSION=$version" >> $GITHUB_ENV
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+      - name: Publish release notes
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: release-drafter/release-drafter@v6
+        with:
+          config-name: release-drafter.yml
+          publish: false
+          name: "v${{ env.VERSION }}"
+          tag: "v${{ env.VERSION }}"
+          version: "v${{ env.VERSION }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # dependency-submission:
   #   name: Submit dependency graph
   #   needs: [ci]
   #   # run on 1) master branch
   #   # do not run on pull requests
-  #   if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+  #   if: github.event_name != "pull_request" && github.ref == "refs/heads/master"
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Checkout

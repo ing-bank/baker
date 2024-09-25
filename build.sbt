@@ -43,6 +43,7 @@ lazy val scala213 = "2.13.14"
 
 lazy val supportedScalaVersions = List(scala213)
 val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
+  organization := "com.ing.baker",
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
   javacOptions := Seq("-source", "17", "-target", "17"),
@@ -115,9 +116,7 @@ lazy val crossBuildSettings: Seq[Setting[_]] = Seq(
   crossScalaVersions := supportedScalaVersions
 )
 
-lazy val defaultModuleSettings212: Seq[Setting[_]] = commonSettings ++ dependencyOverrideSettings
-
-lazy val defaultModuleSettings: Seq[Setting[_]] =  crossBuildSettings ++ defaultModuleSettings212
+lazy val defaultModuleSettings: Seq[Setting[_]] =  crossBuildSettings ++ commonSettings ++ dependencyOverrideSettings
 
 lazy val yPartialUnificationSetting: Seq[Setting[_]] = Seq(
   Compile / scalacOptions ++= {
