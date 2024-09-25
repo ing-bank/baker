@@ -123,6 +123,7 @@ jobs:
           host=pkgs.dev.azure.com
           user=$AZURE_FEEDUSER
           password=$AZURE_FEEDPASSWORD
+          bla=bla
           EOF
           )
           echo "$CONTENTS" > ~/.credentials
