@@ -44,6 +44,10 @@ jobs:
       contents: write
       pull-requests: write
     name: Publish to Sonatype
+    # Publish to Sonatype only on tags starting with 'v' and on workflow_dispatch
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     needs: [ci]
     runs-on: ubuntu-latest
     steps:
