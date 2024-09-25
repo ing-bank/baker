@@ -123,11 +123,9 @@ jobs:
           host=pkgs.dev.azure.com
           user=$AZURE_FEEDUSER
           password=$AZURE_FEEDPASSWORD
-          bla=bla
           EOF
           )
           echo "$CONTENTS" > ~/.credentials
-          cat ~/.credentials
 
           sbt "clean; +aetherDeploy; project interaction-example-make-payment-and-ship-items; +aetherDeploy; project interaction-example-reserve-items; +aetherDeploy; project bakery-client-example; +aetherDeploy; project bakery-kafka-listener-example; +aetherDeploy"
 
