@@ -65,8 +65,7 @@ val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
       "Build-Time" -> new java.util.Date().toString,
       "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
     ),
-  versionScheme := Some("semver-spec"),
-  publish / skip := true,
+  versionScheme := Some("semver-spec")
 )
 
 val dockerSettings: Seq[Setting[_]] = Seq(
@@ -132,7 +131,6 @@ lazy val scalaPBSettings: Seq[Setting[_]] = Seq(Compile / PB.targets := Seq(scal
 lazy val `baker-types`: Project = project.in(file("core/baker-types"))
   .settings(defaultModuleSettings)
   .settings(Publish.settings)
-  .settings(publish / skip := false)
   .settings(
     moduleName := "baker-types",
     libraryDependencies ++= compileDeps(
