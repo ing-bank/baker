@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   ci:
-    name: Build, test, coverage, draft release notes
+    name: Build and test
     permissions:
       contents: write
       pull-requests: write
@@ -38,8 +38,8 @@ jobs:
     #     run: |-
     #       cp .jvmopts-ci .jvmopts
     #       sbt coverage compile coverageReport && bash <(curl -s https://codecov.io/bash)  
-      - name: Prepare release notes
-        uses: release-drafter/release-drafter@v5
+      - name: Prepare draft release notes
+        uses: release-drafter/release-drafter@v6
         with:
           config-name: release-drafter.yml
         env:
@@ -73,26 +73,26 @@ jobs:
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-      - name: Extract version from github tag ref
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          version=${GITHUB_REF/refs\/tags\/v/}
-          echo "github ref = $GITHUB_REF"
-          echo "extracted version = $version"
-          echo "VERSION=$version" >> $GITHUB_ENV
-        env:
-          COMMIT_MSG: ${{ github.event.head_commit.message }}
-      - name: Publish release notes
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: release-drafter/release-drafter@v6
-        with:
-          config-name: release-drafter.yml
-          publish: false
-          name: "v${{ env.VERSION }}"
-          tag: "v${{ env.VERSION }}"
-          version: "v${{ env.VERSION }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   - name: Extract version from github tag ref
+    #     if: startsWith(github.ref, 'refs/tags/v')
+    #     run: |
+    #       version=${GITHUB_REF/refs\/tags\/v/}
+    #       echo "github ref = $GITHUB_REF"
+    #       echo "extracted version = $version"
+    #       echo "VERSION=$version" >> $GITHUB_ENV
+    #     env:
+    #       COMMIT_MSG: ${{ github.event.head_commit.message }}
+    #   - name: Publish release notes
+    #     if: startsWith(github.ref, 'refs/tags/v')
+    #     uses: release-drafter/release-drafter@v6
+    #     with:
+    #       config-name: release-drafter.yml
+    #       publish: false
+    #       name: "v${{ env.VERSION }}"
+    #       tag: "v${{ env.VERSION }}"
+    #       version: "v${{ env.VERSION }}"
+    #     env:
+    #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   publish-azure:
     permissions:
       contents: write
