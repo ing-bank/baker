@@ -31,6 +31,14 @@ object Publish {
     homepage := Some(url("https://github.com/ing-bank/baker")),
     licenses := List(License.MIT)
   )) ++ List(
-        sonatypeProfileName := "com.ing",
+    sonatypeProfileName := "com.ing",
+    pomExtra := (
+      <developers>
+        <developer>
+          <id>Apollo</id>
+          <name>Squad Apollo</name>
+        </developer>
+      </developers>
+    )
   )
 }
