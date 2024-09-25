@@ -1,7 +1,6 @@
 import sbt._
 import Keys._
 import xerial.sbt.Sonatype.SonatypeKeys._
-import xerial.sbt.Sonatype.sonatypeCentralHost
 
 object Publish {
 
@@ -19,7 +18,7 @@ object Publish {
   )
 
   val StableToAzureFeed = Seq(
-    organization := "io.github.bekiroguz",
+    // organization := "com.ing",
     credentials += Credentials(Path.userHome / ".credentials"),
     publishTo := Some("pkgs.dev.azure.com" at sys.env.getOrElse("FEEDURL", "")),
     publishMavenStyle := true,
@@ -27,11 +26,8 @@ object Publish {
   )
 
   val ReleaseToSonatype = inThisBuild(List(
-    organization := "io.github.bekiroguz",
-    homepage := Some(url("https://github.com/bekiroguz/baker")),
-    licenses := List(License.MIT),
-    sonatypeCredentialHost := "s01.oss.sonatype.org"
-  )) ++ List(
-    sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
-  )
+    // organization := "com.ing",
+    homepage := Some(url("https://github.com/ing-bank/baker")),
+    licenses := List(License.MIT)
+  )) 
 }
