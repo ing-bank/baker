@@ -12,6 +12,10 @@ permissions:
 
 jobs:
   ci:
+    name: Build, test, coverage, draft release notes
+    permissions:
+      contents: write
+      pull-requests: write
     # run on 1) push, 2) manual trigger, 3) external PRs
     # do not run on internal since those will be run by push to branch
     if: |
@@ -24,7 +28,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
     #   - name: Set up JDK 17
     #     uses: actions/setup-java@v4
     #     with:
@@ -41,12 +44,12 @@ jobs:
           config-name: release-drafter.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  publish:
+  release-publish-maven-central:
     permissions:
       contents: write
       pull-requests: write
-    name: Publish release
-    # needs: [ci]
+    name: Release and publish to Maven Central or Sonatype Staging
+    needs: [ci]
     # run on 1) tags starting with v, 2) manual trigger, 3) pushes/merges to master, 4) pull requests
     if: |
       (! startsWith(github.ref, 'refs/tags/vref')) && 
@@ -63,28 +66,13 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: sbt
-      # - name: Compile
-      #   run: sbt compile
-      - name: Publish to Sonatype
-        run: |-
-          sbt ci-release
+      - name: Release/Publish
+        run: sbt ci-release
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-      - name: Publish to Azure
-        run: |-
-            echo "Prepare credentials"
-            echo "realm=pkgs.dev.azure.com\nhost=pkgs.dev.azure.com\nuser=$AZURE_FEEDUSER\npassword=$AZURE_FEEDPASSWORD\n" > ~/.credentials
-
-            sbt "clean; +aetherDeploy; project interaction-example-make-payment-and-ship-items; +aetherDeploy; project interaction-example-reserve-items; +aetherDeploy; project bakery-client-example; +aetherDeploy; project bakery-kafka-listener-example; +aetherDeploy"
-
-            rm ~/.credentials
-        env:
-            AZURE_FEEDUSER: ${{ secrets.AZURE_FEEDUSER }}
-            AZURE_FEEDPASSWORD: ${{ secrets.AZURE_FEEDPASSWORD }}
-            AZURE_FEEDURL: ${{ secrets.AZURE_FEEDURL }}
       - name: Extract version from github tag ref
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
@@ -105,6 +93,42 @@ jobs:
           version: "v${{ env.VERSION }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  publish-azure:
+    permissions:
+      contents: write
+      pull-requests: write
+    name: Publish to Azure
+    needs: [ci]
+    # run on 1) tags starting with v, 2) manual trigger, 3) pushes/merges to master, 4) pull requests
+    if: |
+      (! startsWith(github.ref, 'refs/tags/vref')) && 
+      (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+            distribution: temurin
+            java-version: 17
+            cache: sbt
+      - name: Publish
+        run: |-
+            echo "Prepare credentials"
+            echo "realm=pkgs.dev.azure.com\nhost=pkgs.dev.azure.com\nuser=$AZURE_FEEDUSER\npassword=$AZURE_FEEDPASSWORD\n" > ~/.credentials
+
+            sbt "clean; +aetherDeploy; project interaction-example-make-payment-and-ship-items; +aetherDeploy; project interaction-example-reserve-items; +aetherDeploy; project bakery-client-example; +aetherDeploy; project bakery-kafka-listener-example; +aetherDeploy"
+
+            rm ~/.credentials
+        env:
+            AZURE_FEEDUSER: ${{ secrets.AZURE_FEEDUSER }}
+            AZURE_FEEDPASSWORD: ${{ secrets.AZURE_FEEDPASSWORD }}
+            AZURE_FEEDURL: ${{ secrets.AZURE_FEEDURL }}
+
+
   # dependency-submission:
   #   name: Submit dependency graph
   #   needs: [ci]
