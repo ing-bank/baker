@@ -4,10 +4,11 @@ import xerial.sbt.Sonatype.SonatypeKeys._
 
 object Publish {
 
-  lazy val settings = 
-    if (sys.env.contains("FEEDURL")) StableToAzureFeed
-    else if ( (sys.env.contains("SONATYPE_USERNAME"))) ReleaseToSonatype
-    else SuppressJavaDocs
+  lazy val settings = ReleaseToSonatype
+  // lazy val settings = 
+  //   if (sys.env.contains("FEEDURL")) StableToAzureFeed
+  //   else if ( (sys.env.contains("SONATYPE_USERNAME"))) ReleaseToSonatype
+  //   else SuppressJavaDocs
 
   import aether.AetherKeys._
 
@@ -27,8 +28,9 @@ object Publish {
 
   val ReleaseToSonatype = inThisBuild(List(
     organization := "com.ing.baker",
-    sonatypeProfileName := "com.ing",
     homepage := Some(url("https://github.com/ing-bank/baker")),
     licenses := List(License.MIT)
-  ))
+  )) ++ List(
+        sonatypeProfileName := "com.ing",
+  )
 }
