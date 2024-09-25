@@ -44,11 +44,11 @@ jobs:
           config-name: release-drafter.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  release-publish-maven-central:
+  publish-sonatype:
     permissions:
       contents: write
       pull-requests: write
-    name: Release and publish to Maven Central or Sonatype Staging
+    name: Publish to Sonatype
     needs: [ci]
     # run on 1) tags starting with v, 2) manual trigger, 3) pushes/merges to master, 4) pull requests
     if: |
@@ -66,7 +66,7 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: sbt
-      - name: Release/Publish
+      - name: Publish to Sonatype
         run: sbt ci-release
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
@@ -115,10 +115,10 @@ jobs:
             distribution: temurin
             java-version: 17
             cache: sbt
-      - name: Publish
+      - name: Publish to Azure
         run: |-
             echo "Prepare credentials"
-            echo "realm=pkgs.dev.azure.com\nhost=pkgs.dev.azure.com\nuser=$AZURE_FEEDUSER\npassword=$AZURE_FEEDPASSWORD\n" > ~/.credentials
+            echo "realm=pkgs.dev.azure.com\nhost=pkgs.dev.azure.com\nuser=${AZURE_FEEDUSER}\npassword=${AZURE_FEEDPASSWORD}\n" > ~/.credentials
 
             sbt "clean; +aetherDeploy; project interaction-example-make-payment-and-ship-items; +aetherDeploy; project interaction-example-reserve-items; +aetherDeploy; project bakery-client-example; +aetherDeploy; project bakery-kafka-listener-example; +aetherDeploy"
 
