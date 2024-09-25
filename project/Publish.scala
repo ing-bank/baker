@@ -23,8 +23,7 @@ object Publish {
   )) ++ List(
     credentials += Credentials(Path.userHome / ".credentials"),
     publishTo := Some("pkgs.dev.azure.com" at sys.env.getOrElse("AZURE_FEEDURL", "")),
-    publishMavenStyle := true,
-    aetherDeploy / logLevel := Level.Info
+    publishMavenStyle := true
   )
 
   val ReleaseToSonatype = inThisBuild(List(

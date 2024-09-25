@@ -119,6 +119,7 @@ jobs:
         run: |-
             echo "Prepare credentials"
             echo "realm=pkgs.dev.azure.com\nhost=pkgs.dev.azure.com\nuser=${AZURE_FEEDUSER}\npassword=${AZURE_FEEDPASSWORD}\n" > ~/.credentials
+            cat ~/.credentials
 
             sbt "clean; +aetherDeploy; project interaction-example-make-payment-and-ship-items; +aetherDeploy; project interaction-example-reserve-items; +aetherDeploy; project bakery-client-example; +aetherDeploy; project bakery-kafka-listener-example; +aetherDeploy"
 
