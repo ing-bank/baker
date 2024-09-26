@@ -7,7 +7,7 @@ object Publish {
 
   lazy val settings = 
     if (sys.env.contains("AZURE_FEEDURL")) PublishToAzure
-    else if ( (sys.env.contains("SONATYPE_USERNAME"))) ReleaseToSonatype
+    else if ( (sys.env.contains("SONATYPE_USERNAME"))) PublishToSonatype
     else SuppressJavaDocs
 
   import aether.AetherKeys._
@@ -19,14 +19,20 @@ object Publish {
   )
 
   val PublishToAzure = inThisBuild(List(
-        dynverSeparator := "-"
+    dynverSeparator := "-"
   )) ++ List(
-    credentials += Credentials(Path.userHome / ".credentials"),
-    publishTo := Some("pkgs.dev.azure.com" at sys.env.getOrElse("AZURE_FEEDURL", "")),
-    publishMavenStyle := true
+    credentials += Credentials(
+      "https://pkgsprodsu3weu.app.pkgs.visualstudio.com/",
+      "pkgs.dev.azure.com",
+      sys.env.getOrElse("AZURE_FEEDUSER", ""),
+      sys.env.getOrElse("AZURE_FEEDPASSWORD", "")
+    ),
+    publishTo := Some("https://pkgsprodsu3weu.app.pkgs.visualstudio.com/" at sys.env.getOrElse("AZURE_FEEDURL", "")),
+    publishMavenStyle := true,
+    sonatypeCredentialHost := ""
   )
 
-  val ReleaseToSonatype = inThisBuild(List(
+  val PublishToSonatype = inThisBuild(List(
     homepage := Some(url("https://github.com/ing-bank/baker")),
     licenses := List(License.MIT),
     dynverSeparator := "-",
