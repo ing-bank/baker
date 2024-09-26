@@ -1,0 +1,129 @@
+name: CI
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: ["master"]
+  push:
+    branches: ["master"]
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Build and test
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: sbt
+      - name: Run tests and coverage
+        run: |-
+          cp .jvmopts-ci .jvmopts
+          sbt coverage test coverageReport && bash <(curl -s https://codecov.io/bash)  
+      - name: Prepare draft release notes
+        continue-on-error: true
+        uses: release-drafter/release-drafter@v6
+        with:
+          config-name: release-drafter.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  publish-sonatype:
+    permissions:
+      contents: write
+      pull-requests: write
+    name: Publish to Sonatype
+    # Publish to Sonatype only on tags starting with 'v' and on workflow_dispatch
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    needs: [ci]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: sbt
+      - name: Publish to Sonatype
+        run: sbt ci-release
+        env:
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+  publish-azure:
+    permissions:
+      contents: write
+      pull-requests: write
+    name: Publish to Azure
+    needs: [ci]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: sbt
+      - name: Publish to Azure
+        run: |-
+          echo "Prepare credentials"
+          CONTENTS=$(cat << EOF
+          realm=pkgs.dev.azure.com
+          host=pkgs.dev.azure.com
+          user=$AZURE_FEEDUSER
+          password=$AZURE_FEEDPASSWORD
+          EOF
+          )
+          echo "$CONTENTS" > ~/.credentials
+
+          sbt "clean; +aetherDeploy; project interaction-example-make-payment-and-ship-items; +aetherDeploy; project interaction-example-reserve-items; +aetherDeploy; project bakery-client-example; +aetherDeploy; project bakery-kafka-listener-example; +aetherDeploy"
+
+          rm ~/.credentials
+        env:
+          AZURE_FEEDUSER: ${{ secrets.AZURE_FEEDUSER }}
+          AZURE_FEEDPASSWORD: ${{ secrets.AZURE_FEEDPASSWORD }}
+          AZURE_FEEDURL: ${{ secrets.AZURE_FEEDURL }}
+  dependency-submission:
+    name: Submit dependency graph
+    continue-on-error: true
+    needs: [ci]
+    # run on 1) master branch
+    # do not run on pull requests
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: sbt
+      - name: Submit dependency graph 
+        uses: scalacenter/sbt-dependency-submission@v2
+      
