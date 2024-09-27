@@ -39,35 +39,35 @@ jobs:
   #         config-name: release-drafter.yml
   #       env:
   #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  # publish-sonatype:
-  #   permissions:
-  #     contents: write
-  #     pull-requests: write
-  #   name: Publish to Sonatype
-  #   # Publish to Sonatype only on tags starting with 'v' and on workflow_dispatch
-  #   if: |
-  #     github.event_name == 'workflow_dispatch' || 
-  #     (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
-  #   # needs: [ci]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #     - name: Set up JDK 17
-  #       uses: actions/setup-java@v4
-  #       with:
-  #         distribution: temurin
-  #         java-version: 17
-  #         cache: sbt
-  #     - name: Publish to Sonatype
-  #       run: sbt ci-release
-  #       env:
-  #         PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
-  #         PGP_SECRET: ${{ secrets.PGP_SECRET }}
-  #         SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-  #         SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+  publish-sonatype:
+    permissions:
+      contents: write
+      pull-requests: write
+    name: Publish to Sonatype
+    # Publish to Sonatype only on tags starting with 'v' and on workflow_dispatch
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    # needs: [ci]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: sbt
+      - name: Publish to Sonatype
+        run: sbt ci-release
+        env:
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
   publish-azure:
     permissions:
       contents: write
@@ -89,8 +89,6 @@ jobs:
       - name: Publish to Azure
         run: sbt ci-release
         env:
-          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
-          PGP_SECRET: ${{ secrets.PGP_SECRET }}
           AZURE_FEEDUSER: ${{ secrets.AZURE_FEEDUSER }}
           AZURE_FEEDPASSWORD: ${{ secrets.AZURE_FEEDPASSWORD }}
           AZURE_FEEDURL: ${{ secrets.AZURE_FEEDURL }}

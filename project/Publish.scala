@@ -18,24 +18,28 @@ object Publish {
     packageSrc / publishArtifact  := true
   )
 
+  // aetherDeploy will deploy to the Azure Artifacts repository
   val PublishToAzure = inThisBuild(List(
-    dynverSeparator := "-"
+    dynverSeparator := "-",
+    version := version.value.replace("-SNAPSHOT", ""),
   )) ++ List(
     credentials += Credentials(
-      "https://pkgsprodsu3weu.app.pkgs.visualstudio.com/",
+      "Azure Artifacts",
       "pkgs.dev.azure.com",
       sys.env.getOrElse("AZURE_FEEDUSER", ""),
       sys.env.getOrElse("AZURE_FEEDPASSWORD", "")
     ),
-    publishTo := Some("https://pkgsprodsu3weu.app.pkgs.visualstudio.com/" at sys.env.getOrElse("AZURE_FEEDURL", "")),
+    publishTo := Some("Azure Artifacts" at sys.env.getOrElse("AZURE_FEEDURL", "")),
     publishMavenStyle := true,
     sonatypeCredentialHost := ""
   )
 
+  // ci-release will deploy to the Sonatype repository
   val PublishToSonatype = inThisBuild(List(
     homepage := Some(url("https://github.com/ing-bank/baker")),
     licenses := List(License.MIT),
     dynverSeparator := "-",
+    version := version.value.replace("-SNAPSHOT", ""),
   )) ++ List(
     sonatypeProfileName := "com.ing",
     pomExtra := (
