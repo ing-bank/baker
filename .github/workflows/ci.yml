@@ -87,7 +87,7 @@ jobs:
           java-version: 17
           cache: sbt
       - name: Publish to Azure
-        run: sbt ci-release
+        run: sbt "clean; +aetherDeploy; project interaction-example-make-payment-and-ship-items; +aetherDeploy; project interaction-example-reserve-items; +aetherDeploy; project bakery-client-example; +aetherDeploy; project bakery-kafka-listener-example; +aetherDeploy"
         env:
           AZURE_FEEDUSER: ${{ secrets.AZURE_FEEDUSER }}
           AZURE_FEEDPASSWORD: ${{ secrets.AZURE_FEEDPASSWORD }}
