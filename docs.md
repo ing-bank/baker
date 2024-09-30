@@ -4,17 +4,15 @@ This documentation is for developers of Baker.
 
 ## Creating a release
 
-To create a release run the following:
+CI and release processes are fully automated using the following Github Action workflows:
 
-1. Make sure tests are OK:
+* [CI workflow](https://github.com/ing-bank/baker/blob/master/.github/workflows/ci.yml): Runs for each commit to any branch and also for release tags starting with 'v'. This workflow runs all tests, updates the draft release notes, uploads dependency graph to github (only for master branch) and publishes to Sonatype/Maven or Azure depending on following conditions.
+    
+    * Sonatype/Maven: Only for tags starting with 'v' prefix.
 
-    `sbt ";+clean;+test"`
+    * Azure: All commits to all branches except the tagged commits, so we have stable releases in Sonatype and non-stable more frequent releases in Azure for ING internal use and tests.
 
-2. Create the release:
-
-    `sbt -mem 2048 "release cross skip-tests"`
-
-    When prompted, enter the PGP password for signing the files.
+* [Release workflow](https://github.com/ing-bank/baker/blob/master/.github/workflows/release.yml): Manually triggered by one of the contributors when a stable release to Sonatype Maven Central is needed. This workflow just creates and pushes a tag. Then CI workflow gets triggered by the tag (i.e v1.0.0) and artifacts published to Sonatype Maven Central with the version in the tag.
 
 ## Documentation site at github.io
 
