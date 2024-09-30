@@ -152,36 +152,36 @@ modules.
 <dependency>
     <groupId>com.ing.baker</groupId>
     <artifactId>baker-recipe-dsl_2.13</artifactId>
-    <version>3.6.3</version>
+    <version>4.1.0</version>
 </dependency>
 <dependency>
     <groupId>com.ing.baker</groupId>
     <artifactId>baker-compiler_2.13</artifactId>
-    <version>3.6.3</version>
+    <version>4.1.0</version>
 </dependency>
 <dependency>
     <groupId>com.ing.baker</groupId>
     <artifactId>baker-runtime_2.13</artifactId>
-    <version>3.6.3</version>
+    <version>4.1.0</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```groovy
-implementation 'com.ing.baker:baker-recipe-dsl_2.13:3.6.3'
-implementation 'com.ing.baker:baker-compiler_2.13:3.6.3'
-implementation 'com.ing.baker:baker-runtime_2.13:3.6.3'
+implementation 'com.ing.baker:baker-recipe-dsl_2.13:4.1.0'
+implementation 'com.ing.baker:baker-compiler_2.13:4.1.0'
+implementation 'com.ing.baker:baker-runtime_2.13:4.1.0'
 ```
 
 ### Scala SBT
 
-Baker gets cross compiled and released for both Scala 2.12 and 2.13.
+Baker gets compiled and released for both 2.13.
 
 ```scala
-libraryDependencies += "com.ing.baker" % "baker-recipe-dsl_2.13" % "3.6.3"
-libraryDependencies += "com.ing.baker" % "baker-compiler_2.13" % "3.6.3"
-libraryDependencies += "com.ing.baker" % "baker-runtime_2.13" % "3.6.3"
+libraryDependencies += "com.ing.baker" % "baker-recipe-dsl_2.13" % "4.1.0"
+libraryDependencies += "com.ing.baker" % "baker-compiler_2.13" % "4.1.0"
+libraryDependencies += "com.ing.baker" % "baker-runtime_2.13" % "4.1.0"
 ```
 
 ## Contributing
