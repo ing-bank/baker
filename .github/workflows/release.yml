@@ -1,0 +1,41 @@
+name: Release
+on: 
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Please specify the release version. i.e. v1.0.0 (must start with "v") with an optional suffix like -RC1'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT_GIT_TAG_PUSH }}
+
+      - name: Check release tag format
+        run: |
+          if [[ ! "${{ inputs.release_tag }}" =~ ^v[0-9]+(\.[0-9]+)*(-[A-Za-z0-9]+)?$ ]]; then
+            echo "Error: release_tag must start with 'v' followed by a version number i.e. v4.1.0, optionally with a suffix like -RC1."
+            exit 1
+          fi
+
+      - name: Set Git user name and email
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Create release tag and push (triggers the CI run)
+        run: |-
+          git tag ${{ inputs.release_tag }} -m "${{ inputs.release_tag }}"
+          git push origin ${{ inputs.release_tag }}
