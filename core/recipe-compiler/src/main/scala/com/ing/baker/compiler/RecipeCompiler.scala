@@ -225,7 +225,10 @@ object RecipeCompiler {
         isReprovider = i.isReprovider,
         oldName = Option(i.originalName)
       )
-      recipe.interactions.map(copyInteraction).toSet ++ recipe.sieves.map(convertSieveToInteraction) ++ recipe.subRecipes.flatMap(flattenSubRecipesToInteraction)
+      recipe.interactions.map(copyInteraction).toSet ++
+        recipe.sieves.map(convertSieveToInteraction) ++
+        recipe.subRecipes.flatMap(flattenSubRecipesToInteraction) ++
+        recipe.checkpointEvents.map(convertCheckpointEventToInteraction)
     }
 
     val precompileErrors: Seq[String] = Assertions.preCompileAssertions(recipe)

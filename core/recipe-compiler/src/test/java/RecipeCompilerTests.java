@@ -171,6 +171,7 @@ public class RecipeCompilerTests {
 
         Recipe subRecipe = new Recipe("SubRecipe")
                 .withSubRecipe(subSubRecipe)
+                .withCheckpointEvent(new CheckPointEvent("name"))
                 .withInteraction(InteractionDescriptor.of(InteractionA.class));
 
 
@@ -187,7 +188,7 @@ public class RecipeCompilerTests {
                 .map(i -> ((InteractionTransition) i).interactionName())
                 .collect(Collectors.toUnmodifiableList());
 
-        List<String> expected = java.util.List.of("$SubRecipe$SubRecipe$InteractionA", "$SubRecipe$SubSubRecipe$InteractionB");
+        List<String> expected = java.util.List.of("$SubRecipe$SubRecipe$InteractionA", "$CheckpointEventInteraction$name", "$SubRecipe$SubSubRecipe$InteractionB");
 
         Assertions.assertEquals(expected, actual);
     }
