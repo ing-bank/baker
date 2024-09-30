@@ -1,8 +1,8 @@
 <div align="center">
 <img src="https://github.com/ing-bank/baker/blob/master/baker-logo.png?raw=true" alt="Baker Logo">
 
-[![Build Status](https://dev.azure.com/BakeryOSS/BakeryOSS/_apis/build/status/baker-oss-pr?branchName=master)](https://dev.azure.com/BakeryOSS/BakeryOSS/_build?definitionId=9&_a=summary)
-[![Maven Central](https://img.shields.io/maven-central/v/com.ing.baker/baker-runtime_2.12.svg?label=Maven%20Central&logo=apachemaven)](https://search.maven.org/artifact/com.ing.baker/baker-runtime_2.12)
+[![Build Status](https://github.com/ing-bank/baker/actions/workflows/ci.yml/badge.svg)](https://github.com/ing-bank/baker/actions/workflows/ci.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/com.ing.baker/baker-runtime_2.13.svg?label=Maven%20Central&logo=apachemaven)](https://search.maven.org/artifact/com.ing.baker/baker-runtime_2.13)
 [![codecov.io](http://codecov.io/github/ing-bank/baker/coverage.svg?branch=master)](https://codecov.io/gh/ing-bank/baker?branch=master)
 </div>
 
@@ -152,36 +152,36 @@ modules.
 <dependency>
     <groupId>com.ing.baker</groupId>
     <artifactId>baker-recipe-dsl_2.13</artifactId>
-    <version>3.6.3</version>
+    <version>4.1.0</version>
 </dependency>
 <dependency>
     <groupId>com.ing.baker</groupId>
     <artifactId>baker-compiler_2.13</artifactId>
-    <version>3.6.3</version>
+    <version>4.1.0</version>
 </dependency>
 <dependency>
     <groupId>com.ing.baker</groupId>
     <artifactId>baker-runtime_2.13</artifactId>
-    <version>3.6.3</version>
+    <version>4.1.0</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```groovy
-implementation 'com.ing.baker:baker-recipe-dsl_2.13:3.6.3'
-implementation 'com.ing.baker:baker-compiler_2.13:3.6.3'
-implementation 'com.ing.baker:baker-runtime_2.13:3.6.3'
+implementation 'com.ing.baker:baker-recipe-dsl_2.13:4.1.0'
+implementation 'com.ing.baker:baker-compiler_2.13:4.1.0'
+implementation 'com.ing.baker:baker-runtime_2.13:4.1.0'
 ```
 
 ### Scala SBT
 
-Baker gets cross compiled and released for both Scala 2.12 and 2.13.
+Baker gets compiled and released for both 2.13.
 
 ```scala
-libraryDependencies += "com.ing.baker" % "baker-recipe-dsl_2.13" % "3.6.3"
-libraryDependencies += "com.ing.baker" % "baker-compiler_2.13" % "3.6.3"
-libraryDependencies += "com.ing.baker" % "baker-runtime_2.13" % "3.6.3"
+libraryDependencies += "com.ing.baker" % "baker-recipe-dsl_2.13" % "4.1.0"
+libraryDependencies += "com.ing.baker" % "baker-compiler_2.13" % "4.1.0"
+libraryDependencies += "com.ing.baker" % "baker-runtime_2.13" % "4.1.0"
 ```
 
 ## Contributing
