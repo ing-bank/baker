@@ -5,12 +5,7 @@ import com.ing.baker.recipe.common
 import java.util.concurrent.TimeUnit
 import scala.collection.compat.immutable.ArraySeq
 import scala.concurrent.duration.FiniteDuration
-
 import scala.jdk.CollectionConverters._
-import scala.collection.immutable.Seq
-import scala.collection.immutable.List
-import scala.collection.immutable.Map
-import scala.collection.immutable.Set
 
 class Recipe(
   nameInput: String,
