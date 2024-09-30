@@ -2,7 +2,7 @@
 <img src="https://github.com/ing-bank/baker/blob/master/baker-logo.png?raw=true" alt="Baker Logo">
 
 [![Build Status](https://github.com/ing-bank/baker/actions/workflows/ci.yml/badge.svg)](https://github.com/ing-bank/baker/actions/workflows/ci.yml)
-[![Maven Central](https://img.shields.io/maven-central/v/com.ing.baker/baker-runtime_2.12.svg?label=Maven%20Central&logo=apachemaven)](https://search.maven.org/artifact/com.ing.baker/baker-runtime_2.12)
+[![Maven Central](https://img.shields.io/maven-central/v/com.ing.baker/baker-runtime_2.13.svg?label=Maven%20Central&logo=apachemaven)](https://search.maven.org/artifact/com.ing.baker/baker-runtime_2.13)
 [![codecov.io](http://codecov.io/github/ing-bank/baker/coverage.svg?branch=master)](https://codecov.io/gh/ing-bank/baker?branch=master)
 </div>
 
