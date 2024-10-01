@@ -174,7 +174,7 @@ public class RecipeCompilerTests {
 
     @Test
     public void shouldAddSubRecipe() {
-
+        // Several layers deep to verify if everything propagates correctly
         Recipe subSubSubRecipe = new Recipe("subSubSubRecipe")
                 .withSensoryEvent(SubSubSubEvent.class)
                 .withCheckpointEvent(new CheckPointEvent("subSubSubCheckpointEvent"))
