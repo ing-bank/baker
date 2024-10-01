@@ -116,9 +116,7 @@ lazy val crossBuildSettings: Seq[Setting[_]] = Seq(
   crossScalaVersions := supportedScalaVersions
 )
 
-lazy val defaultModuleSettings212: Seq[Setting[_]] = commonSettings ++ dependencyOverrideSettings
-
-lazy val defaultModuleSettings: Seq[Setting[_]] =  crossBuildSettings ++ defaultModuleSettings212
+lazy val defaultModuleSettings: Seq[Setting[_]] =  crossBuildSettings ++ commonSettings ++ dependencyOverrideSettings
 
 lazy val yPartialUnificationSetting: Seq[Setting[_]] = Seq(
   Compile / scalacOptions ++= {
@@ -217,7 +215,9 @@ lazy val `baker-interface-kotlin`: Project = project.in(file("core/baker-interfa
           junitInterface,
           slf4jApi
         )
-  ).dependsOn(`baker-interface`)
+  ).dependsOn(
+    `baker-interface`,
+    `baker-recipe-dsl`)
 
 lazy val `baker-akka-runtime`: Project = project.in(file("core/akka-runtime"))
   .settings(defaultModuleSettings)
@@ -649,7 +649,7 @@ lazy val `bakery-integration-tests`: Project = project.in(file("bakery/integrati
         scalaCheck
       )
   )
-  .dependsOn(
+  .dependsOn( 
     `baker-http-client`,
     `bakery-client-example`,
     `interaction-example-make-payment-and-ship-items`,
