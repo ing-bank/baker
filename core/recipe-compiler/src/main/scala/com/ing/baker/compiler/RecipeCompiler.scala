@@ -225,7 +225,14 @@ object RecipeCompiler {
         isReprovider = i.isReprovider,
         oldName = Option(i.originalName)
       )
-      recipe.interactions.map(copyInteraction).toSet ++ recipe.sieves.map(convertSieveToInteraction) ++ recipe.subRecipes.flatMap(flattenSubRecipesToInteraction)
+      recipe.interactions.map(copyInteraction).toSet ++
+        recipe.sieves.map(convertSieveToInteraction) ++
+        recipe.checkpointEvents.map(convertCheckpointEventToInteraction) ++
+        recipe.subRecipes.flatMap(flattenSubRecipesToInteraction)
+    }
+
+    def flattenSensoryEvents(recipe: Recipe): Set[com.ing.baker.recipe.common.Event] = {
+      recipe.sensoryEvents ++ recipe.subRecipes.flatMap(flattenSensoryEvents)
     }
 
     val precompileErrors: Seq[String] = Assertions.preCompileAssertions(recipe)
@@ -233,12 +240,15 @@ object RecipeCompiler {
     // Extend the interactions with the checkpoint event interactions and sub-recipes
     val actionDescriptors: Seq[InteractionDescriptor] = recipe.interactions ++
       recipe.checkpointEvents.map(convertCheckpointEventToInteraction) ++
-      recipe.subRecipes.flatMap(flattenSubRecipesToInteraction) ++
-      recipe.sieves.map(convertSieveToInteraction)
+      recipe.sieves.map(convertSieveToInteraction) ++
+      recipe.subRecipes.flatMap(flattenSubRecipesToInteraction)
+
+    // Flatten all sensory events from sub recipes
+    val sensoryEvents = flattenSensoryEvents(recipe)
 
     //All ingredient names provided by sensory events or by interactions
     val allIngredientNames: Set[String] =
-      (recipe.sensoryEvents ++ recipe.subRecipes.flatMap(_.sensoryEvents)).flatMap(e => e.providedIngredients.map(i => i.name)) ++
+      sensoryEvents.flatMap(e => e.providedIngredients.map(i => i.name)) ++
         actionDescriptors.flatMap(i => i.output.flatMap { e =>
           // check if the event was renamed (check if there is a transformer for this event)
           i.eventOutputTransformers.get(e) match {
@@ -255,7 +265,7 @@ object RecipeCompiler {
     val allInteractionTransitions: Seq[InteractionTransition] = interactionTransitions
 
     // events provided from outside
-    val sensoryEventTransitions: Seq[EventTransition] = (recipe.sensoryEvents ++ recipe.subRecipes.flatMap(_.sensoryEvents)).map {
+    val sensoryEventTransitions: Seq[EventTransition] = sensoryEvents.map {
       event => EventTransition(eventToCompiledEvent(event), isSensoryEvent = true, event.maxFiringLimit)
     }.toIndexedSeq
 
