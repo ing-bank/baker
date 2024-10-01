@@ -199,6 +199,8 @@ export class BakerConversionService {
             return this.recordValue(typeOptions as TypeRecordTypeInner, value, valuePath);
         case "MapType":
             return this.mapValue(typeOptions as TypeMapTypeInner, value, valuePath);
+        case "Date":
+          return BakerConversionService.primitiveValue("java.lang.Long", value);
         default:
             return "Unknown";
         }
