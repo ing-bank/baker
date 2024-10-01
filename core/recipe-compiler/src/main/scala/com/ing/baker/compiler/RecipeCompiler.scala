@@ -231,6 +231,10 @@ object RecipeCompiler {
         recipe.checkpointEvents.map(convertCheckpointEventToInteraction)
     }
 
+    def flattenSensoryEvents(recipe: Recipe): Set[com.ing.baker.recipe.common.Event] = {
+      recipe.sensoryEvents ++ recipe.subRecipes.flatMap(flattenSensoryEvents)
+    }
+
     val precompileErrors: Seq[String] = Assertions.preCompileAssertions(recipe)
 
     // Extend the interactions with the checkpoint event interactions and sub-recipes
@@ -239,9 +243,12 @@ object RecipeCompiler {
       recipe.subRecipes.flatMap(flattenSubRecipesToInteraction) ++
       recipe.sieves.map(convertSieveToInteraction)
 
+    // Flatten all sensory events from sub recipes
+    val sensoryEvents = flattenSensoryEvents(recipe)
+
     //All ingredient names provided by sensory events or by interactions
     val allIngredientNames: Set[String] =
-      (recipe.sensoryEvents ++ recipe.subRecipes.flatMap(_.sensoryEvents)).flatMap(e => e.providedIngredients.map(i => i.name)) ++
+      (sensoryEvents).flatMap(e => e.providedIngredients.map(i => i.name)) ++
         actionDescriptors.flatMap(i => i.output.flatMap { e =>
           // check if the event was renamed (check if there is a transformer for this event)
           i.eventOutputTransformers.get(e) match {
@@ -258,7 +265,7 @@ object RecipeCompiler {
     val allInteractionTransitions: Seq[InteractionTransition] = interactionTransitions
 
     // events provided from outside
-    val sensoryEventTransitions: Seq[EventTransition] = (recipe.sensoryEvents ++ recipe.subRecipes.flatMap(_.sensoryEvents)).map {
+    val sensoryEventTransitions: Seq[EventTransition] = (sensoryEvents).map {
       event => EventTransition(eventToCompiledEvent(event), isSensoryEvent = true, event.maxFiringLimit)
     }.toIndexedSeq
 

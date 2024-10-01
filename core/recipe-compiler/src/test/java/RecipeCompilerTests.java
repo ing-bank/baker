@@ -1,21 +1,18 @@
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.il.RecipeVisualStyle;
-import com.ing.baker.il.RecipeVisualStyle$;
-import com.ing.baker.il.RecipeVisualizer;
+import com.ing.baker.il.EventDescriptor;
+import com.ing.baker.il.petrinet.InteractionTransition;
 import com.ing.baker.recipe.annotations.FiresEvent;
 import com.ing.baker.recipe.annotations.RequiresIngredient;
+import com.ing.baker.recipe.javadsl.CheckPointEvent;
 import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.InteractionDescriptor;
-import com.ing.baker.il.petrinet.InteractionTransition;
 import com.ing.baker.recipe.javadsl.Recipe;
-
-import com.ing.baker.recipe.javadsl.CheckPointEvent;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class RecipeCompilerTests {
@@ -58,7 +55,7 @@ public class RecipeCompilerTests {
             }
         }
 
-        @FiresEvent(oneOf = { ItemsReserved.class, OrderHadUnavailableItems.class })
+        @FiresEvent(oneOf = {ItemsReserved.class, OrderHadUnavailableItems.class})
         ReserveItemsOutcome apply(
                 @RequiresIngredient("orderId") String id,
                 @RequiresIngredient("items") List<String> items
@@ -88,7 +85,7 @@ public class RecipeCompilerTests {
             }
         }
 
-        @FiresEvent(oneOf = { ItemsReserved.class, OrderHadUnavailableItems.class })
+        @FiresEvent(oneOf = {ItemsReserved.class, OrderHadUnavailableItems.class})
         ReserveItemsOutcome apply(
                 @RequiresIngredient("orderId") String id,
                 @RequiresIngredient("items") List<String> items
@@ -99,7 +96,7 @@ public class RecipeCompilerTests {
     }
 
     @Test
-    public void shouldCompileSimpleRecipe(){
+    public void shouldCompileSimpleRecipe() {
         Recipe recipe = new Recipe("recipe")
                 .withSensoryEvents(EventA.class);
         CompiledRecipe compiled = RecipeCompiler.compileRecipe(recipe);
@@ -109,7 +106,7 @@ public class RecipeCompilerTests {
     }
 
     @Test
-    public void shouldCompileSimpleRecipeWithInteraction(){
+    public void shouldCompileSimpleRecipeWithInteraction() {
 
         Recipe recipe = new Recipe("recipe")
                 .withSensoryEvents(EventA.class)
@@ -163,24 +160,50 @@ public class RecipeCompilerTests {
 
     }
 
+    class SubSubSubEvent {
+    }
+
+    class SubSubEvent {
+    }
+
+    class SubEvent {
+    }
+
+    class Event {
+    }
+
     @Test
     public void shouldAddSubRecipe() {
 
+        Recipe subSubSubRecipe = new Recipe("subSubSubRecipe")
+                .withSensoryEvent(SubSubSubEvent.class)
+                .withCheckpointEvent(new CheckPointEvent("subSubSubCheckpointEvent"))
+                .withInteraction(InteractionDescriptor.of(InteractionA.class));
+
         Recipe subSubRecipe = new Recipe("SubSubRecipe")
+                .withSensoryEvent(SubSubEvent.class)
+                .withSubRecipe(subSubSubRecipe)
+                .withCheckpointEvent(new CheckPointEvent("subSubCheckpointEvent"))
                 .withInteraction(InteractionDescriptor.of(InteractionB.class));
 
         Recipe subRecipe = new Recipe("SubRecipe")
+                .withSensoryEvent(SubEvent.class)
                 .withSubRecipe(subSubRecipe)
-                .withCheckpointEvent(new CheckPointEvent("name"))
+                .withCheckpointEvent(new CheckPointEvent("subCheckpointEvent"))
                 .withInteraction(InteractionDescriptor.of(InteractionA.class));
 
-
         Recipe recipe = new Recipe("recipe")
-                .withSensoryEvents(EventB.class, EventC.class)
-                .withSubRecipe(subRecipe);
+                .withSensoryEvent(Event.class)
+                .withSubRecipe(subRecipe)
+                .withCheckpointEvent(new CheckPointEvent("checkpointEvent"));
 
 
         CompiledRecipe compiled = RecipeCompiler.compileRecipe(recipe);
+
+        Object actualSensoryEvents = convertList(compiled.sensoryEvents()).stream().map(i -> ((EventDescriptor) i).name()).collect(Collectors.toUnmodifiableList());
+        List<String> expectedSensoryEvents = java.util.List.of("SubSubEvent", "SubEvent", "SubSubSubEvent", "Event");
+
+        Assertions.assertEquals(expectedSensoryEvents, actualSensoryEvents);
 
         Object actual = convertList(compiled.petriNet().transitions())
                 .stream()
@@ -188,7 +211,7 @@ public class RecipeCompilerTests {
                 .map(i -> ((InteractionTransition) i).interactionName())
                 .collect(Collectors.toUnmodifiableList());
 
-        List<String> expected = java.util.List.of("$SubRecipe$SubRecipe$InteractionA", "$CheckpointEventInteraction$name", "$SubRecipe$SubSubRecipe$InteractionB");
+        List<String> expected = java.util.List.of("$CheckpointEventInteraction$subSubSubCheckpointEvent", "$SubRecipe$SubRecipe$InteractionA", "$CheckpointEventInteraction$subSubCheckpointEvent", "$CheckpointEventInteraction$subCheckpointEvent", "$CheckpointEventInteraction$checkpointEvent", "$SubRecipe$subSubSubRecipe$InteractionA", "$SubRecipe$SubSubRecipe$InteractionB");
 
         Assertions.assertEquals(expected, actual);
     }
