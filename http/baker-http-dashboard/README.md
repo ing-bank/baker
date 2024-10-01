@@ -5,7 +5,8 @@ This project has been tested to work on v18.2.0 (npm v8.9.0).
 
 
 ## Prerequisites:
-- Install nvm (node version manager): `brew install nvm` (Add it do console: source $(brew --prefix nvm)/nvm.sh)
+- Install nvm (node version manager): `brew install nvm` 
+- Add it do console: `source $(brew --prefix nvm)/nvm.sh)`
 - Install node `nvm install node`
 - Install project `npm install`
 - Link angular cli `npm link @angular/cli` (to solve `zsh: command not found: ng`)
