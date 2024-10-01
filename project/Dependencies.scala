@@ -7,14 +7,14 @@ object Dependencies {
   val akkaManagementVersion = "1.1.4"
   val akkaPersistenceCassandraVersion = "1.0.6"
   val akkaHttpVersion = "10.2.9"
-  val http4sVersion = "0.21.34"
+  val http4sVersion = "0.22.15"
+  val circeVersion = "0.14.10"
   val fs2Version = "2.5.12"
-  val circeVersion = "0.14.2"
   val mockitoScalaVersion = "1.17.37"
   val catsEffectVersion = "2.5.5"
   val catsCoreVersion = "2.12.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "6.1.12"
+  val springVersion = "6.1.13"
   val springBootVersion = "2.6.1"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
@@ -94,7 +94,7 @@ object Dependencies {
   val circe = "io.circe" %% "circe-core" % circeVersion
   val circeParser = "io.circe" %% "circe-parser" % circeVersion
   val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
-  val circeGenericExtras = "io.circe" %% "circe-generic-extras" % circeVersion
+  val circeGenericExtras = "io.circe" %% "circe-generic-extras" % "0.14.4"
 
   val catsEffect = "org.typelevel" %% "cats-effect" % catsEffectVersion
   val catsEffectTesting = "com.codecommit" %% "cats-effect-testing-scalatest" % "0.5.4"
@@ -119,14 +119,14 @@ object Dependencies {
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
 
-  val typeSafeConfig = "com.typesafe" % "config" % "1.4.2"
+  val typeSafeConfig = "com.typesafe" % "config" % "1.4.3"
 
-  val objenisis = "org.objenesis" % "objenesis" % "3.2"
-  val jodaTime = "joda-time" % "joda-time" % "2.12.7"
+  val objenisis = "org.objenesis" % "objenesis" % "3.4"
+  val jodaTime = "joda-time" % "joda-time" % "2.13.0"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.16"
-  val logback = "ch.qos.logback" % "logback-classic" % "1.4.14"
+  val logback = "ch.qos.logback" % "logback-classic" % "1.5.8"
   val logstash = "net.logstash.logback" % "logstash-logback-encoder" % "7.3"
-  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.18.0"
+  val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.18.1"
   val scalaCheckPlus = "org.scalatestplus" %% "scalacheck-1-17" % "3.2.18.0"
   val scalaCheckPlusMockito = "org.scalatestplus" %% "mockito-3-12" % "3.2.10.0"
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
@@ -136,22 +136,22 @@ object Dependencies {
   val springCore = "org.springframework" % "spring-core" % springVersion
   val springBootStarter = "org.springframework.boot" % "spring-boot-starter" % springBootVersion
 
-  val snakeYaml = "org.yaml" % "snakeyaml" % "2.2"
+  val snakeYaml = "org.yaml" % "snakeyaml" % "2.3"
 
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.17.2"
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.17.2"
   val jawnParser = "org.typelevel" %% "jawn-parser" % "1.6.0"
-  val nettyHandler = "io.netty" % "netty-handler" % "4.1.112.Final"
+  val nettyHandler = "io.netty" % "netty-handler" % "4.1.113.Final"
 
-  private val bouncycastleVersion = "1.70"
+  private val bouncycastleVersion = "1.78.1"
 
-  val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % bouncycastleVersion
-  val bouncyCastleBcpkix = "org.bouncycastle" % "bcpkix-jdk15on" % bouncycastleVersion
+  val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk18on" % bouncycastleVersion
+  val bouncyCastleBcpkix = "org.bouncycastle" % "bcpkix-jdk18on" % bouncycastleVersion
 
   val guava = "com.google.guava" % "guava" % "33.3.0-jre"
 
-  val kotlinXCoroutinesCore = "org.jetbrains.kotlinx" % "kotlinx-coroutines-core" % "1.7.1" pomOnly()
-  val kotlinXCoroutinesJdk8 = "org.jetbrains.kotlinx" % "kotlinx-coroutines-jdk8" % "1.7.1"
+  val kotlinXCoroutinesCore = "org.jetbrains.kotlinx" % "kotlinx-coroutines-core" % "1.7.3" pomOnly()
+  val kotlinXCoroutinesJdk8 = "org.jetbrains.kotlinx" % "kotlinx-coroutines-jdk8" % "1.7.3"
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) = modules.map(m => m % scope)
 

@@ -5,11 +5,14 @@ import cats.effect.{Blocker, IO, Resource}
 import com.ing.baker.http.DashboardConfiguration
 import com.ing.baker.runtime.scaladsl.Baker
 import io.prometheus.client.CollectorRegistry
-import org.http4s.headers.{`Content-Length`, `Content-Type`}
+
+import org.http4s.headers._
 import org.http4s.implicits._
 import org.http4s.metrics.MetricsOps
 import org.http4s.metrics.prometheus.Prometheus
 import org.http4s._
+import org.typelevel.ci._
+
 import org.mockito.Mockito.{times, verify, when}
 import org.mockito.MockitoSugar.mock
 import org.scalatest.flatspec.AsyncFlatSpec
@@ -69,13 +72,13 @@ class Http4sBakerServerSpec  extends AsyncFlatSpec with AsyncIOSpec with Matcher
   "the routes" should "serve the dashboard index file if dashboard is enabled" in {
     val response = doRequest(Request(method = Method.GET, uri = uri"/"))
     response.status shouldEqual Status.Ok
-    response.headers.get(`Content-Type`).toString shouldEqual "Some(Content-Type: text/html)"
+    response.headers.headers contains Header.Raw(ci"Content-Type", "text/html") shouldEqual true
   }
 
   "the routes" should "serve the other static files if dashboard is enabled" in {
     val response = doRequest(Request(method = Method.GET, uri = uri"/main.js"))
     response.status shouldEqual Status.Ok
-    response.headers.get(`Content-Type`).toString shouldEqual "Some(Content-Type: application/javascript)"
+    response.headers.headers contains Header.Raw(ci"Content-Type", "application/javascript") shouldEqual true
   }
 
   "the routes" should "give 404 if dashboard is disabled" in {
@@ -86,7 +89,7 @@ class Http4sBakerServerSpec  extends AsyncFlatSpec with AsyncIOSpec with Matcher
   "the routes" should "give dashboard_config" in {
     val response = doRequest(Request(method = Method.GET, uri = uri"/dashboard_config"))
     response.status shouldEqual Status.Ok
-    response.headers.get(`Content-Length`).toString shouldEqual "Some(Content-Length: 104)"
+    response.headers.headers contains Header.Raw(ci"Content-Length", "104") shouldEqual true
   }
 
   "the routes" should "call the underlying baker implementation" in {

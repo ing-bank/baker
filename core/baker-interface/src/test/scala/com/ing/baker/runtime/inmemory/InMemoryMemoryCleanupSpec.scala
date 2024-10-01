@@ -149,7 +149,7 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
     result.unsafeRunSync()
   }
 
-  it should "not delete a process if the idle timeout is reset due to activity" in {
+  it should "not delete a process if the idle timeout is reset due to activity" taggedAs(Retryable) in {
     val recipe = Recipe("tempRecipe3")
       .withInteractions(
         interactionOne

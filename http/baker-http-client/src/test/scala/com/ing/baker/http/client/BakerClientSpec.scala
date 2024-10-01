@@ -12,7 +12,7 @@ import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.Router
-import org.http4s.server.blaze._
+import org.http4s.blaze.server._
 import org.scalatest.ConfigMap
 
 import java.net.InetSocketAddress
@@ -24,7 +24,7 @@ import scala.concurrent.ExecutionContext
 @nowarn
 class BakerClientSpec extends BakeryFunSpec {
 
-  case class Context(serverAddress: InetSocketAddress, receivedHeaders: IO[List[Header]])
+  case class Context(serverAddress: InetSocketAddress, receivedHeaders: IO[List[Header.Raw]])
 
   val serviceTLSConfig: TLSConfig =
     TLSConfig(
@@ -52,12 +52,12 @@ class BakerClientSpec extends BakeryFunSpec {
     */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
 
-    def testServer(receivedHeaders: MVar2[IO, List[Header]]): HttpApp[IO] = {
+    def testServer(receivedHeaders: MVar2[IO, List[Header.Raw]]): HttpApp[IO] = {
       implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
       Router("/api/bakery/instances" ->  HttpRoutes.of[IO] {
         case request@GET -> Root =>
           for {
-            _ <- receivedHeaders.put(request.headers.toList)
+            _ <- receivedHeaders.put(request.headers.headers)
             response <- Ok(BakerResult(List.empty[Int]))
           } yield response
       }).orNotFound
@@ -67,7 +67,7 @@ class BakerClientSpec extends BakeryFunSpec {
     val sslParams = sslConfig.getDefaultSSLParameters
     sslParams.setNeedClientAuth(true)
     for {
-      receivedHeaders <- Resource.eval(MVar.empty[IO, List[Header]])
+      receivedHeaders <- Resource.eval(MVar.empty[IO, List[Header.Raw]])
       service <- BlazeServerBuilder[IO](ExecutionContext.global)
         .withSslContextAndParameters(sslConfig, sslParams)
         .bindSocketAddress(InetSocketAddress.createUnresolved("localhost", 0))

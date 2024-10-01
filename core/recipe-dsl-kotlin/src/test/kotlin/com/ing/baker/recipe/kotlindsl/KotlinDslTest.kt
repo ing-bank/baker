@@ -35,6 +35,9 @@ class KotlinDslTest {
                 until = deadline(20.0.seconds)
             }
 
+            // Ingredient definition failed with optionals
+            ingredient("test", { test: Optional<String> -> "" })
+
             sensoryEvents {
                 eventWithoutFiringLimit<Events.OrderPlaced>()
                 event<Events.PaymentInformationReceived>(maxFiringLimit = 5)
@@ -183,17 +186,17 @@ class KotlinDslTest {
             assertEquals(true, (predefinedIngredients().get("bar").get() as com.ing.baker.types.PrimitiveValue).value())
 
             assertEquals(2, requiredEvents().size())
-            assertEquals("PaymentSuccessful", requiredEvents().get(0))
+            assertEquals("PaymentSuccessful", requiredEvents()[0])
             assertEquals("myEvent", requiredEvents().get(1))
 
             assertEquals(1, requiredOneOfEvents().size())
-            assertEquals(2, requiredOneOfEvents().get(0).size())
-            assertEquals("PaymentInformation", requiredOneOfEvents().get(0).get(0))
-            assertEquals("SomeEvent", requiredOneOfEvents().get(0).get(1))
+            assertEquals(2, requiredOneOfEvents()[0].size())
+            assertEquals("PaymentInformation", requiredOneOfEvents()[0][0])
+            assertEquals("SomeEvent", requiredOneOfEvents()[0].get(1))
 
             assertEquals(2, eventOutputTransformers().size())
-            assertEquals(Event("Char", listOf(), Optional.empty()), eventOutputTransformers().toList().get(0)._1)
-            assertEquals(EventOutputTransformer("foo", emptyMap()), eventOutputTransformers().toList().get(0)._2)
+            assertEquals(Event("Char", listOf(), Optional.empty()), eventOutputTransformers().toList()[0]._1)
+            assertEquals(EventOutputTransformer("foo", emptyMap()), eventOutputTransformers().toList()[0]._2)
             assertEquals(Event("Boolean", listOf(), Optional.empty()), eventOutputTransformers().toList().get(1)._1)
             assertEquals(
                 EventOutputTransformer("AnotherBoolean", mapOf("foo" to "bar", "this" to "that")),
@@ -257,26 +260,26 @@ class KotlinDslTest {
             assertEquals("recipe with sensory events", name())
             assertEquals(3, sensoryEvents().size())
 
-            with(sensoryEvents().get(0)) {
+            with(sensoryEvents()[0]) {
                 assertEquals("One", name())
                 assertEquals(Option.empty<Int>(), maxFiringLimit())
                 assertEquals(1, providedIngredients().size())
-                assertEquals("flag", providedIngredients().get(0).name())
-                assertEquals("Bool", providedIngredients().get(0).ingredientType().toString())
+                assertEquals("flag", providedIngredients()[0].name())
+                assertEquals("Bool", providedIngredients()[0].ingredientType().toString())
             }
-            with(sensoryEvents().get(1)) {
+            with(sensoryEvents()[1]) {
                 assertEquals("Two", name())
                 assertEquals(Some(5), maxFiringLimit())
                 assertEquals(1, providedIngredients().size())
-                assertEquals("text", providedIngredients().get(0).name())
-                assertEquals("CharArray", providedIngredients().get(0).ingredientType().toString())
+                assertEquals("text", providedIngredients()[0].name())
+                assertEquals("CharArray", providedIngredients()[0].ingredientType().toString())
             }
             with(sensoryEvents().get(2)) {
                 assertEquals("Three", name())
                 assertEquals(Some(1), maxFiringLimit())
                 assertEquals(1, providedIngredients().size())
-                assertEquals("number", providedIngredients().get(0).name())
-                assertEquals("Int32", providedIngredients().get(0).ingredientType().toString())
+                assertEquals("number", providedIngredients()[0].name())
+                assertEquals("Int32", providedIngredients()[0].ingredientType().toString())
             }
         }
     }
@@ -351,14 +354,14 @@ class KotlinDslTest {
             assertEquals(Option.empty<FiniteDuration>(), eventReceivePeriod())
             assertEquals(BlockInteraction::class.java, defaultFailureStrategy().javaClass)
             assertEquals(1, checkpointEvents().size())
-            assertEquals("Success", checkpointEvents().get(0).name())
-            assertEquals(2, checkpointEvents().get(0).requiredEvents().size())
-            assertEquals("PaymentSuccessful", checkpointEvents().get(0).requiredEvents().get(0))
-            assertEquals("myEvent", checkpointEvents().get(0).requiredEvents().get(1))
-            assertEquals(1, checkpointEvents().get(0).requiredOneOfEvents().size())
-            assertEquals(2, checkpointEvents().get(0).requiredOneOfEvents().get(0).size())
-            assertEquals("PaymentInformation", checkpointEvents().get(0).requiredOneOfEvents().get(0).get(0))
-            assertEquals("SomeEvent", checkpointEvents().get(0).requiredOneOfEvents().get(0).get(1))
+            assertEquals("Success", checkpointEvents()[0].name())
+            assertEquals(2, checkpointEvents()[0].requiredEvents().size())
+            assertEquals("PaymentSuccessful", checkpointEvents()[0].requiredEvents()[0])
+            assertEquals("myEvent", checkpointEvents()[0].requiredEvents()[1])
+            assertEquals(1, checkpointEvents()[0].requiredOneOfEvents().size())
+            assertEquals(2, checkpointEvents()[0].requiredOneOfEvents()[0].size())
+            assertEquals("PaymentInformation", checkpointEvents()[0].requiredOneOfEvents()[0][0])
+            assertEquals("SomeEvent", checkpointEvents()[0].requiredOneOfEvents()[0][1])
             assertTrue(sensoryEvents().isEmpty)
             assertTrue(interactions().isEmpty)
         }
@@ -383,14 +386,16 @@ class KotlinDslTest {
             assertEquals(Option.empty<FiniteDuration>(), eventReceivePeriod())
             assertEquals(BlockInteraction::class.java, defaultFailureStrategy().javaClass)
             assertEquals(2, interactions().size())
-            assertEquals("MakePayment", interactions().get(0).name())
-            assertEquals("ReserveItems", interactions().get(1).name())
+            assertEquals("MakePayment", interactions()[0].name())
+            assertEquals("ReserveItems", interactions()[1].name())
             assertEquals(1, sieves().size())
-            assertEquals("extractDate", sieves().get(0).name())
-            assertEquals(1, sieves().get(0).inputIngredients().size())
-            assertEquals("reservedItems", sieves().get(0).inputIngredients().get(0).name())
-            assertEquals(1, sieves().get(0).output().size())
-            assertEquals("\$SieveEvent\$extractDate", sieves().get(0).output().get(0).name())
+            assertEquals("extractDate", sieves()[0].name())
+            assertEquals(1, sieves()[0].inputIngredients().size())
+            assertEquals("reservedItems", sieves()[0].inputIngredients()[0].name())
+            assertEquals(1, sieves()[0].output().size())
+            assertEquals("\$SieveEvent\$extractDate", sieves()[0].output()[0].name())
+            assertEquals("1981-01-07", (sieves()[0].function() as Function1<Ingredients.ReservedItems, String>).invoke(
+                Ingredients.ReservedItems(emptyList(), "1981-01-07")))
         }
     }
 
@@ -436,7 +441,7 @@ class KotlinDslTest {
             assertEquals(Option.empty<FiniteDuration>(), eventReceivePeriod())
             assertEquals(BlockInteraction::class.java, defaultFailureStrategy().javaClass)
             assertEquals(1, subRecipes().size())
-            assertEquals("Fulfillment", subRecipes().get(0).name())
+            assertEquals("Fulfillment", subRecipes()[0].name())
         }
     }
 
@@ -452,10 +457,10 @@ class KotlinDslTest {
 
         with(recipe.interactions().apply(0)) {
             assertEquals(1, eventOutputTransformers().size())
-            assertEquals("ItemsReserved", eventOutputTransformers().toList().get(0)._1.name())
+            assertEquals("ItemsReserved", eventOutputTransformers().toList()[0]._1.name())
             assertEquals(
                 EventOutputTransformer("ItemsReservedNew", mapOf("reservedItems" to "reservedItemsNew")),
-                eventOutputTransformers().toList().get(0)._2
+                eventOutputTransformers().toList()[0]._2
             )
         }
     }
@@ -594,6 +599,7 @@ class KotlinDslTest {
         ): Outcome
     }
 
-    private fun <T> Seq<T>.get(index: Int): T = apply(index)
-    private fun <T> Set<T>.get(index: Int): T = toList().apply(index)
+    private operator fun <T> Seq<T>.get(index: Int): T = apply(index)
+    // These sets are ordered, so in the test we use them indexed
+    private operator fun <T> Set<T>.get(index: Int): T = toList().apply(index)
 }
