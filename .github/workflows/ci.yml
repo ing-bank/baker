@@ -16,6 +16,8 @@ jobs:
       contents: write
       pull-requests: write
     runs-on: ubuntu-latest
+    # This condition ensures the ci job runs only for push events that are not associated with a pull request (prevents duplicate runs)
+    if: ${{ github.event_name == 'push' && github.event.pull_request == null }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -100,9 +102,8 @@ jobs:
     name: Submit dependency graph
     continue-on-error: true
     needs: [ci]
-    # run on 1) master branch
-    # do not run on pull requests
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    # Submit dependency graph only for the master branch commits
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
