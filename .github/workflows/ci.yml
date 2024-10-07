@@ -16,8 +16,6 @@ jobs:
       contents: write
       pull-requests: write
     runs-on: ubuntu-latest
-    # This condition ensures the ci job runs only for push events that are not associated with a pull request (prevents duplicate runs)
-    if: ${{ github.event_name == 'push' && github.event.pull_request == null }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
