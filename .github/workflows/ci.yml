@@ -1,8 +1,10 @@
 name: CI
 on:
   push:
-    branches: ["*"]
+    branches: ["**"]
     tags: ["v*"]
+  pull_request:
+    branches: ["master"]
 
 permissions:
   contents: read
@@ -28,22 +30,23 @@ jobs:
       - name: Run tests and coverage
         run: |-
           cp .jvmopts-ci .jvmopts
-          sbt coverage test coverageReport && bash <(curl -s https://codecov.io/bash)  
+          sbt coverage test coverageReport && bash <(curl -s https://codecov.io/bash)
       - name: Prepare draft release notes
-        # Run this step only for pushes to the master branch or for tags starting with 'v'
-        if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) }}
+        # Run this step only in the original repo and for pushes to the master branch or for tags starting with 'v'
+        if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) && ! github.event.repository.fork }}
         continue-on-error: true
         uses: release-drafter/release-drafter@v6
         with:
           config-name: release-drafter.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   publish-sonatype:
     permissions:
       contents: write
       pull-requests: write
     name: Publish to Sonatype
-    # Publish to Sonatype only on tags starting with 'v' (stable releases) and not from forked repositories
+    # Publish to Sonatype only from the original repo and for the tags starting with 'v'
     if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && ! github.event.repository.fork }}
     needs: [ci]
     runs-on: ubuntu-latest
@@ -65,13 +68,14 @@ jobs:
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+
   publish-azure:
     permissions:
       contents: write
       pull-requests: write
     name: Publish to Azure
-    # Publish to Azure only for non-tag references (e.g., all the pushes to default and other branches) and not from forked repositories
-    if: ${{ ! startsWith(github.ref, 'refs/tags/') && ! github.event.repository.fork }}
+    # Publish to Azure all the commits for all the branches from the original repo except for tags.
+    if: ${{ github.event_name == 'push' && ! startsWith(github.ref, 'refs/tags/') && ! github.event.repository.fork }}
     needs: [ci]
     runs-on: ubuntu-latest
     steps:
@@ -91,13 +95,13 @@ jobs:
           AZURE_FEEDUSER: ${{ secrets.AZURE_FEEDUSER }}
           AZURE_FEEDPASSWORD: ${{ secrets.AZURE_FEEDPASSWORD }}
           AZURE_FEEDURL: ${{ secrets.AZURE_FEEDURL }}
+
   dependency-submission:
     name: Submit dependency graph
     continue-on-error: true
     needs: [ci]
-    # run on 1) master branch
-    # do not run on pull requests
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    # Submit dependency graph only for the master branch commits
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -112,6 +116,5 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: sbt
-      - name: Submit dependency graph 
+      - name: Submit dependency graph
         uses: scalacenter/sbt-dependency-submission@v2
-      
