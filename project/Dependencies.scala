@@ -31,7 +31,7 @@ object Dependencies {
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
   val mockServer = "org.mock-server" % "mockserver-netty" % "5.15.0"
   val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
-  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.11.0"
+  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.11.2"
 
   val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
 
@@ -80,7 +80,7 @@ object Dependencies {
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.17.0"
   val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.17.0"
-  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.27"
+  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.28"
 
   val skuber = "io.skuber" %% "skuber" % "2.6.7"
   val play = "com.typesafe.play" %% "play-json" % "2.9.4"
@@ -115,7 +115,7 @@ object Dependencies {
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.25.4" % "protobuf"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.25.5" % "protobuf"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
 
@@ -148,7 +148,7 @@ object Dependencies {
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk18on" % bouncycastleVersion
   val bouncyCastleBcpkix = "org.bouncycastle" % "bcpkix-jdk18on" % bouncycastleVersion
 
-  val guava = "com.google.guava" % "guava" % "33.3.0-jre"
+  val guava = "com.google.guava" % "guava" % "33.3.1-jre"
 
   val kotlinXCoroutinesCore = "org.jetbrains.kotlinx" % "kotlinx-coroutines-core" % "1.7.3" pomOnly()
   val kotlinXCoroutinesJdk8 = "org.jetbrains.kotlinx" % "kotlinx-coroutines-jdk8" % "1.7.3"
