@@ -16,7 +16,6 @@ jobs:
       contents: write
       pull-requests: write
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
