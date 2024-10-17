@@ -21,6 +21,7 @@ export class RecipesComponent implements OnInit {
     ];
 
     selectedRecipeGraph: string | null;
+    selectedRecipeErrors: string[] | null;
     selectedRecipeName: string | null;
     selectedTabIndex: number;
 
@@ -38,11 +39,19 @@ export class RecipesComponent implements OnInit {
 
     viewRecipe(recipeId: string, recipeName: string): void {
         this.bakeryService.getRecipeVisual(recipeId).subscribe(visual => {
+            this.selectedRecipeErrors = null;
             this.selectedRecipeGraph = visual;
             this.selectedRecipeName = recipeName;
             this.selectedTabIndex = 1;
         });
     }
+
+  viewErrors(recipeId: string, recipeName: string, recipeErrors: string[]): void {
+      this.selectedRecipeErrors = recipeErrors;
+      this.selectedRecipeGraph = null;
+      this.selectedRecipeName = recipeName;
+      this.selectedTabIndex = 1;
+  }
 
     bakeRecipe(recipeId: string): void {
         const instanceId = this.randomId(8)
