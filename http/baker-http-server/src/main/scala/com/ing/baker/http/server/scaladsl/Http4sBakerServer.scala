@@ -132,7 +132,7 @@ object Http4sBakerServer extends LazyLogging {
         dashboardFile(req, blocker, "index.html").getOrElseF(NotFound())
 
       case req if req.method == GET && Dashboard.files.contains(req.pathInfo.toRelative.renderString) =>
-        dashboardFile(req, blocker, req.pathInfo.renderString).getOrElseF(NotFound())
+        dashboardFile(req, blocker, req.pathInfo.toRelative.renderString).getOrElseF(NotFound())
     }
 
   private def dashboardFile(request: Request[IO], blocker: Blocker, filename: String)
