@@ -6,11 +6,10 @@
 </form>
 
 <mat-tab-group *ngIf="displayedInstanceId">
-  <mat-tab label="Events & ingredients">
-    <mat-grid-list cols="2" rowHeight="100%">
+  <mat-tab label="Events">
+    <mat-grid-list cols="1" rowHeight="95%">
       <mat-grid-tile colspan="1">
         <div class="text-inside-grid">
-          <p>Events</p>
           <cdk-virtual-scroll-viewport class="scroll-viewport" itemSize="50">
             <table mat-table [dataSource]="instanceEvents" class="mat-elevation-z8">
               <ng-container matColumnDef="timestamp">
@@ -29,21 +28,21 @@
           </cdk-virtual-scroll-viewport>
         </div>
       </mat-grid-tile>
+    </mat-grid-list>
+  </mat-tab>
+  <mat-tab label="ingredients">
+    <mat-grid-list cols="1" rowHeight="95%">
       <mat-grid-tile colspan="1">
         <div class="text-inside-grid">
-          <p>Ingredients</p>
           <cdk-virtual-scroll-viewport class="scroll-viewport" itemSize="50">
             <mat-accordion>
-              <mat-expansion-panel *ngFor="let ingredient of instanceIngredients" [hideToggle]="ingredient.isSimple">
+              <mat-expansion-panel *ngFor="let ingredient of instanceIngredients">
                 <mat-expansion-panel-header>
                   <mat-panel-title>
                     {{ingredient.name}}
                   </mat-panel-title>
-                  <mat-panel-description *ngIf="ingredient.isSimple">
-                    {{ingredient.value}}
-                  </mat-panel-description>
                 </mat-expansion-panel-header>
-                <pre class="ingredient-value-json" *ngIf="!ingredient.isSimple">{{ingredient.value}}</pre>
+                <pre class="ingredient-value-json">{{ingredient.value}}</pre>
               </mat-expansion-panel>
             </mat-accordion>
           </cdk-virtual-scroll-viewport>
