@@ -102,7 +102,7 @@ object Dependencies {
   val console4Cats = "dev.profunktor" %% "console4cats" % "0.8.0"
   val catsRetry = "com.github.cb372" %% "cats-retry" % "2.1.1"
 
-  val jnrConstants = "com.github.jnr" % "jnr-constants" % "0.10.3"
+  val jnrConstants = "com.github.jnr" % "jnr-constants" % "0.10.4"
 
   def scalaReflect(scalaV: String): ModuleID = "org.scala-lang" % "scala-reflect" % scalaV
 
