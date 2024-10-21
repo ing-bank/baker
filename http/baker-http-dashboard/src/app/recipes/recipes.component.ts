@@ -55,9 +55,9 @@ export class RecipesComponent implements OnInit {
 
     bakeRecipe(recipeId: string): void {
         const instanceId = this.randomId(8)
-        const baseUrl = window.location.origin;
+        const baseUrl = (document.querySelector('base') || {}).href;
         this.bakeryService.postBake(instanceId, recipeId).subscribe(() => {
-          window.location.href = `${baseUrl}/instances/${instanceId}`
+          window.location.href = `${baseUrl}instances/${instanceId}`
         });
     }
 
