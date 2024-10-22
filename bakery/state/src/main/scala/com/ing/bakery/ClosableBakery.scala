@@ -2,6 +2,7 @@ package com.ing.bakery
 
 import akka.actor.ActorSystem
 import cats.effect.IO
+import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.scaladsl.Baker
@@ -10,7 +11,7 @@ import com.typesafe.config.Config
 
 import java.io.Closeable
 
-class ClosableBakery(baker: Baker,
+class ClosableBakery(baker: AkkaBaker,
                      system: ActorSystem,
                      close: IO[Unit]
                     ) extends AkkaBakery(baker, system) with Closeable {

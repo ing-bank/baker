@@ -140,6 +140,23 @@ object Http4sBakerServer extends LazyLogging {
     OptionT.fromOption(Dashboard.safeGetResourcePath(filename))(sync)
       .flatMap(resourcePath => StaticFile.fromResource(resourcePath, blocker, Some(request)))
   }
+
+  implicit val eventInstanceDecoder: EntityDecoder[IO, EventInstance] = jsonOf[IO, EventInstance]
+  implicit val interactionExecutionRequestDecoder: EntityDecoder[IO, InteractionExecution.ExecutionRequest] = jsonOf[IO, InteractionExecution.ExecutionRequest]
+  implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
+  implicit val recipeDecoder: EntityDecoder[IO, EncodedRecipe] = jsonOf[IO, EncodedRecipe]
+
+  implicit class BakerResultIOHelper[A](io: => IO[A]) {
+    def toBakerResultResponseIO(implicit encoder: Encoder[A]): IO[Response[IO]] =
+      io.attempt.flatMap {
+        case Left(e: BakerException) => Ok(BakerResult(e))
+        case Left(e) =>
+          logger.error(s"Unexpected exception happened when calling Baker", e)
+          InternalServerError(s"No other exception but BakerExceptions should be thrown here: ${e.getCause}")
+        case Right(()) => Ok(BakerResult.Ack)
+        case Right(a) => Ok(BakerResult(a))
+      }
+  }
 }
 
 final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO]) extends LazyLogging {
@@ -158,11 +175,7 @@ final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO
 
   private object IngredientName extends RegExpValidator("[A-Za-z0-9_]+")
 
-  implicit val recipeDecoder: EntityDecoder[IO, EncodedRecipe] = jsonOf[IO, EncodedRecipe]
-
-  implicit val eventInstanceDecoder: EntityDecoder[IO, EventInstance] = jsonOf[IO, EventInstance]
-  implicit val interactionExecutionRequestDecoder: EntityDecoder[IO, InteractionExecution.ExecutionRequest] = jsonOf[IO, InteractionExecution.ExecutionRequest]
-  implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
+  import Http4sBakerServer._
 
   def routesWithPrefixAndMetrics(apiUrlPrefix: String, metrics: MetricsOps[IO])
                                 (implicit timer: Timer[IO]): HttpRoutes[IO] =
@@ -265,22 +278,8 @@ final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO
     } else None
   }
 
-
   private implicit class BakerResultFutureHelper[A](f: => Future[A]) {
     def toBakerResultResponseIO(implicit encoder: Encoder[A]): IO[Response[IO]] =
       IO.fromFuture(IO(f)).toBakerResultResponseIO
   }
-
-  private implicit class BakerResultIOHelper[A](io: => IO[A]) {
-    def toBakerResultResponseIO(implicit encoder: Encoder[A]): IO[Response[IO]] =
-      io.attempt.flatMap {
-        case Left(e: BakerException) => Ok(BakerResult(e))
-        case Left(e) =>
-          logger.error(s"Unexpected exception happened when calling Baker", e)
-          InternalServerError(s"No other exception but BakerExceptions should be thrown here: ${e.getCause}")
-        case Right(()) => Ok(BakerResult.Ack)
-        case Right(a) => Ok(BakerResult(a))
-      }
-  }
-
 }

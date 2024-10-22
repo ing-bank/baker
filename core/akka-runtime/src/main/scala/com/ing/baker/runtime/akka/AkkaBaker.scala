@@ -78,6 +78,11 @@ object AkkaBaker {
 class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker with LazyLogging {
   import config.system
 
+  /**
+   * Useful for users that want to directly use any of the AkkaBaker components
+   */
+  def getAkkaBakerConfig: AkkaBakerConfig = config
+
   config.bakerActorProvider.initialize(system)
 
   private val recipeManager: RecipeManager =
