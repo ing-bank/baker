@@ -46,12 +46,13 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
 
   def appGetVisualRecipe(recipeId: String): JFuture[String] = baker.getRecipeVisual(recipeId).toBakerResult
 
-  def bake(recipeId: String, recipeInstanceId: String): JFuture[String] = baker.bake(recipeId, recipeInstanceId).toBakerResult
+  def bake(recipeId: String, recipeInstanceId: String): JFuture[String] =
+    baker.bake(recipeId, recipeInstanceId).toBakerResult
 
-  def bake(recipeId: String, recipeInstanceId: String, bakeRequestJson: String): JFuture[String] =
+  def bakeWithBakeRequest(recipeId: String, recipeInstanceId: String, bakeRequestJson: String): JFuture[String] =
     baker.bake(recipeId, recipeInstanceId, getMetaDataFromBakeRequest(bakeRequestJson)).toBakerResult
 
-  def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]) =
+  def bakeWithMetadata(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): JFuture[String] =
     baker.bake(recipeId, recipeInstanceId, metadata).toBakerResult
 
   def getMetaDataFromBakeRequest(bakeRequestJson: String): Map[String, String] = {

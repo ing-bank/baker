@@ -31,7 +31,7 @@ object Dependencies {
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
   val mockServer = "org.mock-server" % "mockserver-netty" % "5.15.0"
   val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
-  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.11.2"
+  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.11.3"
 
   val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
 
@@ -59,7 +59,7 @@ object Dependencies {
   val akkaClusterBoostrap = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
   val akkaDiscoveryKube = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaManagementVersion
 
-  val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.8.0"
+  val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.8.1"
   val fs2Core = "co.fs2" %% "fs2-core" % fs2Version
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Version
   val fs2kafka = "com.github.fd4s" %% "fs2-kafka" % "1.11.0"
@@ -124,7 +124,7 @@ object Dependencies {
   val objenisis = "org.objenesis" % "objenesis" % "3.4"
   val jodaTime = "joda-time" % "joda-time" % "2.13.0"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.16"
-  val logback = "ch.qos.logback" % "logback-classic" % "1.5.11"
+  val logback = "ch.qos.logback" % "logback-classic" % "1.5.12"
   val logstash = "net.logstash.logback" % "logstash-logback-encoder" % "7.3"
   val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.18.1"
   val scalaCheckPlus = "org.scalatestplus" %% "scalacheck-1-17" % "3.2.18.0"
@@ -143,7 +143,7 @@ object Dependencies {
   val jawnParser = "org.typelevel" %% "jawn-parser" % "1.6.0"
   val nettyHandler = "io.netty" % "netty-handler" % "4.1.114.Final"
 
-  private val bouncycastleVersion = "1.78.1"
+  private val bouncycastleVersion = "1.79"
 
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk18on" % bouncycastleVersion
   val bouncyCastleBcpkix = "org.bouncycastle" % "bcpkix-jdk18on" % bouncycastleVersion
