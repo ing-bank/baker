@@ -95,8 +95,8 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
       case Right(json: io.circe.Json) =>
         json.as[EventInstance] match {
           case Left(_) =>
-            logger.error("Failure parsing of EventInstance")
-            Left(BakerException.UnexpectedException("Failure parsing of EventInstance"))
+            logger.error("Failure decoding json to EventInstance")
+            Left(BakerException.UnexpectedException("Failure decoding json to EventInstance"))
           case Right(eventInstance: EventInstance) =>
             Right(eventInstance)
         }
