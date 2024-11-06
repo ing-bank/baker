@@ -36,7 +36,7 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
       json <- parse(recipe).toOption
       encodedRecipe <- json.as[EncodedRecipe].toOption
     } yield RecipeLoader.fromBytes(encodedRecipe.base64.getBytes(Charset.forName("UTF-8"))).unsafeToFuture())
-      .map(_.flatMap(recipe => baker.addRecipe(recipe, validate = false).toBakerResultScalaFuture))
+      .map(_.flatMap(recipe => baker.addRecipe(recipe, validate = false).mapToBakerResult))
       .getOrElse(Future.failed(new IllegalStateException("Error adding recipe")))
   }.toJava.toCompletableFuture
 
@@ -87,6 +87,41 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
     }
   }
 
+  def parseEventRequest(eventJson: String): Either[BakerException, EventInstance] = {
+    parse(eventJson) match {
+      case Left(_) =>
+        logger.error("Failure parsing of EventInstance")
+        Left(BakerException.UnexpectedException("Failure parsing of EventInstance"))
+      case Right(json: io.circe.Json) =>
+        json.as[EventInstance] match {
+          case Left(_) =>
+            logger.error("Failure decoding json to EventInstance")
+            Left(BakerException.UnexpectedException("Failure decoding json to EventInstance"))
+          case Right(eventInstance: EventInstance) =>
+            Right(eventInstance)
+        }
+    }
+  }
+
+  def toBakerResult[A](f: Future[A])(implicit encoder: Encoder[A]): Future[String] = {
+    f.map {
+      case () => BakerResult.Ack
+      case a => BakerResult(a)
+    }.recover {
+      case e: BakerException => BakerResult(e)
+      case e: Throwable =>
+        val errorId = UUID.randomUUID().toString
+        logger.error(s"Unexpected exception happened when calling Baker (id='$errorId').", e)
+        BakerResult(BakerException.UnexpectedException(errorId))
+    }.map(bakerResultEncoder.apply(_).noSpaces)
+  }
+
+  def toBakerResultJFuture[A](f: Future[A])(implicit encoder: Encoder[A]): JFuture[String] = {
+    toBakerResult(f)(encoder)
+      .toJava
+      .toCompletableFuture
+  }
+
   /**
     * Do calls for a specific instance.
     */
@@ -124,34 +159,44 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
 
     def resolveInteraction(interactionName: String, eventJson: String): JFuture[String] =
       parseEventAndExecute(eventJson, baker.resolveInteraction(recipeInstanceId, interactionName, _))
+
+    def fireAndResolveWhenReceivedFromEventInstance(eventInstance: EventInstance, maybeCorrelationId: Optional[String]): JFuture[String] =
+      eventInstanceExecute(eventInstance, baker.fireEventAndResolveWhenReceived(recipeInstanceId, _, toOption(maybeCorrelationId)))
+
+    def fireAndResolveWhenCompletedFromEventInstance(eventInstance: EventInstance, maybeCorrelationId: Optional[String]): JFuture[String] =
+      eventInstanceExecute(eventInstance, baker.fireEventAndResolveWhenCompleted(recipeInstanceId, _, toOption(maybeCorrelationId)))
+
+    def fireAndResolveOnEventFromEventInstance(eventInstance: EventInstance, event: String, maybeCorrelationId: Optional[String]): JFuture[String] =
+      eventInstanceExecute(eventInstance, baker.fireEventAndResolveOnEvent(recipeInstanceId, _, event, toOption(maybeCorrelationId)))
+
+    def resolveInteractionFromEventInstance(interactionName: String, eventInstance: EventInstance): JFuture[String] =
+      eventInstanceExecute(eventInstance, baker.resolveInteraction(recipeInstanceId, interactionName, _))
   }
 
   private def toOption[T](opt: Optional[T]): Option[T] = if (opt.isPresent) Some(opt.get()) else None
 
-  private def parseEventAndExecute[A](eventJson: String, f: EventInstance => Future[A])(implicit encoder: Encoder[A]): JFuture[String] =  (
-    for {
-      json <- parse(eventJson)
-      eventInstance <- json.as[EventInstance]
-    } yield {
-      f(eventInstance).toBakerResultScalaFuture
-    }).getOrElse(Future.failed(new IllegalArgumentException("Can't process event"))).toJava.toCompletableFuture
+  private def eventInstanceExecute[A](eventInstance: EventInstance, f: EventInstance => Future[A])(implicit encoder: Encoder[A]): JFuture[String] =
+    f(eventInstance).mapToBakerResultJFuture
+
+  private def parseEventAndExecute[A](eventJson: String, f: EventInstance => Future[A])(implicit encoder: Encoder[A]): JFuture[String] =
+    parseEventRequest(eventJson) match {
+      case Right(eventInstance: EventInstance) =>
+        f(eventInstance).toBakerResult
+      case Left(bakerException: BakerException) =>
+         Future(bakerResultEncoder.apply(BakerResult(bakerException)).noSpaces)
+           .toJava
+           .toCompletableFuture
+    }
 
   private implicit class BakerResultHelperJavaFuture[A](f: => Future[A])(implicit encoder: Encoder[A]) {
-    def toBakerResult: JFuture[String] = f.toBakerResultScalaFuture.toJava.toCompletableFuture
+    def toBakerResult: JFuture[String] = f.mapToBakerResultJFuture
   }
 
   private implicit class BakerResultHelperScalaFuture[A](f: => Future[A])(implicit encoder: Encoder[A]) {
-    def toBakerResultScalaFuture(implicit encoder: Encoder[A]): Future[String] = {
-      f.map {
-        case () => BakerResult.Ack
-        case a => BakerResult(a)
-      }.recover {
-        case e: BakerException => BakerResult(e)
-        case e: Throwable =>
-          val errorId = UUID.randomUUID().toString
-          logger.error(s"Unexpected exception happened when calling Baker (id='$errorId').", e)
-          BakerResult(BakerException.UnexpectedException(errorId))
-      }.map(bakerResultEncoder.apply(_).noSpaces)
-    }
+    def mapToBakerResult(implicit encoder: Encoder[A]): Future[String] =
+      toBakerResult(f)(encoder)
+
+    def mapToBakerResultJFuture(implicit encoder: Encoder[A]): JFuture[String] =
+      toBakerResultJFuture(f)(encoder)
   }
 }
