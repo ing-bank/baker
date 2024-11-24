@@ -181,8 +181,11 @@ private[recipeinstance] case class TransitionExecution(
           interactionStarted <- effect.delay(InteractionStarted(startTime, recipe.name, recipe.recipeId, recipeInstanceId, interactionTransition.interactionName))
           _ <- effect.delay(components.logging.interactionStarted(interactionStarted))
           _ <- components.eventStream.publish(interactionStarted)
-
-          interactionOutput <- effect.bracket(setupMdc)(_ => execute)(_ => cleanMdc)
+          interactionOutput <-
+            setupMdc.map(_ => execute).flatMap(x => {
+              cleanMdc
+              x
+            })
           _ <- validateInteractionOutput(interactionTransition, interactionOutput)
           transformedOutput: Option[EventInstance] = interactionOutput.map(_.transformWith(interactionTransition))
 
