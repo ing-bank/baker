@@ -14,7 +14,7 @@ object Dependencies {
   val catsEffectVersion = "2.5.5"
   val catsCoreVersion = "2.12.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "6.1.14"
+  val springVersion = "6.1.15"
   val springBootVersion = "2.6.1"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
@@ -141,7 +141,7 @@ object Dependencies {
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.18.1"
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.18.1"
   val jawnParser = "org.typelevel" %% "jawn-parser" % "1.6.0"
-  val nettyHandler = "io.netty" % "netty-handler" % "4.1.114.Final"
+  val nettyHandler = "io.netty" % "netty-handler" % "4.1.115.Final"
 
   private val bouncycastleVersion = "1.79"
 
