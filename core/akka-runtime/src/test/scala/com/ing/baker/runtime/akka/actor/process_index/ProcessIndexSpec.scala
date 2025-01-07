@@ -14,6 +14,7 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
+import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
@@ -33,7 +34,6 @@ import org.scalatestplus.mockito.MockitoSugar
 import scalax.collection.immutable.Graph
 
 import java.util.UUID
-import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
@@ -102,6 +102,22 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
+      petriNetActorProbe.expectMsg(initializeMsg)
+    }
+
+    "create the PetriNetInstance actor with given metadata when Initialize message is received" in {
+      val recipeInstanceId = UUID.randomUUID().toString
+      val metadata = Map("someKey" -> "someValue")
+      val initializeMsg =
+        Initialize(Marking.empty[Place], RecipeInstanceState(
+          recipeId = recipeId,
+          recipeInstanceId = recipeInstanceId,
+          ingredients = Map(RecipeInstanceMetadataName -> com.ing.baker.types.Converters.toValue(metadata)),
+          recipeInstanceMetadata = metadata,
+          events = List.empty))
+      val petriNetActorProbe = TestProbe()
+      val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
+      actorIndex ! CreateProcess(recipeId, recipeInstanceId, metaData = metadata)
       petriNetActorProbe.expectMsg(initializeMsg)
     }
 
