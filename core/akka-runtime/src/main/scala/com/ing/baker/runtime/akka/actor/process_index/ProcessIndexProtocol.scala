@@ -61,8 +61,9 @@ object ProcessIndexProtocol {
     *
     * @param recipeId Id of the recipe to use, must exist on the Recipe Manager
     * @param recipeInstanceId To be used for the process, must not be previously used
+    * @param metaData Additional metadata to be stored with the process
     */
-  case class CreateProcess(recipeId: String, recipeInstanceId: String) extends ProcessIndexMessage
+  case class CreateProcess(recipeId: String, recipeInstanceId: String, metaData: Map[String, String] = Map.empty) extends ProcessIndexMessage
 
   /**
     * Returned if there was already another process using the predefined process id
