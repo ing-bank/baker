@@ -228,7 +228,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     * @return
     */
   override def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] = {
-    processIndexActor.ask(CreateProcess(recipeId, recipeInstanceId, metadata))(config.timeouts.defaultBakeTimeout).javaTimeoutToBakerTimeout("bake").flatMap {
+    val eventualBake = processIndexActor.ask(CreateProcess(recipeId, recipeInstanceId, metadata))(config.timeouts.defaultBakeTimeout).javaTimeoutToBakerTimeout("bake").flatMap {
       case _: Initialized =>
         Future.successful(())
       case ProcessDeleted =>
@@ -237,6 +237,13 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
         Future.failed(ProcessAlreadyExistsException(recipeInstanceId))
       case RecipeManagerProtocol.NoRecipeFound(_) =>
         Future.failed(NoSuchRecipeException(recipeId))
+    }
+
+    // TODO This is a temporary backwards compatibility logic to support the old way of adding metadata during rollout, to be removed in the future release
+    if (metadata.nonEmpty) {
+      eventualBake.map(_ => addMetaData(recipeInstanceId, metadata))
+    } else {
+      eventualBake
     }
   }
 
