@@ -1,7 +1,8 @@
 name: CI
 on:
+  workflow_dispatch:
   push:
-    branches: ["**"]
+    branches: ["master"]
     tags: ["v*"]
   pull_request:
     branches: ["master"]
@@ -27,6 +28,7 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: sbt
+      - uses: sbt/setup-sbt@v1
       - name: Run tests and coverage
         run: |-
           cp .jvmopts-ci .jvmopts
@@ -61,6 +63,7 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: sbt
+      - uses: sbt/setup-sbt@v1
       - name: Publish to Sonatype
         run: sbt ci-release
         env:
@@ -89,6 +92,7 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: sbt
+      - uses: sbt/setup-sbt@v1
       - name: Publish to Azure
         run: sbt "clean; +aetherDeploy; project interaction-example-make-payment-and-ship-items; +aetherDeploy; project interaction-example-reserve-items; +aetherDeploy; project bakery-client-example; +aetherDeploy; project bakery-kafka-listener-example; +aetherDeploy"
         env:
@@ -116,5 +120,6 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: sbt
+      - uses: sbt/setup-sbt@v1
       - name: Submit dependency graph
         uses: scalacenter/sbt-dependency-submission@v2
