@@ -1,7 +1,8 @@
 name: CI
 on:
+  workflow_dispatch:
   push:
-    branches: ["**"]
+    branches: ["master"]
     tags: ["v*"]
   pull_request:
     branches: ["master"]
