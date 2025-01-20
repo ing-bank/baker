@@ -80,7 +80,7 @@ object Dependencies {
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.17.0"
   val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.17.0"
-  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.29"
+  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.30"
 
   val skuber = "io.skuber" %% "skuber" % "2.6.7"
   val play = "com.typesafe.play" %% "play-json" % "2.9.4"
@@ -141,9 +141,9 @@ object Dependencies {
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.18.2"
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.18.2"
   val jawnParser = "org.typelevel" %% "jawn-parser" % "1.6.0"
-  val nettyHandler = "io.netty" % "netty-handler" % "4.1.116.Final"
+  val nettyHandler = "io.netty" % "netty-handler" % "4.1.117.Final"
 
-  private val bouncycastleVersion = "1.79"
+  private val bouncycastleVersion = "1.80"
 
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk18on" % bouncycastleVersion
   val bouncyCastleBcpkix = "org.bouncycastle" % "bcpkix-jdk18on" % bouncycastleVersion
