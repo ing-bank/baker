@@ -6,7 +6,16 @@ import com.ing.baker.petrinet.api._
 import scala.util.Random
 
 object Instance {
-  def uninitialized[S](process: PetriNet): Instance[S] = Instance[S](process, 0, Marking.empty, Map.empty, null.asInstanceOf[S], Map.empty, Set.empty)
+  def uninitialized[S](process: PetriNet): Instance[S] =
+    Instance[S](
+      petriNet = process,
+      sequenceNr = 0,
+      marking = Marking.empty,
+      delayedTransitionIds = Map.empty,
+      state = null.asInstanceOf[S],
+      jobs = Map.empty,
+      receivedCorrelationIds = Set.empty
+    )
 }
 
 /**

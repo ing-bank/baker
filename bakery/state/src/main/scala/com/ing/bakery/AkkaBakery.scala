@@ -16,7 +16,7 @@ import io.prometheus.client.CollectorRegistry
 
 import scala.concurrent.ExecutionContext
 
-case class AkkaBakery(baker: Baker, system: ActorSystem) {
+case class AkkaBakery(baker: AkkaBaker, system: ActorSystem) {
   def executionContext: ExecutionContext = system.dispatcher
 }
 
