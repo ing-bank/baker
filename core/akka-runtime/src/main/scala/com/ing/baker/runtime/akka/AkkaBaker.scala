@@ -214,16 +214,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     * @return
     */
   override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] = {
-    processIndexActor.ask(CreateProcess(recipeId, recipeInstanceId))(config.timeouts.defaultBakeTimeout).javaTimeoutToBakerTimeout("bake").flatMap {
-      case _: Initialized =>
-        Future.successful(())
-      case ProcessDeleted =>
-        Future.failed(ProcessDeletedException(recipeInstanceId))
-      case ProcessAlreadyExists(_) =>
-        Future.failed(ProcessAlreadyExistsException(recipeInstanceId))
-      case RecipeManagerProtocol.NoRecipeFound(_) =>
-        Future.failed(NoSuchRecipeException(recipeId))
-    }
+    bake(recipeId, recipeInstanceId, Map.empty)
   }
 
   /**
@@ -237,7 +228,23 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     * @return
     */
   override def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] = {
-    bake(recipeId, recipeInstanceId).map(_ -> addMetaData(recipeInstanceId, metadata))
+    val eventualBake = processIndexActor.ask(CreateProcess(recipeId, recipeInstanceId, metadata))(config.timeouts.defaultBakeTimeout).javaTimeoutToBakerTimeout("bake").flatMap {
+      case _: Initialized =>
+        Future.successful(())
+      case ProcessDeleted =>
+        Future.failed(ProcessDeletedException(recipeInstanceId))
+      case ProcessAlreadyExists(_) =>
+        Future.failed(ProcessAlreadyExistsException(recipeInstanceId))
+      case RecipeManagerProtocol.NoRecipeFound(_) =>
+        Future.failed(NoSuchRecipeException(recipeId))
+    }
+
+    // TODO This is a temporary backwards compatibility logic to support the old way of adding metadata during rollout, to be removed in the future release
+    if (metadata.nonEmpty) {
+      eventualBake.map(_ => addMetaData(recipeInstanceId, metadata))
+    } else {
+      eventualBake
+    }
   }
 
   override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] =

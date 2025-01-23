@@ -83,7 +83,7 @@ object ProcessInstanceProtocol {
   sealed trait Response extends BakerSerializable
 
   /**
-   * A response send in case any other command then 'Initialize' is sent to the actor in unitialized state.
+   * A response send in case any other command then 'Initialize' is sent to the actor in initialized state.
    *
    * @param recipeInstanceId The identifier of the uninitialized actor.
    */
