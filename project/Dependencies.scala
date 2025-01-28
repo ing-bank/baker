@@ -14,7 +14,7 @@ object Dependencies {
   val catsEffectVersion = "2.5.5"
   val catsCoreVersion = "2.12.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "6.2.1"
+  val springVersion = "6.2.2"
   val springBootVersion = "2.6.1"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
@@ -115,7 +115,7 @@ object Dependencies {
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.25.5" % "protobuf"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.25.6" % "protobuf"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
 
