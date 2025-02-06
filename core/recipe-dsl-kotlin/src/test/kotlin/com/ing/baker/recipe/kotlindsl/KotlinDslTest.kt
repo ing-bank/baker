@@ -36,7 +36,7 @@ class KotlinDslTest {
             }
 
             // Ingredient definition failed with optionals
-            ingredient("test", { test: Optional<String> -> "" })
+            ingredient("test") @JvmSerializableLambda { test: Optional<String> -> "" }
 
             sensoryEvents {
                 eventWithoutFiringLimit<Events.OrderPlaced>()
@@ -377,7 +377,7 @@ class KotlinDslTest {
                 failureStrategy = fireEventAfterFailure("OrderPlaced")
             }
 
-            ingredient("extractDate"){ reservedItems: Ingredients.ReservedItems ->  reservedItems.date }
+            ingredient("extractDate") @JvmSerializableLambda { reservedItems: Ingredients.ReservedItems ->  reservedItems.date }
         }
 
         with(recipe) {
