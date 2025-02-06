@@ -12,9 +12,9 @@ object Dependencies {
   val fs2Version = "2.5.12"
   val mockitoScalaVersion = "1.17.37"
   val catsEffectVersion = "2.5.5"
-  val catsCoreVersion = "2.12.0"
+  val catsCoreVersion = "2.13.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "6.2.1"
+  val springVersion = "6.2.2"
   val springBootVersion = "2.6.1"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
@@ -111,18 +111,18 @@ object Dependencies {
   val paranamer = "com.thoughtworks.paranamer" % "paranamer" % "2.8"
   val findbugs = "com.google.code.findbugs" % "jsr305" % "1.3.9"
 
-  val scalaCollectionCompat = "org.scala-lang.modules" %% "scala-collection-compat" % "2.12.0"
+  val scalaCollectionCompat = "org.scala-lang.modules" %% "scala-collection-compat" % "2.13.0"
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.25.5" % "protobuf"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.25.6" % "protobuf"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
 
   val typeSafeConfig = "com.typesafe" % "config" % "1.4.3"
 
   val objenisis = "org.objenesis" % "objenesis" % "3.4"
-  val jodaTime = "joda-time" % "joda-time" % "2.13.0"
+  val jodaTime = "joda-time" % "joda-time" % "2.13.1"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.16"
   val logback = "ch.qos.logback" % "logback-classic" % "1.5.16"
   val logstash = "net.logstash.logback" % "logstash-logback-encoder" % "7.3"
