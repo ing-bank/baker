@@ -49,7 +49,7 @@ object InteractionExecution {
   }
   case class Failure(reason: FailureReason) extends Result {
     def toBakerInteractionExecutionFailure: InteractionExecutionResult.Failure = reason match {
-      case InteractionError(interactionName, message) => InteractionExecutionResult.Failure(InteractionExecutionFailureReason.INTERACTION_NOT_FOUND, Some(interactionName), Some(message))
+      case InteractionError(interactionName, message) => InteractionExecutionResult.Failure(InteractionExecutionFailureReason.INTERACTION_EXECUTION_ERROR, Some(interactionName), Some(message))
       case NoInstanceFound => InteractionExecutionResult.Failure(InteractionExecutionFailureReason.INTERACTION_NOT_FOUND, None, None)
       case Timeout => InteractionExecutionResult.Failure(InteractionExecutionFailureReason.TIMEOUT, None, None)
       case BadIngredients => InteractionExecutionResult.Failure(InteractionExecutionFailureReason.BAD_INGREDIENTS, None, None)

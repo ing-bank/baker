@@ -12,9 +12,9 @@ object Dependencies {
   val fs2Version = "2.5.12"
   val mockitoScalaVersion = "1.17.37"
   val catsEffectVersion = "2.5.5"
-  val catsCoreVersion = "2.12.0"
+  val catsCoreVersion = "2.13.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "6.2.0"
+  val springVersion = "6.2.3"
   val springBootVersion = "2.6.1"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
@@ -31,7 +31,7 @@ object Dependencies {
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
   val mockServer = "org.mock-server" % "mockserver-netty" % "5.15.0"
   val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
-  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.11.3"
+  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.11.4"
 
   val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
 
@@ -80,7 +80,7 @@ object Dependencies {
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.17.0"
   val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.17.0"
-  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.29"
+  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.30"
 
   val skuber = "io.skuber" %% "skuber" % "2.6.7"
   val play = "com.typesafe.play" %% "play-json" % "2.9.4"
@@ -111,20 +111,20 @@ object Dependencies {
   val paranamer = "com.thoughtworks.paranamer" % "paranamer" % "2.8"
   val findbugs = "com.google.code.findbugs" % "jsr305" % "1.3.9"
 
-  val scalaCollectionCompat = "org.scala-lang.modules" %% "scala-collection-compat" % "2.12.0"
+  val scalaCollectionCompat = "org.scala-lang.modules" %% "scala-collection-compat" % "2.13.0"
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.25.5" % "protobuf"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.25.6" % "protobuf"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
 
   val typeSafeConfig = "com.typesafe" % "config" % "1.4.3"
 
   val objenisis = "org.objenesis" % "objenesis" % "3.4"
-  val jodaTime = "joda-time" % "joda-time" % "2.13.0"
+  val jodaTime = "joda-time" % "joda-time" % "2.13.1"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.16"
-  val logback = "ch.qos.logback" % "logback-classic" % "1.5.12"
+  val logback = "ch.qos.logback" % "logback-classic" % "1.5.16"
   val logstash = "net.logstash.logback" % "logstash-logback-encoder" % "7.3"
   val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.18.1"
   val scalaCheckPlus = "org.scalatestplus" %% "scalacheck-1-17" % "3.2.18.0"
@@ -136,22 +136,22 @@ object Dependencies {
   val springCore = "org.springframework" % "spring-core" % springVersion
   val springBootStarter = "org.springframework.boot" % "spring-boot-starter" % springBootVersion
 
-  val snakeYaml = "org.yaml" % "snakeyaml" % "2.3"
+  val snakeYaml = "org.yaml" % "snakeyaml" % "2.4"
 
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.18.2"
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.18.2"
   val jawnParser = "org.typelevel" %% "jawn-parser" % "1.6.0"
-  val nettyHandler = "io.netty" % "netty-handler" % "4.1.115.Final"
+  val nettyHandler = "io.netty" % "netty-handler" % "4.1.118.Final"
 
-  private val bouncycastleVersion = "1.79"
+  private val bouncycastleVersion = "1.80"
 
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk18on" % bouncycastleVersion
   val bouncyCastleBcpkix = "org.bouncycastle" % "bcpkix-jdk18on" % bouncycastleVersion
 
-  val guava = "com.google.guava" % "guava" % "33.3.1-jre"
+  val guava = "com.google.guava" % "guava" % "33.4.0-jre"
 
-  val kotlinXCoroutinesCore = "org.jetbrains.kotlinx" % "kotlinx-coroutines-core" % "1.7.3" pomOnly()
-  val kotlinXCoroutinesJdk8 = "org.jetbrains.kotlinx" % "kotlinx-coroutines-jdk8" % "1.7.3"
+  val kotlinXCoroutinesCore = "org.jetbrains.kotlinx" % "kotlinx-coroutines-core" % "1.9.0" pomOnly()
+  val kotlinXCoroutinesJdk8 = "org.jetbrains.kotlinx" % "kotlinx-coroutines-jdk8" % "1.9.0"
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) = modules.map(m => m % scope)
 
