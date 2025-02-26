@@ -10,7 +10,7 @@ import java.util.*
 class FunctionInteractionInstanceTest {
     @Test
     fun `should handle function interaction with optional`() {
-        val func = { test: Optional<String> -> "Empty: ${test.isEmpty}" }
+        val func = @JvmSerializableLambda { test: Optional<String> -> "Empty: ${test.isEmpty}" }
         val interaction = functionInteractionInstance("test", func)
 
         assertEquals("\$SieveInteraction\$test", interaction.name())
@@ -20,7 +20,7 @@ class FunctionInteractionInstanceTest {
 
     @Test
     fun `should handle function interaction with empty optional`() {
-        val func = { test: Optional<String> -> "Empty: ${test.isEmpty}" }
+        val func = @JvmSerializableLambda { test: Optional<String> -> "Empty: ${test.isEmpty}" }
         val interaction = functionInteractionInstance("test", func)
 
         assertEquals("\$SieveInteraction\$test", interaction.name())
@@ -30,7 +30,7 @@ class FunctionInteractionInstanceTest {
 
     @Test
     fun `should handle function interaction`() {
-        val func = { test: String -> "Output: $test" }
+        val func = @JvmSerializableLambda { test: String -> "Output: $test" }
         val interaction = functionInteractionInstance("test", func)
 
         assertEquals("\$SieveInteraction\$test", interaction.name())
@@ -39,7 +39,7 @@ class FunctionInteractionInstanceTest {
 
     @Test
     fun `should handle function interaction with multiple ingredients`() {
-        val func = { test1: String, test2: Int, test3: Boolean -> "$test1: ${if (test3) 2*test2 else test2}" }
+        val func = @JvmSerializableLambda { test1: String, test2: Int, test3: Boolean -> "$test1: ${if (test3) 2*test2 else test2}" }
         val interaction = functionInteractionInstance("test", func)
 
         assertEquals("\$SieveInteraction\$test", interaction.name())
@@ -49,7 +49,7 @@ class FunctionInteractionInstanceTest {
 
     @Test
     fun `should handle function interaction list`() {
-        val func = { test: String -> listOf(test, test) }
+        val func = @JvmSerializableLambda { test: String -> listOf(test, test) }
         val interaction = functionInteractionInstance("test", func)
 
         assertEquals("\$SieveInteraction\$test", interaction.name(), )

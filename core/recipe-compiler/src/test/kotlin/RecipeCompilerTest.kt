@@ -44,7 +44,7 @@ class RecipeCompilerTest {
                 event<EventA>()
             }
             interaction<InteractionA>()
-            ingredient<String, String>("extract"){"Hello123"}
+            ingredient<String, String>("extract") @JvmSerializableLambda {"Hello123"}
         }
 
         val compiled = RecipeCompiler.compileRecipe(recipe)
