@@ -20,4 +20,4 @@ addSbtPlugin("community.flock.sbt" % "sbt-kotlin-plugin" % "3.0.1")
 
 addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.0")
 
-libraryDependencies += "org.slf4j" % "slf4j-nop" % "2.0.16"
+libraryDependencies += "org.slf4j" % "slf4j-nop" % "2.0.17"
