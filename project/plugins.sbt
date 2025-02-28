@@ -2,7 +2,7 @@ addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.3.1")
 
 addSbtPlugin("com.github.sbt" % "sbt-ci-release" % "1.9.2")
 
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.3.0")
+addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.3.1")
 
 addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "5.1.0")
 
@@ -20,4 +20,4 @@ addSbtPlugin("community.flock.sbt" % "sbt-kotlin-plugin" % "3.0.1")
 
 addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.2")
 
-libraryDependencies += "org.slf4j" % "slf4j-nop" % "2.0.16"
+libraryDependencies += "org.slf4j" % "slf4j-nop" % "2.0.17"

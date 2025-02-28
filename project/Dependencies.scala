@@ -123,8 +123,8 @@ object Dependencies {
 
   val objenisis = "org.objenesis" % "objenesis" % "3.4"
   val jodaTime = "joda-time" % "joda-time" % "2.13.1"
-  val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.16"
-  val logback = "ch.qos.logback" % "logback-classic" % "1.5.16"
+  val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.17"
+  val logback = "ch.qos.logback" % "logback-classic" % "1.5.17"
   val logstash = "net.logstash.logback" % "logstash-logback-encoder" % "7.3"
   val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.18.1"
   val scalaCheckPlus = "org.scalatestplus" %% "scalacheck-1-17" % "3.2.18.0"
