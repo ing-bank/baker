@@ -108,7 +108,7 @@ object Dependencies {
 
   val javaxInject = "javax.inject" % "javax.inject" % "1"
 
-  val paranamer = "com.thoughtworks.paranamer" % "paranamer" % "2.8.1"
+  val paranamer = "com.thoughtworks.paranamer" % "paranamer" % "2.8.2"
   val findbugs = "com.google.code.findbugs" % "jsr305" % "1.3.9"
 
   val scalaCollectionCompat = "org.scala-lang.modules" %% "scala-collection-compat" % "2.13.0"
@@ -138,8 +138,8 @@ object Dependencies {
 
   val snakeYaml = "org.yaml" % "snakeyaml" % "2.4"
 
-  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.18.2"
-  val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.18.2"
+  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.18.3"
+  val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.18.3"
   val jawnParser = "org.typelevel" %% "jawn-parser" % "1.6.0"
   val nettyHandler = "io.netty" % "netty-handler" % "4.1.119.Final"
 
