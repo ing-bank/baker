@@ -11,7 +11,7 @@ class DefaultRecipeManager(implicit val ex: ExecutionContext) extends RecipeMana
 
 
   override def put(recipeRecord: RecipeRecord): Future[String] = {
-    state. += ((recipeRecord.recipeId,recipeRecord))
+    state += ((recipeRecord.recipeId,recipeRecord))
     Future.successful(recipeRecord.recipeId)
   }
 

@@ -70,6 +70,10 @@ export class BakeryService {
     return this.http.post<DigraphResponse>(`${this.baseUrl}/instances/${instanceId}/bake/${recipeId}`, null).pipe(map(response => response.body));
   }
 
+  deactivateRecipe(recipeId: string): Observable<string> {
+    return this.http.delete<string>(`${this.baseUrl}/app/recipes/${recipeId}`)
+  }
+
   getInteractions(): Observable<Interaction[]> {
     return this.http.get<InteractionsResponse>(`${this.baseUrl}/app/interactions`).pipe(map(response => Object.values(response.body)));
   }

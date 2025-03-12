@@ -5,7 +5,7 @@ import cats.effect.{Blocker, ContextShift, IO, Resource, Sync, Timer}
 import cats.implicits._
 import com.ing.baker.http.{Dashboard, DashboardConfiguration}
 import com.ing.baker.http.server.common.RecipeLoader
-import com.ing.baker.runtime.common.BakerException
+import com.ing.baker.runtime.common.{BakerException, RecipeRecord}
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance}
 import com.ing.baker.runtime.javadsl.{Baker => JBaker}
 import com.ing.baker.runtime.serialization.InteractionExecution
@@ -36,7 +36,6 @@ import java.util.concurrent.CompletableFuture
 import scala.compat.java8.FutureConverters
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
-import com.ing.baker.il.RecipeVisualizer.logger
 
 object Http4sBakerServer extends LazyLogging {
 
@@ -210,6 +209,12 @@ final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO
         } yield result
 
       case GET -> Root / "recipes" => baker.getAllRecipes.toBakerResultResponseIO
+
+      // This does not actually delete the recipe, but flags it as inactive, and it is idempotent
+      case DELETE -> Root / "recipes" / RecipeId(recipeId) =>
+        baker.getRecipe(recipeId).flatMap { recipeInformation =>
+          baker.addRecipe(RecipeRecord.of(recipeInformation.compiledRecipe, updated = System.currentTimeMillis(), recipeInformation.validate, isActive = false))
+        }(ExecutionContext.global).toBakerResultResponseIO
 
       case GET -> Root / "recipes" / RecipeId(recipeId) => baker.getRecipe(recipeId).toBakerResultResponseIO
 

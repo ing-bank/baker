@@ -147,7 +147,6 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   private val restartRandomFactor: Double =  config.getDouble("baker.process-instance.restart-randomFactor")
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
-  private val recipeCache: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
 
   //TODO chose if to use the CassandraBakerCleanup or the ActorBasedBakerCleanup
   private val cleanup: BakerCleanup = {
@@ -168,32 +167,32 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   }
 
   // TODO this is a synchronous ask on an actor which createProcessActor is considered bad practice, alternative?
-  private def getRecipeIdFromManager(recipeId: String): Option[(CompiledRecipe, Long)] = {
-    log.debug("Adding recipe to recipe cache: {}", recipeId)
-    val futureResult: Future[Option[RecipeRecord]] = recipeManager.get(recipeId)
-    val result = Await.result(futureResult, updateCacheTimeout)
-    recipeCache ++= result.map(r => r.recipeId -> (r.recipe, r.updated))
-    log.debug("Added recipe to recipe cache: {}, current size: {}", recipeId, recipeCache.size)
-    result.map(r => r.recipe -> r.updated)
+  private def getAndReactivateRecipe(recipeId: String): Option[RecipeRecord] = {
+    log.info("getAndReactivateRecipe call with id: {}", recipeId)
+    val eventualRecord = recipeManager.get(recipeId).flatMap {
+      case Some(recipeRecord) if recipeRecord.isActive => Future.successful(Some(recipeRecord))
+      case Some(recipeRecord) => // inactive recipe
+        log.warning(s"Recipe $recipeId is not active, but being fetched, marking it active again")
+        val activeRecipe = recipeRecord.copy(isActive = true)
+        recipeManager.put(activeRecipe)
+        Future.successful(Some(activeRecipe))
+      case None => Future.successful(None)
+    }
+    Await.result(eventualRecord, updateCacheTimeout)
   }
 
   def getRecipeIdFromActor(actorRef: ActorRef) : String = actorRef.path.name
 
-  def getRecipeWithTimeStamp(recipeId: String): Option[(CompiledRecipe, Long)] =
-    recipeCache.get(recipeId) match {
-      case None =>
-        getRecipeIdFromManager(recipeId)
-      case other => other
-    }
-
-  def getCompiledRecipe(recipeId: String): Option[CompiledRecipe] =
-    getRecipeWithTimeStamp(recipeId).fold[Option[CompiledRecipe]] {
+  private def getCompiledRecipe(recipeId: String): Option[CompiledRecipe] = {
+    log.info("Fetching recipe with id: {}", recipeId)
+    getAndReactivateRecipe(recipeId).fold[Option[CompiledRecipe]] {
       log.warning(s"No recipe found for $recipeId")
       None
     } {
-      case (recipe, _) => Some(recipe)
+      case r:RecipeRecord => Some(r.recipe)
       case _ => None
     }
+  }
 
   def getOrCreateProcessActor(recipeInstanceId: String): Option[ActorRef] =
     context.child(recipeInstanceId).orElse(createProcessActor(recipeInstanceId))
@@ -520,8 +519,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       index.get(recipeInstanceId) match {
         case Some(processMetadata) if processMetadata.isDeleted => sender() ! ProcessDeleted(recipeInstanceId)
         case Some(processMetadata) =>
-          getRecipeWithTimeStamp(processMetadata.recipeId) match {
-            case Some((compiledRecipe, timestamp)) => sender() ! RecipeFound(compiledRecipe, timestamp)
+          getAndReactivateRecipe(processMetadata.recipeId) match {
+            case Some(RecipeRecord(_, _, updated, recipe, _, _)) => sender() ! RecipeFound(recipe, updated)
             case None => sender() ! NoSuchProcess(recipeInstanceId)
           }
         case None => sender() ! NoSuchProcess(recipeInstanceId)

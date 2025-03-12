@@ -54,7 +54,9 @@ trait RecipeManager[F[_]] extends LazyLogging {
     }
 
   def getAllRecipes(implicit components: BakerComponents[F], effect: Effect[F]): F[Map[String, RecipeInformation]] =
-    fetchAll.flatMap(_.toList
+    fetchAll
+      .map(_.filter { case (_, r) => r.isActive }) // Only return active recipe records
+      .flatMap(_.toList
       .traverse { case (recipeId, r) =>
         getImplementationErrors(r.recipe)
           .map(errors => recipeId -> RecipeInformation(r.recipe, r.updated, errors, r.validate, r.recipe.sensoryEvents))

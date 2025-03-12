@@ -61,6 +61,14 @@ export class RecipesComponent implements OnInit {
         });
     }
 
+    deactivateRecipe(recipeId: string): void {
+        this.bakeryService.deactivateRecipe(recipeId).subscribe(() => {
+            this.bakeryService.getRecipes().subscribe(recipes => {
+                this.recipes = recipes.sort((recipeA, recipeB) => recipeA.recipeCreatedTime - recipeB.recipeCreatedTime).reverse();
+            });
+        });
+    }
+
     toIsoString(linuxTime: number) : string {
         return new Date(linuxTime).toISOString();
     }
