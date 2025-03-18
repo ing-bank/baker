@@ -55,6 +55,10 @@ private class ActorBasedRecipeManager(actor: ActorRef, timeouts: Timeouts)(impli
       recipes
     }
   }
+
+  // active/inactive recipes are not supported yet in the actor based recipe manager,
+  // therefore we are returning all recipes here
+  override def allActive: Future[Seq[RecipeRecord]] = all
 }
 
 object ActorBasedRecipeManager {

@@ -156,8 +156,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
   override def getAllRecipes: Future[Map[String, RecipeInformation]] = {
-    recipeManager.all
-      .map(_.filter(_.isActive)) // Filter only active recipe records
+    recipeManager.allActive
       .flatMap(
         _.toList
           .traverse(ri => getImplementationErrors(ri.recipe)

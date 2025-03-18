@@ -34,6 +34,10 @@ class PollingAwareSpec extends AsyncWordSpecLike
     override def all: Future[Seq[RecipeRecord]] = {
       Future.successful(state.values.toSeq)
     }
+
+    override def allActive: Future[Seq[RecipeRecord]] = {
+      Future.successful(state.values.filter(_.isActive).toSeq)
+    }
   }
 
   "PollingAware trait" should {

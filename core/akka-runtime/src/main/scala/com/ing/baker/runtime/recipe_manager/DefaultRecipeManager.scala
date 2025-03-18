@@ -9,7 +9,6 @@ class DefaultRecipeManager(implicit val ex: ExecutionContext) extends RecipeMana
 
   val state:TrieMap[String, RecipeRecord] = TrieMap.empty
 
-
   override def put(recipeRecord: RecipeRecord): Future[String] = {
     state += ((recipeRecord.recipeId,recipeRecord))
     Future.successful(recipeRecord.recipeId)
@@ -21,6 +20,10 @@ class DefaultRecipeManager(implicit val ex: ExecutionContext) extends RecipeMana
 
   override def all: Future[Seq[RecipeRecord]] = {
     Future.successful(state.values.toSeq)
+  }
+
+  override def allActive: Future[Seq[RecipeRecord]] = {
+    Future.successful(state.values.filter(_.isActive).toSeq)
   }
 }
 

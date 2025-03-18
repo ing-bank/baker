@@ -5,6 +5,9 @@ import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.{ExecutionContext, Future}
 
+/**
+ * This trait is used to avoid replacing recipes with elder or same creation time.
+ */
 trait PollingAware extends RecipeManager with LazyLogging {
 
   implicit def ex: ExecutionContext

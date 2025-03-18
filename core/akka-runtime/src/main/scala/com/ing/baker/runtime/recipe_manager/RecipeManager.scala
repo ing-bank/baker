@@ -10,4 +10,6 @@ trait RecipeManager {
   def get(recipeId: String): Future[Option[RecipeRecord]]
 
   def all: Future[Seq[RecipeRecord]]
+
+  def allActive: Future[Seq[RecipeRecord]]
 }
