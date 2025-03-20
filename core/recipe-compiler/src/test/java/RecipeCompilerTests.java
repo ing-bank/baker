@@ -101,7 +101,7 @@ public class RecipeCompilerTests {
                 .withSensoryEvents(EventA.class);
         CompiledRecipe compiled = RecipeCompiler.compileRecipe(recipe);
 
-        Assertions.assertEquals("bb928e13daf86557", compiled.recipeId());
+        Assertions.assertEquals("8682aa9310e38509", compiled.recipeId());
 
     }
 

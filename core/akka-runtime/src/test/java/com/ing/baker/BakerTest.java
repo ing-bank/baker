@@ -61,7 +61,7 @@ public class BakerTest {
 
         String recipeInstanceId = UUID.randomUUID().toString();
         Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
-        java.util.Map<String, Value> ingredients = jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false))
+        java.util.Map<String, Value> ingredients = jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false, true))
                 .thenCompose(recipeId -> {
                     assertEquals(compiledRecipe.getValidationErrors().size(), 0);
                     return jBaker.bake(recipeId, recipeInstanceId);
@@ -84,7 +84,7 @@ public class BakerTest {
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
 
         Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
-        String recipeId = jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false)).get();
+        String recipeId = jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false, true)).get();
 
         String requestId = UUID.randomUUID().toString();
         jBaker.bake(recipeId, requestId).get();
@@ -104,7 +104,7 @@ public class BakerTest {
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
         Baker jBaker = AkkaBaker.java(config, actorSystem);
 
-        jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), true)).get();
+        jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), true, true)).get();
     }
 
     @Test
@@ -119,7 +119,7 @@ public class BakerTest {
 
         // Setup recipe
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
-        String recipeId = jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false)).get();
+        String recipeId = jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false, true)).get();
         EventInstance eventOne = EventInstance.from(new JavaCompiledRecipeTest.EventOne());
         assertEquals(eventOne.getName(), "EventOne");
         assertTrue(eventOne.getProvidedIngredients().isEmpty());

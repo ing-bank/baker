@@ -1,54 +1,68 @@
 package com.ing.baker.runtime.recipe_manager
 
-import com.ing.baker.il.petrinet.{EventTransition, RecipePetriNet, Transition}
-import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
-import com.ing.baker.petrinet.api.Marking
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.RecipeRecord
 import org.mockito.Mockito.when
+import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AsyncWordSpecLike
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatestplus.mockito.MockitoSugar
 
-import scala.collection.immutable.Seq
+class DefaultRecipeManagerSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
 
-class DefaultRecipeManagerSpec extends AsyncWordSpecLike
-  with Matchers
-  with MockitoSugar
-  with BeforeAndAfter
-  with BeforeAndAfterAll {
+  private val mockCompiledRecipe: CompiledRecipe = mock[CompiledRecipe]
+  when(mockCompiledRecipe.recipeId).thenReturn("1")
+  when(mockCompiledRecipe.name).thenReturn("test recipe")
 
-  "RecipeManagerImpl" should {
+  private val mockInactiveCompiledRecipe: CompiledRecipe = mock[CompiledRecipe]
+  when(mockInactiveCompiledRecipe.recipeId).thenReturn("2")
+  when(mockInactiveCompiledRecipe.name).thenReturn("inactive test recipe")
 
-    "implement add, get and all" in {
-      val impl = new DefaultRecipeManager()
+  private val recipe = RecipeRecord.of(recipe = mockCompiledRecipe)
+  private val inactiveRecipe = RecipeRecord.of(recipe = mockInactiveCompiledRecipe, isActive = false)
 
-      val eventType = EventDescriptor("Event", Seq.empty)
-      val transitions: Set[Transition] = Set(EventTransition(eventType, isSensoryEvent = true, None))
+  "DefaultRecipeManager" should "put and get a active/inactive recipes" in {
+    val manager = new DefaultRecipeManager()
 
-      val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
-      when(petrinetMock.transitions).thenReturn(transitions)
-
-      val recipe1 = CompiledRecipe("name", "1", petrinetMock, Marking.empty, Seq.empty, Option.empty, Option.empty)
-      val recipe2 = CompiledRecipe("name", "2", petrinetMock, Marking.empty, Seq.empty, Option.empty, Option.empty)
-
-      for {
-        id1 <- impl.put(RecipeRecord.of(recipe1, System.currentTimeMillis()))
-        id2 <- impl.put(RecipeRecord.of(recipe2, System.currentTimeMillis()))
-        check1 <- impl.get(id1)
-        check2 <- impl.get(id2)
-        all <- impl.all
-      } yield {
-        val recipes: Seq[CompiledRecipe] = all.map(_.recipe).toIndexedSeq
-        (id1 == "1"
-          && id2 == "2"
-          && check1.get.recipe == recipe1
-          && check2.get.recipe == recipe2
-          && recipes.size == 2
-          && recipes.contains(recipe1)
-          && recipes.contains(recipe2)) shouldBe (true)
-      }
+    for {
+      _ <- manager.put(recipe)
+      _ <- manager.put(inactiveRecipe)
+      result <- manager.get("1")
+      resultInactive <- manager.get("2")
+    } yield {
+      result shouldBe Some(recipe)
+      resultInactive shouldBe Some(inactiveRecipe)
     }
   }
 
+  it should "return None for a non-existent recipe" in {
+    val manager = new DefaultRecipeManager()
+
+    manager.get("non-existent").map { result =>
+      result shouldBe None
+    }
+  }
+
+  it should "return all recipes" in {
+    val manager = new DefaultRecipeManager()
+
+    for {
+      _ <- manager.put(recipe)
+      _ <- manager.put(inactiveRecipe)
+      result <- manager.all
+    } yield {
+      result should contain theSameElementsAs Seq(recipe, inactiveRecipe)
+    }
+  }
+
+  it should "return all active recipes" in {
+    val manager = new DefaultRecipeManager()
+
+    for {
+      _ <- manager.put(recipe)
+      _ <- manager.put(inactiveRecipe)
+      result <- manager.allActive
+    } yield {
+      result should contain theSameElementsAs Seq(recipe)
+    }
+  }
 }

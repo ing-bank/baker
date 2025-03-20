@@ -104,7 +104,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
       RecipeVisualizer.visualizeRecipe(recipe.compiledRecipe, style))
 
   /**
-    * Returns all recipes added to this baker instance.
+    * Returns all 'active' recipes added to this baker instance.
     *
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */

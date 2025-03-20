@@ -268,7 +268,7 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
     toCompletableFuture(baker.getRecipeVisual(recipeId))
 
   /**
-    * Return alls recipes added to this Baker
+    * Return alls 'active' recipes added to this Baker
     *
     * @return A map with all recipes from recipeId -> JRecipeInformation
     */

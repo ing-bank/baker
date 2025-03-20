@@ -44,9 +44,9 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
         validate: Boolean,
         timeCreated: Long = System.currentTimeMillis()
     ): String =
-        addRecipe(RecipeRecord.of(compiledRecipe, timeCreated, validate))
+        addRecipe(RecipeRecord.of(compiledRecipe, timeCreated, validate, true))
 
-    suspend fun addRecipe(recipeRecord: RecipeRecord): String =
+    private suspend fun addRecipe(recipeRecord: RecipeRecord): String =
         jBaker.addRecipe(recipeRecord).await()
 
     suspend fun bake(recipeId: String, recipeInstanceId: String) {

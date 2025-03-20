@@ -13,27 +13,52 @@ import com.ing.baker.runtime.common.RecipeRecord
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 
 private class ActorBasedRecipeManager(actor: ActorRef, timeouts: Timeouts)(implicit val ex: ExecutionContext) extends RecipeManager {
 
+  /**
+   * A cache to store the recipes that have been retrieved from the actor system.
+   * Needed to avoid querying the actor too often.
+   */
+  private val cache: TrieMap[String, RecipeRecord] = TrieMap.empty
+
   override def put(recipeRecord: RecipeRecord): Future[String] = {
     implicit val timeout: Timeout = timeouts.defaultAddRecipeTimeout
-    (actor ? AddRecipe(recipeRecord.recipe)).mapTo[AddRecipeResponse].map(_.recipeId)
+    (actor ? AddRecipe(recipeRecord.recipe)).mapTo[AddRecipeResponse].map { response =>
+      cache += ((response.recipeId, recipeRecord))
+      response.recipeId
+    }
   }
 
   override def get(recipeId: String): Future[Option[RecipeRecord]] = {
-    implicit val timeout: Timeout = timeouts.defaultInquireTimeout
-    (actor ? GetRecipe(recipeId)).map {
-      case RecipeFound(compiledRecipe, timestamp) => Some(RecipeRecord.of(compiledRecipe, updated = timestamp))
-      case NoRecipeFound(_) => None
+    cache.get(recipeId) match {
+      case Some(recipeRecord) => Future.successful(Some(recipeRecord))
+      case None =>
+        implicit val timeout: Timeout = timeouts.defaultInquireTimeout
+        (actor ? GetRecipe(recipeId)).map {
+          case RecipeFound(compiledRecipe, timestamp) =>
+            val recipeRecord = RecipeRecord.of(compiledRecipe, updated = timestamp)
+            cache += ((recipeId, recipeRecord))
+            Some(recipeRecord)
+          case NoRecipeFound(_) => None
+        }
     }
   }
 
   override def all: Future[Seq[RecipeRecord]] = {
-        implicit val timeout: Timeout = timeouts.defaultInquireTimeout
-        (actor ? GetAllRecipes).mapTo[AllRecipes].map(_.recipes.map { r => RecipeRecord.of(r.compiledRecipe, updated = r.timestamp) })
+    implicit val timeout: Timeout = timeouts.defaultInquireTimeout
+    (actor ? GetAllRecipes).mapTo[AllRecipes].map { response =>
+      val recipes = response.recipes.map { r => RecipeRecord.of(r.compiledRecipe, updated = r.timestamp) }
+      recipes.foreach(recipe => cache += ((recipe.recipeId, recipe)))
+      recipes
+    }
   }
+
+  // active/inactive recipes are not supported yet in the actor based recipe manager,
+  // therefore we are returning all recipes here
+  override def allActive: Future[Seq[RecipeRecord]] = all
 }
 
 object ActorBasedRecipeManager {
