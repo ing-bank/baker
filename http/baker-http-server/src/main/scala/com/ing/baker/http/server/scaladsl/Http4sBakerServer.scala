@@ -33,9 +33,9 @@ import java.io.Closeable
 import java.net.InetSocketAddress
 import java.nio.charset.Charset
 import java.util.concurrent.CompletableFuture
-import scala.compat.java8.FutureConverters
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.FutureConverters.FutureOps
 
 object Http4sBakerServer extends LazyLogging {
 
@@ -92,7 +92,7 @@ object Http4sBakerServer extends LazyLogging {
       .map {
         case (server: Server, closeEffect: IO[Unit]) => new ClosableBakerServer(server, closeEffect)
       }(ExecutionContext.global)
-    FutureConverters.toJava(serverStarted).toCompletableFuture
+    serverStarted.asJava.toCompletableFuture
   }
 
   def java(baker: JBaker): CompletableFuture[ClosableBakerServer] = {

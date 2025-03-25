@@ -3,10 +3,9 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.6.20"
-  val akkaManagementVersion = "1.1.4"
-  val akkaPersistenceCassandraVersion = "1.0.6"
-  val akkaHttpVersion = "10.2.9"
+  val akkaVersion = "2.10.2"
+  val akkaManagementVersion = "1.6.0"
+  val akkaPersistenceCassandraVersion = "1.3.0"
   val http4sVersion = "0.22.15"
   val circeVersion = "0.14.10"
   val fs2Version = "2.5.12"
@@ -23,8 +22,6 @@ object Dependencies {
     .exclude("com.typesafe.akka", "akka-persistence-query")
     .exclude("com.typesafe.akka", "akka-stream")
     .exclude("com.typesafe.akka", "akka-protobuf")
-
-  val scalaJava8Compat100 = "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
 
   val scalaTest = "org.scalatest" %% "scalatest" % "3.2.19"
   val mockitoScala = "org.mockito" %% "mockito-scala" % mockitoScalaVersion
@@ -54,7 +51,6 @@ object Dependencies {
   val akkaClusterTyped = "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion
   val akkaPersistenceTyped = "com.typesafe.akka" %% "akka-persistence-typed" % akkaVersion
   val akkaStreamTyped = "com.typesafe.akka" %% "akka-stream-typed" % akkaVersion
-  val akkaHttpSprayJson = "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion
   val akkaManagementHttp = "com.lightbend.akka.management" %% "akka-management-cluster-http" % akkaManagementVersion
   val akkaClusterBoostrap = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
   val akkaDiscoveryKube = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaManagementVersion

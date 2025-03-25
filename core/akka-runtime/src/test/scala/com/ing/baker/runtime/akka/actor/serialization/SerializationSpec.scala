@@ -1,14 +1,13 @@
 package com.ing.baker.runtime.akka.actor.serialization
 
 import akka.actor.{Actor, ActorSystem, Props}
-import akka.serialization.SerializationExtension
+import akka.serialization.{SerializationExtension, Serializer}
 import akka.testkit.TestKit
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.petrinet.api.{Id, Marking, MultiSet}
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.AddRecipeInstanceMetaData
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
@@ -16,7 +15,6 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor.Recipe
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
 import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManagerActor, RecipeManagerProtocol}
-import com.ing.baker.runtime.akka.actor.serialization.SerializationSpec.GenUtil.mapOf
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState, SensoryEventResult}
 import com.ing.baker.runtime.serialization.Encryption.{AESEncryption, NoEncryption}
@@ -64,6 +62,12 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
   import SerializationSpec.RecipeManager._
   import SerializationSpec.Runtime._
   import SerializationSpec.Types._
+
+  test("akka runtime picks correct serializer for baker messages") {
+    val serialization = SerializationExtension(system)
+    val serializer: Serializer = serialization.findSerializerFor(com.ing.baker.runtime.akka.actor.process_instance.protobuf.Initialized())
+    assert(serializer.getClass == classOf[com.ing.baker.runtime.akka.actor.serialization.BakerTypedProtobufSerializer])
+  }
 
   checkFor[Value].run
 
