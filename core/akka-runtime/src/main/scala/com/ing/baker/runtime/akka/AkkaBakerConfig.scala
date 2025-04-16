@@ -95,35 +95,6 @@ object AkkaBakerConfig extends LazyLogging {
     )(actorSystem)
   }
 
-  def clusterDefault(seedNodes: NonEmptyList[Address],
-                     actorSystem: ActorSystem,
-                     interactions: CachingInteractionManager): AkkaBakerConfig = {
-    val defaultTimeouts = Timeouts.default
-
-    val clusterProvider =
-      new ClusterBakerActorProvider(
-        nrOfShards = 50,
-        retentionCheckInterval = 1.minute,
-        actorIdleTimeout = Some(5.minutes),
-        getIngredientsFilter = List.empty,
-        providedIngredientFilter = List.empty,
-        journalInitializeTimeout = 30.seconds,
-        seedNodes = ClusterBakerActorProvider.SeedNodesList(seedNodes),
-        configuredEncryption = Encryption.NoEncryption,
-        timeouts = defaultTimeouts,
-        blacklistedProcesses = List.empty,
-        rememberProcessDuration = None
-      )
-
-    AkkaBakerConfig(
-      timeouts = defaultTimeouts,
-      bakerValidationSettings = BakerValidationSettings.default,
-      bakerActorProvider = clusterProvider,
-      interactions = interactions,
-      recipeManager = ActorBasedRecipeManager.clusterBasedRecipeManagerActor(actorSystem, Timeouts.default)
-    )(actorSystem)
-  }
-
   def from(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager, recipeManager: RecipeManager): AkkaBakerConfig = {
     if (!config.getAs[Boolean]("baker.config-file-included").getOrElse(false))
       throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
