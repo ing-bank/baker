@@ -74,7 +74,7 @@ object Dependencies {
   val graphvizJava = "guru.nidi" % "graphviz-java" % "0.18.1"
 
   val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.16.0"
-  val prometheusJmx = "io.prometheus.jmx" % "collector" % "0.20.0"
+  val prometheusJmx = "io.prometheus.jmx" % "collector" % "1.2.0"
   val sensors = "nl.pragmasoft.sensors" %% "sensors-core" % "0.4.1"
 
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
