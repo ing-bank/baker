@@ -94,7 +94,7 @@ jobs:
           cache: sbt
       - uses: sbt/setup-sbt@v1
       - name: Publish to Azure
-        run: sbt "clean; +aetherDeploy; project interaction-example-make-payment-and-ship-items; +aetherDeploy; project interaction-example-reserve-items; +aetherDeploy; project bakery-client-example; +aetherDeploy; project bakery-kafka-listener-example; +aetherDeploy"
+        run: sbt "clean; +aetherDeploy"
         env:
           AZURE_FEEDUSER: ${{ secrets.AZURE_FEEDUSER }}
           AZURE_FEEDPASSWORD: ${{ secrets.AZURE_FEEDPASSWORD }}
