@@ -14,7 +14,7 @@ object Dependencies {
   val catsEffectVersion = "2.5.5"
   val catsCoreVersion = "2.13.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "6.2.4"
+  val springVersion = "6.2.5"
   val springBootVersion = "2.6.1"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
@@ -124,7 +124,7 @@ object Dependencies {
   val objenisis = "org.objenesis" % "objenesis" % "3.4"
   val jodaTime = "joda-time" % "joda-time" % "2.14.0"
   val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.17"
-  val logback = "ch.qos.logback" % "logback-classic" % "1.5.17"
+  val logback = "ch.qos.logback" % "logback-classic" % "1.5.18"
   val logstash = "net.logstash.logback" % "logstash-logback-encoder" % "7.3"
   val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.18.1"
   val scalaCheckPlus = "org.scalatestplus" %% "scalacheck-1-17" % "3.2.18.0"
@@ -148,7 +148,7 @@ object Dependencies {
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk18on" % bouncycastleVersion
   val bouncyCastleBcpkix = "org.bouncycastle" % "bcpkix-jdk18on" % bouncycastleVersion
 
-  val guava = "com.google.guava" % "guava" % "33.4.0-jre"
+  val guava = "com.google.guava" % "guava" % "33.4.5-jre"
 
   val kotlinXCoroutinesCore = "org.jetbrains.kotlinx" % "kotlinx-coroutines-core" % "1.9.0" pomOnly()
   val kotlinXCoroutinesJdk8 = "org.jetbrains.kotlinx" % "kotlinx-coroutines-jdk8" % "1.9.0"
