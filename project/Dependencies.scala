@@ -13,7 +13,7 @@ object Dependencies {
   val catsEffectVersion = "2.5.5"
   val catsCoreVersion = "2.13.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "6.2.5"
+  val springVersion = "6.2.6"
   val springBootVersion = "2.6.1"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
@@ -28,7 +28,7 @@ object Dependencies {
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
   val mockServer = "org.mock-server" % "mockserver-netty" % "5.15.0"
   val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
-  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.12.1"
+  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.12.2"
 
   val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
 
@@ -96,7 +96,7 @@ object Dependencies {
   val catsEffectTesting = "com.codecommit" %% "cats-effect-testing-scalatest" % "0.5.4"
   val catsCore = "org.typelevel" %% "cats-core" % catsCoreVersion
   val console4Cats = "dev.profunktor" %% "console4cats" % "0.8.0"
-  val catsRetry = "com.github.cb372" %% "cats-retry" % "2.1.1"
+  val catsRetry = "com.github.cb372" %% "cats-retry" % "2.1.2"
 
   val jnrConstants = "com.github.jnr" % "jnr-constants" % "0.10.4"
 
@@ -111,7 +111,7 @@ object Dependencies {
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.25.6" % "protobuf"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.25.7" % "protobuf"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
 
@@ -144,7 +144,7 @@ object Dependencies {
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk18on" % bouncycastleVersion
   val bouncyCastleBcpkix = "org.bouncycastle" % "bcpkix-jdk18on" % bouncycastleVersion
 
-  val guava = "com.google.guava" % "guava" % "33.4.5-jre"
+  val guava = "com.google.guava" % "guava" % "33.4.8-jre"
 
   val kotlinXCoroutinesCore = "org.jetbrains.kotlinx" % "kotlinx-coroutines-core" % "1.9.0" pomOnly()
   val kotlinXCoroutinesJdk8 = "org.jetbrains.kotlinx" % "kotlinx-coroutines-jdk8" % "1.9.0"
