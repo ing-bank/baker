@@ -18,6 +18,6 @@ addSbtPlugin("no.arktekk.sbt" % "aether-deploy" % "0.29.1")
 
 addSbtPlugin("community.flock.sbt" % "sbt-kotlin-plugin" % "3.0.1")
 
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.2")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.3")
 
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "2.0.17"
