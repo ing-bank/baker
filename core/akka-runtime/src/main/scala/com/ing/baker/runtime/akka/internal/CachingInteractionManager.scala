@@ -8,9 +8,9 @@ import com.ing.baker.runtime.{model, scaladsl}
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
-import scala.compat.java8.FunctionConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext
+import scala.jdk.FunctionConverters.enrichAsJavaFunction
 
 object CachingInteractionManager {
 

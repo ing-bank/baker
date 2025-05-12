@@ -14,8 +14,8 @@ import io.circe.parser.parse
 import java.nio.charset.Charset
 import java.util.concurrent.{CompletableFuture => JFuture}
 import java.util.{Optional, UUID}
-import scala.compat.java8.FutureConverters.FutureOps
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.FutureConverters.FutureOps
 
 /**
   * A wrapper around baker which calls the specified baker instance, and returns the BakerResult according to the bakery protocol.
@@ -38,7 +38,7 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
     } yield RecipeLoader.fromBytes(encodedRecipe.base64.getBytes(Charset.forName("UTF-8"))).unsafeToFuture())
       .map(_.flatMap(recipe => baker.addRecipe(recipe, validate = false).mapToBakerResult))
       .getOrElse(Future.failed(new IllegalStateException("Error adding recipe")))
-  }.toJava.toCompletableFuture
+  }.asJava.toCompletableFuture
 
   def appGetRecipe(recipeId: String): JFuture[String] = baker.getRecipe(recipeId).toBakerResult
 
@@ -118,7 +118,7 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
 
   def toBakerResultJFuture[A](f: Future[A])(implicit encoder: Encoder[A]): JFuture[String] = {
     toBakerResult(f)(encoder)
-      .toJava
+      .asJava
       .toCompletableFuture
   }
 
@@ -184,7 +184,7 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
         f(eventInstance).toBakerResult
       case Left(bakerException: BakerException) =>
          Future(bakerResultEncoder.apply(BakerResult(bakerException)).noSpaces)
-           .toJava
+           .asJava
            .toCompletableFuture
     }
 

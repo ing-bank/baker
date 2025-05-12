@@ -13,7 +13,7 @@ import java.util.function.{BiConsumer, Consumer}
 import javax.annotation.Nonnull
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
-import scala.compat.java8.FutureConverters
+import scala.jdk.FutureConverters._
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
@@ -274,26 +274,23 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
     */
   @nowarn
   def getAllRecipes: CompletableFuture[java.util.Map[String, RecipeInformation]] =
-    FutureConverters.toJava(baker.getAllRecipes).toCompletableFuture.thenApply(_.view.map { case (key, value) => (key, value.asJava)}.toMap.asJava)
+    baker.getAllRecipes.asJava.toCompletableFuture.thenApply(_.view.map { case (key, value) => (key, value.asJava)}.toMap.asJava)
 
   @nowarn
   def getInteraction(interactionName: String): CompletableFuture[Optional[InteractionInstanceDescriptorType]] =
-    FutureConverters
-      .toJava(baker.getInteraction(interactionName))
+    baker.getInteraction(interactionName).asJava
       .toCompletableFuture
       .thenApply(e => Optional.ofNullable(e.map(_.asJava()).orNull))
 
   @nowarn
   def getAllInteractions: CompletableFuture[java.util.List[InteractionInstanceDescriptorType]] =
-    FutureConverters
-      .toJava(baker.getAllInteractions)
+    baker.getAllInteractions.asJava
       .toCompletableFuture
       .thenApply(_.map(_.asJava()).asJava)
 
   @nowarn
   def executeSingleInteraction(interactionId: String, ingredients: util.List[IngredientInstanceType]): CompletableFuture[InteractionExecutionResult] =
-    FutureConverters
-      .toJava(baker.executeSingleInteraction(interactionId, ingredients.asScala.map(_.asScala).toIndexedSeq))
+    baker.executeSingleInteraction(interactionId, ingredients.asScala.map(_.asScala).toIndexedSeq).asJava
       .toCompletableFuture
       .thenApply(_.asJava)
 
@@ -309,8 +306,7 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
     */
   @nowarn
   def getAllRecipeInstancesMetadata: CompletableFuture[util.Set[RecipeInstanceMetadata]] =
-    FutureConverters
-      .toJava(baker.getAllRecipeInstancesMetadata)
+    baker.getAllRecipeInstancesMetadata.asJava
       .toCompletableFuture
       .thenApply(_.map(_.asJava).asJava)
 
@@ -409,12 +405,11 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
 
   @nowarn
   private def toCompletableFuture[T](@Nonnull scalaFuture: Future[T]): CompletableFuture[T] =
-    FutureConverters.toJava(scalaFuture).toCompletableFuture
+    scalaFuture.asJava.toCompletableFuture
 
   @nowarn
   private def toCompletableFutureMap[K, V](@Nonnull scalaFuture: Future[Map[K, V]]): CompletableFuture[java.util.Map[K, V]] =
-    FutureConverters.toJava(
-      scalaFuture)
+    scalaFuture.asJava
       .toCompletableFuture
       .thenApply(_.asJava)
 
