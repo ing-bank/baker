@@ -137,7 +137,7 @@ object Dependencies {
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.19.0"
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.19.0"
   val jawnParser = "org.typelevel" %% "jawn-parser" % "1.6.0"
-  val nettyHandler = "io.netty" % "netty-handler" % "4.1.121.Final"
+  val nettyHandler = "io.netty" % "netty-handler" % "4.2.1.Final"
 
   private val bouncycastleVersion = "1.80"
 
@@ -146,8 +146,8 @@ object Dependencies {
 
   val guava = "com.google.guava" % "guava" % "33.4.8-jre"
 
-  val kotlinXCoroutinesCore = "org.jetbrains.kotlinx" % "kotlinx-coroutines-core" % "1.9.0" pomOnly()
-  val kotlinXCoroutinesJdk8 = "org.jetbrains.kotlinx" % "kotlinx-coroutines-jdk8" % "1.9.0"
+  val kotlinXCoroutinesCore = "org.jetbrains.kotlinx" % "kotlinx-coroutines-core" % "1.10.2" pomOnly()
+  val kotlinXCoroutinesJdk8 = "org.jetbrains.kotlinx" % "kotlinx-coroutines-jdk8" % "1.10.2"
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) = modules.map(m => m % scope)
 
