@@ -70,7 +70,7 @@ object Dependencies {
   val ficusConfig = "com.iheart" %% "ficus" % "1.5.2"
 
   val scalaGraph = "org.scala-graph" %% "graph-core" % "1.13.6"
-  val scalaGraphDot = "org.scala-graph" %% "graph-dot" % "1.13.3"
+  val scalaGraphDot = "org.scala-graph" %% "graph-dot" % "2.0.0"
   val graphvizJava = "guru.nidi" % "graphviz-java" % "0.18.1"
 
   val prometheus = "io.prometheus" % "simpleclient_hotspot" % "0.16.0"
