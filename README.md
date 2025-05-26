@@ -176,7 +176,7 @@ implementation 'com.ing.baker:baker-runtime_2.13:4.1.0'
 
 ### Scala SBT
 
-Baker gets compiled and released for both 2.13.
+Baker gets compiled and released for scala 2.13.
 
 ```scala
 libraryDependencies += "com.ing.baker" % "baker-recipe-dsl_2.13" % "4.1.0"

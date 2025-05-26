@@ -1,4 +1,4 @@
-import Dependencies._
+import Dependencies.*
 import sbt.file
 
 import scala.sys.process.Process
@@ -6,9 +6,6 @@ import scala.sys.process.Process
 lazy val baker: Project = project.in(file("."))
   .settings(defaultModuleSettings)
   .settings(Publish.settings)
-  .settings(
-    crossScalaVersions := Nil
-  )
   .aggregate(
     // Core
     `baker-types`, `baker-akka-runtime`, `baker-recipe-compiler`, `baker-recipe-dsl`, `baker-recipe-dsl-kotlin`, `baker-intermediate-language`,
@@ -45,6 +42,7 @@ lazy val supportedScalaVersions = List(scala213)
 val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
   fork := true,
+  scalaVersion := scala213,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
   javacOptions := Seq("-source", "17", "-target", "17"),
   scalacOptions := Seq(
@@ -59,13 +57,17 @@ val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
     "-encoding", "utf8",
 //    "-Xfatal-warnings" //Cannot be enabled since we have deprecated our own methods and use them for now. Can be enabled again after we completely remove the depcrecated methods.
   ),
+  Compile / compile / scalacOptions ++= Seq("-release", "17"),
+  Test / javaOptions ++= Seq("--add-opens", "java.base/java.lang=ALL-UNNAMED"),
   coverageExcludedPackages := "<empty>;bakery.sbt;.*javadsl.*;.*scaladsl.*;.*common.*;.*protobuf.*;.*protomappings.*;.*Main.*",
   packageBin / packageOptions +=
     Package.ManifestAttributes(
       "Build-Time" -> new java.util.Date().toString,
       "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
     ),
-  versionScheme := Some("semver-spec")
+  versionScheme := Some("semver-spec"),
+  libraryDependencies ++= Seq("org.scala-lang" % "scala-library" % scalaVersion.value),
+  resolvers += "Akka library repository".at("https://repo.akka.io/maven")
 )
 
 val dockerSettings: Seq[Setting[_]] = Seq(
@@ -110,21 +112,7 @@ lazy val noPublishSettings: Seq[Setting[_]] = Seq(
   publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
 )
 
-lazy val crossBuildSettings: Seq[Setting[_]] = Seq(
-  scalaVersion := scala213,
-  crossScalaVersions := supportedScalaVersions
-)
-
-lazy val defaultModuleSettings: Seq[Setting[_]] =  crossBuildSettings ++ commonSettings ++ dependencyOverrideSettings
-
-lazy val yPartialUnificationSetting: Seq[Setting[_]] = Seq(
-  Compile / scalacOptions ++= {
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, n)) if n <= 12 => List("-Ypartial-unification")
-      case _ => Nil
-    }
-  }
-)
+lazy val defaultModuleSettings: Seq[Setting[_]] =  commonSettings ++ dependencyOverrideSettings
 
 lazy val scalaPBSettings: Seq[Setting[_]] = Seq(Compile / PB.targets := Seq(scalapb.gen() -> (Compile / sourceManaged).value))
 
@@ -172,7 +160,6 @@ lazy val `baker-interface`: Project = project.in(file("core/baker-interface"))
       catsEffect,
       fs2Core,
       fs2Io,
-      scalaJava8Compat100,
       javaxInject,
       guava
     ) ++ providedDeps(findbugs) ++ testDeps(
@@ -196,7 +183,7 @@ lazy val `baker-interface-kotlin`: Project = project.in(file("core/baker-interfa
     moduleName := "baker-interface-kotlin",
     kotlinVersion := "2.0.21",
     kotlincJvmTarget := "17",
-    kotlinLib("stdlib-jdk8"),
+    kotlinLib("stdlib"),
     kotlinLib("reflect"),
     libraryDependencies ++=
       compileDeps(
@@ -311,7 +298,7 @@ lazy val `baker-recipe-dsl-kotlin`: Project = project.in(file("core/recipe-dsl-k
     moduleName := "baker-recipe-dsl-kotlin",
     kotlinVersion := "2.0.21",
     kotlincJvmTarget := "17",
-    kotlinLib("stdlib-jdk8"),
+    kotlinLib("stdlib"),
     kotlinLib("reflect"),
     libraryDependencies ++=
       compileDeps(
@@ -383,7 +370,6 @@ lazy val `baker-http-client`: Project = project.in(file("http/baker-http-client"
 lazy val `baker-http-server`: Project = project.in(file("http/baker-http-server"))
   .settings(defaultModuleSettings)
   .settings(Publish.settings)
-  .settings(yPartialUnificationSetting)
   .settings(
     moduleName := "baker-http-server",
     libraryDependencies ++= Seq(
@@ -505,7 +491,6 @@ lazy val `bakery-interaction-protocol`: Project = project.in(file("bakery/intera
 lazy val `bakery-interaction-k8s-interaction-manager`: Project = project.in(file("bakery/interaction-k8s-interaction-manager"))
   .settings(defaultModuleSettings)
   .settings(Publish.settings)
-  .settings(yPartialUnificationSetting)
   .settings(
     moduleName := "bakery-interaction-k8s-interaction-manager",
     libraryDependencies ++= Seq(
@@ -542,7 +527,6 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(defaultModuleSettings)
   .settings(Publish.settings)
-  .settings(yPartialUnificationSetting)
   .settings(
     Compile / mainClass := Some("com.ing.bakery.Main"),
     dockerExposedPorts ++= Seq(8080),
@@ -553,7 +537,6 @@ lazy val `bakery-state`: Project = project.in(file("bakery/state"))
       slf4jApi,
       logback,
       akkaPersistenceCassandra,
-      akkaHttpSprayJson,
       akkaManagementHttp,
       akkaClusterBoostrap,
       akkaClusterMetrics,
@@ -659,8 +642,6 @@ lazy val `baker-example`: Project = project
   .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
   .settings(noPublishSettings)
-  .settings(yPartialUnificationSetting)
-  .settings(crossBuildSettings)
   .settings(
     moduleName := "baker-example",
     libraryDependencies ++=
@@ -699,13 +680,11 @@ lazy val `docs-code-snippets`: Project = project
   .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
   .settings(noPublishSettings)
-  .settings(yPartialUnificationSetting)
-  .settings(crossBuildSettings)
   .settings(
     moduleName := "docs-code-snippets",
     kotlinVersion := "2.0.21",
     kotlincJvmTarget := "17",
-    kotlinLib("stdlib-jdk8"),
+    kotlinLib("stdlib"),
     kotlinLib("reflect"),
     libraryDependencies ++=
       compileDeps(
@@ -737,8 +716,6 @@ lazy val `bakery-client-example`: Project = project
   .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
   .settings(noPublishSettings)
-  .settings(yPartialUnificationSetting)
-  .settings(crossBuildSettings)
   .settings(
     moduleName := "bakery-client-example",
     libraryDependencies ++=
@@ -768,7 +745,6 @@ lazy val `bakery-kafka-listener-example`: Project = project
   .enablePlugins(JavaAppPackaging)
   .settings(noPublishSettings)
   .settings(defaultModuleSettings)
-  .settings(yPartialUnificationSetting)
   .settings(
     moduleName := "bakery-kafka-listener-example",
     libraryDependencies ++=
@@ -795,7 +771,6 @@ lazy val `interaction-example-reserve-items`: Project = project.in(file("example
   .enablePlugins(JavaAppPackaging)
   .settings(noPublishSettings)
   .settings(defaultModuleSettings)
-  .settings(yPartialUnificationSetting)
   .settings(
     moduleName := "interaction-example-reserve-items",
     libraryDependencies ++=
@@ -816,7 +791,6 @@ lazy val `interaction-example-make-payment-and-ship-items`: Project = project.in
   .enablePlugins(JavaAppPackaging)
   .settings(noPublishSettings)
   .settings(defaultModuleSettings)
-  .settings(yPartialUnificationSetting)
   .settings(
     moduleName := "interaction-example-make-payment-and-ship-items",
     libraryDependencies ++=

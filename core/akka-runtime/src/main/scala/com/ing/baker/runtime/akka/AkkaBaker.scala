@@ -47,9 +47,6 @@ object AkkaBaker {
   def localDefault(actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
     new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem, interactions))
 
-  def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
-    new AkkaBaker(AkkaBakerConfig.clusterDefault(seedNodes, actorSystem, interactions))
-
   def java(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager, recipeManager: RecipeManager): javadsl.Baker =
     new javadsl.Baker(com.ing.baker.runtime.akka.AkkaBaker.apply(config, actorSystem, interactions, recipeManager))
 
