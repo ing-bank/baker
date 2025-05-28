@@ -60,6 +60,8 @@ class KafkaEventSink(config: Config) extends EventSink with LazyLogging {
       EventRecord("RecipeInstanceCreated", Option(recipeInstanceId), recipeId)
     case RecipeAdded(recipeName, _, _, _) =>
       EventRecord("RecipeAdded", None, recipeName)
+    case EventFired(_, _, _, recipeInstanceId, eventName) =>
+      EventRecord("EventFired", Some(recipeInstanceId), eventName)
   }
 
   private def producerCallback(promise: Promise[RecordMetadata]): Callback =

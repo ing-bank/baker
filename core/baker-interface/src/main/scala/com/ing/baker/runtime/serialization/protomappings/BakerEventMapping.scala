@@ -164,9 +164,10 @@ object BakerEventMapping {
         interactionName = Some(a.interactionName),
         failureCount = Some(a.failureCount),
         exceptionStrategyOutcome = Some(a.exceptionStrategyOutcome match {
-          case ExceptionStrategyOutcome.BlockTransition => protobuf.ExceptionStrategyOutcome(eventName = None, delay = None)
-          case ExceptionStrategyOutcome.Continue(eventName) => protobuf.ExceptionStrategyOutcome(eventName = Some(eventName), delay = None)
-          case ExceptionStrategyOutcome.RetryWithDelay(delay) => protobuf.ExceptionStrategyOutcome(eventName = None, delay = Some(delay))
+          case ExceptionStrategyOutcome.BlockTransition => protobuf.ExceptionStrategyOutcome(eventName = None, functionalEventName = None, delay = None)
+          case ExceptionStrategyOutcome.Continue(eventName) => protobuf.ExceptionStrategyOutcome(eventName = Some(eventName), functionalEventName = None, delay = None)
+          case ExceptionStrategyOutcome.ContinueAsFunctionalEvent(eventName) => protobuf.ExceptionStrategyOutcome(eventName = None, functionalEventName = Some(eventName), delay = None)
+          case ExceptionStrategyOutcome.RetryWithDelay(delay) => protobuf.ExceptionStrategyOutcome(eventName = None, functionalEventName = None, delay = Some(delay))
         })
       )
 
@@ -191,8 +192,9 @@ object BakerEventMapping {
         failureCount = failureCount,
         errorMessage = errorMessage,
         exceptionStrategyOutcome = exceptionStrategyOutcome match {
-          case protobuf.ExceptionStrategyOutcome(Some(eventName), None) => ExceptionStrategyOutcome.Continue(eventName)
-          case protobuf.ExceptionStrategyOutcome(None, Some(delay)) => ExceptionStrategyOutcome.RetryWithDelay(delay)
+          case protobuf.ExceptionStrategyOutcome(Some(eventName), None, None) => ExceptionStrategyOutcome.Continue(eventName)
+          case protobuf.ExceptionStrategyOutcome(None, None, Some(functionalEventName)) => ExceptionStrategyOutcome.ContinueAsFunctionalEvent(functionalEventName)
+          case protobuf.ExceptionStrategyOutcome(None, Some(delay), None) => ExceptionStrategyOutcome.RetryWithDelay(delay)
           case _ => ExceptionStrategyOutcome.BlockTransition
         }
       )

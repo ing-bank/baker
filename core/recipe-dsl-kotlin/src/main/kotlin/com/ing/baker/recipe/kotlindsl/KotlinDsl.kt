@@ -42,7 +42,7 @@ class RecipeBuilder(private val name: String) {
     /**
      * The default failure strategy for interactions that don't specify a failure strategy explicitly.
      *
-     * Available strategies are: [retryWithIncrementalBackoff], [fireEventAfterFailure], and [blockInteraction].
+     * Available strategies are: [retryWithIncrementalBackoff], [fireEventAfterFailure], [fireFunctionalEventAfterFailure] and [blockInteraction].
      * Defaults to [blockInteraction].
      */
     var defaultFailureStrategy: InteractionFailureStrategyBuilder = BlockInteractionBuilder
@@ -198,6 +198,20 @@ class RecipeBuilder(private val name: String) {
         return FireEventAfterFailureBuilder(T::class.simpleName!!)
     }
 
+    /**
+     * Fires a functional event with a specified [name] on failure.
+     */
+    fun fireFunctionalEventAfterFailure(name: String): InteractionFailureStrategyBuilder {
+        return FireFunctionalEventAfterFailureBuilder(name)
+    }
+
+    /**
+     * Fires a functional event [T] on failure.
+     */
+    inline fun <reified T> fireFunctionalEventAfterFailure(): InteractionFailureStrategyBuilder {
+        return FireFunctionalEventAfterFailureBuilder(T::class.simpleName!!)
+    }
+
     internal fun build() = Recipe(
         name,
         interactions.toList(),
@@ -323,6 +337,20 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
      */
     inline fun <reified T> fireEventAfterFailure(): InteractionFailureStrategyBuilder {
         return FireEventAfterFailureBuilder(T::class.simpleName!!)
+    }
+
+    /**
+     * Fires an event with a specified [name] on failure.
+     */
+    fun fireFunctionalEventAfterFailure(name: String): InteractionFailureStrategyBuilder {
+        return FireFunctionalEventAfterFailureBuilder(name)
+    }
+
+    /**
+     * Fires an event [T] on failure.
+     */
+    inline fun <reified T> fireFunctionalEventAfterFailure(): InteractionFailureStrategyBuilder {
+        return FireFunctionalEventAfterFailureBuilder(T::class.simpleName!!)
     }
 
     @PublishedApi
@@ -521,6 +549,11 @@ object BlockInteractionBuilder : InteractionFailureStrategyBuilder {
 class FireEventAfterFailureBuilder(private val eventName: String) : InteractionFailureStrategyBuilder {
     override fun build(): com.ing.baker.recipe.common.InteractionFailureStrategy =
         com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure(Option.apply(eventName))
+}
+
+class FireFunctionalEventAfterFailureBuilder(private val eventName: String) : InteractionFailureStrategyBuilder {
+    override fun build(): com.ing.baker.recipe.common.InteractionFailureStrategy =
+        com.ing.baker.recipe.common.InteractionFailureStrategy.FireFunctionalEventAfterFailure(Option.apply(eventName))
 }
 
 @RecipeDslMarker

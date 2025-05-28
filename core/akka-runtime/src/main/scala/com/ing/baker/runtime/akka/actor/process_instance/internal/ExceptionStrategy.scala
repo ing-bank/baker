@@ -17,6 +17,8 @@ object ExceptionStrategy {
   }
 
   case class Continue[X, O](marking: Marking[X], output: O) extends ExceptionStrategy
+
+  case class ContinueAsFunctionalEvent[X, O](marking: Marking[X], output: O) extends ExceptionStrategy
 }
 
 sealed trait ExceptionStrategy

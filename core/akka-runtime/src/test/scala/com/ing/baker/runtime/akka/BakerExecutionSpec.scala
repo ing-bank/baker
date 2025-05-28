@@ -1250,6 +1250,50 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           "interactionOneOriginalIngredient" -> "success!")
     }
 
+    "not retry a blocked interaction after the sensory event is fired again and place are filled for FireEvent" in {
+      val recipe =
+        Recipe("RetryBlockedInteractionRecipe")
+          .withInteraction(interactionOne
+            .withFailureStrategy(InteractionFailureStrategy.FireEventAfterFailure(Some("interactionOneExhausted"))))
+          .withSensoryEvent(initialEvent.withMaxFiringLimit(5))
+
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ = when(testInteractionOneMock.apply(anyString(), anyString()))
+          .thenThrow(new RuntimeException("Expected test failure"))
+          .thenReturn(Future.successful(InteractionOneSuccessful("success!")))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        state0 <- baker.getRecipeInstanceState(recipeInstanceId)
+        _ = state0.eventNames shouldBe
+          List("InitialEvent", "interactionOneExhausted")
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+      } yield state.eventNames shouldBe List("InitialEvent", "interactionOneExhausted", "InitialEvent")
+    }
+
+    "retry a blocked interaction after the sensory event is fired again and place are filled for FireFunctionalEvent" in {
+      val recipe =
+        Recipe("RetryFunctionalInteractionRecipe")
+          .withInteraction(interactionOne
+            .withFailureStrategy(InteractionFailureStrategy.FireFunctionalEventAfterFailure(Some("interactionOneFunctionalFailure"))))
+          .withSensoryEvent(initialEvent.withMaxFiringLimit(5))
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ = when(testInteractionOneMock.apply(anyString(), anyString()))
+          .thenThrow(new RuntimeException("Expected test failure"))
+          .thenReturn(Future.successful(InteractionOneSuccessful("success!")))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        state0 <- baker.getRecipeInstanceState(recipeInstanceId)
+        _ = state0.eventNames shouldBe List("InitialEvent", "interactionOneFunctionalFailure")
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+      } yield state.eventNames shouldBe List("InitialEvent", "interactionOneFunctionalFailure", "InitialEvent", "InteractionOneSuccessful")
+    }
+
     "be able to return" when {
       "all occurred events" in {
         for {
