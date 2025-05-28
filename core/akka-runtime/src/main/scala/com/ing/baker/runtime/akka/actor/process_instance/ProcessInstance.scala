@@ -5,7 +5,7 @@ import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import cats.effect.IO
-import com.ing.baker.il.failurestrategy.{BlockInteraction, FireEventAfterFailure, RetryWithIncrementalBackoff}
+import com.ing.baker.il.failurestrategy.{BlockInteraction, FireEventAfterFailure, FireFunctionalEventAfterFailure, RetryWithIncrementalBackoff}
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, checkpointEventInteractionPrefix}
 import com.ing.baker.petrinet.api._
@@ -16,7 +16,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstance._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceLogger._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{Continue, RetryWithDelay}
+import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{Continue, ContinueAsFunctionalEvent, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.akka.internal.{FatalInteractionException, RecipeRuntime}
@@ -95,9 +95,13 @@ object ProcessInstance {
     interactionTransition.failureStrategy match {
       case FireEventAfterFailure(event) =>
         getOutputEventNameWithRetryStrategyFiltered(event, interactionTransition.eventsToFire)
-      case RetryWithIncrementalBackoff(_, _, _, _, Some(event)) =>
+      case FireFunctionalEventAfterFailure(event) =>
         getOutputEventNameWithRetryStrategyFiltered(event, interactionTransition.eventsToFire)
-      case RetryWithIncrementalBackoff(_, _, _, _, None) =>
+      case RetryWithIncrementalBackoff(_, _, _, _, Some(event), _) =>
+        getOutputEventNameWithRetryStrategyFiltered(event, interactionTransition.eventsToFire)
+      case RetryWithIncrementalBackoff(_, _, _, _, _, Some(event)) =>
+        getOutputEventNameWithRetryStrategyFiltered(event, interactionTransition.eventsToFire)
+      case RetryWithIncrementalBackoff(_, _, _, _, None, _) =>
         getFirstOutputEventName(interactionTransition.eventsToFire)
       case BlockInteraction =>
         getFirstOutputEventName(interactionTransition.eventsToFire)
@@ -179,6 +183,7 @@ class ProcessInstance[S, E](
     case internal.ExceptionStrategy.BlockTransition => protocol.ExceptionStrategy.BlockTransition
     case internal.ExceptionStrategy.RetryWithDelay(delay) => protocol.ExceptionStrategy.RetryWithDelay(delay)
     case internal.ExceptionStrategy.Continue(marking, output) => protocol.ExceptionStrategy.Continue(marking.asInstanceOf[Marking[Place]].marshall, output)
+    case internal.ExceptionStrategy.ContinueAsFunctionalEvent(marking, output) => protocol.ExceptionStrategy.ContinueAsFunctional(marking.asInstanceOf[Marking[Place]].marshall, output)
   }
 
   private def stopMe(): Unit = {
@@ -332,6 +337,24 @@ class ProcessInstance[S, E](
           }
       )
 
+      //TODO modify this
+    case event@TransitionFailedWithFunctionalOutputEvent(jobId, transitionId, correlationId, timeStarted, timeCompleted, consumed, produced, output) =>
+      val transition = instance.petriNet.transitions.getById(transitionId)
+      log.transitionFired(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition, jobId, timeStarted, timeCompleted)
+      // persist the success event
+      persistEvent(instance, event)(
+        eventSource.apply(instance)
+          .andThen(step)
+          .andThen {
+            case (updatedInstance, newJobs) =>
+              // the sender is notified of the transition having fired
+              sender() ! TransitionFired(jobId, transitionId, correlationId, consumed, produced, newJobs.map(_.id), filterIngredientValuesFromEventInstance(output))
+
+              // the job is removed from the state since it completed
+              context become running(updatedInstance, scheduledRetries - jobId)
+          }
+      )
+
     case ProcessInstanceProtocol.TransitionDelayed(jobId, transitionId, consumed) =>
       val internalEvent = ProcessInstanceEventSourcing.TransitionDelayed(jobId, transitionId, consumed)
       // persist the event
@@ -416,10 +439,22 @@ class ProcessInstance[S, E](
           )
 
         case Continue(produced, out) =>
-          val TransitionFailedWithOutput = TransitionFailedWithOutputEvent(
+          val transitionFailedWithOutput = TransitionFailedWithOutputEvent(
             jobId, transitionId, correlationId, timeStarted, timeFailed, consume, marshallMarking(produced), out)
 
-          persistEvent(instance, TransitionFailedWithOutput)(
+          persistEvent(instance, transitionFailedWithOutput)(
+            eventSource.apply(instance)
+              .andThen(step)
+              .andThen { case (updatedInstance, newJobs) =>
+                sender() ! TransitionFired(jobId, transitionId, correlationId, consume, marshallMarking(produced), newJobs.map(_.id), filterIngredientValuesFromEventInstance(out))
+                context become running(updatedInstance, scheduledRetries - jobId)
+              })
+
+        case ContinueAsFunctionalEvent(produced, out) =>
+          val transitionFailedWithOutput = TransitionFailedWithFunctionalOutputEvent(
+            jobId, transitionId, correlationId, timeStarted, timeFailed, consume, marshallMarking(produced), out)
+
+          persistEvent(instance, transitionFailedWithOutput)(
             eventSource.apply(instance)
               .andThen(step)
               .andThen { case (updatedInstance, newJobs) =>

@@ -11,11 +11,14 @@ object InteractionFailureStrategy {
 
   case class FireEventAfterFailure(eventName: Option[String] = None) extends InteractionFailureStrategy
 
+  case class FireFunctionalEventAfterFailure(eventName: Option[String] = None) extends InteractionFailureStrategy
+
   case class RetryWithIncrementalBackoff private(initialDelay: Duration,
                                                  backoffFactor: Double = 2,
                                                  maximumRetries: Int,
                                                  maxTimeBetweenRetries: Option[Duration] = None,
-                                                 fireRetryExhaustedEvent: Option[Option[String]] = None) extends InteractionFailureStrategy {
+                                                 fireRetryExhaustedEvent: Option[Option[String]] = None,
+                                                 fireFunctionalEvent: Option[Option[String]] = None) extends InteractionFailureStrategy {
     require(backoffFactor >= 1.0, "backoff factor must be greater or equal to 1.0")
     require(maximumRetries >= 1, "maximum retries must be greater or equal to 1")
   }

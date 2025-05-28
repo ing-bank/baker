@@ -2,7 +2,7 @@ package com.ing.baker
 
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.CaseClassIngredient
@@ -39,7 +39,7 @@ trait BakerRuntimeTestBase
   def actorSystemName: String
 
   implicit val timeout: FiniteDuration = 10 seconds
-  implicit val contextShift = IO.contextShift(ExecutionContext.global)
+  implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
   //Values to use for setting and checking the ingredients
 
   //Default values to be used for the ingredients in the tests

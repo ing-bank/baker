@@ -1,11 +1,10 @@
 package com.ing.baker.il.failurestrategy
 
-import java.util.concurrent.TimeUnit
-
 import com.ing.baker.il.EventDescriptor
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.il.failurestrategy.RetryWithIncrementalBackoff._
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
 
 object RetryWithIncrementalBackoff {
@@ -16,7 +15,8 @@ case class RetryWithIncrementalBackoff(initialTimeout: Duration,
                                        backoffFactor: Double,
                                        maximumRetries: Int,
                                        maxTimeBetweenRetries: Option[Duration],
-                                       retryExhaustedEvent: Option[EventDescriptor])
+                                       retryExhaustedEvent: Option[EventDescriptor],
+                                       retryWithFunctionalEvent: Option[EventDescriptor])
   extends InteractionFailureStrategy {
   require(backoffFactor >= 1.0, "backoff factor must be greater or equal to 1.0")
   require(maximumRetries >= 1, "maximum retries must be greater or equal to 1")
@@ -34,6 +34,17 @@ case class RetryWithIncrementalBackoff(initialTimeout: Duration,
   def apply(n: Int): ExceptionStrategyOutcome = {
     if (n <= maximumRetries) RetryWithDelay(determineTimeToNextRetry(n))
     else if (retryExhaustedEvent.isDefined) Continue(retryExhaustedEvent.get.name)
+//    else if (retryWithFunctionalEvent.isDefined) ContinueAsFunctionalEvent(retryWithFunctionalEvent.get.name)
     else BlockTransition
+  }
+
+  // Used in CompiledRecipe to generate the hash. This is a workaround to keep the hash the same.
+  // This method mimics the result of toString before the retryWithFunctionalEvent was added
+  override def toString: String = {
+    if(retryWithFunctionalEvent.isDefined) {
+      s"RetryWithIncrementalBackoff($initialTimeout,$backoffFactor,$maximumRetries,$maxTimeBetweenRetries,$retryExhaustedEvent,$retryWithFunctionalEvent)"
+    } else {
+      s"RetryWithIncrementalBackoff($initialTimeout,$backoffFactor,$maximumRetries,$maxTimeBetweenRetries,$retryExhaustedEvent)"
+    }
   }
 }

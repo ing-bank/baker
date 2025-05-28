@@ -50,6 +50,14 @@ class KotlinDslTest {
             interaction<Interactions.ReserveItems> {
                 failureStrategy = fireEventAfterFailure("OrderPlaced")
             }
+            interaction<Interactions.MakePayment> {
+                name = "MakePayment2"
+                failureStrategy = fireFunctionalEventAfterFailure<Events.OrderPlaced>()
+            }
+            interaction<Interactions.ReserveItems> {
+                name = "ReserveItems2"
+                failureStrategy = fireFunctionalEventAfterFailure("OrderPlaced")
+            }
             interaction<Interactions.ShipItems> {
                 failureStrategy = retryWithIncrementalBackoff {
                     initialDelay = 1.0.seconds
@@ -139,6 +147,44 @@ class KotlinDslTest {
         }
 
         with(recipe.interactions().toList().apply(2)) {
+            assertEquals("MakePayment2", name())
+
+            assertEquals(0, requiredEvents().size())
+
+            assertEquals(2, inputIngredients().size())
+            assertEquals("reservedItems", inputIngredients().toList().apply(0).name())
+            assertEquals("paymentInformation", inputIngredients().toList().apply(1).name())
+
+            with(failureStrategy().get()) {
+                when (this) {
+                    is InteractionFailureStrategy.FireFunctionalEventAfterFailure -> {
+                        assertEquals("OrderPlaced", eventName().get())
+                    }
+
+                    else -> error("Classname did not match ")
+                }
+            }
+        }
+
+        with(recipe.interactions().toList().apply(3)) {
+            assertEquals("ReserveItems2", name())
+
+            assertEquals(0, requiredEvents().size())
+
+            assertEquals(1, inputIngredients().size())
+            assertEquals("items", inputIngredients().toList().apply(0).name())
+
+            with(failureStrategy().get()) {
+                when (this) {
+                    is InteractionFailureStrategy.FireFunctionalEventAfterFailure -> {
+                        assertEquals("OrderPlaced", eventName().get())
+                    }
+                    else -> error("Classname did not match ")
+                }
+            }
+        }
+
+        with(recipe.interactions().toList().apply(4)) {
             assertEquals("ShipItems", name())
 
             assertEquals("ShippingConfirmed", output().apply(0).name())
@@ -166,7 +212,7 @@ class KotlinDslTest {
             }
         }
 
-        with(recipe.interactions().toList().apply(3)) {
+        with(recipe.interactions().toList().apply(5)) {
             assertEquals("foo", name())
             assertEquals(10, maximumInteractionCount().get())
 

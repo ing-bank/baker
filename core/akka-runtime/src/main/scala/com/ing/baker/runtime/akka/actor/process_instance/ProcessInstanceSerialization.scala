@@ -33,6 +33,7 @@ class ProcessInstanceSerialization[S, E](provider: AkkaSerializerProvider) {
     case e: protobuf.Initialized => deserializeInitialized(e)
     case e: protobuf.TransitionFired => deserializeTransitionFired(e)
     case e: protobuf.TransitionFailedWithOutput => deserializeTransitionFailedWithOutput(e)
+    case e: protobuf.TransitionFailedWithFunctionalOutput => deserializeTransitionFailedWithFunctionalOutput(e)
     case e: protobuf.TransitionDelayed => deserializeTransitionDelayed(e)
     case e: protobuf.DelayedTransitionFired => deserializeDelayedTransitionFired(e)
     case e: protobuf.TransitionFailed => deserializeTransitionFailed(e)
@@ -48,6 +49,7 @@ class ProcessInstanceSerialization[S, E](provider: AkkaSerializerProvider) {
       case e: InitializedEvent => serializeInitialized(e)
       case e: TransitionFiredEvent => serializeTransitionFired(e)
       case e: TransitionFailedWithOutputEvent => serializeTransitionFailedWithOutput(e)
+      case e: TransitionFailedWithFunctionalOutputEvent => serializeTransitionFailedWithFunctionalOutput(e)
       case e: TransitionDelayed => serializeTransitionDelayed(e)
       case e: DelayedTransitionFired => serializeDelayedTransitionFired(e)
       case e: TransitionFailedEvent => serializeTransitionFailed(e)
@@ -197,6 +199,21 @@ class ProcessInstanceSerialization[S, E](provider: AkkaSerializerProvider) {
     )
   }
 
+  private def serializeTransitionFailedWithFunctionalOutput(e: TransitionFailedWithFunctionalOutputEvent): protobuf.TransitionFailedWithFunctionalOutput = {
+    val consumedTokens = serializeConsumedMarking(e.consumed)
+    val producedTokens = serializeProducedMarking(e.produced)
+
+    protobuf.TransitionFailedWithFunctionalOutput(
+      jobId = Some(e.jobId),
+      transitionId = Some(e.transitionId),
+      timeStarted = Some(e.timeStarted),
+      timeCompleted = Some(e.timeCompleted),
+      consumed = consumedTokens,
+      produced = producedTokens,
+      data = serializeObject(e.output)
+    )
+  }
+
   private def serializeTransitionDelayed(e: TransitionDelayed): protobuf.TransitionDelayed = {
     val consumedTokens = serializeConsumedMarking(e.consumed)
     protobuf.TransitionDelayed(
@@ -244,6 +261,20 @@ class ProcessInstanceSerialization[S, E](provider: AkkaSerializerProvider) {
     val timeCompleted = e.timeCompleted.getOrElse(missingFieldException("time_completed"))
 
     TransitionFailedWithOutputEvent(jobId, transitionId, e.correlationId, timeStarted, timeCompleted, consumed, produced, output)
+  }
+
+  private def deserializeTransitionFailedWithFunctionalOutput(e: protobuf.TransitionFailedWithFunctionalOutput): Instance[S] => TransitionFailedWithFunctionalOutputEvent = instance => {
+    val consumed: Marking[Id] = deserializeConsumedMarking(instance, e.consumed)
+    val produced: Marking[Id] = deserializeProducedMarking(instance, e.produced)
+
+    val output = e.data.map(deserializeObject).orNull
+
+    val transitionId = e.transitionId.getOrElse(missingFieldException("transition_id"))
+    val jobId = e.jobId.getOrElse(missingFieldException("job_id"))
+    val timeStarted = e.timeStarted.getOrElse(missingFieldException("time_started"))
+    val timeCompleted = e.timeCompleted.getOrElse(missingFieldException("time_completed"))
+
+    TransitionFailedWithFunctionalOutputEvent(jobId, transitionId, e.correlationId, timeStarted, timeCompleted, consumed, produced, output)
   }
 
   private def deserializeTransitionDelayed(e: protobuf.TransitionDelayed): Instance[S] => TransitionDelayed = instance => {
