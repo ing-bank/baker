@@ -399,12 +399,9 @@ class ProcessInstance[S, E](
             }
         )
       } else {
-        log.warning("Ignoring DelayedTransitionFired since there is no open asyncConsumedMarkings")
+        log.error(s"Ignoring DelayedTransitionFired since there is no open asyncConsumedMarkings for transition: $transitionId with count: ${instance.delayedTransitionIds.get(transitionId)}")
         //The DelayedTransition is acknowledged so that it is removed from the DelayedTransitionManager.
         delayedTransitionActor ! FireDelayedTransitionAck(recipeInstanceId, jobId)
-        instance.copy[S](
-          sequenceNr = instance.sequenceNr + 1
-        )
       }
 
     case event@TransitionFailedEvent(jobId, transitionId, correlationId, timeStarted, timeFailed, consume, input, reason, strategy) =>

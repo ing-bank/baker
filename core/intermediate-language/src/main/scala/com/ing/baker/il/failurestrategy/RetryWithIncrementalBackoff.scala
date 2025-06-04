@@ -1,7 +1,7 @@
 package com.ing.baker.il.failurestrategy
 
 import com.ing.baker.il.EventDescriptor
-import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome.{BlockTransition, Continue, RetryWithDelay}
+import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome.{BlockTransition, Continue, ContinueAsFunctionalEvent, RetryWithDelay}
 import com.ing.baker.il.failurestrategy.RetryWithIncrementalBackoff._
 
 import java.util.concurrent.TimeUnit
@@ -34,7 +34,7 @@ case class RetryWithIncrementalBackoff(initialTimeout: Duration,
   def apply(n: Int): ExceptionStrategyOutcome = {
     if (n <= maximumRetries) RetryWithDelay(determineTimeToNextRetry(n))
     else if (retryExhaustedEvent.isDefined) Continue(retryExhaustedEvent.get.name)
-//    else if (retryWithFunctionalEvent.isDefined) ContinueAsFunctionalEvent(retryWithFunctionalEvent.get.name)
+    else if (retryWithFunctionalEvent.isDefined) ContinueAsFunctionalEvent(retryWithFunctionalEvent.get.name)
     else BlockTransition
   }
 
