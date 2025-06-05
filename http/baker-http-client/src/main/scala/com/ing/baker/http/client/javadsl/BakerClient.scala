@@ -2,7 +2,7 @@ package com.ing.baker.http.client.javadsl
 
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.http.client.common.TLSConfig
-import com.ing.baker.http.client.scaladsl.{BakerClient => ScalaClient, EndpointConfig}
+import com.ing.baker.http.client.scaladsl.{EndpointConfig, BakerClient => ScalaClient}
 import com.ing.baker.runtime.javadsl.{Baker => JavaBaker}
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.{Request, Uri}
@@ -11,10 +11,10 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors.newCachedThreadPool
 import java.util.{Optional, List => JList}
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
-import scala.compat.java8.FunctionConverters._
-import scala.compat.java8.FutureConverters
+import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
+import scala.jdk.FunctionConverters.enrichAsScalaFromFunction
+import scala.jdk.FutureConverters.FutureOps
 
 
 object BakerClient {
@@ -62,6 +62,6 @@ object BakerClient {
       }
       .unsafeToFuture()
 
-    FutureConverters.toJava(future).toCompletableFuture
+    future.asJava.toCompletableFuture
   }
 }
