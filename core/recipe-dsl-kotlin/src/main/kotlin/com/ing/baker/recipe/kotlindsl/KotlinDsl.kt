@@ -42,7 +42,7 @@ class RecipeBuilder(private val name: String) {
     /**
      * The default failure strategy for interactions that don't specify a failure strategy explicitly.
      *
-     * Available strategies are: [retryWithIncrementalBackoff], [fireEventAfterFailure], and [blockInteraction].
+     * Available strategies are: [retryWithIncrementalBackoff], [fireEventAndBlock], [fireEventAndResolve] and [blockInteraction].
      * Defaults to [blockInteraction].
      */
     var defaultFailureStrategy: InteractionFailureStrategyBuilder = BlockInteractionBuilder
@@ -184,18 +184,50 @@ class RecipeBuilder(private val name: String) {
         return BlockInteractionBuilder
     }
 
-    /**
-     * Fires an event with a specified [name] on failure.
-     */
+    @Deprecated("Please use fireEventAndBlock or fireEventAndResolve, the fireEventAndBlock is exactly as the old fireEventAfterFailure")
     fun fireEventAfterFailure(name: String): InteractionFailureStrategyBuilder {
-        return FireEventAfterFailureBuilder(name)
+        return FireEventAndBlockBuilder(name)
+    }
+
+    @Deprecated("Please use fireEventAndBlock or fireEventAndResolve, the fireEventAndBlock is exactly as the old fireEventAfterFailure")
+    inline fun <reified T> fireEventAfterFailure(): InteractionFailureStrategyBuilder {
+        return FireEventAndBlockBuilder(T::class.simpleName!!)
     }
 
     /**
-     * Fires an event [T] on failure.
+     * After the interaction fails with an exception an event with a specified [name] is thrown and the interaction is blocked.
+     * Blocked interactions cannot execute again until retryInteraction or resolveInteraction is called on Baker.
+     * @return
      */
-    inline fun <reified T> fireEventAfterFailure(): InteractionFailureStrategyBuilder {
-        return FireEventAfterFailureBuilder(T::class.simpleName!!)
+    fun fireEventAndBlock(name: String): InteractionFailureStrategyBuilder {
+        return FireEventAndBlockBuilder(name)
+    }
+
+    /**
+     * After the interaction fails with an exception an event [T] is thrown and the interaction is blocked.
+     * Blocked interactions cannot execute again until retryInteraction or resolveInteraction is called on Baker.
+     * @return
+     */
+    inline fun <reified T> fireEventAndBlock(): InteractionFailureStrategyBuilder {
+        return FireEventAndBlockBuilder(T::class.simpleName!!)
+    }
+
+    /**
+     * After the interaction fails with an exception an event with a specified [name] is thrown and the interaction is not blocked.
+     * This means the interaction can be executed again if the preconditions are met but retryInteraction or resolveInteraction cannot be done.
+     * @return
+     */
+    fun fireEventAndResolve(name: String): InteractionFailureStrategyBuilder {
+        return FireEventAndResolveBuilder(name)
+    }
+
+    /**
+     * After the interaction fails with an exception an event [T] is thrown and the interaction is not blocked.
+     * This means the interaction can be executed again if the preconditions are met but retryInteraction or resolveInteraction cannot be done.
+     * @return
+     */
+    inline fun <reified T> fireEventAndResolve(): InteractionFailureStrategyBuilder {
+        return FireEventAndResolveBuilder(T::class.simpleName!!)
     }
 
     internal fun build() = Recipe(
@@ -226,7 +258,7 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
     /**
      * The failure strategy for this interaction.
      *
-     * Available strategies are: [retryWithIncrementalBackoff], [fireEventAfterFailure], and [blockInteraction].
+     * Available strategies are: [retryWithIncrementalBackoff], [fireEventAndBlock] [FireEventAndResolve], and [blockInteraction].
      * Defaults to the failure strategy of the recipe.
      */
     var failureStrategy: InteractionFailureStrategyBuilder? = null
@@ -311,18 +343,50 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
         return BlockInteractionBuilder
     }
 
-    /**
-     * Fires an event with a specified [name] on failure.
-     */
+    @Deprecated("Please use fireEventAndBlockAfterFailure or fireEventAndBlockAfterFailure, the fireEventAndBlockAfterFailure is exactly as the old fireEventAfterFailure")
     fun fireEventAfterFailure(name: String): InteractionFailureStrategyBuilder {
-        return FireEventAfterFailureBuilder(name)
+        return FireEventAndBlockBuilder(name)
+    }
+
+    @Deprecated("Please use fireEventAndBlockAfterFailure or fireEventAndBlockAfterFailure, the fireEventAndBlockAfterFailure is exactly as the old fireEventAfterFailure")
+    inline fun <reified T> fireEventAfterFailure(): InteractionFailureStrategyBuilder {
+        return FireEventAndBlockBuilder(T::class.simpleName!!)
     }
 
     /**
-     * Fires an event [T] on failure.
+     * After the interaction fails with an exception an event with a specified [name] is thrown and the interaction is blocked.
+     * Blocked interactions cannot execute again until retryInteraction or resolveInteraction is called on Baker.
+     * @return
      */
-    inline fun <reified T> fireEventAfterFailure(): InteractionFailureStrategyBuilder {
-        return FireEventAfterFailureBuilder(T::class.simpleName!!)
+    fun fireEventAndBlock(name: String): InteractionFailureStrategyBuilder {
+        return FireEventAndBlockBuilder(name)
+    }
+
+    /**
+     * After the interaction fails with an exception an event [T] is thrown and the interaction is blocked.
+     * Blocked interactions cannot execute again until retryInteraction or resolveInteraction is called on Baker.
+     * @return
+     */
+    inline fun <reified T> fireEventAndBlock(): InteractionFailureStrategyBuilder {
+        return FireEventAndBlockBuilder(T::class.simpleName!!)
+    }
+
+    /**
+     * After the interaction fails with an exception an event with a specified [name] is thrown and the interaction is not blocked.
+     * This means the interaction can be executed again if the preconditions are met but retryInteraction or resolveInteraction cannot be done.
+     * @return
+     */
+    fun fireEventAndResolve(name: String): InteractionFailureStrategyBuilder {
+        return FireEventAndResolveBuilder(name)
+    }
+
+    /**
+     * After the interaction fails with an exception an event [T] is thrown and the interaction is not blocked.
+     * This means the interaction can be executed again if the preconditions are met but retryInteraction or resolveInteraction cannot be done.
+     * @return
+     */
+    inline fun <reified T> fireEventAndResolve(): InteractionFailureStrategyBuilder {
+        return FireEventAndResolveBuilder(T::class.simpleName!!)
     }
 
     @PublishedApi
@@ -518,9 +582,30 @@ object BlockInteractionBuilder : InteractionFailureStrategyBuilder {
         BlockInteraction()
 }
 
+@Deprecated("Please use FireEventAndBlock or FireEventAndResolve, the FireEventAndBlock is exactly as the old FireEvent")
 class FireEventAfterFailureBuilder(private val eventName: String) : InteractionFailureStrategyBuilder {
     override fun build(): com.ing.baker.recipe.common.InteractionFailureStrategy =
-        com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure(Option.apply(eventName))
+        com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAndBlock(Option.apply(eventName))
+}
+
+/**
+ * After the interaction fails with an exception an event is thrown and the interaction is blocked.
+ * Blocked interactions cannot execute again until retryInteraction or resolveInteraction is called on Baker.
+ * @return
+ */
+class FireEventAndBlockBuilder(private val eventName: String) : InteractionFailureStrategyBuilder {
+    override fun build(): com.ing.baker.recipe.common.InteractionFailureStrategy =
+        com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAndBlock(Option.apply(eventName))
+}
+
+/**
+ * After the interaction fails with an exception an event is thrown and the interaction is blocked.
+ * Blocked interactions cannot execute again until retryInteraction or resolveInteraction is called on Baker.
+ * @return
+ */
+class FireEventAndResolveBuilder(private val eventName: String) : InteractionFailureStrategyBuilder {
+    override fun build(): com.ing.baker.recipe.common.InteractionFailureStrategy =
+        com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAndResolve(Option.apply(eventName))
 }
 
 @RecipeDslMarker

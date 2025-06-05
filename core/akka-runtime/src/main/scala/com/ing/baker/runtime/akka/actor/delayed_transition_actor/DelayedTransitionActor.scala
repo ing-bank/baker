@@ -118,7 +118,7 @@ class DelayedTransitionActor(processIndex: ActorRef,
           persistWithSnapshot(DelayedTransitionExecuted(id, instance)) { _ =>
             waitingTransitions -= id
           }
-        case None => log.error(s"FireDelayedTransitionAck received for $id but not found")
+        case None => log.warning(s"FireDelayedTransitionAck received for $id but not found")
       }
 
     case ProcessDeleted(recipeInstanceId) =>

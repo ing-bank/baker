@@ -51,6 +51,7 @@ object ProcessInstanceProto {
         a match {
           case ExceptionStrategy.BlockTransition => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.BLOCK_TRANSITION), None)
           case ExceptionStrategy.Continue(marking, output) => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.CONTINUE), None, toProtoMarking(marking), Some(ctxToProto(output.asInstanceOf[AnyRef])))
+          case ExceptionStrategy.ContinueAsFunctional(marking, output) => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.CONTINUE_FUNCTIONAL), None, toProtoMarking(marking), Some(ctxToProto(output.asInstanceOf[AnyRef])))
           case ExceptionStrategy.RetryWithDelay(delay) => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.RETRY), Some(delay))
         }
 
@@ -65,6 +66,11 @@ object ProcessInstanceProto {
               marking <- toDomainMarking(markingProto)
               output <- ctxFromProto(outputProto)
             } yield ExceptionStrategy.Continue(marking, output)
+          case protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.CONTINUE_FUNCTIONAL), _, markingProto, Some(outputProto)) =>
+            for {
+              marking <- toDomainMarking(markingProto)
+              output <- ctxFromProto(outputProto)
+            } yield ExceptionStrategy.ContinueAsFunctional(marking, output)
           case _ =>
             Failure(new IllegalStateException("Got a protobuf.FailureStrategyMessage with an unrecognized StrategyTypeMessage"))
         }

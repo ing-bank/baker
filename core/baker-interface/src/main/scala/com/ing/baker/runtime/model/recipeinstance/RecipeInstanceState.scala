@@ -73,12 +73,20 @@ case class RecipeInstanceState(
   def recordFailedExecution(transitionExecution: TransitionExecution, exceptionStrategy: ExceptionStrategyOutcome): RecipeInstanceState =
     addExecution(transitionExecution.toFailedState(exceptionStrategy))
 
-  def recordFailedWithOutputExecution(transitionExecution: TransitionExecution, output: Option[EventInstance]): (RecipeInstanceState, Set[TransitionExecution]) =
-    aggregateOutputEvent(output)
+  def recordFailedWithOutputExecution(transitionExecution: TransitionExecution, output: EventInstance): (RecipeInstanceState, Set[TransitionExecution]) =
+    aggregateOutputEvent(Some(output))
       .increaseSequenceNumber
-      .aggregatePetriNetChanges(transitionExecution, output)
+      .aggregatePetriNetChanges(transitionExecution, Some(output))
       .addCompletedCorrelationId(transitionExecution)
       .addExecution(transitionExecution.copy(state = TransitionExecution.State.Failed(transitionExecution.failureCount, ExceptionStrategyOutcome.BlockTransition)))
+      .allEnabledExecutions
+
+  def recordFailedWithOutputExecutionAsFunctionalEvent(transitionExecution: TransitionExecution, output: EventInstance): (RecipeInstanceState, Set[TransitionExecution]) =
+    aggregateOutputEvent(Some(output))
+      .increaseSequenceNumber
+      .aggregatePetriNetChanges(transitionExecution, Some(output))
+      .addCompletedCorrelationId(transitionExecution)
+      .removeExecution(transitionExecution)
       .allEnabledExecutions
 
   def recordCompletedExecution(transitionExecution: TransitionExecution, output: Option[EventInstance]): (RecipeInstanceState, Set[TransitionExecution]) =

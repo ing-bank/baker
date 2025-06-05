@@ -181,7 +181,7 @@ object AllTypeRecipe {
         ),
         interactionFive
           .withRequiredEvent(byteArrayEvent)
-          .withFailureStrategy(InteractionFailureStrategy.FireEventAfterFailure()),
+          .withFailureStrategy(InteractionFailureStrategy.FireEventAndBlock()),
         interactionSix,
         interactionSeven,
         sieveInteraction,

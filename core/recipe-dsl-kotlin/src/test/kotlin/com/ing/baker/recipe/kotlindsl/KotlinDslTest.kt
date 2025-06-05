@@ -45,10 +45,18 @@ class KotlinDslTest {
             }
 
             interaction<Interactions.MakePayment> {
-                failureStrategy = fireEventAfterFailure<Events.OrderPlaced>()
+                failureStrategy = fireEventAndBlock<Events.OrderPlaced>()
             }
             interaction<Interactions.ReserveItems> {
-                failureStrategy = fireEventAfterFailure("OrderPlaced")
+                failureStrategy = fireEventAndBlock("OrderPlaced")
+            }
+            interaction<Interactions.MakePayment> {
+                name = "MakePayment2"
+                failureStrategy = fireEventAndResolve<Events.OrderPlaced>()
+            }
+            interaction<Interactions.ReserveItems> {
+                name = "ReserveItems2"
+                failureStrategy = fireEventAndResolve("OrderPlaced")
             }
             interaction<Interactions.ShipItems> {
                 failureStrategy = retryWithIncrementalBackoff {
@@ -110,7 +118,7 @@ class KotlinDslTest {
 
             with(failureStrategy().get()) {
                 when (this) {
-                    is InteractionFailureStrategy.FireEventAfterFailure -> {
+                    is InteractionFailureStrategy.FireEventAndBlock -> {
                         assertEquals("OrderPlaced", eventName().get())
                     }
 
@@ -129,7 +137,7 @@ class KotlinDslTest {
 
             with(failureStrategy().get()) {
                 when (this) {
-                    is InteractionFailureStrategy.FireEventAfterFailure -> {
+                    is InteractionFailureStrategy.FireEventAndBlock -> {
                         assertEquals("OrderPlaced", eventName().get())
                     }
 
@@ -139,6 +147,44 @@ class KotlinDslTest {
         }
 
         with(recipe.interactions().toList().apply(2)) {
+            assertEquals("MakePayment2", name())
+
+            assertEquals(0, requiredEvents().size())
+
+            assertEquals(2, inputIngredients().size())
+            assertEquals("reservedItems", inputIngredients().toList().apply(0).name())
+            assertEquals("paymentInformation", inputIngredients().toList().apply(1).name())
+
+            with(failureStrategy().get()) {
+                when (this) {
+                    is InteractionFailureStrategy.FireEventAndResolve -> {
+                        assertEquals("OrderPlaced", eventName().get())
+                    }
+
+                    else -> error("Classname did not match ")
+                }
+            }
+        }
+
+        with(recipe.interactions().toList().apply(3)) {
+            assertEquals("ReserveItems2", name())
+
+            assertEquals(0, requiredEvents().size())
+
+            assertEquals(1, inputIngredients().size())
+            assertEquals("items", inputIngredients().toList().apply(0).name())
+
+            with(failureStrategy().get()) {
+                when (this) {
+                    is InteractionFailureStrategy.FireEventAndResolve -> {
+                        assertEquals("OrderPlaced", eventName().get())
+                    }
+                    else -> error("Classname did not match ")
+                }
+            }
+        }
+
+        with(recipe.interactions().toList().apply(4)) {
             assertEquals("ShipItems", name())
 
             assertEquals("ShippingConfirmed", output().apply(0).name())
@@ -166,7 +212,7 @@ class KotlinDslTest {
             }
         }
 
-        with(recipe.interactions().toList().apply(3)) {
+        with(recipe.interactions().toList().apply(5)) {
             assertEquals("foo", name())
             assertEquals(10, maximumInteractionCount().get())
 

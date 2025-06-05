@@ -6,6 +6,6 @@ import com.ing.baker.recipe.scaladsl.Recipe
 object RecipeWithDefaultFailureStrategy {
   val recipe: Recipe = Recipe("example")
     .withDefaultFailureStrategy(
-      InteractionFailureStrategy.FireEventAfterFailure(Some("recipeFailed"))
+      InteractionFailureStrategy.FireEventAndBlock(Some("recipeFailed"))
     )
 }

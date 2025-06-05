@@ -20,7 +20,7 @@ class SensoryEventResponseHandlerSpec extends AkkaTestBase("SensoryEventResponse
   implicit val ec: ExecutionContext = system.dispatcher
 
   // Using dilated timeout to take into account the akka.test.timefactor config
-  implicit val timeout = 2.seconds.dilated
+  implicit val timeout: FiniteDuration = 2.seconds.dilated
 
   "The ProcessApi" should {
 
