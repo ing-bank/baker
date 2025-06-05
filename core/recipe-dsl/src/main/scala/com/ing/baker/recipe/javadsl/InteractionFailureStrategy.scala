@@ -46,21 +46,76 @@ object InteractionFailureStrategy {
     }
   }
 
+  /**
+   * @deprecated
+   * Please use FireEventAndBlock or FireEventAndResolve, the FireEventAndBlock is exactly as the old FireEvent
+   */
+  @Deprecated()
   def FireEvent(): common.InteractionFailureStrategy.FireEventAfterFailure = common.InteractionFailureStrategy.FireEventAfterFailure(None)
 
+  /**
+   * @deprecated
+   * Please use FireEventAndBlock or FireEventAndResolve, the FireEventAndBlock is exactly as the old FireEvent
+   */
+  @Deprecated()
   def FireEvent(eventClass: Class[_]): common.InteractionFailureStrategy.FireEventAfterFailure =
     FireEvent(eventClass.getSimpleName)
 
+  /**
+   * @deprecated
+   * Please use FireEventAndBlock or FireEventAndResolve, the FireEventAndBlock is exactly as the old FireEvent
+   */
+  @Deprecated()
   def FireEvent(eventName: String): common.InteractionFailureStrategy.FireEventAfterFailure =
     common.InteractionFailureStrategy.FireEventAfterFailure(Some(eventName))
 
+  /**
+   * After the interaction fails with an exception an event is thrown and the interaction is blocked.
+   * Blocked interactions cannot execute again until retryInteraction or resolveInteraction is called on Baker.
+   * @return
+   */
+  def FireEventAndBlock(): common.InteractionFailureStrategy.FireEventAndBlock = common.InteractionFailureStrategy.FireEventAndBlock(None)
 
-  def FireFunctionalEvent(): common.InteractionFailureStrategy.FireFunctionalEventAfterFailure = common.InteractionFailureStrategy.FireFunctionalEventAfterFailure(None)
+  /**
+   * After the interaction fails with an exception an event is thrown and the interaction is blocked.
+   * Blocked interactions cannot execute again until retryInteraction or resolveInteraction is called on Baker.
+   * @return
+   */
+  def FireEventAndBlock(eventClass: Class[_]): common.InteractionFailureStrategy.FireEventAndBlock =
+    FireEventAndBlock(eventClass.getSimpleName)
 
-  def FireFunctionalEvent(eventClass: Class[_]): common.InteractionFailureStrategy.FireFunctionalEventAfterFailure = FireFunctionalEvent(eventClass.getSimpleName)
+  /**
+   * After the interaction fails with an exception an event is thrown and the interaction is blocked.
+   * Blocked interactions cannot execute again until retryInteraction or resolveInteraction is called on Baker.
+   * @return
+   */
+  def FireEventAndBlock(eventName: String): common.InteractionFailureStrategy.FireEventAndBlock =
+    common.InteractionFailureStrategy.FireEventAndBlock(Some(eventName))
 
-  def FireFunctionalEvent(eventName: String): common.InteractionFailureStrategy.FireFunctionalEventAfterFailure =
-    common.InteractionFailureStrategy.FireFunctionalEventAfterFailure(Some(eventName))
+
+  /**
+   * After the interaction fails with an exception an event is thrown and the interaction is not blocked.
+   * This means the interaction can be executed again if the preconditions are met but retryInteraction or resolveInteraction cannot be done.
+   * @return
+   */
+  def FireEventAndResolve(): common.InteractionFailureStrategy.FireEventAndResolve =
+    common.InteractionFailureStrategy.FireEventAndResolve(None)
+
+  /**
+   * After the interaction fails with an exception an event is thrown and the interaction is not blocked.
+   * This means the interaction can be executed again if the preconditions are met but retryInteraction or resolveInteraction cannot be done.
+   * @return
+   */
+  def FireEventAndResolve(eventClass: Class[_]): common.InteractionFailureStrategy.FireEventAndResolve =
+    FireEventAndResolve(eventClass.getSimpleName)
+
+  /**
+   * After the interaction fails with an exception an event is thrown and the interaction is not blocked.
+   * This means the interaction can be executed again if the preconditions are met but retryInteraction or resolveInteraction cannot be done.
+   * @return
+   */
+  def FireEventAndResolve(eventName: String): common.InteractionFailureStrategy.FireEventAndResolve =
+    common.InteractionFailureStrategy.FireEventAndResolve(Some(eventName))
 
   def BlockInteraction(): BlockInteraction =
     common.InteractionFailureStrategy.BlockInteraction()

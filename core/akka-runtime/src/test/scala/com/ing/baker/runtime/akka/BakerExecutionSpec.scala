@@ -12,7 +12,7 @@ import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
-import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
+import com.ing.baker.recipe.common.InteractionFailureStrategy.{FireEventAfterFailure, FireEventAndBlock}
 import com.ing.baker.recipe.scaladsl.{CheckPointEvent, Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
@@ -1155,7 +1155,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       val recipe = Recipe("ImmediateFailureEvent")
         .withSensoryEvent(initialEvent)
-        .withInteractions(interactionOne.withFailureStrategy(FireEventAfterFailure()))
+        .withInteractions(interactionOne.withFailureStrategy(FireEventAndBlock()))
 
       when(testInteractionOneMock.apply(anyString(), anyString())).thenThrow(new RuntimeException("Some failure happened"))
 
@@ -1227,7 +1227,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val recipe =
         Recipe("RetryBlockedInteractionRecipe")
           .withInteraction(interactionOne
-            .withFailureStrategy(InteractionFailureStrategy.FireEventAfterFailure(Some("interactionOneSuccessful"))))
+            .withFailureStrategy(InteractionFailureStrategy.FireEventAndBlock(Some("interactionOneSuccessful"))))
           .withSensoryEvent(initialEvent)
 
       for {
@@ -1250,11 +1250,11 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           "interactionOneOriginalIngredient" -> "success!")
     }
 
-    "not retry a blocked interaction after the sensory event is fired again and place are filled for FireEvent" in {
+    "not retry a blocked interaction after the sensory event is fired again and place are filled for FireEventAndBlock" in {
       val recipe =
         Recipe("RetryBlockedInteractionRecipe")
           .withInteraction(interactionOne
-            .withFailureStrategy(InteractionFailureStrategy.FireEventAfterFailure(Some("interactionOneExhausted"))))
+            .withFailureStrategy(InteractionFailureStrategy.FireEventAndBlock(Some("interactionOneExhausted"))))
           .withSensoryEvent(initialEvent.withMaxFiringLimit(5))
 
       for {
@@ -1273,11 +1273,11 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       } yield state.eventNames shouldBe List("InitialEvent", "interactionOneExhausted", "InitialEvent")
     }
 
-    "retry a blocked interaction after the sensory event is fired again and place are filled for FireFunctionalEvent" in {
+    "retry a blocked interaction after the sensory event is fired again and place are filled after FireEventAndResolve" in {
       val recipe =
         Recipe("RetryFunctionalInteractionRecipe")
           .withInteraction(interactionOne
-            .withFailureStrategy(InteractionFailureStrategy.FireFunctionalEventAfterFailure(Some("interactionOneFunctionalFailure"))))
+            .withFailureStrategy(InteractionFailureStrategy.FireEventAndResolve(Some("interactionOneFunctionalFailure"))))
           .withSensoryEvent(initialEvent.withMaxFiringLimit(5))
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)

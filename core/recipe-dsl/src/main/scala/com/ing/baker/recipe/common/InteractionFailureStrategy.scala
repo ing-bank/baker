@@ -9,9 +9,26 @@ object InteractionFailureStrategy {
 
   case class BlockInteraction() extends InteractionFailureStrategy
 
+  /**
+   * @deprecated
+   * Please use FireEventAndBlock or FireEventAndResolve, the FireEventAndBlock is exactly as the old FireEvent
+   */
+  @Deprecated()
   case class FireEventAfterFailure(eventName: Option[String] = None) extends InteractionFailureStrategy
 
-  case class FireFunctionalEventAfterFailure(eventName: Option[String] = None) extends InteractionFailureStrategy
+  /**
+   * After the interaction fails with an exception an event is thrown and the interaction is blocked.
+   * Blocked interactions cannot execute again until retryInteraction or resolveInteraction is called on Baker.
+   * @return
+   */
+  case class FireEventAndBlock(eventName: Option[String] = None) extends InteractionFailureStrategy
+
+  /**
+   * After the interaction fails with an exception an event is thrown and the interaction is not blocked.
+   * This means the interaction can be executed again if the preconditions are met but retryInteraction or resolveInteraction cannot be done.
+   * @return
+   */
+  case class FireEventAndResolve(eventName: Option[String] = None) extends InteractionFailureStrategy
 
   case class RetryWithIncrementalBackoff private(initialDelay: Duration,
                                                  backoffFactor: Double = 2,

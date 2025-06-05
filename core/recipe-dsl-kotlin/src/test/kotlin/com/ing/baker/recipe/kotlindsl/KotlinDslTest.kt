@@ -45,18 +45,18 @@ class KotlinDslTest {
             }
 
             interaction<Interactions.MakePayment> {
-                failureStrategy = fireEventAfterFailure<Events.OrderPlaced>()
+                failureStrategy = fireEventAndBlock<Events.OrderPlaced>()
             }
             interaction<Interactions.ReserveItems> {
-                failureStrategy = fireEventAfterFailure("OrderPlaced")
+                failureStrategy = fireEventAndBlock("OrderPlaced")
             }
             interaction<Interactions.MakePayment> {
                 name = "MakePayment2"
-                failureStrategy = fireFunctionalEventAfterFailure<Events.OrderPlaced>()
+                failureStrategy = fireEventAndResolve<Events.OrderPlaced>()
             }
             interaction<Interactions.ReserveItems> {
                 name = "ReserveItems2"
-                failureStrategy = fireFunctionalEventAfterFailure("OrderPlaced")
+                failureStrategy = fireEventAndResolve("OrderPlaced")
             }
             interaction<Interactions.ShipItems> {
                 failureStrategy = retryWithIncrementalBackoff {
@@ -118,7 +118,7 @@ class KotlinDslTest {
 
             with(failureStrategy().get()) {
                 when (this) {
-                    is InteractionFailureStrategy.FireEventAfterFailure -> {
+                    is InteractionFailureStrategy.FireEventAndBlock -> {
                         assertEquals("OrderPlaced", eventName().get())
                     }
 
@@ -137,7 +137,7 @@ class KotlinDslTest {
 
             with(failureStrategy().get()) {
                 when (this) {
-                    is InteractionFailureStrategy.FireEventAfterFailure -> {
+                    is InteractionFailureStrategy.FireEventAndBlock -> {
                         assertEquals("OrderPlaced", eventName().get())
                     }
 
@@ -157,7 +157,7 @@ class KotlinDslTest {
 
             with(failureStrategy().get()) {
                 when (this) {
-                    is InteractionFailureStrategy.FireFunctionalEventAfterFailure -> {
+                    is InteractionFailureStrategy.FireEventAndResolve -> {
                         assertEquals("OrderPlaced", eventName().get())
                     }
 
@@ -176,7 +176,7 @@ class KotlinDslTest {
 
             with(failureStrategy().get()) {
                 when (this) {
-                    is InteractionFailureStrategy.FireFunctionalEventAfterFailure -> {
+                    is InteractionFailureStrategy.FireEventAndResolve -> {
                         assertEquals("OrderPlaced", eventName().get())
                     }
                     else -> error("Classname did not match ")

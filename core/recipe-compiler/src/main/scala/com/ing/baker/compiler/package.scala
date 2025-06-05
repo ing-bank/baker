@@ -98,7 +98,12 @@ package object compiler {
             val exhaustedRetryEvent: EventDescriptor = EventDescriptor(eventName, Seq.empty)
             (il.failurestrategy.FireEventAfterFailure(exhaustedRetryEvent), Some(exhaustedRetryEvent), None)
 
-          case common.InteractionFailureStrategy.FireFunctionalEventAfterFailure(eventNameOption) =>
+          case common.InteractionFailureStrategy.FireEventAndBlock(eventNameOption) =>
+            val eventName = eventNameOption.getOrElse(interactionDescriptor.name + exhaustedEventAppend)
+            val exhaustedRetryEvent: EventDescriptor = EventDescriptor(eventName, Seq.empty)
+            (il.failurestrategy.FireEventAfterFailure(exhaustedRetryEvent), Some(exhaustedRetryEvent), None)
+
+          case common.InteractionFailureStrategy.FireEventAndResolve(eventNameOption) =>
             val eventName = eventNameOption.getOrElse(interactionDescriptor.name + functionalFailedEventAppend)
             val functionalFailed: EventDescriptor = EventDescriptor(eventName, Seq.empty)
             (il.failurestrategy.FireFunctionalEventAfterFailure(functionalFailed), None, Some(functionalFailed))

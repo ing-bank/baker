@@ -664,7 +664,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       index.foreach(process =>
         if(blacklistedProcesses.contains(process._1) && !process._2.isDeleted) {
           val id = process._1
-          log.debug(s"Deleting blacklistedProcesses $id")
+          log.info(s"Deleting blacklistedProcesses $id")
           deleteProcess(process._2)
         }
       )
