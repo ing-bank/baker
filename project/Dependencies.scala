@@ -10,7 +10,7 @@ object Dependencies {
   val http4sVersion = "0.22.15"
   val circeVersion = "0.14.13"
   val fs2Version = "2.5.12"
-  val mockitoScalaVersion = "1.17.37"
+  val mockitoScalaVersion = "1.17.45"
   val catsEffectVersion = "2.5.5"
   val catsCoreVersion = "2.13.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
@@ -59,7 +59,7 @@ object Dependencies {
   val akkaClusterBoostrap = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
   val akkaDiscoveryKube = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaManagementVersion
 
-  val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.9.0"
+  val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.9.1"
   val fs2Core = "co.fs2" %% "fs2-core" % fs2Version
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Version
   val fs2kafka = "com.github.fd4s" %% "fs2-kafka" % "1.11.0"
@@ -80,7 +80,7 @@ object Dependencies {
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.17.0"
   val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.17.0"
-  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.30"
+  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.32"
 
   val skuber = "io.skuber" %% "skuber" % "2.6.7"
   val play = "com.typesafe.play" %% "play-json" % "2.9.4"
@@ -115,7 +115,7 @@ object Dependencies {
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.25.7" % "protobuf"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.25.8" % "protobuf"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
 
