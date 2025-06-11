@@ -1514,6 +1514,32 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       } yield succeed
     }
 
+    "properly handle baking an already deleted process again" in {
+
+      val retentionPeriod = 2 seconds
+
+      val recipe: Recipe =
+        Recipe("RetentionPeriodRecipe")
+          .withSensoryEvents(initialEvent)
+          .withInteractions(interactionOne)
+          .withRetentionPeriod(retentionPeriod)
+
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        //Should not fail
+        _ <- baker.getRecipeInstanceState(recipeInstanceId)
+        _ <- Future {
+          Thread.sleep(FiniteDuration(retentionPeriod.toMillis + 1000, TimeUnit.MILLISECONDS).dilated.toMillis)
+        }
+        //Should fail
+        _ <- recoverToSucceededIf[ProcessDeletedException] {
+          baker.bake(recipeId, recipeInstanceId)
+        }
+      } yield succeed
+    }
+
     "block interaction and log error message" when {
       "a null ingredient is provided directly by an interaction" in {
         val recipe =

@@ -10,11 +10,11 @@ object Dependencies {
   val http4sVersion = "0.22.15"
   val circeVersion = "0.14.13"
   val fs2Version = "2.5.12"
-  val mockitoScalaVersion = "1.17.37"
+  val mockitoScalaVersion = "2.0.0"
   val catsEffectVersion = "2.5.5"
   val catsCoreVersion = "2.13.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "6.2.5"
+  val springVersion = "6.2.7"
   val springBootVersion = "2.6.1"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
@@ -31,7 +31,7 @@ object Dependencies {
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
   val mockServer = "org.mock-server" % "mockserver-netty" % "5.15.0"
   val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
-  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.12.1"
+  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.13.1"
 
   val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
 
@@ -80,7 +80,7 @@ object Dependencies {
   val cassandraUnit = "org.cassandraunit" % "cassandra-unit" % "4.3.1.0"
   val cassandraDriverCore = "com.datastax.oss" % "java-driver-core" % "4.17.0"
   val cassandraDriverQueryBuilder = "com.datastax.oss" % "java-driver-query-builder" % "4.17.0"
-  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.30"
+  val cassandraDriverMetrics = "io.dropwizard.metrics" % "metrics-jmx" % "4.2.32"
 
   val skuber = "io.skuber" %% "skuber" % "2.6.7"
   val play = "com.typesafe.play" %% "play-json" % "2.9.4"
@@ -100,7 +100,7 @@ object Dependencies {
   val catsEffectTesting = "com.codecommit" %% "cats-effect-testing-scalatest" % "0.5.4"
   val catsCore = "org.typelevel" %% "cats-core" % catsCoreVersion
   val console4Cats = "dev.profunktor" %% "console4cats" % "0.8.0"
-  val catsRetry = "com.github.cb372" %% "cats-retry" % "2.1.1"
+  val catsRetry = "com.github.cb372" %% "cats-retry" % "2.1.2"
 
   val jnrConstants = "com.github.jnr" % "jnr-constants" % "0.10.4"
 
@@ -115,7 +115,7 @@ object Dependencies {
 
   val scalapbRuntime = "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.25.6" % "protobuf"
+  val protobufJava = "com.google.protobuf" % "protobuf-java" % "3.25.8" % "protobuf"
 
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
 
@@ -141,17 +141,17 @@ object Dependencies {
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.19.0"
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.19.0"
   val jawnParser = "org.typelevel" %% "jawn-parser" % "1.6.0"
-  val nettyHandler = "io.netty" % "netty-handler" % "4.1.121.Final"
+  val nettyHandler = "io.netty" % "netty-handler" % "4.2.2.Final"
 
-  private val bouncycastleVersion = "1.80"
+  private val bouncycastleVersion = "1.81"
 
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk18on" % bouncycastleVersion
   val bouncyCastleBcpkix = "org.bouncycastle" % "bcpkix-jdk18on" % bouncycastleVersion
 
-  val guava = "com.google.guava" % "guava" % "33.4.5-jre"
+  val guava = "com.google.guava" % "guava" % "33.4.8-jre"
 
-  val kotlinXCoroutinesCore = "org.jetbrains.kotlinx" % "kotlinx-coroutines-core" % "1.9.0" pomOnly()
-  val kotlinXCoroutinesJdk8 = "org.jetbrains.kotlinx" % "kotlinx-coroutines-jdk8" % "1.9.0"
+  val kotlinXCoroutinesCore = "org.jetbrains.kotlinx" % "kotlinx-coroutines-core" % "1.10.2" pomOnly()
+  val kotlinXCoroutinesJdk8 = "org.jetbrains.kotlinx" % "kotlinx-coroutines-jdk8" % "1.10.2"
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) = modules.map(m => m % scope)
 
