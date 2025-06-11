@@ -3,7 +3,7 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.10.5"
+  val akkaVersion = "2.10.6"
   val akkaManagementVersion = "1.6.2"
   val akkaPersistenceCassandraVersion = "1.3.2"
   val http4sVersion = "0.22.15"
@@ -55,7 +55,7 @@ object Dependencies {
   val akkaClusterBoostrap = "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
   val akkaDiscoveryKube = "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaManagementVersion
 
-  val kafkaClient = "org.apache.kafka" % "kafka-clients" % "3.9.1"
+  val kafkaClient = "org.apache.kafka" % "kafka-clients" % "4.0.0"
   val fs2Core = "co.fs2" %% "fs2-core" % fs2Version
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Version
   val fs2kafka = "com.github.fd4s" %% "fs2-kafka" % "1.11.0"
