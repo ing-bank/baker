@@ -9,7 +9,7 @@ object Dependencies {
   val http4sVersion = "0.22.15"
   val circeVersion = "0.14.13"
   val fs2Version = "2.5.12"
-  val mockitoScalaVersion = "1.17.45"
+  val mockitoScalaVersion = "2.0.0"
   val catsEffectVersion = "2.5.5"
   val catsCoreVersion = "2.13.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
@@ -28,7 +28,7 @@ object Dependencies {
   val mockitoScalaTest = "org.mockito" %% "mockito-scala-scalatest" % mockitoScalaVersion
   val mockServer = "org.mock-server" % "mockserver-netty" % "5.15.0"
   val junitInterface = "com.github.sbt" % "junit-interface" % "0.13.3"
-  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.13.0"
+  val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.13.1"
 
   val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
 
@@ -137,9 +137,9 @@ object Dependencies {
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.19.0"
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.19.0"
   val jawnParser = "org.typelevel" %% "jawn-parser" % "1.6.0"
-  val nettyHandler = "io.netty" % "netty-handler" % "4.2.1.Final"
+  val nettyHandler = "io.netty" % "netty-handler" % "4.2.2.Final"
 
-  private val bouncycastleVersion = "1.80"
+  private val bouncycastleVersion = "1.81"
 
   val bouncyCastleBcprov = "org.bouncycastle" % "bcprov-jdk18on" % bouncycastleVersion
   val bouncyCastleBcpkix = "org.bouncycastle" % "bcpkix-jdk18on" % bouncycastleVersion
