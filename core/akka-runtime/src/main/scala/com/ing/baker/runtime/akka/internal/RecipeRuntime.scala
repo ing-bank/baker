@@ -10,7 +10,7 @@ import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor}
 import com.ing.baker.petrinet.api.{MultiSet, _}
 import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceRuntime
-import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
+import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Continue, ContinueAsFunctionalEvent, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.internal.RecipeRuntime._
 import com.ing.baker.runtime.model.InteractionManager
@@ -183,6 +183,9 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
             case ExceptionStrategyOutcome.Continue(eventName) =>
               val runtimeEvent = EventInstance(eventName, Map.empty)
               Continue(createProducedMarking(outMarking, Some(runtimeEvent)), runtimeEvent)
+            case ExceptionStrategyOutcome.ContinueAsFunctionalEvent(eventName) =>
+              val runtimeEvent = EventInstance(eventName, Map.empty)
+              ContinueAsFunctionalEvent(createProducedMarking(outMarking, Some(runtimeEvent)), runtimeEvent)
           }
 
         case _ => BlockTransition

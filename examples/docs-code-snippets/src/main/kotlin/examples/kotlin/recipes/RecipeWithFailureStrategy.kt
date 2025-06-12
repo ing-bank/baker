@@ -8,7 +8,7 @@ import examples.kotlin.interactions.ShipOrder
 object RecipeWithFailureStrategy {
     val recipe = recipe("example") {
         interaction<ShipOrder> {
-            failureStrategy = fireEventAfterFailure("shippingFailed")
+            failureStrategy = fireEventAndBlock("shippingFailed")
         }
     }
 }

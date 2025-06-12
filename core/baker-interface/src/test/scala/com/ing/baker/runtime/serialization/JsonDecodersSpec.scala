@@ -1,5 +1,6 @@
 package com.ing.baker.runtime.serialization
 
+import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceDescriptor, InteractionInstanceInput}
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.types._
@@ -8,7 +9,6 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
 import scala.annotation.nowarn
-import scala.collection.immutable.Seq
 
 @nowarn
 class JsonDecodersSpec extends AnyFunSpec with Matchers {
@@ -104,6 +104,20 @@ class JsonDecodersSpec extends AnyFunSpec with Matchers {
 
       val addMetaDataRequestWithData = decode[AddMetaDataRequest]("""{"metadata":{"Key1":"Value1"}}""").right.get
       addMetaDataRequestWithData shouldEqual AddMetaDataRequest(Map("Key1"-> "Value1"))
+    }
+
+    it("should decode ExceptionStrategyOutcome") {
+      val blockTransition = decode[ExceptionStrategyOutcome]("""{"BlockTransition":{}}""").right.get
+      blockTransition shouldEqual ExceptionStrategyOutcome.BlockTransition
+
+      val retryException = decode[ExceptionStrategyOutcome]("""{"RetryWithDelay":{"delay":10}}""").right.get
+      retryException shouldEqual ExceptionStrategyOutcome.RetryWithDelay(10)
+
+      val continueException = decode[ExceptionStrategyOutcome]("""{"Continue":{"eventName":"event name"}}""").right.get
+      continueException shouldEqual  ExceptionStrategyOutcome.Continue("event name")
+
+      val continueAsFunctionalEvent = decode[ExceptionStrategyOutcome]("""{"ContinueAsFunctionalEvent":{"eventName":"event name"}}""").right.get
+      continueAsFunctionalEvent shouldEqual ExceptionStrategyOutcome.ContinueAsFunctionalEvent("event name")
     }
   }
 }

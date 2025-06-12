@@ -75,28 +75,46 @@ package object compiler {
         case _ => Seq.empty
       }.toMap ++ interactionDescriptor.predefinedIngredients
 
-      val (failureStrategy: InteractionFailureStrategy, exhaustedRetryEvent: Option[EventDescriptor]) = {
+      val (failureStrategy: InteractionFailureStrategy, exhaustedRetryEvent: Option[EventDescriptor], functionalRetryEvent: Option[EventDescriptor]) = {
         interactionDescriptor.failureStrategy.getOrElse[common.InteractionFailureStrategy](defaultFailureStrategy) match {
-          case common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries, fireRetryExhaustedEvent) =>
+          case common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries, fireRetryExhaustedEvent, fireFunctionalEvent) =>
             val exhaustedRetryEvent: Option[EventDescriptor] = fireRetryExhaustedEvent match {
               case Some(None)            => Some(EventDescriptor(interactionDescriptor.name + exhaustedEventAppend, Seq.empty))
               case Some(Some(eventName)) => Some(EventDescriptor(eventName, Seq.empty))
               case None                  => None
             }
-            (il.failurestrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries, exhaustedRetryEvent), exhaustedRetryEvent)
-          case common.InteractionFailureStrategy.BlockInteraction() => (
-            il.failurestrategy.BlockInteraction, None)
+            val functionalFailedEvent: Option[EventDescriptor] = fireFunctionalEvent match {
+              case Some(None)            => Some(EventDescriptor(interactionDescriptor.name + functionalFailedEventAppend, Seq.empty))
+              case Some(Some(eventName)) => Some(EventDescriptor(eventName, Seq.empty))
+              case None                  => None
+            }
+
+            (il.failurestrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries, exhaustedRetryEvent, functionalFailedEvent),exhaustedRetryEvent, functionalFailedEvent)
+
+          case common.InteractionFailureStrategy.BlockInteraction() => (il.failurestrategy.BlockInteraction, None, None)
+
           case common.InteractionFailureStrategy.FireEventAfterFailure(eventNameOption) =>
             val eventName = eventNameOption.getOrElse(interactionDescriptor.name + exhaustedEventAppend)
             val exhaustedRetryEvent: EventDescriptor = EventDescriptor(eventName, Seq.empty)
-            (il.failurestrategy.FireEventAfterFailure(exhaustedRetryEvent), Some(exhaustedRetryEvent))
-          case _ => (il.failurestrategy.BlockInteraction, None)
+            (il.failurestrategy.FireEventAfterFailure(exhaustedRetryEvent), Some(exhaustedRetryEvent), None)
+
+          case common.InteractionFailureStrategy.FireEventAndBlock(eventNameOption) =>
+            val eventName = eventNameOption.getOrElse(interactionDescriptor.name + exhaustedEventAppend)
+            val exhaustedRetryEvent: EventDescriptor = EventDescriptor(eventName, Seq.empty)
+            (il.failurestrategy.FireEventAfterFailure(exhaustedRetryEvent), Some(exhaustedRetryEvent), None)
+
+          case common.InteractionFailureStrategy.FireEventAndResolve(eventNameOption) =>
+            val eventName = eventNameOption.getOrElse(interactionDescriptor.name + functionalFailedEventAppend)
+            val functionalFailed: EventDescriptor = EventDescriptor(eventName, Seq.empty)
+            (il.failurestrategy.FireFunctionalEventAfterFailure(functionalFailed), None, Some(functionalFailed))
+
+          case _ => (il.failurestrategy.BlockInteraction, None, None)
         }
       }
 
       InteractionTransition(
-        eventsToFire = eventsToFire ++ exhaustedRetryEvent,
-        originalEvents = originalEvents ++ exhaustedRetryEvent,
+        eventsToFire = eventsToFire ++ exhaustedRetryEvent ++ functionalRetryEvent,
+        originalEvents = originalEvents ++ exhaustedRetryEvent ++ functionalRetryEvent,
         requiredIngredients = inputFields.map { case (name, ingredientType) => IngredientDescriptor(name, ingredientType) },
         interactionName = interactionDescriptor.name,
         originalInteractionName = interactionDescriptor.originalName,

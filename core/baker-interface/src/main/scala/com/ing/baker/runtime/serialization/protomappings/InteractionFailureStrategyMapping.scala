@@ -27,13 +27,19 @@ class InteractionFailureStrategyMapping extends ProtoMap[il.failurestrategy.Inte
           protobuf.FireEventAfterFailure(Option(ctxToProto(eventDescriptor)))
         protobuf.InteractionFailureStrategy(protobuf.InteractionFailureStrategy.OneofType.FireEventAfterFailure(fireAfterFailure))
 
+      case il.failurestrategy.FireFunctionalEventAfterFailure(eventDescriptor) =>
+        val fireFunctionalEventAfterFailure =
+          protobuf.FireFunctionalEventAfterFailure(Option(ctxToProto(eventDescriptor)))
+        protobuf.InteractionFailureStrategy(protobuf.InteractionFailureStrategy.OneofType.FireFunctionalEventAfterFailure(fireFunctionalEventAfterFailure))
+
       case strategy: il.failurestrategy.RetryWithIncrementalBackoff =>
         val retry = protobuf.RetryWithIncrementalBackoff(
           initialTimeout = Option(strategy.initialTimeout.toMillis),
           backoffFactor = Option(strategy.backoffFactor),
           maximumRetries = Option(strategy.maximumRetries),
           maxTimeBetweenRetries = strategy.maxTimeBetweenRetries.map(_.toMillis),
-          retryExhaustedEvent = strategy.retryExhaustedEvent.map(ctxToProto(_))
+          retryExhaustedEvent = strategy.retryExhaustedEvent.map(ctxToProto(_)),
+          retryFunctionalEvent = strategy.retryWithFunctionalEvent.map(ctxToProto(_))
         )
 
         protobuf.InteractionFailureStrategy(protobuf.InteractionFailureStrategy.OneofType.RetryWithIncrementalBackoff(retry))
@@ -52,18 +58,26 @@ class InteractionFailureStrategyMapping extends ProtoMap[il.failurestrategy.Inte
           event <- ctxFromProto(eventProto)
         } yield il.failurestrategy.FireEventAfterFailure(event)
 
+      case OneofType.FireFunctionalEventAfterFailure(fireEvent: protobuf.FireFunctionalEventAfterFailure) =>
+        for {
+          eventProto <- versioned(fireEvent.event, "event")
+          event <- ctxFromProto(eventProto)
+        } yield il.failurestrategy.FireFunctionalEventAfterFailure(event)
+
       case OneofType.RetryWithIncrementalBackoff(incremental: protobuf.RetryWithIncrementalBackoff) =>
         for {
           initialTimeout <- versioned(incremental.initialTimeout, "initialTimeout")
           backoff <- versioned(incremental.backoffFactor, "backoffFactor")
           maximumRetries <- versioned(incremental.maximumRetries, "maximumRetries")
-          retryExausted <- incremental.retryExhaustedEvent.traverse[Try, il.EventDescriptor](ctxFromProto(_))
+          retryExhausted <- incremental.retryExhaustedEvent.traverse[Try, il.EventDescriptor](ctxFromProto(_))
+          retryFunctionalEvent <- incremental.retryFunctionalEvent.traverse[Try, il.EventDescriptor](ctxFromProto(_))
         } yield il.failurestrategy.RetryWithIncrementalBackoff(
           initialTimeout = Duration(initialTimeout, TimeUnit.MILLISECONDS),
           backoffFactor = backoff,
           maximumRetries = maximumRetries,
           maxTimeBetweenRetries = incremental.maxTimeBetweenRetries.map(Duration(_, TimeUnit.MILLISECONDS)),
-          retryExhaustedEvent = retryExausted
+          retryExhaustedEvent = retryExhausted,
+          retryWithFunctionalEvent = retryFunctionalEvent
         )
 
       case f =>
