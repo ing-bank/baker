@@ -530,7 +530,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       context.stop(sender())
 
     case StopProcessIndexShard =>
-      log.debug("StopProcessIndexShard received, stopping self")
+      log.info("StopProcessIndexShard received, stopping self")
       context.stop(delayedTransitionActor)
       context.stop(self)
 
@@ -668,10 +668,14 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           deleteProcess(process._2)
         }
       )
+
       // Start the active processes
       index
-        .filter(process => process._2.processStatus == Active ).keys
-        .foreach(id => createProcessActor(id))
+        .filter(process => process._2.processStatus == Active).keys
+        .foreach(id => {
+          log.debug(s"Starting child actor after recovery: $id")
+          createProcessActor(id)
+        })
       delayedTransitionActor ! StartTimer
   }
 
