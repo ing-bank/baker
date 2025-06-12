@@ -170,7 +170,7 @@ final class BakerClient( client: Client[IO],
     callRemoteBakerService[String]((host, prefix) => IO(GET(root(host, prefix) / "app" / "recipes" / recipeId / "visual")))
 
   /**
-    * Returns all recipes added to this baker instance.
+    * Returns all 'active' recipes added to this baker instance.
     *
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */

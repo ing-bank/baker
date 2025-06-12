@@ -78,10 +78,14 @@ object AkkaBaker {
 class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker with LazyLogging {
   import config.system
 
+  /**
+   * Useful for users that want to directly use any of the AkkaBaker components
+   */
+  def getAkkaBakerConfig: AkkaBakerConfig = config
+
   config.bakerActorProvider.initialize(system)
 
-  private val recipeManager: RecipeManager =
-    config.recipeManager
+  private val recipeManager: RecipeManager = config.recipeManager
 
   private val processIndexActor: ActorRef =
     config.bakerActorProvider.createProcessIndexActor(config.interactions, recipeManager, system.settings.config)
@@ -101,7 +105,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       val updated = recipeRecord.updated
       if (!recipeRecord.validate || config.bakerValidationSettings.allowAddingRecipeWithoutRequiringInstances) {
         logger.debug(s"Recipe implementation errors are ignored for ${recipe.name}:${recipe.recipeId}")
-        addToManager(recipe, updated)
+        recipeManager.put(recipeRecord.copy(updated = updated))
       } else {
         logger.debug(s"Recipe ${recipe.name}:${recipe.recipeId} is validated for compatibility with interactions")
         getImplementationErrors(recipe).flatMap { implementationErrors =>
@@ -110,15 +114,12 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
           } else if (recipe.validationErrors.nonEmpty) {
             Future.failed(RecipeValidationException(s"Recipe ${recipe.name}:${recipe.recipeId} has validation errors: ${recipe.validationErrors.mkString(", ")}"))
           } else {
-            addToManager(recipe, updated)
+            recipeManager.put(recipeRecord.copy(updated = updated))
           }
         }
       }
     }
   } yield result
-
-  private def addToManager(compiledRecipe: CompiledRecipe, timeCreated: Long): Future[String] =
-    recipeManager.put(RecipeRecord.of(compiledRecipe, updated = timeCreated))
 
   private def getImplementationErrors(compiledRecipe: CompiledRecipe): Future[Set[String]] = {
     compiledRecipe.interactionTransitions.toList
@@ -136,7 +137,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     * @return
     */
   override def getRecipe(recipeId: String): Future[RecipeInformation] = {
-    // here we ask the RecipeManager actor to return us the recipe for the given id
+    // here we ask the RecipeManager to return us the recipe for the given id
     recipeManager.get(recipeId).flatMap {
       case Some(r: RecipeRecord) =>
         getImplementationErrors(r.recipe).map(errors => RecipeInformation(r.recipe, r.updated, errors, r.validate, r.recipe.sensoryEvents ))
@@ -150,12 +151,12 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     getRecipe(recipeId).map(r => RecipeVisualizer.visualizeRecipe(r.compiledRecipe, style))
 
   /**
-    * Returns all recipes added to this baker instance.
+    * Returns all 'active' recipes added to this baker instance.
     *
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
   override def getAllRecipes: Future[Map[String, RecipeInformation]] = {
-    recipeManager.all
+    recipeManager.allActive
       .flatMap(
         _.toList
           .traverse(ri => getImplementationErrors(ri.recipe)
@@ -209,16 +210,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     * @return
     */
   override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] = {
-    processIndexActor.ask(CreateProcess(recipeId, recipeInstanceId))(config.timeouts.defaultBakeTimeout).javaTimeoutToBakerTimeout("bake").flatMap {
-      case _: Initialized =>
-        Future.successful(())
-      case ProcessDeleted =>
-        Future.failed(ProcessDeletedException(recipeInstanceId))
-      case ProcessAlreadyExists(_) =>
-        Future.failed(ProcessAlreadyExistsException(recipeInstanceId))
-      case RecipeManagerProtocol.NoRecipeFound(_) =>
-        Future.failed(NoSuchRecipeException(recipeId))
-    }
+    bake(recipeId, recipeInstanceId, Map.empty)
   }
 
   /**
@@ -232,7 +224,23 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     * @return
     */
   override def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] = {
-    bake(recipeId, recipeInstanceId).map(_ -> addMetaData(recipeInstanceId, metadata))
+    val eventualBake = processIndexActor.ask(CreateProcess(recipeId, recipeInstanceId, metadata))(config.timeouts.defaultBakeTimeout).javaTimeoutToBakerTimeout("bake").flatMap {
+      case _: Initialized =>
+        Future.successful(())
+      case ProcessDeleted(_) =>
+        Future.failed(ProcessDeletedException(recipeInstanceId))
+      case ProcessAlreadyExists(_) =>
+        Future.failed(ProcessAlreadyExistsException(recipeInstanceId))
+      case RecipeManagerProtocol.NoRecipeFound(_) =>
+        Future.failed(NoSuchRecipeException(recipeId))
+    }
+
+    // TODO This is a temporary backwards compatibility logic to support the old way of adding metadata during rollout, to be removed in the future release
+    if (metadata.nonEmpty) {
+      eventualBake.map(_ => addMetaData(recipeInstanceId, metadata))
+    } else {
+      eventualBake
+    }
   }
 
   override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] =

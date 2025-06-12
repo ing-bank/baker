@@ -24,14 +24,16 @@
 
         <ng-container matColumnDef="errors">
           <th mat-header-cell *matHeaderCellDef>Recipe errors</th>
-          <td mat-cell *matCellDef="let recipe"> {{recipe.errors}} </td>
+          <td mat-cell *matCellDef="let recipe"> {{recipe.errors.length > 0}} </td>
         </ng-container>
 
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>Actions</th>
           <td mat-cell *matCellDef="let recipe">
             <button mat-raised-button color="primary" (click)="viewRecipe(recipe.recipeId, recipe.name)">Visualize</button>
+            <button mat-raised-button color="primary" (click)="viewErrors(recipe.recipeId, recipe.name, recipe.errors)">Errors</button>
             <button mat-raised-button color="primary" (click)="bakeRecipe(recipe.recipeId)">Bake</button>
+            <button mat-raised-button color="primary" (click)="deactivateRecipe(recipe.recipeId)">De-activate</button>
           </td>
         </ng-container>
 
@@ -44,6 +46,13 @@
     <mat-tab *ngIf="selectedRecipeGraph" [label]="selectedRecipeName + ' visualization'">
       <ng-template matTabContent>
         <visualize-recipe [visual]="selectedRecipeGraph"></visualize-recipe>
+      </ng-template>
+    </mat-tab>
+    <mat-tab *ngIf="selectedRecipeErrors" [label]="selectedRecipeName + ' errors'">
+      <ng-template matTabContent>
+        <tr *ngFor="let error of selectedRecipeErrors">
+          <td>{{error}}</td>
+        </tr>
       </ng-template>
     </mat-tab>
   </mat-tab-group>

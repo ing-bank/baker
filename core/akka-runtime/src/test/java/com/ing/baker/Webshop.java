@@ -155,7 +155,7 @@ public class Webshop {
         ActorSystem system = ActorSystem.create("webshop");
         Baker baker = AkkaBaker.java(config, system, ImmutableList.of(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock));
 
-        String recipeId = baker.addRecipe(RecipeRecord.of(recipe, System.currentTimeMillis(), false)).get();
+        String recipeId = baker.addRecipe(RecipeRecord.of(recipe, System.currentTimeMillis(), false, true)).get();
 
         String recipeInstanceId = "56a70f82-a24d-497f-b3ac-57366adbb39c"; //UUID.randomUUID().toString();
 

@@ -39,7 +39,7 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
       state
 })
 
-lazy val scala213 = "2.13.15"
+lazy val scala213 = "2.13.16"
 
 lazy val supportedScalaVersions = List(scala213)
 val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
@@ -194,7 +194,7 @@ lazy val `baker-interface-kotlin`: Project = project.in(file("core/baker-interfa
   .settings(Publish.settings)
   .settings(
     moduleName := "baker-interface-kotlin",
-    kotlinVersion := "1.8.21",
+    kotlinVersion := "2.0.21",
     kotlincJvmTarget := "17",
     kotlinLib("stdlib-jdk8"),
     kotlinLib("reflect"),
@@ -309,7 +309,7 @@ lazy val `baker-recipe-dsl-kotlin`: Project = project.in(file("core/recipe-dsl-k
   .settings(Publish.settings)
   .settings(
     moduleName := "baker-recipe-dsl-kotlin",
-    kotlinVersion := "1.8.21",
+    kotlinVersion := "2.0.21",
     kotlincJvmTarget := "17",
     kotlinLib("stdlib-jdk8"),
     kotlinLib("reflect"),
@@ -334,7 +334,7 @@ lazy val `baker-recipe-compiler`: Project = project.in(file("core/recipe-compile
   .settings(Publish.settings)
   .settings(
     moduleName := "baker-compiler",
-    kotlinVersion := "1.8.21",
+    kotlinVersion := "2.0.21",
     kotlincJvmTarget := "17",
     libraryDependencies ++=
       testDeps(scalaTest, scalaCheck, junitJupiter)
@@ -352,7 +352,7 @@ lazy val `baker-test`: Project = project.in(file("core/baker-test"))
     ) ++ testDeps(scalaTest, logback,
       "io.altoo" %% "akka-kryo-serialization" % "2.5.2",
       "junit" % "junit" % "4.13.2",
-      "org.scalatestplus" %% "junit-4-13" % "3.2.19.0"
+      "org.scalatestplus" %% "junit-4-13" % "3.2.19.1"
     )
   ).dependsOn(`baker-interface`, testScope(`baker-akka-runtime`), testScope(`baker-recipe-compiler`))
 
@@ -703,7 +703,7 @@ lazy val `docs-code-snippets`: Project = project
   .settings(crossBuildSettings)
   .settings(
     moduleName := "docs-code-snippets",
-    kotlinVersion := "1.8.21",
+    kotlinVersion := "2.0.21",
     kotlincJvmTarget := "17",
     kotlinLib("stdlib-jdk8"),
     kotlinLib("reflect"),

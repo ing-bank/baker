@@ -201,13 +201,18 @@ object ProcessIndexProto {
       val companion = protobuf.CreateProcess
 
       def toProto(a: CreateProcess): protobuf.CreateProcess =
-        protobuf.CreateProcess(Some(a.recipeId), Some(a.recipeInstanceId))
+        protobuf.CreateProcess(
+          Some(a.recipeId),
+          Some(a.recipeInstanceId),
+          a.metaData.map { case (key, value) => protobuf.AddRecipeInstanceMetaDataRecord(Some(key), Some(value)) }.toSeq
+        )
 
       def fromProto(message: protobuf.CreateProcess): Try[CreateProcess] =
         for {
           recipeId <- versioned(message.recipeId, "recipeId")
           recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
-        } yield CreateProcess(recipeId, recipeInstanceId)
+          metadata = message.metaData.map(record => record.getKey -> record.getValue).toMap
+        } yield CreateProcess(recipeId, recipeInstanceId, metadata)
     }
 
   implicit def processEventProto(implicit actorRefProvider: ActorRefProvider): ProtoMap[ProcessEvent, protobuf.ProcessEvent] =
@@ -369,13 +374,13 @@ object ProcessIndexProto {
       def toProto(a: AddRecipeInstanceMetaData): protobuf.AddRecipeInstanceMetaData =
         protobuf.AddRecipeInstanceMetaData(
           Some(a.recipeInstanceId),
-          a.metaData.map(record => {
-            protobuf.AddRecipeInstanceMetaDataRecord(Some(record._1), Some(record._2))}).toSeq)
+          a.metaData.map { case (key, value) => protobuf.AddRecipeInstanceMetaDataRecord(Some(key), Some(value)) }.toSeq
+        )
 
       def fromProto(message: protobuf.AddRecipeInstanceMetaData): Try[AddRecipeInstanceMetaData] =
         for {
           recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
-          metaData = message.metaData.map(record => (record.getKey -> record.getValue)).toMap
+          metaData = message.metaData.map(record => record.getKey -> record.getValue).toMap
         } yield AddRecipeInstanceMetaData(recipeInstanceId, metaData)
     }
 

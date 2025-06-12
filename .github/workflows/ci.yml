@@ -1,7 +1,8 @@
 name: CI
 on:
+  workflow_dispatch:
   push:
-    branches: ["**"]
+    branches: ["master"]
     tags: ["v*"]
   pull_request:
     branches: ["master"]
@@ -27,6 +28,7 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: sbt
+      - uses: sbt/setup-sbt@v1
       - name: Run tests and coverage
         run: |-
           cp .jvmopts-ci .jvmopts
@@ -61,6 +63,7 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: sbt
+      - uses: sbt/setup-sbt@v1
       - name: Publish to Sonatype
         run: sbt ci-release
         env:
@@ -74,8 +77,8 @@ jobs:
       contents: write
       pull-requests: write
     name: Publish to Azure
-    # Publish to Azure all the commits for all the branches from the original repo except for tags.
-    if: ${{ github.event_name == 'push' && ! startsWith(github.ref, 'refs/tags/') && ! github.event.repository.fork }}
+    # Publish to Azure only for push events and pull requests from the main repo except for tags
+    if: ${{ (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) && ! startsWith(github.ref, 'refs/tags/') }}
     needs: [ci]
     runs-on: ubuntu-latest
     steps:
@@ -89,8 +92,9 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: sbt
+      - uses: sbt/setup-sbt@v1
       - name: Publish to Azure
-        run: sbt "clean; +aetherDeploy; project interaction-example-make-payment-and-ship-items; +aetherDeploy; project interaction-example-reserve-items; +aetherDeploy; project bakery-client-example; +aetherDeploy; project bakery-kafka-listener-example; +aetherDeploy"
+        run: sbt "clean; +aetherDeploy"
         env:
           AZURE_FEEDUSER: ${{ secrets.AZURE_FEEDUSER }}
           AZURE_FEEDPASSWORD: ${{ secrets.AZURE_FEEDPASSWORD }}
@@ -116,5 +120,6 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: sbt
+      - uses: sbt/setup-sbt@v1
       - name: Submit dependency graph
         uses: scalacenter/sbt-dependency-submission@v2

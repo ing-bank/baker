@@ -62,6 +62,7 @@ message Index {
 message CreateProcess {
     optional string recipeId = 1;
     optional string recipeInstanceId = 2;
+    repeated AddRecipeInstanceMetaDataRecord metaData = 3;
 }
 
 message ProcessEvent {

@@ -76,7 +76,7 @@ trait Baker[F[_]] extends LanguageApi {
   def getRecipeVisual(recipeId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): F[String]
 
   /**
-    * Returns all recipes added to this baker instance.
+    * Returns all 'active' recipes added to this baker instance.
     *
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
@@ -394,9 +394,10 @@ case class RecipeRecord(
                          name: String,
                          updated: Long,
                          recipe: CompiledRecipe,
-                         validate: Boolean
+                         validate: Boolean,
+                         isActive: Boolean = true
                        )
 object RecipeRecord {
-  def of(recipe: CompiledRecipe, updated: Long = System.currentTimeMillis(), validate: Boolean = true) =
-    RecipeRecord(recipe.recipeId, recipe.name, updated, recipe, validate)
+  def of(recipe: CompiledRecipe, updated: Long = System.currentTimeMillis(), validate: Boolean = true, isActive: Boolean = true) =
+    RecipeRecord(recipe.recipeId, recipe.name, updated, recipe, validate, isActive)
 }
