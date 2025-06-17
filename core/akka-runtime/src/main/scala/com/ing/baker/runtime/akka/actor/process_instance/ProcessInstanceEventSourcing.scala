@@ -14,10 +14,8 @@ import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.scaladsl.RecipeInstanceState
 import com.ing.baker.runtime.serialization.Encryption
-import com.ing.baker.types.{CharArray, MapType, Value}
+import com.ing.baker.types.Value
 import com.typesafe.scalalogging.LazyLogging
-
-import scala.jdk.CollectionConverters._
 
 object ProcessInstanceEventSourcing extends LazyLogging {
 
@@ -52,6 +50,20 @@ object ProcessInstanceEventSourcing extends LazyLogging {
                                     consumed: Marking[Id],
                                     produced: Marking[Id],
                                     output: Any) extends TransitionEvent
+
+
+  /**
+   * An event describing the fact that a transition failed but was continued with a given event
+   * This does not consume the input and puts the transition in a blocked state but does create the output.
+   */
+  case class TransitionFailedWithFunctionalOutputEvent(override val jobId: Long,
+                                             override val transitionId: Id,
+                                             correlationId: Option[String],
+                                             timeStarted: Long,
+                                             timeCompleted: Long,
+                                             consumed: Marking[Id],
+                                             produced: Marking[Id],
+                                             output: Any) extends TransitionEvent
 
   /**
     * An event describing the fact that a transition failed to fire.
@@ -131,6 +143,20 @@ object ProcessInstanceEventSourcing extends LazyLogging {
         receivedCorrelationIds = instance.receivedCorrelationIds ++ e.correlationId,
         state = newState,
         jobs = instance.jobs + (job.id -> updatedJob)
+      )
+
+    case e: TransitionFailedWithFunctionalOutputEvent =>
+      val transition = instance.petriNet.transitions.getById(e.transitionId)
+      val newState = sourceFn(transition)(instance.state)(e.output.asInstanceOf[E])
+      val consumed: Marking[Place] = e.consumed.unmarshall(instance.petriNet.places)
+      val produced: Marking[Place] = e.produced.unmarshall(instance.petriNet.places)
+
+      instance.copy[S](
+        sequenceNr = instance.sequenceNr + 1,
+        marking = (instance.marking |-| consumed) |+| produced,
+        receivedCorrelationIds = instance.receivedCorrelationIds ++ e.correlationId,
+        state = newState,
+        jobs = instance.jobs - e.jobId
       )
 
     case e: TransitionFailedEvent =>
@@ -239,6 +265,7 @@ abstract class ProcessInstanceEventSourcing[S, E](
     case e: protobuf.Initialized      => applyToRecoveringState(e)
     case e: protobuf.TransitionFired  => applyToRecoveringState(e)
     case e: protobuf.TransitionFailedWithOutput  => applyToRecoveringState(e)
+    case e: protobuf.TransitionFailedWithFunctionalOutput  => applyToRecoveringState(e)
     case e: protobuf.TransitionFailed => applyToRecoveringState(e)
     case e: protobuf.TransitionDelayed => applyToRecoveringState(e)
     case e: protobuf.DelayedTransitionFired => applyToRecoveringState(e)

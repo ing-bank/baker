@@ -7,6 +7,6 @@ import examples.kotlin.interactions.ShipOrder
 @ExperimentalDsl
 object RecipeWithDefaultFailureStrategy {
     val recipe = recipe("example") {
-        defaultFailureStrategy = fireEventAfterFailure("recipeFailed")
+        defaultFailureStrategy = fireEventAndBlock("recipeFailed")
     }
 }

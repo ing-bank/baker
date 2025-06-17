@@ -208,6 +208,15 @@ object ProcessInstanceProtocol {
 
       def isContinue: Boolean = true
     }
+
+    case class ContinueAsFunctional(marking: Marking[Id], output: Any) extends ExceptionStrategy {
+
+      def isBlock: Boolean = false
+
+      def isRetry: Boolean = false
+
+      def isContinue: Boolean = true
+    }
   }
 
   /**

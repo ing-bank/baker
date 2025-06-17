@@ -612,7 +612,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       val petriNetActor = createPetriNetActor(processInstanceProps(petriNet, runtime, customSettings, null), UUID.randomUUID().toString)
       watch(petriNetActor)
 
-      implicit val timeout = Timeout(dilatedMillis(2000), MILLISECONDS)
+      implicit val timeout: Timeout = Timeout(dilatedMillis(2000), MILLISECONDS)
 
       petriNetActor ! Initialize(initialMarking, null)
       expectMsgClass(classOf[Initialized])
@@ -783,7 +783,38 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       )
 
       val failureStrategy: InteractionFailureStrategy =
-        RetryWithIncrementalBackoff(Zero, 1.0, 1, Option.empty, Some(EventDescriptor(exhaustedEvent, Seq.empty)))
+        RetryWithIncrementalBackoff(Zero, 1.0, 1, Option.empty, Some(EventDescriptor(exhaustedEvent, Seq.empty)), None)
+
+      val interactionTransition: InteractionTransition = InteractionTransition(
+        eventsToFire, eventsToFire,
+        Seq.empty,
+        "Name",
+        "Name",
+        Map.empty,
+        Option.empty,
+        failureStrategy, Map.empty, false)
+
+      val logMock = mock[DiagnosticLoggingAdapter]
+
+      val output: String = ProcessInstance.getOutputEventName(interactionTransition, logMock)
+
+      assert(output == eventName)
+    }
+
+    "Should correctly determine the OutputEventName for Delayed Transitions if RetryWithIncrementalBackoff is used with FireFunctionalEvent" in new TestSequenceNet {
+      override val sequence = Seq(
+        transition() { _ => Added(1) })
+
+      val eventName = "originalEvent1"
+      val exhaustedEvent = "exhaustedEvent"
+
+      val eventsToFire: Seq[EventDescriptor] = Seq(
+        EventDescriptor(eventName, Seq.empty),
+        EventDescriptor(exhaustedEvent, Seq.empty)
+      )
+
+      val failureStrategy: InteractionFailureStrategy =
+        RetryWithIncrementalBackoff(Zero, 1.0, 1, Option.empty, Option.empty, Some(EventDescriptor(exhaustedEvent, Seq.empty)))
 
       val interactionTransition: InteractionTransition = InteractionTransition(
         eventsToFire, eventsToFire,
@@ -813,7 +844,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       )
 
       val failureStrategy: InteractionFailureStrategy =
-        RetryWithIncrementalBackoff(Zero, 1.0, 1, Option.empty, Option.empty)
+        RetryWithIncrementalBackoff(Zero, 1.0, 1, Option.empty, Option.empty, None)
 
       val interactionTransition: InteractionTransition = InteractionTransition(
         eventsToFire, eventsToFire,

@@ -9,7 +9,7 @@ object RecipeWithFailureStrategy {
     .withInteraction(
       ShipOrder.interaction
         .withFailureStrategy(
-          InteractionFailureStrategy.FireEventAfterFailure(Some("shippingFailed"))
+          InteractionFailureStrategy.FireEventAndBlock(Some("shippingFailed"))
         )
     )
 }

@@ -50,6 +50,9 @@ class JsonEncodersSpec extends AnyFunSpec with Matchers {
 
       val continueException: ExceptionStrategyOutcome = ExceptionStrategyOutcome.Continue("event name")
       continueException.asJson.noSpaces shouldEqual """{"Continue":{"eventName":"event name"}}"""
+
+      val continueAsFunctionalEvent: ExceptionStrategyOutcome = ExceptionStrategyOutcome.ContinueAsFunctionalEvent("event name")
+      continueAsFunctionalEvent.asJson.noSpaces shouldEqual  """{"ContinueAsFunctionalEvent":{"eventName":"event name"}}"""
     }
 
     it("should encode Throwable") {

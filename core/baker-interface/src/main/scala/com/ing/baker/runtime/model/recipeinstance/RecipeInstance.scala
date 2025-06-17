@@ -108,7 +108,14 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
       case Left(ExceptionStrategyOutcome.Continue(eventName)) =>
         val output: EventInstance = EventInstance(eventName, Map.empty)
         for {
-          enabledExecutions <- state.modify(_.recordFailedWithOutputExecution(finishedExecution, Some(output)))
+          enabledExecutions <- state.modify(_.recordFailedWithOutputExecution(finishedExecution, output))
+          _ <- scheduleIdleStop
+        } yield Some(output) -> enabledExecutions
+
+      case Left(ExceptionStrategyOutcome.ContinueAsFunctionalEvent(eventName)) =>
+        val output: EventInstance = EventInstance(eventName, Map.empty)
+        for {
+          enabledExecutions <- state.modify(_.recordFailedWithOutputExecutionAsFunctionalEvent(finishedExecution, output))
           _ <- scheduleIdleStop
         } yield Some(output) -> enabledExecutions
 
