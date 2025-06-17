@@ -139,7 +139,7 @@ object Dependencies {
   val snakeYaml = "org.yaml" % "snakeyaml" % "2.4"
 
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.19.0"
-  val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.19.0"
+  val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.19.1"
   val jawnParser = "org.typelevel" %% "jawn-parser" % "1.6.0"
   val nettyHandler = "io.netty" % "netty-handler" % "4.2.2.Final"
 
