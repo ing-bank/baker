@@ -361,9 +361,10 @@ class ProcessInstance[S, E](
       persistEvent(instance, internalEvent)(
         eventSource.apply(instance)
           .andThen { case updatedInstance: Instance[S] =>
-            if (updatedInstance.activeJobs.isEmpty)
-                startIdleStop(updatedInstance.sequenceNr)
-              context become running(updatedInstance, scheduledRetries - jobId)
+            if (updatedInstance.activeJobs.isEmpty) {
+              startIdleStop(updatedInstance.sequenceNr)
+            }
+            context become running(updatedInstance, scheduledRetries - jobId)
           }
       )
 
