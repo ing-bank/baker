@@ -264,12 +264,16 @@ message BlockInteraction {}
 message FireEventAfterFailure {
     optional EventDescriptor event = 1;
 }
+message FireFunctionalEventAfterFailure {
+  optional EventDescriptor event = 1;
+}
 message RetryWithIncrementalBackoff {
     optional int64 initialTimeout = 1;
     optional double backoffFactor = 2;
     optional int32 maximumRetries = 3;
     optional int64 maxTimeBetweenRetries = 4;
     optional EventDescriptor retryExhaustedEvent = 5;
+    optional EventDescriptor retryFunctionalEvent = 6;
 }
 
 message InteractionFailureStrategy {
@@ -277,6 +281,7 @@ message InteractionFailureStrategy {
         BlockInteraction blockInteraction = 1;
         FireEventAfterFailure fireEventAfterFailure = 2;
         RetryWithIncrementalBackoff retryWithIncrementalBackoff = 3;
+        FireFunctionalEventAfterFailure fireFunctionalEventAfterFailure = 4;
     }
 }
 
@@ -334,6 +339,7 @@ enum RejectReason {
 message ExceptionStrategyOutcome {
     optional string eventName = 1;
     optional int64 delay = 2;
+    optional string functionalEventName = 3;
 }
 
 message EventReceivedBakerEvent {

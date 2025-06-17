@@ -530,7 +530,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       context.stop(sender())
 
     case StopProcessIndexShard =>
-      log.debug("StopProcessIndexShard received, stopping self")
+      log.info("StopProcessIndexShard received, stopping self")
       context.stop(delayedTransitionActor)
       context.stop(self)
 
@@ -664,14 +664,18 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       index.foreach(process =>
         if(blacklistedProcesses.contains(process._1) && !process._2.isDeleted) {
           val id = process._1
-          log.debug(s"Deleting blacklistedProcesses $id")
+          log.info(s"Deleting blacklistedProcesses $id")
           deleteProcess(process._2)
         }
       )
+
       // Start the active processes
       index
-        .filter(process => process._2.processStatus == Active ).keys
-        .foreach(id => createProcessActor(id))
+        .filter(process => process._2.processStatus == Active).keys
+        .foreach(id => {
+          log.debug(s"Starting child actor after recovery: $id")
+          createProcessActor(id)
+        })
       delayedTransitionActor ! StartTimer
   }
 
