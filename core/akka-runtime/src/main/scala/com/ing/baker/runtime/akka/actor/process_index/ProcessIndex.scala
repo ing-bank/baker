@@ -125,11 +125,11 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
 
   override def preStart(): Unit = {
-    log.debug("ProcessIndex started")
+    log.info(s"ProcessIndex started: $self")
   }
 
   override def postStop(): Unit = {
-    log.debug("ProcessIndex stopped")
+    log.info(s"ProcessIndex stopped: $self")
   }
 
   import context.dispatcher
@@ -641,8 +641,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     sync(processInstance.tell(command, responseHandler))
 
   private def updateWithStatus(recipeInstanceId: String, processStatus: ProcessStatus): Unit = {
-    index.get(recipeInstanceId)
-      .foreach { meta => index.update(recipeInstanceId, meta.copy(processStatus = processStatus)) }
+    index.get(recipeInstanceId) match {
+      case Some(metadata) => index.update(recipeInstanceId, metadata.copy(processStatus = processStatus))
+      case None => log.error(s"Trying to update recipeInstanceId $recipeInstanceId, with status: $processStatus but no metadata found for instance")
+    }
   }
 
   override def receiveRecover: Receive = {
@@ -675,7 +677,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       index
         .filter(process => process._2.processStatus == Active).keys
         .foreach(id => {
-          log.debug(s"Starting child actor after recovery: $id")
+          log.info(s"Starting child actor after recovery: $id")
           createProcessActor(id)
         })
       delayedTransitionActor ! StartTimer

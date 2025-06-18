@@ -143,11 +143,11 @@ class ProcessInstance[S, E](
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
   override def preStart(): Unit = {
-    log.debug("ProcessInstance started")
+    log.info(s"ProcessInstance started: $recipeInstanceId")
   }
 
   override def postStop(): Unit = {
-    log.debug("ProcessInstance stopped")
+    log.info(s"ProcessInstance stopped: $recipeInstanceId")
   }
 
   val recipeInstanceId = context.self.path.name
