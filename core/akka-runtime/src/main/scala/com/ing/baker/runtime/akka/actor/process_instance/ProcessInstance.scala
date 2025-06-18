@@ -400,7 +400,7 @@ class ProcessInstance[S, E](
             }
         )
       } else {
-        log.error(s"Ignoring DelayedTransitionFired since there is no open asyncConsumedMarkings for transition: $transitionId with count: ${instance.delayedTransitionIds.get(transitionId)}")
+        log.warning(s"Ignoring DelayedTransitionFired since there is no open asyncConsumedMarkings for transition: $transitionId with count: ${instance.delayedTransitionIds.get(transitionId)}")
         //The DelayedTransition is acknowledged so that it is removed from the DelayedTransitionManager.
         delayedTransitionActor ! FireDelayedTransitionAck(recipeInstanceId, jobId)
       }
