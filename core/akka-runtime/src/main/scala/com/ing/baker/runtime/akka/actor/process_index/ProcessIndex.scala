@@ -300,9 +300,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       case None if index(recipeInstanceId).isDeleted => sender() ! ProcessDeleted(recipeInstanceId)
       case None =>
         persistWithSnapshot(ActorActivated(recipeInstanceId)) { _ =>
+          updateWithStatus(recipeInstanceId, Active)
           val actor = createProcessActor(recipeInstanceId)
           if (actor.isEmpty) {
-            log.warning(s"Can't create actor for instance $recipeInstanceId")
+            log.error(s"Can't create actor for instance $recipeInstanceId")
           }
           actor.foreach(fn)
         }
@@ -585,6 +586,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         async { callback =>
           createProcessActor(recipeInstanceId).foreach { actor =>
             persistWithSnapshot(ActorActivated(recipeInstanceId)) { _ =>
+              updateWithStatus(recipeInstanceId, Active)
               callback(Right(actor -> index(recipeInstanceId)))
             }
           }
