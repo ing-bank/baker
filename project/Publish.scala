@@ -1,6 +1,5 @@
 import sbt._
 import Keys._
-import xerial.sbt.Sonatype.SonatypeKeys._
 import sbtdynver.DynVerPlugin.autoImport._
 
 object Publish {
@@ -31,7 +30,6 @@ object Publish {
     ),
     publishTo := Some("Azure Artifacts" at sys.env.getOrElse("AZURE_FEEDURL", "")),
     publishMavenStyle := true,
-    sonatypeCredentialHost := ""
   )
 
   // `sbt ci-release` will publish artifacts to the Sonatype repository
@@ -41,7 +39,6 @@ object Publish {
     dynverSeparator := "-",
     version := version.value.replace("-SNAPSHOT", ""),
   )) ++ List(
-    sonatypeProfileName := "com.ing",
     pomExtra := (
       <developers>
         <developer>
