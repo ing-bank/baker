@@ -6,7 +6,7 @@ import com.ing.baker.recipe.scaladsl.Recipe
 
 import scala.concurrent.duration.DurationInt
 
-object RecipeRetryExhaustedEvent {
+object RecipeRetryWithBackOfWithFireEventAndBlock {
   val recipe: Recipe = Recipe("example")
     .withDefaultFailureStrategy(
       RetryWithIncrementalBackoff
@@ -15,7 +15,7 @@ object RecipeRetryExhaustedEvent {
         .withBackoffFactor(2.0)
         .withMaxTimeBetweenRetries(Some(10.minutes))
         .withUntil(Some(UntilDeadline(24.hours)))
-        .withFireRetryExhaustedEvent(Some("RetriesExhausted"))
+        .withFireEventAndBlock(Some("RetriesExhausted"))
         .build()
     )
 }

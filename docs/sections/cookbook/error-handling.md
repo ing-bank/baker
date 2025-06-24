@@ -25,6 +25,8 @@ Baker offers multiple mitigation strategies for technical failures.
 
 This is the default failure strategy. When an exception occurs the interaction is blocked. This option is suitable
 for non-idempotent interactions that cannot be retried.
+A blocked interaction will not execute again for that recipe instance until it is unblocked.
+Blocked interactions can be unblocked by calling the baker.retryInteraction or baker.resolveInteraction methods.
 
 === "Java"
 
@@ -44,27 +46,52 @@ for non-idempotent interactions that cannot be retried.
     --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/RecipeBlockInteraction.scala"
     ```
 
-### Fire event
+### Fire event and Block
 
-This option is the equivalent of a `try-catch` in code. When an exception occurs an event is fired. Instead of failing,
-the process continues.
+This option is the equivalent of a `try-catch` in code. When an exception occurs an event is fired. 
+The interaction is still put in the blocked state. A blocked interaction will not execute again for that recipe instance until it is unblocked.
+Blocked interactions can be unblocked by calling the baker.retryInteraction or baker.resolveInteraction methods.
 
 === "Java"
 
     ```java
-    --8<-- "docs-code-snippets/src/main/java/examples/java/recipes/RecipeFireEvent.java"
+    --8<-- "docs-code-snippets/src/main/java/examples/java/recipes/RecipeFireEventAndBlock.java"
     ```
 
 === "Kotlin"
 
     ```kotlin
-    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/recipes/RecipeFireEvent.kt"
+    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/recipes/RecipeFireEventAndBlock.kt"
     ```
 
 === "Scala"
 
     ```scala
-    --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/RecipeFireEvent.scala"
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/RecipeFireEventAndBlock.scala"
+    ```
+
+### Fire event and Resolve
+
+This option is the equivalent of a `try-catch` in code. When an exception occurs an event is fired. 
+In this case the interaction is not put in the blocked state and can be executed again if the preconditions are met.
+Since the interaction is not put in the blocked state the baker.retryInteraction or baker.resolveInteraction methods cannot be called for the interaction.
+
+=== "Java"
+
+    ```java
+    --8<-- "docs-code-snippets/src/main/java/examples/java/recipes/RecipeFireEventAndBlock.java"
+    ```
+
+=== "Kotlin"
+
+    ```kotlin
+    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/recipes/RecipeFireEventAndBlock.kt"
+    ```
+
+=== "Scala"
+
+    ```scala
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/RecipeFireEventAndBlock.scala"
     ```
 
 ### Retry with incremental back-off
@@ -138,26 +165,26 @@ Which can be visualized like this:
 
     The deadline also does not consider interaction execution time. Keep this in mind when setting the deadline value.
 
-#### Retry exhaustion
-If an interaction keeps failing, the retry is exhausted and the interaction becomes blocked. If you don't want the 
-interaction to block after exhausting all the retries, you can continue the process with a predefined event.
+#### FireEventAndBlock and FireEventAndResolve
+If an interaction keeps failing longer then the defined retry duration, the retry is exhausted and the interaction becomes blocked.
+If you want you can configure either the FireEventAndBlock or FireEventAndResolve as a followup retry strategy.
 
 === "Java"
 
     ```java
-    --8<-- "docs-code-snippets/src/main/java/examples/java/recipes/RecipeRetryExhaustedEvent.java"
+    --8<-- "docs-code-snippets/src/main/java/examples/java/recipes/RecipeRetryWithBackOfWithFireEventAndBlock.java"
     ```
 
 === "Kotlin"
 
     ```kotlin
-    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/recipes/RecipeRetryExhaustedEvent.kt"
+    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/recipes/RecipeRetryWithBackOfWithFireEventAndBlock.kt"
     ```
 
 === "Scala"
 
     ```scala
-    --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/RecipeRetryExhaustedEvent.scala"
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/RecipeRetryWithBackOfWithFireEventAndBlock.scala"
     ```
 
 ## Manual intervention

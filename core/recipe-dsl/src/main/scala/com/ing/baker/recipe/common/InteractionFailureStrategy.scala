@@ -57,7 +57,8 @@ object InteractionFailureStrategy {
                                 private val backoffFactor: Double = 2,
                                 private val until: Option[Until] = None,
                                 private val maxTimeBetweenRetries: Option[Duration] = None,
-                                private val fireRetryExhaustedEvent: Option[Option[String]] = None) {
+                                private val fireRetryExhaustedEvent: Option[Option[String]] = None,
+                                private val fireFunctionalEvent: Option[Option[String]] = None) {
 
       def withInitialDelay(initialDelay: Duration) = this.copy(initialDelay = initialDelay)
 
@@ -67,11 +68,69 @@ object InteractionFailureStrategy {
 
       def withMaxTimeBetweenRetries(maxTimeBetweenRetries: Option[Duration]) = this.copy(maxTimeBetweenRetries = maxTimeBetweenRetries)
 
+      /**
+       * @deprecated
+       * Please use withFireEventAndBlock or withFireEventAndResolve, the withFireEventAndBlock is exactly as the old withFireRetryExhaustedEvent
+       */
+      @Deprecated()
       def withFireRetryExhaustedEvent(fireRetryExhaustedEvent: Option[String]) = this.copy(fireRetryExhaustedEvent = Some(fireRetryExhaustedEvent))
 
+      /**
+       * @deprecated
+       * Please use withFireEventAndBlock or withFireEventAndResolve, the withFireEventAndBlock is exactly as the old withFireRetryExhaustedEvent
+       */
+      @Deprecated()
       def withFireRetryExhaustedEvent() = this.copy(fireRetryExhaustedEvent = Some(None))
 
+      /**
+       * @deprecated
+       * Please use withFireEventAndBlock or withFireEventAndResolve, the withFireEventAndBlock is exactly as the old withFireRetryExhaustedEvent
+       */
+      @Deprecated()
       def withFireRetryExhaustedEvent(fireRetryExhaustedEvent: Event) = this.copy(fireRetryExhaustedEvent = Some(Some(fireRetryExhaustedEvent.name)))
+
+
+      /**
+       * After the interaction fails with an exception an event is thrown and the interaction is blocked.
+       * Blocked interactions cannot execute again until retryInteraction or resolveInteraction is called on Baker.
+       * @return
+       */
+      def withFireEventAndBlock(fireRetryExhaustedEvent: Option[String]) = this.copy(fireRetryExhaustedEvent = Some(fireRetryExhaustedEvent))
+
+      /**
+       * After the interaction fails with an exception an event is thrown and the interaction is blocked.
+       * Blocked interactions cannot execute again until retryInteraction or resolveInteraction is called on Baker.
+       * @return
+       */
+      def withFireEventAndBlock() = this.copy(fireRetryExhaustedEvent = Some(None))
+
+      /**
+       * After the interaction fails with an exception an event is thrown and the interaction is blocked.
+       * Blocked interactions cannot execute again until retryInteraction or resolveInteraction is called on Baker.
+       * @return
+       */
+      def withFireEventAndBlock(fireRetryExhaustedEvent: Event) = this.copy(fireRetryExhaustedEvent = Some(Some(fireRetryExhaustedEvent.name)))
+
+      /**
+       * After the interaction fails with an exception an event is thrown and the interaction is not blocked.
+       * This means the interaction can be executed again if the preconditions are met but retryInteraction or resolveInteraction cannot be done.
+       * @return
+       */
+      def withFireEventAndResolve(fireRetryExhaustedEvent: Option[String]) = this.copy(fireFunctionalEvent = Some(fireRetryExhaustedEvent))
+
+      /**
+       * After the interaction fails with an exception an event is thrown and the interaction is not blocked.
+       * This means the interaction can be executed again if the preconditions are met but retryInteraction or resolveInteraction cannot be done.
+       * @return
+       */
+      def withFireEventAndResolve() = this.copy(fireFunctionalEvent = Some(None))
+
+      /**
+       * After the interaction fails with an exception an event is thrown and the interaction is not blocked.
+       * This means the interaction can be executed again if the preconditions are met but retryInteraction or resolveInteraction cannot be done.
+       * @return
+       */
+      def withFireEventAndResolve(fireRetryExhaustedEvent: Event) = this.copy(fireFunctionalEvent = Some(Some(fireRetryExhaustedEvent.name)))
 
       def build(): RetryWithIncrementalBackoff = {
         until match {
@@ -88,7 +147,8 @@ object InteractionFailureStrategy {
                 totalDelay = initialDelay,
                 timesCounter = 1),
               maxTimeBetweenRetries,
-              fireRetryExhaustedEvent)
+              fireRetryExhaustedEvent,
+              fireFunctionalEvent)
 
           case Some(UntilMaximumRetries(count)) =>
             new RetryWithIncrementalBackoff(
@@ -96,7 +156,8 @@ object InteractionFailureStrategy {
               backoffFactor,
               maximumRetries = count,
               maxTimeBetweenRetries,
-              fireRetryExhaustedEvent)
+              fireRetryExhaustedEvent,
+              fireFunctionalEvent)
           case None => throw new IllegalArgumentException("Either deadline of maximum retries need to be set")
         }
 

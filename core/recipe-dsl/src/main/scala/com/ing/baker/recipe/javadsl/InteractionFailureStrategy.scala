@@ -12,9 +12,10 @@ object InteractionFailureStrategy {
                                                         private val backoffFactor: Double,
                                                         private val until: Option[Until],
                                                         private val maxTimeBetweenRetries: Option[java.time.Duration],
-                                                        private val fireRetryExhaustedEvent: Option[Option[String]]) {
+                                                        private val fireRetryExhaustedEvent: Option[Option[String]],
+                                                        private val fireFunctionalEvent: Option[Option[String]]) {
     // initialize with defaults
-    def this() = this(initialDelay = None, backoffFactor = 2, until = None, maxTimeBetweenRetries = None, fireRetryExhaustedEvent = None)
+    def this() = this(initialDelay = None, backoffFactor = 2, until = None, maxTimeBetweenRetries = None, fireRetryExhaustedEvent = None, fireFunctionalEvent = None)
 
     def withInitialDelay(initialDelay: java.time.Duration) = this.copy(initialDelay = Some(initialDelay))
 
@@ -24,11 +25,27 @@ object InteractionFailureStrategy {
 
     def withMaxTimeBetweenRetries(maxTimeBetweenRetries: java.time.Duration) = this.copy(maxTimeBetweenRetries = Some(maxTimeBetweenRetries))
 
+    @Deprecated
     def withFireRetryExhaustedEvent(fireRetryExhaustedEvent: String) = this.copy(fireRetryExhaustedEvent = Some(Some(fireRetryExhaustedEvent)))
 
+    @Deprecated
     def withFireRetryExhaustedEvent() = this.copy(fireRetryExhaustedEvent = Some(None))
 
+    @Deprecated
     def withFireRetryExhaustedEvent(fireRetryExhaustedEvent: Class[_]) = this.copy(fireRetryExhaustedEvent = Some(Some(fireRetryExhaustedEvent.getSimpleName)))
+
+    def withFireEventAndBlock(fireRetryExhaustedEvent: String) = this.copy(fireRetryExhaustedEvent = Some(Some(fireRetryExhaustedEvent)))
+
+    def withFireEventAndBlock() = this.copy(fireRetryExhaustedEvent = Some(None))
+
+    def withFireEventAndBlock(fireRetryExhaustedEvent: Class[_]) = this.copy(fireRetryExhaustedEvent = Some(Some(fireRetryExhaustedEvent.getSimpleName)))
+
+    def withFireEventAndResolve(fireRetryExhaustedEvent: String) = this.copy(fireFunctionalEvent = Some(Some(fireRetryExhaustedEvent)))
+
+    def withFireEventAndResolve() = this.copy(fireFunctionalEvent = Some(None))
+
+    def withFireEventAndResolve(fireRetryExhaustedEvent: Class[_]) = this.copy(fireFunctionalEvent = Some(Some(fireRetryExhaustedEvent.getSimpleName)))
+
 
     def withDeadline(duration: java.time.Duration) = this.copy(until = Some(UntilDeadline(Duration(duration.toMillis, MILLISECONDS))))
 
@@ -41,7 +58,9 @@ object InteractionFailureStrategy {
         .withInitialDelay(Duration(initialDelay.get.toMillis, MILLISECONDS))
         .withBackoffFactor(backoffFactor)
       if(fireRetryExhaustedEvent.isDefined)
-        builder = builder.withFireRetryExhaustedEvent(fireRetryExhaustedEvent.get)
+        builder = builder.withFireEventAndBlock(fireRetryExhaustedEvent.get)
+      if(fireFunctionalEvent.isDefined)
+        builder = builder.withFireEventAndResolve(fireFunctionalEvent.get)
       builder.build()
     }
   }
