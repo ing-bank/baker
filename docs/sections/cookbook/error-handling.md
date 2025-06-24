@@ -72,26 +72,26 @@ Blocked interactions can be unblocked by calling the baker.retryInteraction or b
 
 ### Fire event and Resolve
 
-This option is the equivalent of a `try-catch` in code. When an exception occurs an event is fired. 
+When an exception occurs an event is fired. This is seen as if the interaction returned this event.
 In this case the interaction is not put in the blocked state and can be executed again if the preconditions are met.
 Since the interaction is not put in the blocked state the baker.retryInteraction or baker.resolveInteraction methods cannot be called for the interaction.
 
 === "Java"
 
     ```java
-    --8<-- "docs-code-snippets/src/main/java/examples/java/recipes/RecipeFireEventAndBlock.java"
+    --8<-- "docs-code-snippets/src/main/java/examples/java/recipes/RecipeFireEventAndResolve.java"
     ```
 
 === "Kotlin"
 
     ```kotlin
-    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/recipes/RecipeFireEventAndBlock.kt"
+    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/recipes/RecipeFireEventAndResolve.kt"
     ```
 
 === "Scala"
 
     ```scala
-    --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/RecipeFireEventAndBlock.scala"
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/RecipeFireEventAndResolve.scala"
     ```
 
 ### Retry with incremental back-off
