@@ -29,6 +29,60 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       // dumpToFile("TestRecipe.svg", compiledRecipe.getVisualRecipeAsSVG)
     }
 
+    "add the exhausted retry event to the interaction event output list if defined with FireEventAfterFailure (with name)" in {
+      val recipe = Recipe("RetryExhaustedRecipe")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withFailureStrategy(
+          InteractionFailureStrategy.FireEventAfterFailure(Some(exhaustedEvent.name))))
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
+    }
+
+    "add the exhausted retry event to the interaction event output list if defined with FireEventAfterFailure (no name)" in {
+      val recipe = Recipe("RetryExhaustedRecipe")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withFailureStrategy(
+          InteractionFailureStrategy.FireEventAfterFailure(None)))
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.allEvents.map(_.name) should contain("InteractionOneRetryExhausted")
+    }
+
+    "add the exhausted retry event to the interaction event output list if defined with FireEventAndBlock (with name)" in {
+      val recipe = Recipe("RetryExhaustedRecipe")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withFailureStrategy(
+          InteractionFailureStrategy.FireEventAndBlock(Some(exhaustedEvent.name))))
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
+    }
+
+    "add the exhausted retry event to the interaction event output list if defined with FireEventAndBlock (no name)" in {
+      val recipe = Recipe("RetryExhaustedRecipe")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withFailureStrategy(
+          InteractionFailureStrategy.FireEventAndBlock(None)))
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.allEvents.map(_.name) should contain("InteractionOneRetryExhausted")
+    }
+
+    "add the exhausted retry event to the interaction event output list if defined with FireEventAndResolve (with name)" in {
+      val recipe = Recipe("RetryExhaustedRecipe")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withFailureStrategy(
+          InteractionFailureStrategy.FireEventAndResolve(Some(exhaustedEvent.name))))
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
+    }
+
+    "add the exhausted retry event to the interaction event output list if defined with FireEventAndResolve (no name)" in {
+      val recipe = Recipe("RetryExhaustedRecipe")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withFailureStrategy(
+          InteractionFailureStrategy.FireEventAndResolve(None)))
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.allEvents.map(_.name) should contain("InteractionOneFunctionalFailed")
+    }
+
     "add the exhausted retry event to the interaction event output list if defined with withFireRetryExhaustedEvent" in {
       val recipe = Recipe("RetryExhaustedRecipe")
         .withSensoryEvent(initialEvent)
@@ -74,7 +128,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       compiledRecipe.allEvents.map(_.name) should contain("InteractionOneRetryExhausted")
     }
 
-    "add the exhausted retry event to the interaction event output list if defined with withfireEventAndBlock" in {
+    "add the exhausted retry event to the interaction event output list if defined with withFireEventAndBlock" in {
       val exhaustedEvent = Event("RetryExhausted")
       val recipe = Recipe("RetryExhaustedRecipe")
         .withSensoryEvent(initialEvent)
@@ -90,7 +144,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
 
-    "add the exhausted retry event to the interaction event output list if defined with withfireEventAndBlock 2" in {
+    "add the exhausted retry event to the interaction event output list if defined with withFireEventAndBlock 2" in {
       val recipe = Recipe("RetryExhaustedRecipe")
         .withSensoryEvent(initialEvent)
         .withInteractions(interactionOne.withFailureStrategy(
@@ -105,7 +159,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
 
-    "add the exhausted retry event to the interaction event output list if defined with withfireEventAndBlock 3" in {
+    "add the exhausted retry event to the interaction event output list if defined with withFireEventAndBlock 3" in {
       val recipe = Recipe("RetryExhaustedRecipe")
         .withSensoryEvent(initialEvent)
         .withInteractions(interactionOne.withFailureStrategy(
@@ -120,7 +174,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       compiledRecipe.allEvents.map(_.name) should contain("InteractionOneRetryExhausted")
     }
 
-    "add the exhausted retry event to the interaction event output list if defined with withfireEventAndResolve" in {
+    "add the exhausted retry event to the interaction event output list if defined with withFireEventAndResolve" in {
       val exhaustedEvent = Event("RetryExhausted")
       val recipe = Recipe("RetryExhaustedRecipe")
         .withSensoryEvent(initialEvent)
@@ -136,7 +190,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
 
-    "add the exhausted retry event to the interaction event output list if defined with withfireEventAndResolve 2" in {
+    "add the exhausted retry event to the interaction event output list if defined with withFireEventAndResolve 2" in {
       val recipe = Recipe("RetryExhaustedRecipe")
         .withSensoryEvent(initialEvent)
         .withInteractions(interactionOne.withFailureStrategy(
@@ -151,7 +205,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
 
-    "add the exhausted retry event to the interaction event output list if defined with withfireEventAndResolve 3" in {
+    "add the exhausted retry event to the interaction event output list if defined with withFireEventAndResolve 3" in {
       val recipe = Recipe("RetryExhaustedRecipe")
         .withSensoryEvent(initialEvent)
         .withInteractions(interactionOne.withFailureStrategy(
