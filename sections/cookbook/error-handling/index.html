@@ -14,8 +14,9 @@
       
         <link rel="next" href="../visualizations/">
       
+      
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
     
     
       
@@ -23,11 +24,14 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.26e3688c.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.342714a4.min.css">
       
       
 
+
     
+    
+      
     
     
       
@@ -41,7 +45,7 @@
     
       <link rel="stylesheet" href="../../../css/ing.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -53,9 +57,6 @@
   
     <body dir="ltr">
   
-    
-    
-      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
@@ -82,11 +83,12 @@
     <a href="../../.." title="Baker" class="md-header__button md-logo" aria-label="Baker" data-md-component="logo">
       
   
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
       <div class="md-header__ellipsis">
@@ -106,29 +108,38 @@
     </div>
     
     
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
-      <label class="md-header__button md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
-      </label>
-      <div class="md-search" data-md-component="search" role="dialog">
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
       </label>
       <nav class="md-search__options" aria-label="Search">
         
         <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
       
     </form>
     <div class="md-search__output">
-      <div class="md-search__scrollwrap" data-md-scrollfix>
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
         <div class="md-search-result" data-md-component="search-result">
           <div class="md-search-result__meta">
             Initializing search
@@ -139,13 +150,14 @@
     </div>
   </div>
 </div>
+      
     
     
       <div class="md-header__source">
         <a href="https://github.com/ing-bank/baker" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
   </div>
   <div class="md-source__repository">
     ing-bank/baker
@@ -175,12 +187,13 @@
                     
 
 
+
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href="../../.." title="Baker" class="md-nav__button md-logo" aria-label="Baker" data-md-component="logo">
       
   
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
     Baker
@@ -190,7 +203,7 @@
       <a href="https://github.com/ing-bank/baker" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
   </div>
   <div class="md-source__repository">
     ing-bank/baker
@@ -202,14 +215,21 @@
     
       
       
-      
-
+  
   
   
   
     <li class="md-nav__item">
       <a href="../../.." class="md-nav__link">
-        Home
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
       </a>
     </li>
   
@@ -217,14 +237,21 @@
     
       
       
-      
-
+  
   
   
   
     <li class="md-nav__item">
       <a href="../../quickstart-guide/" class="md-nav__link">
-        Quickstart guide
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart guide
+    
+  </span>
+  
+
       </a>
     </li>
   
@@ -232,14 +259,21 @@
     
       
       
-      
-
+  
   
   
   
     <li class="md-nav__item">
       <a href="../../concepts/" class="md-nav__link">
-        Concepts
+        
+  
+  
+  <span class="md-ellipsis">
+    Concepts
+    
+  </span>
+  
+
       </a>
     </li>
   
@@ -247,14 +281,21 @@
     
       
       
-      
-
+  
   
   
   
     <li class="md-nav__item">
       <a href="../../tutorial/" class="md-nav__link">
-        Tutorial
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorial
+    
+  </span>
+  
+
       </a>
     </li>
   
@@ -262,54 +303,73 @@
     
       
       
-      
-
   
   
     
   
   
+  
+    
+    
+    
+    
     
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
-      
-      
-      
-        <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-          Cookbook
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
-        <label class="md-nav__title" for="__nav_5">
-          <span class="md-nav__icon md-icon"></span>
-          Cookbook
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
           
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Cookbook
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Cookbook
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
             
               
+                
+  
   
   
   
     <li class="md-nav__item">
       <a href="../recipe-dsl/" class="md-nav__link">
-        Recipe DSL
+        
+  
+  
+  <span class="md-ellipsis">
+    Recipe DSL
+    
+  </span>
+  
+
       </a>
     </li>
   
 
-            
-          
+              
             
               
+                
   
   
     
+  
   
   
     <li class="md-nav__item md-nav__item--active">
@@ -321,12 +381,28 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Error handling
+          
+  
+  
+  <span class="md-ellipsis">
+    Error handling
+    
+  </span>
+  
+
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Error handling
+        
+  
+  
+  <span class="md-ellipsis">
+    Error handling
+    
+  </span>
+  
+
       </a>
       
         
@@ -346,7 +422,9 @@
       
         <li class="md-nav__item">
   <a href="#failure-strategies" class="md-nav__link">
-    Failure strategies
+    <span class="md-ellipsis">
+      Failure strategies
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="Failure strategies">
@@ -354,21 +432,36 @@
         
           <li class="md-nav__item">
   <a href="#block-interaction" class="md-nav__link">
-    Block interaction
+    <span class="md-ellipsis">
+      Block interaction
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#fire-event" class="md-nav__link">
-    Fire event
+  <a href="#fire-event-and-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fire event and Block
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fire-event-and-resolve" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fire event and Resolve
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#retry-with-incremental-back-off" class="md-nav__link">
-    Retry with incremental back-off
+    <span class="md-ellipsis">
+      Retry with incremental back-off
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="Retry with incremental back-off">
@@ -376,21 +469,27 @@
         
           <li class="md-nav__item">
   <a href="#until-deadline" class="md-nav__link">
-    Until deadline
+    <span class="md-ellipsis">
+      Until deadline
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#until-maximum-retries" class="md-nav__link">
-    Until maximum retries
+    <span class="md-ellipsis">
+      Until maximum retries
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#retry-exhaustion" class="md-nav__link">
-    Retry exhaustion
+  <a href="#fireeventandblock-and-fireeventandresolve" class="md-nav__link">
+    <span class="md-ellipsis">
+      FireEventAndBlock and FireEventAndResolve
+    </span>
   </a>
   
 </li>
@@ -407,7 +506,9 @@
       
         <li class="md-nav__item">
   <a href="#manual-intervention" class="md-nav__link">
-    Manual intervention
+    <span class="md-ellipsis">
+      Manual intervention
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="Manual intervention">
@@ -415,21 +516,27 @@
         
           <li class="md-nav__item">
   <a href="#force-a-retry" class="md-nav__link">
-    Force a retry
+    <span class="md-ellipsis">
+      Force a retry
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#resolve-interaction" class="md-nav__link">
-    Resolve interaction
+    <span class="md-ellipsis">
+      Resolve interaction
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#stop-retrying" class="md-nav__link">
-    Stop retrying
+    <span class="md-ellipsis">
+      Stop retrying
+    </span>
   </a>
   
 </li>
@@ -446,276 +553,421 @@
     </li>
   
 
-            
-          
+              
             
               
+                
+  
   
   
   
     <li class="md-nav__item">
       <a href="../visualizations/" class="md-nav__link">
-        Visualizations
+        
+  
+  
+  <span class="md-ellipsis">
+    Visualizations
+    
+  </span>
+  
+
       </a>
     </li>
   
 
-            
-          
+              
             
               
+                
+  
   
   
   
     <li class="md-nav__item">
       <a href="../fire-sensory-events/" class="md-nav__link">
-        Fire events and inquiry
+        
+  
+  
+  <span class="md-ellipsis">
+    Fire events and inquiry
+    
+  </span>
+  
+
       </a>
     </li>
   
 
-            
-          
+              
             
               
+                
+  
   
   
   
     <li class="md-nav__item">
       <a href="../interaction-execution/" class="md-nav__link">
-        Interaction execution
+        
+  
+  
+  <span class="md-ellipsis">
+    Interaction execution
+    
+  </span>
+  
+
       </a>
     </li>
   
 
-            
-          
+              
             
               
+                
+  
   
   
   
     <li class="md-nav__item">
       <a href="../testing/" class="md-nav__link">
-        Testing
+        
+  
+  
+  <span class="md-ellipsis">
+    Testing
+    
+  </span>
+  
+
       </a>
     </li>
   
 
-            
-          
+              
             
               
+                
+  
   
   
   
     <li class="md-nav__item">
       <a href="../monitoring/" class="md-nav__link">
-        Monitoring
+        
+  
+  
+  <span class="md-ellipsis">
+    Monitoring
+    
+  </span>
+  
+
       </a>
     </li>
   
 
+              
             
-          
-        </ul>
-      </nav>
+          </ul>
+        </nav>
+      
     </li>
   
 
     
       
       
-      
-
+  
   
   
   
     
+    
+    
+    
+    
     <li class="md-nav__item md-nav__item--nested">
       
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
-          Reference
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_6">
-          <span class="md-nav__icon md-icon"></span>
-          Reference
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
           
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Reference
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
             
               
+                
+  
   
   
   
     <li class="md-nav__item">
       <a href="../../reference/main-abstractions/" class="md-nav__link">
-        Main Abstractions
+        
+  
+  
+  <span class="md-ellipsis">
+    Main Abstractions
+    
+  </span>
+  
+
       </a>
     </li>
   
 
-            
-          
+              
             
               
+                
+  
   
   
   
     <li class="md-nav__item">
       <a href="../../reference/execution-semantics/" class="md-nav__link">
-        Execution Semantics
+        
+  
+  
+  <span class="md-ellipsis">
+    Execution Semantics
+    
+  </span>
+  
+
       </a>
     </li>
   
 
-            
-          
+              
             
               
+                
+  
   
   
   
     <li class="md-nav__item">
       <a href="../../reference/baker-types-and-values/" class="md-nav__link">
-        Baker Types and Values
+        
+  
+  
+  <span class="md-ellipsis">
+    Baker Types and Values
+    
+  </span>
+  
+
       </a>
     </li>
   
 
-            
-          
+              
             
               
+                
+  
   
   
   
     <li class="md-nav__item">
       <a href="../../reference/runtime/" class="md-nav__link">
-        The Baker Runtime
+        
+  
+  
+  <span class="md-ellipsis">
+    The Baker Runtime
+    
+  </span>
+  
+
       </a>
     </li>
   
 
-            
-          
+              
             
               
+                
+  
   
   
   
     <li class="md-nav__item">
       <a href="../../reference/stores/" class="md-nav__link">
-        Event Stores and Cluster Configuration
+        
+  
+  
+  <span class="md-ellipsis">
+    Event Stores and Cluster Configuration
+    
+  </span>
+  
+
       </a>
     </li>
   
 
+              
             
-          
-        </ul>
-      </nav>
+          </ul>
+        </nav>
+      
     </li>
   
 
     
       
       
-      
-
+  
   
   
   
     
+    
+    
+    
+    
     <li class="md-nav__item md-nav__item--nested">
       
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
-          Versions
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_7">
-          <span class="md-nav__icon md-icon"></span>
-          Versions
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
           
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Versions
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Versions
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
             
               
+                
+  
   
   
   
     <li class="md-nav__item">
       <a href="../../versions/baker-3-release-notes/" class="md-nav__link">
-        Release Notes v3
+        
+  
+  
+  <span class="md-ellipsis">
+    Release Notes v3
+    
+  </span>
+  
+
       </a>
     </li>
   
 
-            
-          
+              
             
               
+                
+  
   
   
   
     <li class="md-nav__item">
       <a href="../../versions/baker-3/" class="md-nav__link">
-        Migration Guide v3
+        
+  
+  
+  <span class="md-ellipsis">
+    Migration Guide v3
+    
+  </span>
+  
+
       </a>
     </li>
   
 
-            
-          
+              
             
               
+                
+  
   
   
   
     <li class="md-nav__item">
       <a href="../../versions/baker-2/" class="md-nav__link">
-        Migration Guide v2
+        
+  
+  
+  <span class="md-ellipsis">
+    Migration Guide v2
+    
+  </span>
+  
+
       </a>
     </li>
   
 
+              
             
-          
-        </ul>
-      </nav>
+          </ul>
+        </nav>
+      
     </li>
   
 
     
       
       
-      
-
+  
   
   
   
     <li class="md-nav__item">
       <a href="../../feature-comparison/" class="md-nav__link">
-        Feature comparison
+        
+  
+  
+  <span class="md-ellipsis">
+    Feature comparison
+    
+  </span>
+  
+
       </a>
     </li>
   
@@ -749,7 +1001,9 @@
       
         <li class="md-nav__item">
   <a href="#failure-strategies" class="md-nav__link">
-    Failure strategies
+    <span class="md-ellipsis">
+      Failure strategies
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="Failure strategies">
@@ -757,21 +1011,36 @@
         
           <li class="md-nav__item">
   <a href="#block-interaction" class="md-nav__link">
-    Block interaction
+    <span class="md-ellipsis">
+      Block interaction
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#fire-event" class="md-nav__link">
-    Fire event
+  <a href="#fire-event-and-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fire event and Block
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fire-event-and-resolve" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fire event and Resolve
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#retry-with-incremental-back-off" class="md-nav__link">
-    Retry with incremental back-off
+    <span class="md-ellipsis">
+      Retry with incremental back-off
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="Retry with incremental back-off">
@@ -779,21 +1048,27 @@
         
           <li class="md-nav__item">
   <a href="#until-deadline" class="md-nav__link">
-    Until deadline
+    <span class="md-ellipsis">
+      Until deadline
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#until-maximum-retries" class="md-nav__link">
-    Until maximum retries
+    <span class="md-ellipsis">
+      Until maximum retries
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#retry-exhaustion" class="md-nav__link">
-    Retry exhaustion
+  <a href="#fireeventandblock-and-fireeventandresolve" class="md-nav__link">
+    <span class="md-ellipsis">
+      FireEventAndBlock and FireEventAndResolve
+    </span>
   </a>
   
 </li>
@@ -810,7 +1085,9 @@
       
         <li class="md-nav__item">
   <a href="#manual-intervention" class="md-nav__link">
-    Manual intervention
+    <span class="md-ellipsis">
+      Manual intervention
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="Manual intervention">
@@ -818,21 +1095,27 @@
         
           <li class="md-nav__item">
   <a href="#force-a-retry" class="md-nav__link">
-    Force a retry
+    <span class="md-ellipsis">
+      Force a retry
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#resolve-interaction" class="md-nav__link">
-    Resolve interaction
+    <span class="md-ellipsis">
+      Resolve interaction
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#stop-retrying" class="md-nav__link">
-    Stop retrying
+    <span class="md-ellipsis">
+      Stop retrying
+    </span>
   </a>
   
 </li>
@@ -855,6 +1138,7 @@
               <article class="md-content__inner md-typeset">
                 
                   
+
 
   
   
@@ -880,7 +1164,9 @@ available for the <code>failureStrategy</code> on <code>interaction</code> level
 </div>
 <h3 id="block-interaction">Block interaction</h3>
 <p>This is the default failure strategy. When an exception occurs the interaction is blocked. This option is suitable
-for non-idempotent interactions that cannot be retried.</p>
+for non-idempotent interactions that cannot be retried.
+A blocked interaction will not execute again for that recipe instance until it is unblocked.
+Blocked interactions can be unblocked by calling the baker.retryInteraction or baker.resolveInteraction methods.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Java</label><label for="__tabbed_1_2">Kotlin</label><label for="__tabbed_1_3">Scala</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -928,9 +1214,10 @@ for non-idempotent interactions that cannot be retried.</p>
 </div>
 </div>
 </div>
-<h3 id="fire-event">Fire event</h3>
-<p>This option is the equivalent of a <code>try-catch</code> in code. When an exception occurs an event is fired. Instead of failing,
-the process continues.</p>
+<h3 id="fire-event-and-block">Fire event and Block</h3>
+<p>This option is the equivalent of a <code>try-catch</code> in code. When an exception occurs an event is fired. 
+The interaction is still put in the blocked state. A blocked interaction will not execute again for that recipe instance until it is unblocked.
+Blocked interactions can be unblocked by calling the baker.retryInteraction or baker.resolveInteraction methods.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Java</label><label for="__tabbed_2_2">Kotlin</label><label for="__tabbed_2_3">Scala</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -939,11 +1226,11 @@ the process continues.</p>
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.InteractionFailureStrategy</span><span class="p">;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.Recipe</span><span class="p">;</span>
 
-<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">RecipeFireEvent</span><span class="w"> </span><span class="p">{</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">RecipeFireEventAndBlock</span><span class="w"> </span><span class="p">{</span>
 
 <span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">Recipe</span><span class="w"> </span><span class="n">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Recipe</span><span class="p">(</span><span class="s">&quot;example&quot;</span><span class="p">)</span>
 <span class="w">        </span><span class="p">.</span><span class="na">withDefaultFailureStrategy</span><span class="p">(</span>
-<span class="w">            </span><span class="n">InteractionFailureStrategy</span><span class="p">.</span><span class="na">FireEvent</span><span class="p">(</span><span class="s">&quot;MyEvent&quot;</span><span class="p">)</span>
+<span class="w">            </span><span class="n">InteractionFailureStrategy</span><span class="p">.</span><span class="na">FireEventAndBlock</span><span class="p">(</span><span class="s">&quot;MyEvent&quot;</span><span class="p">)</span>
 <span class="w">        </span><span class="p">);</span>
 <span class="p">}</span>
 </code></pre></div>
@@ -955,9 +1242,9 @@ the process continues.</p>
 <span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.recipe</span>
 
 <span class="nd">@ExperimentalDsl</span>
-<span class="kd">object</span><span class="w"> </span><span class="nc">RecipeFireEvent</span><span class="w"> </span><span class="p">{</span>
+<span class="kd">object</span><span class="w"> </span><span class="nc">RecipeFireEventAndBlock</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">recipe</span><span class="p">(</span><span class="s">&quot;example&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="n">defaultFailureStrategy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fireEventAfterFailure</span><span class="p">(</span><span class="s">&quot;MyEvent&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="n">defaultFailureStrategy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fireEventAndBlock</span><span class="p">(</span><span class="s">&quot;MyEvent&quot;</span><span class="p">)</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
@@ -968,10 +1255,61 @@ the process continues.</p>
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">common</span><span class="p">.</span><span class="nc">InteractionFailureStrategy</span>
 <span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Recipe</span>
 
-<span class="k">object</span><span class="w"> </span><span class="nc">RecipeFireEvent</span><span class="w"> </span><span class="p">{</span>
+<span class="k">object</span><span class="w"> </span><span class="nc">RecipeFireEventAndBlock</span><span class="w"> </span><span class="p">{</span>
 <span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="n">recipe</span><span class="p">:</span><span class="w"> </span><span class="nc">Recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Recipe</span><span class="p">(</span><span class="s">&quot;example&quot;</span><span class="p">)</span>
 <span class="w">    </span><span class="p">.</span><span class="n">withDefaultFailureStrategy</span><span class="p">(</span>
-<span class="w">      </span><span class="nc">InteractionFailureStrategy</span><span class="p">.</span><span class="nc">FireEventAfterFailure</span><span class="p">(</span><span class="nc">Some</span><span class="p">(</span><span class="s">&quot;MyEvent&quot;</span><span class="p">))</span>
+<span class="w">      </span><span class="nc">InteractionFailureStrategy</span><span class="p">.</span><span class="nc">FireEventAndBlock</span><span class="p">(</span><span class="nc">Some</span><span class="p">(</span><span class="s">&quot;MyEvent&quot;</span><span class="p">))</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h3 id="fire-event-and-resolve">Fire event and Resolve</h3>
+<p>When an exception occurs an event is fired. This is seen as if the interaction returned this event.
+In this case the interaction is not put in the blocked state and can be executed again if the preconditions are met.
+Since the interaction is not put in the blocked state the baker.retryInteraction or baker.resolveInteraction methods cannot be called for the interaction.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Java</label><label for="__tabbed_3_2">Kotlin</label><label for="__tabbed_3_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.InteractionFailureStrategy</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.Recipe</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">RecipeFireEventAndResolve</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">Recipe</span><span class="w"> </span><span class="n">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Recipe</span><span class="p">(</span><span class="s">&quot;example&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">withDefaultFailureStrategy</span><span class="p">(</span>
+<span class="w">            </span><span class="n">InteractionFailureStrategy</span><span class="p">.</span><span class="na">FireEventAndResolve</span><span class="p">(</span><span class="s">&quot;MyEvent&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.recipes</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.ExperimentalDsl</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.recipe</span>
+
+<span class="nd">@ExperimentalDsl</span>
+<span class="kd">object</span><span class="w"> </span><span class="nc">RecipeFireEventAndResolve</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">recipe</span><span class="p">(</span><span class="s">&quot;example&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">defaultFailureStrategy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fireEventAndResolve</span><span class="p">(</span><span class="s">&quot;MyEvent&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">recipes</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">common</span><span class="p">.</span><span class="nc">InteractionFailureStrategy</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Recipe</span>
+
+<span class="k">object</span><span class="w"> </span><span class="nc">RecipeFireEventAndResolve</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="n">recipe</span><span class="p">:</span><span class="w"> </span><span class="nc">Recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Recipe</span><span class="p">(</span><span class="s">&quot;example&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="n">withDefaultFailureStrategy</span><span class="p">(</span>
+<span class="w">      </span><span class="nc">InteractionFailureStrategy</span><span class="p">.</span><span class="nc">FireEventAndResolve</span><span class="p">(</span><span class="nc">Some</span><span class="p">(</span><span class="s">&quot;MyEvent&quot;</span><span class="p">))</span>
 <span class="w">    </span><span class="p">)</span>
 <span class="p">}</span>
 </code></pre></div>
@@ -983,7 +1321,7 @@ the process continues.</p>
 You retry quickly at first, but slower over time. Retry with incremental back-off keeps retrying until a set deadline
 or the maximum amount of retries is reached.</p>
 <h4 id="until-deadline">Until deadline</h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Java</label><label for="__tabbed_3_2">Kotlin</label><label for="__tabbed_3_3">Scala</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:3"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Java</label><label for="__tabbed_4_2">Kotlin</label><label for="__tabbed_4_3">Scala</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
@@ -1055,7 +1393,7 @@ or the maximum amount of retries is reached.</p>
 </div>
 </div>
 <h4 id="until-maximum-retries">Until maximum retries</h4>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:3"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Java</label><label for="__tabbed_4_2">Kotlin</label><label for="__tabbed_4_3">Scala</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:3"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><input id="__tabbed_5_3" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Java</label><label for="__tabbed_5_2">Kotlin</label><label for="__tabbed_5_3">Scala</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
@@ -1165,10 +1503,10 @@ or the maximum amount of retries is reached.</p>
 <p><code>(100 millis + 5 seconds + 200 millis) = 5.3 seconds</code></p>
 <p>The deadline also does not consider interaction execution time. Keep this in mind when setting the deadline value.</p>
 </div>
-<h4 id="retry-exhaustion">Retry exhaustion</h4>
-<p>If an interaction keeps failing, the retry is exhausted and the interaction becomes blocked. If you don't want the 
-interaction to block after exhausting all the retries, you can continue the process with a predefined event.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="5:3"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><input id="__tabbed_5_3" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Java</label><label for="__tabbed_5_2">Kotlin</label><label for="__tabbed_5_3">Scala</label></div>
+<h4 id="fireeventandblock-and-fireeventandresolve">FireEventAndBlock and FireEventAndResolve</h4>
+<p>If an interaction keeps failing longer then the defined retry duration, the retry is exhausted and the interaction becomes blocked.
+If you want you can configure either the FireEventAndBlock or FireEventAndResolve as a followup retry strategy.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:3"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><input id="__tabbed_6_3" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Java</label><label for="__tabbed_6_2">Kotlin</label><label for="__tabbed_6_3">Scala</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
@@ -1178,7 +1516,7 @@ interaction to block after exhausting all the retries, you can continue the proc
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">java.time.Duration</span><span class="p">;</span>
 
-<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">RecipeRetryExhaustedEvent</span><span class="w"> </span><span class="p">{</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">RecipeRetryWithBackOfWithFireEventAndBlock</span><span class="w"> </span><span class="p">{</span>
 
 <span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">Recipe</span><span class="w"> </span><span class="n">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Recipe</span><span class="p">(</span><span class="s">&quot;example&quot;</span><span class="p">)</span>
 <span class="w">        </span><span class="p">.</span><span class="na">withDefaultFailureStrategy</span><span class="p">(</span>
@@ -1187,7 +1525,7 @@ interaction to block after exhausting all the retries, you can continue the proc
 <span class="w">                </span><span class="p">.</span><span class="na">withBackoffFactor</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
 <span class="w">                </span><span class="p">.</span><span class="na">withMaxTimeBetweenRetries</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">ofSeconds</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
 <span class="w">                </span><span class="p">.</span><span class="na">withDeadline</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">ofHours</span><span class="p">(</span><span class="mi">24</span><span class="p">))</span>
-<span class="w">                </span><span class="p">.</span><span class="na">withFireRetryExhaustedEvent</span><span class="p">(</span><span class="s">&quot;RetriesExhausted&quot;</span><span class="p">)</span>
+<span class="w">                </span><span class="p">.</span><span class="na">withFireEventAndBlock</span><span class="p">(</span><span class="s">&quot;RetriesExhausted&quot;</span><span class="p">)</span>
 <span class="w">                </span><span class="p">.</span><span class="na">build</span><span class="p">()</span>
 <span class="w">        </span><span class="p">);</span>
 <span class="p">}</span>
@@ -1203,14 +1541,14 @@ interaction to block after exhausting all the retries, you can continue the proc
 <span class="k">import</span><span class="w"> </span><span class="nn">kotlin.time.Duration.Companion.seconds</span>
 
 <span class="nd">@ExperimentalDsl</span>
-<span class="kd">object</span><span class="w"> </span><span class="nc">RecipeRetryExhaustedEvent</span><span class="w"> </span><span class="p">{</span>
+<span class="kd">object</span><span class="w"> </span><span class="nc">RecipeRetryWithBackOfWithFireEventAndBlock</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">recipe</span><span class="p">(</span><span class="s">&quot;example&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="n">defaultFailureStrategy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">retryWithIncrementalBackoff</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="n">initialDelay</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">100.</span><span class="n">milliseconds</span>
 <span class="w">            </span><span class="n">backoffFactor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2.0</span>
 <span class="w">            </span><span class="n">maxTimeBetweenRetries</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">10.</span><span class="n">seconds</span>
 <span class="w">            </span><span class="n">until</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">deadline</span><span class="p">(</span><span class="m">24.</span><span class="n">hours</span><span class="p">)</span>
-<span class="w">            </span><span class="n">fireRetryExhaustedEvent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;RetriesExhausted&quot;</span>
+<span class="w">            </span><span class="n">fireEventAndBlock</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;RetriesExhausted&quot;</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span>
@@ -1225,7 +1563,7 @@ interaction to block after exhausting all the retries, you can continue the proc
 
 <span class="k">import</span><span class="w"> </span><span class="nn">scala</span><span class="p">.</span><span class="nn">concurrent</span><span class="p">.</span><span class="nn">duration</span><span class="p">.</span><span class="nc">DurationInt</span>
 
-<span class="k">object</span><span class="w"> </span><span class="nc">RecipeRetryExhaustedEvent</span><span class="w"> </span><span class="p">{</span>
+<span class="k">object</span><span class="w"> </span><span class="nc">RecipeRetryWithBackOfWithFireEventAndBlock</span><span class="w"> </span><span class="p">{</span>
 <span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="n">recipe</span><span class="p">:</span><span class="w"> </span><span class="nc">Recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Recipe</span><span class="p">(</span><span class="s">&quot;example&quot;</span><span class="p">)</span>
 <span class="w">    </span><span class="p">.</span><span class="n">withDefaultFailureStrategy</span><span class="p">(</span>
 <span class="w">      </span><span class="nc">RetryWithIncrementalBackoff</span>
@@ -1234,7 +1572,7 @@ interaction to block after exhausting all the retries, you can continue the proc
 <span class="w">        </span><span class="p">.</span><span class="n">withBackoffFactor</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
 <span class="w">        </span><span class="p">.</span><span class="n">withMaxTimeBetweenRetries</span><span class="p">(</span><span class="nc">Some</span><span class="p">(</span><span class="mi">10</span><span class="p">.</span><span class="n">minutes</span><span class="p">))</span>
 <span class="w">        </span><span class="p">.</span><span class="n">withUntil</span><span class="p">(</span><span class="nc">Some</span><span class="p">(</span><span class="nc">UntilDeadline</span><span class="p">(</span><span class="mi">24</span><span class="p">.</span><span class="n">hours</span><span class="p">)))</span>
-<span class="w">        </span><span class="p">.</span><span class="n">withFireRetryExhaustedEvent</span><span class="p">(</span><span class="nc">Some</span><span class="p">(</span><span class="s">&quot;RetriesExhausted&quot;</span><span class="p">))</span>
+<span class="w">        </span><span class="p">.</span><span class="n">withFireEventAndBlock</span><span class="p">(</span><span class="nc">Some</span><span class="p">(</span><span class="s">&quot;RetriesExhausted&quot;</span><span class="p">))</span>
 <span class="w">        </span><span class="p">.</span><span class="n">build</span><span class="p">()</span>
 <span class="w">    </span><span class="p">)</span>
 <span class="p">}</span>
@@ -1247,7 +1585,7 @@ interaction to block after exhausting all the retries, you can continue the proc
 <h3 id="force-a-retry">Force a retry</h3>
 <p>This method retries a given interaction a single time. If it succeeds, your process continues. If it fails, the interaction
 stays blocked.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="6:3"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><input id="__tabbed_6_3" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Java</label><label for="__tabbed_6_2">Kotlin</label><label for="__tabbed_6_3">Scala</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:3"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><input id="__tabbed_7_3" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Java</label><label for="__tabbed_7_2">Kotlin</label><label for="__tabbed_7_3">Scala</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
@@ -1288,7 +1626,7 @@ stays blocked.</p>
 </div>
 <h3 id="resolve-interaction">Resolve interaction</h3>
 <p>This method resolves a blocked interaction by firing an event.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="7:3"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><input id="__tabbed_7_3" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Java</label><label for="__tabbed_7_2">Kotlin</label><label for="__tabbed_7_3">Scala</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:3"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><input id="__tabbed_8_3" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Java</label><label for="__tabbed_8_2">Kotlin</label><label for="__tabbed_8_3">Scala</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
@@ -1343,7 +1681,7 @@ stays blocked.</p>
 </div>
 <h3 id="stop-retrying">Stop retrying</h3>
 <p>This method halts the retry process of a failing interaction by blocking the interaction.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="8:3"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><input id="__tabbed_8_3" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Java</label><label for="__tabbed_8_2">Kotlin</label><label for="__tabbed_8_3">Scala</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:3"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><input id="__tabbed_9_3" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Java</label><label for="__tabbed_9_2">Kotlin</label><label for="__tabbed_9_3">Scala</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
@@ -1388,11 +1726,19 @@ stays blocked.</p>
 
 
 
+
+
+
+
+
+
+
                 
               </article>
             </div>
           
           
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
       </main>
@@ -1420,10 +1766,13 @@ stays blocked.</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.copy"], "search": "../../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.b4d07000.min.js"></script>
+      
+      <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.copy"], "search": "../../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.13a4f30d.min.js"></script>
       
     
   </body>
