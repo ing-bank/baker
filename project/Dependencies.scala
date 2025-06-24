@@ -7,13 +7,13 @@ object Dependencies {
   val akkaManagementVersion = "1.6.2"
   val akkaPersistenceCassandraVersion = "1.3.2"
   val http4sVersion = "0.22.15"
-  val circeVersion = "0.14.13"
+  val circeVersion = "0.14.14"
   val fs2Version = "2.5.12"
   val mockitoScalaVersion = "2.0.0"
   val catsEffectVersion = "2.5.5"
   val catsCoreVersion = "2.13.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
-  val springVersion = "6.2.7"
+  val springVersion = "6.2.8"
   val springBootVersion = "2.6.1"
 
   val akkaInmemoryJournal = ("com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2")
@@ -134,8 +134,8 @@ object Dependencies {
 
   val snakeYaml = "org.yaml" % "snakeyaml" % "2.4"
 
-  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.19.0"
-  val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.19.0"
+  val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.19.1"
+  val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % "2.19.1"
   val jawnParser = "org.typelevel" %% "jawn-parser" % "1.6.0"
   val nettyHandler = "io.netty" % "netty-handler" % "4.2.2.Final"
 
