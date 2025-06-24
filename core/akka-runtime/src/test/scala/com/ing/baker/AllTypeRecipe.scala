@@ -176,7 +176,7 @@ object AllTypeRecipe {
           .withBackoffFactor(2.0)
           .withUntil(Some(UntilDeadline(10.minutes)))
           .withMaxTimeBetweenRetries(Some(100.milliseconds))
-          .withFireRetryExhaustedEvent(Some("someEventName"))
+          .withFireEventAndBlock(Some("someEventName"))
           .build()
         ),
         interactionFive

@@ -29,8 +29,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       // dumpToFile("TestRecipe.svg", compiledRecipe.getVisualRecipeAsSVG)
     }
 
-    "add the exhausted retry event to the interaction event output list if defined" in {
-      val exhaustedEvent = Event("RetryExhausted")
+    "add the exhausted retry event to the interaction event output list if defined with withFireRetryExhaustedEvent" in {
       val recipe = Recipe("RetryExhaustedRecipe")
         .withSensoryEvent(initialEvent)
         .withInteractions(interactionOne.withFailureStrategy(
@@ -43,6 +42,128 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
 
       compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
+    }
+
+    "add the exhausted retry event to the interaction event output list if defined with withFireRetryExhaustedEvent 2" in {
+      val recipe = Recipe("RetryExhaustedRecipe")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withFailureStrategy(
+          InteractionFailureStrategy.RetryWithIncrementalBackoff.builder()
+            .withInitialDelay(10 milliseconds)
+            .withUntil(Some(UntilDeadline(10 seconds)))
+            .withFireRetryExhaustedEvent(Some("RetryExhausted"))
+            .build()))
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+
+      compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
+    }
+
+    "add the exhausted retry event to the interaction event output list if defined with withFireRetryExhaustedEvent 3" in {
+      val recipe = Recipe("RetryExhaustedRecipe")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withFailureStrategy(
+          InteractionFailureStrategy.RetryWithIncrementalBackoff.builder()
+            .withInitialDelay(10 milliseconds)
+            .withUntil(Some(UntilDeadline(10 seconds)))
+            .withFireRetryExhaustedEvent()
+            .build()))
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+
+      compiledRecipe.allEvents.map(_.name) should contain("InteractionOneRetryExhausted")
+    }
+
+    "add the exhausted retry event to the interaction event output list if defined with withfireEventAndBlock" in {
+      val exhaustedEvent = Event("RetryExhausted")
+      val recipe = Recipe("RetryExhaustedRecipe")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withFailureStrategy(
+          InteractionFailureStrategy.RetryWithIncrementalBackoff.builder()
+            .withInitialDelay(10 milliseconds)
+            .withUntil(Some(UntilDeadline(10 seconds)))
+            .withFireEventAndBlock(exhaustedEvent)
+            .build()))
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+
+      compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
+    }
+
+    "add the exhausted retry event to the interaction event output list if defined with withfireEventAndBlock 2" in {
+      val recipe = Recipe("RetryExhaustedRecipe")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withFailureStrategy(
+          InteractionFailureStrategy.RetryWithIncrementalBackoff.builder()
+            .withInitialDelay(10 milliseconds)
+            .withUntil(Some(UntilDeadline(10 seconds)))
+            .withFireEventAndBlock(Some("RetryExhausted"))
+            .build()))
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+
+      compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
+    }
+
+    "add the exhausted retry event to the interaction event output list if defined with withfireEventAndBlock 3" in {
+      val recipe = Recipe("RetryExhaustedRecipe")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withFailureStrategy(
+          InteractionFailureStrategy.RetryWithIncrementalBackoff.builder()
+            .withInitialDelay(10 milliseconds)
+            .withUntil(Some(UntilDeadline(10 seconds)))
+            .withFireEventAndBlock()
+            .build()))
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+
+      compiledRecipe.allEvents.map(_.name) should contain("InteractionOneRetryExhausted")
+    }
+
+    "add the exhausted retry event to the interaction event output list if defined with withfireEventAndResolve" in {
+      val exhaustedEvent = Event("RetryExhausted")
+      val recipe = Recipe("RetryExhaustedRecipe")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withFailureStrategy(
+          InteractionFailureStrategy.RetryWithIncrementalBackoff.builder()
+            .withInitialDelay(10 milliseconds)
+            .withUntil(Some(UntilDeadline(10 seconds)))
+            .withFireEventAndResolve(exhaustedEvent)
+            .build()))
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+
+      compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
+    }
+
+    "add the exhausted retry event to the interaction event output list if defined with withfireEventAndResolve 2" in {
+      val recipe = Recipe("RetryExhaustedRecipe")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withFailureStrategy(
+          InteractionFailureStrategy.RetryWithIncrementalBackoff.builder()
+            .withInitialDelay(10 milliseconds)
+            .withUntil(Some(UntilDeadline(10 seconds)))
+            .withFireEventAndResolve(Some("RetryExhausted"))
+            .build()))
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+
+      compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
+    }
+
+    "add the exhausted retry event to the interaction event output list if defined with withfireEventAndResolve 3" in {
+      val recipe = Recipe("RetryExhaustedRecipe")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withFailureStrategy(
+          InteractionFailureStrategy.RetryWithIncrementalBackoff.builder()
+            .withInitialDelay(10 milliseconds)
+            .withUntil(Some(UntilDeadline(10 seconds)))
+            .withFireEventAndResolve()
+            .build()))
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+
+      compiledRecipe.allEvents.map(_.name) should contain("InteractionOneFunctionalFailed")
     }
 
     "generate the same id for the same recipe" in {
