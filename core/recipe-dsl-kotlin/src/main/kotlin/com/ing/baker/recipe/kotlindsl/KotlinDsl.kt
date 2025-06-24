@@ -620,7 +620,10 @@ class RetryWithIncrementalBackoffBuilder : InteractionFailureStrategyBuilder {
     var initialDelay: Duration? = null
     var maxTimeBetweenRetries: Duration? = null
     var backoffFactor: Double? = null
+    @Deprecated("Please use fireEventAndBlock or fireEventAndResolve")
     var fireRetryExhaustedEvent: String? = null
+    var fireEventAndBlock: String? = null
+    var fireEventAndResolve: String? = null
 
     fun deadline(duration: Duration) = Deadline(duration)
     fun maximumRetries(count: Int) = MaximumRetries(count)
@@ -631,6 +634,8 @@ class RetryWithIncrementalBackoffBuilder : InteractionFailureStrategyBuilder {
             .run { initialDelay?.let { withInitialDelay(it.toJavaDuration()) } ?: this }
             .run { maxTimeBetweenRetries?.let { withMaxTimeBetweenRetries(it.toJavaDuration()) } ?: this }
             .run { fireRetryExhaustedEvent?.let { withFireRetryExhaustedEvent(it) } ?: this }
+            .run { fireEventAndBlock?.let { withFireEventAndBlock(it) } ?: this }
+            .run { fireEventAndResolve?.let { withFireEventAndResolve(it) } ?: this }
             .run {
                 when (until) {
                     is Deadline -> withDeadline((until as Deadline).duration.toJavaDuration())

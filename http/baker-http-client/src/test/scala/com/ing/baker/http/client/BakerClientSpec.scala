@@ -17,9 +17,9 @@ import org.scalatest.ConfigMap
 
 import java.net.InetSocketAddress
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
-import scala.compat.java8.FutureConverters
 import scala.concurrent.ExecutionContext
+import scala.jdk.CollectionConverters._
+import scala.jdk.FutureConverters.CompletionStageOps
 
 @nowarn
 class BakerClientSpec extends BakeryFunSpec {
@@ -119,10 +119,9 @@ class BakerClientSpec extends BakeryFunSpec {
       val testHeader = Header("X-Test", "Foo")
       val filter: java.util.function.Function[Request[IO], Request[IO]] = _.putHeaders(testHeader)
       for {
-        client <- IO.fromFuture(IO(FutureConverters.toScala(
-          JavaClient.build(List(host).asJava, "/api/bakery",
-            List().asJava, "", List(filter).asJava, java.util.Optional.of(clientTLSConfig), true))))
-        _ <- IO.fromFuture(IO(FutureConverters.toScala(client.getAllRecipeInstancesMetadata)))
+        client <- IO.fromFuture(IO(JavaClient.build(List(host).asJava, "/api/bakery",
+          List().asJava, "", List(filter).asJava, java.util.Optional.of(clientTLSConfig), apiLoggingEnabled = true).asScala))
+        _ <- IO.fromFuture(IO(client.getAllRecipeInstancesMetadata.asScala))
         headers <- context.receivedHeaders
       } yield assert(headers.contains(testHeader))
     }

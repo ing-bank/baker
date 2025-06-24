@@ -12,9 +12,9 @@ import com.typesafe.scalalogging.LazyLogging
 import java.net.InetSocketAddress
 import java.util.UUID
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
-import scala.compat.java8.FutureConverters.toScala
+import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.FutureConverters.CompletionStageOps
 
 case class Settings(
                      contactPoints: List[String],
@@ -78,16 +78,15 @@ class InstrumentedCassandraSessionProvider(system: ActorSystem,
     val driverConfig = CqlSessionProvider.driverConfig(system, config)
     val driverConfigLoader = DriverConfigLoaderFromConfig.fromConfig(driverConfig)
     logger.info("Creating new Cassandra connection")
-    toScala(
-      CqlSession.builder()
-        .withMetricRegistry(metricRegistry)
-        .withConfigLoader(driverConfigLoader)
-        .withAuthCredentials(settings.username, settings.password)
-        .addContactPoints(settings.contactPoints.map(InetSocketAddress.createUnresolved(_, settings.port)).asJavaCollection)
-        .withLocalDatacenter(settings.localDatacenter)
-        .withClientId(instanceId)
-        .withNodeStateListener(nodeStateListener)
-        .buildAsync())
+    CqlSession.builder()
+      .withMetricRegistry(metricRegistry)
+      .withConfigLoader(driverConfigLoader)
+      .withAuthCredentials(settings.username, settings.password)
+      .addContactPoints(settings.contactPoints.map(InetSocketAddress.createUnresolved(_, settings.port)).asJavaCollection)
+      .withLocalDatacenter(settings.localDatacenter)
+      .withClientId(instanceId)
+      .withNodeStateListener(nodeStateListener)
+      .buildAsync().asScala
   }
 }
 

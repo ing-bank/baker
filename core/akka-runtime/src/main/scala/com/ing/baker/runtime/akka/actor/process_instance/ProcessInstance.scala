@@ -143,11 +143,11 @@ class ProcessInstance[S, E](
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
   override def preStart(): Unit = {
-    log.debug("ProcessInstance started")
+    log.info(s"ProcessInstance started: $recipeInstanceId")
   }
 
   override def postStop(): Unit = {
-    log.debug("ProcessInstance stopped")
+    log.info(s"ProcessInstance stopped: $recipeInstanceId")
   }
 
   val recipeInstanceId = context.self.path.name
@@ -400,7 +400,7 @@ class ProcessInstance[S, E](
             }
         )
       } else {
-        log.error(s"Ignoring DelayedTransitionFired since there is no open asyncConsumedMarkings for transition: $transitionId with count: ${instance.delayedTransitionIds.get(transitionId)}")
+        log.warning(s"Ignoring DelayedTransitionFired since there is no open asyncConsumedMarkings for transition: $transitionId with count: ${instance.delayedTransitionIds.get(transitionId)}")
         //The DelayedTransition is acknowledged so that it is removed from the DelayedTransitionManager.
         delayedTransitionActor ! FireDelayedTransitionAck(recipeInstanceId, jobId)
       }

@@ -22,9 +22,9 @@ import java.lang.reflect.InvocationTargetException
 import java.net.{InetSocketAddress, URLEncoder}
 import java.util.concurrent.CompletableFuture
 import scala.annotation.nowarn
-import scala.collection.JavaConverters
-import scala.compat.java8.FutureConverters._
 import scala.concurrent.ExecutionContext
+import scala.jdk.CollectionConverters._
+import scala.jdk.FutureConverters.FutureOps
 
 object RemoteInteractionService {
 
@@ -134,7 +134,7 @@ class InteractionExecutorJava(implementations: java.util.List[InteractionInstanc
                               val executionContext: ExecutionContext)
   extends InteractionExecutor {
   @nowarn
-  private lazy val javaInteractions = JavaConverters.collectionAsScalaIterableConverter(implementations).asScala.toList
+  private lazy val javaInteractions = implementations.asScala.toList
   def interactions: List[InteractionInstance] = javaInteractions
 
   def list: String = interactionsCodec(CurrentInteractions).noSpaces
@@ -149,7 +149,7 @@ class InteractionExecutorJava(implementations: java.util.List[InteractionInstanc
     case Left(error) => executionFailure("?", error.getMessage)
   }).map(executionResultCodec.apply)
     .map(_.noSpaces)
-    .unsafeToFuture().toJava.toCompletableFuture
+    .unsafeToFuture().asJava.toCompletableFuture
 }
 
 final class RemoteInteractionService(val interactions: List[InteractionInstance])(implicit val executionContext: ExecutionContext)

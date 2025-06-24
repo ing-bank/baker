@@ -10,12 +10,9 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
-import scala.collection.immutable.Seq
-import scala.compat.java8.FutureConverters
-import scala.compat.java8.FutureConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
-
+import scala.jdk.FutureConverters.FutureOps
 
 abstract class InteractionInstance extends common.InteractionInstance[CompletableFuture] with JavaApi {
 
@@ -35,14 +32,14 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
 
   override def execute(input: util.List[IngredientInstance], metadata: Map[String, String]): CompletableFuture[Optional[EventInstance]]
 
-  @nowarn
   private def wrapRunToFuture(input: Seq[scaladsl.IngredientInstance]): Future[Option[scaladsl.EventInstance]] = {
-    FutureConverters.toScala(run(input.map(_.asJava).asJava)
-      .thenApply[Option[scaladsl.EventInstance]] {
-        optional =>
-          if (optional.isPresent) Some(optional.get().asScala)
-          else None
-      })
+    import scala.concurrent.ExecutionContext.Implicits.global
+    import scala.jdk.FutureConverters._
+    run(input.map(_.asJava).asJava).asScala.map {
+      optional =>
+        if (optional.isPresent) Some(optional.get().asScala)
+        else None
+    }
   }
 
   @nowarn
@@ -85,7 +82,7 @@ object InteractionInstance {
   @nowarn
   def fromModel(common: model.InteractionInstance[IO]): InteractionInstance = {
     val converter = new (IO ~> CompletableFuture) {
-      def apply[A](fa: IO[A]): CompletableFuture[A] = fa.unsafeToFuture().toJava.toCompletableFuture
+      def apply[A](fa: IO[A]): CompletableFuture[A] = fa.unsafeToFuture().asJava.toCompletableFuture
     }
     new javadsl.InteractionInstance {
       override val name: String =
