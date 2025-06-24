@@ -31,7 +31,6 @@ object Dependencies {
   val junitJupiter = "org.junit.jupiter" % "junit-jupiter-engine" % "5.13.1"
 
   val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
-
   val akkaStream = "com.typesafe.akka" %% "akka-stream" % akkaVersion
   val akkaProtobuf = "com.typesafe.akka" %% "akka-protobuf" % akkaVersion
   val akkaPersistence = "com.typesafe.akka" %% "akka-persistence" % akkaVersion
