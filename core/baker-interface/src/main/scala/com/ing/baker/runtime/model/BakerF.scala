@@ -178,6 +178,16 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
       .flatMap(_ => components.recipeInstanceManager.addMetaData(recipeInstanceId, metadata))
 
   /**
+   * Deletes a recipeInstance. Once deleted the instance will be marked as `Deleted` in the index and then removed after a while.
+   * Use `removeFromIndex` to remove all references to the instance directly allowing you to create a new instance with the same id again.
+   * @param recipeInstanceId The identifier for the newly baked process
+   * @param removeFromIndex If enabled removes all references to the id directly
+   * @return
+   */
+  override def deleteRecipeInstance(recipeInstanceId: String, removeFromIndex: Boolean): F[Unit] =
+    components.recipeInstanceManager.remove(recipeInstanceId)
+
+  /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
     *
     * Possible failures:
@@ -511,6 +521,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.bake(recipeId, recipeInstanceId))
       override def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] =
         mapK(self.bake(recipeId, recipeInstanceId, metadata))
+      override def deleteRecipeInstance(recipeInstanceId: String, removeFromIndex: Boolean): Future[Unit] =
+        mapK(self.deleteRecipeInstance(recipeInstanceId, removeFromIndex))
       override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] =
         mapK(self.fireEventAndResolveWhenReceived(recipeInstanceId, event, correlationId))
       override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventResult] =

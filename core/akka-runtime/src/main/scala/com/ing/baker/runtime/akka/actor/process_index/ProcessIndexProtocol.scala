@@ -34,6 +34,8 @@ object ProcessIndexProtocol {
 
   case class AddRecipeInstanceMetaData(recipeInstanceId: String, metaData: Map[String, String]) extends ProcessIndexMessage
 
+  case class DeleteProcess(recipeInstanceId: String, removeFromIndex: Boolean = false) extends ProcessIndexMessage
+
   /**
     * Failure when attempting to resolve a blocked interaction, the event is not of valid type according with the recipe
     *

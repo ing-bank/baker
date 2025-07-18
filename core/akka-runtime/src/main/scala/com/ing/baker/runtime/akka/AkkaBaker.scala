@@ -240,6 +240,15 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     }
   }
 
+  override def deleteRecipeInstance(recipeInstanceId: String, removeFromIndex: Boolean = false): Future[Unit] = {
+    processIndexActor
+      .ask(DeleteProcess(recipeInstanceId, removeFromIndex))(config.timeouts.defaultProcessEventTimeout)
+      .javaTimeoutToBakerTimeout("deleteRecipeInstance").flatMap {
+        case ProcessDeleted(_) => Future.successful(())
+        case NoSuchProcess(_) => Future.failed(NoSuchProcessException(recipeInstanceId))
+      }
+  }
+
   override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] =
     processIndexActor.ask(ProcessEvent(
       recipeInstanceId = recipeInstanceId,

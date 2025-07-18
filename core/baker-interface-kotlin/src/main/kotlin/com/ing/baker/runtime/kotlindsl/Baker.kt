@@ -57,6 +57,10 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
         jBaker.bake(recipeId, recipeInstanceId, metadata).await()
     }
 
+    suspend fun deleteRecipeInstance(recipeInstanceId: String, removeFromIndex: Boolean = false) {
+        jBaker.deleteRecipeInstance(recipeInstanceId, removeFromIndex).await()
+    }
+
     suspend fun fireEventAndResolveWhenReceived(
         recipeInstanceId: String,
         event: EventInstance,

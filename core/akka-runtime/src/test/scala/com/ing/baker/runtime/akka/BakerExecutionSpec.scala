@@ -1646,5 +1646,27 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         } yield succeed
 
     }
+
+    "deleting an instance with removeFromIndex enabled allows baking with the same instanceId again" in {
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("ExampleRecipe")
+        id = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, id)
+        _ <- baker.deleteRecipeInstance(id, removeFromIndex = true)
+        _ <- baker.bake(recipeId, id)
+      } yield succeed
+    }
+
+    "deleting an instance with removeFromIndex disabled will keep it in the index until it expires" in {
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("ExampleRecipe")
+        id = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, id)
+        _ <- baker.deleteRecipeInstance(id, removeFromIndex = false)
+        _ <- recoverToSucceededIf[ProcessDeletedException] {
+          baker.bake(recipeId, id)
+        }
+      } yield succeed
+    }
   }
 }

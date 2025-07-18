@@ -181,3 +181,8 @@ message NoSuchProcess {
 message ProcessAlreadyExists {
     optional string recipeInstanceId = 1;
 }
+
+message DeleteProcess {
+    optional string recipeInstanceId = 1;
+    optional bool removeFromIndex = 2;
+}

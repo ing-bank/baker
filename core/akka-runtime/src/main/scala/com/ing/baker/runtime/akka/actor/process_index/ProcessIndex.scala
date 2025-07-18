@@ -227,7 +227,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           .withFinalStopMessage(_.isInstanceOf[ProcessInstanceProtocol.Stop])
       )
     val processActor = context.actorOf(props = processActorProps, name = recipeInstanceId)
-    context.watch(processActor)
+    context.watchWith(processActor, TerminatedWithReplyTo(processActor))
     processActor
   }
 
@@ -276,6 +276,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     // This will first start the ProcessInstance actor even if is passivated so will have bigger memory impact and more reads on the datastore.
     else {
       getOrCreateProcessActor(meta.recipeInstanceId).foreach(_ ! Stop(delete = true))
+      index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
     }
   }
 
@@ -339,7 +340,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       toBeDeleted.foreach(meta => deleteProcess(meta))
       forgetProcesses()
 
-    case Terminated(actorRef) =>
+    case TerminatedWithReplyTo(actorRef, replyToWhenDone) =>
       val recipeInstanceId = getRecipeIdFromActor(actorRef)
 
       val mdc = Map(
@@ -361,7 +362,11 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
             index.update(recipeInstanceId, meta.copy(processStatus = Passivated))
           }
         case None =>
-          log.logWithMDC(Logging.WarningLevel, s"Received Terminated message for non indexed actor: $actorRef", mdc)
+          log.logWithMDC(Logging.DebugLevel, s"Received Terminated message for non indexed actor: $actorRef. This can happen through manual deletion with removeFromIndex enabled.", mdc)
+      }
+
+      replyToWhenDone.map {
+        replyToRef =>  replyToRef ! ProcessDeleted(recipeInstanceId)
       }
 
     case CreateProcess(recipeId, recipeInstanceId, recipeInstanceMetadata) =>
@@ -404,8 +409,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
             case None =>
               sender() ! NoRecipeFound(recipeId)
           }
-
-        case _ if index(recipeInstanceId).isDeleted =>
+        case _ if index.get(recipeInstanceId).exists(_.isDeleted) =>
           sender() ! ProcessDeleted(recipeInstanceId)
         case None =>
           //Temporary solution for the situation that the initializeCmd is not send in the original Bake
@@ -529,6 +533,26 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
     case Passivate(ProcessInstanceProtocol.Stop) =>
       context.stop(sender())
+
+    case DeleteProcess(recipeInstanceId, removeFromIndex) =>
+      index.get(recipeInstanceId) match {
+        case Some(processState) =>
+          // The process exists, so we can delete it.
+          getProcessActor(processState.recipeInstanceId) match {
+            case Some(actorRef: ActorRef) =>
+              context.unwatch(actorRef)
+              context.watchWith(actorRef, TerminatedWithReplyTo(actorRef, Some(sender())))
+          }
+          deleteProcess(processState)
+          if (removeFromIndex) {
+            index -= recipeInstanceId
+          }
+
+        case None =>
+          // The process was not found in the index.
+          log.warning(s"Attempted to delete non-existent process '$recipeInstanceId'.")
+          sender() ! NoSuchProcess(recipeInstanceId)
+      }
 
     case StopProcessIndexShard =>
       log.info("StopProcessIndexShard received, stopping self")

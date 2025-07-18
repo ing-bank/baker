@@ -171,6 +171,9 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
 
     def resolveInteractionFromEventInstance(interactionName: String, eventInstance: EventInstance): JFuture[String] =
       eventInstanceExecute(eventInstance, baker.resolveInteraction(recipeInstanceId, interactionName, _))
+
+    def delete(removeFromIndex: Boolean): JFuture[String] =
+      baker.deleteRecipeInstance(recipeInstanceId, removeFromIndex).toBakerResult
   }
 
   private def toOption[T](opt: Optional[T]): Option[T] = if (opt.isPresent) Some(opt.get()) else None
