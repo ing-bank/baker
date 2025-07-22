@@ -90,6 +90,10 @@ export class BakeryService {
     );
   }
 
+  deleteInstance(instanceId: string): Observable<string> {
+    return this.http.delete<string>(`${this.baseUrl}/instances/${instanceId}/delete?removeFromIndex=true`)
+  }
+
   getInstanceVisual(instanceId: string): Observable<string | null> {
     return this.http.get<DigraphResponse>(`${this.baseUrl}/instances/${instanceId}/visual`).pipe(
       catchError(this.handleError<DigraphResponse>(null)),

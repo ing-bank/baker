@@ -117,4 +117,8 @@ export class InstancesComponent implements OnInit {
     toIsoString(linuxTime: number) : string {
         return new Date(linuxTime).toISOString();
     }
+
+    deleteRecipe(instanceId: string): void {
+      this.bakeryService.deleteInstance(instanceId);
+    }
 }
