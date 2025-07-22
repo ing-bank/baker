@@ -66,7 +66,7 @@ class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") 
         topology = petriNet,
         encryption = NoEncryption,
         readJournal = readJournal,
-        eventSourceFn = t => eventSourceFunction)
+        eventSourceFn = (l, t) => eventSourceFunction)
         .map(_._2) // Get the event from the tuple
         .runWith(TestSink.probe)
         .request(3)

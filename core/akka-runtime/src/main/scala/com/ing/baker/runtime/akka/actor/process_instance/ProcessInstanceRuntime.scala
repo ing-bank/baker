@@ -30,7 +30,7 @@ trait ProcessInstanceRuntime[S, E] extends LazyLogging {
     *
     * By default the identity function is used.
     */
-  val eventSource: Transition => S => E => S = _ => s => _ => s
+  val eventSource: (Long, Transition) => S => E => S = (_, _) => s => _ => s
 
   /**
    * This function is called when a transition throws an exception.

@@ -105,7 +105,7 @@ object ProcessInstanceEventSourcing extends LazyLogging {
     */
   case class MetaDataAdded(metaData: Map[String, String]) extends Event
 
-  def apply[S, E](sourceFn: Transition => (S => E => S)): Instance[S] => Event => Instance[S] = instance => {
+  def apply[S, E](sourceFn: (Long, Transition) => (S => E => S)): Instance[S] => Event => Instance[S] = instance => {
     case InitializedEvent(initial, initialState) =>
 
       val initialMarking: Marking[Place] = initial.unmarshall(instance.petriNet.places)
@@ -114,7 +114,7 @@ object ProcessInstanceEventSourcing extends LazyLogging {
 
     case e: TransitionFiredEvent =>
       val transition = instance.petriNet.transitions.getById(e.transitionId)
-      val newState = sourceFn(transition)(instance.state)(e.output.asInstanceOf[E])
+      val newState = sourceFn(e.timeCompleted, transition)(instance.state)(e.output.asInstanceOf[E])
       val consumed: Marking[Place] = e.consumed.unmarshall(instance.petriNet.places)
       val produced: Marking[Place] = e.produced.unmarshall(instance.petriNet.places)
 
@@ -128,7 +128,7 @@ object ProcessInstanceEventSourcing extends LazyLogging {
 
     case e: TransitionFailedWithOutputEvent =>
       val transition = instance.petriNet.transitions.getById(e.transitionId)
-      val newState = sourceFn(transition)(instance.state)(e.output.asInstanceOf[E])
+      val newState = sourceFn(e.timeCompleted, transition)(instance.state)(e.output.asInstanceOf[E])
       val consumed: Marking[Place] = e.consumed.unmarshall(instance.petriNet.places)
       val produced: Marking[Place] = e.produced.unmarshall(instance.petriNet.places)
 
@@ -147,7 +147,7 @@ object ProcessInstanceEventSourcing extends LazyLogging {
 
     case e: TransitionFailedWithFunctionalOutputEvent =>
       val transition = instance.petriNet.transitions.getById(e.transitionId)
-      val newState = sourceFn(transition)(instance.state)(e.output.asInstanceOf[E])
+      val newState = sourceFn(e.timeCompleted, transition)(instance.state)(e.output.asInstanceOf[E])
       val consumed: Marking[Place] = e.consumed.unmarshall(instance.petriNet.places)
       val produced: Marking[Place] = e.produced.unmarshall(instance.petriNet.places)
 
@@ -187,7 +187,8 @@ object ProcessInstanceEventSourcing extends LazyLogging {
       val delayedInstanceCount: Int = instance.delayedTransitionIds(e.transitionId)
       val produced: Marking[Place] = e.produced.unmarshall(instance.petriNet.places)
       val transition = instance.petriNet.transitions.getById(e.transitionId)
-      val newState = sourceFn(transition)(instance.state)(e.output.asInstanceOf[E])
+      //TODO store the execution time so we can set it correctly
+      val newState = sourceFn(0L, transition)(instance.state)(e.output.asInstanceOf[E])
 
       instance.copy[S](
         sequenceNr = instance.sequenceNr + 1,
@@ -216,7 +217,7 @@ object ProcessInstanceEventSourcing extends LazyLogging {
       topology: PetriNet,
       encryption: Encryption,
       readJournal: CurrentEventsByPersistenceIdQuery,
-      eventSourceFn: Transition => (S => E => S))(implicit actorSystem: ActorSystem): Source[(Instance[S], Event), NotUsed] = {
+      eventSourceFn: (Long, Transition) => (S => E => S))(implicit actorSystem: ActorSystem): Source[(Instance[S], Event), NotUsed] = {
 
     val serializer = new ProcessInstanceSerialization[S, E](AkkaSerializerProvider(actorSystem, encryption))
 
@@ -238,7 +239,7 @@ object ProcessInstanceEventSourcing extends LazyLogging {
 abstract class ProcessInstanceEventSourcing[S, E](
     val petriNet: PetriNet,
     encryption: Encryption,
-    eventSourceFn: Transition => (S => E => S)) extends PersistentActor with PersistentActorMetrics {
+    eventSourceFn: (Long, Transition) => (S => E => S)) extends PersistentActor with PersistentActorMetrics {
 
   protected implicit val system: ActorSystem = context.system
 

@@ -16,7 +16,7 @@ trait StateTransitionNet[S, E] {
   def eventSourceFunction: S => E => S
 
   val runtime: ProcessInstanceRuntime[S, E] = new ProcessInstanceRuntime[S, E] {
-    override val eventSource: com.ing.baker.il.petrinet.Transition => S => E => S = _ => eventSourceFunction
+    override val eventSource: (Long, com.ing.baker.il.petrinet.Transition) => S => E => S = (_, _) => eventSourceFunction
 
     override def transitionTask(petriNet: PetriNet, t: com.ing.baker.il.petrinet.Transition)
                                (marking: Marking[Place], state: S, input: Any): IO[(Marking[Place], E)] = {
