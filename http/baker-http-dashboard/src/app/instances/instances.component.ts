@@ -119,6 +119,9 @@ export class InstancesComponent implements OnInit {
     }
 
     deleteRecipe(instanceId: string): void {
-      this.bakeryService.deleteInstance(instanceId);
+      const baseUrl = (document.querySelector('base') || {}).href;
+      this.bakeryService.deleteInstance(instanceId).subscribe(_ => {
+        window.location.href = `${baseUrl}instances`
+      });
     }
 }
