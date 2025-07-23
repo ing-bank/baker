@@ -133,7 +133,7 @@ object RecipeRuntime {
   }
 }
 
-class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager[IO], eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime[RecipeInstanceState, EventInstance] {
+class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager[IO], eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime {
 
   protected implicit lazy val contextShift: ContextShift[IO] = IO.contextShift(ec)
 

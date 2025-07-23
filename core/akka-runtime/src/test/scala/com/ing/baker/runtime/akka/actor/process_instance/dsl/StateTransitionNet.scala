@@ -8,38 +8,39 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceRuntime
 import com.ing.baker.runtime.akka.actor.process_instance.dsl.TestUtils.TransitionMethods
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.BlockTransition
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
+import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
 
 import scala.util.Random
 
-trait StateTransitionNet[S, E] {
+trait StateTransitionNet {
 
-  def eventSourceFunction: S => E => S
+  def eventSourceFunction: RecipeInstanceState => EventInstance => RecipeInstanceState
 
-  val runtime: ProcessInstanceRuntime[S, E] = new ProcessInstanceRuntime[S, E] {
-    override val eventSource: (Long, com.ing.baker.il.petrinet.Transition) => S => E => S = (_, _) => eventSourceFunction
+  val runtime: ProcessInstanceRuntime = new ProcessInstanceRuntime {
+    override val eventSource: (Long, com.ing.baker.il.petrinet.Transition) => RecipeInstanceState => EventInstance => RecipeInstanceState = (_, _) => eventSourceFunction
 
     override def transitionTask(petriNet: PetriNet, t: com.ing.baker.il.petrinet.Transition)
-                               (marking: Marking[Place], state: S, input: Any): IO[(Marking[Place], E)] = {
-      val eventTask = t.asInstanceOf[StateTransition[S, E]].produceEvent(state)
+                               (marking: Marking[Place], state: RecipeInstanceState, input: Any): IO[(Marking[Place], EventInstance)] = {
+      val eventTask = t.asInstanceOf[StateTransition].produceEvent(state)
       val produceMarking: Marking[Place] = petriNet.outMarking(t).toMarking
       eventTask.map(e => (produceMarking, e))
     }
 
-    override def handleException(job: Job[S])
+    override def handleException(job: Job[RecipeInstanceState])
                                 (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]): ExceptionStrategy =
       job.transition.exceptionStrategy(throwable, failureCount, outMarking)
 
-    override def canBeFiredAutomatically(instance: Instance[S], t: com.ing.baker.il.petrinet.Transition): Boolean =
+    override def canBeFiredAutomatically(instance: Instance[RecipeInstanceState], t: com.ing.baker.il.petrinet.Transition): Boolean =
       t.isAutomated && !instance.isBlocked(t)
   }
 
   def stateTransition(id: Long = Math.abs(Random.nextLong()), label: Option[String] = None, automated: Boolean = false,
-                      exceptionStrategy: TransitionExceptionHandler[Place] = (_, _, _) => BlockTransition)(fn: S => E): Transition =
-    StateTransition(id, label.getOrElse(s"t$id"), automated, exceptionStrategy, (s: S) => IO.pure(fn(s)))
+                      exceptionStrategy: TransitionExceptionHandler[Place] = (_, _, _) => BlockTransition)(fn: RecipeInstanceState => EventInstance): Transition =
+    StateTransition(id, label.getOrElse(s"t$id"), automated, exceptionStrategy, (s: RecipeInstanceState) => IO.pure(fn(s)))
 
-  def constantTransition[I, O](id: Long, label: Option[String] = None, automated: Boolean = false, constant: O): StateTransition[I, O] =
-    StateTransition[I, O](id, label.getOrElse(s"t$id"), automated, (_, _, _) => BlockTransition, _ => IO.pure(constant))
+  def constantTransition(id: Long, label: Option[String] = None, automated: Boolean = false, constant: EventInstance): StateTransition =
+    StateTransition(id, label.getOrElse(s"t$id"), automated, (_, _, _) => BlockTransition, _ => IO.pure(constant))
 
-  def nullTransition[O](id: Long, label: Option[String] = None, automated: Boolean = false): Transition =
-    constantTransition[Unit, O](id, label, automated, ().asInstanceOf[O])
+  def emptyTransition(id: Long, label: Option[String] = None, automated: Boolean = false): Transition =
+    constantTransition(id, label, automated, EventInstance("name"))
 }

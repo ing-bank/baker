@@ -12,7 +12,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSou
 import com.ing.baker.runtime.akka.actor.process_instance.internal.{ExceptionState, ExceptionStrategy, Instance, Job}
 import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
-import com.ing.baker.runtime.scaladsl.RecipeInstanceState
+import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.Value
 import com.typesafe.scalalogging.LazyLogging
@@ -211,22 +211,22 @@ object ProcessInstanceEventSourcing extends LazyLogging {
       instance.copy[S](state = newState)
   }
 
-  def eventsForInstance[S, E](
+  def eventsForInstance(
       processTypeName: String,
       recipeInstanceId: String,
       topology: PetriNet,
       encryption: Encryption,
       readJournal: CurrentEventsByPersistenceIdQuery,
-      eventSourceFn: (Long, Transition) => (S => E => S))(implicit actorSystem: ActorSystem): Source[(Instance[S], Event), NotUsed] = {
+      eventSourceFn: (Long, Transition) => (RecipeInstanceState => EventInstance => RecipeInstanceState))(implicit actorSystem: ActorSystem): Source[(Instance[RecipeInstanceState], Event), NotUsed] = {
 
-    val serializer = new ProcessInstanceSerialization[S, E](AkkaSerializerProvider(actorSystem, encryption))
+    val serializer = new ProcessInstanceSerialization[RecipeInstanceState, EventInstance](AkkaSerializerProvider(actorSystem, encryption))
 
     val persistentId = ProcessInstance.recipeInstanceId2PersistenceId(processTypeName, recipeInstanceId)
     val src = readJournal.currentEventsByPersistenceId(persistentId, 0, Long.MaxValue)
-    val eventSource = ProcessInstanceEventSourcing.apply[S, E](eventSourceFn)
+    val eventSource = ProcessInstanceEventSourcing.apply[RecipeInstanceState, EventInstance](eventSourceFn)
 
     // TODO: remove null value
-    src.scan[(Instance[S], Event)]((Instance.uninitialized[S](topology), null.asInstanceOf[Event])) {
+    src.scan[(Instance[RecipeInstanceState], Event)]((Instance.uninitialized[RecipeInstanceState](topology), null.asInstanceOf[Event])) {
       case ((instance, _), e) =>
         val serializedEvent = e.event.asInstanceOf[AnyRef]
         val deserializedEvent = serializer.deserializeEvent(serializedEvent)(instance)
@@ -236,26 +236,26 @@ object ProcessInstanceEventSourcing extends LazyLogging {
   }
 }
 
-abstract class ProcessInstanceEventSourcing[S, E](
+abstract class ProcessInstanceEventSourcing(
     val petriNet: PetriNet,
     encryption: Encryption,
-    eventSourceFn: (Long, Transition) => (S => E => S)) extends PersistentActor with PersistentActorMetrics {
+    eventSourceFn: (Long, Transition) => (RecipeInstanceState => EventInstance => RecipeInstanceState)) extends PersistentActor with PersistentActorMetrics {
 
   protected implicit val system: ActorSystem = context.system
 
-  protected val eventSource: Instance[S] => Event => Instance[S] =
-    ProcessInstanceEventSourcing.apply[S, E](eventSourceFn)
+  protected val eventSource: Instance[RecipeInstanceState] => Event => Instance[RecipeInstanceState] =
+    ProcessInstanceEventSourcing.apply[RecipeInstanceState, EventInstance](eventSourceFn)
 
-  private val serializer = new ProcessInstanceSerialization[S, E](AkkaSerializerProvider(system, encryption))
+  private val serializer = new ProcessInstanceSerialization[RecipeInstanceState, EventInstance](AkkaSerializerProvider(system, encryption))
 
-  def onRecoveryCompleted(state: Instance[S]): Unit
+  def onRecoveryCompleted(state: Instance[RecipeInstanceState]): Unit
 
-  def persistEvent[O](instance: Instance[S], e: Event)(fn: Event => O): Unit = {
+  def persistEvent[O](instance: Instance[RecipeInstanceState], e: Event)(fn: Event => O): Unit = {
     val serializedEvent = serializer.serializeEvent(e)(instance)
     persist(serializedEvent) { persisted => fn(e) }
   }
 
-  private var recoveringState: Instance[S] = Instance.uninitialized[S](petriNet)
+  private var recoveringState: Instance[RecipeInstanceState] = Instance.uninitialized[RecipeInstanceState](petriNet)
 
   private def applyToRecoveringState(e: AnyRef): Unit = {
     val deserializedEvent = serializer.deserializeEvent(e)(recoveringState)

@@ -4,9 +4,9 @@ import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props, Terminated}
 import akka.event.DiagnosticLoggingAdapter
 import akka.testkit.{TestDuration, TestProbe}
 import akka.util.Timeout
-import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
 import com.ing.baker.il.failurestrategy.{BlockInteraction, FireEventAfterFailure, InteractionFailureStrategy, RetryWithIncrementalBackoff}
 import com.ing.baker.il.petrinet.{InteractionTransition, Place}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.AkkaTestBase
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
@@ -21,7 +21,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrat
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.akka.internal.FatalInteractionException
 import com.ing.baker.runtime.akka.namedCachedThreadPool
-import com.ing.baker.runtime.scaladsl.RecipeInstanceState
+import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption.NoEncryption
 import com.ing.baker.types
 import com.ing.baker.types.{Converters, Value}
@@ -38,7 +38,6 @@ import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
-import scala.collection.immutable.Seq
 import scala.concurrent.Promise
 import scala.concurrent.duration.Duration.Zero
 import scala.concurrent.duration._
@@ -47,19 +46,16 @@ import scala.util.Success
 
 sealed trait Event
 
-case class Added(n: Int) extends Event
+trait TestSequenceNet extends SequenceNet {
 
-case class Removed(n: Int) extends Event
-
-trait TestSequenceNet extends SequenceNet[Set[Int], Event] {
-
-  override val eventSourceFunction: Set[Int] => Event => Set[Int] = set => {
-    case Added(c)   => set + c
-    case Removed(c) => set - c
+  override val eventSourceFunction: RecipeInstanceState => EventInstance => RecipeInstanceState = set => {
+    case _  => set
   }
 }
 
 object ProcessInstanceSpec {
+
+  def Added(n: Int): EventInstance = EventInstance(n.toString, Map.empty)
 
   val testExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
 
@@ -71,12 +67,12 @@ object ProcessInstanceSpec {
     Seq.empty
   )
 
-  def processInstanceProps[S, E](
-                                  topology: PetriNet,
-                                  runtime: ProcessInstanceRuntime[S, E],
-                                  settings: Settings,
-                                  delayedTransitionActor: ActorRef): Props = {
-    Props(new ProcessInstance[S, E](
+  def processInstanceProps(
+                            topology: PetriNet,
+                            runtime: ProcessInstanceRuntime,
+                            settings: Settings,
+                            delayedTransitionActor: ActorRef): Props = {
+    Props(new ProcessInstance(
       "test",
       CompiledRecipe("name", UUID.randomUUID().toString, topology, Marking.empty, Seq.empty, Option.empty, Option.empty),
       settings,
@@ -89,8 +85,8 @@ object ProcessInstanceSpec {
     system.actorOf(props, name)
   }
 
-  def createProcessInstance[S, E](petriNet: PetriNet,
-                                  runtime: ProcessInstanceRuntime[S, E],
+  def createProcessInstance(petriNet: PetriNet,
+                                  runtime: ProcessInstanceRuntime,
                                   recipeInstanceId: String = UUID.randomUUID().toString,
                                   delayedTransitionActor: ActorRef = null)(implicit system: ActorSystem): ActorRef = {
 
@@ -118,9 +114,9 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition()(_ => Added(2))
       )
 
-      val initialState = Set(1, 2, 3)
+      val initialState = RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq(EventMoment("1", 0), EventMoment("2", 0), EventMoment("3", 0)))
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance(petriNet, runtime)
 
       actor ! Initialize(initialMarking, initialState)
       expectMsg(Initialized(initialMarking, initialState))
@@ -133,9 +129,9 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition()(_ => Added(2))
       )
 
-      val initialState = Set(1, 2, 3)
+      val initialState = RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq(EventMoment("1", 0), EventMoment("2", 0), EventMoment("3", 0)))
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance(petriNet, runtime)
 
       actor ! Initialize(initialMarking, initialState)
       actor ! Initialize(initialMarking, initialState)
@@ -150,7 +146,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition()(_ => Added(2))
       )
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance(petriNet, runtime)
 
       watch(actor)
       actor ! GetState
@@ -164,8 +160,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition()(_ => Added(2))
       )
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
-      val initialState = Set(1, 2, 3)
+      val actor = createProcessInstance(petriNet, runtime)
+      val initialState = RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq(EventMoment("1", 0), EventMoment("2", 0), EventMoment("3", 0)))
 
       actor ! Initialize(initialMarking, initialState)
       expectMsgClass(classOf[Initialized])
@@ -181,9 +177,9 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition()(_ => throw new RuntimeException("t2 failed!"))
       )
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance(petriNet, runtime)
 
-      actor ! Initialize(initialMarking, Set.empty)
+      actor ! Initialize(initialMarking, RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq.empty))
       expectMsgClass(classOf[Initialized])
 
       actor ! FireTransition(transitionId = 1, input = null)
@@ -203,9 +199,9 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
             Added(1)
         })
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance(petriNet, runtime)
 
-      actor ! Initialize(initialMarking, Set.empty)
+      actor ! Initialize(initialMarking, RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq.empty))
       expectMsgClass(classOf[Initialized])
 
       actor ! FireTransition(transitionId = 1, input = null)
@@ -235,9 +231,9 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       override val sequence = Seq(
         transition() { _ => throw new RuntimeException("t1 failed!") })
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance(petriNet, runtime)
 
-      actor ! Initialize(initialMarking, Set.empty)
+      actor ! Initialize(initialMarking, RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq.empty))
       expectMsgClass(classOf[Initialized])
 
       actor ! FireTransition(transitionId = 1, input = null)
@@ -256,10 +252,12 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         case Some(ExceptionState(_, _, BlockTransition)) =>
       }
 
-      actor ! OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.Continue(place(2).markWithN(1).marshall, Added(2)))
+      val instance = Added(2)
+
+      actor ! OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.Continue(place(2).markWithN(1).marshall, instance))
 
       // expect that the failure is resolved
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, Added(2)) => }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, instance) => }
     }
 
     "Be able to block a retrying transition when requested" in new TestSequenceNet {
@@ -273,9 +271,9 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition(exceptionHandler = retryHandler) { _ => throw new RuntimeException("Expected test failure") }
       )
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance(petriNet, runtime)
 
-      actor ! Initialize(initialMarking, Set.empty)
+      actor ! Initialize(initialMarking, RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq.empty))
       expectMsgClass(classOf[Initialized])
 
       actor ! FireTransition(transitionId = 1, input = null)
@@ -308,12 +306,12 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition()(_ => Added(1))
       )
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance(petriNet, runtime)
 
       // initialize the petri net with 2 tokens in the first place
       val marking: Marking[Place] = place(1).markWithN(2)
 
-      actor ! Initialize(marking, Set.empty)
+      actor ! Initialize(marking, RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq.empty))
       expectMsgClass(classOf[Initialized])
 
       actor ! FireTransition(transitionId = 1, input = null, correlationId = Some(testCorrelationId))
@@ -332,9 +330,9 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition()(_ => Added(2))
       )
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance(petriNet, runtime)
 
-      actor ! Initialize(initialMarking, Set.empty)
+      actor ! Initialize(initialMarking, RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq.empty))
       expectMsgClass(classOf[Initialized])
 
       actor ! FireTransition(transitionId = 1, input = null)
@@ -354,9 +352,9 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition()(_ => Added(2))
       )
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance(petriNet, runtime)
 
-      actor ! Initialize(initialMarking, Set.empty)
+      actor ! Initialize(initialMarking, RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq.empty))
       expectMsgClass(classOf[Initialized])
 
       // attempt to fire the second transition
@@ -380,9 +378,9 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val id = UUID.randomUUID()
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance(petriNet, runtime)
 
-      actor ! Initialize(initialMarking, Set.empty)
+      actor ! Initialize(initialMarking, RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq.empty))
       expectMsgClass(classOf[Initialized])
 
       actor ! FireTransition(transitionId = 1, input = null)
@@ -411,9 +409,11 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val actorName = UUID.randomUUID().toString
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime, actorName)
+      val actor = createProcessInstance(petriNet, runtime, actorName)
 
-      actor ! Initialize(initialMarking, Set.empty)
+      val state = RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq.empty)
+
+      actor ! Initialize(initialMarking, state)
       expectMsgClass(classOf[Initialized])
 
       // fire the first transition (t1) manually
@@ -427,7 +427,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       // validate the final state
       val endMarking: Marking[Place] = place(3).markWithN(1)
-      val expectedFinalState = InstanceState(3, endMarking.marshall, Set(1, 2), Map.empty)
+      val expectedFinalState = InstanceState(3, endMarking.marshall, state, Map.empty)
       actor ! GetState
       expectMsg(expectedFinalState)
 
@@ -435,7 +435,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       syncKillActorWithPoisonPill(actor)
 
       // create a new actor with the same persistent identifier
-      val newActor = createProcessInstance[Set[Int], Event](petriNet, runtime, actorName)
+      val newActor = createProcessInstance(petriNet, runtime, actorName)
 
       newActor ! GetState
 
@@ -449,19 +449,19 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       val retryHandler: TransitionExceptionHandler[Place] = {
         case (e, n, _) => RetryWithDelay(Delay)
       }
-      val mockFunction = mock[Set[Int] => Event]
+      val mockFunction = mock[RecipeInstanceState => EventInstance]
 
       override val sequence = Seq(
         transition()(_ => Added(1)),
         transition(automated = true, exceptionHandler = retryHandler)(mockFunction)
       )
 
-      when(mockFunction.apply(any[Set[Int]])).thenThrow(new RuntimeException("t2 failed"))
+      when(mockFunction.apply(any[RecipeInstanceState])).thenThrow(new RuntimeException("t2 failed"))
 
       val actorName = UUID.randomUUID().toString
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime, actorName)
+      val actor = createProcessInstance(petriNet, runtime, actorName)
 
-      actor ! Initialize(initialMarking, Set.empty)
+      actor ! Initialize(initialMarking, RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq.empty))
       expectMsgClass(classOf[Initialized])
 
       actor ! FireTransition(transitionId = 1, input = null)
@@ -470,7 +470,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       expectMsgPF() { case TransitionFailed(_, 2, _, _, _, _, protocol.ExceptionStrategy.RetryWithDelay(Delay)) => }
 
       // verify that the mock function was called
-      verify(mockFunction).apply(any[Set[Int]])
+      verify(mockFunction).apply(any[RecipeInstanceState])
 
       // kill the actor
       actor ! Stop(delete = false)
@@ -478,15 +478,15 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       // reset the mock
       reset(mockFunction)
-      when(mockFunction.apply(any[Set[Int]])).thenReturn(Added(1))
+      when(mockFunction.apply(any[RecipeInstanceState])).thenReturn(Added(1))
 
       // create a new actor with the same persistent identifier
-      val newActor = createProcessInstance[Set[Int], Event](petriNet, runtime, actorName)
+      val newActor = createProcessInstance(petriNet, runtime, actorName)
 
       // TODO find a way to prevent this sleep, perhaps listen on the event bus?
       Thread.sleep(dilatedMillis(1000))
 
-      verify(mockFunction).apply(any[Set[Int]])
+      verify(mockFunction).apply(any[RecipeInstanceState])
     }
 
     "Block a transition if the exception strategy function throws an exception" in new TestSequenceNet {
@@ -501,9 +501,9 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         )
 
       val actorName = UUID.randomUUID().toString
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime, actorName)
+      val actor = createProcessInstance(petriNet, runtime, actorName)
 
-      actor ! Initialize(initialMarking, Set.empty)
+      actor ! Initialize(initialMarking, RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq.empty))
 
       expectMsgClass(classOf[Initialized])
 
@@ -515,8 +515,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
     "Not re-fire a failed transition with 'Blocked' strategy after being restored from persistent storage" in new TestSequenceNet {
 
       // setup a failing mock function
-      val mockT2 = mock[Set[Int] => Event]
-      when(mockT2.apply(any[Set[Int]])).thenThrow(new RuntimeException("t2 mock failed"))
+      val mockT2 = mock[RecipeInstanceState => EventInstance]
+      when(mockT2.apply(any[RecipeInstanceState])).thenThrow(new RuntimeException("t2 mock failed"))
 
       override val sequence = Seq(
         transition(automated = true)(_ => Added(1)),
@@ -525,16 +525,16 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val recipeInstanceId = UUID.randomUUID().toString
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime, recipeInstanceId)
+      val actor = createProcessInstance(petriNet, runtime, recipeInstanceId)
 
-      actor ! Initialize(initialMarking, Set.empty)
+      actor ! Initialize(initialMarking, RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq.empty))
       expectMsgClass(classOf[Initialized])
 
       // expect the next marking: p2 -> 1
       expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) => }
       expectMsgPF() { case TransitionFailed(_, 2, _, _, _, _, protocol.ExceptionStrategy.BlockTransition) => }
 
-      verify(mockT2).apply(any[Set[Int]])
+      verify(mockT2).apply(any[RecipeInstanceState])
 
       // terminate the actor
       syncKillActorWithPoisonPill(actor)
@@ -542,7 +542,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       reset(mockT2)
 
       // create a new actor with the same persistent identifier
-      val newActor = createProcessInstance[Set[Int], Event](petriNet, runtime, recipeInstanceId)
+      val newActor = createProcessInstance(petriNet, runtime, recipeInstanceId)
 
       newActor ! GetState
 
@@ -559,7 +559,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         case (e, n, _) => RetryWithDelay(InitialDelay)
       }
 
-      val mockFunction = mock[Set[Int] => Event]
+      val mockFunction = mock[RecipeInstanceState => EventInstance]
 
       override val sequence = Seq(
         transition(automated = true, exceptionHandler = retryHandler)(mockFunction)
@@ -567,7 +567,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val mockPromise = Promise[Boolean]()
 
-      when(mockFunction.apply(any[Set[Int]])).thenAnswer(new Answer[Event] {
+      when(mockFunction.apply(any[RecipeInstanceState])).thenAnswer(new Answer[Event] {
         override def answer(invocationOnMock: InvocationOnMock): Event = {
           mockPromise.complete(Success(true)) // FIXME TRAVIS: sometimes we have PromiseAlreadyCompleted exception here
           throw new RuntimeException("failure")
@@ -576,15 +576,15 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val actorName = UUID.randomUUID().toString
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime, actorName)
+      val actor = createProcessInstance(petriNet, runtime, actorName)
 
-      actor ! Initialize(initialMarking, Set.empty)
+      actor ! Initialize(initialMarking, RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq.empty))
       expectMsgClass(classOf[Initialized])
       expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.RetryWithDelay(InitialDelay)) => }
 
       whenReady(mockPromise.future) { _ =>
 
-        verify(mockFunction).apply(any[Set[Int]]) // FIXME TRAVIS: sometimes executes 2 times
+        verify(mockFunction).apply(any[RecipeInstanceState]) // FIXME TRAVIS: sometimes executes 2 times
 
         // kill the actor
         actor ! Stop(delete = false)
@@ -618,17 +618,22 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       expectMsgClass(classOf[Initialized])
     }
 
-    "fire automated transitions in parallel when possible" in new StateTransitionNet[Unit, Unit] {
+    "fire automated transitions in parallel when possible" in new StateTransitionNet {
 
-      override val eventSourceFunction: Unit => Unit => Unit = s => e => s
+      override val eventSourceFunction: RecipeInstanceState => EventInstance => RecipeInstanceState = s => e => s
 
       val p1 = place(id = 1)
       val p2 = place(id = 2)
 
-      val t1 = nullTransition(id = 1, automated = false)
-      val t2 = stateTransition(id = 2, automated = true)(_ => Thread.sleep(dilatedMillis(500)))
-      val t3 = stateTransition(id = 3, automated = true)(_ => Thread.sleep(dilatedMillis(500)))
-
+      val t1 = emptyTransition(id = 1, automated = false)
+      val t2 = stateTransition(id = 2, automated = true)(_ => {
+        Thread.sleep(dilatedMillis(500))
+        EventInstance("t2")
+      })
+      val t3 = stateTransition(id = 3, automated = true)(_ => {
+        Thread.sleep(dilatedMillis(500))
+        EventInstance("t3")
+      })
       val petriNet = createPetriNet[Unit](
         t1 ~> p1,
         t1 ~> p2,
@@ -639,7 +644,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       // creates a petri net actor with initial marking: p1 -> 1
       val initialMarking = Marking.empty[Place]
 
-      val actor = createProcessInstance[Unit, Unit](petriNet, runtime)
+      val actor = createProcessInstance(petriNet, runtime)
 
       actor ! Initialize(initialMarking, null)
       expectMsgClass(classOf[Initialized])
@@ -665,9 +670,9 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       override val sequence = Seq(
         transition() { _ => Added(1) })
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance(petriNet, runtime)
 
-      actor ! Initialize(initialMarking, Set.empty)
+      actor ! Initialize(initialMarking, RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq.empty))
       expectMsgClass(classOf[Initialized])
 
       val receiver = TestProbe()
