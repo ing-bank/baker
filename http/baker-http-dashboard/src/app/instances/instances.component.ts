@@ -117,4 +117,11 @@ export class InstancesComponent implements OnInit {
     toIsoString(linuxTime: number) : string {
         return new Date(linuxTime).toISOString();
     }
+
+    deleteRecipe(instanceId: string): void {
+      const baseUrl = (document.querySelector('base') || {}).href;
+      this.bakeryService.deleteInstance(instanceId).subscribe(_ => {
+        window.location.href = `${baseUrl}instances`
+      });
+    }
 }

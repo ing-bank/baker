@@ -33,9 +33,10 @@ final class InMemoryRecipeInstanceManager(inmem: Ref[IO, InMemoryRecipeInstanceM
                                           retentionPeriodCheckInterval: FiniteDuration,
                                           idleTimeOut: FiniteDuration)(implicit timer: Timer[IO]) extends RecipeInstanceManager[IO] {
 
-//  We use this function instead of the startRetentionPeriodStream stream since it performs better
+  //  We use this function instead of the startRetentionPeriodStream stream since it performs better
   def repeat(io : IO[Unit]) : IO[Nothing] = io >> IO.sleep(retentionPeriodCheckInterval) >> repeat(io)
-  val repeatEvaluation = repeat(cleanupRecipeInstances(idleTimeOut)).unsafeRunAsyncAndForget()
+
+  repeat(cleanupRecipeInstances(idleTimeOut)).unsafeRunAsyncAndForget()
 
   override def fetch(recipeInstanceId: String): IO[Option[RecipeInstanceStatus[IO]]] = {
     inmem.getAndUpdate(store => {
@@ -71,9 +72,10 @@ final class InMemoryRecipeInstanceManager(inmem: Ref[IO, InMemoryRecipeInstanceM
   override protected def fetchAll: IO[Map[String, RecipeInstanceStatus[IO]]] =
     inmem.get.map(_.asScala.toMap)
 
-  override protected def remove(recipeInstanceId: String): IO[Unit] =
-    inmem.update(store => {
-      store.remove(recipeInstanceId)
-      store
-    })
+  override def remove(recipeInstanceId: String): IO[Unit] =
+    idleStop(recipeInstanceId) *>
+      inmem.update(store => {
+        store.remove(recipeInstanceId)
+        store
+      })
 }

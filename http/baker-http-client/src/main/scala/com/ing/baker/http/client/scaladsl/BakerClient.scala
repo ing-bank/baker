@@ -423,4 +423,7 @@ final class BakerClient( client: Client[IO],
     */
   override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
     callRemoteBakerServiceFallbackAware[Unit]((host, prefix) => IO(POST(root(host, prefix) / "instances" / recipeInstanceId / "interaction" / interactionName / "stop-retrying")), fallbackEndpoint)
+
+  override def deleteRecipeInstance(recipeInstanceId: String, removeFromIndex: Boolean): Future[Unit] =
+    callRemoteBakerServiceFallbackAware[Unit]((host, prefix) => IO(DELETE((root(host, prefix) / "instances" / recipeInstanceId / "delete").withQueryParam("removeFromIndex", removeFromIndex))), fallbackEndpoint)
 }

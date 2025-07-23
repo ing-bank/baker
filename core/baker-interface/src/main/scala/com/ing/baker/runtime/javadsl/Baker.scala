@@ -115,6 +115,9 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
     toCompletableFuture(baker.bake(recipeId, recipeInstanceId, metadata.asScala.toMap))
   }
 
+  def deleteRecipeInstance(recipeInstanceId: String, removeFromIndex: Boolean): CompletableFuture[Unit] = {
+    toCompletableFuture(baker.deleteRecipeInstance(recipeInstanceId, removeFromIndex))
+  }
 
   def fireEventAndResolveWhenReceived(@Nonnull recipeInstanceId: String, @Nonnull event: EventInstance, @Nonnull correlationId: String): CompletableFuture[SensoryEventStatus] =
     fireEventAndResolveWhenReceived(recipeInstanceId, event, Optional.of(correlationId))

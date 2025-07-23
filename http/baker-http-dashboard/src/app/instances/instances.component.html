@@ -74,6 +74,19 @@
       </mat-grid-list>
     </ng-template>
   </mat-tab>
+  <mat-tab label="Lifecycle">
+    <ng-template matTabContent>
+      <mat-grid-list cols="1" rowHeight="100%">
+        <mat-grid-tile colspan="1">
+          <div class="text-inside-grid">
+            <div style="padding: 1rem">
+              <button mat-raised-button color="primary" (click)="deleteRecipe(instanceId)">Delete</button>
+            </div>
+          </div>
+        </mat-grid-tile>
+      </mat-grid-list>
+    </ng-template>
+  </mat-tab>
 </mat-tab-group>
 
 <p class="mat-error" *ngIf="failedInstanceId">Could not load instance information with id "{{ failedInstanceId }}".</p>

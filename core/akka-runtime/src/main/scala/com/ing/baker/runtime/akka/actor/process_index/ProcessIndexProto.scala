@@ -398,6 +398,21 @@ object ProcessIndexProto {
         } yield GetProcessState(recipeInstanceId)
     }
 
+  implicit def getDeleteProcess: ProtoMap[DeleteProcess, protobuf.DeleteProcess] =
+    new ProtoMap[DeleteProcess, protobuf.DeleteProcess] {
+
+      val companion = protobuf.DeleteProcess
+
+      def toProto(a: DeleteProcess): protobuf.DeleteProcess =
+        protobuf.DeleteProcess(Some(a.recipeInstanceId), Some(a.removeFromIndex))
+
+      def fromProto(message: protobuf.DeleteProcess): Try[DeleteProcess] =
+        for {
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+          removeFromIndex <- versioned(message.removeFromIndex, "RemoveFromIndex")
+        } yield DeleteProcess(recipeInstanceId, removeFromIndex)
+    }
+
   implicit def getIngredient: ProtoMap[GetProcessIngredient, protobuf.GetProcessIngredient] =
     new ProtoMap[GetProcessIngredient, protobuf.GetProcessIngredient] {
 

@@ -38,15 +38,11 @@ trait RecipeInstanceManager[F[_]] {
 
   protected def fetchAll: F[Map[String, RecipeInstanceStatus[F]]]
 
-  protected def remove(recipeInstanceId: String): F[Unit]
+  def remove(recipeInstanceId: String): F[Unit]
 
   def idleStop(recipeInstanceId: String): F[Unit]
 
   def getAllRecipeInstancesMetadata: F[Set[RecipeInstanceMetadata]]
-
-  //This is not used since the direct usage of IO seems to perform better
-  def startRetentionPeriodStream(interval: FiniteDuration, idleTTL: FiniteDuration)(implicit effect: Effect[F], timer: Timer[F]) =
-    Stream.awakeEvery[F](interval).evalMap { _ => cleanupRecipeInstances(idleTTL) }.compile.resource.drain
 
   protected def cleanupRecipeInstances(idleTimeOut: FiniteDuration)(implicit effect: Effect[F], timer: Timer[F]): F[Unit] =
     for {
