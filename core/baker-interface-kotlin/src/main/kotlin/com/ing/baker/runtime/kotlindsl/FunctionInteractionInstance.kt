@@ -14,6 +14,7 @@ import kotlin.reflect.jvm.javaType
 import kotlin.reflect.jvm.reflect
 import kotlin.reflect.typeOf
 
+@OptIn(kotlin.reflect.jvm.ExperimentalReflectionOnLambdas::class)
 class FunctionInteractionInstance<R>(private val types: List<java.lang.reflect.Type>, val function: Function<R>, private val name: String): InteractionInstance() {
     private val params = function.reflect()?.parameters ?: error("Cannot read parameters")
 

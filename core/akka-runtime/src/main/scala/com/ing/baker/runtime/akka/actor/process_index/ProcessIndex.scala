@@ -171,7 +171,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     val eventualRecord = recipeManager.get(recipeId).flatMap {
       case Some(recipeRecord) if recipeRecord.isActive => Future.successful(Some(recipeRecord))
       case Some(recipeRecord) if !reactivate => Future.successful(Some(recipeRecord)) // inactive recipe, but reactivation is not needed
-      case Some(recipeRecord) if reactivate => // inactive recipe, reactivate it
+      case Some(recipeRecord) => // inactive recipe, reactivate it
         log.info(s"Inactive recipe $recipeId being reactivated.")
         val activeRecipe = recipeRecord.copy(isActive = true)
         recipeManager.put(activeRecipe)
@@ -538,8 +538,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       index.get(recipeInstanceId) match {
         case Some(processState) =>
           // The process exists, so we can delete it.
-          getProcessActor(processState.recipeInstanceId) match {
-            case Some(actorRef: ActorRef) =>
+          getProcessActor(processState.recipeInstanceId) map {
+            actorRef: ActorRef =>
               context.unwatch(actorRef)
               context.watchWith(actorRef, TerminatedWithReplyTo(actorRef, Some(sender())))
           }
