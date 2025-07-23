@@ -110,6 +110,15 @@ trait Baker[F[_]] extends LanguageApi {
   def bake(recipeId: String, recipeInstanceId: String, metadata: language.Map[String, String]): F[Unit]
 
   /**
+   * Deletes a recipeInstance. Once deleted the instance will be marked as `Deleted` in the index and then removed after a while.
+   * Use `removeFromIndex` to remove all references to the instance directly allowing you to create a new instance with the same id again.
+   * @param recipeInstanceId The identifier for the newly baked process
+   * @param removeFromIndex If enabled removes all references to the id directly
+   * @return
+   */
+  def deleteRecipeInstance(recipeInstanceId: String, removeFromIndex: Boolean): F[Unit]
+
+  /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
     *
     * Possible failures:

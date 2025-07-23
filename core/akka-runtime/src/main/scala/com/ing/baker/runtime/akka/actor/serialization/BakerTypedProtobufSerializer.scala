@@ -83,6 +83,8 @@ object BakerTypedProtobufSerializer {
         .register("ProcessIndexProtocol.ProcessEventResponse"),
       forType[ProcessIndexProtocol.GetProcessState]
         .register("ProcessIndexProtocol.GetProcessState"),
+      forType[ProcessIndexProtocol.DeleteProcess]
+        .register("ProcessIndexProtocol.DeleteProcess"),
       forType[ProcessIndexProtocol.GetProcessIngredient]
         .register("ProcessIndexProtocol.GetProcessIngredientc"),
       forType[ProcessIndexProtocol.GetCompiledRecipe]
