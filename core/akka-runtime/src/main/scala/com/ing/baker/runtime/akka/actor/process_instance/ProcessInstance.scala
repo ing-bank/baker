@@ -504,8 +504,6 @@ class ProcessInstance[S, E](
         // retry is only allowed if the interaction is blocked by a failure
         case Some(job@internal.Job(_, _, _, _, _, _, Some(blocked@internal.ExceptionState(_, _, _, internal.ExceptionStrategy.BlockTransition)))) =>
 
-          val now = System.currentTimeMillis()
-
           // the job is updated so it cannot be retried again
           val updatedJob: Job[S] = job.copy(failure = Some(blocked.copy(failureStrategy = internal.ExceptionStrategy.RetryWithDelay(timeout))))
           val updatedInstance: Instance[S] = instance.copy(jobs = instance.jobs + (jobId -> updatedJob))

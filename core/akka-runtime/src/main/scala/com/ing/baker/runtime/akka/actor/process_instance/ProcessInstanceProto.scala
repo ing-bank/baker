@@ -9,11 +9,14 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.protobuf.FailureStrategyMessage.StrategyTypeMessage
 import com.ing.baker.runtime.serialization.ProtoMap
 import com.ing.baker.runtime.serialization.ProtoMap.{AnyRefMapping, ctxFromProto, ctxToProto, versioned}
+import org.slf4j.{Logger, LoggerFactory}
 import scalapb.GeneratedMessageCompanion
 
 import scala.util.{Failure, Success, Try}
 
 object ProcessInstanceProto {
+
+  val log: Logger = LoggerFactory.getLogger("com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto")
 
   implicit def stopProto: ProtoMap[Stop, protobuf.Stop] =
     new ProtoMap[Stop, protobuf.Stop] {
@@ -375,13 +378,18 @@ object ProcessInstanceProto {
   }
 
   private def toProtoMarking(markingData: Marking[Id])(implicit ev0: AnyRefMapping): Seq[protobuf.MarkingData] = {
-    markingData.flatMap { case (placeId, multiSet) =>
-      if (multiSet.isEmpty)
-        throw new IllegalArgumentException(s"Empty marking encoutered for place id: $placeId")
-      multiSet.map { case (data, count) =>
-        protobuf.MarkingData(Some(placeId), Some(ctxToProto(data.asInstanceOf[AnyRef])), Some(count))
-      }
-    }.toSeq
+    if(markingData == null) {
+      log.error("MarkingData empty in toProtoMarking, returning empty list")
+      Seq.empty
+    }
+    else {
+      markingData.flatMap { case (placeId, multiSet) =>
+        if (multiSet.isEmpty)
+          throw new IllegalArgumentException(s"Empty marking encountered for place id: $placeId")
+        multiSet.map { case (data, count) =>
+          protobuf.MarkingData(Some(placeId), Some(ctxToProto(data.asInstanceOf[AnyRef])), Some(count))
+        }
+      }.toSeq
+    }
   }
-
 }
