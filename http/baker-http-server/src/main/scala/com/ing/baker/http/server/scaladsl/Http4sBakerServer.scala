@@ -3,11 +3,11 @@ package com.ing.baker.http.server.scaladsl
 import cats.data.OptionT
 import cats.effect.{Blocker, ContextShift, IO, Resource, Sync, Timer}
 import cats.implicits._
-import com.ing.baker.http.{Dashboard, DashboardConfiguration}
 import com.ing.baker.http.server.common.RecipeLoader
+import com.ing.baker.http.{Dashboard, DashboardConfiguration}
 import com.ing.baker.runtime.common.{BakerException, RecipeRecord}
-import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance}
 import com.ing.baker.runtime.javadsl.{Baker => JBaker}
+import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance}
 import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 import com.ing.baker.runtime.serialization.JsonDecoders._
@@ -18,13 +18,13 @@ import io.circe._
 import io.circe.generic.auto._
 import io.prometheus.client.CollectorRegistry
 import org.http4s._
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.headers.{`Content-Length`, `Content-Type`}
 import org.http4s.implicits._
 import org.http4s.metrics.MetricsOps
 import org.http4s.metrics.prometheus.Prometheus
-import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.middleware.{CORS, Logger, Metrics}
 import org.http4s.server.{Router, Server}
 import org.slf4j.LoggerFactory
@@ -48,7 +48,7 @@ object Http4sBakerServer extends LazyLogging {
       val apiLogger = LoggerFactory.getLogger("API")
       Some(s => IO(apiLogger.info(s)))
     } else None
-    
+
     for {
       metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_api")
       blocker <- Blocker[IO]
@@ -96,16 +96,17 @@ object Http4sBakerServer extends LazyLogging {
   }
 
   def java(baker: JBaker): CompletableFuture[ClosableBakerServer] = {
-    val config : Config = ConfigFactory.load()
+    val config: Config = ConfigFactory.load()
     java(baker, Http4sBakerServerConfiguration.fromConfig(config), DashboardConfiguration.fromConfig(config))
   }
 
-  class ClosableBakerServer(val server : Server, closeEffect : IO[Unit]) extends Closeable {
+  class ClosableBakerServer(val server: Server, closeEffect: IO[Unit]) extends Closeable {
     override def close(): Unit = closeEffect.unsafeRunSync()
   }
+
   def routes(baker: Baker, apiUrlPrefix: String, metrics: MetricsOps[IO],
-                          dashboardConfiguration: DashboardConfiguration, blocker: Blocker)
-                         (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] = {
+             dashboardConfiguration: DashboardConfiguration, blocker: Blocker)
+            (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] = {
     val dashboardRoutesOrEmpty: HttpRoutes[IO] =
       if (dashboardConfiguration.enabled) dashboardRoutes(apiUrlPrefix, dashboardConfiguration, blocker)
       else HttpRoutes.empty
@@ -161,6 +162,8 @@ object Http4sBakerServer extends LazyLogging {
 final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO]) extends LazyLogging {
 
   object CorrelationId extends OptionalQueryParamDecoderMatcher[String]("correlationId")
+
+  object RemoveFromIndex extends OptionalQueryParamDecoderMatcher[Boolean]("removeFromIndex")
 
   private class RegExpValidator(regexp: String) {
     def unapply(str: String): Option[String] = if (str.matches(regexp)) Some(str) else None
@@ -236,6 +239,8 @@ final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO
     case GET -> Root / RecipeInstanceId(recipeInstanceId) / "visual" => baker.getVisualState(recipeInstanceId).toBakerResultResponseIO
 
     case POST -> Root / RecipeInstanceId(recipeInstanceId) / "bake" / RecipeId(recipeId) => baker.bake(recipeId, recipeInstanceId).toBakerResultResponseIO
+
+    case DELETE -> Root / RecipeInstanceId(recipeInstanceId) / "delete" :? RemoveFromIndex(removeFromIndex) => baker.deleteRecipeInstance(recipeInstanceId, removeFromIndex.getOrElse(true)).toBakerResultResponseIO
 
     case req@POST -> Root / RecipeInstanceId(recipeInstanceId) / "fire-and-resolve-when-received" :? CorrelationId(maybeCorrelationId) =>
       for {
