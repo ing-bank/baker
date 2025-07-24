@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.15">
     
     
       
@@ -766,6 +766,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#bakerdeleterecipeinstancerecipeinstanceid-removefromindex" class="md-nav__link">
+    <span class="md-ellipsis">
+      baker.deleteRecipeInstance(recipeInstanceId, removeFromIndex)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#eventinstancefromobject" class="md-nav__link">
     <span class="md-ellipsis">
       EventInstance.from(object)
@@ -1168,6 +1177,15 @@
   <a href="#bakerbakerecipeid-recipeinstanceid" class="md-nav__link">
     <span class="md-ellipsis">
       baker.bake(recipeId, recipeInstanceId)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bakerdeleterecipeinstancerecipeinstanceid-removefromindex" class="md-nav__link">
+    <span class="md-ellipsis">
+      baker.deleteRecipeInstance(recipeInstanceId, removeFromIndex)
     </span>
   </a>
   
@@ -1581,6 +1599,43 @@ except it comes in a <code>CompletableFuture</code> that will help you handle as
 </div>
 </div>
 </div>
+<h2 id="bakerdeleterecipeinstancerecipeinstanceid-removefromindex">baker.deleteRecipeInstance(recipeInstanceId, removeFromIndex)</h2>
+<p>Use <code>deleteRecipeInstance</code> to delete an active recipe instance manually. When an instance is deleted (this also applies to
+deletion through retention period expiration) all of it's process data is removed directly but the recipeInstanceId is by
+default kept in an index for 30 more days which prevents you from creating another instance with the same id during this
+time. Set <code>removeFromIndex</code> to <code>true</code> to also remove it from the index directly allowing for immediate reuse of the id.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:3"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><input id="__tabbed_9_3" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Scala</label><label for="__tabbed_9_2">Java</label><label for="__tabbed_9_3">Kotlin</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">_</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="n">bake</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">.</span><span class="n">recipeId</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myInstance&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="n">_</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="n">deleteRecipeInstance</span><span class="p">(</span><span class="s">&quot;myInstance&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">removeFromIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<span class="w">    </span><span class="n">_</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="n">bake</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">.</span><span class="n">recipeId</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myInstance&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">// &lt;- OK</span>
+<span class="w">    </span><span class="n">_</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="n">deleteRecipeInstance</span><span class="p">(</span><span class="s">&quot;myInstance&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">removeFromIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">)</span>
+<span class="w">    </span><span class="n">_</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="n">bake</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">.</span><span class="n">recipeId</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myInstance&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">// &lt;- EXCEPTION</span>
+<span class="p">}</span><span class="w"> </span><span class="k">yield</span><span class="w"> </span><span class="p">()</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="n">baker</span><span class="p">.</span><span class="na">bake</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">.</span><span class="na">recipeId</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;myInstance&quot;</span><span class="p">).</span><span class="na">get</span><span class="p">();</span>
+<span class="n">baker</span><span class="p">.</span><span class="na">deleteRecipeInstance</span><span class="p">(</span><span class="s">&quot;myInstance&quot;</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">).</span><span class="na">get</span><span class="p">();</span>
+<span class="n">baker</span><span class="p">.</span><span class="na">bake</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">.</span><span class="na">recipeId</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;myInstance&quot;</span><span class="p">).</span><span class="na">get</span><span class="p">();</span><span class="w"> </span><span class="c1">// &lt;- OK</span>
+<span class="n">baker</span><span class="p">.</span><span class="na">deleteRecipeInstance</span><span class="p">(</span><span class="s">&quot;myInstance&quot;</span><span class="p">,</span><span class="w"> </span><span class="kc">false</span><span class="p">).</span><span class="na">get</span><span class="p">();</span>
+<span class="n">baker</span><span class="p">.</span><span class="na">bake</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">.</span><span class="na">recipeId</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;myInstance&quot;</span><span class="p">).</span><span class="na">get</span><span class="p">();</span><span class="w"> </span><span class="c1">// &lt;- EXCEPTION</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">example</span><span class="p">(</span><span class="n">baker</span><span class="p">:</span><span class="w"> </span><span class="n">Baker</span><span class="p">,</span><span class="w"> </span><span class="n">compiledRecipe</span><span class="p">:</span><span class="w"> </span><span class="n">CompiledRecipe</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">baker</span><span class="p">.</span><span class="na">bake</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">.</span><span class="na">recipeId</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myInstance&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="n">baker</span><span class="p">.</span><span class="na">deleteRecipeInstance</span><span class="p">(</span><span class="s">&quot;myInstance&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">removeFromIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<span class="w">    </span><span class="n">baker</span><span class="p">.</span><span class="na">bake</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">.</span><span class="na">recipeId</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myInstance&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">// &lt;- OK</span>
+<span class="w">    </span><span class="n">baker</span><span class="p">.</span><span class="na">deleteRecipeInstance</span><span class="p">(</span><span class="s">&quot;myInstance&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">removeFromIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">)</span>
+<span class="w">    </span><span class="n">baker</span><span class="p">.</span><span class="na">bake</span><span class="p">(</span><span class="n">compiledRecipe</span><span class="p">.</span><span class="na">recipeId</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myInstance&quot;</span><span class="p">)</span><span class="w"> </span><span class="c1">// &lt;- EXCEPTION</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="eventinstancefromobject">EventInstance.from(object)</h2>
 <p>As part of our efforts to ease the creation of <code>EventInstances</code>, we added a function that uses Java and Scala reflection 
 to create <code>EventInstances</code> from class objects.</p>
@@ -1589,7 +1644,7 @@ to create <code>EventInstances</code> from class objects.</p>
 translated to <code>IngredientInstances</code> with corresponding names and baker types.</p>
 <p>Notice that this function might throw an exception if the event is not correctly done (this is why in Scala the API is
 named "unsafe").</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Scala</label><label for="__tabbed_9_2">Java</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">Scala</label><label for="__tabbed_10_2">Java</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">EventInstance</span>
@@ -1655,7 +1710,7 @@ to the moment the <code>onEventName</code> was fired.</p>
 <p>Optionally you may provide a <code>correlation id</code> when firing a <code>EventInstance</code>. The purpose of this identifier is idempotent 
 event delivery: when sending the same event correlation id multiple times, only the first will be processed.</p>
 <p>This can be applied to the <code>OrderPlaced</code> event for example.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">Scala</label><label for="__tabbed_10_2">Java</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">Scala</label><label for="__tabbed_11_2">Java</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kd">val</span><span class="w"> </span><span class="n">correlationOrderId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;a unique order id&quot;</span>
@@ -1718,7 +1773,7 @@ event delivery: when sending the same event correlation id multiple times, only 
 <h2 id="bakergetrecipeinstancestaterecipeinstanceid">baker.getRecipeInstanceState(recipeInstanceId)</h2>
 <p><code>baker.getInteractionInstanceState(recipeInstanceId)</code> will return an <code>InteractionInstanceState</code> object which 
 contains all the event names with timestamps that have executed, and the current available provided ingredient data.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">Scala</label><label for="__tabbed_11_2">Java</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">Scala</label><label for="__tabbed_12_2">Java</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">RecipeInstanceState</span>
@@ -1744,7 +1799,7 @@ the given timeout.</em></p>
 API. This will return a GraphViz string like the <a href="">visualization api</a> that you can convert into an image.</p>
 <p>Here is a visualization of the state of another webshop example, one can clearly see that the process is flowing correctly
 without failures and that it is still waiting for the payment sensory event to be fired.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">Scala</label><label for="__tabbed_12_2">Java</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">Scala</label><label for="__tabbed_13_2">Java</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kd">val</span><span class="w"> </span><span class="n">state</span><span class="p">:</span><span class="w"> </span><span class="nc">Future</span><span class="p">[</span><span class="nc">String</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="n">getVisualState</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">)</span>
@@ -1766,7 +1821,7 @@ without failures and that it is still waiting for the payment sensory event to b
 - logging
 - metrics
 - unit tests</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">Scala</label><label for="__tabbed_13_2">Java</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">Scala</label><label for="__tabbed_14_2">Java</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">baker</span><span class="p">.</span><span class="n">registerEventListener</span><span class="p">((</span><span class="n">recipeInstanceId</span><span class="p">:</span><span class="w"> </span><span class="nc">String</span><span class="p">,</span><span class="w"> </span><span class="n">event</span><span class="p">:</span><span class="w"> </span><span class="nc">EventInstance</span><span class="p">)</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="p">{</span>
@@ -1793,7 +1848,7 @@ received <code>EventInstances</code> or <code>CompiledRecipes</code> being added
 - logging
 - metrics
 - unit tests</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">Scala</label><label for="__tabbed_14_2">Java</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="15:2"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1">Scala</label><label for="__tabbed_15_2">Java</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="n">_</span>
@@ -1827,7 +1882,7 @@ This one involves forcing another try, resulting either on a successful continue
 to check this you will need to request the state of the <code>RecipeInstance</code> again.</p>
 <p><em>Note: this behaviour can be automatically preconfigured by using the <code>RetryWithIncrementalBackoff</code> <code>FailureStrategy</code>
 on the <code>Interaction</code> of the <code>Recipe</code></em></p>
-<div class="tabbed-set tabbed-alternate" data-tabs="15:2"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1">Scala</label><label for="__tabbed_15_2">Java</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="16:2"><input checked="checked" id="__tabbed_16_1" name="__tabbed_16" type="radio" /><input id="__tabbed_16_2" name="__tabbed_16" type="radio" /><div class="tabbed-labels"><label for="__tabbed_16_1">Scala</label><label for="__tabbed_16_2">Java</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kd">val</span><span class="w"> </span><span class="n">program</span><span class="p">:</span><span class="w"> </span><span class="nc">Future</span><span class="p">[</span><span class="nc">Unit</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>
@@ -1848,7 +1903,7 @@ the blocked interaction in two ways. This one involves resolving the interaction
 the one that would have had been computed by the <code>InteractionInstance</code>.</p>
 <p><em>Note: this behaviour can be automatically preconfigured by using the <code>FireEventAfterFailure(eventName)</code> <code>FailureStrategy</code>
 on the <code>Interaction</code> of the <code>Recipe</code></em></p>
-<div class="tabbed-set tabbed-alternate" data-tabs="16:2"><input checked="checked" id="__tabbed_16_1" name="__tabbed_16" type="radio" /><input id="__tabbed_16_2" name="__tabbed_16" type="radio" /><div class="tabbed-labels"><label for="__tabbed_16_1">Scala</label><label for="__tabbed_16_2">Java</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="17:2"><input checked="checked" id="__tabbed_17_1" name="__tabbed_17" type="radio" /><input id="__tabbed_17_2" name="__tabbed_17" type="radio" /><div class="tabbed-labels"><label for="__tabbed_17_1">Scala</label><label for="__tabbed_17_2">Java</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kd">val</span><span class="w"> </span><span class="n">program</span><span class="p">:</span><span class="w"> </span><span class="nc">Future</span><span class="p">[</span><span class="nc">Unit</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>
@@ -1865,7 +1920,7 @@ on the <code>Interaction</code> of the <code>Recipe</code></em></p>
 <h2 id="bakerstopretryinginteractionrecipeinstanceid-interactionname">baker.stopRetryingInteraction(recipeInstanceId, interactionName)</h2>
 <p>If an <code>Interaction</code> is configured with a <code>RetryWithIncrementalBackoff</code> <code>FailureStrategy</code> then it will not stop retrying 
 until you call this API or a successful outcome happens from the <code>InteractionInstance</code>.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="17:2"><input checked="checked" id="__tabbed_17_1" name="__tabbed_17" type="radio" /><input id="__tabbed_17_2" name="__tabbed_17" type="radio" /><div class="tabbed-labels"><label for="__tabbed_17_1">Scala</label><label for="__tabbed_17_2">Java</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="18:2"><input checked="checked" id="__tabbed_18_1" name="__tabbed_18" type="radio" /><input id="__tabbed_18_2" name="__tabbed_18" type="radio" /><div class="tabbed-labels"><label for="__tabbed_18_1">Scala</label><label for="__tabbed_18_2">Java</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kd">val</span><span class="w"> </span><span class="n">program</span><span class="p">:</span><span class="w"> </span><span class="nc">Future</span><span class="p">[</span><span class="nc">Unit</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>
@@ -1930,7 +1985,7 @@ until you call this API or a successful outcome happens from the <code>Interacti
       <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.copy"], "search": "../../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.56ea9cef.min.js"></script>
       
     
   </body>
