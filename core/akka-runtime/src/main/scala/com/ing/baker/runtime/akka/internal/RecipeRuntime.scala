@@ -22,13 +22,13 @@ import scala.collection.immutable.{Map, Seq}
 import scala.concurrent.ExecutionContext
 
 object RecipeRuntime {
-  def recipeEventSourceFn: Transition => RecipeInstanceState => EventInstance => RecipeInstanceState =
-    _ => state => {
+  def recipeEventSourceFn: (Long, Transition) => RecipeInstanceState => EventInstance => RecipeInstanceState =
+    (occurredOn, transition) => state => {
       case null => state
       case event: EventInstance =>
         state.copy(
           ingredients = state.ingredients ++ event.providedIngredients,
-          events = state.events :+ EventMoment(event.name, System.currentTimeMillis()))
+          events = state.events :+ EventMoment(event.name, occurredOn))
     }
 
   /**
@@ -133,7 +133,7 @@ object RecipeRuntime {
   }
 }
 
-class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager[IO], eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime[RecipeInstanceState, EventInstance] {
+class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager[IO], eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime {
 
   protected implicit lazy val contextShift: ContextShift[IO] = IO.contextShift(ec)
 
@@ -157,7 +157,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
     }
   }
 
-  override val eventSource: Transition => RecipeInstanceState => EventInstance => RecipeInstanceState = recipeEventSourceFn
+  override val eventSource: (Long, Transition) => RecipeInstanceState => EventInstance => RecipeInstanceState = recipeEventSourceFn
 
   override def handleException(job: Job[RecipeInstanceState])
                               (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]): ExceptionStrategy = {

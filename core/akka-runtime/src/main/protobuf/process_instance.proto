@@ -90,6 +90,7 @@ message DelayedTransitionFired {
     repeated ConsumedToken consumed = 6;
     repeated ProducedToken produced = 7;
     optional SerializedData data = 8;
+    optional int64 time_completed = 9;
 }
 
 message FailureStrategy {

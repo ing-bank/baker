@@ -10,6 +10,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSou
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.BlockTransition
 import com.ing.baker.runtime.akka.actor.process_instance.internal.{ExceptionStrategy, Instance, Job}
 import com.ing.baker.runtime.common.RemoteInteractionExecutionException
+import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -21,7 +22,7 @@ import org.slf4j.{Logger, LoggerFactory}
   * @tparam S The state type
   * @tparam E The event type
   */
-trait ProcessInstanceRuntime[S, E] extends LazyLogging {
+trait ProcessInstanceRuntime extends LazyLogging {
 
   val log: Logger = LoggerFactory.getLogger("com.ing.baker.runtime.core.actor.process_instance.ProcessInstanceRuntime")
 
@@ -30,26 +31,26 @@ trait ProcessInstanceRuntime[S, E] extends LazyLogging {
     *
     * By default the identity function is used.
     */
-  val eventSource: Transition => S => E => S = _ => s => _ => s
+  val eventSource: (Long, Transition) => RecipeInstanceState => EventInstance => RecipeInstanceState = (_, _) => s => _ => s
 
   /**
    * This function is called when a transition throws an exception.
    *
    * By default the transition is blocked.
    */
-  def handleException(job: Job[S])(throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]): ExceptionStrategy = BlockTransition
+  def handleException(job: Job[RecipeInstanceState])(throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]): ExceptionStrategy = BlockTransition
 
   /**
    * Returns the task that should be executed for a transition.
    */
-  def transitionTask(petriNet: PetriNet, t: Transition)(marking: Marking[Place], state: S, input: Any): IO[(Marking[Place], E)]
+  def transitionTask(petriNet: PetriNet, t: Transition)(marking: Marking[Place], state: RecipeInstanceState, input: Any): IO[(Marking[Place], EventInstance)]
 
   /**
     * Checks if a transition can be fired automatically by the runtime (not triggered by some outside input).
     *
     * By default, cold transitions (without in adjacent places) are not fired automatically
     */
-  def canBeFiredAutomatically(instance: Instance[S], t: Transition): Boolean = instance.petriNet.incomingPlaces(t).nonEmpty
+  def canBeFiredAutomatically(instance: Instance[RecipeInstanceState], t: Transition): Boolean = instance.petriNet.incomingPlaces(t).nonEmpty
 
   /**
    * Defines which tokens from a marking for a particular place are consumable by a transition.
@@ -71,7 +72,7 @@ trait ProcessInstanceRuntime[S, E] extends LazyLogging {
    * However, since that is not used this can be refactored to a simple function: Job -> TransitionEvent
    *
    */
-  def jobExecutor(topology: PetriNet)(implicit transitionIdentifier: Identifiable[Transition], placeIdentifier: Identifiable[Place]): Job[S] => IO[TransitionEvent] = {
+  def jobExecutor(topology: PetriNet)(implicit transitionIdentifier: Identifiable[Transition], placeIdentifier: Identifiable[Place]): Job[RecipeInstanceState] => IO[TransitionEvent] = {
 
     def exceptionStackTrace(e: Throwable): String = e match {
       case _: RemoteInteractionExecutionException => e.getMessage
@@ -145,7 +146,7 @@ trait ProcessInstanceRuntime[S, E] extends LazyLogging {
   /**
    * Creates a job for a specific transition with input, computes the marking it should consume
    */
-  def createJob(transition: Transition, input: Any, correlationId: Option[String] = None): State[Instance[S], Either[String, Job[S]]] =
+  def createJob(transition: Transition, input: Any, correlationId: Option[String] = None): State[Instance[RecipeInstanceState], Either[String, Job[RecipeInstanceState]]] =
     State {instance =>
       if (instance.isBlocked(transition))
         (instance, Left("Transition is blocked by a previous failure"))
@@ -154,8 +155,8 @@ trait ProcessInstanceRuntime[S, E] extends LazyLogging {
           case None =>
             (instance, Left(s"Not enough consumable tokens. This might have been caused because the event has already been fired up the the firing limit but the recipe requires more instances of the event, use withSensoryEventNoFiringLimit or increase the amount of firing limit on the recipe if such behaviour is desired"))
           case Some(params) =>
-            val job = Job[S](instance.nextJobId(), correlationId, instance.state, transition, params.head, input)
-            val updatedInstance = instance.copy[S](jobs = instance.jobs + (job.id -> job))
+            val job = Job[RecipeInstanceState](instance.nextJobId(), correlationId, instance.state, transition, params.head, input)
+            val updatedInstance = instance.copy[RecipeInstanceState](jobs = instance.jobs + (job.id -> job))
             (updatedInstance, Right(job))
         }
     }
@@ -163,20 +164,20 @@ trait ProcessInstanceRuntime[S, E] extends LazyLogging {
   /**
     * Finds the (optional) first transition that is enabled and can be fired automatically
     */
-  def firstEnabledJob: State[Instance[S], Option[Job[S]]] = State { instance =>
+  def firstEnabledJob: State[Instance[RecipeInstanceState], Option[Job[RecipeInstanceState]]] = State { instance =>
     enabledParameters(instance.petriNet)(instance.availableMarking).find {
       case (t, _) => !instance.isBlocked(t) && canBeFiredAutomatically(instance, t)
     }.map {
       case (t, markings) =>
-        val job = Job[S](instance.nextJobId(), None, instance.state, t, markings.head, null)
-        (instance.copy[S](jobs = instance.jobs + (job.id -> job)), Some(job))
+        val job = Job[RecipeInstanceState](instance.nextJobId(), None, instance.state, t, markings.head, null)
+        (instance.copy[RecipeInstanceState](jobs = instance.jobs + (job.id -> job)), Some(job))
     }.getOrElse((instance, None))
   }
 
   /**
    * Finds all automated enabled transitions.
    */
-  def allEnabledJobs: State[Instance[S], Set[Job[S]]] =
+  def allEnabledJobs: State[Instance[RecipeInstanceState], Set[Job[RecipeInstanceState]]] =
     firstEnabledJob.flatMap {
       case None => State.pure(Set.empty)
       case Some(job) => allEnabledJobs.map(_ + job)

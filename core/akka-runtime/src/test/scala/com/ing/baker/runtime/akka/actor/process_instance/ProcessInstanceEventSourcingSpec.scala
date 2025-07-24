@@ -14,6 +14,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceSpec._
 import com.ing.baker.runtime.akka.actor.process_instance.dsl.TestUtils.{PlaceMethods, place}
 import com.ing.baker.runtime.akka.actor.process_instance.dsl._
+import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption.NoEncryption
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers._
@@ -38,39 +39,41 @@ class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") 
 
   "The query package" should {
 
-    "return a source of events for a petriNet instance" in new StateTransitionNet[Unit, Unit] {
+    "return a source of events for a petriNet instance" in new StateTransitionNet {
 
-      override val eventSourceFunction: Unit => Unit => Unit = s => _ => s
+      override val eventSourceFunction: RecipeInstanceState => EventInstance => RecipeInstanceState = s => _ => s
 
       val readJournal = PersistenceQuery(system).readJournalFor[ReadJournal with CurrentEventsByPersistenceIdQuery]("inmemory-read-journal")
 
       val p1 = place(1)
       val p2 = place(2)
       val p3 = place(3)
-      val t1 = nullTransition(id = 1, automated = true)
-      val t2 = nullTransition(id = 2, automated = true)
+      val t1 = emptyTransition(id = 1, automated = true)
+      val t2 = emptyTransition(id = 2, automated = true)
 
       val petriNet = createPetriNet(p1 ~> t1, t1 ~> p2, p2 ~> t2, t2 ~> p3)
       val recipeInstanceId = UUID.randomUUID().toString
-      val instance = createProcessInstance[Unit, Unit](petriNet, runtime, recipeInstanceId)
+      val instance = createProcessInstance(petriNet, runtime, recipeInstanceId)
 
-      instance ! Initialize(p1.markWithN(1), ())
+      val state = RecipeInstanceState(recipeInstanceId, recipeInstanceId, Map.empty, Map.empty, Seq.empty)
 
-      expectMsg(Initialized(p1.markWithN(1), ()))
+      instance ! Initialize(p1.markWithN(1), state)
+
+      expectMsg(Initialized(p1.markWithN(1), state))
       expectMsgPF(timeOut) { case TransitionFired(_, 1, _, _, _, _, _) => }
       expectMsgPF(timeOut) { case TransitionFired(_, 2, _, _, _, _, _) => }
 
-      ProcessInstanceEventSourcing.eventsForInstance[Unit, Unit](
+      ProcessInstanceEventSourcing.eventsForInstance(
         processTypeName = "test",
         recipeInstanceId = recipeInstanceId,
         topology = petriNet,
         encryption = NoEncryption,
         readJournal = readJournal,
-        eventSourceFn = t => eventSourceFunction)
+        eventSourceFn = (l, t) => eventSourceFunction)
         .map(_._2) // Get the event from the tuple
         .runWith(TestSink.probe)
         .request(3)
-        .expectNext(InitializedEvent(marking = p1.markWithN(1).marshall, state = ()))
+        .expectNext(InitializedEvent(marking = p1.markWithN(1).marshall, state = state))
         .expectNextChainingPF {
           case TransitionFiredEvent(_, 1, _, _, _, consumed, produced, _) =>
             consumed shouldBe p1.markWithN(1).marshall

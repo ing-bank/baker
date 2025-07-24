@@ -16,11 +16,11 @@ object TestUtils {
   implicit class TransitionMethods(val transition: com.ing.baker.il.petrinet.Transition) {
     val exceptionStrategy =
       transition match {
-        case st: StateTransition[_, _] => st.exceptionStrategy
+        case st: StateTransition => st.exceptionStrategy
       }
     val isAutomated =
       transition match {
-        case st: StateTransition[_, _] => st.isAutomated
+        case st: StateTransition => st.isAutomated
       }
   }
 }
