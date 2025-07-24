@@ -376,13 +376,13 @@ class ProcessInstance(
 
         //TODO create a better way to get the outgoing places (not by directly calling the RecipeRuntime)
         val produced = RecipeRuntime.createProducedMarking(
-          petriNet.outMarking(transition).asInstanceOf[MultiSet[Place]],
+          petriNet.outMarking(transition),
           Some(out)
         ).marshall
-        val internalEvent = ProcessInstanceEventSourcing.DelayedTransitionFired(jobId, transitionId, produced, out)
+        val internalEvent = ProcessInstanceEventSourcing.DelayedTransitionFired(jobId, transitionId, System.currentTimeMillis(), produced, out)
 
         val timestamp = System.currentTimeMillis()
-        log.transitionFired(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition.asInstanceOf[Transition], jobId, timestamp, timestamp)
+        log.transitionFired(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition, jobId, timestamp, timestamp)
 
         LogAndSendEvent.eventFired(EventFired(timestamp, compiledRecipe.name, compiledRecipe.recipeId, recipeInstanceId,  out.name), context.system.eventStream)
 
@@ -410,12 +410,12 @@ class ProcessInstance(
 
       val transition = instance.petriNet.transitions.getById(transitionId)
 
-      log.transitionFailed(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition.asInstanceOf[Transition], jobId, timeStarted, timeFailed, reason)
+      log.transitionFailed(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition, jobId, timeStarted, timeFailed, reason)
 
       strategy match {
         case RetryWithDelay(delay) =>
 
-          log.scheduleRetry(recipeInstanceId, transition.asInstanceOf[Transition], delay)
+          log.scheduleRetry(recipeInstanceId, transition, delay)
 
           val originalSender = sender()
 
@@ -490,7 +490,7 @@ class ProcessInstance(
               context become running(updatedInstance, scheduledRetries)
             case (_, Left(reason)) =>
 
-              log.fireTransitionRejected(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition.asInstanceOf[Transition], reason)
+              log.fireTransitionRejected(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition, reason)
 
               sender() ! FireSensoryEventRejection.FiringLimitMet(recipeInstanceId)
           }
@@ -603,10 +603,10 @@ class ProcessInstance(
   }
 
   def executeJob(job: Job[RecipeInstanceState], originalSender: ActorRef): Unit = {
-    log.fireTransition(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
+    log.fireTransition(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, job.id, job.transition, System.currentTimeMillis())
     job.transition match {
       case eventTransition: EventTransition =>
-        BakerLogging.default.firingEvent(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
+        BakerLogging.default.firingEvent(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, job.id, job.transition, System.currentTimeMillis())
         executeJobViaExecutor(job, originalSender)
       case i: InteractionTransition if isDelayedInteraction(i) =>
         startDelayedTransition(i, job, originalSender)
@@ -646,7 +646,7 @@ class ProcessInstance(
       job.consume.marshall,
 
       RecipeRuntime.createProducedMarking(
-        petriNet.outMarking(job.transition).asInstanceOf[MultiSet[Place]],
+        petriNet.outMarking(job.transition),
         Some(outputEvent)).marshall,
       outputEvent
     )
@@ -666,7 +666,7 @@ class ProcessInstance(
   def startDelayedTransition(interactionTransition: InteractionTransition, job: Job[RecipeInstanceState], originalSender: ActorRef): Unit = {
     delayedTransitionActor ! ScheduleDelayedTransition(
       recipeInstanceId,
-      getWaitTimeInMillis(interactionTransition, job.processState.asInstanceOf[RecipeInstanceState]),
+      getWaitTimeInMillis(interactionTransition, job.processState),
       job.id,
       job.transition.getId,
       job.consume.marshall,
@@ -682,7 +682,7 @@ class ProcessInstance(
           executeJob(j, sender())
           map
         } else {
-          log.scheduleRetry(recipeInstanceId, j.transition.asInstanceOf[Transition], newDelay)
+          log.scheduleRetry(recipeInstanceId, j.transition, newDelay)
           val cancellable = system.scheduler.scheduleOnce(newDelay milliseconds) {
             executeJob(j, sender())
           }

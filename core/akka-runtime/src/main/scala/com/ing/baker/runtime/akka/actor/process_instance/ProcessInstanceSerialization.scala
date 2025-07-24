@@ -242,7 +242,8 @@ class ProcessInstanceSerialization[S, E](provider: AkkaSerializerProvider) {
       jobId = Some(e.jobId),
       transitionId = Some(e.transitionId),
       produced = producedTokens,
-      data = serializeObject(e.output)
+      data = serializeObject(e.output),
+      timeCompleted = Some(e.timeCompleted)
     )
   }
 
@@ -304,8 +305,9 @@ class ProcessInstanceSerialization[S, E](provider: AkkaSerializerProvider) {
 
     val transitionId = e.transitionId.getOrElse(missingFieldException("transition_id"))
     val jobId = e.jobId.getOrElse(missingFieldException("job_id"))
+    val timeCompleted: Long = e.timeCompleted.getOrElse(0)
 
-    DelayedTransitionFired(jobId, transitionId, produced, output)
+    DelayedTransitionFired(jobId, transitionId, timeCompleted, produced, output)
   }
 
   private def serializeMetaDataAdded(e: com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.MetaDataAdded): protobuf.MetaDataAdded = {

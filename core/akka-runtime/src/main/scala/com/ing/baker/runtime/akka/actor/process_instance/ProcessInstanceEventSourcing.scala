@@ -90,6 +90,7 @@ object ProcessInstanceEventSourcing extends LazyLogging {
     */
   case class DelayedTransitionFired(override val jobId: Long,
                                     override val transitionId: Id,
+                                    timeCompleted: Long,
                                     produced: Marking[Id],
                                     output: Any) extends TransitionEvent
 
@@ -187,8 +188,7 @@ object ProcessInstanceEventSourcing extends LazyLogging {
       val delayedInstanceCount: Int = instance.delayedTransitionIds(e.transitionId)
       val produced: Marking[Place] = e.produced.unmarshall(instance.petriNet.places)
       val transition = instance.petriNet.transitions.getById(e.transitionId)
-      //TODO store the execution time so we can set it correctly
-      val newState = sourceFn(0L, transition)(instance.state)(e.output.asInstanceOf[E])
+      val newState = sourceFn(e.timeCompleted, transition)(instance.state)(e.output.asInstanceOf[E])
 
       instance.copy[S](
         sequenceNr = instance.sequenceNr + 1,
