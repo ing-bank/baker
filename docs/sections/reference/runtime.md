@@ -309,6 +309,48 @@ except it comes in a `CompletableFuture` that will help you handle async program
         .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId));
     ```
 
+## baker.deleteRecipeInstance(recipeInstanceId, removeFromIndex)
+
+Use `deleteRecipeInstance` to delete an active recipe instance manually. When an instance is deleted (this also applies to
+deletion through retention period expiration) all of it's process data is removed directly but the recipeInstanceId is by
+default kept in an index for 30 more days which prevents you from creating another instance with the same id during this
+time. Set `removeFromIndex` to `true` to also remove it from the index directly allowing for immediate reuse of the id.
+
+=== "Scala"
+
+    ```scala
+    for {
+        _ <- baker.bake(compiledRecipe.recipeId, "myInstance")
+        _ <- baker.deleteRecipeInstance("myInstance", removeFromIndex = true)
+        _ <- baker.bake(compiledRecipe.recipeId, "myInstance") // <- OK
+        _ <- baker.deleteRecipeInstance("myInstance", removeFromIndex = false)
+        _ <- baker.bake(compiledRecipe.recipeId, "myInstance") // <- EXCEPTION
+    } yield ()
+    ```
+
+=== "Java"
+
+    ```java
+    baker.bake(compiledRecipe.recipeId(), "myInstance").get();
+    baker.deleteRecipeInstance("myInstance", true).get();
+    baker.bake(compiledRecipe.recipeId(), "myInstance").get(); // <- OK
+    baker.deleteRecipeInstance("myInstance", false).get();
+    baker.bake(compiledRecipe.recipeId(), "myInstance").get(); // <- EXCEPTION
+    ```
+
+=== "Kotlin"
+
+    ```kotlin
+    suspend fun example(baker: Baker, compiledRecipe: CompiledRecipe) {
+        baker.bake(compiledRecipe.recipeId, "myInstance")
+        baker.deleteRecipeInstance("myInstance", removeFromIndex = true)
+        baker.bake(compiledRecipe.recipeId, "myInstance") // <- OK
+        baker.deleteRecipeInstance("myInstance", removeFromIndex = false)
+        baker.bake(compiledRecipe.recipeId, "myInstance") // <- EXCEPTION
+    }
+    ```
+
+
 ## EventInstance.from(object)
 
 As part of our efforts to ease the creation of `EventInstances`, we added a function that uses Java and Scala reflection 
