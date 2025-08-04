@@ -1,9 +1,9 @@
 # Recipe DSL
 
 !!! Warning
-    The examples in this section are set up to demonstrate specific features of the recipe DSL. The snippets are not
-    complete recipes. For example, some snippets only specify sensory events without any interactions,
-    and vice versa.
+The examples in this section are set up to demonstrate specific features of the recipe DSL. The snippets are not
+complete recipes. For example, some snippets only specify sensory events without any interactions,
+and vice versa.
 
 ## Sensory events
 
@@ -36,7 +36,8 @@ as such. If left unspecified, the firing limit defaults to 1.
         found in [this section](../../tutorial#define-the-sensory-event) of the tutorial.
 
 ### Event receive period
-The period during which the process accepts sensory events. This is an optional parameter, defaults to accepting 
+
+The period during which the process accepts sensory events. This is an optional parameter, defaults to accepting
 sensory events forever.
 
 === "Java"
@@ -60,6 +61,7 @@ sensory events forever.
 ## Interactions
 
 ### Custom name
+
 By default, the name of the interaction matches the name of the interaction class. Optionally, you can specify your
 own name.
 
@@ -81,8 +83,8 @@ own name.
     --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/InteractionWithCustomName.scala"
     ```
 
-
 ### Maximum interaction count
+
 By default, an interaction can be invoked an unlimited amount of times. Optionally, you can specify a limit.
 
 === "Java"
@@ -104,6 +106,7 @@ By default, an interaction can be invoked an unlimited amount of times. Optional
     ```
 
 ### Predefined ingredients
+
 It's possible to register static ingredients to the interaction via predefined ingredients.
 
 === "Java"
@@ -125,14 +128,15 @@ It's possible to register static ingredients to the interaction via predefined i
     ```
 
 ### Required events
+
 Sometimes an interaction should only execute after a certain event has happened. To achieve this you can specify
-`requiredEvents` or `requiredOneOfEvents`. 
+`requiredEvents` or `requiredOneOfEvents`.
 
-All required events have to be available for the interaction to be executed. It works as a logical AND. In contrast, 
+All required events have to be available for the interaction to be executed. It works as a logical AND. In contrast,
 required one of events works as a logical OR. At least one of those events should be available before the interaction
-is executed. 
+is executed.
 
-In this example, the `ShipOrder` interaction will only execute if the `FraudCheckCompleted` and one of (or both) the 
+In this example, the `ShipOrder` interaction will only execute if the `FraudCheckCompleted` and one of (or both) the
 `PaymentReceived` or `UsedCouponCode` events are available.
 
 === "Java"
@@ -155,7 +159,7 @@ In this example, the `ShipOrder` interaction will only execute if the `FraudChec
 
 ### Transform output events
 
-It's possible to change the name of an output event. Optionally, you can also change names of 
+It's possible to change the name of an output event. Optionally, you can also change names of
 ingredients.
 
 === "Java"
@@ -199,8 +203,9 @@ It's possible to change the names the input ingredients.
     ```
 
 ### Failure strategy
+
 It's possible to define a failure strategy on interaction level. This failure strategy will only be used for this
-specific interaction. Interaction specific failure strategies take precedence over the default failure strategy. 
+specific interaction. Interaction specific failure strategies take precedence over the default failure strategy.
 For all available failure strategies, see the [error handling](/sections/cookbook/error-handling) section.
 
 === "Java"
@@ -224,7 +229,10 @@ For all available failure strategies, see the [error handling](/sections/cookboo
 ## Recipe
 
 ### Retention period
-The period during which the process keeps running, the recipe will be deleted AFTER the retention period has passed (measured from the creation time of the Recipe instance. This is an optional parameter, defaults to keep the process forever.
+
+The period during which the process keeps running, the recipe will be deleted AFTER the retention period has passed (
+measured from the creation time of the Recipe instance. This is an optional parameter, defaults to keep the process
+forever.
 
 === "Java"
 
@@ -245,7 +253,8 @@ The period during which the process keeps running, the recipe will be deleted AF
     ```
 
 ### Checkpoint events
-Checkpoints are used to fire an event with a given name whenever certain preconditions are met. The preconditions 
+
+Checkpoints are used to fire an event with a given name whenever certain preconditions are met. The preconditions
 are specified via `requiredEvents` or `requiredOneOfEvents`.
 
 === "Java"
@@ -267,8 +276,10 @@ are specified via `requiredEvents` or `requiredOneOfEvents`.
     ```
 
 ### Default failure strategy
-The default failure strategy allows you to set a failure strategy for interactions that don't specify 
-one explicitly. For all available failure strategies, see the [error handling](/sections/cookbook/error-handling) section.
+
+The default failure strategy allows you to set a failure strategy for interactions that don't specify
+one explicitly. For all available failure strategies, see the [error handling](/sections/cookbook/error-handling)
+section.
 
 === "Java"
 
@@ -286,4 +297,48 @@ one explicitly. For all available failure strategies, see the [error handling](/
 
     ```scala
     --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/RecipeWithDefaultFailureStrategy.scala"
+    ```
+
+### Sub Recipe
+
+You can build complex recipes by breaking them down into smaller, reusable sub-recipes. This improves organization and allows you to reuse common sequences of steps.
+
+When you include a sub-recipe, the parent recipe **only** inherits its `interactions` (the sequence of steps).
+
+Configuration settings from the sub-recipe are **not** inherited. This means you must define settings like the following on the main, top-level recipe:
+
+*   Sensory events
+*   Retention periods
+*   Default retry strategies
+*   Any other non-interaction settings
+
+**Best Practice**
+To keep your code clean and easy to understand, if a sub-recipe is only meant to be a building block (and not run on its own), you should only define its `interactions`.
+
+#### Visualizing Your Recipe
+
+To help you understand and debug the flow of interactions, you can generate a visual representation of your compiled recipe. There are two types of visualizations available:
+
+*   **`getRecipeVisualization()`: Expanded View**
+    This method generates a complete, detailed diagram. It shows every interaction from the main recipe *and* all its included sub-recipes, giving you a full end-to-end view of the entire process.
+
+*   **`getSubRecipeVisualization()`: High-Level View**
+    This method generates a simplified, high-level diagram. It only shows the interactions on the main recipe's top level. Each sub-recipe is represented as a single "black box" with its name, hiding its internal complexity. This is perfect for understanding the main structure of your recipe at a glance.
+
+=== "Java"
+
+    ```java
+    --8<-- "docs-code-snippets/src/main/java/examples/java/recipes/SubRecipe.java"
+    ```
+
+=== "Kotlin"
+
+    ```kotlin
+    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/recipes/SubRecipe.kt"
+    ```
+
+=== "Scala"
+
+    ```scala
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/recipes/SubRecipe.scala"
     ```
