@@ -545,6 +545,30 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#sub-recipe" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sub Recipe
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sub Recipe">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#visualizing-your-recipe" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visualizing Your Recipe
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1174,6 +1198,30 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#sub-recipe" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sub Recipe
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sub Recipe">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#visualizing-your-recipe" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visualizing Your Recipe
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1201,10 +1249,10 @@
 <h1 id="recipe-dsl">Recipe DSL</h1>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
+</div>
 <p>The examples in this section are set up to demonstrate specific features of the recipe DSL. The snippets are not
 complete recipes. For example, some snippets only specify sensory events without any interactions,
 and vice versa.</p>
-</div>
 <h2 id="sensory-events">Sensory events</h2>
 <h3 id="firing-limit">Firing limit</h3>
 <p>Sensory events can be declared with or without firing limit. The firing limit determines how many times the event is
@@ -1274,7 +1322,7 @@ found in <a href="../../tutorial#define-the-sensory-event">this section</a> of t
 </div>
 </div>
 <h3 id="event-receive-period">Event receive period</h3>
-<p>The period during which the process accepts sensory events. This is an optional parameter, defaults to accepting 
+<p>The period during which the process accepts sensory events. This is an optional parameter, defaults to accepting
 sensory events forever.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Java</label><label for="__tabbed_2_2">Kotlin</label><label for="__tabbed_2_3">Scala</label></div>
 <div class="tabbed-content">
@@ -1504,11 +1552,11 @@ own name.</p>
 </div>
 <h3 id="required-events">Required events</h3>
 <p>Sometimes an interaction should only execute after a certain event has happened. To achieve this you can specify
-<code>requiredEvents</code> or <code>requiredOneOfEvents</code>. </p>
-<p>All required events have to be available for the interaction to be executed. It works as a logical AND. In contrast, 
+<code>requiredEvents</code> or <code>requiredOneOfEvents</code>.</p>
+<p>All required events have to be available for the interaction to be executed. It works as a logical AND. In contrast,
 required one of events works as a logical OR. At least one of those events should be available before the interaction
-is executed. </p>
-<p>In this example, the <code>ShipOrder</code> interaction will only execute if the <code>FraudCheckCompleted</code> and one of (or both) the 
+is executed.</p>
+<p>In this example, the <code>ShipOrder</code> interaction will only execute if the <code>FraudCheckCompleted</code> and one of (or both) the
 <code>PaymentReceived</code> or <code>UsedCouponCode</code> events are available.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="6:3"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><input id="__tabbed_6_3" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Java</label><label for="__tabbed_6_2">Kotlin</label><label for="__tabbed_6_3">Scala</label></div>
 <div class="tabbed-content">
@@ -1581,7 +1629,7 @@ is executed. </p>
 </div>
 </div>
 <h3 id="transform-output-events">Transform output events</h3>
-<p>It's possible to change the name of an output event. Optionally, you can also change names of 
+<p>It's possible to change the name of an output event. Optionally, you can also change names of
 ingredients.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="7:3"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><input id="__tabbed_7_3" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Java</label><label for="__tabbed_7_2">Kotlin</label><label for="__tabbed_7_3">Scala</label></div>
 <div class="tabbed-content">
@@ -1713,7 +1761,7 @@ ingredients.</p>
 </div>
 <h3 id="failure-strategy">Failure strategy</h3>
 <p>It's possible to define a failure strategy on interaction level. This failure strategy will only be used for this
-specific interaction. Interaction specific failure strategies take precedence over the default failure strategy. 
+specific interaction. Interaction specific failure strategies take precedence over the default failure strategy.
 For all available failure strategies, see the <a href="/sections/cookbook/error-handling">error handling</a> section.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="9:3"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><input id="__tabbed_9_3" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Java</label><label for="__tabbed_9_2">Kotlin</label><label for="__tabbed_9_3">Scala</label></div>
 <div class="tabbed-content">
@@ -1776,7 +1824,9 @@ For all available failure strategies, see the <a href="/sections/cookbook/error-
 </div>
 <h2 id="recipe">Recipe</h2>
 <h3 id="retention-period">Retention period</h3>
-<p>The period during which the process keeps running, the recipe will be deleted AFTER the retention period has passed (measured from the creation time of the Recipe instance. This is an optional parameter, defaults to keep the process forever.</p>
+<p>The period during which the process keeps running, the recipe will be deleted AFTER the retention period has passed (
+measured from the creation time of the Recipe instance. This is an optional parameter, defaults to keep the process
+forever.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="10:3"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><input id="__tabbed_10_3" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">Java</label><label for="__tabbed_10_2">Kotlin</label><label for="__tabbed_10_3">Scala</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -1825,7 +1875,7 @@ For all available failure strategies, see the <a href="/sections/cookbook/error-
 </div>
 </div>
 <h3 id="checkpoint-events">Checkpoint events</h3>
-<p>Checkpoints are used to fire an event with a given name whenever certain preconditions are met. The preconditions 
+<p>Checkpoints are used to fire an event with a given name whenever certain preconditions are met. The preconditions
 are specified via <code>requiredEvents</code> or <code>requiredOneOfEvents</code>.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="11:3"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><input id="__tabbed_11_3" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">Java</label><label for="__tabbed_11_2">Kotlin</label><label for="__tabbed_11_3">Scala</label></div>
 <div class="tabbed-content">
@@ -1895,8 +1945,9 @@ are specified via <code>requiredEvents</code> or <code>requiredOneOfEvents</code
 </div>
 </div>
 <h3 id="default-failure-strategy">Default failure strategy</h3>
-<p>The default failure strategy allows you to set a failure strategy for interactions that don't specify 
-one explicitly. For all available failure strategies, see the <a href="/sections/cookbook/error-handling">error handling</a> section.</p>
+<p>The default failure strategy allows you to set a failure strategy for interactions that don't specify
+one explicitly. For all available failure strategies, see the <a href="/sections/cookbook/error-handling">error handling</a>
+section.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="12:3"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><input id="__tabbed_12_3" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">Java</label><label for="__tabbed_12_2">Kotlin</label><label for="__tabbed_12_3">Scala</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -1939,6 +1990,83 @@ one explicitly. For all available failure strategies, see the <a href="/sections
 <span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="n">recipe</span><span class="p">:</span><span class="w"> </span><span class="nc">Recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Recipe</span><span class="p">(</span><span class="s">&quot;example&quot;</span><span class="p">)</span>
 <span class="w">    </span><span class="p">.</span><span class="n">withDefaultFailureStrategy</span><span class="p">(</span>
 <span class="w">      </span><span class="nc">InteractionFailureStrategy</span><span class="p">.</span><span class="nc">FireEventAndBlock</span><span class="p">(</span><span class="nc">Some</span><span class="p">(</span><span class="s">&quot;recipeFailed&quot;</span><span class="p">))</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h3 id="sub-recipe">Sub Recipe</h3>
+<p>You can build complex recipes by breaking them down into smaller, reusable sub-recipes. This improves organization and allows you to reuse common sequences of steps.</p>
+<p>When you include a sub-recipe, the parent recipe <strong>only</strong> inherits its <code>interactions</code> (the sequence of steps).</p>
+<p>Configuration settings from the sub-recipe are <strong>not</strong> inherited. This means you must define settings like the following on the main, top-level recipe:</p>
+<ul>
+<li>Sensory events</li>
+<li>Retention periods</li>
+<li>Default retry strategies</li>
+<li>Any other non-interaction settings</li>
+</ul>
+<p><strong>Best Practice</strong>
+To keep your code clean and easy to understand, if a sub-recipe is only meant to be a building block (and not run on its own), you should only define its <code>interactions</code>.</p>
+<h4 id="visualizing-your-recipe">Visualizing Your Recipe</h4>
+<p>To help you understand and debug the flow of interactions, you can generate a visual representation of your compiled recipe. There are two types of visualizations available:</p>
+<ul>
+<li>
+<p><strong><code>getRecipeVisualization()</code>: Expanded View</strong>
+    This method generates a complete, detailed diagram. It shows every interaction from the main recipe <em>and</em> all its included sub-recipes, giving you a full end-to-end view of the entire process.</p>
+</li>
+<li>
+<p><strong><code>getSubRecipeVisualization()</code>: High-Level View</strong>
+    This method generates a simplified, high-level diagram. It only shows the interactions on the main recipe's top level. Each sub-recipe is represented as a single "black box" with its name, hiding its internal complexity. This is perfect for understanding the main structure of your recipe at a glance.</p>
+</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="13:3"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><input id="__tabbed_13_3" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">Java</label><label for="__tabbed_13_2">Kotlin</label><label for="__tabbed_13_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.recipes</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.javadsl.Recipe</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">SubRecipe</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="n">Recipe</span><span class="w"> </span><span class="n">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Recipe</span><span class="p">(</span><span class="s">&quot;root recipe&quot;</span><span class="p">)</span>
+<span class="w">            </span><span class="p">.</span><span class="na">withSubRecipe</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Recipe</span><span class="p">(</span><span class="s">&quot;sub recipe 1&quot;</span><span class="p">))</span>
+<span class="w">            </span><span class="p">.</span><span class="na">withSubRecipe</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Recipe</span><span class="p">(</span><span class="s">&quot;sub recipe 2&quot;</span><span class="p">)</span>
+<span class="w">                    </span><span class="p">.</span><span class="na">withSubRecipe</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">Recipe</span><span class="p">(</span><span class="s">&quot;sub sub recipe 2.1&quot;</span><span class="p">))</span>
+<span class="w">            </span><span class="p">);</span>
+
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.recipes</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.ExperimentalDsl</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.recipe.kotlindsl.recipe</span>
+
+<span class="nd">@ExperimentalDsl</span>
+<span class="kd">object</span><span class="w"> </span><span class="nc">SubRecipe</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="nv">myRecipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">recipe</span><span class="p">(</span><span class="s">&quot;root recipe&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">subRecipe</span><span class="p">(</span><span class="n">recipe</span><span class="p">(</span><span class="s">&quot;sub recipe 1&quot;</span><span class="p">))</span>
+<span class="w">        </span><span class="n">subRecipe</span><span class="p">(</span><span class="n">recipe</span><span class="p">(</span><span class="s">&quot;sub recipe 2&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">recipe</span><span class="p">(</span><span class="s">&quot;sub sub recipe 2.1&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="p">})</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">recipes</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">recipe</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.</span><span class="nc">Recipe</span>
+
+<span class="k">object</span><span class="w"> </span><span class="nc">SubRecipe</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">val</span><span class="w"> </span><span class="n">recipe</span><span class="p">:</span><span class="w"> </span><span class="nc">Recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">Recipe</span><span class="p">(</span><span class="s">&quot;root recipe&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="n">withSubRecipe</span><span class="p">(</span><span class="nc">Recipe</span><span class="p">(</span><span class="s">&quot;sub recipe 1&quot;</span><span class="p">))</span>
+<span class="w">    </span><span class="p">.</span><span class="n">withSubRecipe</span><span class="p">(</span><span class="nc">Recipe</span><span class="p">(</span><span class="s">&quot;sub recipe 2&quot;</span><span class="p">)</span>
+<span class="w">      </span><span class="p">.</span><span class="n">withSubRecipe</span><span class="p">(</span><span class="nc">Recipe</span><span class="p">(</span><span class="s">&quot;sub sub recipe 2.1&quot;</span><span class="p">))</span>
 <span class="w">    </span><span class="p">)</span>
 <span class="p">}</span>
 </code></pre></div>
