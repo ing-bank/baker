@@ -235,10 +235,14 @@ into a [visualization](../../cookbook/visualizations).
 
 ## baker.addRecipe(RecipeRecord.of(compiledRecipe))
 
-Once `Recipes` have been transformed into `CompiledRecipes` they must be added to a baker runtime. The `baker.addRecipe(RecipeRecord.of(compiledRecipe))`
-API will do so and return an id that you can use to reference the added recipe later on.
+Once `Recipes` have been transformed into `CompiledRecipes` they must be added to a baker runtime. The
+`baker.addRecipe(RecipeRecord.of(compiledRecipe))`
+API will do so and return an id that you can use to reference the added recipe later on. This id is deterministic, all
+recipies with equal `petri net` representations will get the same id. This allows to reference the same recipe from
+distributed nodes.
 
-_Note: Before doing this, baker requires you to add all related `InteractionInstances` to the runtime, this is because baker 
+_Note: Before doing this, baker requires you to add all related `InteractionInstances` to the runtime, this is because
+baker
 does validation to ensure that every recipe is runnable from the previously added `InteractionInstances`._
 
 === "Java"
