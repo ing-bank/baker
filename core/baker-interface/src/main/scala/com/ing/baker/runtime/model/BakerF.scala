@@ -499,6 +499,12 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.resolveInteraction(recipeInstanceId, interactionName, event))
       override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): G[Unit] =
         mapK(self.stopRetryingInteraction(recipeInstanceId, interactionName))
+      override def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: String): G[SensoryEventStatus] =
+        mapK(self.fireSensoryEventAndAwaitReceived(recipeInstanceId, event, correlationId))
+      override def awaitEvent(recipeInstanceId: String, eventName: String): G[Unit] =
+        mapK(self.awaitEvent(recipeInstanceId, eventName))
+      override def awaitIdle(recipeInstanceId: String): G[SensoryEventStatus] =
+        mapK(self.awaitIdle(recipeInstanceId))
     }
 
   def asDeprecatedFutureImplementation(mapK: F ~> Future, comapK: Future ~> F): DeprecatedBaker =
@@ -563,6 +569,12 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.stopRetryingInteraction(recipeInstanceId, interactionName))
       override def addMetaData(recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] =
         mapK(self.addMetaData(recipeInstanceId, metadata))
+      override def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: String): Future[SensoryEventStatus] =
+        mapK(self.fireSensoryEventAndAwaitReceived(recipeInstanceId, event, correlationId))
+      override def awaitEvent(recipeInstanceId: String, eventName: String): Future[Unit] =
+        mapK(self.awaitEvent(recipeInstanceId, eventName))
+      override def awaitIdle(recipeInstanceId: String): Future[SensoryEventStatus] =
+        mapK(self.awaitIdle(recipeInstanceId))
     }
 
 }

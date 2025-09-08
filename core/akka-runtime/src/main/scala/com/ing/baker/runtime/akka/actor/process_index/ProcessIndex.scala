@@ -520,6 +520,16 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     case GetProcessIngredient(recipeInstanceId, name) =>
       withActiveProcess(recipeInstanceId) { actorRef => actorRef.forward(GetIngredient(name)) }
 
+    case ProcessIndexProtocol.IsIdle(recipeInstanceId) =>
+      withActiveProcess(recipeInstanceId) { actorRef =>
+        actorRef.forward(ProcessInstanceProtocol.IsIdle)
+      }
+
+    case ProcessIndexProtocol.HasEventOccurred(recipeInstanceId, eventName) =>
+      withActiveProcess(recipeInstanceId) { actorRef =>
+        actorRef.forward(ProcessInstanceProtocol.HasEventOccurred(eventName))
+      }
+
     case GetCompiledRecipe(recipeInstanceId) =>
       index.get(recipeInstanceId) match {
         case Some(processMetadata) if processMetadata.isDeleted => sender() ! ProcessDeleted(recipeInstanceId)

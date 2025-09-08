@@ -8,14 +8,15 @@ import cats.implicits._
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor._
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{IngredientFound, IngredientNotFound, Initialized, InstanceState, MetaDataAdded, Uninitialized}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{EventNotOccurred, EventOccurred, Idle, IngredientFound, IngredientNotFound, Initialized, InstanceState, MetaDataAdded, NotIdle, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
-import com.ing.baker.runtime.common.{InteractionExecutionFailureReason, RecipeRecord, SensoryEventStatus}
+import com.ing.baker.runtime.common.{BakerException, InteractionExecutionFailureReason, RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.getMetaDataFromIngredients
 import com.ing.baker.runtime.recipe_manager.{ActorBasedRecipeManager, DefaultRecipeManager, RecipeManager}
 import com.ing.baker.runtime.scaladsl._
@@ -25,13 +26,14 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 
-import java.util.{List => JavaList}
+import java.util.{Optional, List => JavaList}
 import scala.annotation.nowarn
 import scala.collection.immutable.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{Future, Promise}
+import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 object AkkaBaker {
 
@@ -568,6 +570,137 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     }
   }
 
+  override def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: String): Future[SensoryEventStatus] = {
+    processIndexActor.ask(ProcessEvent(
+      recipeInstanceId = recipeInstanceId,
+      event = event,
+      correlationId = Option.apply(correlationId),
+      timeout = config.timeouts.defaultProcessEventTimeout,
+      reaction = FireSensoryEventReaction.NotifyWhenReceived
+    ))(config.timeouts.defaultProcessEventTimeout).javaTimeoutToBakerTimeout("fireEventAndResolveWhenReceived").flatMap {
+      case FireSensoryEventRejection.InvalidEvent(_, message) =>
+        Future.failed(IllegalEventException(message))
+      case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
+        Future.failed(NoSuchProcessException(recipeInstanceId0))
+      case _: FireSensoryEventRejection.FiringLimitMet =>
+        Future.successful(SensoryEventStatus.FiringLimitMet)
+      case _: FireSensoryEventRejection.AlreadyReceived =>
+        Future.successful(SensoryEventStatus.AlreadyReceived)
+      case _: FireSensoryEventRejection.ReceivePeriodExpired =>
+        Future.successful(SensoryEventStatus.ReceivePeriodExpired)
+      case _: FireSensoryEventRejection.RecipeInstanceDeleted =>
+        Future.successful(SensoryEventStatus.RecipeInstanceDeleted)
+      case ProcessEventReceivedResponse(status) =>
+        // TODO - OPTIONAL: Wait for sensory event to be in event list
+        Future.successful(status)
+    }
+  }
+
+  override def awaitEvent(recipeInstanceId: String, eventName: String): Future[Unit] = {
+    val overallTimeout = config.timeouts.defaultProcessEventTimeout
+    val pollInterval = 100.millis
+    val promise = Promise[Unit]()
+
+    val timeoutCancellable = system.scheduler.scheduleOnce(overallTimeout) {
+      promise.tryFailure(TimeoutException(s"Timed out after $overallTimeout waiting for event '$eventName' in recipe instance '$recipeInstanceId'."))
+    }
+
+    def check(): Unit = {
+      val askTimeout = config.timeouts.defaultInquireTimeout
+      val futureResponse = processIndexActor.ask(ProcessIndexProtocol.HasEventOccurred(recipeInstanceId, eventName))(askTimeout)
+
+      futureResponse.onComplete {
+        case Success(EventOccurred) =>
+          if (promise.trySuccess(())) {
+            timeoutCancellable.cancel()
+          }
+        case Success(EventNotOccurred) =>
+          if (!promise.isCompleted) {
+            system.scheduler.scheduleOnce(pollInterval)(check())
+          }
+        case Success(NoSuchProcess(id)) =>
+          if (promise.tryFailure(NoSuchProcessException(id))) {
+            timeoutCancellable.cancel()
+          }
+        case Success(ProcessDeleted(id)) =>
+          if (promise.tryFailure(ProcessDeletedException(id))) {
+            timeoutCancellable.cancel()
+          }
+        case Failure(e) =>
+          if (promise.tryFailure(e)) {
+            timeoutCancellable.cancel()
+          }
+        case Success(other) =>
+          val e = UnknownBakerException(s"Unexpected response while waiting for event '$eventName' in instance '$recipeInstanceId': $other")
+          if (promise.tryFailure(e)) {
+            timeoutCancellable.cancel()
+          }
+      }
+    }
+
+    check()
+
+    promise.future
+  }
+
+  override def awaitIdle(recipeInstanceId: String): Future[SensoryEventStatus] = {
+    // 1. Define timeouts and create the promise
+    val overallTimeout = config.timeouts.defaultProcessEventTimeout
+    val pollInterval = 100.millis
+    val promise = Promise[SensoryEventStatus]()
+
+    // 2. Schedule the overall timeout mechanism
+    val timeoutCancellable = system.scheduler.scheduleOnce(overallTimeout) {
+      promise.tryFailure(TimeoutException(operationName="awaitIdle"))
+    }
+
+    // 3. Define the recursive check function
+    def check(): Unit = {
+      // Use a shorter timeout for the individual 'ask'
+      val askTimeout = config.timeouts.defaultInquireTimeout
+      val futureResponse = processIndexActor.ask(ProcessIndexProtocol.IsIdle(recipeInstanceId))(askTimeout)
+
+      futureResponse.onComplete {
+        case Success(Idle) =>
+          // Instance is idle, complete the promise and cancel the timeout
+          if (promise.trySuccess(SensoryEventStatus.Completed)) {
+            timeoutCancellable.cancel()
+          }
+        case Success(NotIdle) =>
+          // Not idle yet, schedule the next check if the promise is still open
+          if (!promise.isCompleted) {
+            system.scheduler.scheduleOnce(pollInterval)(check())
+          }
+        case Success(NoSuchProcess(id)) =>
+          if (promise.tryFailure(NoSuchProcessException(id))) {
+            timeoutCancellable.cancel()
+          }
+        case Success(ProcessDeleted(id)) =>
+          if (promise.tryFailure(ProcessDeletedException(id))) {
+            timeoutCancellable.cancel()
+          }
+        case Failure(e) =>
+          // The ask failed for some reason (e.g., timeout)
+          if (promise.tryFailure(e)) {
+            timeoutCancellable.cancel()
+          }
+        case Success(other) =>
+          // This should not happen, but we handle it defensively
+          val e = UnknownBakerException(s"Unexpected response while waiting for idle state of '$recipeInstanceId': $other")
+          if (promise.tryFailure(e)) {
+            timeoutCancellable.cancel()
+          }
+      }
+    }
+
+    // 4. Kick off the first check
+    check()
+
+    // 5. Return the future associated with the promise
+    promise.future
+  }
+
+
   /**
     * Attempts to gracefully shutdown the baker system.
     */
@@ -575,4 +708,5 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   override def gracefulShutdown(): Future[Unit] =
     GracefulShutdown.gracefulShutdownActorSystem(system, config.timeouts.defaultShutdownTimeout, config.terminateActorSystem)
       .javaTimeoutToBakerTimeout("gracefulShutdown").map(_ => ())
+
 }

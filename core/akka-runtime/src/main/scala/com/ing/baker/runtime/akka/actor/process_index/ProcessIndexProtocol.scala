@@ -37,6 +37,16 @@ object ProcessIndexProtocol {
   case class DeleteProcess(recipeInstanceId: String, removeFromIndex: Boolean = false) extends ProcessIndexMessage
 
   /**
+   * Asks the ProcessIndex to query a specific process instance for its idle status.
+   */
+  case class IsIdle(recipeInstanceId: String) extends ProcessIndexMessage
+
+  /**
+   * Asks the ProcessIndex to query if an event has occurred in a specific instance.
+   */
+  case class HasEventOccurred(recipeInstanceId: String, eventName: String) extends ProcessIndexMessage
+
+  /**
     * Failure when attempting to resolve a blocked interaction, the event is not of valid type according with the recipe
     *
     * @param recipeInstanceId The identifier of the RecipeInstanceId

@@ -427,4 +427,13 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
     val x: Map[String, String] = metadata.asScala.toMap
     toCompletableFuture(baker.addMetaData(recipeInstanceId, x))
   }
+
+  override def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: String): CompletableFuture[SensoryEventStatus] =
+    toCompletableFuture(baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, event.asScala, correlationId))
+
+  override def awaitEvent(recipeInstanceId: String, eventName: String): CompletableFuture[Unit] =
+    toCompletableFuture(baker.awaitEvent(recipeInstanceId, eventName))
+
+  override def awaitIdle(recipeInstanceId: String): CompletableFuture[SensoryEventStatus] =
+    toCompletableFuture(baker.awaitIdle(recipeInstanceId))
 }

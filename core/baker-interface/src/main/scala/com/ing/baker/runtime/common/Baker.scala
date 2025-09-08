@@ -130,6 +130,12 @@ trait Baker[F[_]] extends LanguageApi {
     */
   def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstanceType): F[SensoryEventStatus]
 
+  def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstanceType, correlationId: String): F[SensoryEventStatus]
+
+  def awaitEvent(recipeInstanceId: String, eventName: String): F[Unit]
+
+  def awaitIdle(recipeInstanceId: String): F[SensoryEventStatus]
+
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
     *

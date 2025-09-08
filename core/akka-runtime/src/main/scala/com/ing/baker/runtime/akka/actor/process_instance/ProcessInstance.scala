@@ -282,6 +282,24 @@ class ProcessInstance(
         log.debug("Receive timeout happened but jobs are still active: will wait for another receive timeout")
       }
 
+    case ProcessInstanceProtocol.IsIdle =>
+      if (instance.activeJobs.isEmpty)
+        sender() ! ProcessInstanceProtocol.Idle
+      else
+        sender() ! ProcessInstanceProtocol.NotIdle
+
+    case ProcessInstanceProtocol.HasEventOccurred(eventName) =>
+      instance.state match {
+        case state: RecipeInstanceState =>
+          if (state.eventNames.contains(eventName))
+            sender() ! ProcessInstanceProtocol.EventOccurred
+          else
+            sender() ! ProcessInstanceProtocol.EventNotOccurred
+        case _ =>
+          // Should not happen in a normal running state, but good to handle
+          sender() ! ProcessInstanceProtocol.EventNotOccurred
+      }
+
     case GetState =>
       sender() ! mapStateToProtocol(instance)
 

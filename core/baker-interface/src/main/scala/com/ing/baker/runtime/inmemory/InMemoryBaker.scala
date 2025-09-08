@@ -2,8 +2,10 @@ package com.ing.baker.runtime.inmemory
 
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
 import cats.~>
+import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.javadsl.BakerConfig
 import com.ing.baker.runtime.model.{BakerComponents, BakerF, InteractionInstance}
+import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.runtime.{defaultinteractions, javadsl}
 
 import java.util
@@ -71,4 +73,10 @@ final class InMemoryBakerImpl(val config: BakerF.Config)(implicit components: Ba
     * Attempts to gracefully shutdown the baker system.
     */
   override def gracefulShutdown(): IO[Unit] = IO.unit
+
+  override def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: String): IO[SensoryEventStatus] = IO(SensoryEventStatus.Received)
+
+  override def awaitIdle(recipeInstanceId: String): IO[SensoryEventStatus] = IO(SensoryEventStatus.Received)
+
+  override def awaitEvent(recipeInstanceId: String, eventName: String): IO[Unit] = IO(())
 }

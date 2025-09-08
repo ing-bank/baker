@@ -426,4 +426,10 @@ final class BakerClient( client: Client[IO],
 
   override def deleteRecipeInstance(recipeInstanceId: String, removeFromIndex: Boolean): Future[Unit] =
     callRemoteBakerServiceFallbackAware[Unit]((host, prefix) => IO(DELETE((root(host, prefix) / "instances" / recipeInstanceId / "delete").withQueryParam("removeFromIndex", removeFromIndex))), fallbackEndpoint)
+
+  override def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: String): Future[SensoryEventStatus] = ???
+
+  override def awaitEvent(recipeInstanceId: String, eventName: String): Future[Unit] = ???
+
+  override def awaitIdle(recipeInstanceId: String): Future[SensoryEventStatus] = ???
 }
