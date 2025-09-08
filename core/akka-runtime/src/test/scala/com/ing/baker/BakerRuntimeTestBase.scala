@@ -96,6 +96,7 @@ trait BakerRuntimeTestBase
   protected val testSieveInteractionMock: SieveInteraction = mock[SieveInteraction]
   protected val testOptionalIngredientInteractionMock: OptionalIngredientInteraction = mock[OptionalIngredientInteraction]
   protected val testProvidesNothingInteractionMock: ProvidesNothingInteraction = mock[ProvidesNothingInteraction]
+  protected val testTimerInteractionMock: TimerInteraction = mock[TimerInteraction]
 
   protected val mockImplementations: List[InteractionInstance] =
     List(
@@ -114,7 +115,8 @@ trait BakerRuntimeTestBase
       testNonMatchingReturnTypeInteractionMock,
       testSieveInteractionMock,
       testOptionalIngredientInteractionMock,
-      testProvidesNothingInteractionMock).map(InteractionInstance.unsafeFrom(_))
+      testProvidesNothingInteractionMock,
+      testTimerInteractionMock).map(InteractionInstance.unsafeFrom(_))
 
   def writeRecipeToSVGFile(recipe: CompiledRecipe) = {
     import guru.nidi.graphviz.engine.{Format, Graphviz}

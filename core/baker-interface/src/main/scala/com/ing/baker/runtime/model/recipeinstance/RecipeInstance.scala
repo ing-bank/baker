@@ -1,14 +1,14 @@
 package com.ing.baker.runtime.model.recipeinstance
 
 import cats.data.EitherT
-import cats.effect.concurrent.Ref
+import cats.effect.concurrent.{Deferred, Ref}
 import cats.effect.{ConcurrentEffect, Effect, IO, Sync, Timer}
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.model.{BakerComponents, FireSensoryEventRejection}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
-import com.ing.baker.runtime.scaladsl.{EventFired, EventInstance, EventReceived, EventRejected, RecipeInstanceCreated}
+import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, EventRejected, RecipeInstanceCreated}
 import com.typesafe.scalalogging.LazyLogging
 import fs2.Stream
 
@@ -23,7 +23,7 @@ object RecipeInstance {
   def empty[F[_]](recipe: CompiledRecipe, recipeInstanceId: String, settings: Config)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[RecipeInstance[F]] =
     for {
       timestamp <- timer.clock.realTime(MILLISECONDS)
-      state <- Ref.of[F, RecipeInstanceState](RecipeInstanceState.empty(recipeInstanceId, recipe, timestamp))
+      state <- Ref.of[F, RecipeInstanceState[F]](RecipeInstanceState.empty(recipeInstanceId, recipe, timestamp))
       recipeInstanceCreated = RecipeInstanceCreated(timestamp, recipe.recipeId, recipe.name, recipeInstanceId)
       _ <- effect.delay(components.logging.recipeInstanceCreated(recipeInstanceCreated))
       _ <- components.eventStream.publish(recipeInstanceCreated)
@@ -32,7 +32,30 @@ object RecipeInstance {
   class FatalInteractionException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
 }
 
-case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance.Config, state: Ref[F, RecipeInstanceState]) extends LazyLogging {
+case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance.Config, state: Ref[F, RecipeInstanceState[F]]) extends LazyLogging {
+
+  private def updateStateAndNotify[A](update: RecipeInstanceState[F] => (RecipeInstanceState[F], A))(implicit F: ConcurrentEffect[F]): F[A] =
+    for {
+      resultAndListeners <- state.modify { current =>
+        val (next, result) = update(current)
+
+        // Check for idle transition
+        val (idleListeners, stateAfterIdleClear) =
+          if (next.isInactive && !current.isInactive) (next.idleListeners, next.copy(idleListeners = Set.empty[Deferred[F, Unit]]))
+          else (Set.empty[Deferred[F, Unit]], next)
+
+        // Check for newly fired events
+        val newEventNames = next.events.map(_.name).toSet -- current.events.map(_.name).toSet
+        val eventListeners = newEventNames.flatMap(name => stateAfterIdleClear.eventListeners.getOrElse(name, Set.empty))
+        val stateAfterEventClear = stateAfterIdleClear.copy(eventListeners = stateAfterIdleClear.eventListeners -- newEventNames)
+
+        // Combine all listeners to notify and return the final state
+        val allListeners = idleListeners ++ eventListeners
+        (stateAfterEventClear, (result, allListeners))
+      }
+      (result, listenersToNotify) = resultAndListeners
+      _ <- listenersToNotify.toList.traverse_(_.complete(()))
+    } yield result
 
   def fireEventStream(input: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): EitherT[F, FireSensoryEventRejection, Stream[F, EventInstance]] =
     for {
@@ -53,26 +76,29 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
   def stopRetryingInteraction(interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] =
     for {
       transitionExecution <- getInteractionTransitionExecution(interactionName)
-      _ <- state.update(_
-        .removeRetryingExecution(transitionExecution.id)
-        .recordFailedExecution(transitionExecution, ExceptionStrategyOutcome.BlockTransition))
+      _ <- updateStateAndNotify { s =>
+        val nextState = s
+          .removeRetryingExecution(transitionExecution.id)
+          .recordFailedExecution(transitionExecution, ExceptionStrategyOutcome.BlockTransition)
+        (nextState, ())
+      }
     } yield ()
 
   def retryBlockedInteraction(interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): Stream[F, EventInstance] =
     Stream.force {
-      for {
-        transitionExecution <- getInteractionTransitionExecution(interactionName)
-      } yield inductionStep(transitionExecution, Left(ExceptionStrategyOutcome.RetryWithDelay(0)))
-    }
+        for {
+          transitionExecution <- getInteractionTransitionExecution(interactionName)
+        } yield inductionStep(transitionExecution, Left(ExceptionStrategyOutcome.RetryWithDelay(0)))
+      }
       .collect { case Some(output) => output }
 
   def resolveBlockedInteraction(interactionName: String, eventInstance: EventInstance)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): Stream[F, EventInstance] =
     Stream.force {
-      for {
-        transitionExecution <- getInteractionTransitionExecution(interactionName)
-        newOutcome <- transitionExecution.validateEventForResolvingBlockedInteraction(eventInstance)
-      } yield inductionStep(transitionExecution, Right(Some(newOutcome)))
-    }
+        for {
+          transitionExecution <- getInteractionTransitionExecution(interactionName)
+          newOutcome <- transitionExecution.validateEventForResolvingBlockedInteraction(eventInstance)
+        } yield inductionStep(transitionExecution, Right(Some(newOutcome)))
+      }
       .collect { case Some(output) => output }
 
   /** The "base case" is the very 1st step in the stream of executing transitions that create EventInstances  */
@@ -84,8 +110,8 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
     } yield output
 
   /** The "induction step" is the "repeating" 2nd, 3rd... nth step in the stream of executing transitions that create
-    * EventInstances, notice the recursion when there exist enabled transitions, which are outcome of executing this step
-    */
+   * EventInstances, notice the recursion when there exist enabled transitions, which are outcome of executing this step
+   */
   private def inductionStep(finishedExecution: TransitionExecution, outcome: TransitionExecution.Outcome)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): Stream[F, Option[EventInstance]] =
     for {
       outputAndEnabledExecutions <- Stream.eval(handleExecutionOutcome(finishedExecution)(outcome))
@@ -101,27 +127,26 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
 
       case Right(output) =>
         for {
-          enabledExecutions <- state.modify(_.recordCompletedExecution(finishedExecution, output))
+          enabledExecutions <- updateStateAndNotify(_.recordCompletedExecution(finishedExecution, output))
           _ <- scheduleIdleStop
         } yield output -> enabledExecutions
 
       case Left(ExceptionStrategyOutcome.Continue(eventName)) =>
         val output: EventInstance = EventInstance(eventName, Map.empty)
         for {
-          enabledExecutions <- state.modify(_.recordFailedWithOutputExecution(finishedExecution, output))
+          enabledExecutions <- updateStateAndNotify(_.recordFailedWithOutputExecution(finishedExecution, output))
           _ <- scheduleIdleStop
         } yield Some(output) -> enabledExecutions
 
       case Left(ExceptionStrategyOutcome.ContinueAsFunctionalEvent(eventName)) =>
         val output: EventInstance = EventInstance(eventName, Map.empty)
         for {
-          enabledExecutions <- state.modify(_.recordFailedWithOutputExecutionAsFunctionalEvent(finishedExecution, output))
+          enabledExecutions <- updateStateAndNotify(_.recordFailedWithOutputExecutionAsFunctionalEvent(finishedExecution, output))
           _ <- scheduleIdleStop
         } yield Some(output) -> enabledExecutions
 
       case Left(strategy @ ExceptionStrategyOutcome.BlockTransition) =>
-        state
-          .update(_.recordFailedExecution(finishedExecution, strategy))
+        updateStateAndNotify(s => (s.recordFailedExecution(finishedExecution, strategy), ()))
           .as(None -> Set.empty[TransitionExecution])
 
       case Left(strategy @ ExceptionStrategyOutcome.RetryWithDelay(delay)) =>
@@ -130,15 +155,18 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
             .recordFailedExecution(finishedExecution, strategy)
             .addRetryingExecution(finishedExecution.id))
           _ <- effect.delay(components.logging.scheduleRetry(recipeInstanceId, finishedExecution.transition, delay))
-          finalOutcome <- timer.sleep(delay.milliseconds) *> state.get.flatMap { currentState =>
-            if (currentState.retryingExecutions.contains(finishedExecution.id)) {
-              val currentTransitionExecution = currentState.executions(finishedExecution.id)
-              currentTransitionExecution
-                .execute
-                .flatMap(handleExecutionOutcome(currentTransitionExecution))
-                .flatTap(_ => state.update(_.removeRetryingExecution(finishedExecution.id)))
-            } else
-              effect.pure[(Option[EventInstance], Set[TransitionExecution])](None -> Set.empty)
+          finalOutcome <- timer.sleep(delay.milliseconds) *> {
+            state.get.flatMap { currentState =>
+              if (currentState.retryingExecutions.contains(finishedExecution.id)) {
+                val currentTransitionExecution = currentState.executions(finishedExecution.id)
+                val removeRetryState = updateStateAndNotify(s => (s.removeRetryingExecution(finishedExecution.id), ()))
+                removeRetryState *>
+                  currentTransitionExecution
+                    .execute
+                    .flatMap(handleExecutionOutcome(currentTransitionExecution))
+              } else
+                effect.pure[(Option[EventInstance], Set[TransitionExecution])](None -> Set.empty)
+            }
           }
         } yield finalOutcome
     }

@@ -15,7 +15,6 @@ import com.ing.baker.runtime.scaladsl.{Baker => DeprecatedBaker, _}
 import com.ing.baker.types.Value
 import com.typesafe.scalalogging.LazyLogging
 
-import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -67,6 +66,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
   override type RecipeMetadataType = RecipeEventMetadata
 
   override type InteractionExecutionResultType = InteractionExecutionResult
+
+  override type DurationType = FiniteDuration
 
   private def javaTimeoutToBakerTimeout[A](operationName: String) : PartialFunction[Throwable, F[A]] = {
     case _ : java.util.concurrent.TimeoutException => effect.raiseError(BakerException.TimeoutException(operationName))
@@ -285,6 +286,20 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
   override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: String): EventResolutionsType =
     fireEvent(recipeInstanceId, event, Some(correlationId))
 
+  override def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventStatus] =
+    components.recipeInstanceManager
+      .fireSensoryEventAndAwaitReceived(recipeInstanceId, event, correlationId)
+      .timeout(config.processEventTimeout)
+      .recoverWith(javaTimeoutToBakerTimeout("fireSensoryEventAndAwaitReceived"))
+
+  override def awaitCompleted(recipeInstanceId: String, timeout: FiniteDuration): F[SensoryEventStatus] =
+    components.recipeInstanceManager.awaitCompleted(recipeInstanceId, timeout)
+      .recoverWith(javaTimeoutToBakerTimeout(s"awaitCompleted for recipe instance '$recipeInstanceId'"))
+
+  override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration): F[Unit] =
+    components.recipeInstanceManager.awaitEvent(recipeInstanceId, eventName, timeout)
+      .recoverWith(javaTimeoutToBakerTimeout(s"awaitEvent for recipe instance '$recipeInstanceId'"))
+
   override def addMetaData(recipeInstanceId: String, metadata: Map[String, String]): F[Unit] =
     components.recipeInstanceManager.addMetaData(recipeInstanceId, metadata)
 
@@ -499,6 +514,12 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.resolveInteraction(recipeInstanceId, interactionName, event))
       override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): G[Unit] =
         mapK(self.stopRetryingInteraction(recipeInstanceId, interactionName))
+      override def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): G[SensoryEventStatus] =
+        mapK(self.fireSensoryEventAndAwaitReceived(recipeInstanceId, event, correlationId))
+      override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration): G[Unit] =
+        mapK(self.awaitEvent(recipeInstanceId, eventName, timeout))
+      override def awaitCompleted(recipeInstanceId: String, timeout: FiniteDuration): G[SensoryEventStatus] =
+        mapK(self.awaitCompleted(recipeInstanceId, timeout))
     }
 
   def asDeprecatedFutureImplementation(mapK: F ~> Future, comapK: Future ~> F): DeprecatedBaker =
@@ -563,6 +584,12 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
         mapK(self.stopRetryingInteraction(recipeInstanceId, interactionName))
       override def addMetaData(recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] =
         mapK(self.addMetaData(recipeInstanceId, metadata))
+      override def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] =
+        mapK(self.fireSensoryEventAndAwaitReceived(recipeInstanceId, event, correlationId))
+      override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration): Future[Unit] =
+        mapK(self.awaitEvent(recipeInstanceId, eventName, timeout))
+      override def awaitCompleted(recipeInstanceId: String, timeout: FiniteDuration): Future[SensoryEventStatus] =
+        mapK(self.awaitCompleted(recipeInstanceId, timeout))
     }
 
 }
