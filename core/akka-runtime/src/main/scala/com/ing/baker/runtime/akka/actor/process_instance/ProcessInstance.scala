@@ -157,6 +157,20 @@ class ProcessInstance(
 
   private val idleListeners: mutable.Set[ActorRef] = mutable.Set.empty
 
+  private var eventListeners: mutable.Map[String, Set[ActorRef]] = mutable.Map.empty
+
+  private def addEventListener(eventName: String, listener: ActorRef) = {
+    context.watch(listener)
+    val newSet = eventListeners.getOrElse(eventName, Set.empty) + listener
+    eventListeners += (eventName -> newSet)
+  }
+
+  private def removeEventListener(eventName: String, listener: ActorRef) = {
+    context.unwatch(listener)
+    val newSet = eventListeners.getOrElse(eventName, Set.empty) - listener
+    eventListeners += (eventName -> newSet)
+  }
+
   override def persistenceId: String = recipeInstanceId2PersistenceId(processType, recipeInstanceId)
 
   override def receiveCommand: Receive = uninitialized
@@ -259,7 +273,19 @@ class ProcessInstance(
     }
   }
 
-  def updateState(updatedInstance: Instance[RecipeInstanceState], scheduledRetries: Map[Long, Cancellable]) = {
+  def updateState(updatedInstance: Instance[RecipeInstanceState], scheduledRetries: Map[Long, Cancellable], firedEvent: Option[EventInstance] = None) = {
+
+    // Check for Event Occurrences
+    firedEvent.foreach { event =>
+      val eventName = event.name
+      // Find listeners for this specific event
+      eventListeners.get(eventName).foreach { listenersForThisEvent =>
+        // Notify them
+        listenersForThisEvent.foreach(_ ! EventOccurred)
+        // Remove them from the map
+        eventListeners.remove(eventName)
+      }
+    }
 
     // Check for Idle Condition
     if (updatedInstance.activeJobs.isEmpty) {
@@ -302,9 +328,18 @@ class ProcessInstance(
       }
 
     case Terminated(deadActorRef) =>
-      // Remove the dead actor from the idle listeners set
+      // unwatch
       context.unwatch(deadActorRef)
+
+      // Remove the dead actor from the idle listeners set
       idleListeners -= deadActorRef
+
+      // Remove the dead actor from all event waiter sets
+      eventListeners = eventListeners.map {
+        case (eventName, waiters) => eventName -> (waiters - deadActorRef)
+      }.filter {
+        case (_, waiters) => waiters.nonEmpty // Clean up empty event entries
+      }
 
     case ProcessInstanceProtocol.AwaitIdle =>
       if (instance.activeJobs.isEmpty) {
@@ -320,16 +355,18 @@ class ProcessInstance(
         sender() ! ProcessInstanceProtocol.Idle
       }
 
-    case ProcessInstanceProtocol.HasEventOccurred(eventName) =>
-      instance.state match {
-        case state: RecipeInstanceState =>
-          if (state.eventNames.contains(eventName))
-            sender() ! ProcessInstanceProtocol.EventOccurred
-          else
-            sender() ! ProcessInstanceProtocol.EventNotOccurred
-        case _ =>
-          // Should not happen in a normal running state, but good to handle
-          sender() ! ProcessInstanceProtocol.EventNotOccurred
+    case ProcessInstanceProtocol.AwaitEvent(eventName) =>
+      val state = instance.state
+
+      if (state.eventNames.contains(eventName)) {
+        sender() ! ProcessInstanceProtocol.EventOccurred
+      }
+      // Register listener
+      addEventListener(eventName, sender())
+      // Check to avoid race condition
+      if (state.eventNames.contains(eventName)) {
+        removeEventListener(eventName, sender())
+        sender() ! ProcessInstanceProtocol.EventOccurred
       }
 
     case GetState =>
@@ -368,7 +405,9 @@ class ProcessInstance(
               sender() ! TransitionFired(jobId, transitionId, correlationId, consumed, produced, newJobs.map(_.id), filterIngredientValuesFromEventInstance(output))
 
               // the job is removed from the state since it completed
-              updateState(updatedInstance, scheduledRetries - jobId)
+              // Safely convert output to Option[EventInstance]
+              val firedEventOpt = Option(output).map(_.asInstanceOf[EventInstance])
+              updateState(updatedInstance, scheduledRetries - jobId, firedEventOpt)
           }
       )
 

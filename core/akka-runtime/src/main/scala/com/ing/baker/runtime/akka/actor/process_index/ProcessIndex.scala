@@ -525,9 +525,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         actorRef.forward(ProcessInstanceProtocol.AwaitIdle)
       }
 
-    case ProcessIndexProtocol.HasEventOccurred(recipeInstanceId, eventName) =>
+    case ProcessIndexProtocol.AwaitEvent(recipeInstanceId, eventName) =>
       withActiveProcess(recipeInstanceId) { actorRef =>
-        actorRef.forward(ProcessInstanceProtocol.HasEventOccurred(eventName))
+        actorRef.forward(ProcessInstanceProtocol.AwaitEvent(eventName))
       }
 
     case GetCompiledRecipe(recipeInstanceId) =>

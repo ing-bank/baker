@@ -9,7 +9,7 @@ import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{EventNotOccurred, EventOccurred, Idle, IngredientFound, IngredientNotFound, Initialized, InstanceState, MetaDataAdded, Uninitialized}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{EventOccurred, Idle, IngredientFound, IngredientNotFound, Initialized, InstanceState, MetaDataAdded, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
@@ -595,50 +595,15 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   }
 
   override def awaitEvent(recipeInstanceId: String, eventName: String): Future[Unit] = {
-    val overallTimeout = config.timeouts.defaultProcessEventTimeout
-    val pollInterval = 100.millis
-    val promise = Promise[Unit]()
-
-    val timeoutCancellable = system.scheduler.scheduleOnce(overallTimeout) {
-      promise.tryFailure(TimeoutException(s"Timed out after $overallTimeout waiting for event '$eventName' in recipe instance '$recipeInstanceId'."))
-    }
-
-    def check(): Unit = {
-      val askTimeout = config.timeouts.defaultInquireTimeout
-      val futureResponse = processIndexActor.ask(ProcessIndexProtocol.HasEventOccurred(recipeInstanceId, eventName))(askTimeout)
-
-      futureResponse.onComplete {
-        case Success(EventOccurred) =>
-          if (promise.trySuccess(())) {
-            timeoutCancellable.cancel()
-          }
-        case Success(EventNotOccurred) =>
-          if (!promise.isCompleted) {
-            system.scheduler.scheduleOnce(pollInterval)(check())
-          }
-        case Success(NoSuchProcess(id)) =>
-          if (promise.tryFailure(NoSuchProcessException(id))) {
-            timeoutCancellable.cancel()
-          }
-        case Success(ProcessDeleted(id)) =>
-          if (promise.tryFailure(ProcessDeletedException(id))) {
-            timeoutCancellable.cancel()
-          }
-        case Failure(e) =>
-          if (promise.tryFailure(e)) {
-            timeoutCancellable.cancel()
-          }
-        case Success(other) =>
-          val e = UnknownBakerException(s"Unexpected response while waiting for event '$eventName' in instance '$recipeInstanceId': $other")
-          if (promise.tryFailure(e)) {
-            timeoutCancellable.cancel()
-          }
+    processIndexActor
+      .ask(ProcessIndexProtocol.AwaitEvent(recipeInstanceId, eventName))(config.timeouts.defaultProcessEventTimeout)
+      .javaTimeoutToBakerTimeout("awaitEvent")
+      .flatMap {
+        case EventOccurred => Future.successful(SensoryEventStatus.Completed)
+        case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
+        case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
+        case other => Future.failed(UnknownBakerException(s"Unexpected response while waiting for event $eventName of '$recipeInstanceId': $other"))
       }
-    }
-
-    check()
-
-    promise.future
   }
 
   override def awaitIdle(recipeInstanceId: String): Future[SensoryEventStatus] = {

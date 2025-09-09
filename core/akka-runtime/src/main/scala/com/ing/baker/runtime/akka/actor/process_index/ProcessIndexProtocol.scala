@@ -38,10 +38,7 @@ object ProcessIndexProtocol {
 
   case class AwaitIdle(recipeInstanceId: String) extends ProcessIndexMessage
 
-  /**
-   * Asks the ProcessIndex to query if an event has occurred in a specific instance.
-   */
-  case class HasEventOccurred(recipeInstanceId: String, eventName: String) extends ProcessIndexMessage
+  case class AwaitEvent(recipeInstanceId: String, eventName: String) extends ProcessIndexMessage
 
   /**
     * Failure when attempting to resolve a blocked interaction, the event is not of valid type according with the recipe

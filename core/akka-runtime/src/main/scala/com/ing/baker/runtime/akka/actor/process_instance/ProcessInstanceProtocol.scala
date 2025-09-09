@@ -22,9 +22,6 @@ object ProcessInstanceProtocol {
    */
   case object GetState extends Command
 
-  /**
-   * A command to query if the process instance is idle (has no active jobs).
-   */
   case object AwaitIdle extends Command
 
   /**
@@ -32,20 +29,12 @@ object ProcessInstanceProtocol {
    */
   case object Idle extends BakerSerializable
 
-  /**
-   * A command to query if an event with a given name has occurred.
-   */
-  case class HasEventOccurred(eventName: String) extends Command
+  case class AwaitEvent(eventName: String) extends Command
 
   /**
    * Response confirming the event has occurred.
    */
   case object EventOccurred extends BakerSerializable
-
-  /**
-   * Response confirming the event has not yet occurred.
-   */
-  case object EventNotOccurred extends BakerSerializable
 
   /**
     * Command to request the current ingredient
