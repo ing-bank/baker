@@ -1754,8 +1754,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), "correlationId")
-        _ <- recoverToSucceededIf[TimeoutException] {
-          // We reduce the timeout for the test to not wait too long
+        _ <- recoverToSucceededIf[BakerException.TimeoutException] {
           baker.asInstanceOf[AkkaBaker].awaitIdle(recipeInstanceId)
         }
       } yield succeed

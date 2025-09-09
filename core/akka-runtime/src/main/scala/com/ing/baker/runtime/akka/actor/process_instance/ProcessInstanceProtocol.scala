@@ -25,17 +25,12 @@ object ProcessInstanceProtocol {
   /**
    * A command to query if the process instance is idle (has no active jobs).
    */
-  case object IsIdle extends Command
+  case object AwaitIdle extends Command
 
   /**
    * Response to the IsIdle query, confirming the instance is idle.
    */
   case object Idle extends BakerSerializable
-
-  /**
-   * Response to the IsIdle query, confirming the instance is not idle.
-   */
-  case object NotIdle extends BakerSerializable
 
   /**
    * A command to query if an event with a given name has occurred.

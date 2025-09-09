@@ -520,9 +520,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     case GetProcessIngredient(recipeInstanceId, name) =>
       withActiveProcess(recipeInstanceId) { actorRef => actorRef.forward(GetIngredient(name)) }
 
-    case ProcessIndexProtocol.IsIdle(recipeInstanceId) =>
+    case ProcessIndexProtocol.AwaitIdle(recipeInstanceId) =>
       withActiveProcess(recipeInstanceId) { actorRef =>
-        actorRef.forward(ProcessInstanceProtocol.IsIdle)
+        actorRef.forward(ProcessInstanceProtocol.AwaitIdle)
       }
 
     case ProcessIndexProtocol.HasEventOccurred(recipeInstanceId, eventName) =>

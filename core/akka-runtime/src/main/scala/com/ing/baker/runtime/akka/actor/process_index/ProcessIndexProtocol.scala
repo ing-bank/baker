@@ -36,10 +36,7 @@ object ProcessIndexProtocol {
 
   case class DeleteProcess(recipeInstanceId: String, removeFromIndex: Boolean = false) extends ProcessIndexMessage
 
-  /**
-   * Asks the ProcessIndex to query a specific process instance for its idle status.
-   */
-  case class IsIdle(recipeInstanceId: String) extends ProcessIndexMessage
+  case class AwaitIdle(recipeInstanceId: String) extends ProcessIndexMessage
 
   /**
    * Asks the ProcessIndex to query if an event has occurred in a specific instance.

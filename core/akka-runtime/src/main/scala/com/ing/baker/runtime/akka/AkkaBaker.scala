@@ -1,22 +1,21 @@
 package com.ing.baker.runtime.akka
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Address, Props}
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.pattern.{FutureRef, ask}
 import akka.util.Timeout
-import cats.data.NonEmptyList
 import cats.implicits._
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{EventNotOccurred, EventOccurred, Idle, IngredientFound, IngredientNotFound, Initialized, InstanceState, MetaDataAdded, NotIdle, Uninitialized}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{EventNotOccurred, EventOccurred, Idle, IngredientFound, IngredientNotFound, Initialized, InstanceState, MetaDataAdded, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
-import com.ing.baker.runtime.common.{BakerException, InteractionExecutionFailureReason, RecipeRecord, SensoryEventStatus}
+import com.ing.baker.runtime.common.{InteractionExecutionFailureReason, RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.getMetaDataFromIngredients
 import com.ing.baker.runtime.recipe_manager.{ActorBasedRecipeManager, DefaultRecipeManager, RecipeManager}
 import com.ing.baker.runtime.scaladsl._
@@ -26,9 +25,8 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 
-import java.util.{Optional, List => JavaList}
+import java.util.{List => JavaList}
 import scala.annotation.nowarn
-import scala.collection.immutable.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
 import scala.concurrent.duration.DurationInt
@@ -644,60 +642,15 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   }
 
   override def awaitIdle(recipeInstanceId: String): Future[SensoryEventStatus] = {
-    // 1. Define timeouts and create the promise
-    val overallTimeout = config.timeouts.defaultProcessEventTimeout
-    val pollInterval = 100.millis
-    val promise = Promise[SensoryEventStatus]()
-
-    // 2. Schedule the overall timeout mechanism
-    val timeoutCancellable = system.scheduler.scheduleOnce(overallTimeout) {
-      promise.tryFailure(TimeoutException(operationName="awaitIdle"))
-    }
-
-    // 3. Define the recursive check function
-    def check(): Unit = {
-      // Use a shorter timeout for the individual 'ask'
-      val askTimeout = config.timeouts.defaultInquireTimeout
-      val futureResponse = processIndexActor.ask(ProcessIndexProtocol.IsIdle(recipeInstanceId))(askTimeout)
-
-      futureResponse.onComplete {
-        case Success(Idle) =>
-          // Instance is idle, complete the promise and cancel the timeout
-          if (promise.trySuccess(SensoryEventStatus.Completed)) {
-            timeoutCancellable.cancel()
-          }
-        case Success(NotIdle) =>
-          // Not idle yet, schedule the next check if the promise is still open
-          if (!promise.isCompleted) {
-            system.scheduler.scheduleOnce(pollInterval)(check())
-          }
-        case Success(NoSuchProcess(id)) =>
-          if (promise.tryFailure(NoSuchProcessException(id))) {
-            timeoutCancellable.cancel()
-          }
-        case Success(ProcessDeleted(id)) =>
-          if (promise.tryFailure(ProcessDeletedException(id))) {
-            timeoutCancellable.cancel()
-          }
-        case Failure(e) =>
-          // The ask failed for some reason (e.g., timeout)
-          if (promise.tryFailure(e)) {
-            timeoutCancellable.cancel()
-          }
-        case Success(other) =>
-          // This should not happen, but we handle it defensively
-          val e = UnknownBakerException(s"Unexpected response while waiting for idle state of '$recipeInstanceId': $other")
-          if (promise.tryFailure(e)) {
-            timeoutCancellable.cancel()
-          }
+    processIndexActor
+      .ask(ProcessIndexProtocol.AwaitIdle(recipeInstanceId))(config.timeouts.defaultProcessEventTimeout)
+      .javaTimeoutToBakerTimeout("awaitIdle")
+      .flatMap {
+        case Idle => Future.successful(SensoryEventStatus.Completed)
+        case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
+        case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
+        case other => Future.failed(UnknownBakerException(s"Unexpected response while waiting for idle state of '$recipeInstanceId': $other"))
       }
-    }
-
-    // 4. Kick off the first check
-    check()
-
-    // 5. Return the future associated with the promise
-    promise.future
   }
 
 
