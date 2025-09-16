@@ -142,9 +142,13 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   private val processInquireTimeout: FiniteDuration = config.getDuration("baker.process-inquire-timeout").toScala
   private val updateCacheTimeout: FiniteDuration =  config.getDuration("baker.process-index-update-cache-timeout").toScala
 
-  private val restartMinBackoff: FiniteDuration =  config.getDuration("baker.process-instance.restart-minBackoff").toScala
-  private val restartMaxBackoff: FiniteDuration =  config.getDuration("baker.process-instance.restart-maxBackoff").toScala
-  private val restartRandomFactor: Double =  config.getDouble("baker.process-instance.restart-randomFactor")
+  private val ProcessInstanceRestartMinBackoff: FiniteDuration =  config.getDuration("baker.process-instance.restart-minBackoff").toScala
+  private val ProcessInstanceRestartMaxBackoff: FiniteDuration =  config.getDuration("baker.process-instance.restart-maxBackoff").toScala
+  private val ProcessInstanceRestartRandomFactor: Double =  config.getDouble("baker.process-instance.restart-randomFactor")
+
+  private val DelayedTransitionActorRestartMinBackoff: FiniteDuration =  config.getDuration("baker.delayed-transition.restart-minBackoff").toScala
+  private val DelayedTransitionActorRestartMaxBackoff: FiniteDuration =  config.getDuration("baker.delayed-transition.restart-maxBackoff").toScala
+  private val DelayedTransitionActorRestartRandomFactor: Double =  config.getDouble("baker.delayed-transition.restart-randomFactor")
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
 
@@ -157,8 +161,17 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       new ActorBasedBakerCleanup()
   }
 
+  private val delayedTransitionActorWithBackoffProps =
+    BackoffSupervisor.props(
+      BackoffOpts.onStop(
+        DelayedTransitionActor.props(this.self, cleanup, snapShotInterval, snapshotCount),
+        childName = s"${self.path.name}-timer",
+        minBackoff = DelayedTransitionActorRestartMinBackoff,
+        maxBackoff = DelayedTransitionActorRestartMaxBackoff,
+        randomFactor = DelayedTransitionActorRestartRandomFactor))
+
   private val delayedTransitionActor: ActorRef = context.actorOf(
-    props = DelayedTransitionActor.props(this.self, cleanup, snapShotInterval, snapshotCount),
+    props = delayedTransitionActorWithBackoffProps,
     name = s"${self.path.name}-timer")
 
   // if there is a retention check interval defined we schedule a recurring message
@@ -221,9 +234,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
             delayedTransitionActor = delayedTransitionActor
           ),
           childName = recipeInstanceId,
-          minBackoff = restartMinBackoff,
-          maxBackoff = restartMaxBackoff,
-          randomFactor = restartRandomFactor)
+          minBackoff = ProcessInstanceRestartMinBackoff,
+          maxBackoff = ProcessInstanceRestartMaxBackoff,
+          randomFactor = ProcessInstanceRestartRandomFactor)
           .withFinalStopMessage(_.isInstanceOf[ProcessInstanceProtocol.Stop])
       )
     val processActor = context.actorOf(props = processActorProps, name = recipeInstanceId)
