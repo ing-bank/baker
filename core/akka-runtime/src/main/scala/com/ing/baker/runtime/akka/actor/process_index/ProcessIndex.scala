@@ -686,6 +686,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   override def receiveRecover: Receive = {
     case SnapshotOffer(_, processIndexSnapShot: ProcessIndexSnapShot) =>
+      log.info(s"ProcessIndex: Starting receiveRecover from snapshot message")
       index.clear()
       index ++= processIndexSnapShot.index
     case SnapshotOffer(_, _) =>
@@ -701,14 +702,16 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     case ActorDeleted(recipeInstanceId) =>
       updateWithStatus(recipeInstanceId, Deleted)
     case RecoveryCompleted =>
-      // Delete all blacklisted processes.
-      index.foreach(process =>
-        if(blacklistedProcesses.contains(process._1) && !process._2.isDeleted) {
-          val id = process._1
-          log.info(s"Deleting blacklistedProcesses $id")
-          deleteProcess(process._2)
-        }
-      )
+      // Delete all blacklisted processes if configured.
+      if(blacklistedProcesses.nonEmpty) {
+        index.foreach(process =>
+          if (blacklistedProcesses.contains(process._1) && !process._2.isDeleted) {
+            val id = process._1
+            log.info(s"Deleting blacklistedProcesses $id")
+            deleteProcess(process._2)
+          }
+        )
+      }
 
       // Start the active processes
       index
@@ -716,8 +719,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         .foreach(id => {
           log.info(s"Starting child actor after recovery: $id")
           createProcessActor(id)
+          log.info(s"Child actor started after recovery: $id")
         })
       delayedTransitionActor ! StartTimer
+      log.info(s"ProcessIndex: Finished receiveRecover")
   }
 
   def persistWithSnapshot[A](event: A)(handler: A => Unit): Unit = {
