@@ -148,7 +148,7 @@ class DelayedTransitionActor(processIndex: ActorRef,
   override def receiveRecover: Receive = {
 
     case SnapshotOffer(_, delayedTransitionSnapshot: DelayedTransitionSnapshot) =>
-      log.debug("Loading Snapshots")
+      log.info(s"DelayedTransitionActor: Starting receiveRecover from snapshot message")
       waitingTransitions = delayedTransitionSnapshot.waitingTransitions
     case SnapshotOffer(_, _) =>
       val message = "could not load snapshot because snapshot was not of type ProcessIndexSnapShot"
@@ -160,5 +160,7 @@ class DelayedTransitionActor(processIndex: ActorRef,
         scheduled.delayedTransitionInstance)
     case fired: DelayedTransitionExecuted =>
       waitingTransitions -= fired.id
+    case RecoveryCompleted =>
+      log.info(s"DelayedTransitionActor: Finished receiveRecover with ${waitingTransitions.size} waiting transitions")
   }
 }
