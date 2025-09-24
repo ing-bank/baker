@@ -123,6 +123,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(logSource = this)
 
+  private val startTime = System.currentTimeMillis()
 
   override def preStart(): Unit = {
     log.info(s"ProcessIndex started: $self")
@@ -722,7 +723,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           log.info(s"Child actor started after recovery: $id")
         })
       delayedTransitionActor ! StartTimer
-      log.info(s"ProcessIndex: Finished receiveRecover")
+      log.info(s"ProcessIndex: ${self.actorRef} Finished receiveRecover after ${System.currentTimeMillis() - startTime} ms with ${index.size} indexed size and ${index.count(_._2.processStatus == Active)} active processes")
   }
 
   def persistWithSnapshot[A](event: A)(handler: A => Unit): Unit = {
