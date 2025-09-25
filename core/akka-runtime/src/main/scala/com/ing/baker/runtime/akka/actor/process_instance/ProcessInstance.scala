@@ -695,6 +695,11 @@ class ProcessInstance(
   override def onRecoveryCompleted(instance: Instance[RecipeInstanceState]) = {
     val scheduledRetries = scheduleFailedJobsForRetry(instance)
     val (updatedInstance, jobs) = step(instance)
+    log.info(s"ProcessInstance: Finished receiveRecover " +
+      s"for ${recipeInstanceId} " +
+      s"with recipe: ${recipeInstanceId} with ${updatedInstance.state.events.size} events, " +
+      s"${updatedInstance.state.ingredients.size} ingredients and " +
+      s"${updatedInstance.activeJobs.size} active jobs")
     context become running(updatedInstance, scheduledRetries)
   }
 }

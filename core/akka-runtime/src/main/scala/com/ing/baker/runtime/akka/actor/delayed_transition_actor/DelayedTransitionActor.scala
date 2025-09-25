@@ -47,14 +47,18 @@ class DelayedTransitionActor(processIndex: ActorRef,
 
   import context.dispatcher
 
+  private val startTime = System.currentTimeMillis()
+
+  private var messageCounter = 0
+
   override def receiveCommand: Receive = starting
 
   override def preStart(): Unit = {
-    log.debug(s"DelayedTransitionActor started: ${persistenceId}")
+    log.info(s"DelayedTransitionActor started: ${persistenceId}")
   }
 
   override def postStop(): Unit = {
-    log.debug(s"DelayedTransitionActor stopped: ${persistenceId}")
+    log.info(s"DelayedTransitionActor stopped: ${persistenceId}")
   }
 
   private def handleScheduleDelayedTransition(event: ScheduleDelayedTransition) = {
@@ -148,17 +152,21 @@ class DelayedTransitionActor(processIndex: ActorRef,
   override def receiveRecover: Receive = {
 
     case SnapshotOffer(_, delayedTransitionSnapshot: DelayedTransitionSnapshot) =>
-      log.debug("Loading Snapshots")
+      log.info(s"DelayedTransitionActor: Starting receiveRecover from snapshot message")
       waitingTransitions = delayedTransitionSnapshot.waitingTransitions
     case SnapshotOffer(_, _) =>
       val message = "could not load snapshot because snapshot was not of type ProcessIndexSnapShot"
       log.error(message)
       throw new IllegalArgumentException(message)
     case scheduled: DelayedTransitionScheduled =>
+      messageCounter = messageCounter + 1
       waitingTransitions += (
         scheduled.id ->
         scheduled.delayedTransitionInstance)
     case fired: DelayedTransitionExecuted =>
+      messageCounter = messageCounter + 1
       waitingTransitions -= fired.id
+    case RecoveryCompleted =>
+      log.info(s"DelayedTransitionActor: Finished receiveRecover after ${System.currentTimeMillis() - startTime} ms with ${waitingTransitions.size} waiting transitions after $messageCounter messages")
   }
 }
