@@ -12,6 +12,7 @@ import java.util
 import java.util.Optional
 import scala.annotation.nowarn
 import scala.collection.JavaConverters._
+import scala.reflect.runtime.universe
 
 case class PersonCaseClass(name: String, age: Int)
 
@@ -233,6 +234,17 @@ class JavaModulesSpec extends AnyWordSpecLike with Matchers {
         RecordField("boolean", types.Bool))
 
       readJavaType[ComplexPOJOExample] shouldBe RecordType(complexPOJOExampleSeq)
+      readJavaType[ComplexPOJOExample] shouldBe RecordType(complexPOJOExampleSeq)
+    }
+
+    "be able to parse recursive types" in {
+
+      readJavaType[RecursiveType] shouldBe RecordType(
+        Seq(
+          RecordField("a", types.CharArray),
+          RecordField("b", OptionType(ReferenceType(defaultTypeConverter, "com.ing.baker.types.RecursiveType")))
+        )
+      )
     }
   }
 }

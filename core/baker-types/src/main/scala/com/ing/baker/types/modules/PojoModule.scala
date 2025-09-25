@@ -1,9 +1,10 @@
 package com.ing.baker.types.modules
 
 import java.lang.reflect.Modifier
-
 import com.ing.baker.types._
 import org.objenesis.ObjenesisStd
+
+import scala.util.{Failure, Success, Try}
 
 class PojoModule extends TypeModule {
 
@@ -11,9 +12,31 @@ class PojoModule extends TypeModule {
 
   override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): Type = {
     val pojoClass = getBaseClass(javaType)
-    val fields = pojoClass.getDeclaredFields.toIndexedSeq.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
-    val ingredients = fields.map(f => RecordField(f.getName, context.readType(f.getGenericType)))
-    RecordType(ingredients)
+    val className = pojoClass.getName
+
+    context.loadType(className) match {
+      case Some(t) => t
+      case _       =>
+        Try {
+          // we save the type as a reference type to avoid recursion
+          context.saveType(className, ReferenceType(context, className));
+
+          val fields = pojoClass.getDeclaredFields.toIndexedSeq.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
+          val ingredients = fields.map(f => RecordField(f.getName, context.readType(f.getGenericType)))
+          val `type` = RecordType(ingredients)
+          context.saveType(className, `type`);
+          RecordType(ingredients)
+
+        } match {
+
+          case Failure(e) =>
+            context.removeType(className)
+            throw e
+          case Success(result) =>
+            context.saveType(className, result);
+            result
+        }
+    }
   }
 
   override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any = value match {
