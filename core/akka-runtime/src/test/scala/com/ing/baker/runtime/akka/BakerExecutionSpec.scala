@@ -40,6 +40,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
   override def actorSystemName = "BakerExecutionSpec"
 
   before {
+    TestKit.shutdownActorSystem(defaultActorSystem)
+    defaultActorSystem = ActorSystem(UUID.randomUUID().toString)
     resetMocks()
     setupMockResponse()
     CollectorRegistry.defaultRegistry.clear()
@@ -1780,7 +1782,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         _ <- baker.bake(recipeId, recipeInstanceId)
 
         // Fire the event but don't wait for the process to complete
-        _ = baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), Option.apply("correlationId"))
+        _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), Option.apply("correlationId"))
 
         // Await for an event that happens late in the process
         _ <- baker.awaitEvent(recipeInstanceId, "InteractionThreeSuccessful", timeout = 1.seconds)
@@ -1828,7 +1830,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           delay = 500.millis
 
           // Fire the event but don't wait for the process to complete
-          _ = baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(DelayedEvent(delay)), Option.empty)
+          _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(DelayedEvent(delay)), Option.empty)
 
           startTime = System.currentTimeMillis()
           // Await for the process to become idle
@@ -1857,7 +1859,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           delay = 500.millis
 
           // Fire the event but don't wait for the process to complete
-          _ = baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(DelayedEvent(delay)), Option.empty)
+          _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(DelayedEvent(delay)), Option.empty)
 
           startTime = System.currentTimeMillis()
           // Await for the TimeWaited event specifically

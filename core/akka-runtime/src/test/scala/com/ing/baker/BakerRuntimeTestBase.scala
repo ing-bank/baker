@@ -23,7 +23,6 @@ import org.scalatestplus.mockito.MockitoSugar
 
 import java.nio.file.Paths
 import java.util.UUID
-import io.prometheus.client.CollectorRegistry
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -195,7 +194,7 @@ trait BakerRuntimeTestBase
          |}
     """.stripMargin).withFallback(localLevelDBConfig(actorSystemName, journalInitializeTimeout, journalPath, snapshotsPath))
 
-  implicit protected val defaultActorSystem: ActorSystem = ActorSystem(actorSystemName)
+  implicit protected var defaultActorSystem: ActorSystem = ActorSystem(actorSystemName)
 
   override def afterAll(): Unit = {
     TestKit.shutdownActorSystem(defaultActorSystem)
@@ -220,14 +219,12 @@ trait BakerRuntimeTestBase
 
   protected def setupBakerWithRecipe(recipe: Recipe, implementations: List[InteractionInstance])
                                     (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
-    implicit val contextShift = IO.contextShift(actorSystem.dispatcher)
     val baker = AkkaBaker(ConfigFactory.load(), actorSystem, CachingInteractionManager(implementations))
     baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe))).map(baker -> _)(actorSystem.dispatcher)
   }
 
   protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Future[Baker] = {
     setupMockResponse()
-    implicit val contextShift = IO.contextShift(actorSystem.dispatcher)
     Future.successful(AkkaBaker(ConfigFactory.load(), actorSystem, CachingInteractionManager(mockImplementations)))
   }
 
