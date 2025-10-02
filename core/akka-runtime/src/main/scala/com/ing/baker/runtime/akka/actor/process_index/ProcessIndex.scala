@@ -505,15 +505,6 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           originalSender ! akka.actor.Status.Failure(exception)
 
         case Right(Left(rejection)) =>
-          // TODO: Remove LogAndSendEvent after eventListener redesign
-          LogAndSendEvent.eventRejected(
-            EventRejected(
-              System.currentTimeMillis(),
-              recipeInstanceId,
-              correlationId,
-              event.name,
-              rejection.asReason),
-            context.system.eventStream)
           // This case represents a controlled, business-logic failure (e.g., validation failed, process not found).
           // We send the rejection object directly back to the sender, as is idiomatic in Baker.
           originalSender ! rejection
