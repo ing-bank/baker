@@ -2,7 +2,8 @@ package com.ing.baker.runtime.model
 
 import cats.data.EitherT
 import cats.effect.concurrent.Deferred
-import cats.effect.{ConcurrentEffect, Effect, Resource, Timer}
+import cats.effect.implicits.{catsEffectSyntaxConcurrent, toConcurrentOps}
+import cats.effect.{Concurrent, ConcurrentEffect, Effect, Timer}
 import cats.implicits._
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common.BakerException.{ProcessAlreadyExistsException, ProcessDeletedException}
@@ -11,12 +12,10 @@ import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.model.RecipeInstanceManager.RecipeInstanceStatus
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
-import com.ing.baker.types.MapType
 import fs2.{Pipe, Stream}
 
+import java.util.concurrent.TimeoutException
 import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
-import scala.collection.immutable.Seq
-import scala.jdk.CollectionConverters._
 
 object RecipeInstanceManager {
 
@@ -68,7 +67,7 @@ trait RecipeInstanceManager[F[_]] {
       _ <- store(newRecipeInstance)
     } yield ()
 
-  def getRecipeInstanceState(recipeInstanceId: String)(implicit effect: Effect[F]): F[RecipeInstanceState] =
+  def getRecipeInstanceState(recipeInstanceId: String)(implicit effect: Effect[F]): F[com.ing.baker.runtime.scaladsl.RecipeInstanceState] =
     getExistent(recipeInstanceId).flatMap(
       _.state.get.map { currentState =>
         RecipeInstanceState(
@@ -100,6 +99,24 @@ trait RecipeInstanceManager[F[_]] {
       case Some(RecipeInstanceStatus.Active(recipeInstance, _)) =>
         Right(recipeInstance)
     }).flatMap(_.fireEventStream(event, correlationId))
+  }
+
+  def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[SensoryEventStatus] = {
+    def awaitFirst(stream: Stream[F, EventInstance])(implicit F: Concurrent[F]): F[Unit] =
+      Deferred[F, Unit].flatMap { firstEventProcessed =>
+        val signalingStream = stream.zipWithIndex.evalTap { case (_, index) =>
+          if (index == 0) firstEventProcessed.complete(()).attempt.void
+          else F.unit
+        }.map(_._1)
+
+        for {
+          _ <- signalingStream.compile.drain.start
+          _ <- firstEventProcessed.get
+        } yield ()
+      }
+
+    fireEventStream(recipeInstanceId, event, correlationId)
+      .value.flatMap(foldToStatus(awaitFirst))
   }
 
   def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[SensoryEventStatus] =
@@ -146,16 +163,30 @@ trait RecipeInstanceManager[F[_]] {
           foldToResult((_: Unit) => completed.get)(outcome.map(_ => ()))))
 
   def addMetaData(recipeInstanceId: String, metadata: Map[String, String])(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] = {
-    getExistent(recipeInstanceId).map((recipeInstance: RecipeInstance[F]) => {
+    getExistent(recipeInstanceId).flatMap((recipeInstance: RecipeInstance[F]) => {
       recipeInstance.state.update(currentState => {
         val newRecipeInstanceMetaData = currentState.recipeInstanceMetadata ++ metadata
         currentState.copy(
           ingredients = currentState.ingredients + (RecipeInstanceMetadataName -> com.ing.baker.types.Converters.toValue(newRecipeInstanceMetaData)),
           recipeInstanceMetadata = newRecipeInstanceMetaData)
       })
-    }).flatten
+    })
   }
 
+  def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration)(implicit effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] =
+    getExistent(recipeInstanceId).flatMap { recipeInstance =>
+      Deferred[F, Unit].flatMap { listener =>
+        recipeInstance.state.modify { currentState =>
+          // Check if the event has already occurred
+          if (currentState.events.exists(_.name == eventName)) {
+            (currentState, effect.unit) // Already happened, resolve immediately
+          } else {
+            // Not yet happened, add listener and wait on it
+            (currentState.addEventListener(eventName, listener), listener.get)
+          }
+        }.flatten.timeoutTo(timeout, effect.raiseError(new TimeoutException(s"Timed out after $timeout waiting for event '$eventName' in instance '$recipeInstanceId'")))
+      }
+    }
 
   def stopRetryingInteraction(recipeInstanceId: String, interactionName: String)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Unit] =
     getExistent(recipeInstanceId).flatMap(_.stopRetryingInteraction(interactionName))
@@ -165,6 +196,20 @@ trait RecipeInstanceManager[F[_]] {
 
   def resolveBlockedInteraction(recipeInstanceId: String, interactionName: String, eventInstance: EventInstance)(implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]): F[Stream[F, EventInstance]] =
     getExistent(recipeInstanceId).map(_.resolveBlockedInteraction(interactionName, eventInstance))
+
+  def awaitCompleted(recipeInstanceId: String, timeout: FiniteDuration)(implicit effect: ConcurrentEffect[F], timer: Timer[F]): F[SensoryEventStatus] =
+    getExistent(recipeInstanceId).flatMap { recipeInstance =>
+      Deferred[F, Unit].flatMap { listener =>
+        recipeInstance.state.modify { currentState =>
+          if (currentState.isInactive) {
+            (currentState, effect.pure(SensoryEventStatus.Completed)) // Already idle
+          } else {
+            // Not idle, add listener and then wait on it
+            (currentState.addIdleListener(listener), listener.get.as(SensoryEventStatus.Completed))
+          }
+        }.flatten.timeoutTo(timeout, effect.raiseError(new java.util.concurrent.TimeoutException(s"Timed out after $timeout waiting for instance '$recipeInstanceId' to become idle.")))
+      }
+    }
 
   private def getExistent(recipeInstanceId: String)(implicit effect: Effect[F]): F[RecipeInstance[F]] =
     fetch(recipeInstanceId).flatMap {
@@ -182,7 +227,7 @@ trait RecipeInstanceManager[F[_]] {
     )
   }
 
-  private def foldToStatus[A](f: A => F[Unit])(outcome: Either[FireSensoryEventRejection, A])(implicit effect: Effect[F]): F[SensoryEventStatus] =
+  private def foldToStatus[A](f: A => F[Unit])(outcome: Either[FireSensoryEventRejection, A])(implicit effect: ConcurrentEffect[F]): F[SensoryEventStatus] =
     outcome match {
       case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
         effect.raiseError(BakerException.IllegalEventException(message))

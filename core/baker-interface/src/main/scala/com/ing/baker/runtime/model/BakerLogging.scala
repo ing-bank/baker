@@ -135,7 +135,7 @@ case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
       "recipeName" -> eventReceived.recipeName,
       "timeReceived" -> eventReceived.timeStamp.toString,
     )
-    withMDC(mdc, _.warn(msg))
+    withMDC(mdc, _.info(msg))
   }
 
   def eventRejected(eventRejected: EventRejected): Unit = {

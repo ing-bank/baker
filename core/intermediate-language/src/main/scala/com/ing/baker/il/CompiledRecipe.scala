@@ -81,6 +81,10 @@ case class CompiledRecipe(name: String,
     case EventTransition(eventDescriptor, true, _) => eventDescriptor
   }
 
+  def events: Set[EventDescriptor] = petriNet.transitions.collect {
+    case EventTransition(eventDescriptor, _, _) => eventDescriptor
+  }
+
   @nowarn
   def getValidationErrors: java.util.List[String] = validationErrors.toList.asJava
 

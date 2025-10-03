@@ -15,6 +15,7 @@ import webshop.simple.ingredients.PaymentInformation;
 import webshop.simple.ingredients.ReservedItems;
 import webshop.simple.ingredients.ShippingAddress;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -67,9 +68,10 @@ public class JWebshopRecipeTests {
         String recipeInstanceId = UUID.randomUUID().toString();
         CompletableFuture<List<String>> result = baker.addRecipe(compiledRecipe, true)
                 .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
-                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
-                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentInformationReceived))
-                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, shippingInformationReceived))
+                .thenCompose(ignore -> baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, firstOrderPlaced))
+                .thenCompose(ignore -> baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, paymentInformationReceived))
+                .thenCompose(ignore -> baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, shippingInformationReceived))
+                .thenCompose(ignore -> baker.awaitCompleted(recipeInstanceId, Duration.ofSeconds(5)))
                 .thenCompose(ignore -> baker.getRecipeInstanceState(recipeInstanceId))
                 .thenApply(x -> x.events().stream().map(EventMoment::getName).collect(Collectors.toList()));
 
@@ -115,9 +117,10 @@ public class JWebshopRecipeTests {
         String recipeInstanceId = UUID.randomUUID().toString();
         CompletableFuture<List<String>> result = baker.addRecipe(compiledRecipe, true)
                 .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
-                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
-                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentInformationReceived))
-                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, shippingInformationReceived))
+                .thenCompose(ignore -> baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, firstOrderPlaced))
+                .thenCompose(ignore -> baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, paymentInformationReceived))
+                .thenCompose(ignore -> baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, shippingInformationReceived))
+                .thenCompose(ignore -> baker.awaitCompleted(recipeInstanceId, Duration.ofSeconds(5)))
                 .thenCompose(ignore -> baker.getRecipeInstanceState(recipeInstanceId))
                 .thenApply(x -> x.events().stream().map(EventMoment::getName).collect(Collectors.toList()));
 

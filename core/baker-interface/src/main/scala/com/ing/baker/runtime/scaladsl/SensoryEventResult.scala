@@ -6,6 +6,7 @@ import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.types.Value
 import scala.collection.immutable.Seq
 
+@deprecated("The SensoryEventResult class will be removed after December 2026. Use fireSensoryEventAndAwaitReceived -> awaitCompleted -> getIngredients + getEventNames instead.", "5.1.0")
 case class SensoryEventResult(
                                sensoryEventStatus: SensoryEventStatus,
                                eventNames: Seq[String],

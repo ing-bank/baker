@@ -8,6 +8,6 @@ class FireEventAndResolveWhenReceived(private val baker: Baker) {
 
     suspend fun example(recipeInstanceId: String, orderPlaced: OrderPlaced) {
         val orderPlacedEvent = EventInstance.from(orderPlaced)
-        val sensoryEventStatus = baker.fireEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent)
+        baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, orderPlacedEvent)
     }
 }

@@ -2,6 +2,7 @@ package com.ing.baker.recipe
 
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl._
+import com.ing.baker.recipe.scaladsl.interactions.{TimeWaited, WaitTime}
 
 import java.util.Optional
 import scala.collection.immutable.Seq
@@ -84,6 +85,10 @@ object TestRecipe {
   val unboxedProviderEvent = Event("UnboxedProviderEvent", missingJavaOptionalDirectString, initialIngredient, missingScalaOptionDirectString)
 
   case class UnboxedProviderEvent(missingJavaOptional: String, initialIngredient: String, missingScalaOption: String)
+
+  val delayedEvent: Event = Event("DelayedEvent", Ingredient[FiniteDuration]("waitTime"))
+
+  case class DelayedEvent(waitTime: FiniteDuration)
 
   case class InteractionOneSuccessful(interactionOneOriginalIngredient: String)
 
@@ -351,4 +356,20 @@ object TestRecipe {
         initialEventExtendedName,
         secondEvent,
         notUsedSensoryEvent)
+
+  val timerInteraction: Interaction = Interaction(
+    name = "TimerInteraction",
+    inputIngredients = Seq(
+      WaitTime
+    ),
+    output = Seq(
+      TimeWaited
+    )
+  )
+
+  trait TimerInteraction {
+    def name: String = "TimerInteraction"
+
+    def apply(WaitTime: Duration): Future[Event]
+  }
 }

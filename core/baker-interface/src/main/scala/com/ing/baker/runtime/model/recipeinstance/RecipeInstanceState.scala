@@ -1,5 +1,6 @@
 package com.ing.baker.runtime.model.recipeinstance
 
+import cats.effect.concurrent.Deferred
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet.Place.IngredientPlace
@@ -24,7 +25,7 @@ object RecipeInstanceState {
   def getMetaDataFromIngredients(ingredients: Seq[IngredientInstance]): Option[Map[String, String]] =
     getMetaDataFromIngredients(ingredients.map(i => i.name -> i.value).toMap)
 
-  def empty(recipeInstanceId: String, recipe: CompiledRecipe, createdOn: Long): RecipeInstanceState =
+  def empty[F[_]](recipeInstanceId: String, recipe: CompiledRecipe, createdOn: Long): RecipeInstanceState[F] =
     RecipeInstanceState(
       recipeInstanceId,
       recipe,
@@ -36,26 +37,38 @@ object RecipeInstanceState {
       events = List.empty,
       completedCorrelationIds = Set.empty,
       executions = Map.empty,
-      retryingExecutions = Set.empty
+      retryingExecutions = Set.empty,
+      idleListeners = Set.empty[Deferred[F, Unit]],
+      eventListeners = Map.empty[String, Set[Deferred[F, Unit]]]
     )
 }
 
-case class RecipeInstanceState(
-                                recipeInstanceId: String,
-                                recipe: CompiledRecipe,
-                                createdOn: Long,
-                                sequenceNumber: Long,
-                                marking: Marking[Place],
-                                ingredients: Map[String, Value],
-                                recipeInstanceMetadata: Map[String, String],
-                                events: List[EventMoment],
-                                completedCorrelationIds: Set[String],
-                                executions: Map[Long, TransitionExecution],
-                                retryingExecutions: Set[Long]
-                              ) extends RecipeInstanceEventValidation {
+case class RecipeInstanceState[F[_]](
+                                      recipeInstanceId: String,
+                                      recipe: CompiledRecipe,
+                                      createdOn: Long,
+                                      sequenceNumber: Long,
+                                      marking: Marking[Place],
+                                      ingredients: Map[String, Value],
+                                      recipeInstanceMetadata: Map[String, String],
+                                      events: List[EventMoment],
+                                      completedCorrelationIds: Set[String],
+                                      executions: Map[Long, TransitionExecution],
+                                      retryingExecutions: Set[Long],
+                                      idleListeners: Set[Deferred[F, Unit]] = Set.empty[Deferred[F, Unit]],
+                                      eventListeners: Map[String, Set[Deferred[F, Unit]]] = Map.empty[String, Set[Deferred[F, Unit]]]
+                                    ) extends RecipeInstanceEventValidation[F] {
 
   def isInactive: Boolean =
     executions.values.forall(_.isInactive)
+
+  def addIdleListener(listener: Deferred[F, Unit]): RecipeInstanceState[F] =
+    this.copy(idleListeners = idleListeners + listener)
+
+  def addEventListener(eventName: String, listener: Deferred[F, Unit]): RecipeInstanceState[F] = {
+    val currentListeners = eventListeners.getOrElse(eventName, Set.empty)
+    this.copy(eventListeners = eventListeners + (eventName -> (currentListeners + listener)))
+  }
 
   def getInteractionExecution(interactionName: String): Option[TransitionExecution] =
     for {
@@ -64,16 +77,16 @@ case class RecipeInstanceState(
         case (_, execution) if execution.transition.id == transition.id => execution }
     } yield transitionExecution
 
-  def addExecution(execution: TransitionExecution*): RecipeInstanceState =
+  def addExecution(execution: TransitionExecution*): RecipeInstanceState[F] =
     copy(executions = executions ++ execution.map(ex => ex.id -> ex))
 
-  private def removeExecution(transitionExecution: TransitionExecution): RecipeInstanceState =
+  private def removeExecution(transitionExecution: TransitionExecution): RecipeInstanceState[F] =
     copy(executions = executions - transitionExecution.id)
 
-  def recordFailedExecution(transitionExecution: TransitionExecution, exceptionStrategy: ExceptionStrategyOutcome): RecipeInstanceState =
+  def recordFailedExecution(transitionExecution: TransitionExecution, exceptionStrategy: ExceptionStrategyOutcome): RecipeInstanceState[F] =
     addExecution(transitionExecution.toFailedState(exceptionStrategy))
 
-  def recordFailedWithOutputExecution(transitionExecution: TransitionExecution, output: EventInstance): (RecipeInstanceState, Set[TransitionExecution]) =
+  def recordFailedWithOutputExecution(transitionExecution: TransitionExecution, output: EventInstance): (RecipeInstanceState[F], Set[TransitionExecution]) =
     aggregateOutputEvent(Some(output))
       .increaseSequenceNumber
       .aggregatePetriNetChanges(transitionExecution, Some(output))
@@ -81,7 +94,7 @@ case class RecipeInstanceState(
       .addExecution(transitionExecution.copy(state = TransitionExecution.State.Failed(transitionExecution.failureCount, ExceptionStrategyOutcome.BlockTransition)))
       .allEnabledExecutions
 
-  def recordFailedWithOutputExecutionAsFunctionalEvent(transitionExecution: TransitionExecution, output: EventInstance): (RecipeInstanceState, Set[TransitionExecution]) =
+  def recordFailedWithOutputExecutionAsFunctionalEvent(transitionExecution: TransitionExecution, output: EventInstance): (RecipeInstanceState[F], Set[TransitionExecution]) =
     aggregateOutputEvent(Some(output))
       .increaseSequenceNumber
       .aggregatePetriNetChanges(transitionExecution, Some(output))
@@ -89,7 +102,7 @@ case class RecipeInstanceState(
       .removeExecution(transitionExecution)
       .allEnabledExecutions
 
-  def recordCompletedExecution(transitionExecution: TransitionExecution, output: Option[EventInstance]): (RecipeInstanceState, Set[TransitionExecution]) =
+  def recordCompletedExecution(transitionExecution: TransitionExecution, output: Option[EventInstance]): (RecipeInstanceState[F], Set[TransitionExecution]) =
     aggregateOutputEvent(output)
       .increaseSequenceNumber
       .aggregatePetriNetChanges(transitionExecution, output)
@@ -97,13 +110,13 @@ case class RecipeInstanceState(
       .removeExecution(transitionExecution)
       .allEnabledExecutions
 
-  def addRetryingExecution(transitionExecutionId: Long): RecipeInstanceState =
+  def addRetryingExecution(transitionExecutionId: Long): RecipeInstanceState[F] =
     copy(retryingExecutions = retryingExecutions + transitionExecutionId)
 
-  def removeRetryingExecution(transitionExecutionId: Long): RecipeInstanceState =
+  def removeRetryingExecution(transitionExecutionId: Long): RecipeInstanceState[F] =
     copy(retryingExecutions = retryingExecutions - transitionExecutionId)
 
-  private def allEnabledExecutions: (RecipeInstanceState, Set[TransitionExecution]) = {
+  private def allEnabledExecutions: (RecipeInstanceState[F], Set[TransitionExecution]) = {
 
     def canBeFiredAutomatically(transition: Transition): Boolean =
       transition match {
@@ -147,7 +160,7 @@ case class RecipeInstanceState(
     addExecution(executions: _*) -> executions.toSet
   }
 
-  private def aggregateOutputEvent(output: Option[EventInstance]): RecipeInstanceState =
+  private def aggregateOutputEvent(output: Option[EventInstance]): RecipeInstanceState[F] =
     output match {
       case None => this
       case Some(outputEvent) =>
@@ -156,10 +169,10 @@ case class RecipeInstanceState(
           events = events :+ EventMoment(outputEvent.name, System.currentTimeMillis()))
     }
 
-  private def increaseSequenceNumber: RecipeInstanceState =
+  private def increaseSequenceNumber: RecipeInstanceState[F] =
     copy(sequenceNumber = sequenceNumber + 1)
 
-  private def aggregatePetriNetChanges(transitionExecution: TransitionExecution, output: Option[EventInstance]): RecipeInstanceState = {
+  private def aggregatePetriNetChanges(transitionExecution: TransitionExecution, output: Option[EventInstance]): RecipeInstanceState[F] = {
     val outputMarkings: MultiSet[Place] = recipe.petriNet.outMarking(transitionExecution.transition)
 
     val producedMarking: Marking[Place] = {
@@ -176,7 +189,7 @@ case class RecipeInstanceState(
     copy(marking = (marking |-| transitionExecution.consume) |+| producedMarking |+| reproviderMarkings)
   }
 
-  private def addCompletedCorrelationId(transitionExecution: TransitionExecution): RecipeInstanceState =
+  private def addCompletedCorrelationId(transitionExecution: TransitionExecution): RecipeInstanceState[F] =
     copy(completedCorrelationIds = completedCorrelationIds ++ transitionExecution.correlationId)
 
   protected def availableMarkings: Marking[Place] = {

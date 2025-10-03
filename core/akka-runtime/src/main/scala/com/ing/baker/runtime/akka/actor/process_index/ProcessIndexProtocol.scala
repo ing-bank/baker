@@ -36,6 +36,10 @@ object ProcessIndexProtocol {
 
   case class DeleteProcess(recipeInstanceId: String, removeFromIndex: Boolean = false) extends ProcessIndexMessage
 
+  case class AwaitCompleted(recipeInstanceId: String) extends ProcessIndexMessage
+
+  case class AwaitEvent(recipeInstanceId: String, eventName: String) extends ProcessIndexMessage
+
   /**
     * Failure when attempting to resolve a blocked interaction, the event is not of valid type according with the recipe
     *
@@ -85,6 +89,8 @@ object ProcessIndexProtocol {
     */
   case class ProcessEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String], timeout: FiniteDuration, reaction: FireSensoryEventReaction) extends ProcessIndexMessage
 
+  case class ProcessSensoryEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]) extends ProcessIndexMessage
+
   /**
     * Expected reactions when firing a sensory event
     */
@@ -130,7 +136,7 @@ object ProcessIndexProtocol {
   /**
     * Possible failures when firing a sensory event
     */
-  sealed trait FireSensoryEventRejection extends ProcessIndexMessage {
+  sealed trait FireSensoryEventRejection extends Exception with ProcessIndexMessage {
 
     def asReason: RejectReason
   }

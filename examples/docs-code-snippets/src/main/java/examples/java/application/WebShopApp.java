@@ -10,12 +10,14 @@ import examples.java.interactions.CheckStockImpl;
 import examples.java.interactions.ShipOrderImpl;
 import examples.java.recipes.WebShopRecipe;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 public class WebShopApp {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
         var baker = InMemoryBaker.java(
             List.of(new CheckStockImpl(), new CancelOrderImpl(), new ShipOrderImpl())
         );
@@ -23,10 +25,10 @@ public class WebShopApp {
         var recipeInstanceId = UUID.randomUUID().toString();
         var sensoryEvent = EventInstance.from(createOrderPlaced());
 
-        baker.addRecipe(RecipeCompiler.compileRecipe(WebShopRecipe.recipe), true)
-            .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
-            .thenCompose(ignored -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, sensoryEvent))
-            .join();
+        var recipeId = baker.addRecipe(RecipeCompiler.compileRecipe(WebShopRecipe.recipe), true).get();
+        baker.bake(recipeId, recipeInstanceId).get();
+        baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, sensoryEvent).get();
+        baker.awaitCompleted(recipeInstanceId, Duration.ofSeconds(5)).get();
     }
 
     private static OrderPlaced createOrderPlaced() {

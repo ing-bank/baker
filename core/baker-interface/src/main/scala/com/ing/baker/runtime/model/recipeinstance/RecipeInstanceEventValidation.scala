@@ -15,9 +15,9 @@ object RecipeInstanceEventValidation {
     Either[(FireSensoryEventRejection, Reason), A]
 }
 
-trait RecipeInstanceEventValidation { recipeInstance: RecipeInstanceState =>
+trait RecipeInstanceEventValidation[F[_]] { recipeInstance: RecipeInstanceState[F] =>
 
-  def validateExecution[F[_]](input: EventInstance, correlationId: Option[String], currentTime: Long): EventValidation[TransitionExecution] = {
+  def validateExecution(input: EventInstance, correlationId: Option[String], currentTime: Long): EventValidation[TransitionExecution] = {
     for {
       transitionAndDescriptor <- eventIsInRecipe(input)
       (transition, descriptor) = transitionAndDescriptor

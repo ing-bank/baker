@@ -12,6 +12,7 @@ import examples.kotlin.interactions.ShipOrderImpl
 import examples.kotlin.recipes.WebShopRecipe
 import kotlinx.coroutines.runBlocking
 import java.util.*
+import kotlin.time.Duration.Companion.seconds
 
 @ExperimentalDsl
 fun main(): Unit = runBlocking {
@@ -28,7 +29,8 @@ fun main(): Unit = runBlocking {
     val sensoryEvent = EventInstance.from(orderPlaced)
 
     baker.bake(recipeId, recipeInstanceId)
-    baker.fireEventAndResolveWhenCompleted(recipeInstanceId, sensoryEvent)
+    baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, sensoryEvent)
+    baker.awaitCompleted(recipeInstanceId, timeout = 5.seconds)
 }
 
 private val orderPlaced = OrderPlaced(

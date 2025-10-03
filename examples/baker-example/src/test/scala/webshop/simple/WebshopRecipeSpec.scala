@@ -13,6 +13,7 @@ import org.scalatest.flatspec.AsyncFlatSpecLike
 import org.scalatest.matchers.should.Matchers
 
 import java.util.UUID
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 
 class WebshopRecipeSpec extends TestKit(ActorSystem("baker-webshop-system")) with Matchers with AsyncFlatSpecLike with BeforeAndAfterAll {
@@ -87,10 +88,9 @@ class WebshopRecipeSpec extends TestKit(ActorSystem("baker-webshop-system")) wit
       for {
         recipeId <- baker.addRecipe(RecipeRecord.of(compiled))
         _ <- baker.bake(recipeId, recipeInstanceId)
-        _ <- baker.fireEventAndResolveWhenCompleted(
-          recipeInstanceId, orderPlaced)
-        _ <- baker.fireEventAndResolveWhenCompleted(
-          recipeInstanceId, paymentMade)
+        _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, orderPlaced)
+        _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, paymentMade)
+        _ <- baker.awaitCompleted(recipeInstanceId, timeout = 5.seconds)
         state <- baker.getRecipeInstanceState(recipeInstanceId)
         provided = state
           .ingredients

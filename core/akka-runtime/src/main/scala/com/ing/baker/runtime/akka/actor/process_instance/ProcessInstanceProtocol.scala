@@ -22,6 +22,20 @@ object ProcessInstanceProtocol {
    */
   case object GetState extends Command
 
+  case object AwaitCompleted extends Command
+
+  /**
+   * Response to the AwaitCompleted query, confirming the instance has completed.
+   */
+  case object Completed extends BakerSerializable
+
+  case class AwaitEvent(eventName: String) extends Command
+
+  /**
+   * Response confirming the event has occurred.
+   */
+  case object EventOccurred extends BakerSerializable
+
   /**
     * Command to request the current ingredient
     */
