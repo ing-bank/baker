@@ -169,7 +169,6 @@ object AllTypeRecipe {
             .build()
           )
           .withMaximumInteractionCount(5)
-          .withOverriddenIngredientName("longIngredient", "renamedLongIngredient")
           .withRequiredOneOfEvents(mapEvent, otherEvent),
         interactionFour.withFailureStrategy(InteractionFailureStrategy.RetryWithIncrementalBackoff.builder()
           .withInitialDelay(5.seconds)

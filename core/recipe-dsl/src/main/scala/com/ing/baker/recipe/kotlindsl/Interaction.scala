@@ -26,7 +26,6 @@ class Interaction private(
   failureStrategyInput: Option[common.InteractionFailureStrategy],
   isReproviderInput: Boolean
 ) extends common.InteractionDescriptor {
-
   override val name: String = nameInput
   override val originalName: String = originalNameInput
   override val inputIngredients: Seq[common.Ingredient] = inputIngredientsInput
@@ -40,6 +39,15 @@ class Interaction private(
   override val maximumInteractionCount: Option[Int] = maximumInteractionCountInput
   override val failureStrategy: Option[common.InteractionFailureStrategy] = failureStrategyInput
   override val isReprovider: Boolean = isReproviderInput
+
+  // Verifies that all overridden ingredient names exist as input ingredients.
+  // This check is part of the constructor, so it's executed on every instantiation.
+  private val allIngredientNames: Set[String] = inputIngredients.map(_.name).toSet
+  overriddenIngredientNames.keys.foreach { oldName =>
+    require(allIngredientNames.contains(oldName),
+      s"Ingredient to override '$oldName' does not exist in the interaction '$name'. " +
+        s"Available ingredients are: ${allIngredientNames.mkString(", ")}")
+  }
 }
 
 object Interaction {
