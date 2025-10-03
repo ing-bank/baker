@@ -151,7 +151,7 @@ __Note: Names of sensory `Event` and `EventInstance` must match, so that Baker c
 
     ```
 
-To fire a `SensoryEvent` use the `bakerRuntime.fireEvent(recipeInstanceId, event)` API variations, 
+To fire a `SensoryEvent` use the `bakerRuntime.fireSensoryEventAndAwaitReceived(recipeInstanceId, event)` API, 
 after creating the baker runtime, adding your recipe to the runtime and `baking` a `RecipeInstance`. For full 
 documentation on this please refer to the [runtime documentation](../../reference/runtime/).
 
@@ -173,7 +173,7 @@ documentation on this please refer to the [runtime documentation](../../referenc
         .unsafeFrom(OrderPlaced("order-uuid", List("item1", "item2")))
     val recipeInstanceId: String = "recipe id from previously baked recipe instance"
 
-    val result: Future[EventResult] = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, FirstOrderPlaced)
+    val result: Future[SensoryEventStatus] = baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, FirstOrderPlaced)
     ```
 
 === "Java"
@@ -196,7 +196,7 @@ documentation on this please refer to the [runtime documentation](../../referenc
     EventInstance firstOrderPlaced = 
             EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
 
-    CompletableFuture<EventResult> result = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced);
+    CompletableFuture<SensoryEventStatus> result = baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, firstOrderPlaced);
     ```
 
 ## Interaction and InteractionInstance
@@ -532,8 +532,10 @@ the `Interaction`
         _ <- baker.bake(recipeId, "first-instance-id")
         firstOrderPlaced: EventInstance =
             EventInstance.unsafeFrom(WebshopRecipeReflection.OrderPlaced("order-uuid", List("item1", "item2")))
-        result <- baker.fireEventAndResolveWhenCompleted("first-instance-id", firstOrderPlaced)
-    } yield assert(result.events == Seq(
+        _ <- baker.fireSensoryEventAndAwaitReceived("first-instance-id", firstOrderPlaced)
+        _ <- baker.awaitCompleted("first-instance-id", timeout=5.seconds)
+        eventNames <- baker.getEventNames("first-instance-id")
+    } yield assert(eventNames == Seq(
         WebshopRecipe.Events.OrderPlaced.name,
         WebshopRecipe.Events.ItemsReserved.name
     ))
@@ -571,8 +573,9 @@ the `Interaction`
     CompletableFuture<List<String>> result = baker.addInteractionInstance(reserveItemsInstance)
         .thenCompose(ignore -> baker.addRecipe(RecipeRecord.of(compiledRecipe)))
         .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
-        .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
-        .thenApply(EventResult::events);
+        .thenCompose(ignore -> baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, firstOrderPlaced))
+        .thenCompose(ignore -> baker.awaitCompleted(recipeInstanceId, Duration.ofSeconds(5)))
+        .thenCompose(ignore -> baker.getEventNames(recipeInstanceId))
 
     List<String> blockedResult = result.join();
     assert(blockedResult.contains("OrderPlaced") && blockedResult.contains("ReservedItems"));

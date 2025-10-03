@@ -398,32 +398,12 @@ named "unsafe").
         EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
     ```
 
-## baker.fireEvent(recipeInstanceId, eventInstance)
+## baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, eventInstance)
 
-After creation of a `RecipeInstance`, you use one of the variations of `baker.fireEvent(recipeInstanceId, eventInstance)`
-to fire your `EventInstances` and start/continue the process flow. There are several supported semantics for firing an 
-event which depend on the moment you want to get notified and continue your asynchronous computation, these are the 4 
-different moments:
+After creation of a `RecipeInstance`, you use `baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, eventInstance)`
+to fire your `EventInstances` and start/continue the process flow.
 
-1. When the event got accepted by the `RecipeInstance` but has not started cascading the execution of `InteractionInstances`. 
-For this use the `Baker.fireEventAndResolveWhenReceived(recipeInstanceId, eventInstance)` API. This will return a 
-`Future[SensoryEventStatus]` enum notifying of the outcome (the event might get rejected).
-
-2. When the event got accepted by the `RecipeInstance` and has finished cascading the execution of `InteractionInstances`
-up to the point that it requires more `EventInstances` (`SensoryEvents`) to continue, or the process has finished.
-For this use the `Baker.fireEventAndResolveWhenCompleted(recipeInstanceId, eventInstance)` API. This will return a 
-`Future[EventResult]` object containing a `SensoryEventStatus`, the `Event` names that got fired in consequence of this 
-`SensoryEvent`, and the current available `Ingredients` output of the `InteractionInstances` that got executed as consequence 
-of the `SensoryEvent`.
-
-3. You want to do something on both of the previously mentioned moments, then use the 
-`Baker.fireEvent(recipeInstanceId, eventInstance)` API, which will return an `EventResolutions` object which contains both
-`Future[SensoryEventStatus]` and `Future[EventResult]` (or its `CompletableFuture<A>` equivalents in Java).
-
-4. As soon as an intermediate `Event` fires from one of the `InteractionInstances` that execute as consequence of the fired
-`SensoryEvent`. For this use the `Baker.fireEventAndResolveOnEvent(recipeInstanceId, eventInstance, onEventName)` API. This will return 
-a similar `Future[EventResult` to the one returned by `Baker.fireEventAndResolveWhenCompleted` except the data will be up
-to the moment the `onEventName` was fired.
+This will return a `Future[SensoryEventStatus]` notifying you once the `RecipeInstance` has received and persisted the sensory event.
 
 ### correlationId
 
@@ -438,9 +418,9 @@ This can be applied to the `OrderPlaced` event for example.
     val correlationOrderId = "a unique order id"
 
     for {
-        statusA <- baker.processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId)
+        statusA <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId)
         _ = assert(statusA == Received)
-        statusB <- baker.processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId)
+        statusB <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId)
         _ = assert(statusB == AlreadyReceived)
     } yield ()
     ```
@@ -451,12 +431,12 @@ This can be applied to the `OrderPlaced` event for example.
     String correlationOrderId = "a unique order id";
 
     SensoryEventStatus statusA = baker
-        .processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId);
+        .fireSensoryEventAndAwaitReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId);
         .join();
     assert(statusA == Received);
 
     SensoryEventStatus statusB = baker
-        .processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId);
+        .fireSensoryEventAndAwaitReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId);
         .join();
     assert(statusB == AlreadyReceived);
 
@@ -472,6 +452,21 @@ This can be applied to the `OrderPlaced` event for example.
 | `ReceivePeriodExpired` | The receive period for the process instance has passed |
 | `FiringLimitMet` | The `firing limit` for the event was met |
 
+
+## baker.awaitCompleted(recipeInstanceId, timeout)
+
+Once you have started the execution inside a `RecipeInstance` you can use `awaitCompleted` to wait for it to stop
+processing again.
+
+The execution of a `RecipeInstance` is considered `Completed` once there are no more jobs or delayed transitions that
+await processing. This means if you use the `TimerInteraction` or a `retry strategy` which causes the instance to sleep
+for a while (idle state) it will still not be regarded as `Completed` since there are delayed transitions outstanding.
+
+## baker.awaitEvent(recipeInstanceId, eventName, timeout)
+
+You can use `awaitEvent` to wait for a specific event to occur within a `RecipeInstance`. This is useful for synchronizing with key milestones in a process without having to wait for the entire recipe to finish.
+
+The call will block until an event with the given `eventName` has been successfully fired by a transition and persisted in the recipe instance's state.
 
 ## baker.getRecipeInstanceState(recipeInstanceId)
 

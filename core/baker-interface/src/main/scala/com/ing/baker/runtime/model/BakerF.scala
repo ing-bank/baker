@@ -286,6 +286,9 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
   override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: String): EventResolutionsType =
     fireEvent(recipeInstanceId, event, Some(correlationId))
 
+  def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance): F[SensoryEventStatus] =
+    fireSensoryEventAndAwaitReceived(recipeInstanceId, event, Option.empty)
+
   override def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventStatus] =
     components.recipeInstanceManager
       .fireSensoryEventAndAwaitReceived(recipeInstanceId, event, correlationId)

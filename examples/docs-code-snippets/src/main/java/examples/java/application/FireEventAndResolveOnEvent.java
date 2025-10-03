@@ -4,6 +4,8 @@ import com.ing.baker.runtime.javadsl.Baker;
 import com.ing.baker.runtime.javadsl.EventInstance;
 import examples.java.events.OrderPlaced;
 
+import java.time.Duration;
+
 public class FireEventAndResolveOnEvent {
 
     private final Baker baker;
@@ -14,6 +16,7 @@ public class FireEventAndResolveOnEvent {
 
     public void example(String recipeInstanceId, OrderPlaced orderPlaced) {
         var eventInstance = EventInstance.from(orderPlaced);
-        var sensoryEventResult = baker.fireEventAndResolveOnEvent(recipeInstanceId, eventInstance, "ExpectedEvent").join();
+        baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, eventInstance).join();
+        baker.awaitEvent(recipeInstanceId, "ExpectedEvent", Duration.ofSeconds(5)).join();
     }
 }
