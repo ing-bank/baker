@@ -37,6 +37,18 @@ fun recipe(name: String, configuration: (RecipeBuilder.() -> Unit) = {}): Recipe
     return RecipeBuilder(name).apply(configuration).build()
 }
 
+/**
+ * Helper for specifying an event by its class.
+ * To be used with `requiredEvents` and `requiredOneOfEvents`.
+ */
+inline fun <reified T> event(): String = T::class.simpleName!!
+
+/**
+ * Helper for specifying an event by its name.
+ * To be used with `requiredEvents` and `requiredOneOfEvents`.
+ */
+fun event(name: String): String = name
+
 @RecipeDslMarker
 class RecipeBuilder(private val name: String) {
     /**
@@ -283,22 +295,39 @@ class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.
 
 
     /**
-     * All events specified in this block have to be available for the interaction to be executed (AND precondition).
+     * Specifies events that are all required for the interaction to execute (AND logic).
      *
+     * Example:
+     * ```
+     * requiredEvents(
+     *     event<PaymentReceived>(),
+     *     event("ShippingAddressReceived")
+     * )
+     * ```
      * @see requiredOneOfEvents
      */
-    fun requiredEvents(init: InteractionRequiredEventsBuilder.() -> Unit) {
-        requiredEvents.addAll(InteractionRequiredEventsBuilder().apply(init).build())
+    fun requiredEvents(vararg events: String) {
+        requiredEvents.addAll(events)
     }
 
     /**
-     * One of the events specified in this block have to be available for the interaction to be
-     * executed (OR precondition).
+     * Specifies a set of events where at least one is required for the interaction to execute (OR logic).
+     * This function can be called multiple times to create multiple OR groups.
      *
+     * Example:
+     * ```
+     * requiredOneOfEvents(
+     *     event<CustomerInfoReceived>(),
+     *     event<LegacyCustomerInfoReceived>()
+     * )
+     * ```
      * @see requiredEvents
      */
-    fun requiredOneOfEvents(init: InteractionRequiredOneOfEventsBuilder.() -> Unit) {
-        requiredOneOfEvents.add(InteractionRequiredOneOfEventsBuilder().apply(init).build())
+    fun requiredOneOfEvents(vararg events: String) {
+        if (events.size < 2) {
+            throw IllegalArgumentException("At least 2 events should be provided for a requiredOneOfEvents clause.")
+        }
+        requiredOneOfEvents.add(events.toSet())
     }
 
     /**
@@ -488,38 +517,6 @@ class IngredientNameOverridesBuilder {
 }
 
 @RecipeDslMarker
-class InteractionRequiredEventsBuilder {
-    @PublishedApi
-    internal val events = mutableSetOf<String>()
-
-    inline fun <reified T> event() {
-        events.add(T::class.simpleName!!)
-    }
-
-    fun event(name: String) {
-        events.add(name)
-    }
-
-    internal fun build() = events.toSet()
-}
-
-@RecipeDslMarker
-class InteractionRequiredOneOfEventsBuilder {
-    @PublishedApi
-    internal val events = mutableSetOf<String>()
-
-    inline fun <reified T> event() {
-        events.add(T::class.simpleName!!)
-    }
-
-    fun event(name: String) {
-        events.add(name)
-    }
-
-    internal fun build() = events.toSet()
-}
-
-@RecipeDslMarker
 class SensoryEventsBuilder {
     @PublishedApi
     internal val events = mutableMapOf<KClass<*>, Int?>()
@@ -552,22 +549,24 @@ class CheckpointEventBuilder {
     private val requiredOneOfEvents: MutableSet<Set<String>> = mutableSetOf()
 
     /**
-     * All events specified in this block have to be available for the checkpoint to be executed (AND precondition).
+     * All events specified must be available for the checkpoint to be created (AND logic).
      *
      * @see requiredOneOfEvents
      */
-    fun requiredEvents(init: InteractionRequiredEventsBuilder.() -> Unit) {
-        requiredEvents.addAll(InteractionRequiredEventsBuilder().apply(init).build())
+    fun requiredEvents(vararg events: String) {
+        requiredEvents.addAll(events)
     }
 
     /**
-     * One of the events specified in this block have to be available for the checkpoint to be
-     * executed (OR precondition).
+     * One of the events specified must be available for the checkpoint to be created (OR logic).
      *
      * @see requiredEvents
      */
-    fun requiredOneOfEvents(init: InteractionRequiredOneOfEventsBuilder.() -> Unit) {
-        requiredOneOfEvents.add(InteractionRequiredOneOfEventsBuilder().apply(init).build())
+    fun requiredOneOfEvents(vararg events: String) {
+        if (events.size < 2) {
+            throw IllegalArgumentException("At least 2 events should be provided for a requiredOneOfEvents clause.")
+        }
+        requiredOneOfEvents.add(events.toSet())
     }
 
     internal fun build(eventName: String) = CheckPointEvent(eventName, requiredEvents, requiredOneOfEvents)

@@ -1,6 +1,7 @@
 package examples.kotlin.recipes
 
 import com.ing.baker.recipe.kotlindsl.ExperimentalDsl
+import com.ing.baker.recipe.kotlindsl.event
 import com.ing.baker.recipe.kotlindsl.recipe
 import examples.kotlin.events.OrderPlaced
 import examples.kotlin.interactions.CancelOrder
@@ -16,14 +17,14 @@ object WebShopRecipe {
         }
         interaction<CheckStock>()
         interaction<ShipOrder> {
-            requiredEvents {
+            requiredEvents(
                 event<SufficientStock>()
-            }
+            )
         }
         interaction<CancelOrder> {
-            requiredEvents {
+            requiredEvents(
                 event<OrderHasUnavailableItems>()
-            }
+            )
         }
     }
 }

@@ -67,9 +67,9 @@ class KotlinDslTest {
                     fireRetryExhaustedEvent = "TestEvent1"
                     until = maximumRetries(20)
                 }
-                requiredEvents {
+                requiredEvents(
                     event<Interactions.MakePayment.PaymentSuccessful>()
-                }
+                )
             }
             interaction<Interactions.ShipItems> {
                 name = "foo"
@@ -80,15 +80,15 @@ class KotlinDslTest {
                     "bar" to true
                 }
 
-                requiredEvents {
-                    event<Interactions.MakePayment.PaymentSuccessful>()
+                requiredEvents(
+                    event<Interactions.MakePayment.PaymentSuccessful>(),
                     event("myEvent")
-                }
+                )
 
-                requiredOneOfEvents {
-                    event<Ingredients.PaymentInformation>()
+                requiredOneOfEvents(
+                    event<Ingredients.PaymentInformation>(),
                     event("SomeEvent")
-                }
+                )
 
                 transformEvent<Char>("foo")
 
@@ -98,8 +98,8 @@ class KotlinDslTest {
                 }
 
                 ingredientNameOverrides {
-                    "foo" to "yolo"
-                    "bar" to "krakaka"
+                    "shippingAddress" to "yolo"
+                    "reservedItems" to "krakaka"
                 }
             }
         }
@@ -251,8 +251,8 @@ class KotlinDslTest {
             )
 
             assertEquals(2, overriddenIngredientNames().size())
-            assertEquals("yolo", overriddenIngredientNames().get("foo").get())
-            assertEquals("krakaka", overriddenIngredientNames().get("bar").get())
+            assertEquals("yolo", overriddenIngredientNames().get("shippingAddress").get())
+            assertEquals("krakaka", overriddenIngredientNames().get("reservedItems").get())
 
             assertTrue(failureStrategy().isEmpty)
         }
@@ -383,15 +383,15 @@ class KotlinDslTest {
     fun `create a recipe with checkpoint events`() {
         val recipe = recipe("RecipeWithCheckpointEvent") {
             checkpointEvent("Success") {
-                requiredEvents {
-                    event<Interactions.MakePayment.PaymentSuccessful>()
+                requiredEvents(
+                    event<Interactions.MakePayment.PaymentSuccessful>(),
                     event("myEvent")
-                }
+                )
 
-                requiredOneOfEvents {
-                    event<Ingredients.PaymentInformation>()
+                requiredOneOfEvents(
+                    event<Ingredients.PaymentInformation>(),
                     event("SomeEvent")
-                }
+                )
             }
         }
 
@@ -460,9 +460,9 @@ class KotlinDslTest {
                     fireRetryExhaustedEvent = "TestEvent1"
                     until = maximumRetries(20)
                 }
-                requiredEvents {
+                requiredEvents(
                     event<Interactions.MakePayment.PaymentSuccessful>()
-                }
+                )
             }
         }
 
