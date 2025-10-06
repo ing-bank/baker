@@ -330,20 +330,6 @@ class ProcessInstance(
         log.debug("Receive timeout happened but jobs are still active: will wait for another receive timeout")
       }
 
-    case Terminated(deadActorRef) =>
-      // unwatch
-      context.unwatch(deadActorRef)
-
-      // Remove the dead actor from the idle listeners set
-      completionListeners -= deadActorRef
-
-      // Remove the dead actor from all event waiter sets
-      eventListeners = eventListeners.map {
-        case (eventName, waiters) => eventName -> (waiters - deadActorRef)
-      }.filter {
-        case (_, waiters) => waiters.nonEmpty // Clean up empty event entries
-      }
-
     case ProcessInstanceProtocol.AwaitCompleted =>
       if (instance.hasCompletedExecution) {
         sender() ! ProcessInstanceProtocol.Completed
