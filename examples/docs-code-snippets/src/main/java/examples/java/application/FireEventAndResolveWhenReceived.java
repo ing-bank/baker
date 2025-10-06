@@ -14,6 +14,6 @@ public class FireEventAndResolveWhenReceived {
 
     public void example(String recipeInstanceId, OrderPlaced orderPlaced) {
         var eventInstance = EventInstance.from(orderPlaced);
-        baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, eventInstance).join();
+        var sensoryEventStatus = baker.fireEventAndResolveWhenReceived(recipeInstanceId, eventInstance).join();
     }
 }
