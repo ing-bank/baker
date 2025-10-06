@@ -48,6 +48,9 @@ case class Instance[S](
     */
   def activeJobs: Iterable[Job[S]] = jobs.values.filter(_.isActive)
 
+  def hasCompletedExecution: Boolean =
+    activeJobs.isEmpty && delayedTransitionIds.values.forall(_ <= 0)
+
   /**
     * Checks whether a transition is blocked by a previous failure.
     */

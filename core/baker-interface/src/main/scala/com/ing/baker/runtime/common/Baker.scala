@@ -38,6 +38,8 @@ trait Baker[F[_]] extends LanguageApi {
 
   type InteractionExecutionResultType <: InteractionExecutionResult { type Language <: self.Language }
 
+  type DurationType
+
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
     *
@@ -119,161 +121,97 @@ trait Baker[F[_]] extends LanguageApi {
   def deleteRecipeInstance(recipeInstanceId: String, removeFromIndex: Boolean): F[Unit]
 
   /**
-    * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
-    *
-    * Possible failures:
-    * `NoSuchProcessException` -> When no process exists for the given id
-    * `ProcessDeletedException` -> If the process is already deleted
-    *
-    * @param recipeInstanceId The process identifier
-    * @param event     The event object
-    */
+   * Fires a sensory event for a given recipe instance and waits until it has been accepted and persisted.
+   *
+   * This method is fast and returns as soon as the event is stored in the journal. It does NOT wait for
+   * any interactions to be executed.
+   *
+   * @param recipeInstanceId The identifier of the recipe instance.
+   * @param event            The sensory event instance to fire.
+   * @param correlationId    An optional correlation identifier. If provided, Baker guarantees that an event with the
+   *                         same correlation ID is only processed once. This is crucial for building idempotent
+   *                         systems. If a second event with the same ID arrives, the method will fail with
+   *                         [[AlreadyReceivedException]].
+   * @return A future that resolves to [[SensoryEventStatus.Received]] when the event has been successfully persisted.
+   * @throws NoSuchProcessException                if the recipe instance does not exist.
+   * @throws ProcessDeletedException               if the recipe instance has been deleted.
+   * @throws InvalidEventException                 if the event is not a valid sensory event for the recipe.
+   * @throws AlreadyReceivedException              if an event with the same `correlationId` has already been received.
+   * @throws java.util.concurrent.TimeoutException if the request does not complete within the configured `baker.process-event-timeout`.
+   *                                               Note that a timeout does NOT mean the event was not processed; it may still be
+   *                                               processed later.
+   */
+  def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstanceType, correlationId: language.Option[String]): F[SensoryEventStatus]
+
+  /**
+   * Waits for a specific event to be fired and persisted for a recipe instance.
+   *
+   * This method polls the event history of the recipe instance until an event with the given name appears,
+   * or until the specified timeout is reached.
+   *
+   * If the provided `eventName` is not defined in the recipe, this method will fail immediately with
+   * [[InvalidEventException]].
+   *
+   * @param recipeInstanceId The identifier of the recipe instance.
+   * @param eventName        The name of the event to wait for. This can be any event, not just a sensory one.
+   * @param timeout          The maximum duration to wait for the event.
+   * @return A future that resolves to [[SensoryEventStatus.Completed]] when the event is found.
+   * @throws InvalidEventException   if the `eventName` is not defined in the recipe. This check is performed upfront.
+   * @throws NoSuchProcessException  if the recipe instance does not exist.
+   * @throws ProcessDeletedException if the recipe instance has been deleted.
+   * @throws TimeoutException        if the event does not occur within the specified `timeout`.
+   */
+  def awaitEvent(recipeInstanceId: String, eventName: String, timeout: DurationType): F[Unit]
+
+  /**
+   * Waits until a recipe instance completes execution.
+   *
+   * An execution is considered completed when there are no more running or scheduled jobs (e.g., interactions, delayed events).
+   * This is useful for ensuring that a process has fully completed its execution flow after an event has been fired.
+   *
+   * @param recipeInstanceId The identifier of the recipe instance.
+   * @param timeout          The maximum duration to wait for the execution to become completed.
+   * @return A future that resolves to [[SensoryEventStatus.Completed]] when the executions has completed.
+   * @throws NoSuchProcessException  if the recipe instance does not exist.
+   * @throws ProcessDeletedException if the recipe instance has been deleted.
+   * @throws TimeoutException        if the execution does not complete within the specified `timeout`.
+   */
+  def awaitCompleted(recipeInstanceId: String, timeout: DurationType): F[SensoryEventStatus]
+
+  @deprecated("This method is deprecated and will be removed after December 1st, 2026. Please use fireSensoryEventAndAwaitReceived instead.", "5.1.0")
   def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstanceType): F[SensoryEventStatus]
 
-  /**
-    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
-    *
-    * Possible failures:
-    * `NoSuchProcessException` -> When no process exists for the given id
-    * `ProcessDeletedException` -> If the process is already deleted
-    *
-    * @param recipeInstanceId The process identifier
-    * @param event     The event object
-    */
+  @deprecated("This method is deprecated and will be removed after December 1st, 2026. Please use the combination of fireSensoryEventAndAwaitReceived followed by awaitCompleted.", "5.1.0")
   def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstanceType): F[SensoryEventResultType]
 
-  /**
-    * Notifies Baker that an event has happened and waits until an specific event has executed.
-    *
-    * Possible failures:
-    * `NoSuchProcessException` -> When no process exists for the given id
-    * `ProcessDeletedException` -> If the process is already deleted
-    *
-    * @param recipeInstanceId The process identifier
-    * @param event     The event object
-    * @param on        The name of the event to wait for
-    */
+  @deprecated("This method is deprecated and will be removed after December 1st, 2026. Please use the combination of fireSensoryEventAndAwaitReceived followed by awaitEvent.", "5.1.0")
   def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstanceType, on: String): F[SensoryEventResultType]
 
-  /**
-    * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
-    * the process, and another for when the event was fully executed by the process.
-    *
-    * Possible failures:
-    * `NoSuchProcessException` -> When no process exists for the given id
-    * `ProcessDeletedException` -> If the process is already deleted
-    *
-    * @param recipeInstanceId The process identifier
-    * @param event     The event object
-    */
+  @deprecated("This method uses a callback-style API that is deprecated and will be removed after December 1st, 2026. Please use the new composable API: fireSensoryEventAndAwaitReceived followed by awaitCompleted or awaitEvent.", "5.1.0")
   def fireEvent(recipeInstanceId: String, event: EventInstanceType): EventResolutionsType
 
-  /**
-    * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
-    *
-    * Possible failures:
-    * `NoSuchProcessException` -> When no process exists for the given id
-    * `ProcessDeletedException` -> If the process is already deleted
-    *
-    * @param recipeInstanceId     The process identifier
-    * @param event         The event object
-    * @param correlationId Id used to ensure the process instance handles unique events
-    */
+  @deprecated("This method is deprecated and will be removed after December 1st, 2026. Please use fireSensoryEventAndAwaitReceived instead.", "5.1.0")
   def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstanceType, correlationId: String): F[SensoryEventStatus]
 
-  /**
-    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
-    *
-    * Possible failures:
-    * `NoSuchProcessException` -> When no process exists for the given id
-    * `ProcessDeletedException` -> If the process is already deleted
-    *
-    * @param recipeInstanceId     The process identifier
-    * @param event         The event object
-    * @param correlationId Id used to ensure the process instance handles unique events
-    */
+  @deprecated("This method is deprecated and will be removed after December 1st, 2026. Please use the combination of fireSensoryEventAndAwaitReceived followed by awaitCompleted.", "5.1.0")
   def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstanceType, correlationId: String): F[SensoryEventResultType]
 
-  /**
-    * Notifies Baker that an event has happened and waits until an specific event has executed.
-    *
-    * Possible failures:
-    * `NoSuchProcessException` -> When no process exists for the given id
-    * `ProcessDeletedException` -> If the process is already deleted
-    *
-    * @param recipeInstanceId The process identifier
-    * @param event     The event object
-    * @param onEvent        The name of the event to wait for
-    * @param correlationId Id used to ensure the process instance handles unique events
-    */
+  @deprecated("This method is deprecated and will be removed after December 1st, 2026. Please use the combination of fireSensoryEventAndAwaitReceived followed by awaitEvent.", "5.1.0")
   def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstanceType, onEvent: String, correlationId: String): F[SensoryEventResultType]
 
-  /**
-    * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
-    * the process, and another for when the event was fully executed by the process.
-    *
-    * Possible failures:
-    * `NoSuchProcessException` -> When no process exists for the given id
-    * `ProcessDeletedException` -> If the process is already deleted
-    *
-    * @param recipeInstanceId     The process identifier
-    * @param event         The event object
-    * @param correlationId Id used to ensure the process instance handles unique events
-    */
+  @deprecated("This method uses a callback-style API that is deprecated and will be removed after December 1st, 2026. Please use the new composable API: fireSensoryEventAndAwaitReceived followed by awaitCompleted or awaitEvent.", "5.1.0")
   def fireEvent(recipeInstanceId: String, event: EventInstanceType, correlationId: String): EventResolutionsType
 
-  /**
-    * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
-    *
-    * Possible failures:
-    * `NoSuchProcessException` -> When no process exists for the given id
-    * `ProcessDeletedException` -> If the process is already deleted
-    *
-    * @param recipeInstanceId     The process identifier
-    * @param event         The event object
-    * @param correlationId Id used to ensure the process instance handles unique events
-    */
+  @deprecated("This method is deprecated and will be removed after December 1st, 2026. Please use fireSensoryEventAndAwaitReceived instead.", "5.1.0")
   def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstanceType, correlationId: language.Option[String]): F[SensoryEventStatus]
 
-  /**
-    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
-    *
-    * Possible failures:
-    * `NoSuchProcessException` -> When no process exists for the given id
-    * `ProcessDeletedException` -> If the process is already deleted
-    *
-    * @param recipeInstanceId     The process identifier
-    * @param event         The event object
-    * @param correlationId Id used to ensure the process instance handles unique events
-    */
+  @deprecated("This method is deprecated and will be removed after December 1st, 2026. Please use the combination of fireSensoryEventAndAwaitReceived followed by awaitCompleted.", "5.1.0")
   def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstanceType, correlationId: language.Option[String]): F[SensoryEventResultType]
 
-  /**
-    * Notifies Baker that an event has happened and waits until an specific event has executed.
-    *
-    * Possible failures:
-    * `NoSuchProcessException` -> When no process exists for the given id
-    * `ProcessDeletedException` -> If the process is already deleted
-    *
-    * @param recipeInstanceId The process identifier
-    * @param event     The event object
-    * @param onEvent        The name of the event to wait for
-    * @param correlationId Id used to ensure the process instance handles unique events
-    */
+  @deprecated("This method is deprecated and will be removed after December 1st, 2026. Please use the combination of fireSensoryEventAndAwaitReceived followed by awaitEvent.", "5.1.0")
   def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstanceType, onEvent: String, correlationId: language.Option[String]): F[SensoryEventResultType]
 
-  /**
-    * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
-    * the process, and another for when the event was fully executed by the process.
-    *
-    * Possible failures:
-    * `NoSuchProcessException` -> When no process exists for the given id
-    * `ProcessDeletedException` -> If the process is already deleted
-    *
-    * @param recipeInstanceId     The process identifier
-    * @param event         The event object
-    * @param correlationId Id used to ensure the process instance handles unique events
-    */
+  @deprecated("This method uses a callback-style API that is deprecated and will be removed after December 1st, 2026. Please use the new composable API: fireSensoryEventAndAwaitReceived followed by awaitCompleted or awaitEvent.", "5.1.0")
   def fireEvent(recipeInstanceId: String, event: EventInstanceType, correlationId: language.Option[String]): EventResolutionsType
 
   /**

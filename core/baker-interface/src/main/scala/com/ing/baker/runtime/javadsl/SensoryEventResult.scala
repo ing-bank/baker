@@ -8,10 +8,10 @@ import com.ing.baker.types.Value
 import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
+@deprecated("The SensoryEventResult class will be removed after December 2026. Use fireSensoryEventAndAwaitReceived -> awaitCompleted -> getIngredients + getEventNames instead.", "5.1.0")
 case class SensoryEventResult(
                                sensoryEventStatus: SensoryEventStatus,
                                eventNames: java.util.List[String],
-                               @deprecated("This will be removed in the next version, use Baker.getIngredients instead.", "3.8.0")
                                ingredients: java.util.Map[String, Value]
 ) extends common.SensoryEventResult with JavaApi {
 

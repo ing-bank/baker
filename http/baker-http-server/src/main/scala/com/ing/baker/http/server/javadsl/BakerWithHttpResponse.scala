@@ -1,6 +1,7 @@
 package com.ing.baker.http.server.javadsl
 
 import com.ing.baker.http.server.common.RecipeLoader
+import com.ing.baker.runtime.akka.actor.protobuf.SensoryEventStatus
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance}
 import com.ing.baker.runtime.serialization.JsonDecoders._
@@ -14,6 +15,7 @@ import io.circe.parser.parse
 import java.nio.charset.Charset
 import java.util.concurrent.{CompletableFuture => JFuture}
 import java.util.{Optional, UUID}
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.FutureConverters.FutureOps
 
@@ -174,6 +176,15 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
 
     def delete(removeFromIndex: Boolean): JFuture[String] =
       baker.deleteRecipeInstance(recipeInstanceId, removeFromIndex).toBakerResult
+
+    def fireSensoryEventAndAwaitReceived(eventJson: String, maybeCorrelationId: Optional[String]): JFuture[String] =
+      parseEventAndExecute(eventJson, baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, _, toOption(maybeCorrelationId)))
+
+    def awaitCompleted(timeout: FiniteDuration): JFuture[String] =
+      baker.awaitCompleted(recipeInstanceId, timeout).toBakerResult
+
+    def awaitEvent(eventName: String, timeout: FiniteDuration): JFuture[String]  =
+      baker.awaitEvent(recipeInstanceId, eventName, timeout).toBakerResult
   }
 
   private def toOption[T](opt: Optional[T]): Option[T] = if (opt.isPresent) Some(opt.get()) else None

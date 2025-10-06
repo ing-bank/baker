@@ -41,7 +41,7 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
         CheckoutFlowEvents.OrderPlaced(items.map(Item)))
       for {
         _ <- baker.bake(checkoutRecipeId, orderId)
-        status <- baker.fireEventAndResolveWhenReceived(orderId, event)
+        status <- baker.fireSensoryEventAndAwaitReceived(orderId, event)
         _ = logger.info(s"${event.name}[$orderId]: $status")
       } yield orderId
     })
@@ -52,7 +52,7 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
       val event = EventInstance.unsafeFrom(
         CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress(address)))
       for {
-        status <- baker.fireEventAndResolveWhenReceived(orderId, event)
+        status <- baker.fireSensoryEventAndAwaitReceived(orderId, event)
         _ = logger.info(s"${event.name}[$orderId]: $status")
       } yield None
     })
@@ -62,7 +62,7 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
       val event = EventInstance.unsafeFrom(
         CheckoutFlowEvents.PaymentInformationReceived(PaymentInformation(paymentInfo)))
       for {
-        status <- baker.fireEventAndResolveWhenReceived(orderId, event)
+        status <- baker.fireSensoryEventAndAwaitReceived(orderId, event)
         _ = logger.info(s"${event.name}[$orderId]: $status")
       } yield None
     })

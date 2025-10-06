@@ -26,7 +26,7 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit cs: ContextS
       CheckoutFlowEvents.OrderPlaced(items.map(Item)))
     for {
       _ <- IO.fromFuture(IO(baker.bake(checkoutRecipeId, orderId)))
-      status <- IO.fromFuture(IO(baker.fireEventAndResolveWhenReceived(orderId, event)))
+      status <- IO.fromFuture(IO(baker.fireSensoryEventAndAwaitReceived(orderId, event)))
       _ = logger.info(s"${event.name}[$orderId]: $status")
     } yield orderId
   }
@@ -41,7 +41,7 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit cs: ContextS
 
   private def fireAndInformEvent(orderId: String, event: EventInstance): IO[Unit] = {
     IO.fromFuture(IO {
-      baker.fireEventAndResolveWhenReceived(orderId, event)
+      baker.fireSensoryEventAndAwaitReceived(orderId, event)
     }).void
   }
 
