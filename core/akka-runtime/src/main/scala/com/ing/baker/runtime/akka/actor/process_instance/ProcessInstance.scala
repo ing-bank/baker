@@ -160,13 +160,11 @@ class ProcessInstance(
   private var eventListeners: mutable.Map[String, Set[ActorRef]] = mutable.Map.empty
 
   private def addEventListener(eventName: String, listener: ActorRef) = {
-    context.watch(listener)
     val newSet = eventListeners.getOrElse(eventName, Set.empty) + listener
     eventListeners += (eventName -> newSet)
   }
 
   private def removeEventListener(eventName: String, listener: ActorRef) = {
-    context.unwatch(listener)
     val newSet = eventListeners.getOrElse(eventName, Set.empty) - listener
     eventListeners += (eventName -> newSet)
   }
@@ -282,7 +280,6 @@ class ProcessInstance(
       eventListeners.get(eventName).foreach { listenersForThisEvent =>
         // Notify them
         listenersForThisEvent.foreach(listener => {
-          context.unwatch(listener)
           listener ! EventOccurred
         })
         // Remove them from the map
@@ -294,7 +291,6 @@ class ProcessInstance(
     if (updatedInstance.hasCompletedExecution) {
       // Notify all idle waiters
       completionListeners.foreach(listener => {
-        context.unwatch(listener)
         listener ! Completed
       })
       // Clear the idle waiters list
@@ -335,11 +331,9 @@ class ProcessInstance(
         sender() ! ProcessInstanceProtocol.Completed
       }
       // Register listener
-      context.watch(sender())
       completionListeners += sender()
       // Check to avoid race condition
       if (instance.hasCompletedExecution) {
-        context.unwatch(sender())
         completionListeners -= sender()
         sender() ! ProcessInstanceProtocol.Completed
       }
