@@ -1,7 +1,7 @@
 package com.ing.bakery.baker.mocks
 
-import cats.effect.{ContextShift, IO}
-import com.ing.baker.runtime.common.{BakerEvent, EventFired, EventInstance}
+import cats.effect.IO
+import com.ing.baker.runtime.common.{BakerEvent, EventFired}
 import com.ing.bakery.components.EventSink
 
 import scala.collection.mutable
@@ -12,7 +12,7 @@ class EventListener {
 
   val eventSink: EventSink = new EventSink() {
 
-    def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit] = {
+    def fire(event: Any): IO[Unit] = {
       event match {
         case eventFired: EventFired     =>
           events.append(eventFired.eventName)

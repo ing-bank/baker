@@ -1,13 +1,13 @@
 package webshop.webservice
 
-import java.util.UUID
-
-import cats.effect.{ContextShift, IO}
+import cats.effect.IO
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
 import com.typesafe.scalalogging.LazyLogging
 import webshop.webservice.CheckoutFlowIngredients.{Item, PaymentInformation, ShippingAddress}
+
+import java.util.UUID
 
 object WebShopBaker {
 
@@ -15,7 +15,7 @@ object WebShopBaker {
     RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
 }
 
-class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit cs: ContextShift[IO]) extends WebShop with LazyLogging {
+class WebShopBaker(baker: Baker, checkoutRecipeId: String) extends WebShop with LazyLogging {
 
   override def listRecipeNames: IO[List[String]] =
     IO.fromFuture(IO(baker.getAllRecipes)).map(_.values.toList.map(_.compiledRecipe.name))

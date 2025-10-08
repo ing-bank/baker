@@ -1,6 +1,7 @@
 package webshop.webservice
 
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should
 

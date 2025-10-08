@@ -6,11 +6,12 @@ object Dependencies {
   val akkaVersion = "2.10.6"
   val akkaManagementVersion = "1.6.2"
   val akkaPersistenceCassandraVersion = "1.3.2"
-  val http4sVersion = "0.22.15"
+  val http4sVersion = "0.23.17"
+  val http4sVersionPrometheus = "0.25.0"
   val circeVersion = "0.14.14"
-  val fs2Version = "2.5.12"
+  val fs2Version = "3.12.2"
   val mockitoScalaVersion = "2.0.0"
-  val catsEffectVersion = "2.5.5"
+  val catsEffectVersion = "3.6.3"
   val catsCoreVersion = "2.13.0"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
   val springVersion = "6.2.8"
@@ -57,7 +58,7 @@ object Dependencies {
   val kafkaClient = "org.apache.kafka" % "kafka-clients" % "4.0.0"
   val fs2Core = "co.fs2" %% "fs2-core" % fs2Version
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Version
-  val fs2kafka = "com.github.fd4s" %% "fs2-kafka" % "1.11.0"
+  val fs2kafka = "com.github.fd4s" %% "fs2-kafka" % "3.9.0"
   val levelDB = "org.iq80.leveldb" % "leveldb" % "0.12"
 
   val levelDBJni = "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
@@ -85,7 +86,7 @@ object Dependencies {
   val http4sServer = "org.http4s" %% "http4s-blaze-server" % http4sVersion
   val http4sClient = "org.http4s" %% "http4s-blaze-client" % http4sVersion
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sVersion
-  val http4sPrometheus = "org.http4s" %% "http4s-prometheus-metrics" % http4sVersion
+  val http4sPrometheus = "org.http4s" %% "http4s-prometheus-metrics" % http4sVersionPrometheus
   val circe = "io.circe" %% "circe-core" % circeVersion
   val circeParser = "io.circe" %% "circe-parser" % circeVersion
   val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
@@ -95,7 +96,7 @@ object Dependencies {
   val catsEffectTesting = "com.codecommit" %% "cats-effect-testing-scalatest" % "0.5.4"
   val catsCore = "org.typelevel" %% "cats-core" % catsCoreVersion
   val console4Cats = "dev.profunktor" %% "console4cats" % "0.8.0"
-  val catsRetry = "com.github.cb372" %% "cats-retry" % "2.1.2"
+  val catsRetry = "com.github.cb372" %% "cats-retry" % "3.1.3"
 
   val jnrConstants = "com.github.jnr" % "jnr-constants" % "0.10.4"
 

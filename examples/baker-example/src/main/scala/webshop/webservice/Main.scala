@@ -2,7 +2,7 @@ package webshop.webservice
 
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
-import cats.effect.concurrent.Ref
+import cats.effect.kernel.Ref
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
@@ -31,7 +31,7 @@ object Main extends IOApp {
           InteractionInstance.unsafeFrom(new MakePaymentInstance()),
           InteractionInstance.unsafeFrom(new ShipItemsInstance()),
         ))) }
-        checkoutRecipeId <- WebShopBaker.initRecipes(baker)(timer, actorSystem.dispatcher)
+        checkoutRecipeId <- WebShopBaker.initRecipes(baker)(actorSystem.dispatcher)
         sd <- Ref.of[IO, Boolean](false)
         webShopBaker = new WebShopBaker(baker, checkoutRecipeId)(actorSystem.dispatcher)
         memoryDumpPath = config.getString("service.memory-dump-path")

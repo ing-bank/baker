@@ -1,6 +1,7 @@
 package webshop.webservice.recipe
 
-import cats.effect.{IO, Timer}
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import webshop.webservice.recipe.CheckoutFlowEvents.MakePaymentOutput
 import webshop.webservice.recipe.CheckoutFlowIngredients.{PaymentInformation, ReservedItems}
 import webshop.webservice.recipe.CheckoutFlowInteractions.MakePayment
@@ -8,7 +9,7 @@ import webshop.webservice.recipe.CheckoutFlowInteractions.MakePayment
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class MakePaymentInstance(implicit timer: Timer[IO]) extends MakePayment {
+class MakePaymentInstance() extends MakePayment {
 
   override def apply(processId: String, items: ReservedItems, payment: PaymentInformation): Future[MakePaymentOutput] = {
       IO.sleep(5.second)

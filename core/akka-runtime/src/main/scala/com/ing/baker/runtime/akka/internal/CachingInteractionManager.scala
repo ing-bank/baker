@@ -1,15 +1,14 @@
 package com.ing.baker.runtime.akka.internal
 
-import cats.effect.concurrent.Ref
-import cats.effect.{ContextShift, IO, Resource, Sync}
+import cats.effect.{IO, Ref, Resource, Sync}
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.baker.runtime.{model, scaladsl}
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.nowarn
-import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext
+import scala.jdk.CollectionConverters._
 import scala.jdk.FunctionConverters.enrichAsJavaFunction
 
 object CachingInteractionManager {
@@ -39,7 +38,6 @@ object CachingInteractionManager {
 
   private def fromFuture(i: scaladsl.InteractionInstance): model.InteractionInstance[IO] = {
     implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
-    implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
     model.InteractionInstance.build(
       _name = i.name,
       _input = i.input,

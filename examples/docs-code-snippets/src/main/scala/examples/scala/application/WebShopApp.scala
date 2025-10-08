@@ -1,23 +1,20 @@
 package examples.scala.application
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import com.ing.baker.compiler.RecipeCompiler
-import examples.scala.events.OrderPlaced
 import com.ing.baker.runtime.inmemory.InMemoryBaker
 import com.ing.baker.runtime.model.InteractionInstance
 import com.ing.baker.runtime.scaladsl.EventInstance
+import examples.scala.events.OrderPlaced
 import examples.scala.ingredients.Address
 import examples.scala.interactions.{CancelOrderImpl, CheckStockImpl, ShipOrderImpl}
 import examples.scala.recipes.WebShopRecipe
 
 import java.util.UUID
-import scala.concurrent.ExecutionContext
 
 class WebShopApp {
   def main(args: Array[String]): Unit = {
-
-    implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
-    implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
     val interactions = List(
       new CancelOrderImpl(),

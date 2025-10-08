@@ -1,5 +1,6 @@
 package com.ing.baker.http.server.javadsl
 
+import cats.effect.unsafe.IORuntime
 import com.ing.baker.http.server.common.RecipeLoader
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance}
@@ -35,7 +36,7 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
     (for {
       json <- parse(recipe).toOption
       encodedRecipe <- json.as[EncodedRecipe].toOption
-    } yield RecipeLoader.fromBytes(encodedRecipe.base64.getBytes(Charset.forName("UTF-8"))).unsafeToFuture())
+    } yield RecipeLoader.fromBytes(encodedRecipe.base64.getBytes(Charset.forName("UTF-8"))).unsafeToFuture()(IORuntime.global))
       .map(_.flatMap(recipe => baker.addRecipe(recipe, validate = false).mapToBakerResult))
       .getOrElse(Future.failed(new IllegalStateException("Error adding recipe")))
   }.asJava.toCompletableFuture

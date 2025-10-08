@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.akka.internal
 
 import akka.event.EventStream
-import cats.effect.{ContextShift, IO}
+import cats.effect.IO
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet.Place.IngredientPlace
@@ -15,7 +15,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.internal.RecipeRuntime._
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.scaladsl._
-import com.ing.baker.types.{ListValue, PrimitiveValue, RecordValue, Value}
+import com.ing.baker.types.{ListValue, PrimitiveValue, Value}
 
 import java.lang.reflect.InvocationTargetException
 import scala.collection.immutable.{Map, Seq}
@@ -134,8 +134,6 @@ object RecipeRuntime {
 }
 
 class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager[IO], eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime {
-
-  protected implicit lazy val contextShift: ContextShift[IO] = IO.contextShift(ec)
 
   /**
     * All transitions except sensory event interactions are auto-fireable by the runtime

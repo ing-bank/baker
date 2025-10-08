@@ -2,7 +2,7 @@ package com.ing.bakery.components
 
 import akka.actor.ActorSystem
 import cats.Traverse
-import cats.effect.{ConcurrentEffect, ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import cats.syntax.all._
 import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
 import com.ing.baker.runtime.defaultinteractions
@@ -13,13 +13,12 @@ import com.ing.bakery.interaction.{BaseRemoteInteractionClient, RemoteInteractio
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import org.http4s.client.Client
 import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.client.Client
 import org.http4s.{Headers, Uri}
 import scalax.collection.ChainingOps
 
 import java.io.IOException
-import scala.collection.immutable.Seq
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 object InteractionRegistry extends LazyLogging {
@@ -68,10 +67,6 @@ trait TraversingInteractionRegistry extends InteractionRegistry {
 class BaseInteractionRegistry(config: Config, metricService: MetricService, actorSystem: ActorSystem)
   extends TraversingInteractionRegistry
     with LazyLogging {
-
-  implicit val cs: ContextShift[IO] = IO.contextShift(actorSystem.dispatcher)
-  implicit val effect: ConcurrentEffect[IO] = IO.ioConcurrentEffect
-  implicit val timer: Timer[IO] = IO.timer(actorSystem.dispatcher)
 
   // variable state, but changed only once when the resource is started
   protected var managers: List[InteractionManager[IO]] = List.empty[InteractionManager[IO]]
@@ -128,10 +123,9 @@ case class RemoteInteractions(startedAt: Long,
   */
 trait RemoteInteractionDiscovery extends LazyLogging {
 
-  def extractInteractions(remoteInteractions: RemoteInteractionClient, uri: Uri)
-                         (implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[RemoteInteractions] = {
+  def extractInteractions(remoteInteractions: RemoteInteractionClient, uri: Uri): IO[RemoteInteractions] = {
 
-    def within[A](giveUpAfter: FiniteDuration, retries: Int)(f: IO[A])(implicit timer: Timer[IO]): IO[A] = {
+    def within[A](giveUpAfter: FiniteDuration, retries: Int)(f: IO[A]): IO[A] = {
       def attempt(count: Int, times: FiniteDuration): IO[A] = {
         if (count < 1) f else f.attempt.flatMap {
           case Left(e) =>

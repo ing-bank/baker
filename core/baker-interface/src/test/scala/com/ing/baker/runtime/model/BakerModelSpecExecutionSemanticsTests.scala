@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.model
 
-import cats.effect.ConcurrentEffect
-import cats.implicits._
+import cats.effect.{Async, IO, Sync}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, ProcessAlreadyExistsException}
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
@@ -12,13 +11,12 @@ import org.mockito.ArgumentMatchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
 
 import java.util.UUID
-import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
 
-trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
+trait BakerModelSpecExecutionSemanticsTests { self: BakerModelSpec =>
 
-  def runExecutionSemanticsTests()(implicit effect: ConcurrentEffect[F], classTag: ClassTag[F[Any]]): Unit = {
+  def runExecutionSemanticsTests()(implicit sync: Sync[IO], async: Async[IO], classTag: ClassTag[IO[Any]]): Unit = {
     test("bake a process successfully if baking for the first time") { context =>
       for {
         bakerAndRecipeId <- context.setupBakerWithRecipe("FirstTimeBaking")
@@ -31,7 +29,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
     test("allows adding metadata to an RecipeInstance") { context =>
       for {
         bakerAndRecipeId <- context.setupBakerWithRecipe("MetaDataOne")
-        (baker: BakerF[F], recipeId) = bakerAndRecipeId
+        (baker, recipeId) = bakerAndRecipeId
         id = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, id)
         _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value"))
@@ -47,7 +45,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
     test("allows updating metadata to an RecipeInstance") { context =>
       for {
         bakerAndRecipeId <- context.setupBakerWithRecipe("MetaDataTwo")
-        (baker: BakerF[F], recipeId) = bakerAndRecipeId
+        (baker, recipeId) = bakerAndRecipeId
         id = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, id)
         _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value"))
@@ -62,7 +60,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
     test("allows empty metadata to an RecipeInstance") { context =>
       for {
         bakerAndRecipeId <- context.setupBakerWithRecipe("MetaDataThree")
-        (baker: BakerF[F], recipeId) = bakerAndRecipeId
+        (baker, recipeId) = bakerAndRecipeId
         id = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, id)
         _ <- baker.addMetaData(id, Map.empty)
@@ -76,7 +74,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
     test("has no metaData if not given") { context =>
       for {
         bakerAndRecipeId <- context.setupBakerWithRecipe("MetaDataFour")
-        (baker: BakerF[F], recipeId) = bakerAndRecipeId
+        (baker, recipeId) = bakerAndRecipeId
         id = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, id)
         ingredients <- baker.getIngredients(id)
@@ -147,7 +145,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
       for {
         bakerWithRecipe <- context.setupBakerWithRecipe(recipe, mockImplementations)
         (baker, recipeId) = bakerWithRecipe
-        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(sync.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
@@ -169,7 +167,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
       for {
         bakerWithRecipe <- context.setupBakerWithRecipe(recipe, mockImplementations)
         (baker, recipeId) = bakerWithRecipe
-        _ = when(testInteractionOneWithMetaDataMock.apply(anyString(), anyString(), any())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        _ = when(testInteractionOneWithMetaDataMock.apply(anyString(), anyString(), any())).thenReturn(IO.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
         recipeInstanceId = UUID.randomUUID().toString
         metaData = Map("MetaDataKey" -> "MetaDataValue")
         _ <- baker.bake(recipeId, recipeInstanceId, metaData)
@@ -193,7 +191,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
       for {
         bakerWithRecipe <- context.setupBakerWithRecipe(recipe, mockImplementations)
         (baker, recipeId) = bakerWithRecipe
-        _ = when(testInteractionOneWithEventListMock.apply(anyString(), anyString(), any())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        _ = when(testInteractionOneWithEventListMock.apply(anyString(), anyString(), any())).thenReturn(IO.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
         recipeInstanceId = UUID.randomUUID().toString
         eventList = List("InitialEvent")
         _ <- baker.bake(recipeId, recipeInstanceId)
@@ -248,23 +246,23 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
           .withSensoryEvent(sensoryEvent)
 
       val interactionInstances = List(
-        InteractionInstance.build[F](
+        InteractionInstance.build[IO](
           _name = "Interaction1",
           _input = Seq(InteractionInstanceInput(Option.empty, Int32)),
           _output = None,
-          _run = _ => effect.pure(Some(EventInstance("interaction-1-happened", Map("ingredient-1" -> PrimitiveValue("data1")))))
+          _run = _ => IO.pure(Some(EventInstance("interaction-1-happened", Map("ingredient-1" -> PrimitiveValue("data1")))))
         ),
-        InteractionInstance.build[F](
+        InteractionInstance.build[IO](
           _name = "Interaction2",
           _input = Seq(InteractionInstanceInput(Option.empty, CharArray)),
           _output = None,
-          _run = _ => effect.pure(Some(EventInstance("interaction-2-happened", Map("ingredient-2" -> PrimitiveValue("data2")))))
+          _run = _ => IO.pure(Some(EventInstance("interaction-2-happened", Map("ingredient-2" -> PrimitiveValue("data2")))))
         ),
-        InteractionInstance.build[F](
+        InteractionInstance.build[IO](
           _name = "Interaction3",
           _input = Seq(InteractionInstanceInput(Option.empty, CharArray)),
           _output = None,
-          _run = _ => effect.pure(Some(EventInstance("interaction-3-happened", Map("final" -> PrimitiveValue("data3")))))
+          _run = _ => IO.pure(Some(EventInstance("interaction-3-happened", Map("final" -> PrimitiveValue("data3")))))
         )
       )
 
@@ -283,7 +281,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
           Map("ingredient-0" -> PrimitiveValue(42),
             "ingredient-1" -> PrimitiveValue("data1"),
             "ingredient-2" -> PrimitiveValue("data2"))
-        _ <- timer.sleep(100.millis).to[F]
+        _ <- async.sleep(100.millis)
         state <- baker.getRecipeInstanceState(recipeInstanceId)
         _ = state.ingredients shouldBe
           Map("ingredient-0" -> PrimitiveValue(42),
@@ -312,7 +310,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
         _ = when(testFireTwoEventsInteractionMock.apply(anyString()))
           .thenReturn(Event1FromInteractionSeven("ingredient3"))
         _ = when(testInteractionOneMock.apply(anyString(), anyString()))
-          .thenReturn(effect.pure(InteractionOneSuccessful("data")))
+          .thenReturn(IO.pure(InteractionOneSuccessful("data")))
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue))))
@@ -333,7 +331,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
         bakerAndRecipeId<- context.setupBakerWithRecipe(recipe, mockImplementations)
         (baker, recipeId) = bakerAndRecipeId
 
-        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(IO.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
 
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
@@ -358,7 +356,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
         bakerAndRecipeId<- context.setupBakerWithRecipe(recipe, mockImplementations)
         (baker, recipeId) = bakerAndRecipeId
 
-        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(IO.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
 
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
@@ -383,7 +381,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
         bakerAndRecipeId<- context.setupBakerWithRecipe(recipe, mockImplementations)
         (baker, recipeId) = bakerAndRecipeId
 
-        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(IO.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
 
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
@@ -409,7 +407,7 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
 
     test("notify a registered event listener of events") { context =>
       val listenerMock = mock[(RecipeEventMetadata, String) => Unit]
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(IO.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
       val recipe =
         Recipe("EventListenerRecipe")
           .withInteraction(interactionOne)
@@ -446,6 +444,32 @@ trait BakerModelSpecExecutionSemanticsTests[F[_]] { self: BakerModelSpec[F] =>
           "interactionThreeIngredient"
         )
       } yield confirmCompleted.eventNames should contain only(
+        "InitialEvent",
+        "SieveInteractionSuccessful",
+        "InteractionOneSuccessful",
+        "EventFromInteractionTwo",
+        "InteractionThreeSuccessful"
+      )
+    }
+
+    test("return a list of events that were caused by a sensory event 2") { context =>
+      for {
+        bakerAndRecipeId <- context.setupBakerWithRecipe("SensoryEventDeltaRecipe")
+        (baker, recipeId) = bakerAndRecipeId
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        response <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ = response.sensoryEventStatus shouldBe SensoryEventStatus.Completed
+        events = response.eventNames
+        ingredients = response.ingredients
+        _ = ingredients.keys should contain only(
+          "initialIngredient",
+          "sievedIngredient",
+          "interactionOneIngredient",
+          "interactionTwoIngredient",
+          "interactionThreeIngredient"
+        )
+      } yield events should contain only(
         "InitialEvent",
         "SieveInteractionSuccessful",
         "InteractionOneSuccessful",

@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.inmemory
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe
 import com.ing.baker.recipe.TestRecipe._
@@ -9,16 +10,14 @@ import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 import com.ing.baker.runtime.model.{BakerF, InteractionInstance}
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
-import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.Retries
+import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.tagobjects.Retryable
 
 import java.util.UUID
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import org.scalatest.Retries
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.tagobjects.Retryable
-import com.ing.baker.runtime.common.BakerException.RecipeValidationException
 
 class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
 
@@ -32,9 +31,6 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
   behavior of "InMemoryRecipeInstanceManager"
 
   it should "find a process in the timeout" in {
-    implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
-    implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-
     val recipeInstanceId = UUID.randomUUID().toString
 
     val result: IO[RecipeInstanceState] = for {
@@ -61,9 +57,6 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
       }
     }
 
-    implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
-    implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-
     val recipeInstanceId = UUID.randomUUID().toString
 
     val result: IO[RecipeInstanceState] = for {
@@ -74,7 +67,7 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
         List(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
       recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), validate = false)
       _ <- baker.bake(recipeId, recipeInstanceId)
-      _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAsyncAndForget()
+      _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAndForget()
       _ <- IO.sleep(120.milliseconds)
       result <- baker.getRecipeInstanceState(recipeInstanceId)
     } yield (result)
@@ -94,9 +87,6 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
       }
     }
 
-    implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
-    implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-
     val recipeInstanceId = UUID.randomUUID().toString
 
     val result: IO[RecipeInstanceState] = for {
@@ -107,7 +97,7 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
         List(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
       recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), validate = false)
       _ <- baker.bake(recipeId, recipeInstanceId)
-      _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAsyncAndForget()
+      _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAndForget()
       _ <- IO.sleep(200.milliseconds)
       result <- baker.getRecipeInstanceState(recipeInstanceId)
     } yield (result)
@@ -129,9 +119,6 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
       }
     }
 
-    implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
-    implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-
     val recipeInstanceId = UUID.randomUUID().toString
 
     val result: IO[RecipeInstanceState] = for {
@@ -142,7 +129,7 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
         List(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
       recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), validate = false)
       _ <- baker.bake(recipeId, recipeInstanceId)
-      _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAsyncAndForget()
+      _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAndForget()
       _ <- IO.sleep(120.milliseconds)
       result <- baker.getRecipeInstanceState(recipeInstanceId)
     } yield (result)
@@ -162,9 +149,6 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
       }
     }
 
-    implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
-    implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-
     val recipeInstanceId = UUID.randomUUID().toString
 
     val result: IO[RecipeInstanceState] = for {
@@ -175,9 +159,9 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
         List(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
       recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), validate = false)
       _ <- baker.bake(recipeId, recipeInstanceId)
-      _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAsyncAndForget()
+      _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAndForget()
       _ <- IO.sleep(80.milliseconds)
-      _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAsyncAndForget()
+      _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAndForget()
       _ <- IO.sleep(80.milliseconds)
       result <- baker.getRecipeInstanceState(recipeInstanceId)
     } yield (result)
@@ -200,9 +184,6 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
       }
     }
 
-    implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
-    implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-
     val recipeInstanceId = UUID.randomUUID().toString
 
     val result: IO[RecipeInstanceState] = for {
@@ -213,7 +194,7 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
         List(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
       recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), validate = false)
       _ <- baker.bake(recipeId, recipeInstanceId)
-      _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAsyncAndForget()
+      _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAndForget()
       _ <- IO.sleep(120.milliseconds)
       result <- baker.getRecipeInstanceState(recipeInstanceId)
     } yield (result)

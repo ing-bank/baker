@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.inmemory
 
-import cats.effect.concurrent.Ref
-import cats.effect.{IO, Timer}
+import cats.effect.{IO, Ref}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.model.RecipeManager
@@ -10,11 +9,11 @@ object InMemoryRecipeManager {
 
   type Store = Map[String, RecipeRecord]
 
-  def build(implicit timer: Timer[IO]): IO[InMemoryRecipeManager] =
+  def build: IO[InMemoryRecipeManager] =
     Ref.of[IO, Store](Map.empty).map(new InMemoryRecipeManager(_))
 }
 
-final class InMemoryRecipeManager(inmem: Ref[IO, InMemoryRecipeManager.Store])(implicit timer: Timer[IO]) extends RecipeManager[IO] {
+final class InMemoryRecipeManager(inmem: Ref[IO, InMemoryRecipeManager.Store]) extends RecipeManager[IO] {
 
   import InMemoryRecipeManager._
 

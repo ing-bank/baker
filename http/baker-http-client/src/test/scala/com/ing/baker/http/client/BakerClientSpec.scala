@@ -1,7 +1,6 @@
 package com.ing.baker.http.client
 
-import cats.effect.concurrent.{MVar, MVar2}
-import cats.effect.{IO, Resource}
+import cats.effect.{IO, Ref, Resource}
 import com.ing.baker.http.client.common.{KeystoreConfig, TLSConfig}
 import com.ing.baker.http.client.javadsl.{BakerClient => JavaClient}
 import com.ing.baker.http.client.scaladsl.{EndpointConfig, BakerClient => ScalaClient}
@@ -52,12 +51,13 @@ class BakerClientSpec extends BakeryFunSpec {
     */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
 
-    def testServer(receivedHeaders: MVar2[IO, List[Header.Raw]]): HttpApp[IO] = {
+    def testServer(receivedHeaders: Ref[IO, List[Header.Raw]]): HttpApp[IO] = {
       implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
       Router("/api/bakery/instances" ->  HttpRoutes.of[IO] {
         case request@GET -> Root =>
           for {
-            _ <- receivedHeaders.put(request.headers.headers)
+            oldHeaders <- receivedHeaders.get
+            _ <- receivedHeaders.set(oldHeaders ++ request.headers.headers)
             response <- Ok(BakerResult(List.empty[Int]))
           } yield response
       }).orNotFound
@@ -67,13 +67,13 @@ class BakerClientSpec extends BakeryFunSpec {
     val sslParams = sslConfig.getDefaultSSLParameters
     sslParams.setNeedClientAuth(true)
     for {
-      receivedHeaders <- Resource.eval(MVar.empty[IO, List[Header.Raw]])
+      receivedHeaders <- Resource.eval(Ref.empty[IO, List[Header.Raw]])
       service <- BlazeServerBuilder[IO](ExecutionContext.global)
         .withSslContextAndParameters(sslConfig, sslParams)
         .bindSocketAddress(InetSocketAddress.createUnresolved("localhost", 0))
         .withHttpApp(testServer(receivedHeaders))
         .resource
-    } yield Context(service.address, receivedHeaders.take)
+    } yield Context(service.address, receivedHeaders.get)
   }
 
   /** Refines the `ConfigMap` populated with the -Dkey=value arguments coming from the "sbt testOnly" command.

@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Address, Props}
 import akka.pattern.{FutureRef, ask}
 import akka.util.Timeout
 import cats.data.NonEmptyList
+import cats.effect.unsafe.IORuntime
 import cats.implicits._
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -96,7 +97,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     * @return A recipeId
     */
   override def addRecipe(recipeRecord: RecipeRecord): Future[String] = for {
-    _ <- config.interactions.recipeAdded(recipeRecord).unsafeToFuture()
+    _ <- config.interactions.recipeAdded(recipeRecord).unsafeToFuture()(IORuntime.global)
     result <- {
       val recipe = recipeRecord.recipe
       val updated = recipeRecord.updated
@@ -125,7 +126,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
         .filterNot(_._1.isEmpty)
         .map(x => s"No compatible implementation provided for interaction: ${x._2}: ${x._1}")
         .toSet)
-  }.unsafeToFuture()
+  }.unsafeToFuture()(IORuntime.global)
 
   /**
     * Returns the recipe information for the given RecipeId
@@ -166,12 +167,12 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   override def getInteraction(interactionName: String): Future[Option[InteractionInstanceDescriptor]] =
     config.interactions.listAll.map(
       _.find(_.name == interactionName)
-        .map(i => InteractionInstanceDescriptor(i.shaBase64, i.name, i.input, i.output))).unsafeToFuture()
+        .map(i => InteractionInstanceDescriptor(i.shaBase64, i.name, i.input, i.output))).unsafeToFuture()(IORuntime.global)
 
 
   override def getAllInteractions: Future[List[InteractionInstanceDescriptor]] =
     config.interactions.listAll.map(_.map(
-      i => InteractionInstanceDescriptor(i.shaBase64, i.name, i.input, i.output))).unsafeToFuture()
+      i => InteractionInstanceDescriptor(i.shaBase64, i.name, i.input, i.output))).unsafeToFuture()(IORuntime.global)
 
   override def executeSingleInteraction(interactionId: String, ingredients: Seq[IngredientInstance]): Future[InteractionExecutionResult] =
     config.interactions
@@ -194,10 +195,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
             .timeoutTo(duration = config.timeouts.defaultExecuteSingleInteractionTimeout,
               fallback = cats.effect.IO.pure(
                 InteractionExecutionResult(Left(
-                  InteractionExecutionResult.Failure(InteractionExecutionFailureReason.TIMEOUT, Some(interactionInstance.name), None)))))(
-              timer = cats.effect.IO.timer(config.system.dispatcher), cs = cats.effect.IO.contextShift(config.system.dispatcher))
+                  InteractionExecutionResult.Failure(InteractionExecutionFailureReason.TIMEOUT, Some(interactionInstance.name), None)))))
       }
-      .unsafeToFuture().javaTimeoutToBakerTimeout("executeSingleInteraction")
+      .unsafeToFuture()(IORuntime.global).javaTimeoutToBakerTimeout("executeSingleInteraction")
 
   /**
     * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier

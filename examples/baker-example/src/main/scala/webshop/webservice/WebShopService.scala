@@ -1,12 +1,7 @@
 package webshop.webservice
 
-import java.io.File
-import java.util.UUID
-import java.util.concurrent.Executors
-
 import cats.data.Kleisli
-import cats.effect.concurrent.Ref
-import cats.effect.{Blocker, ContextShift, IO, Timer}
+import cats.effect.{IO, Ref}
 import cats.implicits._
 import fs2.io.file
 import io.circe.generic.auto._
@@ -17,6 +12,9 @@ import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.Router
 
+import java.io.File
+import java.util.UUID
+import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 
 object WebShopService {
@@ -33,7 +31,7 @@ object WebShopService {
 
 }
 
-class WebShopService(webshop: WebShop, memoryDumpPath: String)(implicit timer: Timer[IO], cs: ContextShift[IO]) {
+class WebShopService(webshop: WebShop, memoryDumpPath: String)() {
 
   import WebShopService._
 
@@ -76,7 +74,6 @@ class WebShopService(webshop: WebShop, memoryDumpPath: String)(implicit timer: T
               Status.Ok,
               body = file.readAll[IO](
                 path = java.nio.file.Paths.get(path),
-                blocker = Blocker.liftExecutionContext(blockingEc),
                 chunkSize = 4096),
               headers = Headers(headers.`Content-Type`(MediaType.application.`octet-stream`, Charset.`UTF-8`).pure[List]))
           )
@@ -116,9 +113,9 @@ class WebShopService(webshop: WebShop, memoryDumpPath: String)(implicit timer: T
 
       })).orNotFound
 
-  import java.lang.management.ManagementFactory
-
   import com.sun.management.HotSpotDiagnosticMXBean
+
+  import java.lang.management.ManagementFactory
 
   def dumpHeap(filePath: String, live: Boolean): IO[Unit] = IO {
     val file = new File(filePath)

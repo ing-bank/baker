@@ -1,6 +1,6 @@
 package com.ing.baker.http.server.common
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.protobuf
@@ -20,14 +20,13 @@ import scala.util.Try
 
 object RecipeLoader extends LazyLogging {
 
-  def pollRecipesUpdates(path: String, baker: Baker, duration: FiniteDuration)
-                        (implicit timer: Timer[IO], cs: ContextShift[IO]): IO[Unit] = {
+  def pollRecipesUpdates(path: String, baker: Baker, duration: FiniteDuration): IO[Unit] = {
     def pollRecipes: IO[Unit] = loadRecipesIntoBaker(path, baker) >> IO.sleep(duration) >> IO.defer(pollRecipes)
 
     pollRecipes
   }
 
-  def loadRecipesIntoBaker(path: String, baker: Baker)(implicit cs: ContextShift[IO]): IO[Unit] =
+  def loadRecipesIntoBaker(path: String, baker: Baker): IO[Unit] =
     for {
       recipes <- RecipeLoader.loadRecipes(path)
       _ <- recipes.traverse { record =>

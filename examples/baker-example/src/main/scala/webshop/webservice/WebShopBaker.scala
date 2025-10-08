@@ -1,15 +1,15 @@
 package webshop.webservice
 
-import java.util.UUID
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.RecipeRecord
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
 import org.log4s.{Logger, getLogger}
 import webshop.webservice.recipe.CheckoutFlowIngredients.{Item, PaymentInformation, ShippingAddress}
 import webshop.webservice.recipe.{CheckoutFlowEvents, CheckoutFlowRecipe, OrderStatus}
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext
 
 object WebShopBaker {
@@ -19,9 +19,7 @@ object WebShopBaker {
   val checkoutFlowCompiledRecipe: CompiledRecipe =
     RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
 
-  def initRecipes(baker: Baker)(implicit time: Timer[IO], ec: ExecutionContext): IO[String] = {
-    implicit val cs = IO.contextShift(ec)
-
+  def initRecipes(baker: Baker)(implicit ec: ExecutionContext): IO[String] = {
     IO.fromFuture(IO(for {
       checkoutRecipeId <- baker.addRecipe(RecipeRecord.of(checkoutFlowCompiledRecipe))
       _ = println(Console.GREEN + "V3 Checkout Recipe ID :: " + checkoutRecipeId + Console.RESET)
@@ -32,7 +30,6 @@ object WebShopBaker {
 class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: ExecutionContext) extends WebShop {
 
   import WebShopBaker.logger
-  private implicit val cs: ContextShift[IO] = IO.contextShift(ec)
 
   override def createCheckoutOrder(items: List[String]): IO[String] = {
     IO.fromFuture(IO {

@@ -1,12 +1,12 @@
 package com.ing.bakery.interaction
 
-import java.net.InetSocketAddress
-
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 
+import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext
 
 object RemoteInteractionLoader extends LazyLogging {
@@ -31,8 +31,6 @@ object RemoteInteractionLoader extends LazyLogging {
       else None
 
     implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
-    implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
-    implicit val timer: Timer[IO] = IO.timer(executionContext)
 
     RemoteInteractionService.resource(implementations, address, tlsConfig, apiLoggingEnabled,
       interactionPerTypeMetricsEnabled, metricsPort, metricsEnabled, apiUrlPrefix)
@@ -40,9 +38,9 @@ object RemoteInteractionLoader extends LazyLogging {
         logger.info(s"Interactions started successfully at $address, now starting health service $healthServiceAddress")
         HealthService.resource(healthServiceAddress)
           .use(_ => IO.never)
-          .unsafeRunAsyncAndForget()
+          .unsafeRunAndForget()
         IO.never
       })
-      .unsafeRunAsyncAndForget()
+      .unsafeRunAndForget()
   }
 }

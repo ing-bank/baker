@@ -1,6 +1,7 @@
 package com.ing.baker.http.client.javadsl
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import com.ing.baker.http.client.common.TLSConfig
 import com.ing.baker.http.client.scaladsl.{EndpointConfig, BakerClient => ScalaClient}
 import com.ing.baker.runtime.javadsl.{Baker => JavaBaker}
@@ -11,8 +12,8 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors.newCachedThreadPool
 import java.util.{Optional, List => JList}
 import scala.annotation.nowarn
-import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
+import scala.jdk.CollectionConverters._
 import scala.jdk.FunctionConverters.enrichAsScalaFromFunction
 import scala.jdk.FutureConverters.FutureOps
 
@@ -42,8 +43,6 @@ object BakerClient {
     val sslContext = if (tlsConfig.isPresent) Some(tlsConfig.get()).map(_.loadSSLContext) else None
 
     implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
-    implicit val contextShift: ContextShift[IO] = IO.contextShift(ec)
-    implicit val timer: Timer[IO] = IO.timer(ec)
 
     val future = sslContext
       .fold(BlazeClientBuilder[IO](connectionPool))(BlazeClientBuilder[IO](connectionPool).withSslContext)

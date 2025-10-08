@@ -1,26 +1,24 @@
 package com.ing.baker.http.server.scaladsl
 
 import cats.effect.testing.scalatest.AsyncIOSpec
-import cats.effect.{Blocker, IO, Resource}
+import cats.effect.unsafe.implicits.global
+import cats.effect.{IO, Resource}
 import com.ing.baker.http.DashboardConfiguration
 import com.ing.baker.runtime.scaladsl.Baker
 import io.prometheus.client.CollectorRegistry
-
-import org.http4s.headers._
+import org.http4s._
 import org.http4s.implicits._
 import org.http4s.metrics.MetricsOps
 import org.http4s.metrics.prometheus.Prometheus
-import org.http4s._
-import org.typelevel.ci._
-
 import org.mockito.Mockito.{times, verify, when}
 import org.mockito.MockitoSugar.mock
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.typelevel.ci._
 
 import scala.concurrent.Future
 
-class Http4sBakerServerSpec  extends AsyncFlatSpec with AsyncIOSpec with Matchers{
+class Http4sBakerServerSpec extends AsyncFlatSpec with Matchers{
 
   val bakerMock: Baker = mock[Baker]
 
@@ -45,21 +43,18 @@ class Http4sBakerServerSpec  extends AsyncFlatSpec with AsyncIOSpec with Matcher
   }
 
   private def routes(metrics: MetricsOps[IO],
-                     blocker: Blocker,
                      dashboardConfiguration: DashboardConfiguration): HttpRoutes[IO] = Http4sBakerServer.routes(
     baker = bakerMock,
     apiUrlPrefix = "/api/test",
     metrics = metrics,
-    dashboardConfiguration = dashboardConfiguration,
-    blocker = blocker
+    dashboardConfiguration = dashboardConfiguration
   )
 
   private def doRequest(request : Request[IO],
                         dashboardConfiguration: DashboardConfiguration = dashboardConfigurationEnabled) : Response[IO] = {
     val routesResource: Resource[IO, HttpRoutes[IO]] = for {
       metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "test")
-      blocker <- Blocker[IO]
-    } yield routes(metrics, blocker, dashboardConfiguration)
+    } yield routes(metrics, dashboardConfiguration)
 
     routesResource.use(_.orNotFound.run(request)).unsafeRunSync()
   }

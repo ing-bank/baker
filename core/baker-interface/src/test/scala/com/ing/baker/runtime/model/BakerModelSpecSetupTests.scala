@@ -1,27 +1,23 @@
 package com.ing.baker.runtime.model
 
-import cats.effect.ConcurrentEffect
+import cats.effect.{Async, IO, Sync}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.{CheckPointEvent, Recipe}
 import com.ing.baker.runtime.common.RecipeRecord
+import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.runtime.scaladsl.ScalaDSLRuntime._
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 
+import java.util.UUID
 import scala.annotation.nowarn
 import scala.reflect.ClassTag
-import cats.implicits._
-import com.ing.baker.recipe.TestRecipe.InteractionOneSuccessful
-import com.ing.baker.runtime.scaladsl.EventInstance
-
-import java.util.UUID
-import scala.concurrent.Future
 
 @nowarn
-trait BakerModelSpecSetupTests[F[_]] {
-  self: BakerModelSpec[F] =>
+trait BakerModelSpecSetupTests {
+  self: BakerModelSpec =>
 
-  def runSetupTests()(implicit effect: ConcurrentEffect[F], classTag: ClassTag[F[Any]]): Unit = {
+  def runSetupTests()(implicit sync: Sync[IO], async: Async[IO], classTag: ClassTag[IO[Any]]): Unit = {
 
     test("correctly load extensions when specified in the configuration") { context =>
       val simpleRecipe = RecipeCompiler.compileRecipe(Recipe("SimpleRecipe")
@@ -29,8 +25,8 @@ trait BakerModelSpecSetupTests[F[_]] {
         .withSensoryEvent(initialEvent))
 
       for {
-        baker <- context.setupBakerWithNoRecipe(mockImplementations)
-        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful("foobar")))
+        baker <- context.setupBakerWithNoRecipe(mockImplementations(sync, classTag))
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(sync.pure(InteractionOneSuccessful("foobar")))
         recipeId <- baker.addRecipe(RecipeRecord.of(simpleRecipe))
         recipeInstanceId = java.util.UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
@@ -150,7 +146,7 @@ trait BakerModelSpecSetupTests[F[_]] {
 
       for {
         baker <- context.buildBaker(List(InteractionInstance.unsafeFrom(testInteractionOneMock)))
-        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful("Hello")))
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(async.pure(InteractionOneSuccessful("Hello")))
         _ <- baker.addRecipe(RecipeRecord.of(compiled))
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(compiled.recipeId, recipeInstanceId)

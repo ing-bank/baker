@@ -1,5 +1,6 @@
 package com.ing.baker.http.server.common
 
+import cats.effect.unsafe.IORuntime
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.annotations.{FiresEvent, RecipeInstanceId, RequiresIngredient}
@@ -53,7 +54,7 @@ class RecipeLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll 
     } yield {
       assert(r1._1.name == "ItemReservation.recipe")
       assert(r2._1.name == "ItemReservation.recipe")
-    }).unsafeRunSync()
+    }).unsafeRunSync()(IORuntime.global)
   }
 
   test("Recipe loader from classpath") {
@@ -61,7 +62,7 @@ class RecipeLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll 
       r <- RecipeLoader.loadRecipes(getClass.getResource("/recipes").getPath)
     } yield {
       assert(r.size == 2)
-    }).unsafeRunSync()
+    }).unsafeRunSync()(IORuntime.global)
   }
 
   test("GZipped then Base64ed recipe could be loaded") {
@@ -70,7 +71,7 @@ class RecipeLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll 
     } yield {
       assert(recipe._1.name == "Webshop")
       ()
-    }).unsafeRunSync()
+    }).unsafeRunSync()(IORuntime.global)
   }
 
   test("GZipped recipe could be loaded") {
@@ -79,7 +80,7 @@ class RecipeLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll 
     } yield {
       assert(recipe._1.name == "Webshop")
       ()
-    }).unsafeRunSync()
+    }).unsafeRunSync()(IORuntime.global)
   }
 
   test("Plain Base64ed recipe could be loaded") {
@@ -88,7 +89,7 @@ class RecipeLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll 
     } yield {
       assert(recipe._1.name == "Webshop")
       ()
-    }).unsafeRunSync()
+    }).unsafeRunSync()(IORuntime.global)
   }
 
   test("Plain recipe could be loaded") {
@@ -97,7 +98,7 @@ class RecipeLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll 
     } yield {
       assert(recipe._1.name == "Webshop")
       ()
-    }).unsafeRunSync()
+    }).unsafeRunSync()(IORuntime.global)
   }
 
   class CustomerInfo(val name: String, val address: String, val email: String) {}

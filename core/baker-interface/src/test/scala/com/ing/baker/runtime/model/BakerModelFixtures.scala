@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.model
 
 import cats.Applicative
-import cats.effect.Sync
+import cats.effect.{IO, Sync}
 import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.types.{Converters, Value}
 import org.mockito.ArgumentMatchers.anyString
@@ -10,7 +10,7 @@ import org.scalatestplus.mockito.MockitoSugar
 
 import scala.reflect.ClassTag
 
-trait BakerModelFixtures[F[_]] extends TestRecipe[F] with MockitoSugar {
+trait BakerModelFixtures extends TestRecipe with MockitoSugar {
 
   val initialIngredientValue = "initialIngredient"
   val sievedIngredientValue = "sievedIngredient"
@@ -66,7 +66,7 @@ trait BakerModelFixtures[F[_]] extends TestRecipe[F] with MockitoSugar {
   val testOptionalIngredientInteractionMock: OptionalIngredientInteraction = mock[OptionalIngredientInteraction]
   val testProvidesNothingInteractionMock: ProvidesNothingInteraction = mock[ProvidesNothingInteraction]
 
-  def mockImplementations(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): List[InteractionInstance[F]] =
+  def mockImplementations(implicit sync: Sync[IO], classTag: ClassTag[IO[Any]]): List[InteractionInstance[IO]] =
     List(
       testInteractionOneMock,
       testInteractionOneWithMetaDataMock,
@@ -83,10 +83,10 @@ trait BakerModelFixtures[F[_]] extends TestRecipe[F] with MockitoSugar {
       testNonMatchingReturnTypeInteractionMock,
       testSieveInteractionMock,
       testOptionalIngredientInteractionMock,
-      testProvidesNothingInteractionMock).map(InteractionInstance.unsafeFrom[F](_))
+      testProvidesNothingInteractionMock).map(InteractionInstance.unsafeFrom[IO](_))
 
-  protected def setupMockResponse(implicit effect: Sync[F]): F[Unit] = effect.delay {
-    when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+  protected def setupMockResponse(implicit sync: Sync[IO]): IO[Unit] = sync.delay {
+    when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(sync.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
     when(testInteractionTwoMock.apply(anyString())).thenReturn(interactionTwoEventValue)
     when(testInteractionThreeMock.apply(anyString(), anyString())).thenReturn(InteractionThreeSuccessful(interactionThreeIngredientValue))
     when(testInteractionFourMock.apply()).thenReturn(InteractionFourSuccessful(interactionFourIngredientValue))

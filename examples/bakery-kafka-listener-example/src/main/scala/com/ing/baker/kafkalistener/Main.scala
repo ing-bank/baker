@@ -52,7 +52,7 @@ object Main extends IOApp with LazyLogging {
 
     logger.info(s"Started listening $clientConfig")
 
-    consumerStream(consumerSettings)
+    KafkaConsumer.stream(consumerSettings)
       .evalTap(_.subscribeTo(clientConfig.topic))
       .flatMap(_.stream)
       .map(committable => {
@@ -65,7 +65,7 @@ object Main extends IOApp with LazyLogging {
             logger.warn(s"Don't know how to process events from topic ${record.topic}")
         }
         committable.offset})
-      .through(commitBatchWithin(1, 1.second)(IO.ioConcurrentEffect, timer))
+      .through(commitBatchWithin(1, 1.second))
       .compile
       .drain
       .as(ExitCode.Success)

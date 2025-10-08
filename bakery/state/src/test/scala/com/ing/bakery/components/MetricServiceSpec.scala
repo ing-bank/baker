@@ -1,6 +1,7 @@
 package com.ing.bakery.components
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.ConfigFactory
 import io.prometheus.client.CollectorRegistry
@@ -20,8 +21,6 @@ class MetricServiceSpec extends AnyFunSuite with Matchers {
     val config = ConfigFactory.load(ConfigFactory.parseFile(new File(s"$configPath/application.conf")))
     val bakery = config.getConfig("baker")
     implicit val executionContext: ExecutionContext = ExecutionContext.global
-    implicit val cs: ContextShift[IO] = IO.contextShift(executionContext)
-    implicit val timer: Timer[IO] = IO.timer(executionContext)
     val metricsPort = bakery.getInt("metrics-port")
     val mainResource  =
       for {
@@ -40,8 +39,6 @@ class MetricServiceSpec extends AnyFunSuite with Matchers {
           case _ => IO.raiseError(new IllegalStateException("Not started"))
         }
     }.unsafeRunSync()
-
   }
-
 }
 

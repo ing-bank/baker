@@ -1,7 +1,7 @@
 package com.ing.bakery.components
 
 import akka.actor.ActorSystem
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -17,7 +17,7 @@ class WatcherReadinessCheck extends (() => Future[Boolean]) {
 
 object Watcher {
 
-  def resource(config: Config, system: ActorSystem, cassandra: Option[Cassandra])(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Unit] = {
+  def resource(config: Config, system: ActorSystem, cassandra: Option[Cassandra])(implicit ec: ExecutionContext): Resource[IO, Unit] = {
 
     val watcher = config.getString("baker.watcher.class")
 

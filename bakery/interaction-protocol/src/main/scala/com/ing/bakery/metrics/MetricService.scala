@@ -1,16 +1,16 @@
 package com.ing.bakery.metrics
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.typesafe.scalalogging.LazyLogging
 import io.prometheus.client.exporter.common.TextFormat
 import io.prometheus.client.hotspot._
 import io.prometheus.client.{Collector, CollectorRegistry, Counter}
 import io.prometheus.jmx.JmxCollector
+import org.http4s._
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.dsl.io._
 import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
-import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.{Router, Server}
-import org.http4s._
 import org.typelevel.ci._
 
 import java.io.CharArrayWriter
@@ -46,8 +46,7 @@ object MetricService extends LazyLogging {
 
   def defaultInstance = new MetricService(new CollectorRegistry(true))
 
-  def resourceServer(socketAddress: InetSocketAddress, registry: CollectorRegistry, ec: ExecutionContext)
-                    (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server] = {
+  def resourceServer(socketAddress: InetSocketAddress, registry: CollectorRegistry, ec: ExecutionContext): Resource[IO, Server] = {
     val encoder = EntityEncoder.stringEncoder
 
     def fromPrometheus: String = {

@@ -4,6 +4,7 @@ import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props, Terminated}
 import akka.event.DiagnosticLoggingAdapter
 import akka.testkit.{TestDuration, TestProbe}
 import akka.util.Timeout
+import cats.effect.unsafe.IORuntime
 import com.ing.baker.il.failurestrategy.{BlockInteraction, FireEventAfterFailure, InteractionFailureStrategy, RetryWithIncrementalBackoff}
 import com.ing.baker.il.petrinet.{InteractionTransition, Place}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
@@ -61,6 +62,7 @@ object ProcessInstanceSpec {
 
   val instanceSettings = Settings(
     executionContext = testExecutionContext,
+    ioRuntime = IORuntime.global,
     idleTTL = None,
     encryption = NoEncryption,
     Seq.empty,

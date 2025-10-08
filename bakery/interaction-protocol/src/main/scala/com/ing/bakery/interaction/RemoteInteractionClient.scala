@@ -1,17 +1,16 @@
 package com.ing.bakery.interaction
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.common.RemoteInteractionExecutionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
 import com.ing.baker.runtime.serialization.InteractionExecution
 import com.ing.baker.runtime.serialization.InteractionExecution._
 import com.ing.bakery.metrics.MetricService
-import io.prometheus.client.Counter
+import org.http4s._
+import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.dsl.io._
-import org.http4s._
 
 import scala.concurrent.ExecutionContext
 
@@ -23,7 +22,7 @@ object RemoteInteractionClient {
   def resource(headers: Headers,
                pool: ExecutionContext,
                metricService: MetricService,
-               tlsConfig: Option[BakeryHttp.TLSConfig])(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, RemoteInteractionClient] = {
+               tlsConfig: Option[BakeryHttp.TLSConfig]): Resource[IO, RemoteInteractionClient] = {
     
     tlsConfig.map(BakeryHttp.loadSSLContext)
     .fold(BlazeClientBuilder[IO](pool))(BlazeClientBuilder[IO](pool).withSslContext)
@@ -46,12 +45,10 @@ trait RemoteInteractionClient {
 class BaseRemoteInteractionClient(
                                    val client: Client[IO],
                                    val headers: Headers,
-                                   metricService: MetricService)(implicit cs: ContextShift[IO], timer: Timer[IO])
+                                   metricService: MetricService)
   extends RemoteInteractionClient {
 
-  import RemoteInteractionClient._
   import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
-  import com.ing.baker.runtime.serialization.JsonCodec._
   override def entityCodecs: (EntityEncoder[IO, ExecutionRequest], EntityDecoder[IO, ExecutionResult], EntityDecoder[IO, Interactions]) =
     (jsonEncoderOf[IO, ExecutionRequest],
       jsonOf[IO, ExecutionResult],

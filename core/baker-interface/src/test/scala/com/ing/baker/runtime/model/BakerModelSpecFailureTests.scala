@@ -1,27 +1,25 @@
 package com.ing.baker.runtime.model
 
-import java.util.UUID
-
-import cats.effect.ConcurrentEffect
-import cats.implicits._
+import cats.effect.{Async, Sync}
+import cats.effect.IO
 import com.ing.baker.recipe.common.InteractionFailureStrategy._
 import com.ing.baker.recipe.scaladsl.Recipe
-import com.ing.baker.runtime.common.BakerException.ProcessDeletedException
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata}
 import org.mockito.ArgumentMatchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 
+import java.util.UUID
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
 
-trait BakerModelSpecFailureTests[F[_]] { self: BakerModelSpec[F] =>
+trait BakerModelSpecFailureTests { self: BakerModelSpec =>
 
-  def runFailureTests()(implicit effect: ConcurrentEffect[F], classTag: ClassTag[F[Any]]): Unit = {
+  def runFailureTests()(implicit sync: Sync[IO], async: Async[IO], classTag: ClassTag[IO[Any]]): Unit = {
     test("not throw an exception when an event is fired and a resulting interactions fails") { context =>
       for {
-        bakerAndRecipeId <- context.setupBakerWithRecipe("FailingInteraction")
+        bakerAndRecipeId <- context.setupBakerWithRecipe("FailingInteraction")(sync, classTag)
         (baker, recipeId) = bakerAndRecipeId
         _ = when(testInteractionOneMock.apply(anyString, anyString()))
           .thenThrow(new RuntimeException(errorMessage))
@@ -39,7 +37,7 @@ trait BakerModelSpecFailureTests[F[_]] { self: BakerModelSpec[F] =>
         firstrecipeInstanceId = UUID.randomUUID().toString
         secondrecipeInstanceId = UUID.randomUUID().toString
         _ = when(testInteractionOneMock.apply(firstrecipeInstanceId.toString, initialIngredientValue))
-          .thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+          .thenReturn(IO.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
         _ = when(testInteractionOneMock.apply(secondrecipeInstanceId.toString, initialIngredientValue))
           .thenThrow(new RuntimeException(errorMessage))
         _ <- baker.bake(recipeId, firstrecipeInstanceId)
@@ -86,7 +84,7 @@ trait BakerModelSpecFailureTests[F[_]] { self: BakerModelSpec[F] =>
 
         //Thread.sleep is needed since we need to wait for the exponential back-off
         //100ms should be enough since it waits 20ms and then 40 ms
-        _ <- effect.delay {
+        _ <- IO.delay {
           Thread.sleep(200)
         }
         //Since it can be called up to 3 times it should have been called 3 times in the 100ms
@@ -228,7 +226,7 @@ trait BakerModelSpecFailureTests[F[_]] { self: BakerModelSpec[F] =>
         (baker, recipeId) = bakerAndRecipeId
         _ = when(testInteractionOneMock.apply(anyString(), anyString()))
           .thenThrow(new RuntimeException("Expected test failure"))
-          .thenReturn(effect.pure(InteractionOneSuccessful("success!")))
+          .thenReturn(IO.pure(InteractionOneSuccessful("success!")))
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
@@ -346,7 +344,7 @@ trait BakerModelSpecFailureTests[F[_]] { self: BakerModelSpec[F] =>
         (baker, recipeId) = bakerAndRecipeId
         recipeInstanceId = UUID.randomUUID().toString
 
-        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(IO.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
         _ = when(testInteractionThreeMock.apply(anyString(), anyString())).thenReturn(InteractionThreeSuccessful(interactionThreeIngredientValue))
 
         _ <- baker.bake(recipeId, recipeInstanceId)
@@ -371,7 +369,7 @@ trait BakerModelSpecFailureTests[F[_]] { self: BakerModelSpec[F] =>
         (baker, recipeId) = bakerAndRecipeId
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
-        _ <- effect.delay {
+        _ <- IO.delay {
           Thread.sleep(receivePeriod.toMillis + 100)
         }
         completed <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("")))

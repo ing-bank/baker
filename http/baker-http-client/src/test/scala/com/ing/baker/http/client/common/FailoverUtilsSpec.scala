@@ -1,20 +1,21 @@
 package com.ing.baker.http.client.common
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.unsafe.implicits.global
+import cats.effect.{IO, Resource}
 import com.ing.baker.http.client.scaladsl.EndpointConfig
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 import com.ing.baker.runtime.scaladsl.BakerResult
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import org.http4s.Method.GET
 import org.http4s._
+import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.circe.jsonEncoderOf
 import org.http4s.client.Client
-import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.Router
-import org.http4s.blaze.server.BlazeServerBuilder
 import org.scalatest.funspec.FixtureAsyncFunSpec
 import org.scalatest.{Assertion, FutureOutcome}
 
@@ -29,11 +30,6 @@ class FailoverUtilsSpec extends FixtureAsyncFunSpec   {
 
   import com.ing.baker.http.client.common.FailoverUtils._
   implicit val ec: ExecutionContextExecutor = scala.concurrent.ExecutionContext.global
-  implicit val contextShift: ContextShift[IO] =
-    IO.contextShift(ec)
-
-  implicit val timer: Timer[IO] =
-    IO.timer(ec)
   import com.ing.baker.runtime.serialization.JsonDecoders._
   implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
   val callbackCollector: mutable.ListBuffer[String] = ListBuffer.empty

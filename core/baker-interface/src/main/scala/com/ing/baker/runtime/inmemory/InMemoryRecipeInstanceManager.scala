@@ -1,8 +1,8 @@
 package com.ing.baker.runtime.inmemory
 
-import cats.effect.concurrent.Ref
-import cats.effect.{IO, Timer}
-import cats.implicits._
+import cats.effect.unsafe.implicits.global
+import cats.effect.{IO, Ref}
+import cats.syntax.all._
 import com.google.common.cache.{CacheBuilder, CacheLoader}
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
 import com.ing.baker.runtime.model.RecipeInstanceManager.RecipeInstanceStatus
@@ -13,14 +13,14 @@ import com.ing.baker.runtime.scaladsl.RecipeInstanceMetadata
 
 import java.util.concurrent.ConcurrentMap
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
-import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
+import scala.concurrent.duration.FiniteDuration
+import scala.jdk.CollectionConverters._
 
 object InMemoryRecipeInstanceManager {
 
   type Store = ConcurrentMap[String, RecipeInstanceStatus[IO]]
 
-  def build(idleTimeOut: FiniteDuration, retentionPeriodCheckInterval: FiniteDuration)(implicit timer: Timer[IO]): IO[InMemoryRecipeInstanceManager] = {
+  def build(idleTimeOut: FiniteDuration, retentionPeriodCheckInterval: FiniteDuration): IO[InMemoryRecipeInstanceManager] = {
     val cache: ConcurrentMap[String, RecipeInstanceStatus[IO]] = CacheBuilder.newBuilder()
       .build(new CacheLoader[String, RecipeInstanceStatus[IO]] {
         override def load(key: String): RecipeInstanceStatus[IO] = throw NoSuchProcessException("key")
@@ -31,12 +31,12 @@ object InMemoryRecipeInstanceManager {
 
 final class InMemoryRecipeInstanceManager(inmem: Ref[IO, InMemoryRecipeInstanceManager.Store],
                                           retentionPeriodCheckInterval: FiniteDuration,
-                                          idleTimeOut: FiniteDuration)(implicit timer: Timer[IO]) extends RecipeInstanceManager[IO] {
+                                          idleTimeOut: FiniteDuration) extends RecipeInstanceManager[IO] {
 
   //  We use this function instead of the startRetentionPeriodStream stream since it performs better
   def repeat(io : IO[Unit]) : IO[Nothing] = io >> IO.sleep(retentionPeriodCheckInterval) >> repeat(io)
 
-  repeat(cleanupRecipeInstances(idleTimeOut)).unsafeRunAsyncAndForget()
+  repeat(cleanupRecipeInstances(idleTimeOut)).unsafeRunAndForget()
 
   override def fetch(recipeInstanceId: String): IO[Option[RecipeInstanceStatus[IO]]] = {
     inmem.getAndUpdate(store => {

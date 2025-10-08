@@ -4,8 +4,8 @@ import akka.actor.ActorSystem
 import akka.stream._
 import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source, TcpIdleTimeoutException}
 import akka.{Done, NotUsed}
-import cats.effect.{ContextShift, IO, Resource, Timer}
-import cats.implicits.catsSyntaxApplicativeError
+import cats.effect.unsafe.implicits.global
+import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
 import com.ing.bakery.components.RemoteInteractionDiscovery
 import com.ing.bakery.interaction.RemoteInteractionClient
@@ -29,9 +29,6 @@ class KubernetesInteractions(config: Config,
   extends DynamicInteractionManager
     with RemoteInteractionDiscovery
     with LazyLogging {
-
-  private implicit val contextShift: ContextShift[IO] = IO.contextShift(system.dispatcher)
-  private implicit val timer: Timer[IO] = IO.timer(system.dispatcher)
 
   private val apiUrlPrefix = config.getString("baker.interactions.kubernetes.api-url-prefix")
   private val kubernetes = kubernetesClient.getOrElse(skuber.k8sInit(config)(system))
@@ -94,7 +91,7 @@ class KubernetesInteractions(config: Config,
     } yield (this, killSwitch)) { case (_, hook) => IO(hook.shutdown()) }.map(_._1)
   }
 
-  def update(event: K8SWatchEvent[Service])(implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[Any] = (for {
+  def update(event: K8SWatchEvent[Service]): IO[Any] = (for {
     spec <- event._object.spec
     port <- spec.ports.find(_.name == "interactions")
   } yield {

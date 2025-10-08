@@ -1,6 +1,7 @@
 package com.ing.baker.http.client
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.unsafe.implicits.global
+import cats.effect.{IO, Resource}
 import org.scalactic.source
 import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.FixtureAsyncFunSpecLike
@@ -10,12 +11,6 @@ import scala.concurrent.duration._
 
 /** Abstracts the common test practices across the Bakery project. */
 abstract class BakeryFunSpec extends FixtureAsyncFunSpecLike {
-
-  implicit val contextShift: ContextShift[IO] =
-    IO.contextShift(executionContext)
-
-  implicit val timer: Timer[IO] =
-    IO.timer(executionContext)
 
   /** Represents the "sealed resources context" that each test can use. */
   type TestContext

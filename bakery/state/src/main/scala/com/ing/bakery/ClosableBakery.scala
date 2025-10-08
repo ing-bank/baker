@@ -2,10 +2,10 @@ package com.ing.bakery
 
 import akka.actor.ActorSystem
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
-import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.bakery.Bakery.akkaBakery
 import com.typesafe.config.Config
 

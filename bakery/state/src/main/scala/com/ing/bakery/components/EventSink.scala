@@ -1,6 +1,7 @@
 package com.ing.bakery.components
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.unsafe.implicits.global
+import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.scaladsl._
 import com.typesafe.config.Config
@@ -17,11 +18,11 @@ import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 trait EventSink {
-  def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit]
+  def fire(event: Any): IO[Unit]
   def close(): Unit = ()
-  def attach(baker: AkkaBaker)(implicit cs: ContextShift[IO]): IO[Unit] = {
+  def attach(baker: AkkaBaker): IO[Unit] = {
     IO.fromFuture(IO{baker.registerBakerEventListener {
-      event => fire(event).unsafeRunAsyncAndForget()
+      event => fire(event).unsafeRunAndForget()
     }})
   }
 }
@@ -75,7 +76,7 @@ class KafkaEventSink(config: Config) extends EventSink with LazyLogging {
       callback(result)
     }
 
-  override def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit] = (event match {
+  override def fire(event: Any): IO[Unit] = (event match {
     case eventInstance: EventInstance => Some(recordOf(eventInstance))
     case bakerEvent: BakerEvent    => Some(recordOf(bakerEvent))
     case _                =>
@@ -103,11 +104,11 @@ object EventSink extends LazyLogging {
 
   private lazy val NoSink = IO {
     new EventSink {
-      override def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit] = IO.unit
+      override def fire(event: Any): IO[Unit] = IO.unit
     }
   }
 
-  def resource(config: Config)(implicit contextShift: ContextShift[IO], timer: Timer[IO]): Resource[IO, EventSink] = {
+  def resource(config: Config): Resource[IO, EventSink] = {
 
     Resource.make({
       val providerClass = config.getString("baker.event-sink.class")
