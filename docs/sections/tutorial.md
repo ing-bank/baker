@@ -248,7 +248,8 @@ Before we can fire the sensory event, we need to create a new process instance o
 method. You are required to specify a `recipeInstanceId`. Here we use `UUID`, but it can be anything as long as it's 
 unique within your processes.
 
-Finally, we can fire the sensory event via `fireEventAndResolveWhenCompleted`. The moment the event arrives our process
+Finally, we can fire the sensory event via `fireSensoryEventAndAwaitReceived` then wait for the execution to complete
+using `awaitCompleted`. The moment the sensory event arrives our process
 will start.
 
 === "Java"

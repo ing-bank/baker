@@ -22,7 +22,9 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import java.util.*
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
     override fun close() = runBlocking {
@@ -61,6 +63,7 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
         jBaker.deleteRecipeInstance(recipeInstanceId, removeFromIndex).await()
     }
 
+    @Deprecated("This method is deprecated and will be removed after December 1st, 2026. Please use fireSensoryEventAndAwaitReceived instead.", level = DeprecationLevel.WARNING)
     suspend fun fireEventAndResolveWhenReceived(
         recipeInstanceId: String,
         event: EventInstance,
@@ -70,6 +73,7 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
             .await()
     }
 
+    @Deprecated("This method is deprecated and will be removed after December 1st, 2026. Please use the combination of fireSensoryEventAndAwaitReceived followed by awaitCompleted.", level = DeprecationLevel.WARNING)
     suspend fun fireEventAndResolveWhenCompleted(
         recipeInstanceId: String,
         event: EventInstance,
@@ -79,6 +83,7 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
             .await()
     }
 
+    @Deprecated("This method is deprecated and will be removed after December 1st, 2026. Please use the combination of fireSensoryEventAndAwaitReceived followed by awaitEvent.", level = DeprecationLevel.WARNING)
     suspend fun fireEventAndResolveOnEvent(
         recipeInstanceId: String,
         event: EventInstance,
@@ -89,6 +94,7 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
             .await()
     }
 
+    @Deprecated("This method uses a callback-style API that is deprecated and will be removed after December 1st, 2026. Please use the new composable API: fireSensoryEventAndAwaitReceived followed by awaitCompleted or awaitEvent.", level = DeprecationLevel.WARNING)
     fun fireEvent(
         recipeInstanceId: String,
         event: EventInstance,
@@ -176,6 +182,33 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
 
     suspend fun addMetaData(recipeInstanceId: String, metadata: Map<String, String>) {
         jBaker.addMetaData(recipeInstanceId, metadata).await()
+    }
+
+    suspend fun fireSensoryEventAndAwaitReceived(
+        recipeInstanceId: String,
+        event: EventInstance,
+        correlationId: String? = null
+    ): SensoryEventStatus {
+        return jBaker.fireSensoryEventAndAwaitReceived(
+            recipeInstanceId,
+            event,
+            Optional.ofNullable(correlationId),
+        ).await()
+    }
+
+    suspend fun awaitEvent(
+        recipeInstanceId: String,
+        eventName: String,
+        timeout: Duration,
+    ): Unit {
+        jBaker.awaitEvent(recipeInstanceId, eventName, timeout.toJavaDuration()).await()
+    }
+
+    suspend fun awaitCompleted(
+        recipeInstanceId: String,
+        timeout: Duration,
+    ): SensoryEventStatus {
+        return jBaker.awaitCompleted(recipeInstanceId, timeout.toJavaDuration()).await()
     }
 
     private fun <T> Optional<T>.toNullable(): T? = if (isEmpty) null else get()

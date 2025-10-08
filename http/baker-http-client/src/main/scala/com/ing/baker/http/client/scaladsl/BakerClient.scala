@@ -21,6 +21,7 @@ import org.http4s.circe._
 import org.http4s.client.Client
 import org.http4s.client.dsl.io._
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
 
@@ -423,4 +424,27 @@ final class BakerClient( client: Client[IO],
 
   override def deleteRecipeInstance(recipeInstanceId: String, removeFromIndex: Boolean): Future[Unit] =
     callRemoteBakerServiceFallbackAware[Unit]((host, prefix) => IO(DELETE((root(host, prefix) / "instances" / recipeInstanceId / "delete").withQueryParam("removeFromIndex", removeFromIndex))), fallbackEndpoint)
+
+  override def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] =
+    callRemoteBakerServiceFallbackAware[SensoryEventStatus](
+      (host, prefix) => IO(POST(event, (root(host, prefix) / "instances" / recipeInstanceId / "fire-sensory-event-and-await-received")
+        .withOptionQueryParam("correlationId", correlationId))), fallbackEndpoint).map { result =>
+      logger.info(s"For recipe instance '$recipeInstanceId', fired and received event '${event.name}', resulting status $result")
+      result
+    }
+
+  override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration): Future[Unit] =
+    callRemoteBakerServiceFallbackAware[Unit](
+      (host, prefix) => IO(POST((root(host, prefix) / "instances" / recipeInstanceId / "await-event" / eventName)
+        .withQueryParam("timeout", timeout.toMillis))), fallbackEndpoint).map { _ =>
+      logger.info(s"For recipe instance '$recipeInstanceId', awaited event '$eventName'")
+    }
+
+  override def awaitCompleted(recipeInstanceId: String, timeout: FiniteDuration): Future[SensoryEventStatus] =
+    callRemoteBakerServiceFallbackAware[SensoryEventStatus](
+      (host, prefix) => IO(POST((root(host, prefix) / "instances" / recipeInstanceId / "await-completed")
+        .withQueryParam("timeout", timeout.toMillis))), fallbackEndpoint).map { result =>
+      logger.info(s"For recipe instance '$recipeInstanceId', awaited idle, resulting status $result")
+      result
+    }
 }

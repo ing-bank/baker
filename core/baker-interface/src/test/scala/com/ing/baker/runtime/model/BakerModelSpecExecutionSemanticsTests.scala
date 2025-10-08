@@ -2,11 +2,11 @@ package com.ing.baker.runtime.model
 
 import cats.effect.{Async, IO, Sync}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
-import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, ProcessAlreadyExistsException}
+import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, ProcessAlreadyExistsException, TimeoutException}
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceInput, RecipeEventMetadata}
-import com.ing.baker.types.{CharArray, Int32, PrimitiveValue, Value}
+import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
 import org.mockito.ArgumentMatchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
 
@@ -476,6 +476,141 @@ trait BakerModelSpecExecutionSemanticsTests { self: BakerModelSpec =>
         "EventFromInteractionTwo",
         "InteractionThreeSuccessful"
       )
+    }
+
+    test("awaitCompleted should resolve immediately if the instance is already idle") { context =>
+      val recipe = Recipe("AwaitIdleAlreadyIdleRecipe").withSensoryEvent(initialEvent)
+      for {
+        bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, List.empty)
+        (baker, recipeId) = bakerAndRecipeId
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        status <- baker.awaitCompleted(recipeInstanceId, 2.seconds)
+      } yield status shouldBe SensoryEventStatus.Completed
+    }
+
+    test("awaitCompleted should wait for an interaction to complete") { context =>
+      val recipe = Recipe("AwaitIdleWaitsForInteractionRecipe")
+        .withInteraction(interactionOne)
+        .withSensoryEvent(initialEvent)
+
+      for {
+        bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, mockImplementations)
+        (baker, recipeId) = bakerAndRecipeId
+        // The interaction is delayed to ensure the instance is active when awaitCompleted is called
+        _ = when(testInteractionOneMock.apply(anyString(), anyString()))
+          .thenReturn(async.sleep(100.millis) *> async.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), Option.empty)
+        status <- baker.awaitCompleted(recipeInstanceId, 1.seconds)
+        _ = status shouldBe SensoryEventStatus.Completed
+        // Verify that the interaction actually completed
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+      } yield state.ingredients.keySet should contain("interactionOneOriginalIngredient")
+    }
+
+    test("awaitCompleted should throw a TimeoutException if the instance does not become idle in time") { context =>
+      val recipe = Recipe("AwaitIdleTimeoutRecipe")
+        .withInteraction(interactionOne)
+        .withSensoryEvent(initialEvent)
+
+      for {
+        bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, mockImplementations)
+        (baker, recipeId) = bakerAndRecipeId
+        // The interaction is delayed longer than the awaitCompleted timeout
+        _ = when(testInteractionOneMock.apply(anyString(), anyString()))
+          .thenReturn(async.sleep(1.seconds) *> async.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), Option.empty)
+        result <- baker.awaitCompleted(recipeInstanceId, 100.millis).attempt
+      } yield result match {
+        case Left(_: TimeoutException) => succeed
+        case _ => fail("Should have failed with a TimeoutException")
+      }
+    }
+
+    test("awaitCompleted should throw a NoSuchProcessException for a non-existent instance") { context =>
+      for {
+        bakerAndRecipeId <- context.setupBakerWithRecipe("AwaitIdleNoProcessRecipe")
+        (baker, _) = bakerAndRecipeId
+        result <- baker.awaitCompleted(UUID.randomUUID().toString, 1.second).attempt
+      } yield result match {
+        case Left(_: NoSuchProcessException) => succeed
+        case _ => fail("Should have failed with a NoSuchProcessException")
+      }
+    }
+
+    test("awaitEvent should resolve immediately if the event has already happened") { context =>
+      val recipe = Recipe("AwaitEventAlreadyHappenedRecipe")
+        .withInteraction(interactionOne)
+        .withSensoryEvent(initialEvent)
+
+      for {
+        bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, mockImplementations)
+        (baker, recipeId) = bakerAndRecipeId
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(async.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        // Fire the event and wait for it to complete fully
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        // Now, await the event that we know has already happened
+        _ <- baker.awaitEvent(recipeInstanceId, "InteractionOneSuccessful", 1.second)
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+      } yield state.eventNames should contain("InteractionOneSuccessful")
+    }
+
+    test("awaitEvent should wait for an event to be fired") { context =>
+      val recipe = Recipe("AwaitEventWaitsForEventRecipe")
+        .withInteraction(interactionOne)
+        .withSensoryEvent(initialEvent)
+
+      for {
+        bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, mockImplementations)
+        (baker, recipeId) = bakerAndRecipeId
+        _ = when(testInteractionOneMock.apply(anyString(), anyString()))
+          .thenReturn(async.sleep(100.millis) *> async.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        // Fire the sensory event, but don't wait for completion
+        _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), Option.empty)
+        // Awaiting the event should now succeed
+        _ <- baker.awaitEvent(recipeInstanceId, "InteractionOneSuccessful", 1.second)
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+      } yield state.eventNames should contain("InteractionOneSuccessful")
+    }
+
+    test("awaitEvent should throw a TimeoutException if the event does not occur in time") { context =>
+      val recipe = Recipe("AwaitEventTimeoutRecipe")
+        .withInteraction(interactionOne)
+        .withSensoryEvent(initialEvent)
+
+      for {
+        bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, mockImplementations)
+        (baker, recipeId) = bakerAndRecipeId
+        _ = when(testInteractionOneMock.apply(anyString(), anyString()))
+          .thenReturn(async.sleep(500.millis) *> async.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), Option.empty)
+        // This should time out because the interaction takes longer than the await timeout
+        result <- baker.awaitEvent(recipeInstanceId, "InteractionOneSuccessful", 100.millis).attempt
+      } yield result match {
+        case Left(_: TimeoutException) => succeed
+        case _ => fail("Should have failed with a TimeoutException")
+      }
+    }
+
+    test("awaitEvent should throw a NoSuchProcessException for a non-existent instance") { context =>
+      for {
+        bakerAndRecipeId <- context.setupBakerWithRecipe("AwaitEventNoProcessRecipe")
+        (baker, _) = bakerAndRecipeId
+        result <- baker.awaitEvent(UUID.randomUUID().toString, "anyEvent", 1.second).attempt
+      } yield result match {
+        case Left(_: NoSuchProcessException) => succeed
+        case _ => fail("Should have failed with a NoSuchProcessException")
+      }
     }
 
     /* TODO (see BakerF TODO)

@@ -12,6 +12,7 @@ import examples.scala.interactions.{CancelOrderImpl, CheckStockImpl, ShipOrderIm
 import examples.scala.recipes.WebShopRecipe
 
 import java.util.UUID
+import scala.concurrent.duration.DurationInt
 
 class WebShopApp {
   def main(args: Array[String]): Unit = {
@@ -31,8 +32,8 @@ class WebShopApp {
     for {
       recipeId <- bakerF.addRecipe(RecipeCompiler.compileRecipe(recipe = WebShopRecipe.recipe), validate = true)
       _ <- bakerF.bake(recipeId, recipeInstanceId)
-      _ <- bakerF.fireEventAndResolveWhenCompleted(recipeInstanceId, sensoryEvent)
-
+      _ <- bakerF.fireSensoryEventAndAwaitReceived(recipeInstanceId, sensoryEvent)
+      _ <- bakerF.awaitCompleted(recipeInstanceId, timeout = 5.seconds)
     } yield recipeId
   }
 

@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Address, Props}
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.pattern.{FutureRef, ask}
 import akka.util.Timeout
 import cats.data.NonEmptyList
@@ -9,8 +9,10 @@ import cats.implicits._
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor._
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{IngredientFound, IngredientNotFound, Initialized, InstanceState, MetaDataAdded, Uninitialized}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{EventOccurred, IngredientFound, IngredientNotFound, Initialized, InstanceState, MetaDataAdded, TransitionFired, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
@@ -28,9 +30,9 @@ import net.ceedubs.ficus.Ficus._
 
 import java.util.{List => JavaList}
 import scala.annotation.nowarn
-import scala.collection.immutable.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 import scala.language.postfixOps
 import scala.util.Try
 
@@ -566,6 +568,54 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       }))
       system.eventStream.subscribe(listenerActor, classOf[BakerEvent])
     }
+  }
+
+  override def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] = {
+    processIndexActor.ask(ProcessSensoryEvent(
+      recipeInstanceId = recipeInstanceId,
+      event = event,
+      correlationId = correlationId,
+    ))(config.timeouts.defaultProcessEventTimeout).javaTimeoutToBakerTimeout("fireSensoryEventAndAwaitReceived").flatMap {
+      case FireSensoryEventRejection.InvalidEvent(_, message) =>
+        Future.failed(IllegalEventException(message))
+      case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
+        Future.failed(NoSuchProcessException(recipeInstanceId0))
+      case _: FireSensoryEventRejection.FiringLimitMet =>
+        Future.successful(SensoryEventStatus.FiringLimitMet)
+      case _: FireSensoryEventRejection.AlreadyReceived =>
+        Future.successful(SensoryEventStatus.AlreadyReceived)
+      case _: FireSensoryEventRejection.ReceivePeriodExpired =>
+        Future.successful(SensoryEventStatus.ReceivePeriodExpired)
+      case _: FireSensoryEventRejection.RecipeInstanceDeleted =>
+        Future.successful(SensoryEventStatus.RecipeInstanceDeleted)
+      case TransitionFired(_,_,_,_,_,_,_) =>
+        Future.successful(SensoryEventStatus.Received)
+    }
+  }
+
+  override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration): Future[Unit] = {
+    processIndexActor
+      .ask(ProcessIndexProtocol.AwaitEvent(recipeInstanceId, eventName))(timeout)
+      .javaTimeoutToBakerTimeout("awaitEvent")
+      .flatMap {
+        case EventOccurred => Future.successful()
+        case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
+        case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
+        case FireSensoryEventRejection.InvalidEvent(_, message) => Future.failed(IllegalEventException(message))
+        case other => Future.failed(UnknownBakerException(s"Unexpected response while waiting for event $eventName of '$recipeInstanceId': $other"))
+      }
+  }
+
+  override def awaitCompleted(recipeInstanceId: String, timeout: FiniteDuration): Future[SensoryEventStatus] = {
+    processIndexActor
+      .ask(ProcessIndexProtocol.AwaitCompleted(recipeInstanceId))(timeout)
+      .javaTimeoutToBakerTimeout("awaitCompleted")
+      .flatMap {
+        case ProcessInstanceProtocol.Completed => Future.successful(SensoryEventStatus.Completed)
+        case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
+        case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
+        case other => Future.failed(UnknownBakerException(s"Unexpected response while waiting for idle state of '$recipeInstanceId': $other"))
+      }
   }
 
   /**

@@ -33,8 +33,8 @@ import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.net.InetSocketAddress
 import java.nio.charset.Charset
-import java.util.concurrent.CompletableFuture
-import scala.concurrent.duration.DurationInt
+import java.util.concurrent.{CompletableFuture, TimeUnit}
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.FutureConverters.FutureOps
 
@@ -161,6 +161,8 @@ final class Http4sBakerServer private(baker: Baker) extends LazyLogging {
 
   object CorrelationId extends OptionalQueryParamDecoderMatcher[String]("correlationId")
 
+  object Timeout extends QueryParamDecoderMatcher[Long]("timeout")
+
   object RemoveFromIndex extends OptionalQueryParamDecoderMatcher[Boolean]("removeFromIndex")
 
   private class RegExpValidator(regexp: String) {
@@ -272,6 +274,21 @@ final class Http4sBakerServer private(baker: Baker) extends LazyLogging {
         event <- req.as[EventInstance]
         result <- baker.resolveInteraction(recipeInstanceId, interactionName, event).toBakerResultResponseIO
       } yield result
+
+    case req@POST -> Root / RecipeInstanceId(recipeInstanceId) / "fire-sensory-event-and-await-received" :? CorrelationId(maybeCorrelationId) =>
+      for {
+        event <- req.as[EventInstance]
+        result <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, event, maybeCorrelationId).toBakerResultResponseIO
+      } yield result
+
+    case POST -> Root / RecipeInstanceId(recipeInstanceId) / "await-event" / InteractionName(eventName) :? Timeout(timeoutMillis) =>
+      val timeout = FiniteDuration(timeoutMillis, TimeUnit.MILLISECONDS)
+      baker.awaitEvent(recipeInstanceId, eventName, timeout).toBakerResultResponseIO
+
+    case POST -> Root / RecipeInstanceId(recipeInstanceId) / "await-completed" :? Timeout(timeoutMillis) =>
+      val timeout = FiniteDuration(timeoutMillis, TimeUnit.MILLISECONDS)
+      baker.awaitCompleted(recipeInstanceId, timeout).toBakerResultResponseIO
+
   })
 
   def metricsClassifier(apiUrlPrefix: String): Request[IO] => Option[String] = { request =>

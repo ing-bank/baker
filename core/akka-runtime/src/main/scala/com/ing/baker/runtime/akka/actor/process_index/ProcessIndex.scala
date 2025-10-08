@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, Terminated}
+import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, Status, Terminated}
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.{BackoffOpts, BackoffSupervisor, ask}
@@ -29,17 +29,17 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
-import com.ing.baker.runtime.common.RecipeRecord
+import com.ing.baker.runtime.common.{RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
-import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
+import com.ing.baker.runtime.scaladsl.{EventInstance, EventRejected, RecipeInstanceCreated, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 
 import scala.collection.mutable
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
 
@@ -463,7 +463,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           (processInstance, metadata) = instanceAndMeta
           recipe <- fetchRecipe(metadata)
           _ <- initializeResponseHandler(recipe, responseHandler)
-          transitionAndDescriptor <- validateEventIsInRecipe(recipe, event, recipeInstanceId)
+          transitionAndDescriptor <- validateSensoryEventNameIsInRecipe(recipe, event.name, recipeInstanceId)
           (transition, descriptor) = transitionAndDescriptor
           _ <- validateEventIsSound(descriptor, event, recipeInstanceId)
           _ <- validateWithinReceivePeriod(recipe, metadata, recipeInstanceId)
@@ -471,6 +471,56 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           _ <- forwardToProcessInstance(fireTransitionCommand, processInstance, responseHandler)
         } yield ()
       }, command)
+
+    case ProcessSensoryEvent(recipeInstanceId, event, correlationId) =>
+      val originalSender = sender()
+
+      // This program describes the validation and forwarding logic as a sequence of steps.
+      // It uses EitherT[IO, FireSensoryEventRejection, A] to handle business-logic failures (rejections)
+      val program: FireEventIO[Unit] = for {
+        // Fetch the process actor and its metadata. This will activate the actor if it's passivated.
+        instanceAndMeta <- fetchInstance(recipeInstanceId)
+        (processInstance, metadata) = instanceAndMeta
+
+        // Fetch the compiled recipe from the cache or manager.
+        recipe <- fetchRecipe(metadata)
+
+        // Validate that the event is a known sensory event in the recipe.
+        transitionAndDescriptor <- validateSensoryEventNameIsInRecipe(recipe, event.name, recipeInstanceId)
+        (transition, descriptor) = transitionAndDescriptor
+
+        // Validate the ingredients of the event instance against the recipe's event descriptor.
+        _ <- validateEventIsSound(descriptor, event, recipeInstanceId)
+
+        // Validate that the event is received within the recipe's defined period (if any).
+        _ <- validateWithinReceivePeriod(recipe, metadata, recipeInstanceId)
+
+        // Create the command to fire the transition in the process instance actor.
+        fireTransitionCommand = FireTransition(transition.id, event, correlationId)
+
+        // Forward the command to the process instance actor. The process instance will then
+        // reply directly to the `originalSender` of the ProcessSensoryEvent message.
+        _ <- accept(processInstance.tell(fireTransitionCommand, originalSender))
+      } yield ()
+
+      // Asynchronously execute the program and handle the result.
+      program.value.unsafeRunAsync {
+        case Left(exception) =>
+          // This case represents an unexpected technical error within the IO program itself.
+          log.error(exception, s"Unexpected error processing sensory event for recipe instance '$recipeInstanceId'")
+          originalSender ! akka.actor.Status.Failure(exception)
+
+        case Right(Left(rejection)) =>
+          // This case represents a controlled, business-logic failure (e.g., validation failed, process not found).
+          // We send the rejection object directly back to the sender, as is idiomatic in Baker.
+          originalSender ! rejection
+
+        case Right(Right(())) =>
+          // The command was successfully validated and forwarded to the ProcessInstance actor.
+          // That actor is now responsible for processing the event and sending a reply.
+          // No further action is needed here in the ProcessIndex.
+          ()
+      }(IORuntime.global)
 
     case FireDelayedTransition(recipeInstanceId, jobId, transitionId, eventToFire, originalSender) =>
       withActiveProcess(recipeInstanceId) { processActor =>
@@ -539,6 +589,53 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
     case GetProcessIngredient(recipeInstanceId, name) =>
       withActiveProcess(recipeInstanceId) { actorRef => actorRef.forward(GetIngredient(name)) }
+
+    case ProcessIndexProtocol.AwaitCompleted(recipeInstanceId) =>
+      withActiveProcess(recipeInstanceId) { actorRef =>
+        actorRef.forward(ProcessInstanceProtocol.AwaitCompleted)
+      }
+
+    case ProcessIndexProtocol.AwaitEvent(recipeInstanceId, eventName) =>
+      val originalSender = sender()
+
+      // This program describes the logic as a sequence of validation steps.
+      // If any step fails (returns a Left), the entire program short-circuits
+      // and the failure is handled in unsafeRunAsync.
+      val program: FireEventIO[Unit] = for {
+        // Fetch the process actor and its metadata. This will activate the actor if it's passivated.
+        instanceAndMeta <- fetchInstance(recipeInstanceId)
+        (processInstance, metadata) = instanceAndMeta
+
+        // Fetch the compiled recipe from the cache or manager.
+        recipe <- fetchRecipe(metadata)
+
+        // Validate that the event name corresponds to a known sensory event in the recipe.
+        // We don't need the result, we just care that it succeeds.
+        _ <- validateAnyEventNameIsInRecipe(recipe, eventName, recipeInstanceId)
+
+        // If all validations pass, forward the AwaitEvent message to the ProcessInstance actor.
+        // `forward` preserves the original sender, so the ProcessInstance actor's reply will go
+        // to the actor that originally sent the AwaitEvent message.
+        _ <- accept(processInstance.tell(ProcessInstanceProtocol.AwaitEvent(eventName), originalSender))
+      } yield ()
+
+      // Asynchronously execute the program and handle the result.
+      program.value.unsafeRunAsync{
+        case Left(exception) =>
+          // This case represents an unexpected technical error within the IO program.
+          log.error(exception, s"Unexpected error processing AwaitEvent for recipe instance '$recipeInstanceId'")
+          originalSender ! akka.actor.Status.Failure(exception)
+
+        case Right(Left(rejection)) =>
+          // This case represents a controlled, business-logic failure (e.g., event name not found, process doesn't exist).
+          // We send the rejection object directly back to the sender.
+          originalSender ! rejection
+
+        case Right(Right(())) =>
+          // The command was successfully validated and forwarded to the ProcessInstance actor.
+          // That actor is now responsible for handling the await logic. No further action is needed here.
+          ()
+      }(IORuntime.global)
 
     case GetCompiledRecipe(recipeInstanceId) =>
       index.get(recipeInstanceId) match {
@@ -633,16 +730,42 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   def initializeResponseHandler(recipe: CompiledRecipe, handler: ActorRef): FireEventIO[Unit] =
     accept(handler ! recipe)
 
-  def validateEventIsInRecipe(recipe: CompiledRecipe, event: EventInstance, recipeInstanceId: String): FireEventIO[(Transition, EventDescriptor)] = {
-    val transition0 = recipe.petriNet.transitions.find(_.label == event.name)
-    val sensoryEvent0 = recipe.sensoryEvents.find(_.name == event.name)
-    (transition0, sensoryEvent0) match {
-      case (Some(transition), Some(sensoryEvent)) =>
-        accept(transition -> sensoryEvent)
+  /**
+   * Validates that an event name exists within the recipe's SENSORY events.
+   * Used for firing new events into the system.
+   */
+  def validateSensoryEventNameIsInRecipe(recipe: CompiledRecipe, eventName: String, recipeInstanceId: String): FireEventIO[(Transition, EventDescriptor)] =
+    validateEventDescriptorExists(recipe.sensoryEvents, recipe, eventName, recipeInstanceId)
+
+  /**
+   * Validates that an event name exists within ANY of the recipe's events (sensory, internal, etc.).
+   * Used for `awaitEvent`, where we don't care about the event type.
+   */
+  def validateAnyEventNameIsInRecipe(recipe: CompiledRecipe, eventName: String, recipeInstanceId: String): FireEventIO[(Transition, EventDescriptor)] =
+    validateEventDescriptorExists(recipe.events, recipe, eventName, recipeInstanceId)
+
+  /**
+   * A generic helper to find an event descriptor and its corresponding transition from a given list of descriptors.
+   */
+  private def validateEventDescriptorExists(
+                                             eventDescriptors: Set[EventDescriptor],
+                                             recipe: CompiledRecipe,
+                                             eventName: String,
+                                             recipeInstanceId: String
+                                           ): FireEventIO[(Transition, EventDescriptor)] = {
+
+    // Find the event descriptor from the provided list
+    val eventDescriptorOption = eventDescriptors.find(_.name == eventName)
+    // Find the corresponding transition from the petrinet
+    val transitionOption = recipe.petriNet.transitions.find(_.label == eventName)
+
+    (transitionOption, eventDescriptorOption) match {
+      case (Some(transition), Some(eventDescriptor)) =>
+        accept(transition -> eventDescriptor)
       case _ =>
         reject(FireSensoryEventRejection.InvalidEvent(
           recipeInstanceId,
-          s"No event with name '${event.name}' found in recipe '${recipe.name}'"
+          s"No event with name '$eventName' found in recipe '${recipe.name}'"
         ))
     }
   }
