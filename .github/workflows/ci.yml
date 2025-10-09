@@ -42,6 +42,7 @@ jobs:
           config-name: release-drafter.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AKKA_TOKEN: ${{ secrets.AKKA_TOKEN }}
 
   publish-sonatype:
     permissions:
@@ -99,6 +100,7 @@ jobs:
           AZURE_FEEDUSER: ${{ secrets.AZURE_FEEDUSER }}
           AZURE_FEEDPASSWORD: ${{ secrets.AZURE_FEEDPASSWORD }}
           AZURE_FEEDURL: ${{ secrets.AZURE_FEEDURL }}
+          AKKA_TOKEN: ${{ secrets.AKKA_TOKEN }}
 
   dependency-submission:
     name: Submit dependency graph
