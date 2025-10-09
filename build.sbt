@@ -66,8 +66,7 @@ val commonSettings: Seq[Setting[_]] = Defaults.coreDefaultSettings ++ Seq(
       "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
     ),
   versionScheme := Some("semver-spec"),
-  libraryDependencies ++= Seq("org.scala-lang" % "scala-library" % scalaVersion.value),
-  resolvers += "Akka library repository".at("https://repo.akka.io/maven")
+  libraryDependencies ++= Seq("org.scala-lang" % "scala-library" % scalaVersion.value)
 )
 
 val dockerSettings: Seq[Setting[_]] = Seq(
