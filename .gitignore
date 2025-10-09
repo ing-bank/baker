@@ -80,3 +80,6 @@ Thumbs.db
 
 # Git Files
 .gitconfig
+
+# To ensure no passwords are ever committed to git
+akka.sbt
