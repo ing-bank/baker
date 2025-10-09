@@ -7,6 +7,7 @@ object Dependencies {
   val akkaManagementVersion = "1.6.2"
   val akkaPersistenceCassandraVersion = "1.3.2"
   val http4sVersion = "0.23.32"
+  val http4sBlaseVersion = "0.23.17"
   val http4sVersionPrometheus = "0.25.0"
   val circeVersion = "0.14.14"
   val fs2Version = "3.12.2"
@@ -83,8 +84,8 @@ object Dependencies {
 
   val http4s = "org.http4s" %% "http4s-core" % http4sVersion
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sVersion
-  val http4sServer = "org.http4s" %% "http4s-blaze-server" % http4sVersion
-  val http4sClient = "org.http4s" %% "http4s-blaze-client" % http4sVersion
+  val http4sServer = "org.http4s" %% "http4s-blaze-server" % http4sBlaseVersion
+  val http4sClient = "org.http4s" %% "http4s-blaze-client" % http4sBlaseVersion
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sVersion
   val http4sPrometheus = "org.http4s" %% "http4s-prometheus-metrics" % http4sVersionPrometheus
   val circe = "io.circe" %% "circe-core" % circeVersion
