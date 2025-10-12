@@ -154,9 +154,10 @@ message AlreadyInitialized {
 }
 
 message ExceptionState {
-    optional int32 failureCount = 1;
-    optional string failureReason = 2;
-    optional FailureStrategyMessage failureStrategy = 3;
+  optional int32 failureCount = 1;
+  optional string failureReason = 2;
+  optional FailureStrategyMessage failureStrategy = 3;
+  optional int64 failureTime = 4;
 }
 
 message JobState {
@@ -240,4 +241,23 @@ message OverrideExceptionStrategy {
 
 message InvalidCommand {
     optional string reason = 1;
+}
+
+message ProcessInstanceSnapshot {
+  optional int64 sequence_nr = 1;
+  repeated MarkingData marking = 2;
+  map<int64, int32> delayed_transition_ids = 3;
+  map<string, SerializedData> ingredients = 4;
+  map<string, string> recipe_instance_metadata = 5;
+  repeated SnapshotJob jobs = 6;
+  repeated string received_correlation_ids = 7;
+}
+
+message SnapshotJob {
+  optional int64 job_id = 1;
+  optional string correlation_id = 2;
+  optional int64 transition_id = 3;
+  repeated MarkingData consumed = 4;
+  optional SerializedData input = 5;
+  optional ExceptionState failure = 6;
 }

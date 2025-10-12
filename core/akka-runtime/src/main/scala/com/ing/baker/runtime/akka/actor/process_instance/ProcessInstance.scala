@@ -49,14 +49,6 @@ object ProcessInstance {
 
   def recipeInstanceId2PersistenceId(processType: String, recipeInstanceId: String): String = persistenceIdPrefix(processType) + recipeInstanceId
 
-  def persistenceId2recipeInstanceId(processType: String, persistenceId: String): Option[String] = {
-    val parts = persistenceId.split(persistenceIdPrefix(processType))
-    if (parts.length == 2)
-      Some(parts(1))
-    else
-      None
-  }
-
   def props[S, E](processType: String, compiledRecipe: CompiledRecipe,
                   runtime: ProcessInstanceRuntime,
                   settings: Settings,
@@ -225,10 +217,15 @@ class ProcessInstance(
   }
 
   private def persistWithSnapshot(instance: Instance[RecipeInstanceState], event: ProcessInstanceEventSourcing.Event)(onEvent: Instance[RecipeInstanceState] => Unit): Unit = {
+    log.info(s"Persisting event: $event for instance: ${instance.sequenceNr}")
     persistEvent(instance, event) { persistedEvent =>
+      log.info(s"Event persisted: $persistedEvent for instance: ${instance.sequenceNr}")
       val updatedInstance = eventSource(instance)(persistedEvent)
-      if (lastSequenceNr % snapShotInterval == 0 && lastSequenceNr != 0)
-        saveSnapshot(updatedInstance)
+      if (lastSequenceNr % snapShotInterval == 0 && lastSequenceNr != 0) {
+        log.info(s"Saving snapshot for instance: ${instance.sequenceNr} at sequenceNr: $lastSequenceNr")
+        val snapshot = serializer.serializeSnapshot(updatedInstance)
+        saveSnapshot(snapshot)
+      }
       onEvent(updatedInstance)
     }
   }

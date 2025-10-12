@@ -4,16 +4,18 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.TransitionDelayed
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.DelayedTransitionFired
-import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, RetryWithDelay}
-import com.ing.baker.runtime.akka.actor.process_instance.internal.Instance
+import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Continue, ContinueAsFunctionalEvent, RetryWithDelay}
+import com.ing.baker.runtime.akka.actor.process_instance.internal.{ExceptionStrategy, Instance, Job}
+import com.ing.baker.runtime.akka.actor.process_instance.protobuf.{ExceptionState, FailureStrategy}
 import com.ing.baker.runtime.akka.actor.process_instance.protobuf.FailureStrategy.StrategyType
-import com.ing.baker.runtime.akka.actor.process_instance.protobuf._
+import com.ing.baker.runtime.akka.actor.process_instance.protobuf.FailureStrategyMessage.StrategyTypeMessage.{BLOCK_TRANSITION, CONTINUE, CONTINUE_FUNCTIONAL, RETRY}
 import com.ing.baker.runtime.akka.actor.protobuf.{ProducedToken, SerializedData}
 import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto}
 import com.ing.baker.runtime.serialization.TokenIdentifier
-import com.ing.baker.runtime.akka.actor.serialization.SerializedDataProto._
+import com.ing.baker.runtime.scaladsl.RecipeInstanceState
 import org.slf4j.{Logger, LoggerFactory}
+import com.ing.baker.runtime.akka.actor.serialization.SerializedDataProto._
 
 import scala.util.{Failure, Success}
 
@@ -324,4 +326,158 @@ class ProcessInstanceSerialization[S, E](provider: AkkaSerializerProvider) {
         e.metaData.map(record => (record.key.get -> record.value.get)).toMap
       )
     }
+
+  // New stuff below:
+
+  private def markingToProto(marking: Marking[com.ing.baker.il.petrinet.Place]): Seq[protobuf.MarkingData] = {
+    marking.toSeq.flatMap { case (place, multiSet) =>
+      multiSet.toSeq.map { case (value, count) =>
+        protobuf.MarkingData(
+          placeId = Some(place.id),
+          data = serializeObject(value),
+          count = Some(count)
+        )
+      }
+    }
+  }
+
+  private def protoToMarking(protoMarking: Seq[protobuf.MarkingData], petriNet: PetriNet): Marking[com.ing.baker.il.petrinet.Place] = {
+    protoMarking.foldLeft(Marking.empty[com.ing.baker.il.petrinet.Place]) {
+      case (marking, protoToken) =>
+        val place = petriNet.places.getById(protoToken.placeId.get, "place in petrinet")
+        val value = protoToken.data.map(deserializeObject).orNull
+        val count = protoToken.count.get
+        marking.add(place, value, count)
+    }
+  }
+
+  private def idMarkingToProto(marking: Marking[Id]): Seq[protobuf.MarkingData] = {
+    marking.flatMap { case (placeId, multiSet) =>
+      multiSet.map { case (data, count) =>
+        protobuf.MarkingData(Some(placeId), serializeObject(data), Some(count))
+      }
+    }.toSeq
+  }
+
+  private def protoToIdMarking(markingData: Seq[protobuf.MarkingData]): Marking[Id] = {
+    markingData.foldLeft[Marking[Id]](Map.empty) {
+      case (acc, protobuf.MarkingData(Some(placeId), data, Some(count))) =>
+        val deserializedData = data.map(deserializeObject).orNull
+        val placeData: MultiSet[Any] = acc.getOrElse(placeId, MultiSet.empty)
+        acc + (placeId -> (placeData + (deserializedData -> count)))
+      case (acc, _) => acc // Should not happen with valid data
+    }
+  }
+
+  private def internalStrategyToProto(strategy: ExceptionStrategy): protobuf.FailureStrategyMessage = {
+    strategy match {
+      case BlockTransition =>
+        protobuf.FailureStrategyMessage(strategyType = Some(BLOCK_TRANSITION))
+      case RetryWithDelay(delay) =>
+        protobuf.FailureStrategyMessage(strategyType = Some(RETRY), retryDelay = Some(delay))
+      case Continue(marking, output) =>
+        protobuf.FailureStrategyMessage(
+          strategyType = Some(CONTINUE),
+          marking = idMarkingToProto(marking.asInstanceOf[Marking[com.ing.baker.il.petrinet.Place]].marshall),
+          output = serializeObject(output))
+      case ContinueAsFunctionalEvent(marking, output) =>
+        protobuf.FailureStrategyMessage(
+          strategyType = Some(CONTINUE_FUNCTIONAL),
+          marking = idMarkingToProto(marking.asInstanceOf[Marking[com.ing.baker.il.petrinet.Place]].marshall),
+          output = serializeObject(output))
+    }
+  }
+
+  private def protoToInternalStrategy(proto: protobuf.FailureStrategyMessage, petriNet: PetriNet): ExceptionStrategy = {
+    proto.strategyType.get match {
+      case BLOCK_TRANSITION => BlockTransition
+      case RETRY => RetryWithDelay(proto.retryDelay.get)
+      case CONTINUE => Continue(protoToIdMarking(proto.marking).unmarshall(petriNet.places), deserializeObject(proto.output.get))
+      case CONTINUE_FUNCTIONAL => ContinueAsFunctionalEvent(protoToIdMarking(proto.marking).unmarshall(petriNet.places), deserializeObject(proto.output.get))
+    }
+  }
+
+  private def internalExceptionStateToProto(failure: internal.ExceptionState): protobuf.ExceptionState = {
+    protobuf.ExceptionState(
+      failureTime = Some(failure.failureTime),
+      failureCount = Some(failure.failureCount),
+      failureReason = Some(failure.failureReason),
+      failureStrategy = Some(internalStrategyToProto(failure.failureStrategy))
+    )
+  }
+
+  private def protoToInternalExceptionState(pState: protobuf.ExceptionState, petriNet: PetriNet): internal.ExceptionState = {
+    internal.ExceptionState(
+      failureTime = pState.failureTime.get,
+      failureCount = pState.failureCount.get,
+      failureReason = pState.failureReason.get,
+      failureStrategy = protoToInternalStrategy(pState.failureStrategy.get, petriNet)
+    )
+  }
+
+  def serializeSnapshot(instance: Instance[RecipeInstanceState]): protobuf.ProcessInstanceSnapshot = {
+    val protoJobs = instance.jobs.values.map { job =>
+      protobuf.SnapshotJob(
+        jobId = Some(job.id),
+        correlationId = job.correlationId,
+        transitionId = Some(job.transition.getId),
+        consumed = markingToProto(job.consume),
+        input = serializeObject(job.input),
+        failure = job.failure.map(internalExceptionStateToProto)
+      )
+    }.toSeq
+
+    protobuf.ProcessInstanceSnapshot(
+      sequenceNr = Some(instance.sequenceNr),
+      marking = markingToProto(instance.marking),
+      delayedTransitionIds = instance.delayedTransitionIds,
+      ingredients = instance.state.ingredients.map { case (name, value) => (name, serializeObject(value).get) },
+      recipeInstanceMetadata = instance.state.recipeInstanceMetadata,
+      jobs = protoJobs,
+      receivedCorrelationIds = instance.receivedCorrelationIds.toSeq
+    )
+  }
+
+  def deserializeSnapshot(snapshot: protobuf.ProcessInstanceSnapshot)(instance: Instance[S]): Instance[RecipeInstanceState] = {
+    val petriNet = instance.petriNet
+
+    val ingredients = snapshot.ingredients.map {
+      case (name, data) => (name, ctxFromProto(data).get.asInstanceOf[com.ing.baker.types.Value])
+    }
+
+    val recipeInstanceState = RecipeInstanceState(
+      recipeId = "", // available in the actor context, not needed in snapshot
+      recipeInstanceId = "", // available in the actor context, not needed in snapshot
+      ingredients = ingredients,
+      recipeInstanceMetadata = snapshot.recipeInstanceMetadata,
+      events = Seq.empty // TODO: Event history is currently NOT restored from snapshot (should probably need to store it???)
+    )
+
+    val jobs = snapshot.jobs.map { pJob =>
+      val transition = petriNet.transitions.getById(pJob.transitionId.get, "transition in petrinet")
+      val consumed = protoToMarking(pJob.consumed, petriNet)
+      val input = pJob.input.map(deserializeObject).orNull
+      val failure = pJob.failure.map(pState => protoToInternalExceptionState(pState, petriNet))
+
+      Job[RecipeInstanceState](
+        id = pJob.jobId.get,
+        correlationId = pJob.correlationId,
+        processState = recipeInstanceState,
+        transition = transition,
+        consume = consumed,
+        input = input,
+        failure = failure
+      )
+    }.map(j => j.id -> j).toMap
+
+    Instance(
+      petriNet = petriNet,
+      sequenceNr = snapshot.sequenceNr.get,
+      marking = protoToMarking(snapshot.marking, petriNet),
+      delayedTransitionIds = snapshot.delayedTransitionIds,
+      state = recipeInstanceState,
+      jobs = jobs,
+      receivedCorrelationIds = snapshot.receivedCorrelationIds.toSet
+    )
+  }
 }

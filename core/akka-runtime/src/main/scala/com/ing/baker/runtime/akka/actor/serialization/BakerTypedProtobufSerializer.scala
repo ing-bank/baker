@@ -163,6 +163,8 @@ object BakerTypedProtobufSerializer {
         .register("TransitionDelayed")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionDelayed)),
       forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.DelayedTransitionFired]
         .register("DelayedTransitionFired")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.DelayedTransitionFired)),
+      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.ProcessInstanceSnapshot]
+        .register("ProcessInstanceSnapshot")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.ProcessInstanceSnapshot))
     )
 
   def recipeManagerEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] =

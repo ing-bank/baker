@@ -246,7 +246,7 @@ abstract class ProcessInstanceEventSourcing(
   protected val eventSource: Instance[RecipeInstanceState] => Event => Instance[RecipeInstanceState] =
     ProcessInstanceEventSourcing.apply[RecipeInstanceState, EventInstance](eventSourceFn)
 
-  private val serializer = new ProcessInstanceSerialization[RecipeInstanceState, EventInstance](AkkaSerializerProvider(system, encryption))
+  protected val serializer = new ProcessInstanceSerialization[RecipeInstanceState, EventInstance](AkkaSerializerProvider(system, encryption))
 
   def onRecoveryCompleted(state: Instance[RecipeInstanceState]): Unit
 
@@ -263,6 +263,8 @@ abstract class ProcessInstanceEventSourcing(
   }
 
   override def receiveRecover: Receive = {
+    case akka.persistence.SnapshotOffer(_, snapshot: protobuf.ProcessInstanceSnapshot) =>
+      recoveringState = serializer.deserializeSnapshot(snapshot)(recoveringState)
     case e: protobuf.Initialized      => applyToRecoveringState(e)
     case e: protobuf.TransitionFired  => applyToRecoveringState(e)
     case e: protobuf.TransitionFailedWithOutput  => applyToRecoveringState(e)
