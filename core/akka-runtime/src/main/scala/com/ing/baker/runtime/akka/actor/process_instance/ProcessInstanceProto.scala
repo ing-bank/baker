@@ -392,4 +392,15 @@ object ProcessInstanceProto {
       }.toSeq
     }
   }
+
+  implicit def processInstanceSnapshotProto: ProtoMap[ProcessInstance.ProcessInstanceSnapshot, protobuf.ProcessInstanceSnapshot] =
+    new ProtoMap[ProcessInstance.ProcessInstanceSnapshot, protobuf.ProcessInstanceSnapshot] {
+      val companion = protobuf.ProcessInstanceSnapshot
+
+      def toProto(a: ProcessInstance.ProcessInstanceSnapshot): protobuf.ProcessInstanceSnapshot =
+        a.snapshot
+
+      def fromProto(message: protobuf.ProcessInstanceSnapshot): Try[ProcessInstance.ProcessInstanceSnapshot] =
+        Success(ProcessInstance.ProcessInstanceSnapshot(message))
+    }
 }

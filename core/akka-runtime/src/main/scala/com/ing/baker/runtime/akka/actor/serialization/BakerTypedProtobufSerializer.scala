@@ -7,7 +7,7 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionProto._
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
+import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManagerActor, RecipeManagerProtocol}
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata, RecipeInstanceState}
@@ -163,8 +163,11 @@ object BakerTypedProtobufSerializer {
         .register("TransitionDelayed")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionDelayed)),
       forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.DelayedTransitionFired]
         .register("DelayedTransitionFired")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.DelayedTransitionFired)),
+      forType[ProcessInstance.ProcessInstanceSnapshot]
+        .register("ProcessInstance.ProcessInstanceSnapshot"),
       forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.ProcessInstanceSnapshot]
         .register("ProcessInstanceSnapshot")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.ProcessInstanceSnapshot))
+
     )
 
   def recipeManagerEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] =

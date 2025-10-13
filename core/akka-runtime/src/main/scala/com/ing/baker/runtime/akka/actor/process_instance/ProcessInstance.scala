@@ -22,6 +22,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{Continue, ContinueAsFunctionalEvent, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
+import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.{FatalInteractionException, RecipeRuntime}
 import com.ing.baker.runtime.model.BakerLogging
 import com.ing.baker.runtime.scaladsl.{EventFired, EventInstance, IngredientInstance, RecipeInstanceState}
@@ -44,6 +45,8 @@ object ProcessInstance {
                       providedIngredientFilter: Seq[String])
 
   case class IdleStop(seq: Long) extends NoSerializationVerificationNeeded
+
+  case class ProcessInstanceSnapshot(snapshot: protobuf.ProcessInstanceSnapshot) extends BakerSerializable
 
   def persistenceIdPrefix(processType: String) = s"process-$processType-"
 
@@ -223,8 +226,13 @@ class ProcessInstance(
       val updatedInstance = eventSource(instance)(persistedEvent)
       if (lastSequenceNr % snapShotInterval == 0 && lastSequenceNr != 0) {
         log.info(s"Saving snapshot for instance: ${instance.sequenceNr} at sequenceNr: $lastSequenceNr")
-        val snapshot = serializer.serializeSnapshot(updatedInstance)
-        saveSnapshot(snapshot)
+
+        // 1. Serialize the state to the protobuf message
+        val snapshotProto = serializer.serializeSnapshot(updatedInstance)
+        // 2. Wrap the protobuf message in our case class
+        val snapshotWrapper = ProcessInstance.ProcessInstanceSnapshot(snapshotProto)
+        // 3. Save the wrapper
+        saveSnapshot(snapshotWrapper)
       }
       onEvent(updatedInstance)
     }
