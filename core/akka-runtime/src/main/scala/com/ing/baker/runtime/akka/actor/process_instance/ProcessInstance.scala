@@ -343,15 +343,12 @@ class ProcessInstance(
     }
 
     case ProcessInstanceProtocol.AwaitEvent(eventName) =>
-      println(s"Awaiting event $eventName")
       val state = instance.state
 
       if (state.eventNames.contains(eventName)) {
-        println(s"Awaiting event $eventName 1")
         sender() ! ProcessInstanceProtocol.EventOccurred
       }
       else {
-        println(s"Awaiting event $eventName 2")
         // Register listener
         addEventListener(eventName, sender())
         // Check to avoid race condition
