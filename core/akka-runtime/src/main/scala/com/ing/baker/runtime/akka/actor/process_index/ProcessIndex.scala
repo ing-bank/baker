@@ -718,8 +718,12 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
             persistWithSnapshot(ActorActivated(recipeInstanceId)) { _ =>
               updateWithStatus(recipeInstanceId, Active)
             }
-            Right(actor -> index(recipeInstanceId))
-          }.get.value
+            actor -> index(recipeInstanceId)
+          }.getOrElse {
+            val message = s"Could not create actor for instance $recipeInstanceId"
+            log.error(message)
+            throw new IllegalStateException(message)
+          }
         }
     }
   }
