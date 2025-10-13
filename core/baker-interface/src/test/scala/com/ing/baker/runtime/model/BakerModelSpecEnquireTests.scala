@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.model
 
-import cats.implicits._
-import cats.effect.ConcurrentEffect
+import cats.effect.{Async, IO, Sync}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.EventInstance
@@ -9,9 +8,9 @@ import com.ing.baker.runtime.scaladsl.EventInstance
 import java.util.UUID
 import scala.reflect.ClassTag
 
-trait BakerModelSpecEnquireTests[F[_]] { self: BakerModelSpec[F] =>
+trait BakerModelSpecEnquireTests { self: BakerModelSpec =>
 
-  def runEnquireTests()(implicit effect: ConcurrentEffect[F], classTag: ClassTag[F[Any]]): Unit = {
+  def runEnquireTests()(implicit sync: Sync[IO], async: Async[IO], classTag: ClassTag[IO[Any]]): Unit = {
     test("return recipe if asked") { context =>
       for {
         bakerWithRecipe <- context.setupBakerWithRecipe("returnRecipe", appendUUIDToTheRecipeName = false)
@@ -56,7 +55,6 @@ trait BakerModelSpecEnquireTests[F[_]] { self: BakerModelSpec[F] =>
     }
 
     test("be able to visualize events that have been fired") { context =>
-      //This test only checks if the graphviz is different, not that the outcome is correct
       for {
         bakerAndRecipeId <- context.setupBakerWithRecipe("CheckEventRecipe")
         (baker, recipeId) = bakerAndRecipeId
@@ -65,14 +63,11 @@ trait BakerModelSpecEnquireTests[F[_]] { self: BakerModelSpec[F] =>
         noEventsGraph <- baker.getVisualState(recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient")))
         firstEventGraph <- baker.getVisualState(recipeInstanceId)
-        //System.out.println(firstEventGraph)
         _ = noEventsGraph should not be firstEventGraph
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(SecondEvent()))
         secondEventGraph <- baker.getVisualState(recipeInstanceId)
-        //System.out.println(secondEventGraph)
         _ = firstEventGraph should not be secondEventGraph
       } yield succeed
     }
-
   }
 }

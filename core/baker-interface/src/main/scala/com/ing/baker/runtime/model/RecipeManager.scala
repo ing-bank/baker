@@ -1,14 +1,12 @@
 package com.ing.baker.runtime.model
 
-import cats.effect.{Effect, Timer}
+import cats.effect.{Async, Clock, Sync}
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.BakerException.{ImplementationsException, NoSuchRecipeException, RecipeValidationException}
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.{RecipeAdded, RecipeInformation}
 import com.typesafe.scalalogging.LazyLogging
-
-import scala.concurrent.duration
 
 trait RecipeManager[F[_]] extends LazyLogging {
 
@@ -18,12 +16,15 @@ trait RecipeManager[F[_]] extends LazyLogging {
 
   protected def fetch(recipeId: String): F[Option[RecipeRecord]]
 
-  def addRecipe(compiledRecipe: CompiledRecipe, suppressImplementationErrors: Boolean)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[String] =
+  def addRecipe(
+                 compiledRecipe: CompiledRecipe,
+                 suppressImplementationErrors: Boolean
+               )(implicit components: BakerComponents[F], sync: Sync[F], async: Async[F]): F[String] =
     for {
       implementationErrors <-
-        if (suppressImplementationErrors) effect.delay {
+        if (suppressImplementationErrors) sync.delay {
           logger.debug(s"Recipe implementation errors are ignored for ${compiledRecipe.name}:${compiledRecipe.recipeId}")
-          List.empty
+          List.empty[String]
         }
         else {
           logger.debug(s"Recipe ${compiledRecipe.name}:${compiledRecipe.recipeId} is validated for compatibility with interactions")
@@ -31,29 +32,29 @@ trait RecipeManager[F[_]] extends LazyLogging {
         }
       _ <-
         if (implementationErrors.nonEmpty)
-          effect.raiseError(ImplementationsException(s"Recipe ${compiledRecipe.name}:${compiledRecipe.recipeId} has implementation errors: ${implementationErrors.mkString(", ")}"))
+          Sync[F].raiseError(ImplementationsException(s"Recipe ${compiledRecipe.name}:${compiledRecipe.recipeId} has implementation errors: ${implementationErrors.mkString(", ")}"))
         else if (compiledRecipe.validationErrors.nonEmpty)
-          effect.raiseError(RecipeValidationException(s"Recipe ${compiledRecipe.name}:${compiledRecipe.recipeId} has validation errors: ${compiledRecipe.validationErrors.mkString(", ")}"))
+          Sync[F].raiseError(RecipeValidationException(s"Recipe ${compiledRecipe.name}:${compiledRecipe.recipeId} has validation errors: ${compiledRecipe.validationErrors.mkString(", ")}"))
         else
           for {
-            timestamp <- timer.clock.realTime(duration.MILLISECONDS)
+            timestamp <- async.pure(System.currentTimeMillis())
             _ <- store(compiledRecipe, timestamp)
             recipeAdded = RecipeAdded(compiledRecipe.name, compiledRecipe.recipeId, timestamp, compiledRecipe)
-            _ <- effect.delay(components.logging.addedRecipe(recipeAdded))
+            _ <- sync.delay(components.logging.addedRecipe(recipeAdded))
             _ <- components.eventStream.publish(recipeAdded)
           } yield ()
     } yield compiledRecipe.recipeId
 
-  def getRecipe(recipeId: String)(implicit components: BakerComponents[F], effect: Effect[F]): F[RecipeInformation] =
+  def getRecipe(recipeId: String)(implicit components: BakerComponents[F], sync: Sync[F]): F[RecipeInformation] =
     fetch(recipeId).flatMap[RecipeInformation] {
       case Some(r: RecipeRecord) =>
         getImplementationErrors(r.recipe).map( errors =>
           RecipeInformation(r.recipe, r.updated, errors, r.validate, r.recipe.sensoryEvents))
       case None =>
-        effect.raiseError(NoSuchRecipeException(recipeId))
+        Sync[F].raiseError(NoSuchRecipeException(recipeId))
     }
 
-  def getAllRecipes(implicit components: BakerComponents[F], effect: Effect[F]): F[Map[String, RecipeInformation]] =
+  def getAllRecipes(implicit components: BakerComponents[F], sync: Sync[F]): F[Map[String, RecipeInformation]] =
     fetchAll
       .map(_.filter { case (_, r) => r.isActive }) // Only return active recipe records
       .flatMap(_.toList
@@ -63,7 +64,7 @@ trait RecipeManager[F[_]] extends LazyLogging {
       }
       .map(_.toMap))
 
-  private def getImplementationErrors(compiledRecipe: CompiledRecipe)(implicit components: BakerComponents[F], effect: Effect[F]): F[Set[String]] = {
+  private def getImplementationErrors(compiledRecipe: CompiledRecipe)(implicit components: BakerComponents[F], sync: Sync[F]): F[Set[String]] = {
     compiledRecipe.interactionTransitions.toList
       .traverse(x => components
         .interactions.incompatibilities(x)

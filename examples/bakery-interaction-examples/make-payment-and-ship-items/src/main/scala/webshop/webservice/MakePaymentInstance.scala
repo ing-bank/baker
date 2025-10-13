@@ -1,17 +1,15 @@
 package webshop.webservice
 
-import cats.effect.{IO, Timer}
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import com.typesafe.scalalogging.Logger
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 
 class MakePaymentInstance extends MakePayment {
 
   val log: Logger = Logger(classOf[MakePaymentInstance])
-
-  private val ctx: ExecutionContext = concurrent.ExecutionContext.Implicits.global
-  private implicit val timer: Timer[IO] = IO.timer(ctx)
 
   override def apply(processId: String, items: ReservedItems, payment: PaymentInformation): Future[MakePaymentOutput] = {
     log.info("Calling MakePayments API")

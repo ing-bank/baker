@@ -1,16 +1,15 @@
 package com.ing.bakery.baker.recipe
 
-import cats.effect.{IO, Timer}
-import com.ing.bakery.baker.recipe.Events.ReserveItemsOutput
-import com.ing.bakery.baker.recipe.Ingredients.{Item, OrderId}
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
+import com.ing.bakery.baker.recipe.Events.{ItemsReserved, ReserveItemsOutput}
+import com.ing.bakery.baker.recipe.Ingredients.{Item, OrderId, ReservedItems}
 import com.ing.bakery.baker.recipe.Interactions.ReserveItems
-import Events.ItemsReserved
-import Ingredients.ReservedItems
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ReserveItemsInstance(implicit timer: Timer[IO]) extends ReserveItems {
+class ReserveItemsInstance() extends ReserveItems {
 
   override def apply(orderId: OrderId, items: List[Item]): Future[ReserveItemsOutput] = {
       IO.sleep(100.millis)

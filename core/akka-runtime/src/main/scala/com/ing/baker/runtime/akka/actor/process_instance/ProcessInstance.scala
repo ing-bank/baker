@@ -5,6 +5,7 @@ import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import cats.effect.IO
+import cats.effect.unsafe.IORuntime
 import com.ing.baker.il.failurestrategy.{BlockInteraction, FireEventAfterFailure, FireFunctionalEventAfterFailure, RetryWithIncrementalBackoff}
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, checkpointEventInteractionPrefix}
@@ -34,6 +35,7 @@ import scala.util.Try
 object ProcessInstance {
 
   case class Settings(executionContext: ExecutionContext,
+                      ioRuntime: IORuntime,
                       idleTTL: Option[FiniteDuration],
                       encryption: Encryption,
                       getIngredientsFilter: Seq[String],
@@ -330,13 +332,15 @@ class ProcessInstance(
       if (instance.hasCompletedExecution) {
         sender() ! ProcessInstanceProtocol.Completed
       }
-      // Register listener
-      completionListeners += sender()
-      // Check to avoid race condition
-      if (instance.hasCompletedExecution) {
-        completionListeners -= sender()
-        sender() ! ProcessInstanceProtocol.Completed
-      }
+      else {
+        // Register listener
+        completionListeners += sender()
+        // Check to avoid race condition
+        if (instance.hasCompletedExecution) {
+          completionListeners -= sender()
+          sender() ! ProcessInstanceProtocol.Completed
+        }
+    }
 
     case ProcessInstanceProtocol.AwaitEvent(eventName) =>
       val state = instance.state
@@ -344,12 +348,14 @@ class ProcessInstance(
       if (state.eventNames.contains(eventName)) {
         sender() ! ProcessInstanceProtocol.EventOccurred
       }
-      // Register listener
-      addEventListener(eventName, sender())
-      // Check to avoid race condition
-      if (state.eventNames.contains(eventName)) {
-        removeEventListener(eventName, sender())
-        sender() ! ProcessInstanceProtocol.EventOccurred
+      else {
+        // Register listener
+        addEventListener(eventName, sender())
+        // Check to avoid race condition
+        if (state.eventNames.contains(eventName)) {
+          removeEventListener(eventName, sender())
+          sender() ! ProcessInstanceProtocol.EventOccurred
+        }
       }
 
     case GetState =>
@@ -695,15 +701,12 @@ class ProcessInstance(
   }
 
   def executeJobViaExecutor(job: Job[RecipeInstanceState], originalSender: ActorRef): Unit = {
-    // context.self can be potentially throw NullPointerException in non graceful shutdown situations
     Try(context.self).foreach { self =>
-      // executes the IO task on the ExecutionContext
-      val io = IO.shift(settings.executionContext) *> executor(job)
-      // pipes the result back this actor
+      val io: IO[TransitionEvent] = executor(job).evalOn(settings.executionContext)
       io.unsafeRunAsync {
         case Right(event: TransitionEvent) => self.tell(event, originalSender)
         case Left(exception) => self.tell(Status.Failure(exception), originalSender)
-      }
+      }(settings.ioRuntime)
     }
   }
 

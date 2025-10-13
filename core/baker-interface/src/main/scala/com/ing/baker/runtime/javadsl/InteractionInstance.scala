@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.javadsl
 
-import cats.effect.{ContextShift, IO}
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import cats.~>
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.{common, javadsl, model, scaladsl}
@@ -10,8 +11,8 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 import scala.annotation.nowarn
-import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters.FutureOps
 
 abstract class InteractionInstance extends common.InteractionInstance[CompletableFuture] with JavaApi {
@@ -58,11 +59,11 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
   }
 
   @nowarn
-  def asEffectful(implicit cs: ContextShift[IO]): common.InteractionInstance[IO] = {
+  def asEffectful(): common.InteractionInstance[IO] = {
     model.InteractionInstance.build(
       name,
       input.asScala.map(input => input.asScala).toIndexedSeq,
-      input => IO.fromFuture(IO(wrapRunToFuture(input)))(cs),
+      input => IO.fromFuture(IO(wrapRunToFuture(input))),
       outputOrNone
     )
   }

@@ -1,7 +1,8 @@
 package com.ing.baker.http.server.scaladsl
 
 import cats.data.OptionT
-import cats.effect.{Blocker, ContextShift, IO, Resource, Sync, Timer}
+import cats.effect.unsafe.implicits.global
+import cats.effect.{IO, Resource, Sync}
 import cats.implicits._
 import com.ing.baker.http.server.common.RecipeLoader
 import com.ing.baker.http.{Dashboard, DashboardConfiguration}
@@ -41,7 +42,7 @@ object Http4sBakerServer extends LazyLogging {
 
   def resource(baker: Baker, ec: ExecutionContext, hostname: InetSocketAddress, apiUrlPrefix: String,
                dashboardConfiguration: DashboardConfiguration, loggingEnabled: Boolean)
-              (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server] = {
+              (implicit sync: Sync[IO]): Resource[IO, Server] = {
 
 
     val apiLoggingAction: Option[String => IO[Unit]] = if (loggingEnabled) {
@@ -51,7 +52,6 @@ object Http4sBakerServer extends LazyLogging {
 
     for {
       metrics <- Prometheus.metricsOps[IO](CollectorRegistry.defaultRegistry, "http_api")
-      blocker <- Blocker[IO]
       server <- BlazeServerBuilder[IO](ec)
         .bindSocketAddress(hostname)
         .withHttpApp(
@@ -63,7 +63,7 @@ object Http4sBakerServer extends LazyLogging {
                 logHeaders = loggingEnabled,
                 logBody = loggingEnabled,
                 logAction = apiLoggingAction)(
-                routes(baker, apiUrlPrefix, metrics, dashboardConfiguration, blocker).orNotFound)))
+                routes(baker, apiUrlPrefix, metrics, dashboardConfiguration).orNotFound)))
         .resource
     } yield server
   }
@@ -72,7 +72,7 @@ object Http4sBakerServer extends LazyLogging {
                http4sBakerServerConfiguration: Http4sBakerServerConfiguration,
                dashboardConfiguration: DashboardConfiguration,
                ec: ExecutionContext = ExecutionContext.global)
-              (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server] =
+              (implicit sync: Sync[IO]): Resource[IO, Server] =
     resource(baker, ec,
       hostname = InetSocketAddress.createUnresolved(http4sBakerServerConfiguration.apiHost, http4sBakerServerConfiguration.apiPort),
       apiUrlPrefix = http4sBakerServerConfiguration.apiUrlPrefix,
@@ -84,8 +84,6 @@ object Http4sBakerServer extends LazyLogging {
            http4sBakerServerConfiguration: Http4sBakerServerConfiguration,
            dashboardConfiguration: DashboardConfiguration,
           ): CompletableFuture[ClosableBakerServer] = {
-    implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
-    implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     val serverStarted = resource(baker.getScalaBaker, http4sBakerServerConfiguration, dashboardConfiguration)
       .allocated
       .unsafeToFuture()
@@ -105,18 +103,18 @@ object Http4sBakerServer extends LazyLogging {
   }
 
   def routes(baker: Baker, apiUrlPrefix: String, metrics: MetricsOps[IO],
-             dashboardConfiguration: DashboardConfiguration, blocker: Blocker)
-            (implicit sync: Sync[IO], cs: ContextShift[IO], timer: Timer[IO]): HttpRoutes[IO] = {
+             dashboardConfiguration: DashboardConfiguration)
+            (implicit sync: Sync[IO]): HttpRoutes[IO] = {
     val dashboardRoutesOrEmpty: HttpRoutes[IO] =
-      if (dashboardConfiguration.enabled) dashboardRoutes(apiUrlPrefix, dashboardConfiguration, blocker)
+      if (dashboardConfiguration.enabled) dashboardRoutes(apiUrlPrefix, dashboardConfiguration)
       else HttpRoutes.empty
 
     new Http4sBakerServer(baker).routesWithPrefixAndMetrics(apiUrlPrefix, metrics) <+> dashboardRoutesOrEmpty
   }
 
 
-  private def dashboardRoutes(apiUrlPrefix: String, dashboardConfiguration: DashboardConfiguration, blocker: Blocker)
-                             (implicit sync: Sync[IO], cs: ContextShift[IO]): HttpRoutes[IO] =
+  private def dashboardRoutes(apiUrlPrefix: String, dashboardConfiguration: DashboardConfiguration)
+                             (implicit sync: Sync[IO]): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
       case GET -> Root / "dashboard_config" =>
         val bodyText = Dashboard.dashboardConfigJson(apiUrlPrefix, dashboardConfiguration)
@@ -129,16 +127,16 @@ object Http4sBakerServer extends LazyLogging {
           )
         ))
       case req if req.method == GET && req.pathInfo.renderString.matches(Dashboard.indexPattern.regex) =>
-        dashboardFile(req, blocker, "index.html").getOrElseF(NotFound())
+        dashboardFile(req, "index.html").getOrElseF(NotFound())
 
       case req if req.method == GET && Dashboard.files.contains(req.pathInfo.toRelative.renderString) =>
-        dashboardFile(req, blocker, req.pathInfo.toRelative.renderString).getOrElseF(NotFound())
+        dashboardFile(req, req.pathInfo.toRelative.renderString).getOrElseF(NotFound())
     }
 
-  private def dashboardFile(request: Request[IO], blocker: Blocker, filename: String)
-                           (implicit sync: Sync[IO], cs: ContextShift[IO]): OptionT[IO, Response[IO]] = {
+  private def dashboardFile(request: Request[IO], filename: String)
+                           (implicit sync: Sync[IO]): OptionT[IO, Response[IO]] = {
     OptionT.fromOption(Dashboard.safeGetResourcePath(filename))(sync)
-      .flatMap(resourcePath => StaticFile.fromResource(resourcePath, blocker, Some(request)))
+      .flatMap(resourcePath => StaticFile.fromResource(resourcePath, Some(request)))
   }
 
   implicit val eventInstanceDecoder: EntityDecoder[IO, EventInstance] = jsonOf[IO, EventInstance]
@@ -159,7 +157,7 @@ object Http4sBakerServer extends LazyLogging {
   }
 }
 
-final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO]) extends LazyLogging {
+final class Http4sBakerServer private(baker: Baker) extends LazyLogging {
 
   object CorrelationId extends OptionalQueryParamDecoderMatcher[String]("correlationId")
 
@@ -181,8 +179,7 @@ final class Http4sBakerServer private(baker: Baker)(implicit cs: ContextShift[IO
 
   import Http4sBakerServer._
 
-  def routesWithPrefixAndMetrics(apiUrlPrefix: String, metrics: MetricsOps[IO])
-                                (implicit timer: Timer[IO]): HttpRoutes[IO] =
+  def routesWithPrefixAndMetrics(apiUrlPrefix: String, metrics: MetricsOps[IO]): HttpRoutes[IO] =
     Router(
       apiUrlPrefix -> Metrics[IO](metrics, classifierF = metricsClassifier(apiUrlPrefix))(routes),
     )

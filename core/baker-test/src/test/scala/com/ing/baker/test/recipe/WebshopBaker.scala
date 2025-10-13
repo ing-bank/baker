@@ -1,7 +1,6 @@
 package com.ing.baker.test.recipe
 
 import akka.actor.ActorSystem
-import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.AkkaBaker
@@ -14,10 +13,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 object WebshopBaker {
-
-  implicit val cs: ContextShift[IO] = IO.contextShift(global)
-
-  implicit val timer: Timer[IO] = IO.timer(global)
 
   val baker: Baker = AkkaBaker.localDefault(ActorSystem.apply(),
     CachingInteractionManager(InteractionInstance.unsafeFrom(new ReserveItems)))

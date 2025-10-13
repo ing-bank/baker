@@ -1,6 +1,6 @@
 package webshop.webservice
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
 import cats.implicits._
 import io.circe.generic.auto._
 import io.circe.syntax._
@@ -39,7 +39,7 @@ object WebShopService {
   }
 }
 
-class WebShopService(webshop: WebShop, managementClient: StateNodeManagementClient)(implicit timer: Timer[IO], cs: ContextShift[IO]) {
+class WebShopService(webshop: WebShop, managementClient: StateNodeManagementClient) {
 
   def build: HttpApp[IO] =
     (root <+> api <+> management).orNotFound

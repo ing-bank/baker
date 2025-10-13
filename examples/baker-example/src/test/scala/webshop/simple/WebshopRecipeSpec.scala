@@ -2,7 +2,7 @@ package webshop.simple
 
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
-import cats.effect.{ContextShift, IO}
+import cats.effect.IO
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
@@ -67,8 +67,6 @@ class WebshopRecipeSpec extends TestKit(ActorSystem("baker-webshop-system")) wit
   }
 
   it should "reserve items in happy conditions" in {
-      implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-
       val reserveItemsInstance: InteractionInstance =
         InteractionInstance.unsafeFrom(new ReserveItemsMock)
       val baker: Baker = AkkaBaker.localDefault(system, CachingInteractionManager(reserveItemsInstance))

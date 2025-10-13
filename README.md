@@ -189,6 +189,12 @@ libraryDependencies += "com.ing.baker" % "baker-runtime_2.13" % "4.1.0"
 We welcome your contributions! The simplest way to contribute to Baker is by creating a branch from a fork. You can then
 create a pull request on GitHub from your branch.
 
+### Configure Akka resolvers
+Before you can compile the project you have to configure the Akka resolvers in a akka.sbt file.
+
+1. Get your own token to download the Akka dependencies at: https://account.akka.io/token
+2. Create an environment variable called AKKA_TOKEN with your token as value
+
 ### Compile and test
 
 To compile and test all libraries:

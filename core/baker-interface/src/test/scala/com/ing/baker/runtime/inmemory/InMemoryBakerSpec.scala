@@ -5,7 +5,7 @@ import com.ing.baker.runtime.model.{BakerF, BakerModelSpec, InteractionInstance}
 
 import scala.concurrent.duration._
 
-class InMemoryBakerSpec extends BakerModelSpec[IO] {
+class InMemoryBakerSpec extends BakerModelSpec{
 
   /** This will execute the predefined baker tests from BakerModelSpec */
   runAll()

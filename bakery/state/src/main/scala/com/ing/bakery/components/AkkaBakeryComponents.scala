@@ -1,7 +1,7 @@
 package com.ing.bakery.components
 
 import akka.actor.ActorSystem
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.akka.AkkaBakerConfig
 import com.ing.baker.runtime.akka.actor.BakerActorProvider
 import com.ing.baker.runtime.model.InteractionManager
@@ -49,12 +49,10 @@ class AkkaBakeryComponents(optionalConfig: Option[Config] = None,
   def actorSystemResource(config: Config): Resource[IO, ActorSystem] =
     Resource.make(
       acquire = IO(ActorSystem("baker", config)))(
-      release = as => IO.fromFuture(IO(as.terminate()))(IO.contextShift(as.dispatcher)).map(_ => ())
+      release = as => IO.fromFuture(IO(as.terminate())).map(_ => ())
     ).logResourceLifecycle("ActorSystem")
 
   def ec(actorSystem: ActorSystem): Resource[IO, ExecutionContext] = Resource.pure[IO, ExecutionContext](actorSystem.dispatcher)
-  def cs(ec: ExecutionContext): Resource[IO, ContextShift[IO]] = Resource.pure[IO, ContextShift[IO]](IO.contextShift(ec))
-  def timer(ec: ExecutionContext): Resource[IO, Timer[IO]] = Resource.pure[IO, Timer[IO]](IO.timer(ec))
 
   def akkaBakerTimeoutsResource(config: Config): Resource[IO, AkkaBakerConfig.Timeouts] =
     Resource.pure[IO, AkkaBakerConfig.Timeouts](AkkaBakerConfig.Timeouts(config)).logResourceLifecycle("Timeouts")
@@ -62,31 +60,25 @@ class AkkaBakeryComponents(optionalConfig: Option[Config] = None,
   def akkaBakerConfigValidationSettingsResource(config: Config): Resource[IO, AkkaBakerConfig.BakerValidationSettings] =
     Resource.pure[IO, AkkaBakerConfig.BakerValidationSettings](AkkaBakerConfig.BakerValidationSettings.from(config)).logResourceLifecycle("BakerValidationSettings")
 
-  def bakerActorProviderResource(config: Config, timer: Timer[IO]): Resource[IO, BakerActorProvider] =
+  def bakerActorProviderResource(config: Config): Resource[IO, BakerActorProvider] =
     Resource.pure[IO, BakerActorProvider](AkkaBakerConfig.bakerProviderFrom(config)).logResourceLifecycle("BakerActorProvider")
 
   def maybeCassandraResource(config: Config,
                              actorSystem: ActorSystem,
-                             ec: ExecutionContext,
-                             cs: ContextShift[IO],
-                             timer: Timer[IO]): Resource[IO, Option[Cassandra]] =
-    Cassandra.resource(config, actorSystem)(cs, timer, ec).logResourceLifecycle("Cassandra")
+                             ec: ExecutionContext): Resource[IO, Option[Cassandra]] =
+    Cassandra.resource(config, actorSystem)(ec).logResourceLifecycle("Cassandra")
 
   def watcherResource(config: Config,
                       actorSystem: ActorSystem,
                       ec: ExecutionContext,
-                      cs: ContextShift[IO],
-                      timer: Timer[IO],
                       maybeCassandra: Option[Cassandra]): Resource[IO, Unit] =
-    Watcher.resource(config, actorSystem, maybeCassandra)(cs, timer, ec).logResourceLifecycle("Watcher")
+    Watcher.resource(config, actorSystem, maybeCassandra)(ec).logResourceLifecycle("Watcher")
 
   def metricsOpsResource: Resource[IO, MetricsOps[IO]] =
     Prometheus.metricsOps[IO](metricService.registry, "http_interactions").logResourceLifecycle("Prometheus")
 
-  def eventSinkResource(config: Config,
-                        cs: ContextShift[IO],
-                        timer: Timer[IO]): Resource[IO, EventSink] =
-    EventSink.resource(config)(cs, timer).logResourceLifecycle("EventSink")
+  def eventSinkResource(config: Config): Resource[IO, EventSink] =
+    EventSink.resource(config).logResourceLifecycle("EventSink")
 
   def interactionManagerResource(config: Config,
                                  actorSystem: ActorSystem,

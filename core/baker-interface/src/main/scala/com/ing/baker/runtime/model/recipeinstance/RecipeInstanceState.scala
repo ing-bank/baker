@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.model.recipeinstance
 
-import cats.effect.concurrent.Deferred
+import cats.effect.Deferred
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet.Place.IngredientPlace

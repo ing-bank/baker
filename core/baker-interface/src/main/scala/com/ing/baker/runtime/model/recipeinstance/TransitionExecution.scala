@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.model.recipeinstance
 
-import java.lang.reflect.InvocationTargetException
-import cats.effect.{Effect, IO, Timer}
+import cats.effect.Async
 import cats.implicits._
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -11,12 +10,12 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl._
-import com.ing.baker.types.{ListValue, PrimitiveValue, RecordValue, Value}
+import com.ing.baker.types.{ListValue, PrimitiveValue, Value}
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.MDC
 
+import java.lang.reflect.InvocationTargetException
 import scala.collection.immutable.{List, Seq}
-import scala.concurrent.duration.MILLISECONDS
 import scala.util.Random
 
 object TransitionExecution {
@@ -93,25 +92,25 @@ private[recipeinstance] case class TransitionExecution(
   def toFailedState(failureStrategy: ExceptionStrategyOutcome): TransitionExecution =
     copy(state = TransitionExecution.State.Failed(failureCount + 1, failureStrategy))
 
-  def execute[F[_]](implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[TransitionExecution.Outcome] =
+  def execute[F[_]](implicit components: BakerComponents[F], async: Async[F]): F[TransitionExecution.Outcome] =
     for {
-      result <- effect.attempt {
+      result <- async.attempt {
         transition match {
           case interactionTransition: InteractionTransition =>
             executeInteractionInstance(interactionTransition)
           case _: EventTransition =>
               for {
-                endTime <- timer.clock.realTime(MILLISECONDS)
+                endTime <- async.pure(System.currentTimeMillis())
                 _ <- input match {
                   case Some(event) =>
                     val eventFired = EventFired(endTime, recipe.name, recipe.recipeId, recipeInstanceId, event.name)
                     components.logging.eventFired(eventFired)
                     components.eventStream.publish(eventFired)
-                  case None => effect.unit
+                  case None => async.unit
                 }
               } yield input
           case _ =>
-            effect.pure(None)
+            async.pure(None)
         }
       }
       outcome = result.leftMap { e =>
@@ -130,7 +129,7 @@ private[recipeinstance] case class TransitionExecution(
       }
     } yield outcome
 
-  private def executeInteractionInstance[F[_]](interactionTransition: InteractionTransition)(implicit components: BakerComponents[F], effect: Effect[F], timer: Timer[F]): F[Option[EventInstance]] = {
+  private def executeInteractionInstance[F[_]](interactionTransition: InteractionTransition)(implicit components: BakerComponents[F], async: Async[F]): F[Option[EventInstance]] = {
 
     def buildInteractionInput: Seq[IngredientInstance] = {
       val recipeInstanceIdIngredient: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(recipeInstanceId)
@@ -156,12 +155,12 @@ private[recipeinstance] case class TransitionExecution(
       }
     }
 
-    def setupMdc: F[Unit] = effect.delay {
+    def setupMdc: F[Unit] = async.delay {
       MDC.put("recipeInstanceId", recipeInstanceId)
       MDC.put("recipeName", recipe.name)
     }
 
-    def cleanMdc: F[Unit] = effect.delay {
+    def cleanMdc: F[Unit] = async.delay {
       MDC.remove("recipeInstanceId")
       MDC.remove("recipeName")
     }
@@ -174,12 +173,11 @@ private[recipeinstance] case class TransitionExecution(
 
 
     for {
-      startTime <- timer.clock.realTime(MILLISECONDS)
+      startTime <-  async.pure(System.currentTimeMillis())
       outcome <- {
-
         for {
-          interactionStarted <- effect.delay(InteractionStarted(startTime, recipe.name, recipe.recipeId, recipeInstanceId, interactionTransition.interactionName))
-          _ <- effect.delay(components.logging.interactionStarted(interactionStarted))
+          interactionStarted <- async.delay(InteractionStarted(startTime, recipe.name, recipe.recipeId, recipeInstanceId, interactionTransition.interactionName))
+          _ <- async.delay(components.logging.interactionStarted(interactionStarted))
           _ <- components.eventStream.publish(interactionStarted)
           interactionOutput <-
             setupMdc.map(_ => execute).flatMap(x => {
@@ -189,12 +187,12 @@ private[recipeinstance] case class TransitionExecution(
           _ <- validateInteractionOutput(interactionTransition, interactionOutput)
           transformedOutput: Option[EventInstance] = interactionOutput.map(_.transformWith(interactionTransition))
 
-          endTime <- timer.clock.realTime(MILLISECONDS)
+          endTime = System.currentTimeMillis()
 
           interactionCompleted = InteractionCompleted(
             endTime, endTime - startTime, recipe.name, recipe.recipeId, recipeInstanceId,
             interactionTransition.interactionName, transformedOutput.map(_.name))
-          _ <- effect.delay(components.logging.interactionFinished(interactionCompleted))
+          _ <- async.delay(components.logging.interactionFinished(interactionCompleted))
           _ <- components.eventStream.publish(interactionCompleted)
 
           _ <- transformedOutput match {
@@ -202,7 +200,7 @@ private[recipeinstance] case class TransitionExecution(
                 val eventFired = EventFired(endTime, recipe.name, recipe.recipeId, recipeInstanceId, event.name)
                 components.logging.eventFired(eventFired)
                 components.eventStream.publish(eventFired)
-              case None => effect.unit
+              case None => async.unit
             }
         } yield transformedOutput
 
@@ -213,11 +211,11 @@ private[recipeinstance] case class TransitionExecution(
           case e => e
         }
         for {
-          endTime <- timer.clock.realTime(MILLISECONDS)
+          endTime <- async.pure(System.currentTimeMillis())
           interactionFailed = InteractionFailed(
             endTime, endTime - startTime, recipe.name, recipe.recipeId, recipeInstanceId,
             transition.label, failureCount, throwable.getMessage, interactionTransition.failureStrategy.apply(failureCount + 1))
-          _ <- effect.delay(components.logging.interactionFailed(interactionFailed, throwable))
+          _ <- async.delay(components.logging.interactionFailed(interactionFailed, throwable))
           _ <- components.eventStream.publish(interactionFailed)
         } yield ()
 
@@ -225,27 +223,27 @@ private[recipeinstance] case class TransitionExecution(
     } yield outcome
   }
 
-  def validateEventForResolvingBlockedInteraction[F[_]](eventInstance: EventInstance)(implicit effect: Effect[F], timer: Timer[F]): F[EventInstance] =
+  def validateEventForResolvingBlockedInteraction[F[_]](eventInstance: EventInstance)(implicit async: Async[F]): F[EventInstance] =
     (isBlocked, transition) match {
       case (true, interactionTransition: InteractionTransition) =>
         validateInteractionOutput[F](interactionTransition, Some(eventInstance))
           .as(eventInstance.transformWith(interactionTransition))
       case (false, _) =>
-        effect.raiseError(new FatalInteractionException("Interaction is not blocked"))
+        async.raiseError(new FatalInteractionException("Interaction is not blocked"))
       case _ =>
-        effect.raiseError(new FatalInteractionException("TransitionExecution is not for an Interaction"))
+        async.raiseError(new FatalInteractionException("TransitionExecution is not for an Interaction"))
     }
 
-  private def validateInteractionOutput[F[_]](interactionTransition: InteractionTransition, interactionOutput: Option[EventInstance])(implicit effect: Effect[F]): F[Unit] = {
+  private def validateInteractionOutput[F[_]](interactionTransition: InteractionTransition, interactionOutput: Option[EventInstance])(implicit async: Async[F]): F[Unit] = {
     def fail(message: String): F[Unit] =
-      effect.raiseError(new FatalInteractionException(message))
+      async.raiseError(new FatalInteractionException(message))
     interactionOutput match {
       case None if interactionTransition.eventsToFire.nonEmpty =>
         fail(s"Interaction '${interactionTransition.interactionName}' did not provide any output, expected one of: ${interactionTransition.eventsToFire.map(_.name).mkString(",")}")
       case None =>
-        effect.unit
+        async.unit
       case Some(event) =>
-        event.validateAsOutputOf(interactionTransition).fold(effect.unit)(fail)
+        event.validateAsOutputOf(interactionTransition).fold(async.unit)(fail)
     }
   }
 }

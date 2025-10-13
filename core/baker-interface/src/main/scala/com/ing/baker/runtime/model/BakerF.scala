@@ -1,7 +1,8 @@
 package com.ing.baker.runtime.model
 
 import cats.effect.implicits._
-import cats.effect.{ConcurrentEffect, Timer}
+import cats.effect.unsafe.IORuntime
+import cats.effect.{Async, IO, Sync}
 import cats.implicits._
 import cats.~>
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -36,7 +37,7 @@ object BakerF {
                    )
 }
 
-abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: ConcurrentEffect[F], timer: Timer[F]) extends common.Baker[F] with ScalaApi with LazyLogging {
+abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[F], async: Async[F]) extends common.Baker[F] with ScalaApi with LazyLogging {
   self =>
 
   val config: BakerF.Config
@@ -70,7 +71,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
   override type DurationType = FiniteDuration
 
   private def javaTimeoutToBakerTimeout[A](operationName: String) : PartialFunction[Throwable, F[A]] = {
-    case _ : java.util.concurrent.TimeoutException => effect.raiseError(BakerException.TimeoutException(operationName))
+    case _ : java.util.concurrent.TimeoutException => sync.raiseError(BakerException.TimeoutException(operationName))
   }
 
   /**
@@ -131,7 +132,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
       .listAll
       .map(interactionsList => interactionsList.find(_.shaBase64 == interactionId))
       .flatMap {
-        case None => effect.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
+        case None => sync.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
           InteractionExecutionFailureReason.INTERACTION_NOT_FOUND, None, None))))
         case Some(interactionInstance) =>
           interactionInstance.execute(ingredients, Map.empty)
@@ -142,7 +143,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
                 Some(interactionInstance.name),
                 Some(s"Interaction execution failed. Interaction threw ${e.getClass.getSimpleName} with message ${e.getMessage}."))))
             }
-            .timeoutTo(config.executeSingleInteractionTimeout, effect.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
+            .timeoutTo(config.executeSingleInteractionTimeout, sync.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
               InteractionExecutionFailureReason.TIMEOUT, Some(interactionInstance.name), None)))))
             .recoverWith(javaTimeoutToBakerTimeout("executeSingleInteraction"))
       }
@@ -253,12 +254,27 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
   override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): EventResolutionsF[F] = {
-    val (onReceive, onComplete) = components.recipeInstanceManager.fireEvent(recipeInstanceId, event, correlationId).toIO.unsafeRunSync()
-    new EventResolutionsF[F] {
-      override def resolveWhenReceived: F[SensoryEventStatus] =
-        onReceive.timeout(config.processEventTimeout).recoverWith(javaTimeoutToBakerTimeout("fireEvent"))
-      override def resolveWhenCompleted: F[SensoryEventResult] =
-        onComplete.timeout(config.processEventTimeout).recoverWith(javaTimeoutToBakerTimeout("fireEvent"))
+    val result: F[(F[SensoryEventStatus], F[SensoryEventResult])] =
+      components.recipeInstanceManager.fireEvent(recipeInstanceId, event, correlationId)
+
+    if(result.isInstanceOf[IO[_]]) {
+      // We are casting to IO and running it to ensure the eventStream is executed if we have an IO implementation
+      val ioCAST: (F[SensoryEventStatus], F[SensoryEventResult]) =
+        result.asInstanceOf[IO[(F[SensoryEventStatus], F[SensoryEventResult])]].unsafeRunSync()(IORuntime.global)
+
+      new EventResolutionsF[F] {
+        override def resolveWhenReceived: F[SensoryEventStatus] =
+          ioCAST._1.timeout(config.processEventTimeout).recoverWith(javaTimeoutToBakerTimeout("fireEvent"))
+        override def resolveWhenCompleted: F[SensoryEventResult] =
+          ioCAST._2.timeout(config.processEventTimeout).recoverWith(javaTimeoutToBakerTimeout("fireEvent"))
+      }
+    } else {
+      new EventResolutionsF[F] {
+        override def resolveWhenReceived: F[SensoryEventStatus] =
+          result._1F.timeout(config.processEventTimeout).recoverWith(javaTimeoutToBakerTimeout("fireEvent")).flatten
+        override def resolveWhenCompleted: F[SensoryEventResult] =
+          result._2F.timeout(config.processEventTimeout).recoverWith(javaTimeoutToBakerTimeout("fireEvent")).flatten
+      }
     }
   }
 
@@ -461,7 +477,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], effect: Con
       .timeout(config.processEventTimeout)
       .recoverWith(javaTimeoutToBakerTimeout("stopRetryingInteraction"))
 
-  def translate[G[_]](mapK: F ~> G, comapK: G ~> F)(implicit components: BakerComponents[G], effect: ConcurrentEffect[G], timer: Timer[G]): BakerF[G] =
+  def translate[G[_]](mapK: F ~> G, comapK: G ~> F)(implicit components: BakerComponents[G], async: Async[G]): BakerF[G] =
     new BakerF[G] {
       override val config: BakerF.Config =
         self.config

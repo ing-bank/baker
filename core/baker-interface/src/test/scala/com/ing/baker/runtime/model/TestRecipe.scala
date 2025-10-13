@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.model
 
 import cats.Applicative
+import cats.effect.IO
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl._
@@ -10,7 +11,7 @@ import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 
 
-trait TestRecipe[F[_]] {
+trait TestRecipe {
 
   case class SomeNotDefinedEvent(name: String)
 
@@ -27,8 +28,8 @@ trait TestRecipe[F[_]] {
     def apply(recipeInstanceId: String, initialIngredient: String): String = ""
   }
 
-  class InteractionOneInterfaceImplementation(implicit effect: Applicative[F]) extends InteractionOne {
-    override def apply(recipeInstanceId: String, initialIngredient: String): F[InteractionOneSuccessful] = effect.pure(InteractionOneSuccessful(""))
+  class InteractionOneInterfaceImplementation(implicit effect: Applicative[IO]) extends InteractionOne {
+    override def apply(recipeInstanceId: String, initialIngredient: String): IO[InteractionOneSuccessful] = effect.pure(InteractionOneSuccessful(""))
   }
 
   class InteractionOneWrongApply() {
@@ -120,7 +121,7 @@ trait TestRecipe[F[_]] {
   trait InteractionOne {
     def name: String = "InteractionOne"
 
-    def apply(recipeInstanceId: String, initialIngredient: String): F[InteractionOneSuccessful]
+    def apply(recipeInstanceId: String, initialIngredient: String): IO[InteractionOneSuccessful]
   }
 
   val interactionOneWithMetaData =
@@ -132,7 +133,7 @@ trait TestRecipe[F[_]] {
   trait InteractionOneWithMetaData {
     def name: String = "InteractionOneWithMetaData"
 
-    def apply(recipeInstanceId: String, initialIngredient: String, bakerMetaData: Map[String, String]): F[InteractionOneSuccessful]
+    def apply(recipeInstanceId: String, initialIngredient: String, bakerMetaData: Map[String, String]): IO[InteractionOneSuccessful]
   }
 
   val interactionOneWithEventList =
@@ -144,7 +145,7 @@ trait TestRecipe[F[_]] {
   trait InteractionOneWithEventList {
     def name: String = "InteractionOneWithEventList"
 
-    def apply(recipeInstanceId: String, initialIngredient: String, recipeInstanceEventList: List[String]): F[InteractionOneSuccessful]
+    def apply(recipeInstanceId: String, initialIngredient: String, recipeInstanceEventList: List[String]): IO[InteractionOneSuccessful]
   }
 
   val interactionTwo =

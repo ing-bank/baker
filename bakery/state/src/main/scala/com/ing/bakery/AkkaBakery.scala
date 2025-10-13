@@ -7,7 +7,6 @@ import com.ing.baker.runtime.akka.actor.LocalBakerActorProvider
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
-import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.bakery.components.AkkaBakeryComponents
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.Config
@@ -33,15 +32,13 @@ object AkkaBakery extends LazyLogging {
       config <- abc.configResource
       actorSystem <- abc.actorSystemResource(config)
       ec <- abc.ec(actorSystem)
-      cs <- abc.cs(ec)
-      timer <- abc.timer(ec)
-      bakerActorProvider <- abc.bakerActorProviderResource(config, timer)
+      bakerActorProvider <- abc.bakerActorProviderResource(config)
       akkaBakerConfigTimeouts <- abc.akkaBakerTimeoutsResource(config)
       akkaBakerConfigValidationSettings <- abc.akkaBakerConfigValidationSettingsResource(config)
-      maybeCassandra <- abc.maybeCassandraResource(config, actorSystem, ec, cs, timer)
-      _ <- abc.watcherResource(config, actorSystem, ec, cs, timer, maybeCassandra)
+      maybeCassandra <- abc.maybeCassandraResource(config, actorSystem, ec)
+      _ <- abc.watcherResource(config, actorSystem, ec, maybeCassandra)
       _ <- abc.metricsOpsResource
-      eventSink <- abc.eventSinkResource(config, cs, timer)
+      eventSink <- abc.eventSinkResource(config)
       externalContext <- abc.externalContextOptionResource
       interactions <- abc.interactionManagerResource(config, actorSystem, externalContext)
       recipeManager <- abc.recipeManagerResource(config, actorSystem)
@@ -55,10 +52,10 @@ object AkkaBakery extends LazyLogging {
             bakerValidationSettings = akkaBakerConfigValidationSettings,
             terminateActorSystem = false, // terminating the actor system is done in it's own resource.
           )(actorSystem))))(
-        release = baker => IO.fromFuture(IO(baker.gracefulShutdown()))(cs)
+        release = baker => IO.fromFuture(IO(baker.gracefulShutdown()))
       )
-      _ <- Resource.eval(eventSink.attach(baker)(cs))
-      _ <- Resource.eval(IO.async[Unit] { callback =>
+      _ <- Resource.eval(eventSink.attach(baker))
+      _ <- Resource.eval(IO.async_[Unit] { callback =>
         //If using local Baker the registerOnMemberUp is never called, should only be used during local testing.
         if (bakerActorProvider.isInstanceOf[LocalBakerActorProvider])
           callback(Right(()))
@@ -66,9 +63,7 @@ object AkkaBakery extends LazyLogging {
           Cluster(actorSystem).registerOnMemberUp {
             logger.info("Akka cluster is now up")
             callback(Right(()))
-          }
-      })
-
+          }})
     } yield AkkaBakery(baker, actorSystem)
   }
 }

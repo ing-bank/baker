@@ -1,26 +1,26 @@
 package com.ing.baker.http.client.scaladsl
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.unsafe.implicits.global
+import cats.effect.{IO, Resource}
+import com.ing.baker.http.client.common.FailoverUtils._
+import com.ing.baker.http.client.common.{FailoverState, TLSConfig}
 import com.ing.baker.il.RecipeVisualStyle
 import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus, Utils}
 import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EncodedRecipe, EventInstance, EventMoment, EventResolutions, IngredientInstance, InteractionExecutionResult, InteractionInstanceDescriptor, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
-import com.ing.baker.runtime.serialization.{AddMetaDataRequest, BakeRequest, InteractionExecution}
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
+import com.ing.baker.runtime.serialization.{AddMetaDataRequest, BakeRequest, InteractionExecution}
 import com.ing.baker.types.Value
-import com.ing.baker.http.client.common.FailoverUtils._
-import com.ing.baker.http.client.common.{FailoverState, TLSConfig}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import org.http4s.Method._
 import org.http4s._
+import org.http4s.blaze.client._
 import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.blaze.client._
 import org.http4s.client.dsl.io._
 
-import scala.collection.immutable.Seq
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
@@ -30,8 +30,7 @@ object BakerClient {
                                          fallbackEndpointConfig: Option[EndpointConfig] = None,
                                          executionContext: ExecutionContext,
                                          filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
-                                         tlsConfig: Option[TLSConfig] = None)
-                                        (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
+                                         tlsConfig: Option[TLSConfig] = None): Resource[IO, BakerClient] = {
     implicit val ex: ExecutionContext = executionContext
 
     tlsConfig.map(_.loadSSLContext)
@@ -45,8 +44,7 @@ object BakerClient {
   def resourceBalanced(endpointConfig: EndpointConfig,
                        executionContext: ExecutionContext,
                        filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
-                       tlsConfig: Option[TLSConfig] = None)
-                      (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
+                       tlsConfig: Option[TLSConfig] = None): Resource[IO, BakerClient] = {
     resourceBalancedWithLegacyFallback(endpointConfig, None, executionContext, filters, tlsConfig)
   }
 
@@ -67,9 +65,8 @@ object BakerClient {
                executionContext: ExecutionContext,
                filters: Seq[Request[IO] => Request[IO]] = Seq.empty,
                tlsConfig: Option[TLSConfig] = None,
-               apiLoggingEnabled: Boolean = false)
-              (implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] =
-    resourceBalanced(EndpointConfig(IndexedSeq(host), apiUrlPrefix, apiLoggingEnabled), executionContext, filters, tlsConfig)(cs, timer)
+               apiLoggingEnabled: Boolean = false): Resource[IO, BakerClient] =
+    resourceBalanced(EndpointConfig(IndexedSeq(host), apiUrlPrefix, apiLoggingEnabled), executionContext, filters, tlsConfig)
 
 
   def apply(client: Client[IO], host: Uri, apiUrlPrefix: String, filters: Seq[Request[IO] => Request[IO]], apiLoggingEnabled: Boolean = false)

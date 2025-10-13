@@ -1,7 +1,7 @@
 package com.ing.bakery.components
 
 import akka.actor.ActorSystem
-import cats.effect.{Async, ContextShift, IO, Resource, Timer}
+import cats.effect.{IO, Resource}
 import com.datastax.oss.driver.api.core.CqlSession
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
@@ -17,7 +17,7 @@ trait Cassandra {
 
 object Cassandra extends LazyLogging {
 
-  def resource(config: Config, system: ActorSystem)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Option[Cassandra]] =
+  def resource(config: Config, system: ActorSystem)(ec: ExecutionContext): Resource[IO, Option[Cassandra]] =
     Resource.eval[IO, Option[Cassandra]] {
       IO {
         val provider = config.getString("baker.cassandra.class")

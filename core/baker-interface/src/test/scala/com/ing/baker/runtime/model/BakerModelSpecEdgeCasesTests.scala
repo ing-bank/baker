@@ -1,24 +1,23 @@
 package com.ing.baker.runtime.model
 
-import java.util.{Optional, UUID}
-import cats.effect.ConcurrentEffect
-import cats.implicits._
+import cats.effect.kernel.Clock
+import cats.effect.unsafe.implicits.global
+import cats.effect.{Async, IO, Sync}
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.RecipeVisualStyle
 import com.ing.baker.recipe.scaladsl.Recipe
+import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.EventInstance
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 
-import scala.reflect.ClassTag
+import java.util.{Optional, UUID}
 import scala.concurrent.duration._
-import cats.implicits._
-import com.ing.baker.runtime.common.RecipeRecord
+import scala.reflect.ClassTag
 
-trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
+trait BakerModelSpecEdgeCasesTests { self: BakerModelSpec =>
 
-  def runEdgeCasesTests()(implicit effect: ConcurrentEffect[F], classTag: ClassTag[F[Any]]): Unit = {
+  def runEdgeCasesTests()(implicit sync: Sync[IO], async: Async[IO], classTag: ClassTag[IO[Any]]): Unit = {
     test("execute an interaction with Optional set to empty when its ingredient is provided") { context =>
       val ingredientValue: Optional[String] = java.util.Optional.of("optionalWithValue")
 
@@ -30,7 +29,7 @@ trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
           .withSensoryEvent(initialEvent)
 
       for {
-        bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, mockImplementations)
+        bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, mockImplementations(sync, classTag))(sync)
         (baker, _) = bakerAndRecipeId
 
         compiledRecipe = RecipeCompiler.compileRecipe(recipe)
@@ -76,7 +75,7 @@ trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
       for {
         bakerAndRecipeId<- context.setupBakerWithRecipe(recipe, mockImplementations)
         (baker, recipeId) = bakerAndRecipeId
-        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(sync.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
@@ -152,7 +151,7 @@ trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
         .withSensoryEvents(initialEvent, secondEvent, thirdEvent, fourthEvent)
 
       for {
-        bakerAndRecipeId<- context.setupBakerWithRecipe(recipe, mockImplementations)
+        bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, mockImplementations)
         (baker, recipeId) = bakerAndRecipeId
         firstrecipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, firstrecipeInstanceId)
@@ -198,19 +197,19 @@ trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
         (baker, recipeId) = bakerAndRecipeId
         // Two answers that take 0.6 seconds each!
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenAnswer((_: InvocationOnMock) => {
-          timer.sleep(600.millis).to[F]
+          async.sleep(600.millis).to[IO]
             .as(InteractionOneSuccessful(interactionOneIngredientValue))
         })
         _ = when(testInteractionTwoMock.apply(anyString()))
           .thenAnswer((_: InvocationOnMock) => {
-              timer.sleep(600.millis).unsafeRunSync()
+              async.sleep(600.millis).unsafeRunSync()
               EventFromInteractionTwo(interactionTwoIngredientValue)
           })
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
-        start <- timer.clock.realTime(MILLISECONDS).to[F]
+        start <- Clock[IO].realTime.map(_.toMillis)
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
-        finish <- timer.clock.realTime(MILLISECONDS).to[F]
+        finish <- Clock[IO].realTime.map(_.toMillis)
         executingTimeInMilliseconds = finish - start
       } yield
         assert(
@@ -230,8 +229,8 @@ trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
         bakerAndRecipeId<- context.setupBakerWithRecipe("UpdateTestRecipe")
         (baker, recipeId) = bakerAndRecipeId
         recipeInstanceId = UUID.randomUUID().toString
-        _ = when(testInteractionOneMock.apply(recipeInstanceId.toString, firstData)).thenReturn(effect.pure(InteractionOneSuccessful(firstResponse)))
-        _ = when(testInteractionOneMock.apply(recipeInstanceId.toString, secondData)).thenReturn(effect.pure(InteractionOneSuccessful(secondResponse)))
+        _ = when(testInteractionOneMock.apply(recipeInstanceId.toString, firstData)).thenReturn(sync.pure(InteractionOneSuccessful(firstResponse)))
+        _ = when(testInteractionOneMock.apply(recipeInstanceId.toString, secondData)).thenReturn(sync.pure(InteractionOneSuccessful(secondResponse)))
         _ <- baker.bake(recipeId, recipeInstanceId)
         //Fire the first event
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(firstData)))
@@ -267,7 +266,7 @@ trait BakerModelSpecEdgeCasesTests[F[_]] { self: BakerModelSpec[F] =>
         .withSensoryEvent(initialEvent)
 
       when(testInteractionOneMock.apply(anyString(), anyString()))
-        .thenReturn(effect.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
+        .thenReturn(sync.pure(InteractionOneSuccessful(interactionOneIngredientValue)))
 
       for {
         bakerAndRecipeId<- context.setupBakerWithRecipe(recipe, mockImplementations)

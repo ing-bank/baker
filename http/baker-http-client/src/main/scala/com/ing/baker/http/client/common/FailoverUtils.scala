@@ -1,6 +1,6 @@
 package com.ing.baker.http.client.common
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.IO
 import cats.implicits._
 import com.ing.baker.http.client.scaladsl.{EndpointConfig, ResponseError}
 import com.ing.baker.runtime.common.BakerException
@@ -56,9 +56,6 @@ object FailoverUtils extends LazyLogging {
                        handleHttpErrors: Response[IO] => IO[Throwable],
                        fallbackEndpoint: Option[EndpointConfig])
                       (implicit ec: ExecutionContext, decoder: Decoder[BakerResult]): IO[BakerResult] = {
-    implicit val timer: Timer[IO] = IO.timer(ec)
-    implicit val cs: ContextShift[IO] = IO.contextShift(ec)
-
     retryingOnAllErrors(
       policy = limitRetries[IO](
         (fos.endpoint.hosts.size + fallbackEndpoint.map(_.hosts.size).getOrElse(0)) * config.retryTimes) |+| constantDelay[IO](config.initialDelay),

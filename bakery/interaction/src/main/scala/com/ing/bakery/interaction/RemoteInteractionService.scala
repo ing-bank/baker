@@ -1,6 +1,7 @@
 package com.ing.bakery.interaction
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.unsafe.implicits.global
+import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.model.BakerLogging
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.ing.baker.runtime.serialization.InteractionExecutionJsonCodecs._
@@ -10,11 +11,11 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser._
 import io.prometheus.client.CollectorRegistry
 import org.http4s._
+import org.http4s.blaze.server._
 import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.metrics.prometheus.Prometheus
-import org.http4s.blaze.server._
 import org.http4s.server.middleware.{Logger, Metrics}
 import org.http4s.server.{Router, Server}
 
@@ -36,7 +37,7 @@ object RemoteInteractionService {
                metricsPort: Int = 9096,
                metricsEnabled: Boolean = false,
                apiUrlPrefix: String = "/api/bakery/interactions",
-               registry: Option[CollectorRegistry] = None)(implicit timer: Timer[IO], cs: ContextShift[IO], executionContext: ExecutionContext): Resource[IO, Server] = {
+               registry: Option[CollectorRegistry] = None)(implicit executionContext: ExecutionContext): Resource[IO, Server] = {
 
     val idToNameMap = interactions.map(i => URLEncoder.encode(i.shaBase64, "UTF-8").take(8) -> i.name).toMap
 
@@ -73,7 +74,7 @@ object RemoteInteractionService {
       }).resource
       _ <- if (metricsEnabled) {
         MetricService
-          .resourceServer(InetSocketAddress.createUnresolved("0.0.0.0", metricsPort), collectorRegistry, ExecutionContext.global)(cs, timer)
+          .resourceServer(InetSocketAddress.createUnresolved("0.0.0.0", metricsPort), collectorRegistry, ExecutionContext.global)
       }
       else Resource.eval(IO.unit)
 
@@ -86,8 +87,6 @@ abstract class InteractionExecutor extends LazyLogging {
 
   def interactions: List[InteractionInstance]
   def executionContext: ExecutionContext
-  implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
-  implicit val timer: Timer[IO] = IO.timer(executionContext)
 
   val bakerLogging: BakerLogging = BakerLogging(logger)
 
