@@ -71,19 +71,19 @@ the process, or when the process has finished.
 === "Java"
 
     ```java
-    --8<-- "docs-code-snippets/src/main/java/examples/java/application/FireEventAndResolveOnEvent.java"
+    --8<-- "docs-code-snippets/src/main/java/examples/java/application/AwaitEvent.java"
     ```
 
 === "Kotlin"
 
     ```kotlin
-    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/application/FireEventAndResolveOnEvent.kt"
+    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/application/AwaitEvent.kt"
     ```
 
 === "Scala"
 
     ```scala
-    --8<-- "docs-code-snippets/src/main/scala/examples/scala/application/FireEventAndResolveOnEvent.scala"
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/application/AwaitEvent.scala"
     ```
 
 ## Inquiry
