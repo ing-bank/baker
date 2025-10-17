@@ -8,7 +8,7 @@ import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransiti
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
+import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceEventSourcing, ProcessInstanceProtocol}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManagerActor, RecipeManagerProtocol}
 import com.ing.baker.runtime.akka.actor.serialization.SerializedDataProto.akkaAnyRefMapping
@@ -127,6 +127,16 @@ object BakerTypedProtobufSerializer {
         .register("ProcessInstanceProtocol.AwaitCompleted"),
       forType[ProcessInstanceProtocol.Completed.type ]
         .register("ProcessInstanceProtocol.Completed"),
+
+      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.CompletionListenerAdded]
+        .register("CompletionListenerAdded")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.CompletionListenerAdded)),
+      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.EventListenerAdded]
+        .register("EventListenerAdded")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.EventListenerAdded)),
+      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.CompletionListenersRemoved]
+        .register("CompletionListenersRemoved")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.CompletionListenersRemoved)),
+      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.EventListenersRemoved]
+        .register("EventListenersRemoved")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.EventListenersRemoved)),
+
       forType[ProcessInstanceProtocol.Stop]
         .register("ProcessInstanceProtocol.Stop"),
       forType[ProcessInstanceProtocol.GetState.type]
@@ -161,6 +171,7 @@ object BakerTypedProtobufSerializer {
         .register("ProcessInstanceProtocol.TransitionFired"),
       forType[ProcessInstanceProtocol.MetaDataAdded.type]
         .register("ProcessInstanceProtocol.MetaDataAdded"),
+
       forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFired]
         .register("TransitionFired")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFired)),
       forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailedWithOutput]

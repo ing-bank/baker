@@ -46,6 +46,9 @@ This method completes right after the event was received, but before any interac
 `awaitCompleted` completes when additional sensory events are required to continue
 the process, or when the process has finished.
 
+!!!Note
+Make sure to set a timeout smaller than the requestTimeout of your httpClient. Otherwise, you will see awaitCompleted() timeout prematurely.
+
 === "Java"
 
     ```java
@@ -67,6 +70,9 @@ the process, or when the process has finished.
 ### Wait for an event
 
 `awaitEvent` completes when an event with the specified name appears in the list of fired events.
+
+!!!Note
+Make sure to set a timeout smaller than the requestTimeout of your httpClient. Otherwise, you will see awaitEvent() timeout prematurely.
 
 === "Java"
 
