@@ -8,7 +8,7 @@ import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{NotifyBoth, NotifyOnEvent, NotifyWhenCompleted, NotifyWhenReceived}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.akka.actor.process_index.protobuf.{ActorMetaData, ActorRefId}
+import com.ing.baker.runtime.akka.actor.process_index.protobuf.ActorRefId
 import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
 import com.ing.baker.runtime.serialization.ProtoMap
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned, versionedOptional}
@@ -570,6 +570,55 @@ object ProcessIndexProto {
         for {
           recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
         } yield ProcessAlreadyExists(recipeInstanceId)
+    }
+
+  implicit def processSensoryEventProto: ProtoMap[ProcessSensoryEvent, protobuf.ProcessSensoryEvent] =
+    new ProtoMap[ProcessSensoryEvent, protobuf.ProcessSensoryEvent] {
+
+      val companion = protobuf.ProcessSensoryEvent
+
+      def toProto(a: ProcessSensoryEvent): protobuf.ProcessSensoryEvent =
+        protobuf.ProcessSensoryEvent(
+          Some(a.recipeInstanceId),
+          Some(ctxToProto(a.event)),
+          a.correlationId
+        )
+
+      def fromProto(message: protobuf.ProcessSensoryEvent): Try[ProcessSensoryEvent] =
+        for {
+          recipeInstanceId <- versioned(message.recipeInstanceId, "recipeInstanceId")
+          eventProto <- versioned(message.event, "event")
+          event <- ctxFromProto(eventProto)
+        } yield ProcessSensoryEvent(recipeInstanceId, event, message.correlationId)
+    }
+
+  implicit def processIndexAwaitCompletedProto: ProtoMap[ProcessIndexProtocol.AwaitCompleted, protobuf.AwaitCompleted] =
+    new ProtoMap[ProcessIndexProtocol.AwaitCompleted, protobuf.AwaitCompleted] {
+
+      val companion = protobuf.AwaitCompleted
+
+      def toProto(a: ProcessIndexProtocol.AwaitCompleted): protobuf.AwaitCompleted =
+        protobuf.AwaitCompleted(Some(a.recipeInstanceId))
+
+      def fromProto(message: protobuf.AwaitCompleted): Try[ProcessIndexProtocol.AwaitCompleted] =
+        for {
+          recipeInstanceId <- versioned(message.recipeInstanceId, "recipeInstanceId")
+        } yield ProcessIndexProtocol.AwaitCompleted(recipeInstanceId)
+    }
+
+  implicit def processIndexAwaitEventProto: ProtoMap[ProcessIndexProtocol.AwaitEvent, protobuf.AwaitEvent] =
+    new ProtoMap[ProcessIndexProtocol.AwaitEvent, protobuf.AwaitEvent] {
+
+      val companion = protobuf.AwaitEvent
+
+      def toProto(a: ProcessIndexProtocol.AwaitEvent): protobuf.AwaitEvent =
+        protobuf.AwaitEvent(Some(a.recipeInstanceId), Some(a.eventName))
+
+      def fromProto(message: protobuf.AwaitEvent): Try[ProcessIndexProtocol.AwaitEvent] =
+        for {
+          recipeInstanceId <- versioned(message.recipeInstanceId, "recipeInstanceId")
+          eventName <- versioned(message.eventName, "eventName")
+        } yield ProcessIndexProtocol.AwaitEvent(recipeInstanceId, eventName)
     }
 
 }
