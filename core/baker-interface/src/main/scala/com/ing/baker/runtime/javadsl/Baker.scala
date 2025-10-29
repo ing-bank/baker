@@ -239,6 +239,15 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
     toCompletableFuture(baker.stopRetryingInteraction(recipeInstanceId, interactionName))
 
   /**
+   * Check if recipe instance exists and is active.
+   *
+   * @param recipeInstanceId The recipe instance identifier
+   * @return true if recipe instance exists, and is in active state, otherwise false.
+   */
+  def hasRecipeInstance(recipeInstanceId: String): CompletableFuture[Boolean] =
+    toCompletableFuture(baker.hasRecipeInstance(recipeInstanceId))
+
+  /**
     * Returns the state of a process instance. This includes the ingredients and names of the events.
     *
     * @param recipeInstanceId The process identifier

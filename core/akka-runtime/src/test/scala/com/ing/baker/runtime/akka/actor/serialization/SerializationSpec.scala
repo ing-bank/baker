@@ -118,6 +118,8 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
 
   checkFor[ProcessIndexProtocol.ProcessEventReceivedResponse].run
 
+  checkFor[ProcessIndexProtocol.HasRecipeInstance].run
+
   checkFor[ProcessIndexProtocol.GetProcessState].run
 
   checkFor[ProcessIndexProtocol.GetCompiledRecipe].run
@@ -395,6 +397,7 @@ object SerializationSpec {
       )
     } yield ProcessEvent(recipeInstanceId, event, correlationId, timeout, reaction)
 
+    implicit val hasRecipeInstanceGen: Gen[HasRecipeInstance] = recipeInstanceIdGen.map(HasRecipeInstance)
     implicit val getProcessStateGen: Gen[GetProcessState] = recipeInstanceIdGen.map(GetProcessState)
     implicit val getCompiledRecipeGen: Gen[GetCompiledRecipe] = recipeInstanceIdGen.map(GetCompiledRecipe)
 

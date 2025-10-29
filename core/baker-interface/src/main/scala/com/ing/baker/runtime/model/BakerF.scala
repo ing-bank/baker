@@ -339,6 +339,17 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
       .recoverWith(javaTimeoutToBakerTimeout("getAllRecipeInstancesMetadata"))
 
   /**
+   * Check if recipe instance exists and is active.
+   *
+   * @param recipeInstanceId The recipe instance identifier
+   * @return true if recipe instance exists, and is in active state, otherwise false.
+   */
+  override def hasRecipeInstance(recipeInstanceId: String): F[Boolean] =
+    components.recipeInstanceManager.hasRecipeInstance(recipeInstanceId)
+      .timeout(config.inquireTimeout)
+      .recoverWith(javaTimeoutToBakerTimeout("hasRecipeInstance"))
+
+  /**
     * Returns the process state.
     *
     * @param recipeInstanceId The process identifier
@@ -575,6 +586,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
       }
       override def getAllRecipeInstancesMetadata: Future[Set[RecipeInstanceMetadata]] =
         mapK(self.getAllRecipeInstancesMetadata)
+      override def hasRecipeInstance(recipeInstanceId: String): Future[Boolean] =
+        mapK(self.hasRecipeInstance(recipeInstanceId))
       override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] =
         mapK(self.getRecipeInstanceState(recipeInstanceId))
       override def getIngredient(recipeInstanceId: String, name: String): Future[Value] =

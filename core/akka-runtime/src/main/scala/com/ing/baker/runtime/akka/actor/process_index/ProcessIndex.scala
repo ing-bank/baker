@@ -584,6 +584,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         actorRef.forward(AddMetaData(metaData))
       }
 
+    case HasRecipeInstance(recipeInstanceId) =>
+      // We check if the recipe instance exists, regardless of whether its state is.
+      sender() ! RecipeInstanceExists(recipeInstanceId, index.contains(recipeInstanceId))
+
     case GetProcessState(recipeInstanceId) =>
       withActiveProcess(recipeInstanceId) { actorRef => actorRef.forward(GetState) }
 

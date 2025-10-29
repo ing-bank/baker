@@ -63,7 +63,10 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
         jBaker.deleteRecipeInstance(recipeInstanceId, removeFromIndex).await()
     }
 
-    @Deprecated("This method is deprecated and will be removed after December 1st, 2026. Please use fireSensoryEventAndAwaitReceived instead.", level = DeprecationLevel.WARNING)
+    @Deprecated(
+        "This method is deprecated and will be removed after December 1st, 2026. Please use fireSensoryEventAndAwaitReceived instead.",
+        level = DeprecationLevel.WARNING
+    )
     suspend fun fireEventAndResolveWhenReceived(
         recipeInstanceId: String,
         event: EventInstance,
@@ -73,7 +76,10 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
             .await()
     }
 
-    @Deprecated("This method is deprecated and will be removed after December 1st, 2026. Please use the combination of fireSensoryEventAndAwaitReceived followed by awaitCompleted.", level = DeprecationLevel.WARNING)
+    @Deprecated(
+        "This method is deprecated and will be removed after December 1st, 2026. Please use the combination of fireSensoryEventAndAwaitReceived followed by awaitCompleted.",
+        level = DeprecationLevel.WARNING
+    )
     suspend fun fireEventAndResolveWhenCompleted(
         recipeInstanceId: String,
         event: EventInstance,
@@ -83,7 +89,10 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
             .await()
     }
 
-    @Deprecated("This method is deprecated and will be removed after December 1st, 2026. Please use the combination of fireSensoryEventAndAwaitReceived followed by awaitEvent.", level = DeprecationLevel.WARNING)
+    @Deprecated(
+        "This method is deprecated and will be removed after December 1st, 2026. Please use the combination of fireSensoryEventAndAwaitReceived followed by awaitEvent.",
+        level = DeprecationLevel.WARNING
+    )
     suspend fun fireEventAndResolveOnEvent(
         recipeInstanceId: String,
         event: EventInstance,
@@ -94,7 +103,10 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
             .await()
     }
 
-    @Deprecated("This method uses a callback-style API that is deprecated and will be removed after December 1st, 2026. Please use the new composable API: fireSensoryEventAndAwaitReceived followed by awaitCompleted or awaitEvent.", level = DeprecationLevel.WARNING)
+    @Deprecated(
+        "This method uses a callback-style API that is deprecated and will be removed after December 1st, 2026. Please use the new composable API: fireSensoryEventAndAwaitReceived followed by awaitCompleted or awaitEvent.",
+        level = DeprecationLevel.WARNING
+    )
     fun fireEvent(
         recipeInstanceId: String,
         event: EventInstance,
@@ -121,6 +133,10 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
         jBaker.stopRetryingInteraction(recipeInstanceId, interactionName).await()
     }
 
+    suspend fun hasRecipeInstance(recipeInstanceId: String): Boolean =
+        // Explicit cast since the method returns scala.Boolean and implicit conversion is not available
+        jBaker.hasRecipeInstance(recipeInstanceId).await() as Boolean
+
     suspend fun getRecipeInstanceState(recipeInstanceId: String): RecipeInstanceState =
         jBaker.getRecipeInstanceState(recipeInstanceId).await()
 
@@ -128,7 +144,7 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
         jBaker.getIngredients(recipeInstanceId).await()
 
     suspend fun getIngredient(recipeInstanceId: String, name: String): Value =
-            jBaker.getIngredient(recipeInstanceId, name).await()
+        jBaker.getIngredient(recipeInstanceId, name).await()
 
     suspend fun getEvents(recipeInstanceId: String): List<EventMoment> =
         jBaker.getEvents(recipeInstanceId).await()
