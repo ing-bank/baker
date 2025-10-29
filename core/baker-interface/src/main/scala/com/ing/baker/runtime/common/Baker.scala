@@ -235,6 +235,14 @@ trait Baker[F[_]] extends LanguageApi {
   def getAllRecipeInstancesMetadata: F[language.Set[RecipeInstanceMetadataType]]
 
   /**
+   * Check if recipe instance exists and is active.
+   *
+   * @param recipeInstanceId The recipe instance identifier
+   * @return true if recipe instance exists, and is in active state, otherwise false.
+   */
+  def hasRecipeInstance(recipeInstanceId: String): F[Boolean]
+
+  /**
     * Returns the process state.
     *
     * @param recipeInstanceId The process identifier

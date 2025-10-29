@@ -20,6 +20,8 @@ object ProcessIndexProtocol {
 
   case class ProcessEventResponse(recipeInstanceId: String) extends ProcessIndexMessage
 
+  case class HasRecipeInstance(recipeInstanceId: String) extends ProcessIndexMessage
+
   case class GetProcessState(recipeInstanceId: String) extends ProcessIndexMessage
 
   case class GetProcessIngredient(recipeInstanceId: String, name: String) extends ProcessIndexMessage
@@ -132,6 +134,8 @@ object ProcessIndexProtocol {
   case class ProcessEventReceivedResponse(status: SensoryEventStatus) extends BakerSerializable
 
   case class ProcessEventCompletedResponse(result: SensoryEventResult) extends BakerSerializable
+
+  case class RecipeInstanceExists(recipeInstanceId: String, exists: Boolean) extends BakerSerializable
 
   /**
     * Possible failures when firing a sensory event

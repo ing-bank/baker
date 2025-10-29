@@ -140,6 +140,10 @@ message ProcessEventResponse {
     optional SerializedData sourceRef = 2;
 }
 
+message HasRecipeInstance {
+    optional string recipeInstanceId = 1;
+}
+
 message GetProcessState {
     optional string recipeInstanceId = 1;
 }
