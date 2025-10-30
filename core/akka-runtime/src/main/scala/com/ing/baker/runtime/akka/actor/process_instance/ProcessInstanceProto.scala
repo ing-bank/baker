@@ -341,7 +341,55 @@ object ProcessInstanceProto {
       }
     }
 
+  implicit def processInstanceAwaitCompletedProto: ProtoMap[ProcessInstanceProtocol.AwaitCompleted.type, protobuf.AwaitCompleted] =
+    new ProtoMap[ProcessInstanceProtocol.AwaitCompleted.type, protobuf.AwaitCompleted] {
 
+      val companion = protobuf.AwaitCompleted
+
+      def toProto(a: ProcessInstanceProtocol.AwaitCompleted.type): protobuf.AwaitCompleted =
+        protobuf.AwaitCompleted()
+
+      def fromProto(message: protobuf.AwaitCompleted): Try[ProcessInstanceProtocol.AwaitCompleted.type] =
+        Success(ProcessInstanceProtocol.AwaitCompleted)
+    }
+
+  implicit def processInstanceCompletedProto: ProtoMap[ProcessInstanceProtocol.Completed.type, protobuf.Completed] =
+    new ProtoMap[ProcessInstanceProtocol.Completed.type, protobuf.Completed] {
+
+      val companion = protobuf.Completed
+
+      def toProto(a: ProcessInstanceProtocol.Completed.type): protobuf.Completed =
+        protobuf.Completed()
+
+      def fromProto(message: protobuf.Completed): Try[ProcessInstanceProtocol.Completed.type] =
+        Success(ProcessInstanceProtocol.Completed)
+    }
+
+  implicit def processInstanceAwaitEventProto: ProtoMap[ProcessInstanceProtocol.AwaitEvent, protobuf.AwaitEvent] =
+    new ProtoMap[ProcessInstanceProtocol.AwaitEvent, protobuf.AwaitEvent] {
+
+      val companion = protobuf.AwaitEvent
+
+      def toProto(a: ProcessInstanceProtocol.AwaitEvent): protobuf.AwaitEvent =
+        protobuf.AwaitEvent(Some(a.eventName))
+
+      def fromProto(message: protobuf.AwaitEvent): Try[ProcessInstanceProtocol.AwaitEvent] =
+        for {
+          eventName <- versioned(message.eventName, "eventName")
+        } yield ProcessInstanceProtocol.AwaitEvent(eventName)
+    }
+
+  implicit def processInstanceEventOccurredProto: ProtoMap[ProcessInstanceProtocol.EventOccurred.type, protobuf.EventOccurred] =
+    new ProtoMap[ProcessInstanceProtocol.EventOccurred.type, protobuf.EventOccurred] {
+
+      val companion = protobuf.EventOccurred
+
+      def toProto(a: ProcessInstanceProtocol.EventOccurred.type): protobuf.EventOccurred =
+        protobuf.EventOccurred()
+
+      def fromProto(message: protobuf.EventOccurred): Try[ProcessInstanceProtocol.EventOccurred.type] =
+        Success(ProcessInstanceProtocol.EventOccurred)
+    }
 
   implicit def transitionFiredProto(implicit ev0: AnyRefMapping): ProtoMap[TransitionFired, protobuf.TransitionFiredMessage] =
     new ProtoMap[TransitionFired, protobuf.TransitionFiredMessage] {

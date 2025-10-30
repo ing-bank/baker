@@ -1,4 +1,5 @@
 syntax = "proto2";
+package com.ing.baker.runtime.akka.actor.process_instance.protobuf;
 
 import "common.proto";
 import "scalapb/scalapb.proto";
@@ -240,4 +241,20 @@ message OverrideExceptionStrategy {
 
 message InvalidCommand {
     optional string reason = 1;
+}
+
+message AwaitCompleted {
+
+}
+
+message Completed {
+
+}
+
+message AwaitEvent {
+  optional string eventName = 1;
+}
+
+message EventOccurred {
+
 }

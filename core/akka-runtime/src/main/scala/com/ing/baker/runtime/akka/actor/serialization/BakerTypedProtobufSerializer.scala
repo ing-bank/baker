@@ -3,18 +3,18 @@ package com.ing.baker.runtime.akka.actor.serialization
 import akka.actor.{ActorRefProvider, ExtendedActorSystem}
 import com.ing.baker.il
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor._
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionProto._
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManagerActor, RecipeManagerProtocol}
+import com.ing.baker.runtime.akka.actor.serialization.SerializedDataProto.akkaAnyRefMapping
+import com.ing.baker.runtime.akka.actor.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.ProtoMap
-import SerializedDataProto._
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.{DelayedTransitionExecuted, DelayedTransitionInstance, DelayedTransitionScheduled, DelayedTransitionSnapshot}
-import com.ing.baker.runtime.akka.actor.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
 
 object BakerTypedProtobufSerializer {
 
@@ -91,6 +91,12 @@ object BakerTypedProtobufSerializer {
         .register("ProcessIndexProtocol.GetCompiledRecipe"),
       forType[ProcessIndexProtocol.ProcessEvent]
         .register("ProcessIndexProtocol.ProcessEvent"),
+      forType[ProcessIndexProtocol.ProcessSensoryEvent]
+        .register("ProcessIndexProtocol.ProcessSensoryEvent"),
+      forType[ProcessIndexProtocol.AwaitCompleted]
+        .register("ProcessIndexProtocol.AwaitCompleted"),
+      forType[ProcessIndexProtocol.AwaitEvent]
+        .register("ProcessIndexProtocol.AwaitEvent"),
       forType[ProcessIndexProtocol.ProcessEventReceivedResponse]
         .register("ProcessIndexProtocol.ProcessEventReceivedResponse"),
       forType[ProcessIndexProtocol.ProcessEventCompletedResponse]
@@ -108,11 +114,19 @@ object BakerTypedProtobufSerializer {
       forType[ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet]
         .register("ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet"),
       forType[ProcessIndexProtocol.AddRecipeInstanceMetaData]
-      .register("ProcessIndexProtocol.AddRecipeInstanceMetaData")
+        .register("ProcessIndexProtocol.AddRecipeInstanceMetaData")
     )
 
   def processInstanceEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] =
     List(
+      forType[ProcessInstanceProtocol.AwaitEvent]
+        .register("ProcessInstanceProtocol.AwaitEvent"),
+      forType[ProcessInstanceProtocol.EventOccurred.type]
+        .register("ProcessInstanceProtocol.EventOccurred"),
+      forType[ProcessInstanceProtocol.AwaitCompleted.type]
+        .register("ProcessInstanceProtocol.AwaitCompleted"),
+      forType[ProcessInstanceProtocol.Completed.type ]
+        .register("ProcessInstanceProtocol.Completed"),
       forType[ProcessInstanceProtocol.Stop]
         .register("ProcessInstanceProtocol.Stop"),
       forType[ProcessInstanceProtocol.GetState.type]

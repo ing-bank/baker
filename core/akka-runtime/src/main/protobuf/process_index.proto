@@ -1,4 +1,5 @@
 syntax = "proto2";
+package com.ing.baker.runtime.akka.actor.process_index.protobuf;
 
 import "scalapb/scalapb.proto";
 import "common.proto";
@@ -185,4 +186,19 @@ message ProcessAlreadyExists {
 message DeleteProcess {
     optional string recipeInstanceId = 1;
     optional bool removeFromIndex = 2;
+}
+
+message AwaitCompleted {
+  optional string recipeInstanceId = 1;
+}
+
+message AwaitEvent {
+  optional string recipeInstanceId = 1;
+  optional string eventName = 2;
+}
+
+message ProcessSensoryEvent {
+  optional string recipeInstanceId = 1;
+  optional RuntimeEvent event = 2;
+  optional string correlationId = 3;
 }
