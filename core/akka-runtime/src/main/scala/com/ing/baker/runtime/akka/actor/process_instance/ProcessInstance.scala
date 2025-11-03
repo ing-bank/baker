@@ -22,7 +22,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.akka.internal.{FatalInteractionException, RecipeRuntime}
 import com.ing.baker.runtime.model.BakerLogging
-import com.ing.baker.runtime.scaladsl.{EventFired, EventInstance, EventReceived, EventRejected, IngredientInstance, RecipeInstanceState}
+import com.ing.baker.runtime.scaladsl.{EventFired, EventInstance, IngredientInstance, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.{FromValue, PrimitiveValue, Value}
 
@@ -46,14 +46,6 @@ object ProcessInstance {
   def persistenceIdPrefix(processType: String) = s"process-$processType-"
 
   def recipeInstanceId2PersistenceId(processType: String, recipeInstanceId: String): String = persistenceIdPrefix(processType) + recipeInstanceId
-
-  def persistenceId2recipeInstanceId(processType: String, persistenceId: String): Option[String] = {
-    val parts = persistenceId.split(persistenceIdPrefix(processType))
-    if (parts.length == 2)
-      Some(parts(1))
-    else
-      None
-  }
 
   def props[S, E](processType: String, compiledRecipe: CompiledRecipe,
                   runtime: ProcessInstanceRuntime,
@@ -153,23 +145,9 @@ class ProcessInstance(
     log.info(s"ProcessInstance stopped: $recipeInstanceId")
   }
 
-  val recipeInstanceId = context.self.path.name
+  val recipeInstanceId: String = context.self.path.name
 
-  val executor = runtime.jobExecutor(petriNet)
-
-  private val completionListeners: mutable.Set[ActorRef] = mutable.Set.empty
-
-  private var eventListeners: mutable.Map[String, Set[ActorRef]] = mutable.Map.empty
-
-  private def addEventListener(eventName: String, listener: ActorRef) = {
-    val newSet = eventListeners.getOrElse(eventName, Set.empty) + listener
-    eventListeners += (eventName -> newSet)
-  }
-
-  private def removeEventListener(eventName: String, listener: ActorRef) = {
-    val newSet = eventListeners.getOrElse(eventName, Set.empty) - listener
-    eventListeners += (eventName -> newSet)
-  }
+  private val executor = runtime.jobExecutor(petriNet)
 
   override def persistenceId: String = recipeInstanceId2PersistenceId(processType, recipeInstanceId)
 
@@ -275,32 +253,46 @@ class ProcessInstance(
 
   private def updateState(updatedInstance: Instance[RecipeInstanceState], scheduledRetries: Map[Long, Cancellable], firedEvent: Option[EventInstance] = None): Unit = {
 
-    // Check for Event Occurrences
-    firedEvent.foreach { event =>
-      val eventName = event.name
-      // Find listeners for this specific event
-      eventListeners.get(eventName).foreach { listenersForThisEvent =>
-        // Notify them
-        listenersForThisEvent.foreach(listener => {
-          listener ! EventOccurred
-        })
-        // Remove them from the map
-        eventListeners.remove(eventName)
+    // The primary purpose is to notify listeners; the events are collected for bookkeeping.
+    val eventsToPersist = handleNotifications(updatedInstance, firedEvent)
+
+    // We block (do not change context) until all cleanup events are persisted.
+    if (eventsToPersist.isEmpty) {
+      context.become(running(updatedInstance, scheduledRetries))
+    } else {
+      persistAllEvents(updatedInstance, eventsToPersist) { persistedEvents =>
+        val finalInstance = persistedEvents.foldLeft(updatedInstance) { (instance, event) =>
+          eventSource.apply(instance)(event)
+        }
+        context.become(running(finalInstance, scheduledRetries))
+      }
+    }
+  }
+
+  /**
+   * Checks for and sends all required notifications, returning a list of
+   * cleanup events that should be persisted.
+   */
+  private def handleNotifications(instance: Instance[RecipeInstanceState], firedEvent: Option[EventInstance]): List[Event] = {
+
+    val eventListenerCleanup = firedEvent.toList.flatMap { event =>
+      instance.eventListenerPaths.get(event.name).filter(_.nonEmpty).map { listenerPaths =>
+        // Side Effect: Notify listeners that the event occurred
+        listenerPaths.foreach(path => context.actorSelection(path) ! EventOccurred)
+        EventListenersRemoved(event.name)
       }
     }
 
-    // Check for Idle Condition
-    if (updatedInstance.hasCompletedExecution) {
-      // Notify all idle waiters
-      completionListeners.foreach(listener => {
-        listener ! Completed
-      })
-      // Clear the idle waiters list
-      // Actors run in single thread so there is no race condition to be cautious of with this.
-      completionListeners.clear()
-    }
+    val completionListenerCleanup =
+      if (instance.hasCompletedExecution && instance.completionListenerPaths.nonEmpty) {
+        // Side Effect: Notify listeners that the recipe completed
+        instance.completionListenerPaths.foreach(path => context.actorSelection(path) ! Completed)
+        List(CompletionListenersRemoved())
+      } else {
+        List.empty
+      }
 
-    context become running(updatedInstance, scheduledRetries)
+    eventListenerCleanup ++ completionListenerCleanup
   }
 
   def running(instance: Instance[RecipeInstanceState],
@@ -331,30 +323,28 @@ class ProcessInstance(
     case ProcessInstanceProtocol.AwaitCompleted =>
       if (instance.hasCompletedExecution) {
         sender() ! ProcessInstanceProtocol.Completed
-      }
-      else {
-        // Register listener
-        completionListeners += sender()
-        // Check to avoid race condition
-        if (instance.hasCompletedExecution) {
-          completionListeners -= sender()
-          sender() ! ProcessInstanceProtocol.Completed
+      } else {
+        // Persist the listener addition
+        val event = CompletionListenerAdded(sender().path.toSerializationFormat)
+        // This persist is sync so no race conditions to worry about
+        persistEvent(instance, event) { _ =>
+          val updatedInstance = eventSource.apply(instance)(event)
+          // Update actor's state
+          context.become(running(updatedInstance, scheduledRetries))
         }
-    }
+      }
 
     case ProcessInstanceProtocol.AwaitEvent(eventName) =>
-      val state = instance.state
-
-      if (state.eventNames.contains(eventName)) {
+      if (instance.state.eventNames.contains(eventName)) {
         sender() ! ProcessInstanceProtocol.EventOccurred
-      }
-      else {
-        // Register listener
-        addEventListener(eventName, sender())
-        // Check to avoid race condition
-        if (state.eventNames.contains(eventName)) {
-          removeEventListener(eventName, sender())
-          sender() ! ProcessInstanceProtocol.EventOccurred
+      } else {
+        // Persist the listener addition
+        val event = EventListenerAdded(eventName, sender().path.toSerializationFormat)
+        // This persist is sync so no race conditions to worry about
+        persistEvent(instance, event) { _ =>
+          val updatedInstance = eventSource.apply(instance)(event)
+          // Update actor's state
+          context.become(running(updatedInstance, scheduledRetries))
         }
       }
 

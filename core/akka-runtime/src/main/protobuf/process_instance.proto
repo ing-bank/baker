@@ -120,6 +120,36 @@ message TransitionFailed {
     repeated ConsumedToken consumed = 9;
 }
 
+
+message CompletionListenerAdded {
+
+  option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
+
+  required string listenerPath = 1;
+}
+
+message EventListenerAdded {
+
+  option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
+
+  required string eventName = 1;
+  required string listenerPath = 2;
+}
+
+message CompletionListenersRemoved {
+
+  option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
+
+  // This message is empty, acting as a marker.
+}
+
+message EventListenersRemoved {
+
+  option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
+
+  required string eventName = 1;
+}
+
 // Protocol
 
 message GetState {

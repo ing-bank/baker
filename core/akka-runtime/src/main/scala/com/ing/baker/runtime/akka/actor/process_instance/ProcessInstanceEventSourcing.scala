@@ -106,6 +106,30 @@ object ProcessInstanceEventSourcing extends LazyLogging {
     */
   case class MetaDataAdded(metaData: Map[String, String]) extends Event
 
+  /**
+   * An event that describes a listener being added for process completion.
+   * @param listenerPath The serialized path of the listener actor.
+   */
+  case class CompletionListenerAdded(listenerPath: String) extends Event
+
+  /**
+   * An event that describes a listener being added for a specific event occurrence.
+   * @param eventName The name of the event to listen for.
+   * @param listenerPath The serialized path of the listener actor.
+   */
+  case class EventListenerAdded(eventName: String, listenerPath: String) extends Event
+
+  /**
+   * An event that signifies that all completion listeners have been notified and should be removed.
+   */
+  case class CompletionListenersRemoved() extends Event
+
+  /**
+   * An event that signifies that all listeners for a specific event have been notified and should be removed.
+   * @param eventName The event for which listeners are removed.
+   */
+  case class EventListenersRemoved(eventName: String) extends Event
+
   def apply[S, E](sourceFn: (Long, Transition) => (S => E => S)): Instance[S] => Event => Instance[S] = instance => {
     case InitializedEvent(initial, initialState) =>
 
@@ -209,6 +233,28 @@ object ProcessInstanceEventSourcing extends LazyLogging {
             state
       }
       instance.copy[S](state = newState)
+
+    case e: CompletionListenerAdded =>
+      instance.copy(
+        completionListenerPaths = instance.completionListenerPaths + e.listenerPath
+      )
+
+    case e: EventListenerAdded =>
+      val currentListeners = instance.eventListenerPaths.getOrElse(e.eventName, Set.empty)
+      val updatedListeners = currentListeners + e.listenerPath
+      instance.copy(
+        eventListenerPaths = instance.eventListenerPaths + (e.eventName -> updatedListeners)
+      )
+
+    case _: CompletionListenersRemoved =>
+      instance.copy(
+        completionListenerPaths = Set.empty
+      )
+
+    case e: EventListenersRemoved =>
+      instance.copy(
+        eventListenerPaths = instance.eventListenerPaths - e.eventName
+      )
   }
 
   def eventsForInstance(
@@ -252,7 +298,12 @@ abstract class ProcessInstanceEventSourcing(
 
   def persistEvent[O](instance: Instance[RecipeInstanceState], e: Event)(fn: Event => O): Unit = {
     val serializedEvent = serializer.serializeEvent(e)(instance)
-    persist(serializedEvent) { persisted => fn(e) }
+    persist(serializedEvent) { _ => fn(e) }
+  }
+
+  def persistAllEvents[O](instance: Instance[RecipeInstanceState], events: List[Event])(fn: List[Event] => O): Unit = {
+    val serializedEvents = events.map {e => serializer.serializeEvent(e)(instance)}
+    persistAll(serializedEvents) { _ -> fn(events) }
   }
 
   private var recoveringState: Instance[RecipeInstanceState] = Instance.uninitialized[RecipeInstanceState](petriNet)
@@ -263,14 +314,18 @@ abstract class ProcessInstanceEventSourcing(
   }
 
   override def receiveRecover: Receive = {
-    case e: protobuf.Initialized      => applyToRecoveringState(e)
-    case e: protobuf.TransitionFired  => applyToRecoveringState(e)
-    case e: protobuf.TransitionFailedWithOutput  => applyToRecoveringState(e)
-    case e: protobuf.TransitionFailedWithFunctionalOutput  => applyToRecoveringState(e)
+    case e: protobuf.Initialized => applyToRecoveringState(e)
+    case e: protobuf.TransitionFired => applyToRecoveringState(e)
+    case e: protobuf.TransitionFailedWithOutput => applyToRecoveringState(e)
+    case e: protobuf.TransitionFailedWithFunctionalOutput => applyToRecoveringState(e)
     case e: protobuf.TransitionFailed => applyToRecoveringState(e)
     case e: protobuf.TransitionDelayed => applyToRecoveringState(e)
     case e: protobuf.DelayedTransitionFired => applyToRecoveringState(e)
     case e: protobuf.MetaDataAdded => applyToRecoveringState(e)
+    case e: protobuf.CompletionListenerAdded => applyToRecoveringState(e)
+    case e: protobuf.EventListenerAdded => applyToRecoveringState(e)
+    case e: protobuf.CompletionListenersRemoved => applyToRecoveringState(e)
+    case e: protobuf.EventListenersRemoved => applyToRecoveringState(e)
     case RecoveryCompleted =>
       if (recoveringState.sequenceNr > 0)
         onRecoveryCompleted(recoveringState)

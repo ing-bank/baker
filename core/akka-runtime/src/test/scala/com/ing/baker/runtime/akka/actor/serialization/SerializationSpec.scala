@@ -9,8 +9,9 @@ import com.ing.baker.petrinet.api.{Id, Marking, MultiSet}
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.{CompletionListenerAdded, CompletionListenersRemoved, EventListenerAdded, EventListenersRemoved}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
+import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceEventSourcing, ProcessInstanceProtocol}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor.RecipeAdded
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
@@ -19,8 +20,8 @@ import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState, SensoryEventResult}
 import com.ing.baker.runtime.serialization.Encryption.{AESEncryption, NoEncryption}
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto}
-import com.ing.baker.types.modules.PrimitiveModuleSpec._
 import com.ing.baker.types._
+import com.ing.baker.types.modules.PrimitiveModuleSpec._
 import com.ing.baker.{AllTypeRecipe, types}
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Test.Parameters.defaultVerbose
@@ -542,6 +543,20 @@ object SerializationSpec {
       marking <- markingDataGen
       state <- Runtime.processStateGen
     } yield Initialize(marking, state)
+
+    implicit val completionListenerAddedGen: Gen[CompletionListenerAdded] =
+      Gen.alphaStr.map(CompletionListenerAdded)
+
+    implicit val eventListenerAddedGen: Gen[EventListenerAdded] = for {
+      eventName <- Runtime.eventNameGen
+      listenerPath <- Gen.alphaStr
+    } yield EventListenerAdded(eventName, listenerPath)
+
+    implicit val completionListenersRemovedGen: Gen[CompletionListenersRemoved] =
+      Gen.const(CompletionListenersRemoved())
+
+    implicit val eventListenersRemovedGen: Gen[EventListenersRemoved] =
+      Runtime.eventNameGen.map(EventListenersRemoved)
 
     implicit val uninitializedGen: Gen[Uninitialized] = recipeInstanceIdGen.map(Uninitialized)
     implicit val alreadyInitializedGen: Gen[AlreadyInitialized] = recipeInstanceIdGen.map(AlreadyInitialized)

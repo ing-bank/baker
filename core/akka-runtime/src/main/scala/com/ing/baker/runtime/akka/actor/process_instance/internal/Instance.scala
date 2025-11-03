@@ -28,7 +28,10 @@ case class Instance[S](
     delayedTransitionIds: Map[Id, Int],
     state: S,
     jobs: Map[Long, Job[S]],
-    receivedCorrelationIds: Set[String]) {
+    receivedCorrelationIds: Set[String],
+    completionListenerPaths: Set[String] = Set.empty,
+    eventListenerPaths: Map[String, Set[String]] = Map.empty
+) {
 
   /**
    * The marking that is already used by running jobs

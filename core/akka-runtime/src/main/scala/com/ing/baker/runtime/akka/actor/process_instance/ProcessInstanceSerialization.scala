@@ -1,13 +1,11 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.TransitionDelayed
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.DelayedTransitionFired
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.{CompletionListenerAdded, CompletionListenersRemoved, DelayedTransitionFired, EventListenerAdded, EventListenersRemoved, InitializedEvent, TransitionDelayed, TransitionFailedEvent, TransitionFailedWithFunctionalOutputEvent, TransitionFailedWithOutputEvent, TransitionFiredEvent}
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal.Instance
+import com.ing.baker.runtime.akka.actor.process_instance.protobuf.FailureStrategy
 import com.ing.baker.runtime.akka.actor.process_instance.protobuf.FailureStrategy.StrategyType
-import com.ing.baker.runtime.akka.actor.process_instance.protobuf._
 import com.ing.baker.runtime.akka.actor.protobuf.{ProducedToken, SerializedData}
 import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto}
@@ -40,6 +38,10 @@ class ProcessInstanceSerialization[S, E](provider: AkkaSerializerProvider) {
     case e: protobuf.TransitionDelayed => deserializeTransitionDelayed(e)
     case e: protobuf.DelayedTransitionFired => deserializeDelayedTransitionFired(e)
     case e: protobuf.TransitionFailed => deserializeTransitionFailed(e)
+    case e: protobuf.CompletionListenerAdded => deserializeCompletionListenerAdded(e)
+    case e: protobuf.EventListenerAdded => deserializeEventListenerAdded(e)
+    case _: protobuf.CompletionListenersRemoved => deserializeCompletionListenersRemoved()
+    case e: protobuf.EventListenersRemoved => deserializeEventListenersRemoved(e)
     case e: protobuf.MetaDataAdded => deserializeMetaDataAdded(e)
 //    case _ => throw new RuntimeException("e") //TODO write the serialisation for the new stored messages in Protobuff
   }
@@ -56,6 +58,10 @@ class ProcessInstanceSerialization[S, E](provider: AkkaSerializerProvider) {
       case e: TransitionDelayed => serializeTransitionDelayed(e)
       case e: DelayedTransitionFired => serializeDelayedTransitionFired(e)
       case e: TransitionFailedEvent => serializeTransitionFailed(e)
+      case e: CompletionListenerAdded => serializeCompletionListenerAdded(e)
+      case e: EventListenerAdded => serializeEventListenerAdded(e)
+      case _: CompletionListenersRemoved => serializeCompletionListenersRemoved()
+      case e: EventListenersRemoved => serializeEventListenersRemoved(e)
       case e: com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.MetaDataAdded => serializeMetaDataAdded(e)
     }
 
@@ -324,4 +330,36 @@ class ProcessInstanceSerialization[S, E](provider: AkkaSerializerProvider) {
         e.metaData.map(record => (record.key.get -> record.value.get)).toMap
       )
     }
+
+  private def serializeCompletionListenerAdded(e: CompletionListenerAdded): protobuf.CompletionListenerAdded = {
+    protobuf.CompletionListenerAdded(listenerPath = e.listenerPath)
+  }
+
+  private def deserializeCompletionListenerAdded(e: protobuf.CompletionListenerAdded): Instance[S] => CompletionListenerAdded = _ => {
+    CompletionListenerAdded(e.listenerPath)
+  }
+
+  private def serializeEventListenerAdded(e: EventListenerAdded): protobuf.EventListenerAdded = {
+    protobuf.EventListenerAdded(eventName = e.eventName, listenerPath = e.listenerPath)
+  }
+
+  private def deserializeEventListenerAdded(e: protobuf.EventListenerAdded): Instance[S] => EventListenerAdded = _ => {
+    EventListenerAdded(e.eventName, e.listenerPath)
+  }
+
+  private def serializeCompletionListenersRemoved(): protobuf.CompletionListenersRemoved = {
+    protobuf.CompletionListenersRemoved()
+  }
+
+  private def deserializeCompletionListenersRemoved(): Instance[S] => CompletionListenersRemoved = _ => {
+    CompletionListenersRemoved()
+  }
+
+  private def serializeEventListenersRemoved(e: EventListenersRemoved): protobuf.EventListenersRemoved = {
+    protobuf.EventListenersRemoved(eventName = e.eventName)
+  }
+
+  private def deserializeEventListenersRemoved(e: protobuf.EventListenersRemoved): Instance[S] => EventListenersRemoved = _ => {
+    EventListenersRemoved(e.eventName)
+  }
 }
