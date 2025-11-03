@@ -298,7 +298,12 @@ abstract class ProcessInstanceEventSourcing(
 
   def persistEvent[O](instance: Instance[RecipeInstanceState], e: Event)(fn: Event => O): Unit = {
     val serializedEvent = serializer.serializeEvent(e)(instance)
-    persist(serializedEvent) { persisted => fn(e) }
+    persist(serializedEvent) { _ => fn(e) }
+  }
+
+  def persistAllEvents[O](instance: Instance[RecipeInstanceState], events: List[Event])(fn: List[Event] => O): Unit = {
+    val serializedEvents = events.map {e => serializer.serializeEvent(e)(instance)}
+    persistAll(serializedEvents) { _ -> fn(events) }
   }
 
   private var recoveringState: Instance[RecipeInstanceState] = Instance.uninitialized[RecipeInstanceState](petriNet)

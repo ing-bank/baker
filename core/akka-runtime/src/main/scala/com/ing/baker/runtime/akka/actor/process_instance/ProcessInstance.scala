@@ -253,56 +253,47 @@ class ProcessInstance(
 
   private def updateState(updatedInstance: Instance[RecipeInstanceState], scheduledRetries: Map[Long, Cancellable], firedEvent: Option[EventInstance] = None): Unit = {
 
-    // We do not persist each event immediately because the persist callbacks would then be hard to work with.
-    val cleanupEventsToPersist = scala.collection.mutable.ListBuffer.empty[Event]
+    // The primary purpose is to notify listeners; the events are collected for bookkeeping.
+    val eventsToPersist = handleNotifications(updatedInstance, firedEvent)
 
-    // Check for Event Occurrences
-    firedEvent.foreach { event =>
-      val eventName = event.name
-
-      updatedInstance.eventListenerPaths.get(eventName).foreach { listenerPaths =>
-        if (listenerPaths.nonEmpty) {
-          // 1. Notify listeners (Side Effect)
-          listenerPaths.foreach(path => {
-            context.actorSelection(path) ! EventOccurred
-          })
-          // 2. Queue the cleanup event for persistence
-          cleanupEventsToPersist += EventListenersRemoved(eventName)
-        }
-      }
-    }
-
-    // Check for Idle Condition
-    if (updatedInstance.hasCompletedExecution && updatedInstance.completionListenerPaths.nonEmpty) {
-      // 1. Notify all idle waiters (Side Effect)
-      updatedInstance.completionListenerPaths.foreach(path => {
-        context.actorSelection(path) ! Completed
-      })
-      // 2. Queue the cleanup event for persistence
-      cleanupEventsToPersist += CompletionListenersRemoved()
-    }
-
-    // If there are cleanup events, persist them sequentially.
-    // Otherwise, just update the context.
-    if (cleanupEventsToPersist.isEmpty) {
+    // We block (do not change context) until all cleanup events are persisted.
+    if (eventsToPersist.isEmpty) {
       context.become(running(updatedInstance, scheduledRetries))
     } else {
-      // Helper function to persist a list of events sequentially
-      // and only update the context after the last one.
-      def persistAll(instance: Instance[RecipeInstanceState], events: List[Event]): Unit = events match {
-        case Nil =>
-          // All events have been persisted, now switch context
-          context.become(running(instance, scheduledRetries))
-        case head :: tail =>
-          persistEvent(instance, head) { persistedEvent =>
-            val newInstance = eventSource.apply(instance)(persistedEvent)
-            persistAll(newInstance, tail)
-          }
+      persistAllEvents(updatedInstance, eventsToPersist) { persistedEvents =>
+        val finalInstance = persistedEvents.foldLeft(updatedInstance) { (instance, event) =>
+          eventSource.apply(instance)(event)
+        }
+        context.become(running(finalInstance, scheduledRetries))
       }
-      persistAll(updatedInstance, cleanupEventsToPersist.toList)
     }
   }
 
+  /**
+   * Checks for and sends all required notifications, returning a list of
+   * cleanup events that should be persisted.
+   */
+  private def handleNotifications(instance: Instance[RecipeInstanceState], firedEvent: Option[EventInstance]): List[Event] = {
+
+    val eventListenerCleanup = firedEvent.toList.flatMap { event =>
+      instance.eventListenerPaths.get(event.name).filter(_.nonEmpty).map { listenerPaths =>
+        // Side Effect: Notify listeners that the event occurred
+        listenerPaths.foreach(path => context.actorSelection(path) ! EventOccurred)
+        EventListenersRemoved(event.name)
+      }
+    }
+
+    val completionListenerCleanup =
+      if (instance.hasCompletedExecution && instance.completionListenerPaths.nonEmpty) {
+        // Side Effect: Notify listeners that the recipe completed
+        instance.completionListenerPaths.foreach(path => context.actorSelection(path) ! Completed)
+        List(CompletionListenersRemoved())
+      } else {
+        List.empty
+      }
+
+    eventListenerCleanup ++ completionListenerCleanup
+  }
 
   def running(instance: Instance[RecipeInstanceState],
               scheduledRetries: Map[Long, Cancellable]): Receive = {
