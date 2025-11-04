@@ -6,7 +6,6 @@ import java.util.concurrent.CompletableFuture
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
 import com.ing.baker.types.{Converters, Type}
 
-import scala.collection.immutable.Seq
 import scala.reflect.ClassTag
 
 package object javadsl {
@@ -37,6 +36,11 @@ package object javadsl {
       .find(_.getName == interactionMethodName)
       .getOrElse(throw new IllegalStateException(
         s"No method named '$interactionMethodName' defined on '${interactionClass.getName}'"))
+
+    if (!method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
+      throw new common.RecipeValidationException(
+        s"The '$interactionMethodName' method of interaction '${interactionClass.getName}' is not annotated with @FiresEvent. All interactions must declare their outcome.")
+    }
 
     val inputIngredients: Seq[common.Ingredient] =
       method.getParameterNames.toIndexedSeq.map(name =>

@@ -180,14 +180,18 @@ public class JavaCompiledRecipeTest {
     }
 
     public interface InteractionThree {
-        void apply(@RequiresIngredient("RequestIDStringOne") String requestIDStringOne,
+
+        class Nothing {}
+
+        @FiresEvent(oneOf = {InteractionThree.Nothing.class})
+        Nothing apply(@RequiresIngredient("RequestIDStringOne") String requestIDStringOne,
                    @RequiresIngredient("RequestIDStringTwo") String requestIDStringTwo);
     }
 
     public static class InteractionThreeImpl implements InteractionThree {
-        public void apply(String requestIDStringOne,
+        public Nothing apply(String requestIDStringOne,
                           String requestIDStringTwo) {
-
+            return new Nothing();
         }
 
         public String name = InteractionThree.class.getSimpleName();

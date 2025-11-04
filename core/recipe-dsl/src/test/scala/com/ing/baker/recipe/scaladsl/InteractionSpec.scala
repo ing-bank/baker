@@ -3,8 +3,6 @@ package com.ing.baker.recipe.scaladsl
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
-import scala.collection.immutable.Seq
-
 class InteractionSpec extends AnyWordSpecLike with Matchers {
   "an Interaction" when {
     "calling the Equals method" should {
