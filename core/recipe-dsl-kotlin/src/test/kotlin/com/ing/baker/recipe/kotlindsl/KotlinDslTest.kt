@@ -8,6 +8,7 @@ import com.ing.baker.recipe.javadsl.Interaction
 import com.ing.baker.recipe.kotlindsl.JavaInteraction.ItemsReserved
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 import scala.Option
 import scala.Some
@@ -97,8 +98,8 @@ class KotlinDslTest {
                 }
 
                 ingredientNameOverrides {
-                    "foo" to "yolo"
-                    "bar" to "krakaka"
+                    "shippingAddress" to "yolo"
+                    "reservedItems" to "krakaka"
                 }
             }
         }
@@ -250,8 +251,8 @@ class KotlinDslTest {
             )
 
             assertEquals(2, overriddenIngredientNames().size())
-            assertEquals("yolo", overriddenIngredientNames().get("foo").get())
-            assertEquals("krakaka", overriddenIngredientNames().get("bar").get())
+            assertEquals("yolo", overriddenIngredientNames().get("shippingAddress").get())
+            assertEquals("krakaka", overriddenIngredientNames().get("reservedItems").get())
 
             assertTrue(failureStrategy().isEmpty)
         }
@@ -560,6 +561,22 @@ class KotlinDslTest {
             assertEquals(2, output().size())
             assertEquals("ResponseSuccessful", output().toList().apply(0).name())
             assertEquals("ResponseFailed", output().toList().apply(1).name())
+        }
+    }
+
+    @Test
+    fun `should throw exception when renaming non existent ingredient`() {
+        try {
+            recipe("test recipe") {
+                interaction<Interactions.ShipItems> {
+                    ingredientNameOverrides {
+                        "shippingAdres" to "newAddress" // Misspelled ingredient
+                    }
+                }
+            }
+            fail("Should have thrown an IllegalArgumentException")
+        } catch (e: IllegalArgumentException) {
+            e.message!!
         }
     }
 

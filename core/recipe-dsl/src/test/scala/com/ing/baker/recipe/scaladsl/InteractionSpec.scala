@@ -3,8 +3,6 @@ package com.ing.baker.recipe.scaladsl
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
-import scala.collection.immutable.Seq
-
 class InteractionSpec extends AnyWordSpecLike with Matchers {
   "an Interaction" when {
     "calling the Equals method" should {
@@ -60,6 +58,22 @@ class InteractionSpec extends AnyWordSpecLike with Matchers {
         )
         val otherObject = ""
         CreateCustomer.equals(otherObject) shouldBe false
+      }
+
+      "overriding ingredient names" should {
+        "throw exception when trying to override non-existent ingredients" in {
+          val customerName = Ingredient[String]("customerName")
+          val customerId = Ingredient[String]("customerId")
+
+          intercept[IllegalArgumentException] {
+            Interaction(
+              name = "CreateCustomer",
+              inputIngredients = Seq(customerName, customerId),
+              output = Seq(),
+              overriddenIngredientNames = Map("customerNme" -> "customerFullName") // Typo in customerName
+            )
+          }
+        }
       }
     }
   }

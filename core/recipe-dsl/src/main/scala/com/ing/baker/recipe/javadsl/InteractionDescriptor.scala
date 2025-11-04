@@ -5,7 +5,6 @@ import com.ing.baker.types.Converters
 
 import scala.annotation.{nowarn, varargs}
 import scala.collection.JavaConverters._
-import scala.collection.immutable.Seq
 
 case class InteractionDescriptor private(
                           override val originalName: String,
@@ -24,6 +23,15 @@ case class InteractionDescriptor private(
   extends common.InteractionDescriptor {
 
   override val name: String = newName.getOrElse(originalName)
+
+  // Verifies that all overridden ingredient names exist as input ingredients.
+  // This check is part of the constructor, so it's executed on every instantiation.
+  private val allIngredientNames: Set[String] = inputIngredients.map(_.name).toSet
+  overriddenIngredientNames.keys.foreach { oldName =>
+    require(allIngredientNames.contains(oldName),
+      s"Ingredient to override '$oldName' does not exist in the interaction '$name'. " +
+        s"Available ingredients are: ${allIngredientNames.mkString(", ")}")
+  }
 
   /**
     * This sets a requirement for this interaction that a specific event needs to have been fired before it can execute.
