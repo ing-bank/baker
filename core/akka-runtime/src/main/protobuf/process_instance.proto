@@ -288,3 +288,7 @@ message AwaitEvent {
 message EventOccurred {
 
 }
+
+message HasRecipeInstance {
+
+}
