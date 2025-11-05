@@ -166,6 +166,7 @@ public class InteractionDescriptorTest {
         exception.expectMessage("is not annotated with @FiresEvent");
 
         of(InteractionWithMissingFiresEventAnnotation.class);
+    }
 
     @Test
     public void shouldThrowExceptionWhenRenamingNonExistentIngredient() {
@@ -174,7 +175,6 @@ public class InteractionDescriptorTest {
 
         InteractionDescriptor id = of(SimpleInteraction.class);
         id.renameRequiredIngredient("nonExistentIngredient", "newIngredientName");
-
     }
 
     //TODO add tests for all InteractionDescriptor methods
