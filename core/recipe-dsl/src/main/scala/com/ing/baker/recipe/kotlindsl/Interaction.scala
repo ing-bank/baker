@@ -7,10 +7,6 @@ import com.ing.baker.types.{Converters, Value}
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.jdk.CollectionConverters._
-import scala.collection.immutable.Seq
-import scala.collection.immutable.List
-import scala.collection.immutable.Map
-import scala.collection.immutable.Set
 
 class Interaction private(
   nameInput: String,
@@ -40,6 +36,15 @@ class Interaction private(
   override val maximumInteractionCount: Option[Int] = maximumInteractionCountInput
   override val failureStrategy: Option[common.InteractionFailureStrategy] = failureStrategyInput
   override val isReprovider: Boolean = isReproviderInput
+
+  // Verifies that all overridden ingredient names exist as input ingredients.
+  // This check is part of the constructor, so it's executed on every instantiation.
+  private val allIngredientNames: Set[String] = inputIngredients.map(_.name).toSet
+  overriddenIngredientNames.keys.foreach { oldName =>
+    require(allIngredientNames.contains(oldName),
+      s"Ingredient to override '$oldName' does not exist in the interaction '$name'. " +
+        s"Available ingredients are: ${allIngredientNames.mkString(", ")}")
+  }
 }
 
 object Interaction {

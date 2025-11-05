@@ -9,8 +9,6 @@ import com.ing.baker.types.mirror
 import scala.language.experimental.macros
 import scala.reflect.runtime.universe.TypeTag
 
-import scala.collection.immutable.Seq
-
 object Interaction {
 
   def apply[T : TypeTag]: common.InteractionDescriptor = {
@@ -36,6 +34,13 @@ case class Interaction private(override val name: String,
   extends common.InteractionDescriptor {
 
   override val originalName: String = oldName.getOrElse(name)
+
+  private val allIngredientNames: Set[String] = inputIngredients.map(_.name).toSet
+  overriddenIngredientNames.keys.foreach { oldName =>
+    require(allIngredientNames.contains(oldName),
+      s"Ingredient to override '$oldName' does not exist in the interaction '$name'. " +
+        s"Available ingredients are: ${allIngredientNames.mkString(", ")}")
+  }
 
   def withName(newName: String): Interaction = copy(name = newName, oldName = Some(name))
 
