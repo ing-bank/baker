@@ -135,7 +135,7 @@ object ProcessIndexProtocol {
 
   case class ProcessEventCompletedResponse(result: SensoryEventResult) extends BakerSerializable
 
-  case class RecipeInstanceExists(recipeInstanceId: String, exists: Boolean) extends BakerSerializable
+  case class RecipeInstanceExists(recipeInstanceId: String, exists: Boolean) extends ProcessIndexMessage
 
   /**
     * Possible failures when firing a sensory event
