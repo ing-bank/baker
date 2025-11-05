@@ -11,7 +11,7 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.{CompletionListenerAdded, CompletionListenersRemoved, EventListenerAdded, EventListenersRemoved}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
-import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceEventSourcing, ProcessInstanceProtocol}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor.RecipeAdded
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
@@ -117,8 +117,6 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
   checkFor[ProcessIndexProtocol.ProcessEventCompletedResponse].run
 
   checkFor[ProcessIndexProtocol.ProcessEventReceivedResponse].run
-
-  checkFor[ProcessIndexProtocol.HasRecipeInstance].run
 
   checkFor[ProcessIndexProtocol.GetProcessState].run
 
@@ -397,7 +395,6 @@ object SerializationSpec {
       )
     } yield ProcessEvent(recipeInstanceId, event, correlationId, timeout, reaction)
 
-    implicit val hasRecipeInstanceGen: Gen[HasRecipeInstance] = recipeInstanceIdGen.map(HasRecipeInstance)
     implicit val getProcessStateGen: Gen[GetProcessState] = recipeInstanceIdGen.map(GetProcessState)
     implicit val getCompiledRecipeGen: Gen[GetCompiledRecipe] = recipeInstanceIdGen.map(GetCompiledRecipe)
 
