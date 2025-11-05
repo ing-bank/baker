@@ -166,6 +166,15 @@ public class InteractionDescriptorTest {
         exception.expectMessage("is not annotated with @FiresEvent");
 
         of(InteractionWithMissingFiresEventAnnotation.class);
+
+    @Test
+    public void shouldThrowExceptionWhenRenamingNonExistentIngredient() {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("Ingredient to override 'nonExistentIngredient' does not exist in the interaction 'SimpleInteraction'. Available ingredients are: initialIngredient");
+
+        InteractionDescriptor id = of(SimpleInteraction.class);
+        id.renameRequiredIngredient("nonExistentIngredient", "newIngredientName");
+
     }
 
     //TODO add tests for all InteractionDescriptor methods

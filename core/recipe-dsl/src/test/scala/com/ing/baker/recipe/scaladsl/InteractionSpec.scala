@@ -59,6 +59,22 @@ class InteractionSpec extends AnyWordSpecLike with Matchers {
         val otherObject = ""
         CreateCustomer.equals(otherObject) shouldBe false
       }
+
+      "overriding ingredient names" should {
+        "throw exception when trying to override non-existent ingredients" in {
+          val customerName = Ingredient[String]("customerName")
+          val customerId = Ingredient[String]("customerId")
+
+          intercept[IllegalArgumentException] {
+            Interaction(
+              name = "CreateCustomer",
+              inputIngredients = Seq(customerName, customerId),
+              output = Seq(),
+              overriddenIngredientNames = Map("customerNme" -> "customerFullName") // Typo in customerName
+            )
+          }
+        }
+      }
     }
   }
 }

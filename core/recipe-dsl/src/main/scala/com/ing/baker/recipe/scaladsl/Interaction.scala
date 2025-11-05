@@ -35,6 +35,13 @@ case class Interaction private(override val name: String,
 
   override val originalName: String = oldName.getOrElse(name)
 
+  private val allIngredientNames: Set[String] = inputIngredients.map(_.name).toSet
+  overriddenIngredientNames.keys.foreach { oldName =>
+    require(allIngredientNames.contains(oldName),
+      s"Ingredient to override '$oldName' does not exist in the interaction '$name'. " +
+        s"Available ingredients are: ${allIngredientNames.mkString(", ")}")
+  }
+
   def withName(newName: String): Interaction = copy(name = newName, oldName = Some(name))
 
   def withRequiredEvent(event: common.Event): Interaction =
