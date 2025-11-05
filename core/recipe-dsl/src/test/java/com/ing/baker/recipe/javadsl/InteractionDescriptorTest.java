@@ -1,5 +1,6 @@
 package com.ing.baker.recipe.javadsl;
 
+import com.ing.baker.recipe.annotations.RequiresIngredient;
 import com.ing.baker.recipe.common.RecipeValidationException;
 import com.ing.baker.recipe.javadsl.events.InteractionProvidedEvent;
 import com.ing.baker.recipe.javadsl.events.InteractionProvidedEvent2;
@@ -148,6 +149,23 @@ public class InteractionDescriptorTest {
                 id.withEventTransformation(InteractionProvidedEvent2.class, "transformedEventName");
 
         assertTrue(idWithOutputEventTransformer.eventOutputTransformers().isEmpty());
+    }
+
+    /**
+     * This local interface is used for the test.
+     * It correctly defines an 'apply' method but is intentionally
+     * missing the mandatory @FiresEvent annotation.
+     */
+    private interface InteractionWithMissingFiresEventAnnotation extends Interaction {
+        InteractionProvidedEvent apply(@RequiresIngredient("initialIngredient") String initialIngredient);
+    }
+
+    @Test
+    public void shouldThrowExceptionWhenFiresEventAnnotationIsMissing() {
+        exception.expect(RecipeValidationException.class);
+        exception.expectMessage("is not annotated with @FiresEvent");
+
+        of(InteractionWithMissingFiresEventAnnotation.class);
     }
 
     @Test
