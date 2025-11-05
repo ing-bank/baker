@@ -404,7 +404,7 @@ object ProcessIndexProto {
       val companion = protobuf.RecipeInstanceExists
 
       def toProto(a: RecipeInstanceExists): protobuf.RecipeInstanceExists =
-        protobuf.RecipeInstanceExists(Some(a.recipeInstanceId))
+        protobuf.RecipeInstanceExists(Some(a.recipeInstanceId), Some(a.exists))
 
       def fromProto(message: protobuf.RecipeInstanceExists): Try[RecipeInstanceExists] =
         for {
