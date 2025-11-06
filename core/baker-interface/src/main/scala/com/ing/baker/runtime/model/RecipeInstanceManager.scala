@@ -1,8 +1,9 @@
 package com.ing.baker.runtime.model
 
+import cats.Foldable.ops.toAllFoldableOps
 import cats.data.EitherT
 import cats.effect.implicits.{genSpawnOps, genTemporalOps_}
-import cats.effect.{Async, Sync}
+import cats.effect.Async
 import cats.effect.kernel.Deferred
 import cats.implicits._
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
@@ -16,7 +17,6 @@ import fs2.{Pipe, Stream}
 
 import scala.concurrent.duration.FiniteDuration
 import java.util.concurrent.TimeoutException
-import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
 
 object RecipeInstanceManager {
 
@@ -67,6 +67,9 @@ trait RecipeInstanceManager[F[_]] {
       newRecipeInstance <- RecipeInstance.empty[F](recipeInfo.compiledRecipe, recipeInstanceId, config)
       _ <- store(newRecipeInstance)
     } yield ()
+
+  def hasRecipeInstance(recipeInstanceId: String)(implicit async: Async[F]): F[Boolean] =
+    fetch(recipeInstanceId).map(_.nonEmpty)
 
   def getRecipeInstanceState(recipeInstanceId: String)(implicit async: Async[F]): F[RecipeInstanceState] =
     getExistent(recipeInstanceId).flatMap(

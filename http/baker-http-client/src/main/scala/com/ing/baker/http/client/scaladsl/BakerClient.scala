@@ -311,6 +311,15 @@ final class BakerClient( client: Client[IO],
     callRemoteBakerServiceFallbackAware[Set[RecipeInstanceMetadata]]((host, prefix) => IO(GET(root(host, prefix) / "instances")), fallbackEndpoint)
 
   /**
+   * Check if recipe instance exists and is active.
+   *
+   * @param recipeInstanceId The recipe instance identifier
+   * @return true if recipe instance exists, and is in active state, otherwise false.
+   */
+  override def hasRecipeInstance(recipeInstanceId: String): Future[Boolean] =
+    callRemoteBakerServiceFallbackAware[Boolean]((host, prefix) => IO(GET(root(host, prefix) / "instances" / recipeInstanceId / "exists")), fallbackEndpoint)
+
+  /**
     * Returns the process state.
     *
     * @param recipeInstanceId The process identifier

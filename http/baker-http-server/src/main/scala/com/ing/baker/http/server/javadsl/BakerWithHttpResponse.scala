@@ -2,7 +2,6 @@ package com.ing.baker.http.server.javadsl
 
 import cats.effect.unsafe.IORuntime
 import com.ing.baker.http.server.common.RecipeLoader
-import com.ing.baker.runtime.akka.actor.protobuf.SensoryEventStatus
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EncodedRecipe, EventInstance}
 import com.ing.baker.runtime.serialization.JsonDecoders._
@@ -21,12 +20,12 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.FutureConverters.FutureOps
 
 /**
-  * A wrapper around baker which calls the specified baker instance, and returns the BakerResult according to the bakery protocol.
-  * Useful when making your own controller.
-  *
-  * @param baker baker methods to wrap
-  * @param ec execution context to use
-  */
+ * A wrapper around baker which calls the specified baker instance, and returns the BakerResult according to the bakery protocol.
+ * Useful when making your own controller.
+ *
+ * @param baker baker methods to wrap
+ * @param ec    execution context to use
+ */
 class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends LazyLogging {
   implicit val executionContext: ExecutionContext = ec
 
@@ -126,12 +125,14 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
   }
 
   /**
-    * Do calls for a specific instance.
-    */
-  def instance(recipeInstanceId: String) : InstanceResponseMapper = new InstanceResponseMapper(recipeInstanceId)
+   * Do calls for a specific instance.
+   */
+  def instance(recipeInstanceId: String): InstanceResponseMapper = new InstanceResponseMapper(recipeInstanceId)
 
   class InstanceResponseMapper(recipeInstanceId: String) {
-    def get(): JFuture[String] =  baker.getRecipeInstanceState(recipeInstanceId).toBakerResult
+    def get(): JFuture[String] = baker.getRecipeInstanceState(recipeInstanceId).toBakerResult
+
+    def hasRecipeInstance: JFuture[String] = baker.hasRecipeInstance(recipeInstanceId).toBakerResult
 
     def getEvents: JFuture[String] = baker.getEvents(recipeInstanceId).toBakerResult
 
@@ -184,7 +185,7 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
     def awaitCompleted(timeout: FiniteDuration): JFuture[String] =
       baker.awaitCompleted(recipeInstanceId, timeout).toBakerResult
 
-    def awaitEvent(eventName: String, timeout: FiniteDuration): JFuture[String]  =
+    def awaitEvent(eventName: String, timeout: FiniteDuration): JFuture[String] =
       baker.awaitEvent(recipeInstanceId, eventName, timeout).toBakerResult
   }
 
@@ -198,9 +199,9 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
       case Right(eventInstance: EventInstance) =>
         f(eventInstance).toBakerResult
       case Left(bakerException: BakerException) =>
-         Future(bakerResultEncoder.apply(BakerResult(bakerException)).noSpaces)
-           .asJava
-           .toCompletableFuture
+        Future(bakerResultEncoder.apply(BakerResult(bakerException)).noSpaces)
+          .asJava
+          .toCompletableFuture
     }
 
   private implicit class BakerResultHelperJavaFuture[A](f: => Future[A])(implicit encoder: Encoder[A]) {

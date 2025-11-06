@@ -81,6 +81,10 @@ object BakerTypedProtobufSerializer {
         .register("ProcessIndexProtocol.StopRetryingInteraction"),
       forType[ProcessIndexProtocol.ProcessEventResponse]
         .register("ProcessIndexProtocol.ProcessEventResponse"),
+      forType[ProcessIndexProtocol.HasRecipeInstance]
+        .register("ProcessIndexProtocol.HasRecipeInstance"),
+      forType[ProcessIndexProtocol.RecipeInstanceExists]
+        .register("ProcessIndexProtocol.RecipeInstanceExists"),
       forType[ProcessIndexProtocol.GetProcessState]
         .register("ProcessIndexProtocol.GetProcessState"),
       forType[ProcessIndexProtocol.DeleteProcess]
