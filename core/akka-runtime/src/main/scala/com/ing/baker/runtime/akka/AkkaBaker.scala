@@ -63,7 +63,7 @@ object AkkaBaker {
   def java(config: AkkaBakerConfig): javadsl.Baker =
     new javadsl.Baker(com.ing.baker.runtime.akka.AkkaBaker.apply(config))
 
-  //Used for backwards compatability reasons to ensure it works the same as before the RecipeManager was provided
+  //Used for backwards compatibility reasons to ensure it works the same as before the RecipeManager was provided
   private def determineRecipeManager(config: Config)(implicit actorSystem: ActorSystem): RecipeManager = {
     if (config.hasPath("baker.recipe-manager-type") && config.getString("baker.recipe-manager-type") == "inmemory")
       DefaultRecipeManager.pollingAware(actorSystem.dispatcher)
@@ -426,6 +426,21 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       .getAllProcessesMetadata(processIndexActor)(system, config.timeouts.defaultInquireTimeout)
       .map(p => RecipeInstanceMetadata(p.recipeId, p.recipeInstanceId, p.createdDateTime)).toSet)
       .javaTimeoutToBakerTimeout("getAllRecipeInstancesMetadata")
+  }
+
+  /**
+   * Check if recipe instance exists and is active.
+   *
+   * @param recipeInstanceId The recipe instance identifier
+   * @return true if recipe instance exists, and is in active state, otherwise false.
+   */
+  override def hasRecipeInstance(recipeInstanceId: String): Future[Boolean] = {
+    processIndexActor
+      .ask(ProcessIndexProtocol.HasRecipeInstance(recipeInstanceId))(config.timeouts.defaultInquireTimeout)
+      .javaTimeoutToBakerTimeout("hasRecipeInstance")
+      .map {
+        case ProcessIndexProtocol.RecipeInstanceExists(_, exists) => exists
+      }
   }
 
   /**

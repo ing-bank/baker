@@ -384,6 +384,35 @@ object ProcessIndexProto {
         } yield AddRecipeInstanceMetaData(recipeInstanceId, metaData)
     }
 
+  implicit def hasRecipeInstanceProto: ProtoMap[HasRecipeInstance, protobuf.HasRecipeInstance] =
+    new ProtoMap[HasRecipeInstance, protobuf.HasRecipeInstance] {
+
+      val companion = protobuf.HasRecipeInstance
+
+      def toProto(a: HasRecipeInstance): protobuf.HasRecipeInstance =
+        protobuf.HasRecipeInstance(Some(a.recipeInstanceId))
+
+      def fromProto(message: protobuf.HasRecipeInstance): Try[HasRecipeInstance] =
+        for {
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+        } yield HasRecipeInstance(recipeInstanceId)
+    }
+
+    implicit def recipeInstanceExistsProto: ProtoMap[RecipeInstanceExists, protobuf.RecipeInstanceExists] =
+      new ProtoMap[RecipeInstanceExists, protobuf.RecipeInstanceExists] {
+
+      val companion = protobuf.RecipeInstanceExists
+
+      def toProto(a: RecipeInstanceExists): protobuf.RecipeInstanceExists =
+        protobuf.RecipeInstanceExists(Some(a.recipeInstanceId), Some(a.exists))
+
+      def fromProto(message: protobuf.RecipeInstanceExists): Try[RecipeInstanceExists] =
+        for {
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+          exists <- versioned(message.exists, "Exists")
+        } yield RecipeInstanceExists(recipeInstanceId, exists)
+    }
+
   implicit def getProcessStateProto: ProtoMap[GetProcessState, protobuf.GetProcessState] =
     new ProtoMap[GetProcessState, protobuf.GetProcessState] {
 
