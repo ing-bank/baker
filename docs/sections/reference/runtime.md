@@ -354,6 +354,42 @@ time. Set `removeFromIndex` to `true` to also remove it from the index directly 
     }
     ```
 
+## baker.hasRecipeInstance(recipeInstanceId)
+
+Use `hasRecipeInstance` to check if recipe instance exists regardless of its state.
+It's possible to have a recipe instance that is deleted but still exists in the index preventing reuse of the id.
+
+=== "Scala"
+
+    ```scala
+    for {
+        _ <- baker.bake(compiledRecipe.recipeId, "myInstance")
+        exists <- baker.hasRecipeInstance(id) if !exists // <- Here the instance exists
+        _ <- baker.deleteRecipeInstance("myInstance", removeFromIndex = true) // <- Remove from index
+        exists <- baker.hasRecipeInstance(id) if !exists // <- Instance is deleted from the index, so it doesn't exist anymore
+    } yield ()
+    ```
+
+=== "Java"
+
+    ```java
+    baker.bake(compiledRecipe.recipeId(), "myInstance").get();
+    baker.hasRecipeInstance("myInstance").get(); // <- Returns true
+    baker.deleteRecipeInstance("myInstance", true).get(); // <- Remove from index
+    baker.hasRecipeInstance("myInstance").get(); // <- Returns false
+    ```
+
+=== "Kotlin"
+
+    ```kotlin
+    suspend fun example(baker: Baker, compiledRecipe: CompiledRecipe) {
+        baker.bake(compiledRecipe.recipeId, "myInstance")
+        baker.hasRecipeInstance("myInstance").get(); // <- Returns true
+        baker.deleteRecipeInstance("myInstance", removeFromIndex = true) // <- Remove from index
+        baker.hasRecipeInstance("myInstance").get(); // <- Returns false
+    }
+    ```
+
 
 ## EventInstance.from(object)
 
