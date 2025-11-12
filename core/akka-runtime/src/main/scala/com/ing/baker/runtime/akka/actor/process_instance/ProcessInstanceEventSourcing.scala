@@ -2,6 +2,7 @@ package com.ing.baker.runtime.akka.actor.process_instance
 
 import akka.NotUsed
 import akka.actor.{ActorSystem, NoSerializationVerificationNeeded}
+import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.persistence.query.scaladsl.CurrentEventsByPersistenceIdQuery
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.sensors.actor.PersistentActorMetrics
@@ -16,6 +17,7 @@ import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.Value
 import com.typesafe.scalalogging.LazyLogging
+import scalapb.GeneratedMessage
 
 object ProcessInstanceEventSourcing extends LazyLogging {
 
@@ -289,6 +291,59 @@ abstract class ProcessInstanceEventSourcing(
 
   protected implicit val system: ActorSystem = context.system
 
+  override val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
+
+  private object EventSizingMonitor {
+    private def megabytes(mb: Long): Long = mb * 1024 * 1024
+
+    val InitialWarningThreshold: Long = megabytes(20)
+    val WarningLogIncrement: Long = megabytes(1)
+  }
+
+  private var cumulativeEventLogSize: Long = 0L
+  private var nextWarningThreshold: Long = EventSizingMonitor.InitialWarningThreshold
+
+  private def trackAndLogEventSize(newEventSize: Int): Unit = {
+    cumulativeEventLogSize += newEventSize
+
+    if (hasCrossedWarningThreshold) {
+      logLargeEventLogWarning()
+      advanceWarningThreshold()
+    }
+  }
+
+  private def hasCrossedWarningThreshold: Boolean =
+    cumulativeEventLogSize >= nextWarningThreshold
+
+  private def logLargeEventLogWarning(): Unit = {
+    val sizeInMB = cumulativeEventLogSize / (1024 * 1024)
+
+    val originalMdcBackup = log.mdc
+    try {
+      log.mdc(originalMdcBackup ++ Map(
+        "persistenceId"  -> persistenceId,
+        "eventLogSizeMB" -> sizeInMB
+      ))
+      log.warning(
+        s"Process instance '$persistenceId' has a large event log size: " +
+          s"$sizeInMB MB. This may impact performance and recovery times."
+      )
+    } finally {
+      log.mdc(originalMdcBackup)
+    }
+  }
+
+  /**
+   * Advances the warning threshold to the next increment.
+   * This ensures we don't log on every single subsequent event, only when the next milestone is reached.
+   * The loop handles cases where a large batch of events causes the size to cross multiple thresholds at once.
+   */
+  private def advanceWarningThreshold(): Unit = {
+    while (cumulativeEventLogSize >= nextWarningThreshold) {
+      nextWarningThreshold += EventSizingMonitor.WarningLogIncrement
+    }
+  }
+
   protected val eventSource: Instance[RecipeInstanceState] => Event => Instance[RecipeInstanceState] =
     ProcessInstanceEventSourcing.apply[RecipeInstanceState, EventInstance](eventSourceFn)
 
@@ -298,17 +353,24 @@ abstract class ProcessInstanceEventSourcing(
 
   def persistEvent[O](instance: Instance[RecipeInstanceState], e: Event)(fn: Event => O): Unit = {
     val serializedEvent = serializer.serializeEvent(e)(instance)
+    trackAndLogEventSize(serializedEvent.toByteArray.length)
+
     persist(serializedEvent) { _ => fn(e) }
   }
 
   def persistAllEvents[O](instance: Instance[RecipeInstanceState], events: List[Event])(fn: List[Event] => O): Unit = {
     val serializedEvents = events.map {e => serializer.serializeEvent(e)(instance)}
+    serializedEvents.foreach(event => trackAndLogEventSize(event.toByteArray.length))
+
     persistAll(serializedEvents) { _ -> fn(events) }
   }
 
   private var recoveringState: Instance[RecipeInstanceState] = Instance.uninitialized[RecipeInstanceState](petriNet)
 
-  private def applyToRecoveringState(e: AnyRef): Unit = {
+  private def applyToRecoveringState(e: GeneratedMessage with AnyRef): Unit = {
+    val eventSize = e.toByteArray.length
+    trackAndLogEventSize(eventSize)
+
     val deserializedEvent = serializer.deserializeEvent(e)(recoveringState)
     recoveringState = eventSource(recoveringState)(deserializedEvent)
   }
