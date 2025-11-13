@@ -21,7 +21,7 @@ public class RecipeAssertTest {
 
     private RecipeAssert createRecipeAssert(int delayInSeconds) {
         String recipeInstanceId = UUID.randomUUID().toString();
-        WebshopBaker.javaBaker().bake(WebshopBaker.recipeId(), recipeInstanceId);
+        WebshopBaker.javaBaker().bake(WebshopBaker.recipeId(), recipeInstanceId).join();
         Buffer<String> items = JavaConverters.asScalaBuffer(Arrays.asList("item-1", "item-2", "item-3"));
 
         if (delayInSeconds > 0) {

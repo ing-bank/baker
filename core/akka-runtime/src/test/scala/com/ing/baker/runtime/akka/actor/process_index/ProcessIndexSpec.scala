@@ -17,7 +17,7 @@ import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.recipe_manager.RecipeManager
-import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
+import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types
 import com.ing.baker.types.Value
@@ -78,37 +78,62 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
   val recipeId: String = UUID.randomUUID().toString
 
-  val recipeManager: RecipeManager = {
-    val recipe = CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Option.empty)
-    val manager = mock[RecipeManager]
+  val baseRecipe: CompiledRecipe = CompiledRecipe(
+    name = "name",
+    recipeId = recipeId,
+    petriNet = new PetriNet(Graph.empty),
+    initialMarking = Marking.empty,
+    validationErrors = Seq.empty,
+    eventReceivePeriod = Option.empty,
+    retentionPeriod = Option.empty)
 
-//    when(manager.all).thenReturn(Future.successful(Seq(RecipeRecord.of(recipe, updated = 0L))))
-    when(manager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0L))))
+  val recipeManager: RecipeManager = {
+    val manager = mock[RecipeManager]
+    when(manager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(baseRecipe, updated = 0L))))
     manager
   }
 
-  val processActorMock = system.actorOf(Props(new Actor() {
-    override def receive: Receive = {
-      case _ => ()
-    }
-  }))
+  /**
+   * A helper function to synchronously create a process instance.
+   * This handles the asynchronous ask-reply handshake between ProcessIndex and the mock ProcessInstance actor.
+   * It returns the Initialize message that was sent to the mock actor.
+   */
+  def createProcessAndWait(
+                            actorIndex: ActorRef,
+                            probe: TestProbe, // The probe that will act as the mock ProcessInstance
+                            recipeId: String,
+                            recipeInstanceId: String,
+                            metadata: Map[String, String] = Map.empty
+                          ): Initialize = {
+    actorIndex ! CreateProcess(recipeId, recipeInstanceId, metadata)
+
+    val initializeMsg = probe.expectMsgClass(classOf[Initialize])
+
+    probe.reply(Initialized(initializeMsg.marking, initializeMsg.state))
+
+    expectMsgClass(classOf[RecipeInstanceCreated])
+
+    initializeMsg
+  }
 
   "ProcessIndex" should {
 
     "create the PetriNetInstance actor when Initialize message is received" in {
       val recipeInstanceId = UUID.randomUUID().toString
-      val initializeMsg =
+      val expectedInitializeMsg =
         Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
-      actorIndex ! CreateProcess(recipeId, recipeInstanceId)
-      petriNetActorProbe.expectMsg(initializeMsg)
+
+      val receivedInitializeMsg = createProcessAndWait(actorIndex, petriNetActorProbe, recipeId, recipeInstanceId)
+
+      receivedInitializeMsg shouldBe expectedInitializeMsg
     }
 
     "create the PetriNetInstance actor with given metadata when Initialize message is received" in {
       val recipeInstanceId = UUID.randomUUID().toString
       val metadata = Map("someKey" -> "someValue")
-      val initializeMsg =
+      val expectedInitializeMsg =
         Initialize(Marking.empty[Place], RecipeInstanceState(
           recipeId = recipeId,
           recipeInstanceId = recipeInstanceId,
@@ -117,8 +142,10 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
           events = List.empty))
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
-      actorIndex ! CreateProcess(recipeId, recipeInstanceId, metaData = metadata)
-      petriNetActorProbe.expectMsg(initializeMsg)
+
+      val receivedInitializeMsg = createProcessAndWait(actorIndex, petriNetActorProbe, recipeId, recipeInstanceId, metadata)
+
+      receivedInitializeMsg shouldBe expectedInitializeMsg
     }
 
     "passivation" in {
@@ -128,73 +155,65 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val recipeInstanceId = UUID.randomUUID().toString
 
-      // Create empty actor, because test probe overrides actor's name
       val petriNetActorProbe: ActorRef = system.actorOf(Props(new Actor {
         override def receive: Receive = {
+          case init: Initialize => sender() ! Initialized(init.marking, init.state)
           case _ =>
         }
       }), recipeInstanceId)
 
       val actorIndex: ActorRef = createActorIndex(petriNetActorProbe, recipeManager)
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
+      expectMsgClass(classOf[RecipeInstanceCreated])
 
-      eventually{
-        val result = Await.result((actorIndex ? (GetIndex)).mapTo[Index], duration)
+      eventually {
+        val result = Await.result((actorIndex ? GetIndex).mapTo[Index], duration)
         result.entries.size shouldBe 1
       }
 
       petriNetActorProbe ! PoisonPill
 
-      eventually{
-        val result = Await.result((actorIndex ? (GetIndex)).mapTo[Index], duration)
+      eventually {
+        val result = Await.result((actorIndex ? GetIndex).mapTo[Index], duration)
         result.entries.size shouldBe 0
       }
 
       actorIndex ! PoisonPill
 
       val afterSnapshotRead: ActorRef = createActorIndex(petriNetActorProbe, recipeManager)
-      val result = Await.result((afterSnapshotRead ? (GetIndex)).mapTo[Index], duration)
+      val result = Await.result((afterSnapshotRead ? GetIndex).mapTo[Index], duration)
       result.entries.size shouldBe 0
     }
 
     "not create the PetriNetInstance actor if already created" in {
       val recipeInstanceId = UUID.randomUUID().toString
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
+
+      createProcessAndWait(actorIndex, petriNetActorProbe, recipeId, recipeInstanceId)
+
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
-      petriNetActorProbe.expectMsg(initializeMsg)
-      actorIndex ! CreateProcess(recipeId, recipeInstanceId)
-      petriNetActorProbe.expectMsg(initializeMsg)
       expectMsg(ProcessAlreadyExists(recipeInstanceId))
+      petriNetActorProbe.expectNoMessage(noMsgExpectTimeout) // Ensure no second Initialize message is sent
     }
 
     "delete a process if a retention period is defined, CheckForProcessesToBeDeleted received" in {
       val recipeInstanceId = UUID.randomUUID().toString
-
       val recipeRetentionPeriod = 500.milliseconds
       val processProbe = TestProbe(recipeInstanceId)
 
-      val recipeManager = mock[RecipeManager]
+      val recipeWithRetention = baseRecipe.copy(retentionPeriod = Some(recipeRetentionPeriod))
+      val recipeManagerMock = mock[RecipeManager]
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipeWithRetention, updated = 0L))))
 
-      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(
-        CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty,
-          Option.empty, Some(recipeRetentionPeriod)),
-        updated = 0L
-      ))))
+      val actorIndex = createActorIndex(processProbe.ref, recipeManagerMock)
+      createProcessAndWait(actorIndex, processProbe, recipeId, recipeInstanceId)
 
-      val actorIndex = createActorIndex(processProbe.ref, recipeManager)
-
-      actorIndex ! CreateProcess(recipeId, recipeInstanceId)
-
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
-      processProbe.expectMsg(initializeMsg)
       Thread.sleep(recipeRetentionPeriod.toMillis)
-      // inform the index to check for processes to be cleaned up
       actorIndex ! CheckForProcessesToBeDeleted
       processProbe.expectMsg(15.seconds, Stop(delete = true))
 
-      processProbe.testActor ! PoisonPill
+      processProbe.ref ! PoisonPill
 
       val probe2 = TestProbe()
       probe2.send(actorIndex, GetProcessState(recipeInstanceId))
@@ -203,35 +222,24 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
     "forget a process if a remember duration is defined and this is passed" in {
       val recipeInstanceId = UUID.randomUUID().toString
-
       val recipeRetentionPeriod = 500.milliseconds
       val processProbe = TestProbe(recipeInstanceId)
 
-      val recipeManager = mock[RecipeManager]
+      val recipeWithRetention = baseRecipe.copy(retentionPeriod = Some(recipeRetentionPeriod))
+      val recipeManagerMock = mock[RecipeManager]
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipeWithRetention, updated = 0L))))
 
-      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(
-        CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty,
-          Option.empty, Some(recipeRetentionPeriod)),
-        updated = 0L
-      ))))
+      val actorIndex = createActorIndex(processProbe.ref, recipeManagerMock, Some(1.milliseconds))
+      createProcessAndWait(actorIndex, processProbe, recipeId, recipeInstanceId)
 
-      val actorIndex = createActorIndex(processProbe.ref, recipeManager, Some(1.milliseconds))
-
-      actorIndex ! CreateProcess(recipeId, recipeInstanceId)
-
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
-      processProbe.expectMsg(initializeMsg)
       Thread.sleep(recipeRetentionPeriod.toMillis)
-      // inform the index to check for processes to be cleaned up
       actorIndex ! CheckForProcessesToBeDeleted
       processProbe.expectMsg(15.seconds, Stop(delete = true))
 
-      processProbe.testActor ! PoisonPill
+      processProbe.ref ! PoisonPill
 
-      //Wait for 100 millis to give the Index time to stop the actor
       Thread.sleep(100)
 
-      // Second trigger to cleanup this time after the process was deleted
       actorIndex ! CheckForProcessesToBeDeleted
 
       val probe2 = TestProbe()
@@ -240,52 +248,34 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
     }
 
     "Forward the FireTransition command when a valid HandleEvent is sent" in {
-
       val petriNetActorProbe = TestProbe("petrinet-probe")
-
+      val recipeInstanceId = UUID.randomUUID().toString
       val eventType = EventDescriptor("Event", Seq.empty)
-      val transitions: Set[Transition] = Set(EventTransition(eventType, true, None))
+      val transitions: Set[Transition] = Set(EventTransition(eventType, isSensoryEvent = true, None))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
       when(petrinetMock.transitions).thenReturn(transitions)
 
-      val recipeManager = mock[RecipeManager]
-      val recipe = CompiledRecipe("name", recipeId, petrinetMock, Marking.empty,
-        Seq.empty, Option.empty, Option.empty)
-      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0L))))
+      val recipeManagerMock = mock[RecipeManager]
+      val recipe = baseRecipe.copy(petriNet = petrinetMock)
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0L))))
 
-      val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
-
-      val recipeInstanceId = UUID.randomUUID().toString
-
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
-
-
-      actorIndex ! CreateProcess(recipeId, recipeInstanceId)
-
-      petriNetActorProbe.expectMsg(initializeMsg)
+      val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManagerMock)
+      createProcessAndWait(actorIndex, petriNetActorProbe, recipeId, recipeInstanceId)
 
       val runtimeEvent = EventInstance("Event", Map.empty)
-
       actorIndex ! ProcessEvent(recipeInstanceId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
 
       petriNetActorProbe.expectMsgAllClassOf(classOf[FireTransition])
     }
 
     "reply with a NoSuchProcess rejection message when attempting to fire an event to a not existing process" in {
-
       val petriNetActorProbe = TestProbe("petrinet-probe")
-      val recipeManager = mock[RecipeManager]
+      val recipeManagerMock = mock[RecipeManager]
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(baseRecipe, updated = 0L))))
 
-      val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
-
+      val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManagerMock)
       val recipeInstanceId = UUID.randomUUID().toString
-
-      val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
-      val eventType = EventDescriptor("Event", Seq.empty)
-      val transitions: Set[Transition] = Set(EventTransition(eventType, isSensoryEvent = true, None))
-      when(petrinetMock.transitions).thenReturn(transitions)
-
       val runtimeEvent = EventInstance("Event", Map.empty)
 
       actorIndex ! ProcessEvent(recipeInstanceId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
@@ -293,128 +283,95 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       expectMsg(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId))
     }
 
-    "reply with an InvalidEvent rejection message when attempting to fire an event that is now know in the compiledRecipe" in {
-
-      val receivePeriodTimeout = 500.milliseconds
+    "reply with an InvalidEvent rejection message when attempting to fire an event that is not know in the compiledRecipe" in {
       val petriNetActorProbe = TestProbe("petrinet-probe")
-      val recipeManager = mock[RecipeManager]
-      when(recipeManager.get(anyString())).thenReturn(Future.successful(
-        Some(RecipeRecord.of(CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty,
-          Some(receivePeriodTimeout), Option.empty), 0L))))
-
-      val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
-
       val recipeInstanceId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
+      // baseRecipe has an empty petrinet, so it has no sensory events. This is correct for the test.
+      val recipeManagerMock = mock[RecipeManager]
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(baseRecipe.copy(name = "name"), 0L))))
 
-      actorIndex ! CreateProcess(recipeId, recipeInstanceId)
-
-      petriNetActorProbe.expectMsg(initializeMsg)
+      val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManagerMock)
+      createProcessAndWait(actorIndex, petriNetActorProbe, recipeId, recipeInstanceId)
 
       val runtimeEvent = EventInstance("Event", Map.empty)
-
       actorIndex ! ProcessEvent(recipeInstanceId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
 
       expectMsg(FireSensoryEventRejection.InvalidEvent(recipeInstanceId, s"No event with name 'Event' found in recipe 'name'"))
     }
 
     "reply with an InvalidEvent rejection message when attempting to fire an event that does not comply to the recipe" in {
-
-      val receivePeriodTimeout = 500.milliseconds
       val petriNetActorProbe = TestProbe("petrinet-probe")
+      val recipeInstanceId = UUID.randomUUID().toString
       val eventType = EventDescriptor("Event", Seq(IngredientDescriptor("ingredientName", types.CharArray)))
       val transitions: Set[Transition] = Set(EventTransition(eventType, isSensoryEvent = true, None))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
       when(petrinetMock.transitions).thenReturn(transitions)
 
-      val recipeManager = mock[RecipeManager]
-      val recipe = CompiledRecipe("name", recipeId, petrinetMock, Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty)
+      val recipe = baseRecipe.copy(petriNet = petrinetMock)
+      val recipeManagerMock = mock[RecipeManager]
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0L))))
 
-      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0L))))
-
-      val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
-
-      val recipeInstanceId = UUID.randomUUID().toString
-
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
-
-      actorIndex ! CreateProcess(recipeId, recipeInstanceId)
-
-      petriNetActorProbe.expectMsg(initializeMsg)
+      val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManagerMock)
+      createProcessAndWait(actorIndex, petriNetActorProbe, recipeId, recipeInstanceId)
 
       val runtimeEvent = EventInstance("Event", Map.empty)
-
       actorIndex ! ProcessEvent(recipeInstanceId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
 
       expectMsg(FireSensoryEventRejection.InvalidEvent(recipeInstanceId, s"Invalid event: no value was provided for ingredient 'ingredientName'"))
     }
 
     "reply with an EventReceivePeriodExpired rejection message when attempting to fire an event after expiration period" in {
-
       val receivePeriodTimeout = 1000 milliseconds
       val petriNetActorProbe = TestProbe("petrinet-probe")
+      val recipeInstanceId = UUID.randomUUID().toString
+      val eventType = EventDescriptor("Event", Seq.empty)
+      val transitions: Set[Transition] = Set(EventTransition(eventType, isSensoryEvent = true, None))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
-      val eventType = EventDescriptor("Event", Seq.empty)
-      val transitions: Set[Transition] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 
-      val recipeManager = mock[RecipeManager]
-      val recipe = CompiledRecipe("name", recipeId, petrinetMock, Marking.empty, Seq.empty,
-        Some(receivePeriodTimeout), Option.empty)
-      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0L))))
+      val recipe = baseRecipe.copy(
+        petriNet = petrinetMock,
+        eventReceivePeriod = Some(receivePeriodTimeout))
+      val recipeManagerMock = mock[RecipeManager]
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0L))))
 
-      val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
-
-      val recipeInstanceId = UUID.randomUUID().toString
-
-      val initializeMsg = Initialize(Marking.empty[Place], RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty))
-
-
-
-      actorIndex ! CreateProcess(recipeId, recipeInstanceId)
-
-      petriNetActorProbe.expectMsg(initializeMsg)
+      val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManagerMock)
+      createProcessAndWait(actorIndex, petriNetActorProbe, recipeId, recipeInstanceId)
 
       val runtimeEvent = EventInstance("Event", Map.empty)
-
       actorIndex ! ProcessEvent(recipeInstanceId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
-
       petriNetActorProbe.expectMsgAllClassOf(classOf[FireTransition])
 
       Thread.sleep(receivePeriodTimeout.toMillis * 2)
 
       actorIndex ! ProcessEvent(recipeInstanceId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
-
       petriNetActorProbe.expectNoMessage(noMsgExpectTimeout)
 
       expectMsg(FireSensoryEventRejection.ReceivePeriodExpired(recipeInstanceId))
     }
 
     "Forward the DelayedTransitionFired command when a FireDelayedTransition is received" in {
-      val receivePeriodTimeout = 1000 milliseconds
       val petriNetActorProbe = TestProbe("petrinet-probe")
-      val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
+      val recipeInstanceId = UUID.randomUUID().toString
       val eventType = EventDescriptor("Event", Seq.empty)
-      val transitions: Set[Transition] = Set(EventTransition(eventType, true, None))
+      val transitions: Set[Transition] = Set(EventTransition(eventType, isSensoryEvent = true, None))
+
+      val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
       when(petrinetMock.transitions).thenReturn(transitions)
 
-      val recipeManager = mock[RecipeManager]
-      val recipe = CompiledRecipe("name", recipeId, petrinetMock, Marking.empty, Seq.empty,
-        Some(receivePeriodTimeout), Option.empty)
-      when(recipeManager.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0L))))
+      val recipe = baseRecipe.copy(petriNet = petrinetMock)
+      val recipeManagerMock = mock[RecipeManager]
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(recipe, updated = 0L))))
 
-      val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
-
-      val recipeInstanceId = UUID.randomUUID().toString
+      val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManagerMock)
       val jobId: Long = 1
       val transitionId: Long = 2
       val eventToFire = "EventToFire"
 
-      actorIndex ! CreateProcess(recipeId, recipeInstanceId)
-      petriNetActorProbe.expectMsgAllClassOf(classOf[Initialize])
+      createProcessAndWait(actorIndex, petriNetActorProbe, recipeId, recipeInstanceId)
 
       val receiverProbe = TestProbe()
       actorIndex ! FireDelayedTransition(recipeInstanceId, jobId, transitionId, eventToFire, receiverProbe.testActor)

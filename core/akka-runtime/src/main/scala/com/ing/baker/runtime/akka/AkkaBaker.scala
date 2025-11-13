@@ -224,7 +224,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     */
   override def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] = {
     val eventualBake = processIndexActor.ask(CreateProcess(recipeId, recipeInstanceId, metadata))(config.timeouts.defaultBakeTimeout).javaTimeoutToBakerTimeout("bake").flatMap {
-      case _: Initialized =>
+      case _: RecipeInstanceCreated =>
         Future.successful(())
       case ProcessDeleted(_) =>
         Future.failed(ProcessDeletedException(recipeInstanceId))
