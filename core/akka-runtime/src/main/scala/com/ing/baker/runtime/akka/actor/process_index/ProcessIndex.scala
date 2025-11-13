@@ -435,7 +435,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           //Temporary solution for the situation that the initializeCmd is not send in the original Bake
           getCompiledRecipe(recipeId) match {
             case Some(compiledRecipe) =>
-              val processState = RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty)
+              val processState = RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], recipeInstanceMetadata, List.empty)
               val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
               createProcessActor(recipeInstanceId, compiledRecipe) ! initializeCmd
               sender() ! ProcessAlreadyExists(recipeInstanceId)
@@ -447,7 +447,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           //Temporary solution for the situation that the initializeCmd is not send in the original Bake
           getCompiledRecipe(recipeId) match {
             case Some(compiledRecipe) =>
-              val processState = RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], Map.empty[String, String], List.empty)
+              val processState = RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], recipeInstanceMetadata, List.empty)
               val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
               actorRef ! initializeCmd
               sender() ! ProcessAlreadyExists(recipeInstanceId)
