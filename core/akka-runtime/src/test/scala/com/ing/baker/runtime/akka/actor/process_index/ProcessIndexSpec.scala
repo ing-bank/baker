@@ -111,7 +111,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
     probe.reply(Initialized(initializeMsg.marking, initializeMsg.state))
 
-    expectMsgClass(classOf[RecipeInstanceCreated])
+    expectMsgClass(classOf[Initialized])
 
     initializeMsg
   }
@@ -164,7 +164,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val actorIndex: ActorRef = createActorIndex(petriNetActorProbe, recipeManager)
       actorIndex ! CreateProcess(recipeId, recipeInstanceId)
-      expectMsgClass(classOf[RecipeInstanceCreated])
+      expectMsgClass(classOf[Initialized])
 
       eventually {
         val result = Await.result((actorIndex ? GetIndex).mapTo[Index], duration)

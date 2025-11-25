@@ -394,10 +394,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       val actorMetadata = ActorMetadata(recipeId, recipeInstanceId, createdTime, Active)
       index += recipeInstanceId -> actorMetadata
 
-      val event = RecipeInstanceCreated(createdTime, recipeId, compiledRecipe.name, recipeInstanceId)
-      LogAndSendEvent.recipeInstanceCreated(event, context.system.eventStream)
+      val creationEvent = RecipeInstanceCreated(createdTime, recipeId, compiledRecipe.name, recipeInstanceId)
+      LogAndSendEvent.recipeInstanceCreated(creationEvent, context.system.eventStream)
 
-      originalSender ! event
+      originalSender ! Initialized(Marking.empty)
     }
   }
 
