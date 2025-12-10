@@ -353,14 +353,14 @@ abstract class ProcessInstanceEventSourcing(
 
   def persistEvent[O](instance: Instance[RecipeInstanceState], e: Event)(fn: Event => O): Unit = {
     val serializedEvent = serializer.serializeEvent(e)(instance)
-    trackAndLogEventSize(serializedEvent.toByteArray.length)
+    trackAndLogEventSize(serializedEvent.serializedSize)
 
     persist(serializedEvent) { _ => fn(e) }
   }
 
   def persistAllEvents[O](instance: Instance[RecipeInstanceState], events: List[Event])(fn: List[Event] => O): Unit = {
     val serializedEvents = events.map {e => serializer.serializeEvent(e)(instance)}
-    serializedEvents.foreach(event => trackAndLogEventSize(event.toByteArray.length))
+    serializedEvents.foreach(event => trackAndLogEventSize(event.serializedSize))
 
     persistAll(serializedEvents) { _ -> fn(events) }
   }
@@ -368,7 +368,7 @@ abstract class ProcessInstanceEventSourcing(
   private var recoveringState: Instance[RecipeInstanceState] = Instance.uninitialized[RecipeInstanceState](petriNet)
 
   private def applyToRecoveringState(e: GeneratedMessage with AnyRef): Unit = {
-    val eventSize = e.toByteArray.length
+    val eventSize = e.serializedSize
     trackAndLogEventSize(eventSize)
 
     val deserializedEvent = serializer.deserializeEvent(e)(recoveringState)
