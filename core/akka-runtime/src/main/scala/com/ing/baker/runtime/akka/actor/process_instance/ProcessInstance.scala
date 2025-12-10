@@ -662,7 +662,7 @@ class ProcessInstance(
   def step(instance: Instance[RecipeInstanceState]): (Instance[RecipeInstanceState], Set[Job[RecipeInstanceState]]) = {
 
     // Log if sequenceNr is high
-    if (instance.sequenceNr > 100 && instance.sequenceNr % 50 == 0) {
+    if (instance.sequenceNr > 500 && instance.sequenceNr % 50 == 0) {
       val originalMdcBackup = log.mdc
       try {
         log.mdc(originalMdcBackup ++ Map(
