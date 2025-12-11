@@ -204,6 +204,7 @@ message AwaitCompleted {
 message AwaitEvent {
   optional string recipeInstanceId = 1;
   optional string eventName = 2;
+  optional bool waitForNext = 3;
 }
 
 message ProcessSensoryEvent {

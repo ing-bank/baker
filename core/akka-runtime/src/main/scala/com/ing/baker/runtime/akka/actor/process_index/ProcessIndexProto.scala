@@ -641,13 +641,14 @@ object ProcessIndexProto {
       val companion = protobuf.AwaitEvent
 
       def toProto(a: ProcessIndexProtocol.AwaitEvent): protobuf.AwaitEvent =
-        protobuf.AwaitEvent(Some(a.recipeInstanceId), Some(a.eventName))
+        protobuf.AwaitEvent(Some(a.recipeInstanceId), Some(a.eventName), Some(a.waitForNext))
 
       def fromProto(message: protobuf.AwaitEvent): Try[ProcessIndexProtocol.AwaitEvent] =
         for {
           recipeInstanceId <- versioned(message.recipeInstanceId, "recipeInstanceId")
           eventName <- versioned(message.eventName, "eventName")
-        } yield ProcessIndexProtocol.AwaitEvent(recipeInstanceId, eventName)
+          waitForNext = message.waitForNext.getOrElse(false)
+        } yield ProcessIndexProtocol.AwaitEvent(recipeInstanceId, eventName, waitForNext)
     }
 
 }

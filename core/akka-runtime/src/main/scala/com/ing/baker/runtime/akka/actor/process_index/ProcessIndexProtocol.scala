@@ -40,7 +40,7 @@ object ProcessIndexProtocol {
 
   case class AwaitCompleted(recipeInstanceId: String) extends ProcessIndexMessage
 
-  case class AwaitEvent(recipeInstanceId: String, eventName: String) extends ProcessIndexMessage
+  case class AwaitEvent(recipeInstanceId: String, eventName: String, waitForNext: Boolean = false) extends ProcessIndexMessage
 
   /**
     * Failure when attempting to resolve a blocked interaction, the event is not of valid type according with the recipe

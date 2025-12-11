@@ -334,16 +334,13 @@ class ProcessInstance(
         }
       }
 
-    case ProcessInstanceProtocol.AwaitEvent(eventName) =>
-      if (instance.state.eventNames.contains(eventName)) {
+    case ProcessInstanceProtocol.AwaitEvent(eventName, waitForNext) =>
+      if (!waitForNext && instance.state.eventNames.contains(eventName)) {
         sender() ! ProcessInstanceProtocol.EventOccurred
       } else {
-        // Persist the listener addition
         val event = EventListenerAdded(eventName, sender().path.toSerializationFormat)
-        // This persist is sync so no race conditions to worry about
         persistEvent(instance, event) { _ =>
           val updatedInstance = eventSource.apply(instance)(event)
-          // Update actor's state
           context.become(running(updatedInstance, scheduledRetries))
         }
       }
