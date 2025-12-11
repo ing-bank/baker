@@ -49,7 +49,7 @@ class ProcessInstanceSerialization[S, E](provider: AkkaSerializerProvider) {
   /**
     * Serializes an EventSourcing.Event to a persistence.protobuf.Event.
     */
-  def serializeEvent(e: ProcessInstanceEventSourcing.Event): Instance[S] => AnyRef =
+  def serializeEvent(e: ProcessInstanceEventSourcing.Event): Instance[S] => scalapb.GeneratedMessage =
     _ => e match {
       case e: InitializedEvent => serializeInitialized(e)
       case e: TransitionFiredEvent => serializeTransitionFired(e)
