@@ -177,15 +177,15 @@ trait RecipeInstanceManager[F[_]] {
     }).flatten
   }
 
-  def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration)(implicit async: Async[F]): F[Unit] =
+  def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration, waitForNext: Boolean = false)(implicit async: Async[F]): F[Unit] =
     getExistent(recipeInstanceId).flatMap { recipeInstance =>
       Deferred[F, Unit].flatMap { listener =>
         recipeInstance.state.modify { currentState =>
-          // Check if the event has already occurred
-          if (currentState.events.exists(_.name == eventName)) {
+          // If waitForNext is false, check if the event has already occurred
+          if (!waitForNext && currentState.events.exists(_.name == eventName)) {
             (currentState, async.unit) // Already happened, resolve immediately
           } else {
-            // Not yet happened, add listener and wait on it
+            // Not yet happened (or waitForNext=true), add listener and wait on it
             (currentState.addEventListener(eventName, listener), listener.get)
           }
         }.flatten.timeoutTo(timeout, async.raiseError(new TimeoutException(s"Timed out after $timeout waiting for event '$eventName' in instance '$recipeInstanceId'")))

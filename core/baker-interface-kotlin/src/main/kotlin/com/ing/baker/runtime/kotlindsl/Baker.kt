@@ -216,8 +216,9 @@ class Baker internal constructor(private val jBaker: Baker) : AutoCloseable {
         recipeInstanceId: String,
         eventName: String,
         timeout: Duration,
-    ): Unit {
-        jBaker.awaitEvent(recipeInstanceId, eventName, timeout.toJavaDuration()).await()
+        waitForNext: Boolean = false
+    ) {
+        jBaker.awaitEvent(recipeInstanceId, eventName, timeout.toJavaDuration(), waitForNext).await()
     }
 
     suspend fun awaitCompleted(

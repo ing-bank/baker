@@ -608,9 +608,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     }
   }
 
-  override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration): Future[Unit] = {
+  override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration, waitForNext: Boolean = false): Future[Unit] = {
     processIndexActor
-      .ask(ProcessIndexProtocol.AwaitEvent(recipeInstanceId, eventName))(timeout)
+      .ask(ProcessIndexProtocol.AwaitEvent(recipeInstanceId, eventName, waitForNext))(timeout)
       .javaTimeoutToBakerTimeout("awaitEvent")
       .flatMap {
         case EventOccurred => Future.successful()

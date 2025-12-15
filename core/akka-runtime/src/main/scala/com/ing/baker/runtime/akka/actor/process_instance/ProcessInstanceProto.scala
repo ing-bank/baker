@@ -372,12 +372,13 @@ object ProcessInstanceProto {
       val companion = protobuf.AwaitEvent
 
       def toProto(a: ProcessInstanceProtocol.AwaitEvent): protobuf.AwaitEvent =
-        protobuf.AwaitEvent(Some(a.eventName))
+        protobuf.AwaitEvent(Some(a.eventName), Some(a.waitForNext))
 
       def fromProto(message: protobuf.AwaitEvent): Try[ProcessInstanceProtocol.AwaitEvent] =
         for {
           eventName <- versioned(message.eventName, "eventName")
-        } yield ProcessInstanceProtocol.AwaitEvent(eventName)
+          waitForNext = message.waitForNext.getOrElse(false)
+        } yield ProcessInstanceProtocol.AwaitEvent(eventName, waitForNext)
     }
 
   implicit def processInstanceEventOccurredProto: ProtoMap[ProcessInstanceProtocol.EventOccurred.type, protobuf.EventOccurred] =

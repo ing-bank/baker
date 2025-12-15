@@ -185,8 +185,8 @@ class BakerWithHttpResponse(val baker: Baker, ec: ExecutionContext) extends Lazy
     def awaitCompleted(timeout: FiniteDuration): JFuture[String] =
       baker.awaitCompleted(recipeInstanceId, timeout).toBakerResult
 
-    def awaitEvent(eventName: String, timeout: FiniteDuration): JFuture[String] =
-      baker.awaitEvent(recipeInstanceId, eventName, timeout).toBakerResult
+    def awaitEvent(eventName: String, timeout: FiniteDuration, waitForNext: Boolean): JFuture[String] =
+      baker.awaitEvent(recipeInstanceId, eventName, timeout, waitForNext).toBakerResult
   }
 
   private def toOption[T](opt: Optional[T]): Option[T] = if (opt.isPresent) Some(opt.get()) else None

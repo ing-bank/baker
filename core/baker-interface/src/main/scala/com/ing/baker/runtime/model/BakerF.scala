@@ -315,8 +315,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
     components.recipeInstanceManager.awaitCompleted(recipeInstanceId, timeout)
       .recoverWith(javaTimeoutToBakerTimeout(s"awaitCompleted for recipe instance '$recipeInstanceId'"))
 
-  override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration): F[Unit] =
-    components.recipeInstanceManager.awaitEvent(recipeInstanceId, eventName, timeout)
+  override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration, waitForNext: Boolean = false): F[Unit] =
+    components.recipeInstanceManager.awaitEvent(recipeInstanceId, eventName, timeout, waitForNext)
       .recoverWith(javaTimeoutToBakerTimeout(s"awaitEvent for recipe instance '$recipeInstanceId'"))
 
   override def addMetaData(recipeInstanceId: String, metadata: Map[String, String]): F[Unit] =
@@ -546,8 +546,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
         mapK(self.stopRetryingInteraction(recipeInstanceId, interactionName))
       override def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): G[SensoryEventStatus] =
         mapK(self.fireSensoryEventAndAwaitReceived(recipeInstanceId, event, correlationId))
-      override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration): G[Unit] =
-        mapK(self.awaitEvent(recipeInstanceId, eventName, timeout))
+      override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration, waitForNext: Boolean = false): G[Unit] =
+        mapK(self.awaitEvent(recipeInstanceId, eventName, timeout, waitForNext))
       override def awaitCompleted(recipeInstanceId: String, timeout: FiniteDuration): G[SensoryEventStatus] =
         mapK(self.awaitCompleted(recipeInstanceId, timeout))
     }
@@ -618,8 +618,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
         mapK(self.addMetaData(recipeInstanceId, metadata))
       override def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] =
         mapK(self.fireSensoryEventAndAwaitReceived(recipeInstanceId, event, correlationId))
-      override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration): Future[Unit] =
-        mapK(self.awaitEvent(recipeInstanceId, eventName, timeout))
+      override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration, waitForNext: Boolean = false): Future[Unit] =
+        mapK(self.awaitEvent(recipeInstanceId, eventName, timeout, waitForNext))
       override def awaitCompleted(recipeInstanceId: String, timeout: FiniteDuration): Future[SensoryEventStatus] =
         mapK(self.awaitCompleted(recipeInstanceId, timeout))
     }

@@ -442,10 +442,11 @@ final class BakerClient( client: Client[IO],
       result
     }
 
-  override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration): Future[Unit] =
+  override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration, waitForNext: Boolean = false): Future[Unit] =
     callRemoteBakerServiceFallbackAware[Unit](
       (host, prefix) => IO(POST((root(host, prefix) / "instances" / recipeInstanceId / "await-event" / eventName)
-        .withQueryParam("timeout", timeout.toMillis))), fallbackEndpoint).map { _ =>
+        .withQueryParam("timeout", timeout.toMillis)
+        .withQueryParam("waitForNext", waitForNext))), fallbackEndpoint).map { _ =>
       logger.info(s"For recipe instance '$recipeInstanceId', awaited event '$eventName'")
     }
 

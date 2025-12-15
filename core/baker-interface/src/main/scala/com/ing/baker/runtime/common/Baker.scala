@@ -161,7 +161,7 @@ trait Baker[F[_]] extends LanguageApi {
    * @throws ProcessDeletedException if the recipe instance has been deleted.
    * @throws TimeoutException        if the event does not occur within the specified `timeout`.
    */
-  def awaitEvent(recipeInstanceId: String, eventName: String, timeout: DurationType): F[Unit]
+  def awaitEvent(recipeInstanceId: String, eventName: String, timeout: DurationType, waitForNext: Boolean = false): F[Unit]
 
   /**
    * Waits until a recipe instance completes execution.

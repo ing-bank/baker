@@ -29,7 +29,7 @@ object ProcessInstanceProtocol {
    */
   case object Completed extends BakerSerializable
 
-  case class AwaitEvent(eventName: String) extends Command
+  case class AwaitEvent(eventName: String, waitForNext: Boolean = false) extends Command
 
   /**
    * Response confirming the event has occurred.

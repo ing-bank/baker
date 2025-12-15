@@ -634,45 +634,26 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         actorRef.forward(ProcessInstanceProtocol.AwaitCompleted)
       }
 
-    case ProcessIndexProtocol.AwaitEvent(recipeInstanceId, eventName) =>
+    case ProcessIndexProtocol.AwaitEvent(recipeInstanceId, eventName, waitForNext) =>
       val originalSender = sender()
 
-      // This program describes the logic as a sequence of validation steps.
-      // If any step fails (returns a Left), the entire program short-circuits
-      // and the failure is handled in unsafeRunAsync.
       val program: FireEventIO[Unit] = for {
-        // Fetch the process actor and its metadata. This will activate the actor if it's passivated.
         instanceAndMeta <- fetchInstance(recipeInstanceId)
         (processInstance, metadata) = instanceAndMeta
-
-        // Fetch the compiled recipe from the cache or manager.
         recipe <- fetchRecipe(metadata)
-
-        // Validate that the event name corresponds to a known sensory event in the recipe.
-        // We don't need the result, we just care that it succeeds.
         _ <- validateAnyEventNameIsInRecipe(recipe, eventName, recipeInstanceId)
-
-        // If all validations pass, forward the AwaitEvent message to the ProcessInstance actor.
-        // `forward` preserves the original sender, so the ProcessInstance actor's reply will go
-        // to the actor that originally sent the AwaitEvent message.
-        _ <- accept(processInstance.tell(ProcessInstanceProtocol.AwaitEvent(eventName), originalSender))
+        _ <- accept(processInstance.tell(ProcessInstanceProtocol.AwaitEvent(eventName, waitForNext), originalSender))
       } yield ()
 
-      // Asynchronously execute the program and handle the result.
       program.value.unsafeRunAsync{
         case Left(exception) =>
-          // This case represents an unexpected technical error within the IO program.
           log.error(exception, s"Unexpected error processing AwaitEvent for recipe instance '$recipeInstanceId'")
           originalSender ! akka.actor.Status.Failure(exception)
 
         case Right(Left(rejection)) =>
-          // This case represents a controlled, business-logic failure (e.g., event name not found, process doesn't exist).
-          // We send the rejection object directly back to the sender.
           originalSender ! rejection
 
         case Right(Right(())) =>
-          // The command was successfully validated and forwarded to the ProcessInstance actor.
-          // That actor is now responsible for handling the await logic. No further action is needed here.
           ()
       }(IORuntime.global)
 
