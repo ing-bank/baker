@@ -501,6 +501,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Wait for an event">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#waiting-for-new-events-waitfornexttrue" class="md-nav__link">
+    <span class="md-ellipsis">
+      Waiting for new events (waitForNext=true)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -1010,6 +1025,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Wait for an event">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#waiting-for-new-events-waitfornexttrue" class="md-nav__link">
+    <span class="md-ellipsis">
+      Waiting for new events (waitForNext=true)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -1250,10 +1280,16 @@ the process, or when the process has finished.</p>
 </div>
 <h3 id="wait-for-an-event">Wait for an event</h3>
 <p><code>awaitEvent</code> completes when an event with the specified name appears in the list of fired events.</p>
+<p>The method accepts an optional <code>waitForNext</code> parameter (default: <code>false</code>):</p>
+<ul>
+<li><code>waitForNext = false</code>: Baker checks the event history first. If an event with the specified name has <strong>already occurred</strong>, the future completes immediately.
+    This implies that if you call <code>awaitEvent</code> multiple times for the same event name, all calls after the first occurrence will resolve immediately.</li>
+<li><code>waitForNext = true</code>: Baker ignores the event history and registers a listener for the <strong>next</strong> occurrence of the event.</li>
+</ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-</div>
 <p>Make sure to set a timeout smaller than the requestTimeout of your httpClient. Otherwise, you will see awaitEvent() timeout prematurely.</p>
+</div>
 <div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Java</label><label for="__tabbed_3_2">Kotlin</label><label for="__tabbed_3_3">Scala</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -1322,10 +1358,116 @@ the process, or when the process has finished.</p>
 </div>
 </div>
 </div>
+<h4 id="waiting-for-new-events-waitfornexttrue">Waiting for new events (waitForNext=true)</h4>
+<p>When using <code>waitForNext=true</code>, rely on the following pattern to avoid race conditions.</p>
+<div class="admonition warning">
+<p class="admonition-title">Race Condition</p>
+<p>If you fire a sensory event <em>first</em> and then call <code>awaitEvent(..., waitForNext=true)</code>, the expected event might have already occurred by the time the listener is registered. This will cause <code>awaitEvent</code> to run until timeout, even though the event actually happened.</p>
+<p><strong>Solution:</strong> Start <code>awaitEvent</code> <strong>before</strong> firing the sensory event.</p>
+</div>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:3"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Java</label><label for="__tabbed_4_2">Kotlin</label><label for="__tabbed_4_3">Scala</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.Baker</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.EventInstance</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">examples.java.events.OrderPlaced</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">java.time.Duration</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">AwaitEventWaitForNext</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">Baker</span><span class="w"> </span><span class="n">baker</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="nf">AwaitEventWaitForNext</span><span class="p">(</span><span class="n">Baker</span><span class="w"> </span><span class="n">baker</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">baker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">baker</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">example</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="n">OrderPlaced</span><span class="w"> </span><span class="n">orderPlaced</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="n">eventInstance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">EventInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">orderPlaced</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// Pattern: Start waiting BEFORE firing the sensory event</span>
+<span class="w">        </span><span class="c1">// waitForNext = true checks for *new* occurrences of the event</span>
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="n">awaitFuture</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="na">awaitEvent</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ExpectedEvent&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Duration</span><span class="p">.</span><span class="na">ofSeconds</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="w"> </span><span class="kc">true</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// Fire the event</span>
+<span class="w">        </span><span class="n">baker</span><span class="p">.</span><span class="na">fireSensoryEventAndAwaitReceived</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="n">eventInstance</span><span class="p">).</span><span class="na">join</span><span class="p">();</span>
+
+<span class="w">        </span><span class="c1">// Now wait for the event to occur</span>
+<span class="w">        </span><span class="c1">// Because we started listening *before* firing, we are guaranteed not to miss it</span>
+<span class="w">        </span><span class="n">awaitFuture</span><span class="p">.</span><span class="na">join</span><span class="p">();</span><span class="w"> </span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples.kotlin.application</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.javadsl.EventInstance</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">com.ing.baker.runtime.kotlindsl.Baker</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples.kotlin.events.OrderPlaced</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">kotlinx.coroutines.async</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">kotlinx.coroutines.coroutineScope</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">kotlin.time.Duration.Companion.seconds</span>
+
+<span class="kd">class</span><span class="w"> </span><span class="nc">AwaitEventWaitForNext</span><span class="p">(</span><span class="kd">private</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">baker</span><span class="p">:</span><span class="w"> </span><span class="n">Baker</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="kd">suspend</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">example</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">:</span><span class="w"> </span><span class="kt">String</span><span class="p">,</span><span class="w"> </span><span class="n">orderPlaced</span><span class="p">:</span><span class="w"> </span><span class="n">OrderPlaced</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coroutineScope</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">val</span><span class="w"> </span><span class="nv">orderPlacedEvent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">EventInstance</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">orderPlaced</span><span class="p">)</span>
+
+<span class="w">        </span><span class="c1">// Pattern: Start waiting BEFORE firing the sensory event</span>
+<span class="w">        </span><span class="c1">// waitForNext = true checks for *new* occurrences of the event</span>
+<span class="w">        </span><span class="c1">// We use async to start the &quot;await&quot; concurrently </span>
+<span class="w">        </span><span class="kd">val</span><span class="w"> </span><span class="nv">awaitDeferred</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">async</span><span class="w"> </span><span class="p">{</span><span class="w"> </span>
+<span class="w">            </span><span class="n">baker</span><span class="p">.</span><span class="na">awaitEvent</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ExpectedEvent&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">5.</span><span class="n">seconds</span><span class="p">,</span><span class="w"> </span><span class="n">waitForNext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span><span class="w"> </span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="c1">// Fire the event</span>
+<span class="w">        </span><span class="n">baker</span><span class="p">.</span><span class="na">fireSensoryEventAndAwaitReceived</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="n">orderPlacedEvent</span><span class="p">)</span>
+
+<span class="w">        </span><span class="c1">// Now wait for the event to occur</span>
+<span class="w">        </span><span class="n">awaitDeferred</span><span class="p">.</span><span class="na">await</span><span class="p">()</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="k">package</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="n">application</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">com</span><span class="p">.</span><span class="nn">ing</span><span class="p">.</span><span class="nn">baker</span><span class="p">.</span><span class="nn">runtime</span><span class="p">.</span><span class="nn">scaladsl</span><span class="p">.{</span><span class="nc">Baker</span><span class="p">,</span><span class="w"> </span><span class="nc">EventInstance</span><span class="p">}</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">examples</span><span class="p">.</span><span class="nn">scala</span><span class="p">.</span><span class="nn">events</span><span class="p">.</span><span class="nc">OrderPlaced</span>
+
+<span class="k">import</span><span class="w"> </span><span class="nn">scala</span><span class="p">.</span><span class="nn">concurrent</span><span class="p">.</span><span class="nc">ExecutionContext</span><span class="p">.</span><span class="nc">Implicits</span><span class="p">.</span><span class="n">global</span>
+<span class="k">import</span><span class="w"> </span><span class="nn">scala</span><span class="p">.</span><span class="nn">concurrent</span><span class="p">.</span><span class="nn">duration</span><span class="p">.</span><span class="nc">DurationInt</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AwaitEventWaitForNext</span><span class="p">(</span><span class="kd">val</span><span class="w"> </span><span class="n">baker</span><span class="p">:</span><span class="w"> </span><span class="nc">Baker</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">example</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">:</span><span class="w"> </span><span class="nc">String</span><span class="p">,</span><span class="w"> </span><span class="n">orderPlaced</span><span class="p">:</span><span class="w"> </span><span class="nc">OrderPlaced</span><span class="p">):</span><span class="w"> </span><span class="nc">Unit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="n">eventInstance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">EventInstance</span><span class="p">.</span><span class="n">unsafeFrom</span><span class="p">(</span><span class="n">orderPlaced</span><span class="p">)</span>
+
+<span class="w">    </span><span class="c1">// Pattern: Start waiting BEFORE firing the sensory event</span>
+<span class="w">    </span><span class="c1">// waitForNext = true checks for *new* occurrences of the event</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="n">awaitFuture</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="n">awaitEvent</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ExpectedEvent&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">.</span><span class="n">seconds</span><span class="p">,</span><span class="w"> </span><span class="n">waitForNext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+
+<span class="w">    </span><span class="c1">// Fire the event</span>
+<span class="w">    </span><span class="c1">// We combine the futures to ensure we wait for both:</span>
+<span class="w">    </span><span class="c1">// 1. The event to be received</span>
+<span class="w">    </span><span class="c1">// 2. The expected event to occur</span>
+<span class="w">    </span><span class="kd">val</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">_</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">baker</span><span class="p">.</span><span class="n">fireSensoryEventAndAwaitReceived</span><span class="p">(</span><span class="n">recipeInstanceId</span><span class="p">,</span><span class="w"> </span><span class="n">eventInstance</span><span class="p">)</span>
+<span class="w">      </span><span class="n">_</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">awaitFuture</span><span class="w"> </span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">yield</span><span class="w"> </span><span class="p">()</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="inquiry">Inquiry</h2>
 <p>Baker allows you to query the state of a recipe instance at any given moment. To this end, Baker exposes a couple
 of different methods that allow you to fetch information about events, ingredients, and interactions from a running process.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:3"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Java</label><label for="__tabbed_4_2">Kotlin</label><label for="__tabbed_4_3">Scala</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:3"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><input id="__tabbed_5_3" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Java</label><label for="__tabbed_5_2">Kotlin</label><label for="__tabbed_5_3">Scala</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
@@ -1417,7 +1559,7 @@ detail.</p>
 <p>This method returns a <code>CompletableFuture&lt;SensoryEventStatus&gt;</code>. It completes right after the event was received, but
 before any interactions are executed. The <code>SensoryEventStatus</code> is an enum containing information about the outcome
 of the event (<code>Received</code>, <code>Completed</code>, <code>FiringLimitMet</code>, etc).</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="5:3"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><input id="__tabbed_5_3" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Java</label><label for="__tabbed_5_2">Kotlin</label><label for="__tabbed_5_3">Scala</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:3"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><input id="__tabbed_6_3" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Java</label><label for="__tabbed_6_2">Kotlin</label><label for="__tabbed_6_3">Scala</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
@@ -1478,7 +1620,7 @@ of the event (<code>Received</code>, <code>Completed</code>, <code>FiringLimitMe
 <p>Returns a <code>CompletableFuture&lt;SensoryEventResult&gt;</code>. It completes when additional sensory events are required to continue
 the process, or when the process has finished. The <code>SensoryEventResult</code> contains the <code>SensoryEventStatus</code> and a list
 of all events names triggered as a result of this sensory event.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="6:3"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><input id="__tabbed_6_3" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Java</label><label for="__tabbed_6_2">Kotlin</label><label for="__tabbed_6_3">Scala</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:3"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><input id="__tabbed_7_3" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Java</label><label for="__tabbed_7_2">Kotlin</label><label for="__tabbed_7_3">Scala</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
@@ -1540,7 +1682,7 @@ of all events names triggered as a result of this sensory event.</p>
 The method returns an <code>EventResolutions</code> object consisting of a <code>CompletableFuture&lt;SensoryEventStatus&gt;</code> and
 <code>CompletableFuture&lt;SensoryEventResult&gt;</code>. The former completes on receiving the event, the latter on completion of the
 interactions.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="7:3"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><input id="__tabbed_7_3" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Java</label><label for="__tabbed_7_2">Kotlin</label><label for="__tabbed_7_3">Scala</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:3"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><input id="__tabbed_8_3" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Java</label><label for="__tabbed_8_2">Kotlin</label><label for="__tabbed_8_3">Scala</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
@@ -1609,7 +1751,7 @@ interactions.</p>
 <h3 id="fire-event-and-resolve-on-event">Fire event and resolve on event</h3>
 <p>This method returns a <code>CompletableFuture&lt;SensoryEventResult&gt;</code>. It completes when one of the interactions fires an event
 with a specified name.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="8:3"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><input id="__tabbed_8_3" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Java</label><label for="__tabbed_8_2">Kotlin</label><label for="__tabbed_8_3">Scala</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:3"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><input id="__tabbed_9_3" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Java</label><label for="__tabbed_9_2">Kotlin</label><label for="__tabbed_9_3">Scala</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">package</span><span class="w"> </span><span class="nn">examples.java.application</span><span class="p">;</span>
