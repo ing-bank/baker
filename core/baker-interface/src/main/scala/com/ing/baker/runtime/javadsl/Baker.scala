@@ -471,8 +471,14 @@ class Baker(private val baker: scaladsl.Baker) extends common.Baker[CompletableF
   override def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: Optional[String]): CompletableFuture[SensoryEventStatus] =
     toCompletableFuture(baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, event.asScala, Option.apply(correlationId.orElse(null))))
 
-  override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: Duration): CompletableFuture[Unit] =
-    toCompletableFuture(baker.awaitEvent(recipeInstanceId, eventName, FiniteDuration.apply(timeout.toMillis, TimeUnit.MILLISECONDS)))
+  /**
+    * Convenience overload for Java callers that don't want to specify waitForNext.
+    */
+  def awaitEvent(recipeInstanceId: String, eventName: String, timeout: Duration): CompletableFuture[Unit] =
+    awaitEvent(recipeInstanceId, eventName, timeout, false)
+
+  override def awaitEvent(recipeInstanceId: String, eventName: String, timeout: Duration, waitForNext: Boolean): CompletableFuture[Unit] =
+    toCompletableFuture(baker.awaitEvent(recipeInstanceId, eventName, FiniteDuration.apply(timeout.toMillis, TimeUnit.MILLISECONDS), waitForNext))
 
   override def awaitCompleted(recipeInstanceId: String, timeout: Duration): CompletableFuture[SensoryEventStatus] =
     toCompletableFuture(baker.awaitCompleted(recipeInstanceId, FiniteDuration.apply(timeout.toMillis, TimeUnit.MILLISECONDS)))

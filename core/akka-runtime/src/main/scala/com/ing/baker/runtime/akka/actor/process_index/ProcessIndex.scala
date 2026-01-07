@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.actor.process_index
 import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props}
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.{DiagnosticLoggingAdapter, Logging}
-import akka.pattern.{BackoffOpts, BackoffSupervisor, ask}
+import akka.pattern.{BackoffOpts, BackoffSupervisor, ask, pipe}
 import akka.persistence._
 import akka.sensors.actor.PersistentActorMetrics
 import cats.data.{EitherT, OptionT}
@@ -40,6 +40,7 @@ import com.typesafe.config.Config
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 
@@ -127,6 +128,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
                    rememberProcessDuration: Option[Duration]) extends PersistentActor with PersistentActorMetrics {
 
   override val log: DiagnosticLoggingAdapter = Logging.getLogger(logSource = this)
+
+  // --- Internal messages for the asynchronous initialization flow ---
+  private case class InitializationConfirmed(originalSender: ActorRef, recipeId: String, recipeInstanceId: String, compiledRecipe: CompiledRecipe, createdTime: Long) extends NoSerializationVerificationNeeded
+  private case class InitializationRejected(originalSender: ActorRef, recipeInstanceId: String, cause: Throwable) extends NoSerializationVerificationNeeded
 
   private val startTime = System.currentTimeMillis()
 
@@ -342,6 +347,60 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     } yield (transition, jobId)
   }
 
+  /**
+   * Creates the Initialize command for a new process instance.
+   *
+   * @return A tuple containing the Initialize command and the creation timestamp.
+   */
+  private def createInitializationCommand(
+                                           recipeId: String,
+                                           recipeInstanceId: String,
+                                           recipeInstanceMetadata: Map[String, String],
+                                           compiledRecipe: CompiledRecipe): (Initialize, Long) = {
+
+    val createdTime = System.currentTimeMillis()
+
+    val ingredientsMap =
+      if (recipeInstanceMetadata.isEmpty) Map.empty[String, Value]
+      else Map(RecipeInstanceMetadataName -> com.ing.baker.types.Converters.toValue(recipeInstanceMetadata))
+
+    val processState = RecipeInstanceState(
+      recipeId = recipeId,
+      recipeInstanceId = recipeInstanceId,
+      ingredients = ingredientsMap,
+      recipeInstanceMetadata = recipeInstanceMetadata,
+      events = List.empty)
+
+    val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
+
+    (initializeCmd, createdTime)
+  }
+
+  /**
+   * Handles the successful initialization of a process instance.
+   *
+   * This involves persisting the ActorCreated event, updating the in-memory index,
+   * logging the creation event, and replying to the original sender.
+   */
+  private def handleSuccessfulInitialization(
+                                              originalSender: ActorRef,
+                                              recipeId: String,
+                                              recipeInstanceId: String,
+                                              compiledRecipe: CompiledRecipe,
+                                              createdTime: Long): Unit = {
+
+    persistWithSnapshot(ActorCreated(recipeId, recipeInstanceId, createdTime)) { _ =>
+      // This callback runs after the event is successfully persisted.
+      val actorMetadata = ActorMetadata(recipeId, recipeInstanceId, createdTime, Active)
+      index += recipeInstanceId -> actorMetadata
+
+      val creationEvent = RecipeInstanceCreated(createdTime, recipeId, compiledRecipe.name, recipeInstanceId)
+      LogAndSendEvent.recipeInstanceCreated(creationEvent, context.system.eventStream)
+
+      originalSender ! Initialized(Marking.empty)
+    }
+  }
+
   override def receiveCommand: Receive =  {
     case SaveSnapshotSuccess(metadata) =>
       log.debug("Snapshot saved & cleaning old processes")
@@ -390,71 +449,47 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       }
 
     case CreateProcess(recipeId, recipeInstanceId, recipeInstanceMetadata) =>
-      context.child(recipeInstanceId) match {
-        case None if !index.contains(recipeInstanceId) =>
+      val originalSender = sender()
 
-          // First check if the recipe exists
+      index.get(recipeInstanceId) match {
+        case Some(metadata) if metadata.isDeleted =>
+          originalSender ! ProcessDeleted(recipeInstanceId)
+
+        case Some(_) =>
+          originalSender ! ProcessAlreadyExists(recipeInstanceId)
+
+        case None =>
           getCompiledRecipe(recipeId) match {
             case Some(compiledRecipe) =>
-
-              val createdTime = System.currentTimeMillis()
-
-              // this persists the fact that we created a process instance
-              persistWithSnapshot(ActorCreated(recipeId, recipeInstanceId, createdTime)) { _ =>
-
-                // after that we actually create the ProcessInstance actor
-                val processState = RecipeInstanceState(
-                  recipeId = recipeId,
-                  recipeInstanceId = recipeInstanceId,
-                  ingredients =
-                    if (recipeInstanceMetadata.isEmpty) Map.empty[String, Value]
-                    else Map(RecipeInstanceMetadataName -> com.ing.baker.types.Converters.toValue(recipeInstanceMetadata)),
-                  recipeInstanceMetadata = recipeInstanceMetadata,
-                  events = List.empty)
-                val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
-
-                //TODO ensure the initialiseCMD is accepted before we add it ot the index
+              val processActor = context.child(recipeInstanceId).getOrElse {
                 createProcessActor(recipeInstanceId, compiledRecipe)
-                  .forward(initializeCmd)
-
-                val actorMetadata = ActorMetadata(recipeId, recipeInstanceId, createdTime, Active)
-
-                LogAndSendEvent.recipeInstanceCreated(
-                  RecipeInstanceCreated(System.currentTimeMillis(), recipeId, compiledRecipe.name, recipeInstanceId),
-                  context.system.eventStream)
-
-                index += recipeInstanceId -> actorMetadata
               }
 
+              val (initializeCmd, createdTime) = createInitializationCommand(
+                recipeId, recipeInstanceId, recipeInstanceMetadata, compiledRecipe)
+
+              (processActor ? initializeCmd)(processInquireTimeout).map {
+                  case _: Initialized | _: AlreadyInitialized =>
+                    InitializationConfirmed(originalSender, recipeId, recipeInstanceId, compiledRecipe, createdTime)
+                  case other =>
+                    val err = new IllegalStateException(s"ProcessInstance for $recipeInstanceId replied with unexpected message: $other")
+                    InitializationRejected(originalSender, recipeInstanceId, err)
+                }
+                .recover { case NonFatal(e) => InitializationRejected(originalSender, recipeInstanceId, e) }
+                .pipeTo(self)
+
             case None =>
-              sender() ! NoRecipeFound(recipeId)
-          }
-        case _ if index.get(recipeInstanceId).exists(_.isDeleted) =>
-          sender() ! ProcessDeleted(recipeInstanceId)
-        case None =>
-          //Temporary solution for the situation that the initializeCmd is not send in the original Bake
-          getCompiledRecipe(recipeId) match {
-            case Some(compiledRecipe) =>
-              val processState = RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], recipeInstanceMetadata, List.empty)
-              val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
-              createProcessActor(recipeInstanceId, compiledRecipe) ! initializeCmd
-              sender() ! ProcessAlreadyExists(recipeInstanceId)
-            case None =>
-              //Kept the ProcessAlreadyExists since this was the original error
-              sender() ! ProcessAlreadyExists(recipeInstanceId)
-          }
-        case Some(actorRef: ActorRef) =>
-          //Temporary solution for the situation that the initializeCmd is not send in the original Bake
-          getCompiledRecipe(recipeId) match {
-            case Some(compiledRecipe) =>
-              val processState = RecipeInstanceState(recipeId, recipeInstanceId, Map.empty[String, Value], recipeInstanceMetadata, List.empty)
-              val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
-              actorRef ! initializeCmd
-              sender() ! ProcessAlreadyExists(recipeInstanceId)
-            case None =>
-              sender() ! NoRecipeFound(recipeId)
+              originalSender ! NoRecipeFound(recipeId)
           }
       }
+
+    case msg: InitializationConfirmed =>
+      handleSuccessfulInitialization(
+        msg.originalSender, msg.recipeId, msg.recipeInstanceId, msg.compiledRecipe, msg.createdTime)
+
+    case msg: InitializationRejected =>
+      log.error(msg.cause, s"Initialization of process ${msg.recipeInstanceId} failed.")
+      msg.originalSender ! akka.actor.Status.Failure(msg.cause)
 
     case command@ProcessEvent(recipeInstanceId, event, correlationId, _, _) =>
       run ({ responseHandler =>
@@ -599,45 +634,26 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         actorRef.forward(ProcessInstanceProtocol.AwaitCompleted)
       }
 
-    case ProcessIndexProtocol.AwaitEvent(recipeInstanceId, eventName) =>
+    case ProcessIndexProtocol.AwaitEvent(recipeInstanceId, eventName, waitForNext) =>
       val originalSender = sender()
 
-      // This program describes the logic as a sequence of validation steps.
-      // If any step fails (returns a Left), the entire program short-circuits
-      // and the failure is handled in unsafeRunAsync.
       val program: FireEventIO[Unit] = for {
-        // Fetch the process actor and its metadata. This will activate the actor if it's passivated.
         instanceAndMeta <- fetchInstance(recipeInstanceId)
         (processInstance, metadata) = instanceAndMeta
-
-        // Fetch the compiled recipe from the cache or manager.
         recipe <- fetchRecipe(metadata)
-
-        // Validate that the event name corresponds to a known sensory event in the recipe.
-        // We don't need the result, we just care that it succeeds.
         _ <- validateAnyEventNameIsInRecipe(recipe, eventName, recipeInstanceId)
-
-        // If all validations pass, forward the AwaitEvent message to the ProcessInstance actor.
-        // `forward` preserves the original sender, so the ProcessInstance actor's reply will go
-        // to the actor that originally sent the AwaitEvent message.
-        _ <- accept(processInstance.tell(ProcessInstanceProtocol.AwaitEvent(eventName), originalSender))
+        _ <- accept(processInstance.tell(ProcessInstanceProtocol.AwaitEvent(eventName, waitForNext), originalSender))
       } yield ()
 
-      // Asynchronously execute the program and handle the result.
       program.value.unsafeRunAsync{
         case Left(exception) =>
-          // This case represents an unexpected technical error within the IO program.
           log.error(exception, s"Unexpected error processing AwaitEvent for recipe instance '$recipeInstanceId'")
           originalSender ! akka.actor.Status.Failure(exception)
 
         case Right(Left(rejection)) =>
-          // This case represents a controlled, business-logic failure (e.g., event name not found, process doesn't exist).
-          // We send the rejection object directly back to the sender.
           originalSender ! rejection
 
         case Right(Right(())) =>
-          // The command was successfully validated and forwarded to the ProcessInstance actor.
-          // That actor is now responsible for handling the await logic. No further action is needed here.
           ()
       }(IORuntime.global)
 

@@ -71,8 +71,14 @@ Make sure to set a timeout smaller than the requestTimeout of your httpClient. O
 
 `awaitEvent` completes when an event with the specified name appears in the list of fired events.
 
+The method accepts an optional `waitForNext` parameter (default: `false`):
+
+*   `waitForNext = false`: Baker checks the event history first. If an event with the specified name has **already occurred**, the future completes immediately.
+    This implies that if you call `awaitEvent` multiple times for the same event name, all calls after the first occurrence will resolve immediately.
+*   `waitForNext = true`: Baker ignores the event history and registers a listener for the **next** occurrence of the event.
+
 !!!Note
-Make sure to set a timeout smaller than the requestTimeout of your httpClient. Otherwise, you will see awaitEvent() timeout prematurely.
+    Make sure to set a timeout smaller than the requestTimeout of your httpClient. Otherwise, you will see awaitEvent() timeout prematurely.
 
 === "Java"
 
@@ -90,6 +96,33 @@ Make sure to set a timeout smaller than the requestTimeout of your httpClient. O
 
     ```scala
     --8<-- "docs-code-snippets/src/main/scala/examples/scala/application/AwaitEvent.scala"
+    ```
+
+#### Waiting for new events (waitForNext=true)
+
+When using `waitForNext=true`, rely on the following pattern to avoid race conditions.
+
+!!! Warning "Race Condition"
+    If you fire a sensory event *first* and then call `awaitEvent(..., waitForNext=true)`, the expected event might have already occurred by the time the listener is registered. This will cause `awaitEvent` to run until timeout, even though the event actually happened.
+
+    **Solution:** Start `awaitEvent` **before** firing the sensory event.
+
+=== "Java"
+
+    ```java
+    --8<-- "docs-code-snippets/src/main/java/examples/java/application/AwaitEventWaitForNext.java"
+    ```
+
+=== "Kotlin"
+
+    ```kotlin
+    --8<-- "docs-code-snippets/src/main/kotlin/examples/kotlin/application/AwaitEventWaitForNext.kt"
+    ```
+
+=== "Scala"
+
+    ```scala
+    --8<-- "docs-code-snippets/src/main/scala/examples/scala/application/AwaitEventWaitForNext.scala"
     ```
 
 ## Inquiry

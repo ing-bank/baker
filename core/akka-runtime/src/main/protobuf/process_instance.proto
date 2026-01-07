@@ -283,6 +283,7 @@ message Completed {
 
 message AwaitEvent {
   optional string eventName = 1;
+  optional bool waitForNext = 2;
 }
 
 message EventOccurred {

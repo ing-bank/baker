@@ -118,6 +118,29 @@ class SensoryEventResponseHandlerSpec extends AkkaTestBase("SensoryEventResponse
       client.expectNoMessage(100.millis)
     }
 
+    "not crash when a TransitionFailed is received while awaiting NotifyOnEvent" in {
+      val client = TestProbe()
+      val sensoryEvent = EventInstance(webshop.orderPlaced.name, Map.empty)
+      val cmd = ProcessEvent("", sensoryEvent, None, 1 second, NotifyOnEvent(waitForRetries = true, "event2"))
+      val handler = system.actorOf(SensoryEventResponseHandler(client.ref, cmd))
+      val event1 = EventInstance("event1", Map("ingredient1" -> PrimitiveValue("value1")))
+      val event2 = EventInstance("event2", Map("ingredient2" -> PrimitiveValue("value2")))
+      handler ! webShopRecipe
+      client.expectNoMessage(100.millis)
+      // First event fires, spawns job 2
+      handler ! TransitionFired(1, 1, None, Map.empty, Map.empty, Set(2), event1)
+      client.expectNoMessage(100.millis)
+      // Job 2 FAILS - this should NOT cause a ClassCastException
+      handler ! TransitionFailed(2, 2, None, Map.empty, null, "some error", ProcessInstanceProtocol.ExceptionStrategy.BlockTransition)
+      client.expectNoMessage(100.millis)
+      // Now the actual event2 fires on a new job - this should complete
+      handler ! TransitionFired(3, 3, None, Map.empty, Map.empty, Set.empty, event2)
+      // We expect a response with event1 and event2, excluding the failed job's output
+      val expectedEventNames = List(event1.name, event2.name)
+      val expectedIngredients = event1.providedIngredients ++ event2.providedIngredients
+      client.expectMsg(ProcessEventCompletedResponse(SensoryEventResult(SensoryEventStatus.Completed, expectedEventNames, expectedIngredients)))
+    }
+
 
     "wait for the completion of all jobs even if one fails with TransitionFailed" in {
       val client = TestProbe()

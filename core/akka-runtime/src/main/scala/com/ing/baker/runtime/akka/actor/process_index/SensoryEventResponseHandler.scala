@@ -147,7 +147,10 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent)
   def streaming(runningJobs: Set[Long], cache: List[Any]): Receive = {
     command.reaction match {
       case FireSensoryEventReaction.NotifyOnEvent(_, onEvent)
-        if Option(cache.head.asInstanceOf[TransitionFired].output.asInstanceOf[EventInstance]).exists(_.name == onEvent) =>
+        if (cache.head match {
+          case fired: TransitionFired => Option(fired.output).collect { case e: EventInstance => e }.exists(_.name == onEvent)
+          case _ => false
+        }) =>
         notifyComplete(cache.reverse)
         Actor.ignoringBehavior
 
