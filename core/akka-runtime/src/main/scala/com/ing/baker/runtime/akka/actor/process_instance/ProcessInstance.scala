@@ -135,8 +135,6 @@ class ProcessInstance(
   // setting up receive timeout to stop actor, when it's not stopped by IdleStop message
   context.setReceiveTimeout(settings.idleTTL.getOrElse(15 minutes) * 2)
 
-  override val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
-
   override def preStart(): Unit = {
     log.info(s"ProcessInstance started: $recipeInstanceId")
   }
@@ -659,6 +657,27 @@ class ProcessInstance(
    * It finds which transitions are enabled and executes those.
    */
   def step(instance: Instance[RecipeInstanceState]): (Instance[RecipeInstanceState], Set[Job[RecipeInstanceState]]) = {
+
+    // Log if sequenceNr is high
+    if (instance.sequenceNr > 500 && instance.sequenceNr % 50 == 0) {
+      val originalMdcBackup = log.mdc
+      try {
+        log.mdc(originalMdcBackup ++ Map(
+          "sequenceNr" -> instance.sequenceNr
+        ))
+        log.warning(
+          s"High iteration count detected: " +
+            s"recipe='${compiledRecipe.name}', " +
+            s"instance='$recipeInstanceId', " +
+            s"sequence=${instance.sequenceNr}. " +
+            s"Investigate possible non-terminating loops."
+        )
+      } finally {
+        // Always restore the original MDC
+        log.mdc(originalMdcBackup)
+      }
+    }
+
     runtime.allEnabledJobs.run(instance).value match {
       case (updatedInstance, jobs) =>
         if (jobs.isEmpty && updatedInstance.activeJobs.isEmpty)
