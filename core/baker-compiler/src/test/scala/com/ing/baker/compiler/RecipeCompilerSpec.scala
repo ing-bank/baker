@@ -618,11 +618,15 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           }
           .filter( _.startsWith(subRecipePrefix))
 
-//        compiledRecipe.recipeId shouldBe "fb5346c571ca5a47"
-//        res shouldBe Set(
-//          "$SubRecipe$SubRecipe$InteractionSeven",
-//          "$SubRecipe$SubSubRecipe$InteractionOne"
-//        )
+        compiledRecipe.recipeId shouldBe "ae2282f55f0a4f9f"
+        res shouldBe Set(
+          "$SubRecipe$SubSubRecipe$InteractionOne",
+          "$SubRecipe$SubSubRecipe$InteractionTwo",
+          "$SubRecipe$SubRecipe$InteractionThree",
+          "$SubRecipe$SubRecipe$InteractionFour",
+          "$SubRecipe$SubRecipe$InteractionFive",
+          "$SubRecipe$SubRecipe$InteractionSix",
+        )
 
         val vis = RecipeVisualizer.visualizeRecipe(compiledRecipe, RecipeVisualStyle.default)
 
