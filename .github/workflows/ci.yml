@@ -28,8 +28,7 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: maven
-      - uses: sbt/setup-sbt@v1
-      - name: Run tests and coverage
+      - name: Run tests
         run: mvn clean install -Drevision=$(git describe | cut -c2-)
         env:
           AKKA_TOKEN: ${{ secrets.AKKA_TOKEN }}
