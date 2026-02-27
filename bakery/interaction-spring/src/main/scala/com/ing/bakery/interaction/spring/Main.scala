@@ -8,7 +8,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 
 import java.util
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
@@ -22,7 +22,7 @@ object Main extends App with LazyLogging{
     def forClass(c: String) = {
       val configClass = Class.forName(c)
       logger.info("Class found: " + configClass)
-      val ctx = new AnnotationConfigApplicationContext();
+      val ctx = new AnnotationConfigApplicationContext()
       logger.info("Context created")
       ctx.register(configClass)
       logger.info("Context registered")

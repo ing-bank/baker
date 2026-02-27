@@ -1,9 +1,7 @@
 package webshop.webservice
 
 import java.util.concurrent.Executors
-
 import cats.effect.{ExitCode, IO, IOApp}
-import cats.implicits._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.http.client.scaladsl.BakerClient
 import com.typesafe.config.ConfigFactory
@@ -35,8 +33,9 @@ object Main extends IOApp {
     val mainResource = for {
       baker <- BakerClient.resource(Uri.unsafeFromString(bakerUrlPrefix), "/api/bakery", connectionPool)
       management <- StateNodeManagementClient.resource(Uri.unsafeFromString(bakerUrlPrefix), connectionPool)
-      _ <- BlazeServerBuilder[IO](connectionPool)
+      _ <- BlazeServerBuilder[IO]
         .bindHttp(httpPort, "0.0.0.0")
+        .withExecutionContext(connectionPool)
         .withHttpApp(new WebShopService(new WebShopBaker(baker, checkoutRecipeId), management).build)
         .resource
     } yield ()

@@ -22,6 +22,4 @@ class InMemoryBakerSpec extends BakerModelSpec{
       shutdownTimeout = 10.seconds,
       addRecipeTimeout = 10.seconds
     ), interactions))
-
-
 }

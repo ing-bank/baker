@@ -22,17 +22,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
-          cache: sbt
+          java-version: 21
+          cache: maven
       - uses: sbt/setup-sbt@v1
       - name: Run tests and coverage
-        run: |-
-          cp .jvmopts-ci .jvmopts
-          sbt coverage test coverageReport && bash <(curl -s https://codecov.io/bash)
+        run: mvn clean install -Drevision=$(git describe | cut -c2-)
         env:
           AKKA_TOKEN: ${{ secrets.AKKA_TOKEN }}
       - name: Prepare draft release notes
@@ -59,11 +57,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
           cache: sbt
       - uses: sbt/setup-sbt@v1
       - name: Publish to Sonatype
@@ -88,11 +86,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
           cache: sbt
       - uses: sbt/setup-sbt@v1
       - name: Publish to Azure
@@ -117,11 +115,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
           cache: sbt
       - uses: sbt/setup-sbt@v1
       - name: Submit dependency graph

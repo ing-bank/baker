@@ -7,7 +7,6 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy.{BlockInteraction,
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import Events.{ItemsReserved, OrderHadUnavailableItems, OrderPlaced, ReserveItemsOutput}
 
-import scala.collection.immutable.Seq
 import scala.concurrent.Future
 import scala.concurrent.duration._
 

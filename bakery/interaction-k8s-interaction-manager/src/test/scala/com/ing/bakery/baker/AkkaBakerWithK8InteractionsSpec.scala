@@ -9,7 +9,7 @@ import com.ing.baker.http.server.scaladsl.Http4sBakerServer
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.BakerException.NoSuchProcessException
-import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
+import com.ing.baker.runtime.common.{BakerException, RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstanceInput}
 import com.ing.baker.types._
@@ -28,12 +28,13 @@ import org.scalatest.ConfigMap
 import org.scalatest.compatible.Assertion
 import org.scalatest.matchers.should.Matchers
 
+import java.io.InputStream
 import java.net.InetSocketAddress
 import java.util.UUID
 import scala.concurrent.Future
 
 class AkkaBakerWithK8InteractionsSpec extends BakeryFunSpec with Matchers {
-  val metricsService = {
+  val metricsService: MetricService = {
     val service = mock[MetricService]
     when(service.interactionFailureCounter).thenReturn(mock[Counter])
     when(service.interactionSuccessCounter).thenReturn(mock[Counter])
@@ -429,11 +430,47 @@ class AkkaBakerWithK8InteractionsSpec extends BakeryFunSpec with Matchers {
     */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
 
-    def getResourceDirectoryPathSafe: String = {
-      val isWindows: Boolean = sys.props.get("os.name").exists(_.toLowerCase().contains("windows"))
-      val safePath = getClass.getResource("/recipes").getPath
-      if (isWindows) safePath.tail
-      else safePath
+    def loadRecipesFromResources(baker: Baker): IO[Unit] = {
+      import cats.implicits._
+      import scala.jdk.CollectionConverters._
+
+      def loadRecipeFromInputStream(is: InputStream, baker: Baker): IO[Unit] = {
+        for {
+          bytes <- IO(LazyList.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray)
+          recipe <- RecipeLoader.fromBytes(bytes)
+          _ <- IO.fromFuture(IO(baker.addRecipe(RecipeRecord.of(recipe))))
+        } yield ()
+      }
+
+      val recipePath = "/recipes"
+      val recipeUrl = getClass.getResource(recipePath)
+
+      if (recipeUrl != null && recipeUrl.getProtocol == "file") {
+        // Load from file system (development mode)
+        val isWindows: Boolean = sys.props.get("os.name").exists(_.toLowerCase().contains("windows"))
+        val safePath = if (isWindows) recipeUrl.getPath.tail else recipeUrl.getPath
+        RecipeLoader.loadRecipesIntoBaker(safePath, baker)
+      } else if (recipeUrl != null && recipeUrl.getProtocol == "jar") {
+        // Load from JAR (production mode)
+        for {
+          inputStreams <- IO {
+            val jarConnection = recipeUrl.openConnection().asInstanceOf[java.net.JarURLConnection]
+            val jarFile = jarConnection.getJarFile
+            val entries = jarFile.entries().asScala
+
+            entries
+              .filter(entry => !entry.isDirectory && entry.getName.startsWith("recipes/") && entry.getName.endsWith(".recipe"))
+              .map(entry => jarFile.getInputStream(entry))
+              .toList
+          }
+          _ <- inputStreams.traverse { is =>
+            loadRecipeFromInputStream(is, baker).guarantee(IO(is.close()))
+          }
+        } yield ()
+      } else {
+        // Fallback: log warning if no recipes found
+        IO.unit
+      }
     }
 
     val config = ConfigFactory.parseString(
@@ -485,7 +522,7 @@ class AkkaBakerWithK8InteractionsSpec extends BakeryFunSpec with Matchers {
         )
 
       _ <- Resource.eval(eventListener.eventSink.attach(baker))
-      _ <- Resource.eval(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, baker))
+      _ <- Resource.eval(loadRecipesFromResources(baker))
 
       server <- Http4sBakerServer.resource(
         baker,

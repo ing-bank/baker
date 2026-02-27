@@ -23,7 +23,7 @@ import java.net.InetSocketAddress
 import java.util.UUID
 import scala.Console.println
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.convert.ImplicitConversions._
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}

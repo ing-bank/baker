@@ -15,7 +15,6 @@ import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
-import scala.collection.immutable.Seq
 
 class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
 

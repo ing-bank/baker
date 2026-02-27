@@ -1,6 +1,5 @@
 package com.ing.baker.runtime.model
 
-import cats.Applicative
 import cats.effect.{IO, Sync}
 import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.types.{Converters, Value}
@@ -31,7 +30,7 @@ trait BakerModelFixtures extends TestRecipe with MockitoSugar {
   def eventList(events: Any*): Seq[EventInstance] = events.map(EventInstance.unsafeFrom)
 
   //Can be used to check the state after firing the initialEvent
-  val afterInitialState = ingredientMap(
+  val afterInitialState: Map[String, Value] = ingredientMap(
     "initialIngredient" -> initialIngredientValue,
     "sievedIngredient" -> sievedIngredientValue,
     "interactionOneIngredient" -> interactionOneIngredientValue,
@@ -40,7 +39,7 @@ trait BakerModelFixtures extends TestRecipe with MockitoSugar {
   )
 
   //Can be used to check the state after firing the initialEvent and SecondEvent
-  val finalState = ingredientMap(
+  val finalState: Map[String, Value] = ingredientMap(
     "initialIngredient" -> initialIngredientValue,
     "sievedIngredient" -> sievedIngredientValue,
     "interactionOneIngredient" -> interactionOneIngredientValue,

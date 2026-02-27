@@ -4,8 +4,7 @@ import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place,
 import com.ing.baker.petrinet.api.Marking
 
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
-import scala.collection.immutable.Seq
+import scala.jdk.CollectionConverters._
 import scala.concurrent.duration.FiniteDuration
 
 object CompiledRecipe {

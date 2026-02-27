@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import java.util
 import java.util.Optional
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 @nowarn
 class InteractionInstanceTest extends AnyFunSpec with Matchers {

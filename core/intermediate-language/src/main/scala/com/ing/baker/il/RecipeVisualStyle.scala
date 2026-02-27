@@ -6,7 +6,7 @@ import scalax.collection.io.dot.implicits._
 import scalax.collection.io.dot.{DotAttr, DotAttrStmt, Elem}
 
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object RecipeVisualStyle extends LazyLogging {
 
