@@ -1,6 +1,11 @@
 name: CI
 on:
   workflow_dispatch:
+    inputs:
+      submit_dependency_graph:
+        description: 'Submit dependency graph (default: false)'
+        required: false
+        default: 'false'
   push:
     branches: ["master"]
     tags: ["v*"]
@@ -29,7 +34,15 @@ jobs:
           java-version: 21
           cache: maven
       - name: Run tests
-        run: mvn clean install -Drevision=$(git describe | cut -c2-)
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "master" ]; then
+            SUFFIX=""
+          else
+            SUFFIX="-${GITHUB_REF_NAME}"
+          fi
+          echo "REVISION=$(git describe | cut -c2-)$SUFFIX" >> $GITHUB_ENV
+      - name: Run tests
+        run: mvn clean install -Drevision=${{ env.REVISION }}
         env:
           AKKA_TOKEN: ${{ secrets.AKKA_TOKEN }}
       - name: Prepare draft release notes
@@ -76,7 +89,9 @@ jobs:
       contents: write
       pull-requests: write
     name: Publish to Azure
-    # Publish to Azure for push events, pull requests from the main repo, and for tags starting with 'v'
+    # The job runs for:
+    # - Any push to the repository.
+    # - Pull requests from branches within the same repository (not forks).
     if: ${{ (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) }}
     needs: [ci]
     runs-on: ubuntu-latest
@@ -90,10 +105,9 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-          cache: sbt
-      - uses: sbt/setup-sbt@v1
+          cache: maven
       - name: Publish to Azure
-        run: sbt "clean; +aetherDeploy"
+        run: mvn clean deploy -Drevision=${{ env.REVISION }} -DskipTests
         env:
           AZURE_FEEDUSER: ${{ secrets.AZURE_FEEDUSER }}
           AZURE_FEEDPASSWORD: ${{ secrets.AZURE_FEEDPASSWORD }}
@@ -104,8 +118,8 @@ jobs:
     name: Submit dependency graph
     continue-on-error: true
     needs: [ci]
-    # Submit dependency graph only for the master branch commits
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+    # Submit dependency graph only for the master branch commits or if workflow_dispatch input is set
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.event_name == 'workflow_dispatch' && inputs.submit_dependency_graph == 'true') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -119,7 +133,10 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-          cache: sbt
-      - uses: sbt/setup-sbt@v1
+          cache: maven
+      - name: Generate dependency graph
+        run: mvn dependency:tree -DoutputType=dot -DoutputFile=dependency-graph.dot
       - name: Submit dependency graph
-        uses: scalacenter/sbt-dependency-submission@v2
+        uses: github/dependency-submission-action@v4
+        with:
+          files: dependency-graph.dot
