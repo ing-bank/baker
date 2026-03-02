@@ -2,6 +2,10 @@ name: CI
 on:
   workflow_dispatch:
     inputs:
+      publish_to_azure:
+        description: 'Publish to Azure (default: false)'
+        required: false
+        default: 'false'
       submit_dependency_graph:
         description: 'Submit dependency graph (default: false)'
         required: false
@@ -16,12 +20,31 @@ permissions:
   contents: read
 
 jobs:
+  set-version:
+    name: Determine Version
+    runs-on: ubuntu-latest
+    outputs:
+      BAKER_VERSION: ${{ steps.set-version.outputs.BAKER_VERSION }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Determine Version
+        id: set-version
+        run: |
+          SUFFIX=$([[ "${GITHUB_REF_NAME}" == "master" ]] && echo "" || echo "-${GITHUB_REF_NAME}")
+          BAKER_VERSION="$(git describe | cut -c2-)$SUFFIX"
+          echo "BAKER_VERSION=$BAKER_VERSION" >> $GITHUB_OUTPUT
+          echo "Determined version: $BAKER_VERSION"
+
   ci:
-    name: Build and test
+    name: Build, Test and Publish
     permissions:
       contents: write
       pull-requests: write
     runs-on: ubuntu-latest
+    needs: set-version
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,16 +56,11 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: maven
-      - name: Run tests
+      - name: Run build and tests
         run: |
-          if [ "${GITHUB_REF_NAME}" = "master" ]; then
-            SUFFIX=""
-          else
-            SUFFIX="-${GITHUB_REF_NAME}"
-          fi
-          echo "REVISION=$(git describe | cut -c2-)$SUFFIX" >> $GITHUB_ENV
-      - name: Run tests
-        run: mvn clean install -Drevision=${{ env.REVISION }}
+          # Set the POM version to the new git based version, run the build, and then revert the version change
+          mvn clean versions:set -DnewVersion=${{ needs.set-version.outputs.BAKER_VERSION }} -DprocessParent=true --no-transfer-progress -DprocessAllModules=true -DgenerateBackupPoms=false
+          mvn install versions:revert
         env:
           AKKA_TOKEN: ${{ secrets.AKKA_TOKEN }}
       - name: Prepare draft release notes
@@ -62,38 +80,7 @@ jobs:
     name: Publish to Sonatype
     # Publish to Sonatype only from the original repo and for the tags starting with 'v'
     if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && ! github.event.repository.fork }}
-    needs: [ci]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-          cache: sbt
-      - uses: sbt/setup-sbt@v1
-      - name: Publish to Sonatype
-        run: sbt ci-release
-        env:
-          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
-          PGP_SECRET: ${{ secrets.PGP_SECRET }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-
-  publish-azure:
-    permissions:
-      contents: write
-      pull-requests: write
-    name: Publish to Azure
-    # The job runs for:
-    # - Any push to the repository.
-    # - Pull requests from branches within the same repository (not forks).
-    if: ${{ (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) }}
-    needs: [ci]
+    needs: [ci, set-version]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -106,16 +93,68 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: maven
-      - name: Publish to Azure
-        run: mvn clean deploy -Drevision=${{ env.REVISION }} -DskipTests
+      - name: Publish to Sonatype
+        run: |
+          mvn clean versions:set -DnewVersion=${{ needs.set-version.outputs.BAKER_VERSION }} -DprocessParent=true --no-transfer-progress -DprocessAllModules=true -DgenerateBackupPoms=false
+          mvn deploy versions:revert -DskipTests -DaltDeploymentRepository=sonatype::default::https://oss.sonatype.org/repository/maven-releases/
         env:
-          AZURE_FEEDUSER: ${{ secrets.AZURE_FEEDUSER }}
-          AZURE_FEEDPASSWORD: ${{ secrets.AZURE_FEEDPASSWORD }}
-          AZURE_FEEDURL: ${{ secrets.AZURE_FEEDURL }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+
+  publish-azure:
+    permissions:
+      contents: write
+      pull-requests: write
+    name: Publish to Azure
+    # The job runs for:
+    # - Any push to the repository.
+    # - Pull requests from branches within the same repository (not forks).
+    # - Manual workflow dispatch with publish_to_azure input set to true.
+    if: ${{ (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) || (github.event_name == 'workflow_dispatch' && inputs.publish_to_azure == 'true') }}
+    needs: [ci, set-version]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Configure Maven settings
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml <<EOF
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+            <servers>
+              <server>
+                <id>azure-feed</id>
+                <username>${AZURE_FEED_USER}</username>
+                <password>${AZURE_FEED_PASSWORD}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+        env:
+          AZURE_FEED_USER: ${{ secrets.AZURE_FEEDUSER }}
+          AZURE_FEED_PASSWORD: ${{ secrets.AZURE_FEEDPASSWORD }}
+      - name: Publish to Azure
+        run: |
+          # Set the POM version to the new git based version, deploy to Azure feed, and then revert the version change
+          mvn clean versions:set -DnewVersion=${{ needs.set-version.outputs.BAKER_VERSION }} -DprocessParent=true --no-transfer-progress -DprocessAllModules=true -DgenerateBackupPoms=false
+          mvn deploy versions:revert -DskipTests -DaltDeploymentRepository=azure-feed::default::${{ secrets.AZURE_FEEDURL }}
+        env:
           AKKA_TOKEN: ${{ secrets.AKKA_TOKEN }}
 
   dependency-submission:
-    name: Submit dependency graph
+    name: Submit Dependency Graph
     continue-on-error: true
     needs: [ci]
     # Submit dependency graph only for the master branch commits or if workflow_dispatch input is set
@@ -134,9 +173,5 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: maven
-      - name: Generate dependency graph
-        run: mvn dependency:tree -DoutputType=dot -DoutputFile=dependency-graph.dot
       - name: Submit dependency graph
-        uses: github/dependency-submission-action@v4
-        with:
-          files: dependency-graph.dot
+        uses: advanced-security/maven-dependency-submission-action@v4

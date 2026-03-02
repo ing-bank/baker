@@ -5,8 +5,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.ing.baker</groupId>
-    <artifactId>baker-parent</artifactId>
-    <version>${revision}</version>
+    <artifactId>baker</artifactId>
+    <version>5.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Baker</name>
@@ -14,7 +14,6 @@
     <url>https://github.com/ing-bank/baker</url>
 
     <properties>
-        <revision>5.1.0-SNAPSHOT</revision>
         <jvm.target>21</jvm.target>
         <maven.compiler.source>${jvm.target}</maven.compiler.source>
         <maven.compiler.target>${jvm.target}</maven.compiler.target>
@@ -73,7 +72,6 @@
         <cassandra.unit.version>4.3.1.0</cassandra.unit.version>
         <cats.effect.testing.version>0.5.4</cats.effect.testing.version>
         <graphviz.version>0.18.1</graphviz.version>
-        <junit.interface.version>0.13.3</junit.interface.version>
         <junit.jupiter.version>5.13.2</junit.jupiter.version>
         <junit.version>4.13.2</junit.version>
         <leveldb.version>0.12</leveldb.version>
@@ -548,12 +546,6 @@
                 <groupId>org.scalatestplus</groupId>
                 <artifactId>junit-4-13_${scala.compat.version}</artifactId>
                 <version>${scalatestplus.junit.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.github.sbt</groupId>
-                <artifactId>junit-interface</artifactId>
-                <version>${junit.interface.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
