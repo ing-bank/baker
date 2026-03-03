@@ -11,39 +11,33 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>baker-types</artifactId>
-    <name>Baker Types</name>
-    <description>Core types and interfaces for Baker</description>
+    <artifactId>baker-intermediate-language</artifactId>
+    <name>Baker Intermediate Language</name>
+    <description>Intermediate language for Baker recipe compilation</description>
 
     <dependencies>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-types</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-reflect</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.scala-lang.modules</groupId>
-            <artifactId>scala-collection-compat_${scala.compat.version}</artifactId>
-        </dependency>
 
+        <dependency>
+            <groupId>org.scala-graph</groupId>
+            <artifactId>graph-core_${scala.compat.version}</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-graph</groupId>
+            <artifactId>graph-dot_${scala.compat.version}</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.objenesis</groupId>
-            <artifactId>objenesis</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.thesamet.scalapb</groupId>
-            <artifactId>scalapb-runtime_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
         </dependency>
         <dependency>
             <groupId>com.typesafe</groupId>
@@ -77,19 +71,6 @@
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>

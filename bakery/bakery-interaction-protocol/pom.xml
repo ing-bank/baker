@@ -11,24 +11,14 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>baker-example</artifactId>
-    <name>Baker Example</name>
-    <description>Example application showing Baker usage</description>
+    <artifactId>bakery-interaction-protocol</artifactId>
+    <name>Bakery Interaction Protocol</name>
+    <description>Protocol definitions for Bakery interactions</description>
 
     <dependencies>
         <dependency>
             <groupId>com.ing.baker</groupId>
-            <artifactId>baker-akka-runtime</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.ing.baker</groupId>
-            <artifactId>baker-recipe-dsl</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.ing.baker</groupId>
-            <artifactId>baker-compiler</artifactId>
+            <artifactId>baker-interface</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -37,7 +27,6 @@
             <artifactId>scala-library</artifactId>
         </dependency>
 
-        <!-- HTTP4S dependencies -->
         <dependency>
             <groupId>org.http4s</groupId>
             <artifactId>http4s-core_${scala.compat.version}</artifactId>
@@ -52,41 +41,26 @@
         </dependency>
         <dependency>
             <groupId>org.http4s</groupId>
+            <artifactId>http4s-blaze-client_${scala.compat.version}</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.http4s</groupId>
             <artifactId>http4s-circe_${scala.compat.version}</artifactId>
         </dependency>
-
-        <!-- Cats Effect -->
         <dependency>
-            <groupId>org.typelevel</groupId>
-            <artifactId>cats-effect_${scala.compat.version}</artifactId>
-        </dependency>
-
-        <!-- Logging -->
-        <dependency>
-            <groupId>org.log4s</groupId>
-            <artifactId>log4s_${scala.compat.version}</artifactId>
+            <groupId>org.http4s</groupId>
+            <artifactId>http4s-prometheus-metrics_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient_hotspot</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.prometheus.jmx</groupId>
+            <artifactId>collector</artifactId>
         </dependency>
 
         <!-- Test dependencies -->
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-testkit_${scala.compat.version}</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.compat.version}</artifactId>
@@ -102,16 +76,13 @@
             </plugin>
 
             <plugin>
-                <groupId>org.scalatest</groupId>
-                <artifactId>scalatest-maven-plugin</artifactId>
+                <groupId>org.xolstice.maven.plugins</groupId>
+                <artifactId>protobuf-maven-plugin</artifactId>
             </plugin>
 
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
+                <groupId>org.scalatest</groupId>
+                <artifactId>scalatest-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

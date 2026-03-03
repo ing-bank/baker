@@ -11,9 +11,9 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>baker-example</artifactId>
-    <name>Baker Example</name>
-    <description>Example application showing Baker usage</description>
+    <artifactId>bakery-state</artifactId>
+    <name>Bakery State</name>
+    <description>State management for Bakery</description>
 
     <dependencies>
         <dependency>
@@ -23,12 +23,12 @@
         </dependency>
         <dependency>
             <groupId>com.ing.baker</groupId>
-            <artifactId>baker-recipe-dsl</artifactId>
+            <artifactId>baker-http-server</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.ing.baker</groupId>
-            <artifactId>baker-compiler</artifactId>
+            <artifactId>bakery-interaction-protocol</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -37,59 +37,50 @@
             <artifactId>scala-library</artifactId>
         </dependency>
 
-        <!-- HTTP4S dependencies -->
+        <!-- Kafka dependencies -->
         <dependency>
-            <groupId>org.http4s</groupId>
-            <artifactId>http4s-core_${scala.compat.version}</artifactId>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.http4s</groupId>
-            <artifactId>http4s-dsl_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.http4s</groupId>
-            <artifactId>http4s-blaze-server_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.http4s</groupId>
-            <artifactId>http4s-circe_${scala.compat.version}</artifactId>
+            <groupId>com.github.fd4s</groupId>
+            <artifactId>fs2-kafka_${scala.compat.version}</artifactId>
         </dependency>
 
-        <!-- Cats Effect -->
+        <!-- Cassandra dependencies -->
         <dependency>
-            <groupId>org.typelevel</groupId>
-            <artifactId>cats-effect_${scala.compat.version}</artifactId>
-        </dependency>
-
-        <!-- Logging -->
-        <dependency>
-            <groupId>org.log4s</groupId>
-            <artifactId>log4s_${scala.compat.version}</artifactId>
+            <groupId>com.datastax.oss</groupId>
+            <artifactId>java-driver-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
+            <groupId>com.datastax.oss</groupId>
+            <artifactId>java-driver-query-builder</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-jmx</artifactId>
         </dependency>
 
         <!-- Test dependencies -->
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-testkit_${scala.compat.version}</artifactId>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-test</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
+            <groupId>org.cassandraunit</groupId>
+            <artifactId>cassandra-unit</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.compat.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -107,10 +98,20 @@
             </plugin>
 
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
                 <configuration>
-                    <skip>true</skip>
+                    <images>
+                        <image>
+                            <name>baker/bakery-state:${project.version}</name>
+                            <build>
+                                <dockerFileDir>${basedir}/src/main/docker</dockerFileDir>
+                                <assembly>
+                                    <descriptorRef>artifact</descriptorRef>
+                                </assembly>
+                            </build>
+                        </image>
+                    </images>
                 </configuration>
             </plugin>
         </plugins>

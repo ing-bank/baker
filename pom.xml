@@ -6,7 +6,7 @@
 
     <groupId>com.ing.baker</groupId>
     <artifactId>baker</artifactId>
-    <version>5.0.0-SNAPSHOT</version>
+    <version>5.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Baker</name>
@@ -23,7 +23,6 @@
         <scala.compat.version>2.13</scala.compat.version>
 
         <!-- Main Dependency Versions (alphabetically sorted) -->
-        <akka.http.version>10.7.3</akka.http.version>
         <akka.management.version>1.6.4</akka.management.version>
         <akka.persistence.cassandra.version>1.3.4</akka.persistence.cassandra.version>
         <akka.version>2.10.17</akka.version>
@@ -87,6 +86,7 @@
         <scalatest.version>3.2.19</scalatest.version>
 
         <!-- Plugin Dependency Versions (alphabetically sorted) -->
+        <build.helper.maven.plugin.version>3.2.0</build.helper.maven.plugin.version>
         <docker.maven.plugin.version>0.48.1</docker.maven.plugin.version>
         <exec.maven.plugin.version>3.6.3</exec.maven.plugin.version>
         <maven.antrun.plugin.version>3.2.0</maven.antrun.plugin.version>
@@ -106,14 +106,14 @@
     <modules>
         <!-- Core modules -->
         <module>core/baker-types</module>
-        <module>core/intermediate-language</module>
+        <module>core/baker-intermediate-language</module>
         <module>core/baker-interface</module>
         <module>core/baker-interface-kotlin</module>
         <module>core/baker-annotations</module>
-        <module>core/recipe-dsl</module>
-        <module>core/recipe-dsl-kotlin</module>
-        <module>core/recipe-compiler</module>
-        <module>core/akka-runtime</module>
+        <module>core/baker-recipe-dsl</module>
+        <module>core/baker-recipe-dsl-kotlin</module>
+        <module>core/baker-compiler</module>
+        <module>core/baker-akka-runtime</module>
         <module>core/baker-test</module>
 
         <!-- HTTP modules -->
@@ -122,9 +122,9 @@
         <module>http/baker-http-dashboard</module>
 
         <!-- Bakery modules -->
-        <module>bakery/state</module>
-        <module>bakery/interaction</module>
-        <module>bakery/interaction-protocol</module>
+        <module>bakery/bakery-state</module>
+        <module>bakery/bakery-interaction</module>
+        <module>bakery/bakery-interaction-protocol</module>
 
         <!-- Example modules -->
         <module>examples/baker-example</module>
@@ -287,28 +287,6 @@
                 <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-stream-typed_${scala.compat.version}</artifactId>
                 <version>${akka.version}</version>
-            </dependency>
-
-            <!-- Akka HTTP -->
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-http_${scala.compat.version}</artifactId>
-                <version>${akka.http.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-http-core_${scala.compat.version}</artifactId>
-                <version>${akka.http.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-http-spray-json_${scala.compat.version}</artifactId>
-                <version>${akka.http.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-parsing_${scala.compat.version}</artifactId>
-                <version>${akka.http.version}</version>
             </dependency>
 
             <!-- Akka Management -->
