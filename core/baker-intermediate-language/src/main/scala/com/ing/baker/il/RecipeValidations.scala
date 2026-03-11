@@ -3,11 +3,10 @@ package com.ing.baker.il
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.petrinet.api._
 import com.ing.baker.types
-import scala.collection.immutable.Seq
 
 object RecipeValidations {
 
-  def validateInteraction(compiledRecipe: CompiledRecipe)(interactionTransition: InteractionTransition): Seq[String] = {
+  private def validateInteraction(compiledRecipe: CompiledRecipe)(interactionTransition: InteractionTransition): Seq[String] = {
     val interactionWithNoRequirementsValidation : Seq[String] =
       Some(s"Interaction $interactionTransition does not have any requirements (ingredients or preconditions)! This will result in an infinite execution loop.")
         .filter(_ => compiledRecipe.petriNet.inMarking(interactionTransition).isEmpty).toIndexedSeq
@@ -60,7 +59,7 @@ object RecipeValidations {
       predefinedIngredientOfExpectedTypeValidation
   }
 
-  def validateInteractions(compiledRecipe: CompiledRecipe): Seq[String] = {
+  private def validateInteractions(compiledRecipe: CompiledRecipe): Seq[String] = {
     compiledRecipe.interactionTransitions.toIndexedSeq.flatMap(validateInteraction(compiledRecipe))
   }
 
@@ -68,7 +67,7 @@ object RecipeValidations {
   /**
     * Validates that all required ingredients for interactions are provided for and of the correct type.
     */
-  def validateInteractionIngredients(compiledRecipe: CompiledRecipe): Seq[String] = {
+  private def validateInteractionIngredients(compiledRecipe: CompiledRecipe): Seq[String] = {
     compiledRecipe.interactionTransitions.toIndexedSeq.flatMap { t =>
       t.nonProvidedIngredients.flatMap {
         case (IngredientDescriptor(name, expectedType)) =>
@@ -88,18 +87,18 @@ object RecipeValidations {
   /**
     * Validates that provided ingredients do not contain reserved names for Baker
     */
-  def validateSpecialIngredientsNotProvided(compiledRecipe: CompiledRecipe): Seq[String] = {
+  private def validateSpecialIngredientsNotProvided(compiledRecipe: CompiledRecipe): Seq[String] = {
     compiledRecipe.allIngredients.filter(i =>
       i.name == recipeInstanceIdName || i.name == recipeInstanceMetadataName || i.name == recipeInstanceEventListName
     ).map(i => s"Ingredient '${i.name}' is provided and this is a reserved name for internal use in Baker")
   }.toSeq
 
-  def validateNoCycles(compiledRecipe: CompiledRecipe): Seq[String] = {
+  private def validateNoCycles(compiledRecipe: CompiledRecipe): Seq[String] = {
     val cycle: Option[compiledRecipe.petriNet.innerGraph.Cycle] = compiledRecipe.petriNet.innerGraph.findCycle
     cycle.map(c => s"The petrinet topology contains a cycle: $c").toList
   }
 
-  def validateAllInteractionsExecutable(compiledRecipe: CompiledRecipe): Seq[String] = {
+  private def validateAllInteractionsExecutable(compiledRecipe: CompiledRecipe): Seq[String] = {
     val rootNode = PetriNetAnalysis.calculateCoverabilityTree(compiledRecipe.petriNet, compiledRecipe.initialMarking.multiplicities)
 
     compiledRecipe.interactionTransitions filterNot { interaction =>

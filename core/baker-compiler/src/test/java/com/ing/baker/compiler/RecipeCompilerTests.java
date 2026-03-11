@@ -1,4 +1,5 @@
-import com.ing.baker.compiler.RecipeCompiler;
+package com.ing.baker.compiler;
+
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.il.EventDescriptor;
 import com.ing.baker.il.petrinet.InteractionTransition;
@@ -131,10 +132,10 @@ public class RecipeCompilerTests {
                 .withSensoryEvents(EventA.class, EventB.class, EventC.class, EventD.class, EventE.class)
                 .withSensoryEventsNoFiringLimit(EventA.class);
 
-        Assertions.assertThrows(IllegalStateException.class, () ->
+        Assertions.assertThrows(RecipeValidationException.class, () ->
                 RecipeCompiler.compileRecipe(recipe1));
 
-        Assertions.assertThrows(IllegalStateException.class, () ->
+        Assertions.assertThrows(RecipeValidationException.class, () ->
                 RecipeCompiler.compileRecipe(recipe2));
     }
 

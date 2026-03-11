@@ -71,12 +71,24 @@
 
     <build>
         <plugins>
-            <!-- Add both Java and Kotlin test sources -->
+            <!-- Add both Java and Kotlin main and test sources -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <version>${build.helper.maven.plugin.version}</version>
                 <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>src/main/kotlin</source>
+                            </sources>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>add-test-source</id>
                         <phase>generate-test-sources</phase>
@@ -138,6 +150,36 @@
                         <phase>package</phase>
                         <goals>
                             <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven.surefire.plugin.version}</version>
+                <configuration>
+                    <skipTests>false</skipTests>
+                    <useFile>false</useFile>
+                    <trimStackTrace>false</trimStackTrace>
+                    <reportFormat>plain</reportFormat>
+                    <consoleOutputReporter>
+                        <disable>false</disable>
+                    </consoleOutputReporter>
+                    <includes>
+                        <include>**/*Test.class</include>
+                        <include>**/*Tests.class</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*Spec.class</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>test</id>
+                        <goals>
+                            <goal>test</goal>
                         </goals>
                     </execution>
                 </executions>

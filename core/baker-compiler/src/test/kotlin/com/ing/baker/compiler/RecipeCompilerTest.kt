@@ -2,8 +2,8 @@ package com.ing.baker.compiler
 
 import com.ing.baker.recipe.javadsl.Interaction
 import com.ing.baker.recipe.kotlindsl.recipe
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 class RecipeCompilerTest {
 
@@ -44,7 +44,7 @@ class RecipeCompilerTest {
                 event<EventA>()
             }
             interaction<InteractionA>()
-            ingredient<String, String>("extract") @JvmSerializableLambda {"Hello123"}
+            ingredient<String, String>("extract") @JvmSerializableLambda { "Hello123" }
         }
 
         val compiled = RecipeCompiler.compileRecipe(recipe)
