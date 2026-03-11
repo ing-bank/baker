@@ -393,7 +393,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       Seq.empty,
       rememberProcessDuration) {
       override def createProcessActor(id: String, compiledRecipe: CompiledRecipe) = {
-        context.watchWith(petriNetActorRef, TerminatedWithReplyTo(petriNetActorRef))
+        context.watchWith(petriNetActorRef, TerminatedWithReplyTo(petriNetActorRef, None, deleteInstance = false, removeFromIndex = false))
         petriNetActorRef
       }
       override def getProcessActor(recipeInstanceId: String): Option[ActorRef] = {

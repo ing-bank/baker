@@ -99,7 +99,7 @@ object ProcessIndex {
   case class ActorPassivated(recipeInstanceId: String) extends BakerSerializable
 
   // when an actor is deleted
-  case class ActorDeleted(recipeInstanceId: String) extends BakerSerializable
+  case class ActorDeleted(recipeInstanceId: String, removedFromIndex: Boolean) extends BakerSerializable
 
   // when an actor is created
   case class ActorCreated(recipeId: String, recipeInstanceId: String, createdDateTime: Long) extends BakerSerializable
@@ -252,7 +252,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           .withFinalStopMessage(_.isInstanceOf[ProcessInstanceProtocol.Stop])
       )
     val processActor = context.actorOf(props = processActorProps, name = recipeInstanceId)
-    context.watchWith(processActor, TerminatedWithReplyTo(processActor))
+    context.watchWith(processActor, TerminatedWithReplyTo(processActor, None, deleteInstance = false, removeFromIndex = false))
     processActor
   }
 
@@ -268,12 +268,22 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     else false
   }
 
-  private def deleteProcess(meta: ActorMetadata): Unit = {
+  private def deleteProcess(meta: ActorMetadata, replyToOptional: Option[ActorRef] = None, removeFromIndex: Boolean = false): Unit = {
     //The new way of cleaning ProcessInstances, this can only be done if the datastore is Cassandra
     if(cleanup.supportsCleanupOfStoppedActors) {
       getProcessActor(meta.recipeInstanceId) match {
         case Some(actorRef: ActorRef) =>
           log.debug(s"Deleting ${meta.recipeInstanceId} via actor message")
+          replyToOptional match {
+            case Some(replyTo) =>
+              context.unwatch(actorRef)
+              context.watchWith(actorRef, TerminatedWithReplyTo(
+                actorRef,
+                Some(replyTo),
+                deleteInstance = true,
+                removeFromIndex = removeFromIndex))
+            case None =>
+          }
           actorRef ! Stop(delete = true)
         case None =>
           log.debug(s"Deleting ${meta.recipeInstanceId} via cleanup tool")
@@ -281,18 +291,38 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
             case Some(compiledRecipe) =>
               val persistenceId = ProcessInstance.recipeInstanceId2PersistenceId(compiledRecipe.name, meta.recipeInstanceId)
               log.debug(s"Deleting with persistenceId: ${persistenceId}")
-              persistWithSnapshot(ActorDeleted(meta.recipeInstanceId)) { _ =>
+              persistWithSnapshot(ActorDeleted(meta.recipeInstanceId, removeFromIndex)) { _ =>
                 //Using deleteAllEvents since we do not use Snapshots for ProcessInstances
                 cleanup.deleteAllEvents(persistenceId, neverUsePersistenceIdAgain = false)
                   .map(_ -> {
                     log.processHistoryDeletionSuccessful(meta.recipeInstanceId, 0)
-                    index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
+                    if(removeFromIndex) {
+                      index.remove(meta.recipeInstanceId)
+                    }
+                    else {
+                      index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
+                    }
+                    replyToOptional match {
+                      case Some(replyTo) =>
+                        replyTo ! ProcessDeleted(meta.recipeInstanceId)
+                      case None =>
+                    }
                   })
               }
             case None =>
               log.debug(s"Recipe not found for ${meta.recipeInstanceId}, marking as deleted")
-              persistWithSnapshot(ActorDeleted(meta.recipeInstanceId)) { _ =>
-                index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
+              persistWithSnapshot(ActorDeleted(meta.recipeInstanceId, removeFromIndex)) { _ =>
+                if(removeFromIndex) {
+                  index.remove(meta.recipeInstanceId)
+                }
+                else {
+                  index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
+                }
+                replyToOptional match {
+                  case Some(replyTo) =>
+                    replyTo ! ProcessDeleted(meta.recipeInstanceId)
+                  case None =>
+                }
               }
           }
       }
@@ -300,8 +330,23 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     // The old way to cleanup ProcessInstances, we will let Akka Persistence handle the cleanup.
     // This will first start the ProcessInstance actor even if is passivated so will have bigger memory impact and more reads on the datastore.
     else {
-      getOrCreateProcessActor(meta.recipeInstanceId).foreach(_ ! Stop(delete = true))
-      index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
+      getOrCreateProcessActor(meta.recipeInstanceId) match {
+        case Some(actorRef) =>
+          log.debug(s"Deleting ${meta.recipeInstanceId} via actor message")
+          replyToOptional match {
+            case Some(replyTo) =>
+              context.unwatch(actorRef)
+              context.watchWith(actorRef, TerminatedWithReplyTo(
+                actorRef,
+                Some(replyTo),
+                deleteInstance = true,
+                removeFromIndex = removeFromIndex))
+            case None =>
+          }
+          actorRef ! Stop(delete = true)
+        case None =>
+          sender() ! NoSuchProcess(meta.recipeInstanceId)
+      }
     }
   }
 
@@ -419,7 +464,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       toBeDeleted.foreach(meta => deleteProcess(meta))
       forgetProcesses()
 
-    case TerminatedWithReplyTo(actorRef, replyToWhenDone) =>
+    case TerminatedWithReplyTo(actorRef, replyToWhenDone, deleteInstance, removeFromIndex) =>
       val recipeInstanceId = getRecipeIdFromActor(actorRef)
 
       val mdc = Map(
@@ -430,11 +475,19 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       log.logWithMDC(Logging.DebugLevel, s"Actor terminated: $actorRef", mdc)
 
       index.get(recipeInstanceId) match {
-        case Some(meta) if shouldDelete(meta) =>
-          persistWithSnapshot(ActorDeleted(recipeInstanceId)) { _ =>
-            index.update(recipeInstanceId, meta.copy(processStatus = Deleted))
+        case Some(meta) if (deleteInstance || shouldDelete(meta)) =>
+          persistWithSnapshot(ActorDeleted(recipeInstanceId, removeFromIndex)) { _ =>
+            if(removeFromIndex) {
+              index.remove(recipeInstanceId)
+            }
+            else {
+              index.update(recipeInstanceId, meta.copy(processStatus = Deleted))
+            }
           }
         case Some(meta) if meta.isDeleted =>
+          if(removeFromIndex) {
+            index.remove(recipeInstanceId)
+          }
           log.logWithMDC(Logging.WarningLevel, s"Received Terminated message for already deleted recipe instance: ${meta.recipeInstanceId}", mdc)
         case Some(meta) =>
           persistWithSnapshot(ActorPassivated(recipeInstanceId)) { _ =>
@@ -675,16 +728,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       index.get(recipeInstanceId) match {
         case Some(processState) =>
           // The process exists, so we can delete it.
-          getProcessActor(processState.recipeInstanceId) map {
-            actorRef: ActorRef =>
-              context.unwatch(actorRef)
-              context.watchWith(actorRef, TerminatedWithReplyTo(actorRef, Some(sender())))
-          }
-          deleteProcess(processState)
-          if (removeFromIndex) {
-            index -= recipeInstanceId
-          }
-
+          deleteProcess(processState, Some(sender()), removeFromIndex)
         case None =>
           // The process was not found in the index.
           log.warning(s"Attempted to delete non-existent process '$recipeInstanceId'.")
@@ -842,8 +886,12 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       updateWithStatus(recipeInstanceId, Passivated)
     case ActorActivated(recipeInstanceId) =>
       updateWithStatus(recipeInstanceId, Active)
-    case ActorDeleted(recipeInstanceId) =>
-      updateWithStatus(recipeInstanceId, Deleted)
+    case ActorDeleted(recipeInstanceId, removedFromIndex) =>
+      if(removedFromIndex) {
+        index.remove(recipeInstanceId)
+      } else {
+        updateWithStatus(recipeInstanceId, Deleted)
+      }
     case RecoveryCompleted =>
       // Delete all blacklisted processes if configured.
       if(blacklistedProcesses.nonEmpty) {
