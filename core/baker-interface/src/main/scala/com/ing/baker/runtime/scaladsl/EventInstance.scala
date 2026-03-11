@@ -7,8 +7,7 @@ import com.ing.baker.runtime.{common, javadsl}
 import com.ing.baker.types._
 
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
-import scala.collection.immutable.Seq
+import scala.jdk.CollectionConverters._
 
 case class EventInstance(name: String, providedIngredients: Map[String, Value]) extends common.EventInstance with ScalaApi {
 

@@ -7,7 +7,7 @@ import com.ing.baker.types.Type
 import java.util
 import java.util.Optional
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 case class InteractionInstanceDescriptor(id : String,
                                          name: String,

@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.model
 
-import cats.effect.{Async, IO, Resource, Sync}
-import cats.implicits._
+import cats.effect.{IO, Resource, Sync}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.common.RecipeRecord
@@ -27,7 +26,7 @@ abstract class BakerModelSpec
     resetMocks()
   }
 
-  def runAll()(implicit sync: Sync[IO], async: Async[IO], classTag: ClassTag[IO[Any]]): Unit = {
+  def runAll(): Unit = {
     runSetupTests()
     runEnquireTests()
     runExecutionSemanticsTests()

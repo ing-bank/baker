@@ -10,7 +10,7 @@ import com.ing.baker.runtime.{defaultinteractions, javadsl}
 import java.util
 import java.util.{List => JavaList}
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent._
 
 object InMemoryBaker {

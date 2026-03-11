@@ -6,7 +6,7 @@ import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
 
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 @deprecated("The SensoryEventResult class will be removed after December 2026. Use fireSensoryEventAndAwaitReceived -> awaitCompleted -> getIngredients + getEventNames instead.", "5.1.0")
 case class SensoryEventResult(
