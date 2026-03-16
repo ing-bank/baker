@@ -164,7 +164,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
 
   //TODO chose if to use the CassandraBakerCleanup or the ActorBasedBakerCleanup
-  private val cleanup: BakerCleanup = {
+  val cleanup: BakerCleanup = {
     if(config.hasPath("akka.persistence.journal.plugin") &&
       config.getString("akka.persistence.journal.plugin") == "akka.persistence.cassandra.journal")
       new CassandraBakerCleanup(context.system)

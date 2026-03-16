@@ -1,16 +1,20 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
+import akka.Done
 import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props}
+import akka.cluster.sharding.ShardRegion.Passivate
 import akka.pattern.ask
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import akka.util.Timeout
 import com.ing.baker.il.petrinet.{EventTransition, Place, RecipePetriNet, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
 import com.ing.baker.petrinet.api.{Marking, PetriNet}
+import com.ing.baker.runtime.akka.actor.{ActorBasedBakerCleanup, BakerCleanup}
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.FireDelayedTransition
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.CheckForProcessesToBeDeleted
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.NotifyWhenReceived
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexSpec.processIsStopped
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
@@ -23,7 +27,7 @@ import com.ing.baker.types
 import com.ing.baker.types.Value
 import com.typesafe.config.{Config, ConfigFactory}
 import io.prometheus.client.CollectorRegistry
-import org.mockito.ArgumentMatchers.anyString
+import org.mockito.ArgumentMatchers.{any, anyBoolean, anyInt, anyString}
 import org.mockito.Mockito
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.Eventually
@@ -35,7 +39,7 @@ import scalax.collection.immutable.Graph
 
 import java.util.UUID
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 object ProcessIndexSpec {
   val config: Config = ConfigFactory.parseString(
@@ -46,6 +50,8 @@ object ProcessIndexSpec {
       |akka.persistence.snapshot-store.plugin = "inmemory-snapshot-store"
       |akka.test.timefactor = 3.0
     """.stripMargin)
+
+  var processIsStopped: Boolean = false
 }
 
 //noinspection TypeAnnotation
@@ -105,6 +111,8 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
                             recipeInstanceId: String,
                             metadata: Map[String, String] = Map.empty
                           ): Initialize = {
+    processIsStopped = false
+
     actorIndex ! CreateProcess(recipeId, recipeInstanceId, metadata)
 
     val initializeMsg = probe.expectMsgClass(classOf[Initialize])
@@ -218,6 +226,164 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val probe2 = TestProbe()
       probe2.send(actorIndex, GetProcessState(recipeInstanceId))
       probe2.expectMsg(10.seconds, ProcessDeleted(recipeInstanceId))
+    }
+
+    "delete a process if the DeleteProcess is received (removeFromIndex false)" in {
+      val recipeInstanceId = UUID.randomUUID().toString
+      val processProbe = TestProbe(recipeInstanceId)
+
+      val recipeManagerMock = mock[RecipeManager]
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(baseRecipe, updated = 0L))))
+
+      val actorIndex = createActorIndex(processProbe.ref, recipeManagerMock)
+      createProcessAndWait(actorIndex, processProbe, recipeId, recipeInstanceId)
+
+      val probe2 = TestProbe()
+      probe2.send(actorIndex, DeleteProcess(recipeInstanceId, removeFromIndex = false))
+
+      processProbe.expectMsg(1.seconds, Stop(delete = true))
+      processProbe.ref ! PoisonPill
+
+      probe2.expectMsg(ProcessDeleted(recipeInstanceId))
+
+      probe2.send(actorIndex, GetProcessState(recipeInstanceId))
+      probe2.expectMsg(10.seconds, ProcessDeleted(recipeInstanceId))
+    }
+//
+    "delete a process if the DeleteProcess is received (removeFromIndex true)" in {
+      val recipeInstanceId = UUID.randomUUID().toString
+      val processProbe = TestProbe(recipeInstanceId)
+
+      val recipeManagerMock = mock[RecipeManager]
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(baseRecipe, updated = 0L))))
+
+      val actorIndex = createActorIndex(processProbe.ref, recipeManagerMock)
+      createProcessAndWait(actorIndex, processProbe, recipeId, recipeInstanceId)
+
+      val probe2 = TestProbe()
+      probe2.send(actorIndex, DeleteProcess(recipeInstanceId, removeFromIndex = true))
+
+      processProbe.expectMsg(1.seconds, Stop(delete = true))
+      processProbe.ref ! PoisonPill
+
+      probe2.expectMsg(ProcessDeleted(recipeInstanceId))
+
+      probe2.send(actorIndex, GetProcessState(recipeInstanceId))
+      probe2.expectMsg(10.seconds, NoSuchProcess(recipeInstanceId))
+    }
+
+    "delete a process if the DeleteProcess is received (removeFromIndex false) with BakerCleanup" in {
+      val recipeInstanceId = UUID.randomUUID().toString
+      val processProbe = TestProbe(recipeInstanceId)
+
+      val recipeManagerMock = mock[RecipeManager]
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(baseRecipe, updated = 0L))))
+
+      val bakerCleanup = mock[BakerCleanup]
+      when(bakerCleanup.supportsCleanupOfStoppedActors).thenReturn(true)
+      when(bakerCleanup.deleteAllEvents(anyString(), anyBoolean())).thenReturn(Future.successful(Done))
+      when(bakerCleanup.deleteEventsAndSnapshotBeforeSnapshot(anyString(), anyInt())(any())).thenReturn(Future.successful(Done))
+
+      val actorIndex = createActorIndex(processProbe.ref, recipeManagerMock, bakerCleanup = bakerCleanup)
+      createProcessAndWait(actorIndex, processProbe, recipeId, recipeInstanceId)
+
+      val probe2 = TestProbe()
+      probe2.send(actorIndex, DeleteProcess(recipeInstanceId, removeFromIndex = false))
+
+      processProbe.expectMsg(1.seconds, Stop(delete = true))
+      processProbe.ref ! PoisonPill
+
+      probe2.expectMsg(ProcessDeleted(recipeInstanceId))
+
+      probe2.send(actorIndex, GetProcessState(recipeInstanceId))
+      probe2.expectMsg(10.seconds, ProcessDeleted(recipeInstanceId))
+    }
+
+    "delete a process if the DeleteProcess is received (removeFromIndex true) with BakerCleanup" in {
+      val recipeInstanceId = UUID.randomUUID().toString
+      val processProbe = TestProbe(recipeInstanceId)
+
+      val recipeManagerMock = mock[RecipeManager]
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(baseRecipe, updated = 0L))))
+
+      val bakerCleanup = mock[BakerCleanup]
+      when(bakerCleanup.supportsCleanupOfStoppedActors).thenReturn(true)
+      when(bakerCleanup.deleteAllEvents(anyString(), anyBoolean())).thenReturn(Future.successful(Done))
+      when(bakerCleanup.deleteEventsAndSnapshotBeforeSnapshot(anyString(), anyInt())(any())).thenReturn(Future.successful(Done))
+
+      val actorIndex = createActorIndex(processProbe.ref, recipeManagerMock, bakerCleanup = bakerCleanup)
+      createProcessAndWait(actorIndex, processProbe, recipeId, recipeInstanceId)
+
+      val probe2 = TestProbe()
+      probe2.send(actorIndex, DeleteProcess(recipeInstanceId, removeFromIndex = true))
+
+      processProbe.expectMsg(1.seconds, Stop(delete = true))
+      processProbe.ref ! PoisonPill
+
+      probe2.expectMsg(ProcessDeleted(recipeInstanceId))
+
+      probe2.send(actorIndex, GetProcessState(recipeInstanceId))
+      probe2.expectMsg(10.seconds, NoSuchProcess(recipeInstanceId))
+    }
+
+    "delete a process if the DeleteProcess is received (removeFromIndex false) with BakerCleanup and actor stopped" in {
+      val recipeInstanceId = UUID.randomUUID().toString
+      val processProbe: TestProbe = TestProbe(recipeInstanceId)
+
+      val recipeManagerMock = mock[RecipeManager]
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(baseRecipe, updated = 0L))))
+
+      val bakerCleanup = mock[BakerCleanup]
+      when(bakerCleanup.supportsCleanupOfStoppedActors).thenReturn(true)
+      when(bakerCleanup.deleteAllEvents(anyString(), anyBoolean())).thenReturn(Future.successful(Done))
+      when(bakerCleanup.deleteEventsAndSnapshotBeforeSnapshot(anyString(), anyInt())(any())).thenReturn(Future.successful(Done))
+
+      val actorIndex = createActorIndex(processProbe.ref, recipeManagerMock, bakerCleanup = bakerCleanup)
+      createProcessAndWait(actorIndex, processProbe, recipeId, recipeInstanceId)
+
+      // Passivate the process
+      processProbe.send(actorIndex, Passivate(ProcessInstanceProtocol.Stop))
+      processIsStopped = true
+      processProbe.ref ! PoisonPill
+
+      val probe2 = TestProbe()
+      probe2.send(actorIndex, DeleteProcess(recipeInstanceId, removeFromIndex = false))
+
+      processProbe.expectNoMessage(1.seconds)
+      probe2.expectMsg(ProcessDeleted(recipeInstanceId))
+
+      probe2.send(actorIndex, GetProcessState(recipeInstanceId))
+      probe2.expectMsg(10.seconds, ProcessDeleted(recipeInstanceId))
+    }
+
+    "delete a process if the DeleteProcess is received (removeFromIndex true) with BakerCleanup and actor stopped" in {
+      val recipeInstanceId = UUID.randomUUID().toString
+      val processProbe: TestProbe = TestProbe(recipeInstanceId)
+
+      val recipeManagerMock = mock[RecipeManager]
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(baseRecipe, updated = 0L))))
+
+      val bakerCleanup = mock[BakerCleanup]
+      when(bakerCleanup.supportsCleanupOfStoppedActors).thenReturn(true)
+      when(bakerCleanup.deleteAllEvents(anyString(), anyBoolean())).thenReturn(Future.successful(Done))
+      when(bakerCleanup.deleteEventsAndSnapshotBeforeSnapshot(anyString(), anyInt())(any())).thenReturn(Future.successful(Done))
+
+      val actorIndex = createActorIndex(processProbe.ref, recipeManagerMock, bakerCleanup = bakerCleanup)
+      createProcessAndWait(actorIndex, processProbe, recipeId, recipeInstanceId)
+
+      // Passivate the process
+      processProbe.send(actorIndex, Passivate(ProcessInstanceProtocol.Stop))
+      processIsStopped = true
+      processProbe.ref ! PoisonPill
+
+      val probe2 = TestProbe()
+      probe2.send(actorIndex, DeleteProcess(recipeInstanceId, removeFromIndex = true))
+
+      processProbe.expectNoMessage(1.seconds)
+      probe2.expectMsg(ProcessDeleted(recipeInstanceId))
+
+      probe2.send(actorIndex, GetProcessState(recipeInstanceId))
+      probe2.expectMsg(10.seconds, NoSuchProcess(recipeInstanceId))
     }
 
     "forget a process if a remember duration is defined and this is passed" in {
@@ -381,7 +547,8 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
   private def createActorIndex(petriNetActorRef: ActorRef,
                                recipeManager: RecipeManager,
-                               rememberProcessDuration: Option[Duration] = None): ActorRef = {
+                               rememberProcessDuration: Option[Duration] = None,
+                               bakerCleanup: BakerCleanup = new ActorBasedBakerCleanup()): ActorRef = {
     val props = Props(new ProcessIndex(
       recipeInstanceIdleTimeout = None,
       retentionCheckInterval = None,
@@ -392,17 +559,19 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       Seq.empty,
       Seq.empty,
       rememberProcessDuration) {
+
       override def createProcessActor(id: String, compiledRecipe: CompiledRecipe) = {
         context.watchWith(petriNetActorRef, TerminatedWithReplyTo(petriNetActorRef, None, deleteInstance = false, removeFromIndex = false))
         petriNetActorRef
       }
       override def getProcessActor(recipeInstanceId: String): Option[ActorRef] = {
-        Some(petriNetActorRef)
+        if(processIsStopped) None else Some(petriNetActorRef)
       }
       override def getRecipeIdFromActor(actorRef: ActorRef): String = {
         val result = if (petriNetActorRef.path.name.size >= 36) petriNetActorRef.path.name.substring(0, 36) else petriNetActorRef.path.name
         result
       }
+      override val cleanup: BakerCleanup = bakerCleanup
     })
     system.actorOf(props, s"actorIndex-${UUID.randomUUID().toString}")
   }
