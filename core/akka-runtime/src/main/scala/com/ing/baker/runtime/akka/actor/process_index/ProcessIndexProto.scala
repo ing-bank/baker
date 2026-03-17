@@ -71,12 +71,13 @@ object ProcessIndexProto {
       val companion = protobuf.ActorDeleted
 
       def toProto(a: ActorDeleted): protobuf.ActorDeleted =
-        protobuf.ActorDeleted(Some(a.recipeInstanceId))
+        protobuf.ActorDeleted(Some(a.recipeInstanceId), Some(a.removedFromIndex))
 
       def fromProto(message: protobuf.ActorDeleted): Try[ActorDeleted] =
         for {
           recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
-        } yield ActorDeleted(recipeInstanceId)
+          removedFromIndex = versionedOptional[Boolean](message.removedFromIndex, false)
+        } yield ActorDeleted(recipeInstanceId, removedFromIndex = removedFromIndex)
     }
 
   implicit def actorPassivatedProto: ProtoMap[ActorPassivated, protobuf.ActorPassivated] =

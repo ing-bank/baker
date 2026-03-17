@@ -466,8 +466,9 @@ object SerializationSpec {
     implicit val actorPassivatedGen: Gen[ActorPassivated] =
       identifierGen.map(ActorPassivated)
 
-    implicit val actorDeletedGen: Gen[ActorDeleted] =
-      identifierGen.map(ActorDeleted)
+    implicit val actorDeletedGen: Gen[ActorDeleted] = {
+      identifierGen.map(e => ActorDeleted(e, removedFromIndex = false))
+    }
 
     implicit val processIndexSnapShotGen: Gen[ProcessIndexSnapShot] =
       Gen.mapOf(GenUtil.tuple(identifierGen, actorMetadataGen)).map(ProcessIndexSnapShot)
