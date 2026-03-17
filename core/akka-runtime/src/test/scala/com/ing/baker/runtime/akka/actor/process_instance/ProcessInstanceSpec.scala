@@ -208,7 +208,6 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
     }
 
     "Be able to retry a failed (blocked) transition when requested" in new TestSequenceNet {
-
       val counter = new AtomicInteger(0)
 
       override val sequence = Seq(
@@ -225,17 +224,13 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       expectMsgClass(classOf[Initialized])
 
       actor ! FireTransition(transitionId = 1, input = null)
-
       expectMsgClass(classOf[TransitionFailed])
 
+      // Validate the instance is in the correct state
       actor ! GetState
-
       val state: InstanceState = expectMsgClass(classOf[InstanceState])
-
       state.jobs.size shouldBe 1
-
       val (jobId, jobState) = state.jobs.head
-
       jobState.exceptionState should matchPattern {
         case Some(ExceptionState(_, _, BlockTransition)) =>
       }
@@ -246,10 +241,15 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       // Send the OverrideExceptionStrategy message
       actor ! OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.RetryWithDelay(0))
 
-      // Validate job is executing and a job is active
+      // Validate job is executing
       actor ! GetState
       val newState: InstanceState = expectMsgClass(classOf[InstanceState])
       newState.jobs.size shouldBe 1
+      val (newJobId, newJobState) = newState.jobs.head
+      newJobId shouldBe jobId
+      newJobState.exceptionState should matchPattern {
+        case Some(ExceptionState(_, _, com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.RetryWithDelay(0))) =>
+      }
 
       // Allow the job to finish
       countDownLatch.countDown()
@@ -264,7 +264,6 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
     }
 
     "Be able to retry a failed (blocked) transition when requested with delay" in new TestSequenceNet {
-
       val counter = new AtomicInteger(0)
 
       override val sequence = Seq(
@@ -281,17 +280,13 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       expectMsgClass(classOf[Initialized])
 
       actor ! FireTransition(transitionId = 1, input = null)
-
       expectMsgClass(classOf[TransitionFailed])
 
+      // Validate the instance is in the correct state
       actor ! GetState
-
       val state: InstanceState = expectMsgClass(classOf[InstanceState])
-
       state.jobs.size shouldBe 1
-
       val (jobId, jobState) = state.jobs.head
-
       jobState.exceptionState should matchPattern {
         case Some(ExceptionState(_, _, BlockTransition)) =>
       }
@@ -300,12 +295,17 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       countDownLatch = new java.util.concurrent.CountDownLatch(1)
 
       // Send the OverrideExceptionStrategy message
-      actor ! OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.RetryWithDelay(100))
+      actor ! OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.RetryWithDelay(1000))
 
-      // Validate job is executing and a job is active
+      // Validate job is executing
       actor ! GetState
       val newState: InstanceState = expectMsgClass(classOf[InstanceState])
       newState.jobs.size shouldBe 1
+      val (newJobId, newJobState) = newState.jobs.head
+      newJobId shouldBe jobId
+      newJobState.exceptionState should matchPattern {
+        case Some(ExceptionState(_, _, com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.RetryWithDelay(1000))) =>
+      }
 
       // Allow the job to finish
       countDownLatch.countDown()
