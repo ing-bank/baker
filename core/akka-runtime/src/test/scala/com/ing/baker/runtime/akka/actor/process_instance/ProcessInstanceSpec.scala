@@ -4,6 +4,7 @@ import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props, Terminated}
 import akka.event.DiagnosticLoggingAdapter
 import akka.testkit.{TestDuration, TestProbe}
 import akka.util.Timeout
+import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import com.ing.baker.il.failurestrategy.{BlockInteraction, FireEventAfterFailure, InteractionFailureStrategy, RetryWithIncrementalBackoff}
 import com.ing.baker.il.petrinet.{InteractionTransition, Place}
@@ -19,6 +20,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceSpec._
 import com.ing.baker.runtime.akka.actor.process_instance.dsl.TestUtils.{PlaceMethods, place}
 import com.ing.baker.runtime.akka.actor.process_instance.dsl._
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.RetryWithDelay
+import com.ing.baker.runtime.akka.actor.process_instance.internal.Job
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.akka.internal.FatalInteractionException
 import com.ing.baker.runtime.akka.namedCachedThreadPool
@@ -30,6 +32,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Milliseconds, Span}
@@ -56,9 +59,12 @@ trait TestSequenceNet extends SequenceNet {
 
 object ProcessInstanceSpec {
 
+  var countDownLatch = new java.util.concurrent.CountDownLatch(0)
+
   def Added(n: Int): EventInstance = EventInstance(n.toString, Map.empty)
 
   val testExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
+  val interactionExecutorContext = namedCachedThreadPool(s"Baker.InteractionExecutor")
 
   val instanceSettings = Settings(
     executionContext = testExecutionContext,
@@ -79,7 +85,14 @@ object ProcessInstanceSpec {
       CompiledRecipe("name", UUID.randomUUID().toString, topology, Marking.empty, Seq.empty, Option.empty, Option.empty),
       settings,
       runtime,
-      delayedTransitionActor)
+      delayedTransitionActor) {
+        override def executeJobViaExecutor(job: Job[RecipeInstanceState], originalSender: ActorRef): Unit = {
+          IO.delay {
+            countDownLatch.await(10, TimeUnit.SECONDS)
+            super.executeJobViaExecutor(job, originalSender)
+          }.evalOn(interactionExecutorContext).unsafeRunAndForget()(IORuntime.global)
+        }
+      }
     )
   }
 
@@ -96,7 +109,7 @@ object ProcessInstanceSpec {
   }
 }
 
-class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with ScalaFutures with MockitoSugar with Matchers {
+class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with ScalaFutures with MockitoSugar with Matchers  with BeforeAndAfterEach {
 
   def dilatedMillis(millis: Long)(implicit system: ActorSystem): Long = FiniteDuration(millis, TimeUnit.MILLISECONDS).dilated.toMillis
 
@@ -105,6 +118,11 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
     actor ! PoisonPill
     expectMsgClass(classOf[Terminated])
     Thread.sleep(dilatedMillis(100))
+  }
+
+  override def beforeEach(): Unit = {
+    countDownLatch = new java.util.concurrent.CountDownLatch(0)
+    super.beforeEach()
   }
 
   "A persistent petri net actor" should {
@@ -222,10 +240,83 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         case Some(ExceptionState(_, _, BlockTransition)) =>
       }
 
+      // Set the Countdown latch so that the job is only finished when we want.
+      countDownLatch = new java.util.concurrent.CountDownLatch(1)
+
+      // Send the OverrideExceptionStrategy message
       actor ! OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.RetryWithDelay(0))
 
-      // expect that the failure is resolved
+      // Validate job is executing and a job is active
+      actor ! GetState
+      val newState: InstanceState = expectMsgClass(classOf[InstanceState])
+      newState.jobs.size shouldBe 1
+
+      // Allow the job to finish
+      countDownLatch.countDown()
+
+      // Validate the transition is fired successfully after retry
       expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) => }
+
+      // Validate no job is left open
+      actor ! GetState
+      val finalState: InstanceState = expectMsgClass(classOf[InstanceState])
+      finalState.jobs.size shouldBe 0
+    }
+
+    "Be able to retry a failed (blocked) transition when requested with delay" in new TestSequenceNet {
+
+      val counter = new AtomicInteger(0)
+
+      override val sequence = Seq(
+        transition() { _ =>
+          if (counter.getAndIncrement() == 0)
+            throw new RuntimeException("t1 failed!")
+          else
+            Added(1)
+        })
+
+      val actor = createProcessInstance(petriNet, runtime)
+
+      actor ! Initialize(initialMarking, RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq.empty))
+      expectMsgClass(classOf[Initialized])
+
+      actor ! FireTransition(transitionId = 1, input = null)
+
+      expectMsgClass(classOf[TransitionFailed])
+
+      actor ! GetState
+
+      val state: InstanceState = expectMsgClass(classOf[InstanceState])
+
+      state.jobs.size shouldBe 1
+
+      val (jobId, jobState) = state.jobs.head
+
+      jobState.exceptionState should matchPattern {
+        case Some(ExceptionState(_, _, BlockTransition)) =>
+      }
+
+      // Set the Countdown latch so that the job is only finished when we want.
+      countDownLatch = new java.util.concurrent.CountDownLatch(1)
+
+      // Send the OverrideExceptionStrategy message
+      actor ! OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.RetryWithDelay(100))
+
+      // Validate job is executing and a job is active
+      actor ! GetState
+      val newState: InstanceState = expectMsgClass(classOf[InstanceState])
+      newState.jobs.size shouldBe 1
+
+      // Allow the job to finish
+      countDownLatch.countDown()
+
+      // Validate the transition is fired successfully after retry
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) => }
+
+      // Validate no job is left open
+      actor ! GetState
+      val finalState: InstanceState = expectMsgClass(classOf[InstanceState])
+      finalState.jobs.size shouldBe 0
     }
 
     "Be able to resolve a failed (blocked) transition when requested" in new TestSequenceNet {
