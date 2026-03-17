@@ -40,6 +40,7 @@ message ActorActivated {
 
 message ActorDeleted {
     optional string recipeInstanceId = 1;
+    optional bool removedFromIndex = 2;
 }
 
 message ProcessIndexSnapShot {

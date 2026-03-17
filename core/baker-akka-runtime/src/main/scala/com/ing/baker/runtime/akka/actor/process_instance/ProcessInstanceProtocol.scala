@@ -111,8 +111,15 @@ object ProcessInstanceProtocol {
    *
    * @param actorRef        The node that terminated.
    * @param replyToWhenDone An optional node to inform. This is just a ref you need to send a message to this actor yourself.
+   * @param deleteInstance  If it should mark the process as deleted or not
+   * @param removeFromIndex If it should remove the process completely from the index or not.
+   *
    */
-  case class TerminatedWithReplyTo(actorRef: ActorRef, replyToWhenDone: Option[ActorRef] = None) extends Response
+  case class TerminatedWithReplyTo(actorRef: ActorRef,
+                                   replyToWhenDone: Option[ActorRef],
+                                   deleteInstance: Boolean,
+                                   removeFromIndex: Boolean
+                                  ) extends Response
 
   /**
    * Returned in case a second Initialize is send after a first is processed
