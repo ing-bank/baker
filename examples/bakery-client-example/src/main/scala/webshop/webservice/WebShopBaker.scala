@@ -12,7 +12,7 @@ import java.util.UUID
 object WebShopBaker {
 
   val checkoutFlowCompiledRecipe: CompiledRecipe =
-    RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
+    RecipeCompiler.INSTANCE.compileRecipe(CheckoutFlowRecipe.recipe)
 }
 
 class WebShopBaker(baker: Baker, checkoutRecipeId: String) extends WebShop with LazyLogging {

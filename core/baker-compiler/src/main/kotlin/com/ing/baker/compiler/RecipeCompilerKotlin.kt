@@ -56,7 +56,6 @@ import scalax.collection.mutable.ArraySet
 import com.ing.baker.il.CompiledRecipe.`Scala212CompatibleJava$`.`MODULE$` as Scala212CompatibleJava
 import com.ing.baker.il.CompiledRecipe.`Scala212CompatibleKotlin$`.`MODULE$` as Scala212CompatibleKotlin
 import com.ing.baker.il.CompiledRecipe.`Scala212CompatibleScala$`.`MODULE$` as Scala212CompatibleScala
-import com.ing.baker.il.`ValidationSettings$`.`MODULE$` as ValidationSettings
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy as ILInteractionFailureStrategy
 import com.ing.baker.il.`package$`.`MODULE$` as ILPackage
 import com.ing.baker.il.petrinet.Place.`EmptyEventIngredientPlace$`.`MODULE$` as EmptyEventIngredientPlace
@@ -461,9 +460,6 @@ object RecipeCompilerKotlin {
 
         return RecipeValidations.postCompileValidations(compiledRecipe, validationSettings)
     }
-
-    fun compileRecipe(recipe: Recipe): CompiledRecipe =
-        compileRecipe(recipe, ValidationSettings.defaultValidationSettings())
 
     private fun getMultiTransition(internalRepresentationName: String, transitions: List<Transition>) =
         transitions.find { it.label().equals(internalRepresentationName) }

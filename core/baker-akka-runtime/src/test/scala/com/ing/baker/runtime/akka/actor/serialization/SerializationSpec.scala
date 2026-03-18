@@ -263,7 +263,7 @@ object SerializationSpec {
 
     val eventNameGen: Gen[String] = Gen.alphaStr
     val finiteDurationGen: Gen[FiniteDuration] = Gen.posNum[Long].map(millis => FiniteDuration(millis, TimeUnit.MILLISECONDS))
-    val allTypesRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(AllTypeRecipe.recipe)
+    val allTypesRecipe: CompiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(AllTypeRecipe.recipe)
 
     implicit val recipeGen: Gen[CompiledRecipe] = Gen.const(allTypesRecipe)
   }

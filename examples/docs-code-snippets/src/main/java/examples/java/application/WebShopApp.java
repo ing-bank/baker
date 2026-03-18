@@ -25,7 +25,7 @@ public class WebShopApp {
         var recipeInstanceId = UUID.randomUUID().toString();
         var sensoryEvent = EventInstance.from(createOrderPlaced());
 
-        var recipeId = baker.addRecipe(RecipeCompiler.compileRecipe(WebShopRecipe.recipe), true).get();
+        var recipeId = baker.addRecipe(RecipeCompiler.INSTANCE.compileRecipe(WebShopRecipe.recipe), true).get();
         baker.bake(recipeId, recipeInstanceId).get();
         baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, sensoryEvent).get();
         baker.awaitCompleted(recipeInstanceId, Duration.ofSeconds(5)).get();

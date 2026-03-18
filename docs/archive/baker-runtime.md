@@ -78,13 +78,13 @@ For this purpose there is the `RecipeCompiler`.
 === "Scala"
 
     ```scala 
-    val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+    val compiledRecipe: CompiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(recipe)
     ```
     
 === "Java"
 
     ```java 
-    CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
+    CompiledRecipe compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(recipe);
     ```
 
 !!! hint "Did you know?!"
@@ -117,7 +117,7 @@ ValidateOrderImpl validateOrderImpl = new ValidateOrderImpl();
 ManufactureGoodsImpl manufactureGoodsImpl = new ManufactureGoodsImpl();
 
 // Compiling the Recipe
-CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
+CompiledRecipe compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(recipe);
 
 // Creating a Baker Runtime
 JBaker baker = new JBaker();

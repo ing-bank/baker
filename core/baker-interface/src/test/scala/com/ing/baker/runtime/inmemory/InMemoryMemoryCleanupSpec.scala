@@ -35,7 +35,7 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
 
     val result: IO[RecipeInstanceState] = for {
       baker <- InMemoryBaker.build(BakerF.Config(idleTimeout = 100.milliseconds, allowAddingRecipeWithoutRequiringInstances = true), List.empty)
-      recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(TestRecipe.getRecipe("InMemory")), validate = false)
+      recipeId <- baker.addRecipe(RecipeCompiler.INSTANCE.compileRecipe(TestRecipe.getRecipe("InMemory")), validate = false)
       _ <- baker.bake(recipeId, recipeInstanceId)
       result <- baker.getRecipeInstanceState(recipeInstanceId)
     } yield (result)
@@ -65,7 +65,7 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
         retentionPeriodCheckInterval = 10.milliseconds,
         allowAddingRecipeWithoutRequiringInstances = true),
         List(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
-      recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), validate = false)
+      recipeId <- baker.addRecipe(RecipeCompiler.INSTANCE.compileRecipe(recipe), validate = false)
       _ <- baker.bake(recipeId, recipeInstanceId)
       _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAndForget()
       _ <- IO.sleep(120.milliseconds)
@@ -95,7 +95,7 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
         retentionPeriodCheckInterval = 10.milliseconds,
         allowAddingRecipeWithoutRequiringInstances = true),
         List(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
-      recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), validate = false)
+      recipeId <- baker.addRecipe(RecipeCompiler.INSTANCE.compileRecipe(recipe), validate = false)
       _ <- baker.bake(recipeId, recipeInstanceId)
       _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAndForget()
       _ <- IO.sleep(200.milliseconds)
@@ -127,7 +127,7 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
         retentionPeriodCheckInterval = 10.milliseconds,
         allowAddingRecipeWithoutRequiringInstances = true),
         List(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
-      recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), validate = false)
+      recipeId <- baker.addRecipe(RecipeCompiler.INSTANCE.compileRecipe(recipe), validate = false)
       _ <- baker.bake(recipeId, recipeInstanceId)
       _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAndForget()
       _ <- IO.sleep(120.milliseconds)
@@ -157,7 +157,7 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
         retentionPeriodCheckInterval = 10.milliseconds,
         allowAddingRecipeWithoutRequiringInstances = true),
         List(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
-      recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), validate = false)
+      recipeId <- baker.addRecipe(RecipeCompiler.INSTANCE.compileRecipe(recipe), validate = false)
       _ <- baker.bake(recipeId, recipeInstanceId)
       _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAndForget()
       _ <- IO.sleep(80.milliseconds)
@@ -192,7 +192,7 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
         retentionPeriodCheckInterval = 10.milliseconds,
         allowAddingRecipeWithoutRequiringInstances = true),
         List(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
-      recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe), validate = false)
+      recipeId <- baker.addRecipe(RecipeCompiler.INSTANCE.compileRecipe(recipe), validate = false)
       _ <- baker.bake(recipeId, recipeInstanceId)
       _ = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient"))).unsafeRunAndForget()
       _ <- IO.sleep(120.milliseconds)

@@ -1,11 +1,12 @@
 package com.ing.baker.compiler
 
 import com.ing.baker.recipe.javadsl.Interaction
+import com.ing.baker.recipe.kotlindsl.ExperimentalDsl
 import com.ing.baker.recipe.kotlindsl.recipe
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-class RecipeCompilerTest {
+class RecipeCompilerDslTest {
 
     class EventA
 
@@ -21,6 +22,7 @@ class RecipeCompilerTest {
     }
 
     @Test
+    @OptIn(ExperimentalDsl::class)
     fun `should compile dsl to recipe`() {
 
         val recipe = recipe("recipe") {
@@ -37,6 +39,7 @@ class RecipeCompilerTest {
 
 
     @Test
+    @OptIn(ExperimentalDsl::class)
     fun `should compile dsl to recipe ingredient`() {
 
         val recipe = recipe("recipe") {

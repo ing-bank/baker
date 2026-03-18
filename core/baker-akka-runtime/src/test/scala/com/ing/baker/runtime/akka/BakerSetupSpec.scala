@@ -37,7 +37,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
     "bootstrap correctly without throwing an error if provided a correct recipe and correct implementations" when {
 
       "correctly load extensions when specified in the configuration" in {
-        val simpleRecipe = RecipeCompiler.compileRecipe(Recipe("SimpleRecipe")
+        val simpleRecipe = RecipeCompiler.INSTANCE.compileRecipe(Recipe("SimpleRecipe")
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent))
 
@@ -74,7 +74,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
         val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(new implementations.InteractionOne())))
 
         for {
-          _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
+          _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.INSTANCE.compileRecipe(recipe)))
         } yield succeed
       }
 
@@ -87,7 +87,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
         val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(new InteractionOneFieldName())))
 
         for {
-          _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
+          _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.INSTANCE.compileRecipe(recipe)))
         } yield succeed
       }
 
@@ -100,7 +100,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
         val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
 
         for {
-          _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
+          _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.INSTANCE.compileRecipe(recipe)))
         } yield succeed
       }
 
@@ -112,7 +112,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
         val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(mock[ComplexIngredientInteraction])))
 
         for {
-          _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
+          _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.INSTANCE.compileRecipe(recipe)))
         } yield succeed
       }
     }
@@ -127,8 +127,8 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
         val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(mockImplementations))
 
         recoverToExceptionIf[RecipeValidationException] {
-          baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
-        }.map(_ should have('message("Recipe NonProvidedIngredient:68b775e508fc6877 has validation errors: Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction")))
+          baker.addRecipe(RecipeRecord.of(RecipeCompiler.INSTANCE.compileRecipe(recipe)))
+        }.map(_ should have('message("Recipe NonProvidedIngredient:f31b181c8e36a5c3 has validation errors: Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction")))
       }
 
       "a recipe does not provide an implementation for an interaction" in {
@@ -140,8 +140,8 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
         val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager())
 
         recoverToExceptionIf[ImplementationsException] {
-          baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
-        }.map(_ should have('message("Recipe MissingImplementation:dc3970efc8837e64 has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(NameNotFound)")))
+          baker.addRecipe(RecipeRecord.of(RecipeCompiler.INSTANCE.compileRecipe(recipe)))
+        }.map(_ should have('message("Recipe MissingImplementation:e1b92d7afa5609d5 has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(NameNotFound)")))
       }
 
       "a recipe provides an implementation for an interaction and does not comply to the Interaction" in {
@@ -153,8 +153,8 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
         val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(new InteractionOneWrongApply())))
 
         recoverToExceptionIf[ImplementationsException] {
-          baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
-        }.map(_ should have('message("Recipe WrongImplementation:8e2745de0bb0bde5 has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(InteractionOne input size differs: transition expects 2, implementation provides 1)")))
+          baker.addRecipe(RecipeRecord.of(RecipeCompiler.INSTANCE.compileRecipe(recipe)))
+        }.map(_ should have('message("Recipe WrongImplementation:7fcdb6b8feb8aa87 has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(InteractionOne input size differs: transition expects 2, implementation provides 1)")))
       }
     }
   }

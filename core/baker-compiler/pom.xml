@@ -32,11 +32,6 @@
             <version>${project.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-library</artifactId>
-        </dependency>
-
         <!-- Test dependencies -->
         <dependency>
             <groupId>com.ing.baker</groupId>
@@ -46,16 +41,6 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_${scala.compat.version}</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.scalacheck</groupId>
-            <artifactId>scalacheck_${scala.compat.version}</artifactId>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
@@ -71,7 +56,7 @@
 
     <build>
         <plugins>
-            <!-- Add both Java and Kotlin main and test sources -->
+            <!-- Add Kotlin main and test sources -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
@@ -97,17 +82,11 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>src/test/java</source>
                                 <source>src/test/kotlin</source>
                             </sources>
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>net.alchim31.maven</groupId>
-                <artifactId>scala-maven-plugin</artifactId>
             </plugin>
 
             <plugin>
@@ -132,11 +111,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.scalatest</groupId>
-                <artifactId>scalatest-maven-plugin</artifactId>
             </plugin>
 
             <!-- Create test-jar for use by other modules -->
