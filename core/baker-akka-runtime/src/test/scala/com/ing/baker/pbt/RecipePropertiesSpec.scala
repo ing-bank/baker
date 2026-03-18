@@ -24,7 +24,7 @@ class RecipePropertiesSpec extends AnyFunSuite with Checkers {
     val prop = forAll(recipeGen) { recipe =>
       val validations = ValidationSettings(allowCycles = false, allowNonExecutableInteractions = false)
 
-      val compiledRecipe = RecipeCompiler.compileRecipe(recipe, validations)
+      val compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(recipe, validations)
 
       if (compiledRecipe.validationErrors.nonEmpty) {
         logRecipeStats(recipe)

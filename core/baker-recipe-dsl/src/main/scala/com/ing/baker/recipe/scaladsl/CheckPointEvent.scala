@@ -2,10 +2,6 @@ package com.ing.baker.recipe.scaladsl
 
 import com.ing.baker.recipe.common
 
-object CheckPointEvent {
-  def apply(name: String): CheckPointEvent = CheckPointEvent(name, Set.empty, Set.empty)
-}
-
 case class CheckPointEvent private(
                                 override val name: String = "",
                                 override val requiredEvents: Set[String] = Set.empty,

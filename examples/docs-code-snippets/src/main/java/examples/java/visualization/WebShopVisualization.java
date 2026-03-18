@@ -6,7 +6,7 @@ import examples.java.recipes.WebShopRecipe;
 
 public class WebShopVisualization {
     public void printVisualizationString() {
-        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(WebShopRecipe.recipe);
+        CompiledRecipe compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(WebShopRecipe.recipe);
         String graphvizString = compiledRecipe.getRecipeVisualization();
         System.out.println(graphvizString);
     }

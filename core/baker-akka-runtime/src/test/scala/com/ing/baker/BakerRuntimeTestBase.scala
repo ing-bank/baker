@@ -217,7 +217,7 @@ trait BakerRuntimeTestBase
   protected def setupBakerWithRecipe(recipe: Recipe, implementations: List[InteractionInstance])
                                     (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
     val baker = AkkaBaker(ConfigFactory.load(), actorSystem, CachingInteractionManager(implementations))
-    baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe))).map(baker -> _)(actorSystem.dispatcher)
+    baker.addRecipe(RecipeRecord.of(RecipeCompiler.INSTANCE.compileRecipe(recipe))).map(baker -> _)(actorSystem.dispatcher)
   }
 
   protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Future[Baker] = {

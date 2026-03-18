@@ -221,7 +221,7 @@ into a [visualization](../../cookbook/visualizations).
     import com.ing.baker.compiler.RecipeCompiler
     import com.ing.baker.il.CompiledRecipe
 
-    val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+    val compiledRecipe: CompiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(recipe)
     ```
 
 === "Java"
@@ -230,7 +230,7 @@ into a [visualization](../../cookbook/visualizations).
     import com.ing.baker.compiler.RecipeCompiler;
     import com.ing.baker.il.CompiledRecipe;
 
-    CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
+    CompiledRecipe compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(recipe);
     ```
 
 ## baker.addRecipe(RecipeRecord.of(compiledRecipe))

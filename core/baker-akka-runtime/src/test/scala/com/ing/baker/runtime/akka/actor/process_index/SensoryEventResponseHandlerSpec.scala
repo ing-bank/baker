@@ -27,7 +27,7 @@ class SensoryEventResponseHandlerSpec extends AkkaTestBase("SensoryEventResponse
     import com.ing.baker.recipe.scaladsl._
     import Examples.webshop
 
-    val webShopRecipe = RecipeCompiler.compileRecipe(webshop.webShopRecipe)
+    val webShopRecipe = RecipeCompiler.INSTANCE.compileRecipe(webshop.webShopRecipe)
 
     "return a SensoryEventResult when processing the outcome of a sensory event with NotifyWhenCompleted reaction" in {
       val client = TestProbe()

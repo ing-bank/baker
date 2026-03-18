@@ -49,7 +49,7 @@ abstract class BakerModelSpec
     def setupBakerWithRecipe(recipe: Recipe, implementations: List[InteractionInstance[IO]])(implicit effect: Sync[IO]): IO[(BakerF[IO], String)] = {
       for {
         baker <- buildBaker(implementations)
-        recipeId <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe), validate = true))
+        recipeId <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.INSTANCE.compileRecipe(recipe), validate = true))
       } yield (baker, recipeId)
     }
 

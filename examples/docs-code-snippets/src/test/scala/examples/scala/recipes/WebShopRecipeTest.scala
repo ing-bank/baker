@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 
 class WebShopRecipeTest extends AnyFlatSpec with Matchers {
   "Recipe" should "compile without validation errors" in {
-    val validationErrors = RecipeCompiler.compileRecipe(WebShopRecipe.recipe).validationErrors
+    val validationErrors = RecipeCompiler.INSTANCE.compileRecipe(WebShopRecipe.recipe).validationErrors
     assert(validationErrors.isEmpty)
   }
 }

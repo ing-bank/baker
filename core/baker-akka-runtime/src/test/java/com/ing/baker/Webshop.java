@@ -138,7 +138,7 @@ public class Webshop {
 
         Config config = ConfigFactory.load("cassandra.conf");
 
-        CompiledRecipe recipe = RecipeCompiler.compileRecipe(webshopRecipe);
+        CompiledRecipe recipe = RecipeCompiler.INSTANCE.compileRecipe(webshopRecipe);
 
         System.out.println(recipe.getRecipeVisualization());
 

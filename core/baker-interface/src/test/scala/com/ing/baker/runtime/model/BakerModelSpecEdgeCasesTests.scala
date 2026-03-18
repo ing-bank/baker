@@ -32,7 +32,7 @@ trait BakerModelSpecEdgeCasesTests { self: BakerModelSpec =>
         bakerAndRecipeId <- context.setupBakerWithRecipe(recipe, mockImplementations(sync, classTag))(sync)
         (baker, _) = bakerAndRecipeId
 
-        compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(recipe)
         recipeId <- baker.addRecipe(RecipeRecord.of(compiledRecipe))
 
         recipeInstanceId = UUID.randomUUID().toString

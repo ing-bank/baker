@@ -25,7 +25,7 @@ class RecipeManagerActorSpec extends BakerRuntimeTestBase {
 
   "The recipe manager" should {
     "add a recipe to the list when an AddRecipe message is received" in {
-      val compiledRecipe = RecipeCompiler.compileRecipe(TestRecipe.getRecipe("AddRecipeRecipe"))
+      val compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(TestRecipe.getRecipe("AddRecipeRecipe"))
       val recipeManager: ActorRef = defaultActorSystem.actorOf(RecipeManagerActor.props(), s"recipeManager-${UUID.randomUUID().toString}")
 
       for {

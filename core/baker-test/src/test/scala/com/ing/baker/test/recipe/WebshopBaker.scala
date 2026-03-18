@@ -19,7 +19,7 @@ object WebshopBaker {
 
   val javaBaker: javadsl.Baker = new javadsl.Baker(baker)
 
-  val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
+  val compiledRecipe: CompiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(WebshopRecipe.recipe)
 
   val recipeId: String = Await.result(baker.addRecipe(compiledRecipe, validate = true), 10 seconds)
 }
