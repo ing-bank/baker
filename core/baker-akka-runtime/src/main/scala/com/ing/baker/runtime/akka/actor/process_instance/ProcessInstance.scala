@@ -577,6 +577,7 @@ class ProcessInstance(
           // execute the job immediately if there is no timeout
           if (timeout == 0) {
             executeJob(job, originalSender)
+            updateState(updatedInstance, scheduledRetries)
           }
           else {
             // schedule the retry
