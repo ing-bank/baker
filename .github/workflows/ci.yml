@@ -34,6 +34,7 @@ jobs:
         id: set-version
         run: |
           SUFFIX=$([[ "${GITHUB_REF_NAME}" == "master" ]] && echo "" || echo "-${GITHUB_REF_NAME}")
+          SUFFIX="${SUFFIX//\//-}"
           BAKER_VERSION="$(git describe | sed 's/^v//' | sed 's/-g/-/g')$SUFFIX"
           echo "BAKER_VERSION=$BAKER_VERSION" >> $GITHUB_OUTPUT
           echo "Determined version: $BAKER_VERSION"
