@@ -60,8 +60,9 @@ object Main extends IOApp {
 
       sys.addShutdownHook(r.baker.gracefulShutdown())
 
-      BlazeServerBuilder[IO](ExecutionContext.global)
+      BlazeServerBuilder[IO]
         .bindHttp(r.port, "0.0.0.0")
+        .withExecutionContext(ExecutionContext.global)
         .withHttpApp(r.app.buildHttpService(r.shuttingDown))
         .resource
     }.use(_ => IO.never).as(ExitCode.Success)

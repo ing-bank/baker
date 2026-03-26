@@ -5,7 +5,7 @@ import com.ing.baker.types._
 import java.lang.reflect.ParameterizedType
 import java.util
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object JavaModules {
 

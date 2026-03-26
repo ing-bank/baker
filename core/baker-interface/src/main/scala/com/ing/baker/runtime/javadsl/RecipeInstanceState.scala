@@ -6,7 +6,7 @@ import com.ing.baker.types.Value
 
 import java.util.stream.Collectors
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
   * Holds the 'state' of a process instance.

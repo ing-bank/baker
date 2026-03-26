@@ -5,8 +5,7 @@ import com.ing.baker.runtime.{common, javadsl}
 import com.ing.baker.types.Value
 
 import scala.annotation.nowarn
-import scala.collection.JavaConverters._
-import scala.collection.immutable.Seq
+import scala.jdk.CollectionConverters._
 
 /**
   * Holds the 'state' of a process instance.

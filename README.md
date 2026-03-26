@@ -2,7 +2,7 @@
 <img src="https://github.com/ing-bank/baker/blob/master/baker-logo.png?raw=true" alt="Baker Logo">
 
 [![Build Status](https://github.com/ing-bank/baker/actions/workflows/ci.yml/badge.svg)](https://github.com/ing-bank/baker/actions/workflows/ci.yml)
-[![Maven Central](https://img.shields.io/maven-central/v/com.ing.baker/baker-runtime_2.13.svg?label=Maven%20Central&logo=apachemaven)](https://search.maven.org/artifact/com.ing.baker/baker-runtime_2.13)
+[![Maven Central](https://img.shields.io/maven-central/v/com.ing.baker/baker-runtime.svg?label=Maven%20Central&logo=apachemaven)](https://search.maven.org/artifact/com.ing.baker/baker-runtime)
 [![Code Coverage Status](https://codecov.io/gh/ing-bank/baker/graph/badge.svg)](https://codecov.io/gh/ing-bank/baker)
 </div>
 
@@ -143,7 +143,7 @@ modules.
 3. runtime: The runtime to manage and execute recipes
 
 > **Note**
-> If you want to use the Kotlin DSL add `baker-recipe-dsl-kotlin_2.13` instead of `baker-recipe-dsl_2.13`.
+> If you want to use the Kotlin DSL add `baker-recipe-dsl-kotlin` instead of `baker-recipe-dsl`.
 
 ### Maven
 
@@ -151,27 +151,27 @@ modules.
 
 <dependency>
     <groupId>com.ing.baker</groupId>
-    <artifactId>baker-recipe-dsl_2.13</artifactId>
-    <version>4.1.0</version>
+    <artifactId>baker-recipe-dsl</artifactId>
+    <version>5.0.0</version>
 </dependency>
 <dependency>
     <groupId>com.ing.baker</groupId>
-    <artifactId>baker-compiler_2.13</artifactId>
-    <version>4.1.0</version>
+    <artifactId>baker-compiler</artifactId>
+    <version>5.0.0</version>
 </dependency>
 <dependency>
     <groupId>com.ing.baker</groupId>
-    <artifactId>baker-runtime_2.13</artifactId>
-    <version>4.1.0</version>
+    <artifactId>baker-runtime</artifactId>
+    <version>5.0.0</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```groovy
-implementation 'com.ing.baker:baker-recipe-dsl_2.13:4.1.0'
-implementation 'com.ing.baker:baker-compiler_2.13:4.1.0'
-implementation 'com.ing.baker:baker-runtime_2.13:4.1.0'
+implementation 'com.ing.baker:baker-recipe-dsl:5.0.0'
+implementation 'com.ing.baker:baker-compiler:5.0.0'
+implementation 'com.ing.baker:baker-runtime:5.0.0'
 ```
 
 ### Scala SBT
@@ -179,9 +179,9 @@ implementation 'com.ing.baker:baker-runtime_2.13:4.1.0'
 Baker gets compiled and released for scala 2.13.
 
 ```scala
-libraryDependencies += "com.ing.baker" % "baker-recipe-dsl_2.13" % "4.1.0"
-libraryDependencies += "com.ing.baker" % "baker-compiler_2.13" % "4.1.0"
-libraryDependencies += "com.ing.baker" % "baker-runtime_2.13" % "4.1.0"
+libraryDependencies += "com.ing.baker" % "baker-recipe-dsl" % "5.0.0"
+libraryDependencies += "com.ing.baker" % "baker-compiler" % "5.0.0"
+libraryDependencies += "com.ing.baker" % "baker-runtime" % "5.0.0"
 ```
 
 ## Contributing
@@ -200,18 +200,12 @@ Before you can compile the project you have to configure the Akka resolvers in a
 To compile and test all libraries:
 
 ```bash
-sbt 
-> compile
-> test
+mvn clean install
 ```
 
 To cross compile all libraries for Scala 2.12 and 2.13:
 
-```bash
-sbt
-> +compile
-> +test
-```
+# This is handled by Maven profiles or modules. See the pom.xml for details.
 
 ### Compile or test a single project
 
@@ -219,16 +213,14 @@ To build a single project (baker-akka-runtime, baker-anotations, etc...):
 
 1. Find the name of the project by running:
 
+# Use Maven modules or submodules. For example:
 ```bash
-sbt 
-> projects
+mvn -pl <MODULE_NAME> clean install
 ```
 
-2. Open the desired project via `sbt`:
+2. Open the desired project via Maven:
 
 ```bash
-sbt
-> project <PROJECT_NAME>
-> compile
-> test
+cd <MODULE_DIRECTORY>
+mvn clean install
 ```

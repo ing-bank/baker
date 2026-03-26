@@ -3,8 +3,7 @@ package com.ing.baker.http
 import com.typesafe.config.Config
 
 import scala.annotation.nowarn
-import scala.collection.immutable.Map
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 case class DashboardConfiguration(enabled: Boolean,
                                   applicationName: String,
