@@ -1,0 +1,70 @@
+{
+  "openapi": "3.0.0",
+  "info": {"title": "Account API", "version": "1.0.0"},
+  "paths": {
+    "/accounts": {
+      "post": {
+        "operationId": "createAccount",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/CreateAccountRequest"}
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/AccountDto"}
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/ErrorResponse"}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateAccountRequest": {
+        "type": "object",
+        "required": ["userId", "profileId", "accountType", "currency"],
+        "properties": {
+          "userId": {"type": "string"},
+          "profileId": {"type": "string"},
+          "accountType": {"type": "string"},
+          "currency": {"type": "string"}
+        }
+      },
+      "AccountDto": {
+        "type": "object",
+        "required": ["accountId", "userId", "profileId", "iban", "accountType", "currency"],
+        "properties": {
+          "accountId": {"type": "string"},
+          "userId": {"type": "string"},
+          "profileId": {"type": "string"},
+          "iban": {"type": "string"},
+          "accountType": {"type": "string"},
+          "currency": {"type": "string"}
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["message"],
+        "properties": {
+          "message": {"type": "string"}
+        }
+      }
+    }
+  }
+}
