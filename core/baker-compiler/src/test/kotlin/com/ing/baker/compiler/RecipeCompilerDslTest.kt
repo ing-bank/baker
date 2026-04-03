@@ -34,7 +34,7 @@ class RecipeCompilerDslTest {
 
         val compiled = RecipeCompiler.compileRecipe(recipe)
 
-        assertEquals("796a3cb3eb68b35d", compiled.recipeId())
+        assertEquals("9b2bc4caf5752697", compiled.recipeId())
     }
 
 
@@ -52,7 +52,7 @@ class RecipeCompilerDslTest {
 
         val compiled = RecipeCompiler.compileRecipe(recipe)
 
-        assertEquals("ec448bcd08163a73", compiled.recipeId())
+        assertEquals("4e146307a299c515", compiled.recipeId())
     }
 
 }

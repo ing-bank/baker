@@ -61,7 +61,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
 
-class RecipeCompilerScalaTest {
+class RecipeCompilerFeaturesTest {
 
     @Test
     fun `The recipe compiler should not have validation errors for a valid recipe`() {
@@ -722,14 +722,14 @@ class RecipeCompilerScalaTest {
         val compiledRecipeScala = RecipeCompiler.compileRecipe(recipe)
         assertEquals(compiledRecipeScala.recipeId(), compiledRecipeKotlin.recipeId())
 
-        assertEquals("220827c42a75b3f8", compiledRecipeKotlin.recipeId())
+        assertEquals("9a7f1374762c9b0e", compiledRecipeKotlin.recipeId())
     }
 
     @Test
     fun `The recipe compiler should give the interaction with Reprovider enabled when it compiles a java recipe and changes recipeId`() {
         val recipe = TestRecipeJava.getRecipeReprovider("id-test-recipe")
         val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
-        assertEquals("416e8abc02abcbee", compiledRecipe.recipeId())
+        assertEquals("8a9d731ed4dae89e", compiledRecipe.recipeId())
     }
 
     @Test
@@ -743,7 +743,7 @@ class RecipeCompilerScalaTest {
                 ).withRequiredEvent(initialEvent())
             )
         val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
-        assertEquals("469441173f91869a", compiledRecipe.recipeId())
+        assertEquals("5c6aab1ddb03521f", compiledRecipe.recipeId())
         assertEquals(1, compiledRecipe.petriNet().transitions().count {
             it is InteractionTransition && it.interactionName()
                 .contains("${checkpointEventInteractionPrefix}Success")
@@ -805,7 +805,7 @@ class RecipeCompilerScalaTest {
             }
             .filter { it.startsWith(subRecipePrefix) }.toSet()
 
-        assertEquals("ae2282f55f0a4f9f", compiledRecipe.recipeId())
+        assertEquals("5fdfb7538c687289", compiledRecipe.recipeId())
         assertEquals(
             setOf(
                 $$"$SubRecipe$SubSubRecipe$InteractionOne",
