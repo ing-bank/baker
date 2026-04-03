@@ -1,18 +1,19 @@
-package com.ing.baker.model
+package com.ing.baker.recipe
 
 import scala.concurrent.duration.FiniteDuration
-import kotlin.collections.mapKeys
-import com.ing.baker.recipe.common.Event as ScalaEvent
-import com.ing.baker.recipe.common.Recipe as ScalaRecipe
-import com.ing.baker.recipe.common.Sieve as ScalaSieve
-import com.ing.baker.recipe.common.Ingredient as ScalaIngredient
-import com.ing.baker.recipe.common.EventOutputTransformer as ScalaEventOutputTransformer
-import com.ing.baker.recipe.common.InteractionDescriptor as ScalaInteraction
-import com.ing.baker.recipe.common.CheckPointEvent as ScalaCheckPointEvent
 import scala.jdk.javaapi.CollectionConverters
 import kotlin.time.Duration
-import java.time.Duration as JavaDuration
 import kotlin.time.toKotlinDuration
+import com.ing.baker.recipe.common.CheckPointEvent as ScalaCheckPointEvent
+import com.ing.baker.recipe.common.Event as ScalaEvent
+import com.ing.baker.recipe.common.EventOutputTransformer as ScalaEventOutputTransformer
+import com.ing.baker.recipe.common.Ingredient as ScalaIngredient
+import com.ing.baker.recipe.common.InteractionDescriptor as ScalaInteraction
+import com.ing.baker.recipe.common.Recipe as ScalaRecipe
+import com.ing.baker.recipe.common.Sieve as ScalaSieve
+import java.time.Duration as JavaDuration
+
+fun Duration.toFiniteDuration(): FiniteDuration = FiniteDuration.fromNanos(inWholeNanoseconds)
 
 fun FiniteDuration.toKotlin(): Duration = JavaDuration.ofNanos(toNanos()).toKotlinDuration()
 
