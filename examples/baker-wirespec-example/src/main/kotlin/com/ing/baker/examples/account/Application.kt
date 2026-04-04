@@ -1,7 +1,7 @@
 package com.ing.baker.examples.account
 
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.examples.account.generated.*
+import com.ing.baker.examples.account.generated.interaction.*
 import com.ing.baker.examples.account.generated.endpoint.CreateAccount
 import com.ing.baker.examples.account.generated.endpoint.CreateProfile
 import com.ing.baker.examples.account.generated.endpoint.CreateUser
@@ -16,7 +16,7 @@ class Application(
     val recipeId: String,
 ) {
     companion object {
-        suspend fun create(baseUrl: String,): Application {
+        suspend fun of(baseUrl: String,): Application {
             val transport = jvmTransportation(baseUrl)
             val serialization = defaultSerialization()
             val baker = InMemoryBaker.kotlin(
@@ -31,11 +31,6 @@ class Application(
                 validate = true,
             )
             return Application(baker, recipeId)
-        }
-
-        suspend fun of(baseUrl: String): Application {
-
-            return create(baseUrl)
         }
     }
 }

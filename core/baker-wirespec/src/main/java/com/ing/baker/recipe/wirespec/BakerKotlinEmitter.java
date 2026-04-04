@@ -77,7 +77,7 @@ public class BakerKotlinEmitter extends LanguageEmitter {
         this.currentModule = module;
         Emitted base = super.emit(definition, module, logger);
         if (packageName != null && !packageName.getValue().isEmpty()) {
-            String dir = packageName.getValue().replace('.', '/') + "/";
+            String dir = packageName.getValue().replace('.', '/') + "/interaction/";
             return new Emitted(dir + base.getFile(), base.getResult());
         }
         return base;
@@ -100,7 +100,7 @@ public class BakerKotlinEmitter extends LanguageEmitter {
 
         // Package declaration
         if (packageName != null && !packageName.getValue().isEmpty()) {
-            sb.append("package ").append(packageName.getValue()).append("\n\n");
+            sb.append("package ").append(packageName.getValue()).append(".interaction").append("\n\n");
         }
 
         // Collect referenced custom types for imports

@@ -2,7 +2,7 @@ package com.ing.baker.examples.account
 
 import com.ing.baker.recipe.kotlindsl.ExperimentalDsl
 import com.ing.baker.recipe.kotlindsl.recipe
-import com.ing.baker.examples.account.generated.*
+import com.ing.baker.examples.account.generated.interaction.*
 
 @ExperimentalDsl
 object Recipe {
