@@ -270,71 +270,72 @@ class RecipeCompilerUnitTest {
 
     @Test
     fun `buildInternalEventArcs creates arcs for event ingredients`() {
-        val recipe = Recipe("TestRecipe")
-            .withSensoryEvent(OrderPlaced::class.java)
-            .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
-
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
-        val transitions = RecipeCompiler.buildAllTransitions(
-            actionDescriptors,
-            allIngredientNames,
-            sensoryEvents,
-            recipe.defaultFailureStrategy()
+        // Create test data using builders
+        val interactionTransition = TestDataBuilders.simpleInteractionTransition(
+            name = "ReserveItems",
+            inputIngredientNames = listOf("orderId", "items"),
+            outputEventNames = listOf("ItemsReserved"),
+            outputEventIngredients = mapOf("ItemsReserved" to listOf("reservedItems"))
+        )
+        val eventTransition = TestDataBuilders.eventTransition(
+            eventName = "ItemsReserved",
+            isSensory = false,
+            ingredientNames = listOf("reservedItems")
         )
         
         val arcs = RecipeCompiler.buildInternalEventArcs(
-            transitions.allInteractionTransitions,
-            transitions.interactionEventTransitions
+            listOf(interactionTransition),
+            listOf(eventTransition)
         )
 
-        // ItemsReserved event has reservedItems ingredient
+        // ItemsReserved event has reservedItems ingredient - should create arcs
         assertTrue(arcs.isNotEmpty(), "Should create arcs for event ingredients")
     }
 
     @Test
     fun `buildEventLimiterArcs creates arcs for sensory event transitions`() {
-        val recipe = Recipe("TestRecipe")
-            .withSensoryEvent(OrderPlaced::class.java)
-            .withSensoryEvent(PaymentMade::class.java)
-
-        val (_, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
-        val transitions = RecipeCompiler.buildAllTransitions(
-            emptyList(),
-            allIngredientNames,
-            sensoryEvents,
-            recipe.defaultFailureStrategy()
+        // Create sensory event transitions with firing limits using builders
+        val event1 = TestDataBuilders.eventTransition(
+            eventName = "OrderPlaced",
+            isSensory = true,
+            maxFiringLimit = 1,
+            ingredientNames = listOf("orderId", "items")
+        )
+        val event2 = TestDataBuilders.eventTransition(
+            eventName = "PaymentMade",
+            isSensory = true,
+            maxFiringLimit = 1,
+            ingredientNames = listOf("paymentId")
         )
         
-        val arcs = RecipeCompiler.buildEventLimiterArcs(transitions.sensoryEventTransitions)
+        val arcs = RecipeCompiler.buildEventLimiterArcs(listOf(event1, event2))
 
-        // Sensory events have limiters by default
-        assertTrue(arcs.isNotEmpty(), "Should create event limiter arcs for sensory events")
+        // Sensory events with firing limits should have limiter arcs
+        assertTrue(arcs.isNotEmpty(), "Should create event limiter arcs for sensory events with firing limits")
     }
 
     @Test
     fun `buildEventPreconditionArcs creates arcs for required events (AND)`() {
-        // Create recipe with interaction that requires a specific event
-        val recipe = Recipe("TestRecipe")
-            .withSensoryEvent(OrderPlaced::class.java)
-            .withSensoryEvent(PaymentMade::class.java)
-            .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
-            .withInteraction(
-                InteractionDescriptor.of(ShipOrder::class.java)
-                    .withRequiredEvents(ItemsReserved::class.java, PaymentMade::class.java)
-            )
-
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
-        val transitions = RecipeCompiler.buildAllTransitions(
-            actionDescriptors,
-            allIngredientNames,
-            sensoryEvents,
-            recipe.defaultFailureStrategy()
+        // Create event transitions using builders
+        val itemsReservedEvent = TestDataBuilders.eventTransition("ItemsReserved", isSensory = false)
+        val paymentMadeEvent = TestDataBuilders.eventTransition("PaymentMade", isSensory = true)
+        
+        // Create interaction transition with required events
+        val shipOrderInteraction = TestDataBuilders.simpleInteractionTransition(
+            name = "ShipOrder",
+            inputIngredientNames = listOf("orderId", "reservedItems")
+        )
+        
+        // Create interaction descriptor with preconditions
+        val shipOrderDescriptor = TestDataBuilders.interactionDescriptorWithPreconditions(
+            name = "ShipOrder",
+            requiredEvents = setOf("ItemsReserved", "PaymentMade")
         )
         
         val arcs = RecipeCompiler.buildEventPreconditionArcs(
-            transitions.allEventTransitions,
-            transitions.allInteractionTransitions,
-            actionDescriptors
+            listOf(itemsReservedEvent, paymentMadeEvent),
+            listOf(shipOrderInteraction),
+            listOf(shipOrderDescriptor)
         )
 
         // ShipOrder requires ItemsReserved AND PaymentMade
@@ -348,29 +349,26 @@ class RecipeCompilerUnitTest {
 
     @Test
     fun `buildEventPreconditionArcs creates arcs for required one-of events (OR)`() {
-        // Create recipe with interaction that requires one of several events
-        val recipe = Recipe("TestRecipe")
-            .withSensoryEvent(OrderPlaced::class.java)
-            .withSensoryEvent(PaymentMade::class.java)
-            .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
-            .withInteraction(InteractionDescriptor.of(ProcessPayment::class.java))
-            .withInteraction(
-                InteractionDescriptor.of(ShipOrder::class.java)
-                    .withRequiredOneOfEvents(ItemsReserved::class.java, PaymentReceived::class.java)
-            )
-
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
-        val transitions = RecipeCompiler.buildAllTransitions(
-            actionDescriptors,
-            allIngredientNames,
-            sensoryEvents,
-            recipe.defaultFailureStrategy()
+        // Create event transitions using builders
+        val itemsReservedEvent = TestDataBuilders.eventTransition("ItemsReserved", isSensory = false)
+        val paymentReceivedEvent = TestDataBuilders.eventTransition("PaymentReceived", isSensory = false)
+        
+        // Create interaction transition
+        val shipOrderInteraction = TestDataBuilders.simpleInteractionTransition(
+            name = "ShipOrder",
+            inputIngredientNames = listOf("orderId", "reservedItems")
+        )
+        
+        // Create interaction descriptor with OR preconditions
+        val shipOrderDescriptor = TestDataBuilders.interactionDescriptorWithPreconditions(
+            name = "ShipOrder",
+            requiredOneOfEvents = setOf(setOf("ItemsReserved", "PaymentReceived"))
         )
         
         val arcs = RecipeCompiler.buildEventPreconditionArcs(
-            transitions.allEventTransitions,
-            transitions.allInteractionTransitions,
-            actionDescriptors
+            listOf(itemsReservedEvent, paymentReceivedEvent),
+            listOf(shipOrderInteraction),
+            listOf(shipOrderDescriptor)
         )
 
         // ShipOrder requires ItemsReserved OR PaymentReceived
@@ -383,23 +381,24 @@ class RecipeCompilerUnitTest {
 
     @Test
     fun `buildEventPreconditionArcs handles interactions without preconditions`() {
-        val recipe = Recipe("TestRecipe")
-            .withSensoryEvent(OrderPlaced::class.java)
-            .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
-            .withInteraction(InteractionDescriptor.of(ProcessPayment::class.java))
-
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
-        val transitions = RecipeCompiler.buildAllTransitions(
-            actionDescriptors,
-            allIngredientNames,
-            sensoryEvents,
-            recipe.defaultFailureStrategy()
+        // Create interaction transitions without preconditions using builders
+        val reserveItemsInteraction = TestDataBuilders.simpleInteractionTransition(
+            name = "ReserveItems",
+            inputIngredientNames = listOf("orderId", "items")
+        )
+        val processPaymentInteraction = TestDataBuilders.simpleInteractionTransition(
+            name = "ProcessPayment",
+            inputIngredientNames = listOf("orderId", "paymentId")
         )
         
+        // Create descriptors without preconditions
+        val reserveDescriptor = TestDataBuilders.interactionDescriptorWithPreconditions("ReserveItems")
+        val processDescriptor = TestDataBuilders.interactionDescriptorWithPreconditions("ProcessPayment")
+        
         val arcs = RecipeCompiler.buildEventPreconditionArcs(
-            transitions.allEventTransitions,
-            transitions.allInteractionTransitions,
-            actionDescriptors
+            emptyList(),
+            listOf(reserveItemsInteraction, processPaymentInteraction),
+            listOf(reserveDescriptor, processDescriptor)
         )
 
         // No interactions have required events, so no precondition arcs should be created
@@ -408,26 +407,25 @@ class RecipeCompilerUnitTest {
 
     @Test
     fun `buildPreconditionErrors reports missing required events (AND)`() {
-        // Create recipe where ShipOrder requires an event that doesn't exist
-        val recipe = Recipe("TestRecipe")
-            .withSensoryEvent(OrderPlaced::class.java)
-            .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
-            .withInteraction(
-                InteractionDescriptor.of(ShipOrder::class.java)
-                    .withRequiredEvents(ItemsReserved::class.java, PaymentReceived::class.java)
-            )
-
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
-        val transitions = RecipeCompiler.buildAllTransitions(
-            actionDescriptors,
-            allIngredientNames,
-            sensoryEvents,
-            recipe.defaultFailureStrategy()
+        // Create transitions with only one event
+        val itemsReservedEvent = TestDataBuilders.eventTransition("ItemsReserved", isSensory = false)
+        val shipOrderTransition = TestDataBuilders.simpleInteractionTransition("ShipOrder")
+        
+        val transitions = TestDataBuilders.transitionCollections(
+            interactionTransitions = listOf(shipOrderTransition),
+            sensoryEventTransitions = emptyList(),
+            interactionEventTransitions = listOf(itemsReservedEvent)
         )
         
-        val errors = RecipeCompiler.buildPreconditionErrors(transitions, actionDescriptors)
+        // Create descriptor that requires both ItemsReserved and PaymentReceived
+        val shipOrderDescriptor = TestDataBuilders.interactionDescriptorWithPreconditions(
+            name = "ShipOrder",
+            requiredEvents = setOf("ItemsReserved", "PaymentReceived")
+        )
+        
+        val errors = RecipeCompiler.buildPreconditionErrors(transitions, listOf(shipOrderDescriptor))
 
-        // ShipOrder requires PaymentReceived which doesn't exist (ProcessPayment interaction is missing)
+        // ShipOrder requires PaymentReceived which doesn't exist
         assertTrue(errors.isNotEmpty(), "Should report missing required event")
         assertTrue(errors.any { it.contains("PaymentReceived") && it.contains("ShipOrder") }, 
             "Error should mention missing PaymentReceived event for ShipOrder")
@@ -435,23 +433,22 @@ class RecipeCompilerUnitTest {
 
     @Test
     fun `buildPreconditionErrors reports missing required one-of events (OR)`() {
-        // Create recipe where interaction requires one of several events, none of which exist
-        val recipe = Recipe("TestRecipe")
-            .withSensoryEvent(OrderPlaced::class.java)
-            .withInteraction(
-                InteractionDescriptor.of(ShipOrder::class.java)
-                    .withRequiredOneOfEvents(ItemsReserved::class.java, PaymentReceived::class.java)
-            )
-
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
-        val transitions = RecipeCompiler.buildAllTransitions(
-            actionDescriptors,
-            allIngredientNames,
-            sensoryEvents,
-            recipe.defaultFailureStrategy()
+        // Create transitions with no events
+        val shipOrderTransition = TestDataBuilders.simpleInteractionTransition("ShipOrder")
+        
+        val transitions = TestDataBuilders.transitionCollections(
+            interactionTransitions = listOf(shipOrderTransition),
+            sensoryEventTransitions = emptyList(),
+            interactionEventTransitions = emptyList()
         )
         
-        val errors = RecipeCompiler.buildPreconditionErrors(transitions, actionDescriptors)
+        // Create descriptor that requires ItemsReserved OR PaymentReceived (neither exists)
+        val shipOrderDescriptor = TestDataBuilders.interactionDescriptorWithPreconditions(
+            name = "ShipOrder",
+            requiredOneOfEvents = setOf(setOf("ItemsReserved", "PaymentReceived"))
+        )
+        
+        val errors = RecipeCompiler.buildPreconditionErrors(transitions, listOf(shipOrderDescriptor))
 
         // ShipOrder requires ItemsReserved OR PaymentReceived, neither exists
         assertTrue(errors.size >= 2, "Should report all missing OR events")
@@ -461,47 +458,46 @@ class RecipeCompilerUnitTest {
 
     @Test
     fun `buildPreconditionErrors returns empty when all required events exist`() {
-        // Create recipe where all required events are provided
-        val recipe = Recipe("TestRecipe")
-            .withSensoryEvent(OrderPlaced::class.java)
-            .withSensoryEvent(PaymentMade::class.java)
-            .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
-            .withInteraction(InteractionDescriptor.of(ProcessPayment::class.java))
-            .withInteraction(
-                InteractionDescriptor.of(ShipOrder::class.java)
-                    .withRequiredEvents(ItemsReserved::class.java, PaymentReceived::class.java)
-            )
-
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
-        val transitions = RecipeCompiler.buildAllTransitions(
-            actionDescriptors,
-            allIngredientNames,
-            sensoryEvents,
-            recipe.defaultFailureStrategy()
+        // Create transitions with all required events
+        val itemsReservedEvent = TestDataBuilders.eventTransition("ItemsReserved", isSensory = false)
+        val paymentReceivedEvent = TestDataBuilders.eventTransition("PaymentReceived", isSensory = false)
+        val shipOrderTransition = TestDataBuilders.simpleInteractionTransition("ShipOrder")
+        
+        val transitions = TestDataBuilders.transitionCollections(
+            interactionTransitions = listOf(shipOrderTransition),
+            sensoryEventTransitions = emptyList(),
+            interactionEventTransitions = listOf(itemsReservedEvent, paymentReceivedEvent)
         )
         
-        val errors = RecipeCompiler.buildPreconditionErrors(transitions, actionDescriptors)
+        // Create descriptor that requires both events (both exist)
+        val shipOrderDescriptor = TestDataBuilders.interactionDescriptorWithPreconditions(
+            name = "ShipOrder",
+            requiredEvents = setOf("ItemsReserved", "PaymentReceived")
+        )
+        
+        val errors = RecipeCompiler.buildPreconditionErrors(transitions, listOf(shipOrderDescriptor))
 
-        // All required events exist (ItemsReserved from ReserveItems, PaymentReceived from ProcessPayment)
+        // All required events exist
         assertEquals(0, errors.size, "Should not report errors when all required events exist")
     }
 
     @Test
     fun `buildPreconditionErrors handles interactions without preconditions`() {
-        val recipe = Recipe("TestRecipe")
-            .withSensoryEvent(OrderPlaced::class.java)
-            .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
-            .withInteraction(InteractionDescriptor.of(ProcessPayment::class.java))
-
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
-        val transitions = RecipeCompiler.buildAllTransitions(
-            actionDescriptors,
-            allIngredientNames,
-            sensoryEvents,
-            recipe.defaultFailureStrategy()
+        // Create transitions without preconditions
+        val reserveItemsTransition = TestDataBuilders.simpleInteractionTransition("ReserveItems")
+        val processPaymentTransition = TestDataBuilders.simpleInteractionTransition("ProcessPayment")
+        
+        val transitions = TestDataBuilders.transitionCollections(
+            interactionTransitions = listOf(reserveItemsTransition, processPaymentTransition),
+            sensoryEventTransitions = emptyList(),
+            interactionEventTransitions = emptyList()
         )
         
-        val errors = RecipeCompiler.buildPreconditionErrors(transitions, actionDescriptors)
+        // Create descriptors without preconditions
+        val reserveDescriptor = TestDataBuilders.interactionDescriptorWithPreconditions("ReserveItems")
+        val processDescriptor = TestDataBuilders.interactionDescriptorWithPreconditions("ProcessPayment")
+        
+        val errors = RecipeCompiler.buildPreconditionErrors(transitions, listOf(reserveDescriptor, processDescriptor))
 
         // No interactions have required events
         assertEquals(0, errors.size, "Should not report errors when no preconditions are defined")
@@ -509,18 +505,14 @@ class RecipeCompilerUnitTest {
 
     @Test
     fun `buildSensoryEventArcs creates arcs for events with ingredients`() {
-        val recipe = Recipe("TestRecipe")
-            .withSensoryEvent(OrderPlaced::class.java)
-
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
-        val transitions = RecipeCompiler.buildAllTransitions(
-            actionDescriptors,
-            allIngredientNames,
-            sensoryEvents,
-            recipe.defaultFailureStrategy()
+        // Create sensory event transition with ingredients using builder
+        val orderPlacedEvent = TestDataBuilders.eventTransition(
+            eventName = "OrderPlaced",
+            isSensory = true,
+            ingredientNames = listOf("orderId", "items")
         )
         
-        val arcs = RecipeCompiler.buildSensoryEventArcs(transitions.sensoryEventTransitions, actionDescriptors)
+        val arcs = RecipeCompiler.buildSensoryEventArcs(listOf(orderPlacedEvent), emptyList())
 
         // OrderPlaced has orderId and items ingredients
         assertTrue(arcs.size >= 2, "Should create arcs for each ingredient")
@@ -528,46 +520,56 @@ class RecipeCompilerUnitTest {
 
     @Test
     fun `buildMultipleOutputFacilitatorArcs creates arc for each facilitator transition`() {
-        val recipe = Recipe("TestRecipe")
-            .withSensoryEvent(OrderPlaced::class.java)
-            .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
-            .withInteraction(InteractionDescriptor.of(ProcessPayment::class.java))
-
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
-        val transitions = RecipeCompiler.buildAllTransitions(
-            actionDescriptors,
-            allIngredientNames,
-            sensoryEvents,
-            recipe.defaultFailureStrategy()
+        // Create interaction transitions that share orderId ingredient
+        val reserveItemsTransition = TestDataBuilders.simpleInteractionTransition(
+            name = "ReserveItems",
+            inputIngredientNames = listOf("orderId", "items")
+        )
+        val processPaymentTransition = TestDataBuilders.simpleInteractionTransition(
+            name = "ProcessPayment",
+            inputIngredientNames = listOf("orderId", "paymentId")
         )
         
-        val arcs = RecipeCompiler.buildMultipleOutputFacilitatorArcs(transitions.multipleOutputFacilitatorTransitions)
+        // Build facilitator transitions for shared ingredients
+        val facilitatorTransitions = RecipeCompiler.buildMultipleOutputFacilitatorTransitions(
+            listOf(reserveItemsTransition, processPaymentTransition)
+        )
+        
+        val arcs = RecipeCompiler.buildMultipleOutputFacilitatorArcs(facilitatorTransitions)
 
         // Should have facilitator arcs for shared ingredients (orderId)
         assertTrue(arcs.isNotEmpty(), "Should create facilitator arcs")
-        assertEquals(transitions.multipleOutputFacilitatorTransitions.size, arcs.size, 
+        assertEquals(facilitatorTransitions.size, arcs.size, 
             "Should have one arc per facilitator transition")
     }
 
     @Test
     fun `buildInteractionArcs creates arcs for all interactions`() {
-        val recipe = Recipe("TestRecipe")
-            .withSensoryEvent(OrderPlaced::class.java)
-            .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
-            .withInteraction(InteractionDescriptor.of(ProcessPayment::class.java))
-
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
-        val transitions = RecipeCompiler.buildAllTransitions(
-            actionDescriptors,
-            allIngredientNames,
-            sensoryEvents,
-            recipe.defaultFailureStrategy()
+        // Create interaction transitions using builders
+        val reserveItemsTransition = TestDataBuilders.simpleInteractionTransition(
+            name = "ReserveItems",
+            inputIngredientNames = listOf("orderId", "items"),
+            outputEventNames = listOf("ItemsReserved")
+        )
+        val processPaymentTransition = TestDataBuilders.simpleInteractionTransition(
+            name = "ProcessPayment",
+            inputIngredientNames = listOf("orderId", "paymentId"),
+            outputEventNames = listOf("PaymentReceived")
+        )
+        
+        // Create event transitions for interaction outputs
+        val itemsReservedEvent = TestDataBuilders.eventTransition("ItemsReserved", isSensory = false)
+        val paymentReceivedEvent = TestDataBuilders.eventTransition("PaymentReceived", isSensory = false)
+        
+        // Build facilitator transitions
+        val facilitatorTransitions = RecipeCompiler.buildMultipleOutputFacilitatorTransitions(
+            listOf(reserveItemsTransition, processPaymentTransition)
         )
         
         val arcs = RecipeCompiler.buildInteractionArcs(
-            transitions.allInteractionTransitions,
-            transitions.multipleOutputFacilitatorTransitions,
-            transitions.interactionEventTransitions
+            listOf(reserveItemsTransition, processPaymentTransition),
+            facilitatorTransitions,
+            listOf(itemsReservedEvent, paymentReceivedEvent)
         )
 
         assertTrue(arcs.isNotEmpty(), "Should create interaction arcs")
@@ -578,17 +580,19 @@ class RecipeCompilerUnitTest {
 
     @Test
     fun `buildMultipleOutputFacilitatorTransitions creates transitions for shared ingredients`() {
-        val recipe = Recipe("TestRecipe")
-            .withSensoryEvent(OrderPlaced::class.java)
-            .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
-            .withInteraction(InteractionDescriptor.of(ProcessPayment::class.java))
-
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
-        val interactionTransitions = actionDescriptors.map { 
-            interactionTransitionOf(it, recipe.defaultFailureStrategy(), allIngredientNames) 
-        }
+        // Create interaction transitions that share orderId ingredient
+        val reserveItemsTransition = TestDataBuilders.simpleInteractionTransition(
+            name = "ReserveItems",
+            inputIngredientNames = listOf("orderId", "items")
+        )
+        val processPaymentTransition = TestDataBuilders.simpleInteractionTransition(
+            name = "ProcessPayment",
+            inputIngredientNames = listOf("orderId", "paymentId")
+        )
         
-        val facilitatorTransitions = RecipeCompiler.buildMultipleOutputFacilitatorTransitions(interactionTransitions)
+        val facilitatorTransitions = RecipeCompiler.buildMultipleOutputFacilitatorTransitions(
+            listOf(reserveItemsTransition, processPaymentTransition)
+        )
 
         // Both interactions require orderId
         assertTrue(facilitatorTransitions.isNotEmpty(), "Should create facilitator for orderId")
@@ -597,16 +601,15 @@ class RecipeCompilerUnitTest {
 
     @Test
     fun `buildMultipleOutputFacilitatorTransitions returns empty when no shared ingredients`() {
-        val recipe = Recipe("TestRecipe")
-            .withSensoryEvent(OrderPlaced::class.java)
-            .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
-
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
-        val interactionTransitions = actionDescriptors.map { 
-            interactionTransitionOf(it, recipe.defaultFailureStrategy(), allIngredientNames) 
-        }
+        // Create single interaction transition using builder
+        val reserveItemsTransition = TestDataBuilders.simpleInteractionTransition(
+            name = "ReserveItems",
+            inputIngredientNames = listOf("orderId", "items")
+        )
         
-        val facilitatorTransitions = RecipeCompiler.buildMultipleOutputFacilitatorTransitions(interactionTransitions)
+        val facilitatorTransitions = RecipeCompiler.buildMultipleOutputFacilitatorTransitions(
+            listOf(reserveItemsTransition)
+        )
 
         // Only one interaction, no shared ingredients
         assertEquals(0, facilitatorTransitions.size, "Should not create facilitators when no sharing")
