@@ -3,12 +3,12 @@ package com.ing.baker.compiler
 import com.ing.baker.compiler.ScalaConversions.asScala
 import com.ing.baker.il.EventDescriptor
 import com.ing.baker.il.IngredientDescriptor
-import com.ing.baker.il.failurestrategy.`BlockInteraction$`
 import com.ing.baker.il.petrinet.EventTransition
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.recipe.common.Event
 import com.ing.baker.recipe.common.Ingredient
 import com.ing.baker.recipe.common.InteractionDescriptor
+import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.types.`Int32$`
 import scala.Option
 
@@ -67,23 +67,27 @@ object TestDataBuilders {
      * @param name Name of the interaction
      * @param inputIngredientNames List of required ingredient names
      * @param outputEventNames List of event names this interaction can fire
+     * @param outputEventIngredients Map from event name to list of ingredient names for that event
      * @return InteractionTransition ready for use in tests
      */
     fun simpleInteractionTransition(
         name: String,
         inputIngredientNames: List<String> = emptyList(),
-        outputEventNames: List<String> = emptyList()
+        outputEventNames: List<String> = emptyList(),
+        outputEventIngredients: Map<String, List<String>> = emptyMap()
     ): InteractionTransition {
         // Create minimal ingredients
         val ingredients = inputIngredientNames.map { 
             Ingredient(it, `Int32$`.`MODULE$`) 
         }
         
-        // Create minimal events
+        // Create minimal events with optional ingredients
         val events = outputEventNames.map { eventName ->
+            val eventIngredients = outputEventIngredients[eventName] ?: emptyList()
+            val ingredientList = eventIngredients.map { Ingredient(it, `Int32$`.`MODULE$`) }
             com.ing.baker.recipe.scaladsl.Event(
                 eventName,
-                emptyList<Ingredient>().asScala,
+                ingredientList.asScala,
                 Option.empty()
             )
         }
@@ -108,7 +112,7 @@ object TestDataBuilders {
         // Reuse RecipeCompiler.interactionTransitionOf
         return RecipeCompiler.interactionTransitionOf(
             descriptor,
-            `BlockInteraction$`.`MODULE$` as com.ing.baker.recipe.common.InteractionFailureStrategy,
+            InteractionFailureStrategy.BlockInteraction(),
             inputIngredientNames.toSet()
         )
     }
