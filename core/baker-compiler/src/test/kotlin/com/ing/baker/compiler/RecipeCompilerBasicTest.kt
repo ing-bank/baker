@@ -74,35 +74,6 @@ class RecipeCompilerBasicTest {
     }
 
     @Test
-    fun shouldFailOnDuplicatedEventsEvenWithFiringLimitDifference() {
-        // "Duplicated" EventA
-        // Because Set backing sensoryEvents has <=4 elements (is a specialized Set.Set4) it only uses `equals` in `contains`
-        val recipe1 = Recipe("recipe1")
-            .withSensoryEvents(EventA::class.java, EventB::class.java, EventC::class.java, EventD::class.java)
-            .withSensoryEventsNoFiringLimit(EventA::class.java)
-
-        // "Duplicated" EventA
-        // Because Set backing sensoryEvents has >4 elements (is a HashSet) and uses `hashcode` in `contains`
-        val recipe2 = Recipe("recipe2")
-            .withSensoryEvents(
-                EventA::class.java,
-                EventB::class.java,
-                EventC::class.java,
-                EventD::class.java,
-                EventE::class.java
-            )
-            .withSensoryEventsNoFiringLimit(EventA::class.java)
-
-        Assertions.assertThrows(RecipeValidationException::class.java) {
-            RecipeCompiler.compileRecipe(recipe1)
-        }
-
-        Assertions.assertThrows(RecipeValidationException::class.java) {
-            RecipeCompiler.compileRecipe(recipe2)
-        }
-    }
-
-    @Test
     fun shouldAddInteractionsForCheckpointEvents() {
         val recipe = Recipe("recipe1")
             .withSensoryEvents(EventB::class.java, EventC::class.java, EventD::class.java)

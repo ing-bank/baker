@@ -1,5 +1,6 @@
 package com.ing.baker.recipe
 
+import scala.Option
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.javaapi.CollectionConverters
 import kotlin.time.Duration
@@ -11,42 +12,43 @@ import com.ing.baker.recipe.common.Ingredient as ScalaIngredient
 import com.ing.baker.recipe.common.InteractionDescriptor as ScalaInteraction
 import com.ing.baker.recipe.common.Recipe as ScalaRecipe
 import com.ing.baker.recipe.common.Sieve as ScalaSieve
+import scala.collection.Map as ScalaMap
+import scala.collection.Seq as ScalaSeq
+import scala.collection.Set as ScalaSet
 import java.time.Duration as JavaDuration
-
-fun Duration.toFiniteDuration(): FiniteDuration = FiniteDuration.fromNanos(inWholeNanoseconds)
 
 fun FiniteDuration.toKotlin(): Duration = JavaDuration.ofNanos(toNanos()).toKotlinDuration()
 
 fun ScalaRecipe.toKotlin(): Recipe =
     Recipe(
         name = name().orEmpty(),
-        interactions = CollectionConverters.asJava(interactions()).toList().map { it.toKotlin() },
-        sensoryEvents = CollectionConverters.asJava(sensoryEvents()).map { it.toKotlin() }.toSet(),
-        subRecipes = CollectionConverters.asJava(subRecipes()).map { it.toKotlin() }.toSet(),
+        interactions = interactions().toKotlinInteractions(),
+        sensoryEvents = sensoryEvents().toKotlinEvents(),
+        subRecipes = subRecipes().toKotlinRecipes(),
         defaultFailureStrategy = defaultFailureStrategy(),
-        eventReceivePeriod = eventReceivePeriod().map { it.toKotlin() }.getOrElse { null },
-        retentionPeriod = retentionPeriod().map { it.toKotlin() }.getOrElse { null },
-        checkpointEvents = CollectionConverters.asJava(checkpointEvents()).map { it.toKotlin() }.toSet(),
-        sieves = CollectionConverters.asJava(this.sieves()).map { it.toKotlin() }.toSet(),
+        eventReceivePeriod = eventReceivePeriod().toKotlin()?.toKotlin(),
+        retentionPeriod = retentionPeriod().toKotlin()?.toKotlin(),
+        checkpointEvents = checkpointEvents().toKotlinCheckPointEvents(),
+        sieves = sieves().toKotlinSieves(),
     )
 
 fun ScalaInteraction.toKotlin(): Interaction =
     Interaction(
         name = name().orEmpty(),
         originalName = originalName().orEmpty(),
-        inputIngredients = CollectionConverters.asJava(inputIngredients()).toList().map { it.toKotlin() },
-        output = CollectionConverters.asJava(output()).map { it.toKotlin() },
-        requiredEvents = CollectionConverters.asJava(requiredEvents()).toSet(),
-        requiredOneOfEvents = CollectionConverters.asJava(requiredOneOfEvents()).toSet()
-            .map { CollectionConverters.asJava(it).toSet() }.toSet(),
-        predefinedIngredients = CollectionConverters.asJava(predefinedIngredients()).toMap(),
-        overriddenIngredientNames = CollectionConverters.asJava(overriddenIngredientNames()).toMap(),
-        overriddenOutputIngredientName = overriddenOutputIngredientName().getOrElse { null },
-        eventOutputTransformers = CollectionConverters.asJava(eventOutputTransformers()).toMap()
+        inputIngredients = inputIngredients().toKotlinIngredients(),
+        output = output().toKotlinEvents(),
+        requiredEvents = requiredEvents().toKotlin(),
+        requiredOneOfEvents = CollectionConverters.asJava(requiredOneOfEvents()).map { it.toKotlin() }.toSet(),
+
+        predefinedIngredients = predefinedIngredients().toKotlin(),
+        overriddenIngredientNames = overriddenIngredientNames().toKotlin(),
+        overriddenOutputIngredientName = overriddenOutputIngredientName().toKotlin(),
+        eventOutputTransformers = eventOutputTransformers().toKotlin()
             .mapKeys { it.key.toKotlin() }
             .mapValues { it.value.toKotlin() },
         maximumInteractionCount = maximumInteractionCount().getOrElse { null },
-        failureStrategy = failureStrategy().getOrElse { null },
+        failureStrategy = failureStrategy().toKotlin(),
         isReprovider = isReprovider()
     )
 
@@ -55,26 +57,50 @@ fun ScalaIngredient.toKotlin(): Ingredient = Ingredient(name = name().orEmpty(),
 
 fun ScalaSieve.toKotlin(): Sieve = Sieve(
     name = name().orEmpty(),
-    inputIngredients = CollectionConverters.asJava(inputIngredients()).toList().map { it.toKotlin() },
-    output = CollectionConverters.asJava(output()).map { it.toKotlin() },
+    inputIngredients = inputIngredients().toKotlinIngredients(),
+    output = output().toKotlinEvents(),
     function = function(),
-    javaTypes = CollectionConverters.asJava(javaTypes()).toList()
+    javaTypes = javaTypes().toKotlinTypes()
 )
 
 fun ScalaCheckPointEvent.toKotlin(): CheckPointEvent = CheckPointEvent(
     name = name().orEmpty(),
-    requiredEvents = CollectionConverters.asJava(requiredEvents()).toSet(),
-    requiredOneOfEvents = CollectionConverters.asJava(requiredOneOfEvents()).toSet()
-        .map { CollectionConverters.asJava(it).toSet() }.toSet()
+    requiredEvents = requiredEvents().toKotlin(),
+    requiredOneOfEvents = CollectionConverters.asJava(requiredOneOfEvents()).map { it.toKotlin() }.toSet(),
 )
 
 fun ScalaEventOutputTransformer.toKotlin(): EventOutputTransformer = EventOutputTransformer(
     newEventName = newEventName(),
-    ingredientRenames = CollectionConverters.asJava(ingredientRenames()).toMap()
+    ingredientRenames = ingredientRenames().toKotlin()
 )
 
 fun ScalaEvent.toKotlin(): Event = Event(
     name = name().orEmpty(),
-    providedIngredients = CollectionConverters.asJava(providedIngredients()).toList().map { it.toKotlin() },
+    providedIngredients = providedIngredients().toKotlinIngredients(),
     maxFiringLimit = maxFiringLimit().getOrElse { null }
 )
+
+private fun ScalaSeq<ScalaInteraction>.toKotlinInteractions(): List<Interaction> =
+    CollectionConverters.asJava(this).toList().map { it.toKotlin() }
+
+private fun ScalaSeq<ScalaEvent>.toKotlinEvents(): List<Event> = CollectionConverters.asJava(this).toList().map { it.toKotlin() }
+
+private fun ScalaSet<ScalaEvent>.toKotlinEvents(): Set<Event> = CollectionConverters.asJava(this).map { it.toKotlin() }.toSet()
+
+private fun ScalaSet<ScalaSieve>.toKotlinSieves(): Set<Sieve> = CollectionConverters.asJava(this).map { it.toKotlin() }.toSet()
+
+private fun ScalaSet<ScalaRecipe>.toKotlinRecipes(): Set<Recipe> = CollectionConverters.asJava(this).map { it.toKotlin() }.toSet()
+
+private fun ScalaSet<ScalaCheckPointEvent>.toKotlinCheckPointEvents(): Set<CheckPointEvent> =
+    CollectionConverters.asJava(this).map { it.toKotlin() }.toSet()
+
+private fun ScalaSeq<ScalaIngredient>.toKotlinIngredients(): List<Ingredient> =
+    CollectionConverters.asJava(this).toList().map { it.toKotlin() }
+
+private fun ScalaSet<String>.toKotlin(): Set<String> = CollectionConverters.asJava(this).toSet()
+
+private fun ScalaSeq<java.lang.reflect.Type>.toKotlinTypes(): List<java.lang.reflect.Type> = CollectionConverters.asJava(this).toList()
+
+private fun <K, V> ScalaMap<K, V>.toKotlin(): Map<K, V> = CollectionConverters.asJava(this).toMap()
+
+private fun <T> Option<T>.toKotlin(): T? = getOrElse { null }

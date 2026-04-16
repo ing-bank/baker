@@ -14,7 +14,7 @@ object Main extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
 
-    val compiled = RecipeCompiler.INSTANCE.compileRecipe(CheckoutFlowRecipe.recipe)
+    val compiled = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
     val checkoutRecipeId = compiled.recipeId
     /*
     val protoRecipe: Array[Byte] = ProtoMap.ctxToProto(compiled).toByteArray

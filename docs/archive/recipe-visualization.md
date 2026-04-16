@@ -9,7 +9,7 @@ Baker can turn a recipe into a .dot representation. `.dot` is a notation for rep
 === "Scala"
 
     ``` scala 
-    val recipe = RecipeCompiler.INSTANCE.compileRecipe(Examples.webshop.webShopRecipe)
+    val recipe = RecipeCompiler.compileRecipe(Examples.webshop.webShopRecipe)
 
     println(recipe.getRecipeVisualization)
     ```
@@ -17,7 +17,7 @@ Baker can turn a recipe into a .dot representation. `.dot` is a notation for rep
 === "Java"
 
     ```java 
-    final CompiledRecipe recipe = RecipeCompiler.INSTANCE.compileRecipe(Examples.webshop.webShopRecipe);
+    final CompiledRecipe recipe = RecipeCompiler.compileRecipe(Examples.webshop.webShopRecipe);
 
     System.out.println(recipe.getRecipeVisualization());
     ```
