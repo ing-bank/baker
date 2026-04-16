@@ -74,6 +74,22 @@ class RecipeCompilerBasicTest {
     }
 
     @Test
+    fun shouldFailOnDuplicatedEventsEvenWithFiringLimitDifference() {
+        // "Duplicated" EventA
+        val recipe = Recipe("recipe1")
+            .withSensoryEvents(
+                EventA::class.java,
+                EventB::class.java,
+                EventC::class.java,
+                EventD::class.java)
+            .withSensoryEventsNoFiringLimit(EventA::class.java)
+
+        Assertions.assertThrows(RecipeValidationException::class.java) {
+            RecipeCompiler.compileRecipe(recipe)
+        }
+    }
+
+    @Test
     fun shouldAddInteractionsForCheckpointEvents() {
         val recipe = Recipe("recipe1")
             .withSensoryEvents(EventB::class.java, EventC::class.java, EventD::class.java)
