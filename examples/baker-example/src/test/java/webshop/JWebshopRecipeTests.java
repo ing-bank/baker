@@ -30,12 +30,12 @@ public class JWebshopRecipeTests {
 
     @Test
     public void shouldCompileTheRecipeWithoutIssues() {
-        RecipeCompiler.INSTANCE.compileRecipe(JWebshopRecipe.recipe);
+        RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
     }
 
     @Test
     public void shouldVisualizeTheRecipeWithoutIssues() {
-        CompiledRecipe recipe = RecipeCompiler.INSTANCE.compileRecipe(JWebshopRecipe.recipe);
+        CompiledRecipe recipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
         String visualization = recipe.getRecipeVisualization();
         System.out.println(Console.GREEN() + "Recipe visualization, paste this into webgraphviz.com:");
         System.out.println(visualization + Console.RESET());
@@ -44,7 +44,7 @@ public class JWebshopRecipeTests {
     @Test
     public void shouldRunSimpleInstance() throws ExecutionException, InterruptedException {
         // Compile the recipe
-        CompiledRecipe compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(JWebshopRecipe.recipe);
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
         List<Object> implementations = ImmutableList.of(
                 new MakePaymentInstance(),
@@ -88,7 +88,7 @@ public class JWebshopRecipeTests {
     @Test
     public void shouldRunSimpleInstanceMockitoSample() throws InterruptedException, TimeoutException, ExecutionException {
         // Compile the recipe
-        CompiledRecipe compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(JWebshopRecipe.recipe);
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
         // Setup mock
         ReserveItems reserveItemsMock =

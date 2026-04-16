@@ -1,17 +1,11 @@
 package com.ing.baker.compiler
 
-import com.ing.baker.model.Event
-import com.ing.baker.model.Ingredient
-import com.ing.baker.model.Interaction
-import com.ing.baker.model.Recipe
-import com.ing.baker.model.toKotlin
-import scala.jdk.javaapi.CollectionConverters
-import com.ing.baker.recipe.common.Recipe as ScalaRecipe
+import com.ing.baker.recipe.Event
+import com.ing.baker.recipe.Ingredient
+import com.ing.baker.recipe.Interaction
+import com.ing.baker.recipe.Recipe
 
 object PreCompileValidations {
-
-    fun preCompileAssertions(recipe: ScalaRecipe): scala.collection.immutable.Seq<String> =
-        CollectionConverters.asScala(preCompileAssertions(recipe.toKotlin())).toSeq()
 
     fun preCompileAssertions(recipe: Recipe): List<String> {
         assertValidNames(Recipe::name, listOf(recipe), "Recipe")
@@ -46,7 +40,7 @@ object PreCompileValidations {
 
     private fun assertSensoryEventsNegativeFiringLimits(recipe: Recipe): List<String> =
         recipe.sensoryEvents
-            .firstOrNull { it.maxFiringLimit != null && it.maxFiringLimit <= 0 }
+            .firstOrNull { it.maxFiringLimit != null && it.maxFiringLimit!! <= 0 }
             ?.let { listOf("MaxFiringLimit should be greater than 0") } ?: emptyList()
 
     private fun assertRequiredEventForReprovider(recipe: Recipe): List<String> =

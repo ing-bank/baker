@@ -524,7 +524,7 @@ the `Interaction`
         ActorSystem("WebshopSystem")
     val baker: Baker = AkkaBaker.localDefault(actorSystem)
 
-    val compiledRecipe: CompiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(WebshopRecipe.recipe)
+    val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
 
     val program: Future[Unit] = for {
         _ <- baker.addInteractionInstance(WebshopInstances.ReserveItemsInstance)
@@ -567,7 +567,7 @@ the `Interaction`
             EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
 
     InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
-    CompiledRecipe compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(JWebshopRecipe.recipe);
+    CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
     String recipeInstanceId = "first-instance-id";
     CompletableFuture<List<String>> result = baker.addInteractionInstance(reserveItemsInstance)

@@ -389,7 +389,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val baker = AkkaBaker(config, ActorSystem.apply("remoteTest", config), CachingInteractionManager(mockImplementations))
 
       for {
-        recipeId <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.INSTANCE.compileRecipe(recipe)))
+        recipeId <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
@@ -718,7 +718,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           .withSensoryEvent(initialEvent)
 
       val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(mockImplementations))
-      val compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(recipe)
+      val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
 
       for {
         recipeId <- baker.addRecipe(RecipeRecord.of(compiledRecipe))
@@ -1360,7 +1360,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val recoveryRecipeName = "RecoveryRecipe"
       val recipeInstanceId = UUID.randomUUID().toString
 
-      val compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(getRecipe(recoveryRecipeName))
+      val compiledRecipe = RecipeCompiler.compileRecipe(getRecipe(recoveryRecipeName))
 
       val first = (for {
         baker1 <- setupBakerWithNoRecipe()(system1)

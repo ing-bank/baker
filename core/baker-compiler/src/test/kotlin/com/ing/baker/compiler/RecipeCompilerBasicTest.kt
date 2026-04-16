@@ -60,7 +60,7 @@ class RecipeCompilerBasicTest {
             .withSensoryEvents(EventA::class.java)
         val compiled = RecipeCompiler.compileRecipe(recipe)
 
-        Assertions.assertEquals("8682aa9310e38509", compiled.recipeId())
+        Assertions.assertEquals("0e0053c0af52ab7a", compiled.recipeId())
     }
 
     @Test
@@ -70,7 +70,7 @@ class RecipeCompilerBasicTest {
             .withInteraction(InteractionDescriptor.of(InteractionA::class.java))
         val compiled = RecipeCompiler.compileRecipe(recipe)
 
-        Assertions.assertEquals("796a3cb3eb68b35d", compiled.recipeId())
+        Assertions.assertEquals("37cf224098f7d71a", compiled.recipeId())
     }
 
     @Test

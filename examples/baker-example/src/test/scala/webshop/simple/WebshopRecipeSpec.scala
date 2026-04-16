@@ -25,17 +25,17 @@ class WebshopRecipeSpec extends TestKit(ActorSystem("baker-webshop-system")) wit
   }
 
   "The WebshopRecipeReflection" should "compile the recipe without errors" in {
-      RecipeCompiler.INSTANCE.compileRecipe(SimpleWebshopRecipeReflection.recipe)
+      RecipeCompiler.compileRecipe(SimpleWebshopRecipeReflection.recipe)
       Future.successful(succeed)
   }
 
   "The WebshopRecipe" should "compile the recipe without errors" in {
-      RecipeCompiler.INSTANCE.compileRecipe(SimpleWebshopRecipe.recipe)
+      RecipeCompiler.compileRecipe(SimpleWebshopRecipe.recipe)
       Future.successful(succeed)
   }
 
   it should "visualize the recipe" in {
-      val compiled = RecipeCompiler.INSTANCE.compileRecipe(SimpleWebshopRecipe.recipe)
+      val compiled = RecipeCompiler.compileRecipe(SimpleWebshopRecipe.recipe)
       val viz: String = compiled.getRecipeVisualization
       println(Console.GREEN + s"Recipe visualization, paste this into webgraphviz.com:")
       println(viz + Console.RESET)
@@ -71,7 +71,7 @@ class WebshopRecipeSpec extends TestKit(ActorSystem("baker-webshop-system")) wit
         InteractionInstance.unsafeFrom(new ReserveItemsMock)
       val baker: Baker = AkkaBaker.localDefault(system, CachingInteractionManager(reserveItemsInstance))
 
-      val compiled = RecipeCompiler.INSTANCE.compileRecipe(SimpleWebshopRecipe.recipe)
+      val compiled = RecipeCompiler.compileRecipe(SimpleWebshopRecipe.recipe)
       val recipeInstanceId: String = UUID.randomUUID().toString
 
       val orderId: String = "order-id"

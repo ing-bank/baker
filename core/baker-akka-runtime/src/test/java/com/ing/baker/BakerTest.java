@@ -57,7 +57,7 @@ public class BakerTest {
     @Test
     public void shouldSetupJBakerWithDefaultActorFramework() throws BakerException, ExecutionException, InterruptedException {
 
-        CompiledRecipe compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
 
         String recipeInstanceId = UUID.randomUUID().toString();
         Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
@@ -79,7 +79,7 @@ public class BakerTest {
 
     @Test
     public void shouldSetupJBakerWithGivenActorFramework() throws BakerException, ExecutionException, InterruptedException {
-        CompiledRecipe compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
 
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
 
@@ -101,7 +101,7 @@ public class BakerTest {
     public void shouldFailWhenMissingImplementations() throws BakerException, ExecutionException, InterruptedException {
 
         exception.expect(ExecutionException.class);
-        CompiledRecipe compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
         Baker jBaker = AkkaBaker.java(config, actorSystem);
 
         jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), true, true)).get();
@@ -118,7 +118,7 @@ public class BakerTest {
         jBaker.registerBakerEventListener(bakerEvents::add);
 
         // Setup recipe
-        CompiledRecipe compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
         String recipeId = jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false, true)).get();
         EventInstance eventOne = EventInstance.from(new JavaCompiledRecipeTest.EventOne());
         assertEquals(eventOne.getName(), "EventOne");

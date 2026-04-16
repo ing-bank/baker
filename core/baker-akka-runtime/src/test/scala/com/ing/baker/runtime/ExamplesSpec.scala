@@ -24,7 +24,7 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
     "compile without validation errors" in {
 
       // compiles the recipe
-      val compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(webShopRecipe)
+      val compiledRecipe = RecipeCompiler.compileRecipe(webShopRecipe)
 
 //      println(s"Visual recipe: ${compiledRecipe.getRecipeVisualization}")
 
@@ -35,7 +35,7 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
     "run a happy flow" in {
 
       // compiles the recipe
-      val compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(webShopRecipe)
+      val compiledRecipe = RecipeCompiler.compileRecipe(webShopRecipe)
 
       // test data
       val testCustomerInfoData = CustomerInfo("John Snow", "Winterfell", "john_snow@hotmail.com")
@@ -107,7 +107,7 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
     "compile without validation errors" in {
 
       // compiles the recipe
-      val compiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(openAccountRecipe)
+      val compiledRecipe = RecipeCompiler.compileRecipe(openAccountRecipe)
 
       // prints any validation errors the compiler found
       Future { compiledRecipe.validationErrors shouldBe empty }
