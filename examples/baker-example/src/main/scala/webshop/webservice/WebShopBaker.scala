@@ -17,7 +17,7 @@ object WebShopBaker {
   val logger: Logger = getLogger("webshop.webservice")
 
   val checkoutFlowCompiledRecipe: CompiledRecipe =
-    RecipeCompiler.INSTANCE.compileRecipe(CheckoutFlowRecipe.recipe)
+    RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
 
   def initRecipes(baker: Baker)(implicit ec: ExecutionContext): IO[String] = {
     IO.fromFuture(IO(for {

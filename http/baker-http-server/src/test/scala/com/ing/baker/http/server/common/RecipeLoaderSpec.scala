@@ -26,7 +26,7 @@ class RecipeLoaderSpec extends AnyFunSuite with Matchers with BeforeAndAfterAll 
   private val gzippedBase64RecipeFile = File.createTempFile("tmp", "recipe-gzipped-base64")
 
   override protected def beforeAll(): Unit = {
-    val recipe: CompiledRecipe = RecipeCompiler.INSTANCE.compileRecipe(Recipe("Webshop")
+    val recipe: CompiledRecipe = RecipeCompiler.compileRecipe(Recipe("Webshop")
       .withSensoryEvents(
         Event[OrderPlaced],
         Event[PaymentMade])

@@ -90,6 +90,7 @@ object RecipeCompiler {
      * @param recipe             ; The Recipe to compile and execute
      * @return
      */
+    @JvmStatic
     fun compileRecipe(recipe: Recipe): CompiledRecipe =
         compileRecipe(recipe, ValidationSettings.defaultValidationSettings())
 
@@ -100,6 +101,7 @@ object RecipeCompiler {
      * @param validationSettings The validation settings to follow for the validation
      * @return
      */
+    @JvmStatic
     fun compileRecipe(
         recipe: Recipe,
         validationSettings: ValidationSettings

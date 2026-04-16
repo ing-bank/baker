@@ -9,7 +9,7 @@ public class WebShopRecipeTest {
 
     @Test
     public void recipeShouldCompileWithoutValidationErrors() {
-        var validationErrors = RecipeCompiler.INSTANCE.compileRecipe(WebShopRecipe.recipe).getValidationErrors();
+        var validationErrors = RecipeCompiler.compileRecipe(WebShopRecipe.recipe).getValidationErrors();
         assertTrue(
             String.format("Recipe compilation resulted in validation errors: \n%s", validationErrors),
             validationErrors.isEmpty()
