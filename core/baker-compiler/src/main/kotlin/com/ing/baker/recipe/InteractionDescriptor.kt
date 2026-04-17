@@ -5,7 +5,7 @@ import com.ing.baker.types.Value
 
 interface InteractionDescriptor {
     val name: String
-    val originalName: String?
+    val originalName: String
     val inputIngredients: List<Ingredient>
     val output: List<Event>
     val requiredEvents: Set<String>

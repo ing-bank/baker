@@ -12,7 +12,6 @@ import com.ing.baker.il.failurestrategy.`BlockInteraction$`
 import com.ing.baker.il.failurestrategy.FireEventAfterFailure
 import com.ing.baker.il.failurestrategy.FireFunctionalEventAfterFailure
 import com.ing.baker.il.failurestrategy.RetryWithIncrementalBackoff
-import com.ing.baker.il.`package$`
 import com.ing.baker.il.petrinet.Edge
 import com.ing.baker.il.petrinet.EventTransition
 import com.ing.baker.il.petrinet.InteractionTransition
@@ -29,21 +28,18 @@ import com.ing.baker.recipe.Sieve
 import com.ing.baker.recipe.Event
 import com.ing.baker.recipe.EventOutputTransformer
 import com.ing.baker.recipe.Ingredient
+import com.ing.baker.recipe.Interaction
 import com.ing.baker.recipe.InteractionDescriptor
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.Recipe as ScalaRecipe
-import com.ing.baker.recipe.scaladsl.Interaction
 import com.ing.baker.recipe.toKotlin
 import com.ing.baker.types.`NullValue$`
 import com.ing.baker.types.OptionType
 import com.ing.baker.types.Type
 import com.ing.baker.types.Value
-import scala.None
-import scala.`None$`
 import scala.Option
 import scala.Some
 import scala.collection.immutable.Seq
-import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
 import scala.util.Either
 import scala.util.Left
@@ -56,7 +52,6 @@ import scalax.collection.config.GraphConfig
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.edge.`WLDiEdge$`
 import scalax.collection.mutable.ArraySet
-import kotlin.time.Duration
 import com.ing.baker.il.CompiledRecipe.`Scala212CompatibleScala$`.`MODULE$` as Scala212CompatibleScala
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy as ILInteractionFailureStrategy
 import com.ing.baker.il.`package$`.`MODULE$` as ILPackage
@@ -736,8 +731,8 @@ object RecipeCompiler {
      * They are converted to interactions with no input ingredients.
      */
     private fun convertCheckpointEventToInteraction(e: CheckPointEvent) =
-        interaction(
-            name = "${`package$`.`MODULE$`.checkpointEventInteractionPrefix()}${e.name}",
+        Interaction(
+            name = "${ILPackage.checkpointEventInteractionPrefix()}${e.name}",
             inputIngredients = emptyList(),
             output = listOf(Event(e.name, emptyList())),
             requiredEvents = e.requiredEvents,
@@ -749,10 +744,10 @@ object RecipeCompiler {
      * Sieves are interactions that filter/transform ingredients without requiring specific events.
      */
     private fun convertSieveToInteraction(s: Sieve) =
-        interaction(
-            name = "${`package$`.`MODULE$`.sieveInteractionPrefix()}${s.name}",
+        Interaction(
+            name = "${ILPackage.sieveInteractionPrefix()}${s.name}",
             inputIngredients = s.inputIngredients,
-            output = s.output,
+            output = s.output
         )
 
     /**
@@ -962,43 +957,6 @@ object RecipeCompiler {
             interactionDescriptor.isReprovider
         )
     }
-
-    /**
-     * Creates an Interaction descriptor with the specified configuration.
-     *
-     * Helper function that constructs a Scala Interaction object from Kotlin/Java types,
-     * converting collections and options to their Scala equivalents.
-     */
-    private fun interaction(
-        name: String,
-        inputIngredients: List<Ingredient>,
-        output: List<Event>,
-        requiredEvents: Set<String> = emptySet(),
-        requiredOneOfEvents: Set<Set<String>> = emptySet(),
-        predefinedIngredients: Map<String, Value> = emptyMap(),
-        overriddenIngredientNames: Map<String, String> = emptyMap(),
-        overriddenOutputIngredientName: String? = null,
-        maximumInteractionCount: Int? = null,
-        failureStrategy: InteractionFailureStrategy? = null,
-        eventOutputTransformers: Map<Event, EventOutputTransformer> = emptyMap(),
-        isReprovider: Boolean = false,
-        oldName: String? = null,
-    ) =
-        com.ing.baker.recipe.Interaction(
-            name,
-            oldName ?: name,
-            inputIngredients,
-            output,
-            requiredEvents,
-            requiredOneOfEvents,
-            predefinedIngredients,
-            overriddenIngredientNames,
-            overriddenOutputIngredientName,
-            eventOutputTransformers,
-            maximumInteractionCount,
-            failureStrategy,
-            isReprovider
-        )
 }
 
 val InteractionTransition.eventsToFire get() = this.eventsToFire().asJava
