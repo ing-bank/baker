@@ -805,7 +805,7 @@ class RecipeCompilerFeaturesTest {
             }
             .filter { it.startsWith(subRecipePrefix) }.toSet()
 
-        assertEquals("5fdfb7538c687289", compiledRecipe.recipeId())
+        assertEquals("52680e1ab514fa5e", compiledRecipe.recipeId())
         assertEquals(
             setOf(
                 $$"$SubRecipe$SubSubRecipe$InteractionOne",

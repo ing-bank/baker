@@ -5,57 +5,35 @@ import com.ing.baker.types.Converters
 import com.ing.baker.types.Value
 
 data class Interaction(
-    val name: String,
-    val originalName: String,
-    val inputIngredients: List<Ingredient>,
-    val output: List<Event>,
-    val requiredEvents: Set<String>,
-    val requiredOneOfEvents: Set<Set<String>>,
-    val predefinedIngredients: Map<String, Value>,
-    val overriddenIngredientNames: Map<String, String>,
-    val overriddenOutputIngredientName: String? = null,
-    val eventOutputTransformers: Map<Event, EventOutputTransformer>,
-    val maximumInteractionCount: Int? = null,
-    val failureStrategy: InteractionFailureStrategy? = null,
-    val isReprovider: Boolean
-) {
+    override val name: String,
+    override val originalName: String?,
+    override val inputIngredients: List<Ingredient>,
+    override val output: List<Event>,
+    override val requiredEvents: Set<String>,
+    override val requiredOneOfEvents: Set<Set<String>>,
+    override val predefinedIngredients: Map<String, Value>,
+    override val overriddenIngredientNames: Map<String, String>,
+    override val overriddenOutputIngredientName: String? = null,
+    override val eventOutputTransformers: Map<Event, EventOutputTransformer>,
+    override val maximumInteractionCount: Int? = null,
+    override val failureStrategy: InteractionFailureStrategy? = null,
+    override val isReprovider: Boolean
+) : InteractionDescriptor {
     companion object {
         @JvmStatic
         fun of(
             name: String,
-            inputIngredients: List<Ingredient>,
-            output: List<Event>
-        ): Interaction =
-            Interaction(
-                name,
-                originalName = name,
-                inputIngredients,
-                output,
-                requiredEvents = emptySet(),
-                requiredOneOfEvents = emptySet(),
-                predefinedIngredients = emptyMap(),
-                overriddenIngredientNames = emptyMap(),
-                overriddenOutputIngredientName = null,
-                eventOutputTransformers = emptyMap(),
-                maximumInteractionCount = null,
-                failureStrategy = null,
-                isReprovider = false
-            )
-
-        @JvmStatic
-        fun of(
-            name: String,
-            originalName: String,
-            inputIngredients: Set<Ingredient>,
-            output: Set<Event>,
-            requiredEvents: Set<String>,
-            requiredOneOfEvents: Set<Set<String>>,
-            predefinedIngredients: Map<String, Any>,
-            overriddenIngredientNames: Map<String, String>,
-            eventOutputTransformers: Map<Event, EventOutputTransformer>,
-            maximumInteractionCount: Int?,
-            failureStrategy: InteractionFailureStrategy?,
-            isReprovider: Boolean
+            originalName: String? = null,
+            inputIngredients: Set<Ingredient> = emptySet(),
+            output: Set<Event> = emptySet(),
+            requiredEvents: Set<String> = emptySet(),
+            requiredOneOfEvents: Set<Set<String>> = emptySet(),
+            predefinedIngredients: Map<String, Any> = emptyMap(),
+            overriddenIngredientNames: Map<String, String> = emptyMap(),
+            eventOutputTransformers: Map<Event, EventOutputTransformer> = emptyMap(),
+            maximumInteractionCount: Int? = null,
+            failureStrategy: InteractionFailureStrategy? = null,
+            isReprovider: Boolean = false
         ): Interaction =
             Interaction(
                 name,

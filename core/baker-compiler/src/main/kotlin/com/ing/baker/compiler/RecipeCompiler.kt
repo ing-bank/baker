@@ -23,23 +23,27 @@ import com.ing.baker.il.petrinet.Place
 import com.ing.baker.il.petrinet.Place.FiringLimiterPlace
 import com.ing.baker.il.petrinet.Transition
 import com.ing.baker.petrinet.api.PetriNet
-import com.ing.baker.recipe.common.CheckPointEvent
-import com.ing.baker.recipe.common.Event
-import com.ing.baker.recipe.common.EventOutputTransformer
-import com.ing.baker.recipe.common.Ingredient
-import com.ing.baker.recipe.common.InteractionDescriptor
+import com.ing.baker.recipe.CheckPointEvent
+import com.ing.baker.recipe.Recipe
+import com.ing.baker.recipe.Sieve
+import com.ing.baker.recipe.Event
+import com.ing.baker.recipe.EventOutputTransformer
+import com.ing.baker.recipe.Ingredient
+import com.ing.baker.recipe.InteractionDescriptor
 import com.ing.baker.recipe.common.InteractionFailureStrategy
-import com.ing.baker.recipe.common.Recipe
-import com.ing.baker.recipe.common.Sieve
-import com.ing.baker.recipe.scaladsl.`Event$`
+import com.ing.baker.recipe.common.Recipe as ScalaRecipe
 import com.ing.baker.recipe.scaladsl.Interaction
+import com.ing.baker.recipe.toKotlin
 import com.ing.baker.types.`NullValue$`
 import com.ing.baker.types.OptionType
 import com.ing.baker.types.Type
 import com.ing.baker.types.Value
+import scala.None
+import scala.`None$`
 import scala.Option
 import scala.Some
 import scala.collection.immutable.Seq
+import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
 import scala.util.Either
 import scala.util.Left
@@ -52,6 +56,7 @@ import scalax.collection.config.GraphConfig
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.edge.`WLDiEdge$`
 import scalax.collection.mutable.ArraySet
+import kotlin.time.Duration
 import com.ing.baker.il.CompiledRecipe.`Scala212CompatibleScala$`.`MODULE$` as Scala212CompatibleScala
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy as ILInteractionFailureStrategy
 import com.ing.baker.il.`package$`.`MODULE$` as ILPackage
@@ -111,8 +116,22 @@ object RecipeCompiler {
      * @return
      */
     @JvmStatic
-    fun compileRecipe(recipe: Recipe): CompiledRecipe =
+    fun compileRecipe(recipe: ScalaRecipe): CompiledRecipe =
         compileRecipe(recipe, ValidationSettings.defaultValidationSettings())
+
+    /**
+     * Compile the given recipe to a technical recipe that is useful for Baker.
+     *
+     * @param recipe             ; The Recipe to compile and execute
+     * @param validationSettings The validation settings to follow for the validation
+     * @return
+     */
+    @JvmStatic
+    fun compileRecipe(
+        recipe: ScalaRecipe,
+        validationSettings: ValidationSettings
+    ): CompiledRecipe =
+        compileRecipe(recipe.toKotlin(), validationSettings)
 
     /**
      * Compile the given recipe to a technical recipe that is useful for Baker.
@@ -127,7 +146,7 @@ object RecipeCompiler {
         validationSettings: ValidationSettings
     ): CompiledRecipe {
 
-        val precompileErrors: List<String> = preCompileAssertions(recipe).asJava
+        val precompileErrors: List<String> = preCompileAssertions(recipe)
 
         val (actionDescriptors, sensoryEvents, allIngredientNames) = prepareRecipeComponents(recipe)
 
@@ -135,7 +154,7 @@ object RecipeCompiler {
             actionDescriptors,
             allIngredientNames,
             sensoryEvents,
-            recipe.defaultFailureStrategy()
+            recipe.defaultFailureStrategy
         )
 
         val arcs = buildAllPetriNetArcs(actionDescriptors, transitions)
@@ -167,7 +186,7 @@ object RecipeCompiler {
                             when (val transformer = i.eventOutputTransformers[e]) {
                                 null -> e.providedIngredients.map(Ingredient::name)
                                 else -> e.providedIngredients.map { ingredient ->
-                                    transformer.ingredientRenames[ingredient.name()] ?: ingredient.name()
+                                    transformer.ingredientRenames[ingredient.name] ?: ingredient.name
                                 }
                             }
                         }
@@ -194,15 +213,15 @@ object RecipeCompiler {
         val sensoryEventTransitions: List<EventTransition> = sensoryEvents.map { event ->
             EventTransition(
                 EventDescriptor(
-                    event.name(),
-                    event.providedIngredients().map { IngredientDescriptor(it.name(), it.ingredientType()) } as Seq<IngredientDescriptor>
-                ), true, event.maxFiringLimit()
+                    event.name,
+                    event.providedIngredients.map { IngredientDescriptor(it.name, it.type) }.asScala
+                ), true, event.maxFiringLimit.asScala
             )
         }
 
         // events provided by other transitions / actions
         val interactionEventTransitions: List<EventTransition> = allInteractionTransitions.flatMap { t ->
-            t.eventsToFire.map { event -> EventTransition(event, false, Option.empty()) }
+            t.eventsToFire().asJava.map { event -> EventTransition(event, false, Option.empty()) }
         }
 
         val allEventTransitions: List<EventTransition> = sensoryEventTransitions + interactionEventTransitions
@@ -410,12 +429,12 @@ object RecipeCompiler {
         val errors = preconditionErrors + precompileErrors
 
         val compiledRecipe = CompiledRecipe.build(
-            recipe.name(),
+            recipe.name,
             petriNet,
             initialMarking.mapValues { it.value.mapValues { it.value as Any }.asScala }.asScala,
             errors.asScala,
-            recipe.eventReceivePeriod(),
-            recipe.retentionPeriod(),
+            recipe.eventReceivePeriod.asScala,
+            recipe.retentionPeriod.asScala,
             Scala212CompatibleScala,
         )
 
@@ -448,7 +467,7 @@ object RecipeCompiler {
             buildEventPreconditionErrors(
                 eventName,
                 preconditionTransition,
-                interactionTransition(interaction.name())
+                interactionTransition(interaction.name)
             )
         }
 
@@ -461,7 +480,7 @@ object RecipeCompiler {
             buildEventPreconditionErrors(
                 eventName,
                 preconditionTransition,
-                interactionTransition(interaction.name())
+                interactionTransition(interaction.name)
             )
         }
     }
@@ -522,14 +541,14 @@ object RecipeCompiler {
             // a new `Place` generated for each AND events
             val eventPreconditionPlace =
                 createPlace(
-                    label = "$eventName-${interaction.name()}",
+                    label = "$eventName-${interaction.name}",
                     placeType = EventPreconditionPlace
                 )
             buildEventPreconditionArcs(
                 eventName,
                 eventPreconditionPlace,
                 preconditionTransition,
-                interactionTransition(interaction.name())
+                interactionTransition(interaction.name)
             )
         }
 
@@ -540,7 +559,7 @@ object RecipeCompiler {
     ) = interaction.requiredOneOfEvents.flatMapIndexed { index: Int, orGroup: Set<String> ->
         // only one `Place` for all the OR events
         val eventPreconditionPlace = createPlace(
-            label = "${interaction.name()}-or-$index",
+            label = "${interaction.name}-or-$index",
             placeType = EventPreconditionPlace
         )
         orGroup.flatMap { eventName ->
@@ -548,7 +567,7 @@ object RecipeCompiler {
                 eventName,
                 eventPreconditionPlace,
                 preconditionTransition,
-                interactionTransition(interaction.name())
+                interactionTransition(interaction.name)
             )
         }
     }
@@ -718,9 +737,9 @@ object RecipeCompiler {
      */
     private fun convertCheckpointEventToInteraction(e: CheckPointEvent) =
         interaction(
-            name = "${`package$`.`MODULE$`.checkpointEventInteractionPrefix()}${e.name()}",
+            name = "${`package$`.`MODULE$`.checkpointEventInteractionPrefix()}${e.name}",
             inputIngredients = emptyList(),
-            output = listOf(`Event$`.`MODULE$`.apply(e.name(), emptySequence<Ingredient>().asScala)),
+            output = listOf(Event(e.name, emptyList())),
             requiredEvents = e.requiredEvents,
             requiredOneOfEvents = e.requiredOneOfEvents
         )
@@ -731,7 +750,7 @@ object RecipeCompiler {
      */
     private fun convertSieveToInteraction(s: Sieve) =
         interaction(
-            name = "${`package$`.`MODULE$`.sieveInteractionPrefix()}${s.name()}",
+            name = "${`package$`.`MODULE$`.sieveInteractionPrefix()}${s.name}",
             inputIngredients = s.inputIngredients,
             output = s.output,
         )
@@ -741,20 +760,20 @@ object RecipeCompiler {
      * Each interaction in a sub-recipe is copied and prefixed to avoid name conflicts.
      */
     private fun flattenSubRecipesToInteraction(recipe: Recipe): Set<InteractionDescriptor> {
-        fun copyInteraction(i: InteractionDescriptor) = Interaction.apply(
-            $$"$${`package$`.`MODULE$`.subRecipePrefix()}$${recipe.name()}$$${i.name()}",
-            i.inputIngredients(),
-            i.output(),
-            i.requiredEvents(),
-            i.requiredOneOfEvents(),
-            i.predefinedIngredients(),
-            i.overriddenIngredientNames(),
-            i.overriddenOutputIngredientName(),
-            i.maximumInteractionCount(),
-            i.failureStrategy(),
-            i.eventOutputTransformers(),
+        fun copyInteraction(i: InteractionDescriptor) = com.ing.baker.recipe.Interaction(
+            $$"$${ILPackage.subRecipePrefix()}$${recipe.name}$$${i.name}",
+            i.originalName,
+            i.inputIngredients,
+            i.output,
+            i.requiredEvents,
+            i.requiredOneOfEvents,
+            i.predefinedIngredients,
+            i.overriddenIngredientNames,
+            i.overriddenOutputIngredientName,
+            i.eventOutputTransformers,
+            i.maximumInteractionCount,
+            i.failureStrategy,
             i.isReprovider,
-            Option.apply(i.originalName())
         )
         return recipe.interactions.map(::copyInteraction).toSet() +
                 recipe.checkpointEvents.map(::convertCheckpointEventToInteraction) +
@@ -802,28 +821,28 @@ object RecipeCompiler {
         fun transformEventType(event: Event): Event =
             when (val eventOutputTransformer = interactionDescriptor.eventOutputTransformers[event]) {
                 null -> event
-                else -> com.ing.baker.recipe.scaladsl.Event(
+                else -> Event(
                     eventOutputTransformer.newEventName,
                     event.providedIngredients.map { i ->
                         Ingredient(
-                            eventOutputTransformer.ingredientRenames.getOrElse(i.name(), { i.name() }),
-                            i.ingredientType()
+                            eventOutputTransformer.ingredientRenames.getOrElse(i.name, { i.name }),
+                            i.type
                         )
-                    }.asScala,
-                    Option.empty()
+                    },
+                    null
                 )
             }
 
         fun transformEventOutputTransformer(recipeEventOutputTransformer: EventOutputTransformer): com.ing.baker.il.EventOutputTransformer =
             com.ing.baker.il.EventOutputTransformer(
-                recipeEventOutputTransformer.newEventName(),
-                recipeEventOutputTransformer.ingredientRenames()
+                recipeEventOutputTransformer.newEventName,
+                recipeEventOutputTransformer.ingredientRenames.asScala
             )
 
         fun transformEventToCompiledEvent(event: Event): EventDescriptor =
             EventDescriptor(
-                event.name(),
-                event.providedIngredients().map { IngredientDescriptor(it.name(), it.ingredientType()) } as Seq<IngredientDescriptor>
+                event.name,
+                event.providedIngredients.map { IngredientDescriptor(it.name, it.type) }.asScala
             )
 
         // Replace RecipeInstanceId to recipeInstanceIdName tag as know in compiledRecipe
@@ -832,13 +851,13 @@ object RecipeCompiler {
         // Replace ingredient tags with overridden tags
         val inputFields: Seq<Pair<String, Type>> = interactionDescriptor.inputIngredients
             .map { ingredient ->
-                when (ingredient.name()) {
+                when (ingredient.name) {
                     com.ing.baker.recipe.common.`package$`.`MODULE$`.recipeInstanceIdName() -> ILPackage.recipeInstanceIdName()
                     com.ing.baker.recipe.common.`package$`.`MODULE$`.recipeInstanceMetadataName() -> ILPackage.recipeInstanceMetadataName()
                     com.ing.baker.recipe.common.`package$`.`MODULE$`.recipeInstanceEventListName() -> ILPackage.recipeInstanceEventListName()
-                    else -> interactionDescriptor.overriddenIngredientNames()
-                        .getOrElse(ingredient.name(), { ingredient.name() })
-                } to ingredient.ingredientType()
+                    else -> interactionDescriptor.overriddenIngredientNames
+                        .getOrElse(ingredient.name, { ingredient.name })
+                } to ingredient.type
             }.asScala
 
         val originalEvents = interactionDescriptor.output.map(::transformEventToCompiledEvent).asScala
@@ -856,13 +875,13 @@ object RecipeCompiler {
                     interactionDescriptor.predefinedIngredients
 
         val p: Triple<ILInteractionFailureStrategy, Option<EventDescriptor>, Option<EventDescriptor>> =
-            when (val strategy = interactionDescriptor.failureStrategy().getOrElse { defaultFailureStrategy }) {
+            when (val strategy = interactionDescriptor.failureStrategy ?: defaultFailureStrategy) {
                 is InteractionFailureStrategy.RetryWithIncrementalBackoff -> {
                     val exhaustedRetryEvent = when (val e = strategy.fireRetryExhaustedEvent()) {
                         is Some -> Some(
                             EventDescriptor(
                                 e.value().getOrElse { null as String? }
-                                    ?: (interactionDescriptor.name() + ILPackage.exhaustedEventAppend()),
+                                    ?: (interactionDescriptor.name + ILPackage.exhaustedEventAppend()),
                                 emptyList<IngredientDescriptor>().asScala)
                         )
 
@@ -872,7 +891,7 @@ object RecipeCompiler {
                         is Some -> Some(
                             EventDescriptor(
                                 e.value().getOrElse { null as String? }
-                                    ?: (interactionDescriptor.name() + ILPackage.functionalFailedEventAppend()),
+                                    ?: (interactionDescriptor.name + ILPackage.functionalFailedEventAppend()),
                                 emptyList<IngredientDescriptor>().asScala)
                         )
 
@@ -898,21 +917,21 @@ object RecipeCompiler {
 
                 is InteractionFailureStrategy.FireEventAfterFailure -> {
                     val eventName = strategy.eventName()
-                        .getOrElse { interactionDescriptor.name() + ILPackage.exhaustedEventAppend() }
+                        .getOrElse { interactionDescriptor.name + ILPackage.exhaustedEventAppend() }
                     val exhaustedRetryEvent = EventDescriptor(eventName, emptyList<IngredientDescriptor>().asScala)
                     Triple(FireEventAfterFailure(exhaustedRetryEvent), Some(exhaustedRetryEvent), Option.empty())
                 }
 
                 is InteractionFailureStrategy.FireEventAndBlock -> {
                     val eventName = strategy.eventName()
-                        .getOrElse { interactionDescriptor.name() + ILPackage.exhaustedEventAppend() }
+                        .getOrElse { interactionDescriptor.name + ILPackage.exhaustedEventAppend() }
                     val exhaustedRetryEvent = EventDescriptor(eventName, emptyList<IngredientDescriptor>().asScala)
                     Triple(FireEventAfterFailure(exhaustedRetryEvent), Some(exhaustedRetryEvent), Option.empty())
                 }
 
                 is InteractionFailureStrategy.FireEventAndResolve -> {
                     val eventName = strategy.eventName()
-                        .getOrElse { interactionDescriptor.name() + ILPackage.functionalFailedEventAppend() }
+                        .getOrElse { interactionDescriptor.name + ILPackage.functionalFailedEventAppend() }
                     val functionalFailed = EventDescriptor(eventName, emptyList<IngredientDescriptor>().asScala)
                     Triple(FireFunctionalEventAfterFailure(functionalFailed), Option.empty(), Some(functionalFailed))
                 }
@@ -930,17 +949,17 @@ object RecipeCompiler {
             eventsToFireAll.asScala,
             originalEventsAll.asScala,
             inputFields.asJava.map { (name, ingredientType) -> IngredientDescriptor(name, ingredientType) }.asScala,
-            interactionDescriptor.name(),
-            interactionDescriptor.originalName(),
+            interactionDescriptor.name,
+            interactionDescriptor.originalName,
             predefinedIngredientsWithOptionalsEmpty.asScala,
-            interactionDescriptor.maximumInteractionCount(),
+            interactionDescriptor.maximumInteractionCount.asScala,
             failureStrategy,
             interactionDescriptor.eventOutputTransformers.map { (event, transformer) ->
-                event.name() to transformEventOutputTransformer(
+                event.name to transformEventOutputTransformer(
                     transformer
                 )
             }.toMap().asScala,
-            interactionDescriptor.isReprovider()
+            interactionDescriptor.isReprovider
         )
     }
 
@@ -951,7 +970,7 @@ object RecipeCompiler {
      * converting collections and options to their Scala equivalents.
      */
     private fun interaction(
-        name: String?,
+        name: String,
         inputIngredients: List<Ingredient>,
         output: List<Event>,
         requiredEvents: Set<String> = emptySet(),
@@ -965,43 +984,27 @@ object RecipeCompiler {
         isReprovider: Boolean = false,
         oldName: String? = null,
     ) =
-        Interaction.apply(
+        com.ing.baker.recipe.Interaction(
             name,
-            inputIngredients.asScala,
-            output.asScala,
-            requiredEvents.asScala,
-            requiredOneOfEvents.map { it: Set<String> -> it.asScala }.toSet().asScala,
-            predefinedIngredients.asScala,
-            overriddenIngredientNames.asScala,
-            Option.apply(overriddenOutputIngredientName),
-            Option.apply(maximumInteractionCount),
-            Option.apply(failureStrategy),
-            eventOutputTransformers.asScala,
-            isReprovider,
-            Option.apply(oldName)
+            oldName ?: name,
+            inputIngredients,
+            output,
+            requiredEvents,
+            requiredOneOfEvents,
+            predefinedIngredients,
+            overriddenIngredientNames,
+            overriddenOutputIngredientName,
+            eventOutputTransformers,
+            maximumInteractionCount,
+            failureStrategy,
+            isReprovider
         )
 }
 
-val Recipe.sensoryEvents get() = this.sensoryEvents().asJava
-val Recipe.interactions get() = this.interactions().asJava
-val Recipe.subRecipes get() = this.subRecipes().asJava
-val Recipe.checkpointEvents get() = this.checkpointEvents().asJava
-val Recipe.sieves get() = this.sieves().asJava
-val InteractionDescriptor.requiredEvents get() = this.requiredEvents().asJava
-val InteractionDescriptor.requiredOneOfEvents get() = this.requiredOneOfEvents().asJava.map { it.asJava }.toSet()
-val InteractionDescriptor.output get() = this.output().asJava
-val InteractionDescriptor.eventOutputTransformers get() = this.eventOutputTransformers().asJava
-val InteractionDescriptor.inputIngredients get() = this.inputIngredients().asJava
-val InteractionDescriptor.predefinedIngredients get() = this.predefinedIngredients().asJava
 val InteractionTransition.eventsToFire get() = this.eventsToFire().asJava
 val InteractionTransition.nonProvidedIngredients get() = this.nonProvidedIngredients().asJava
 val InteractionTransition.maximumInteractionCount
     get(): Int? = this.maximumInteractionCount().getOrElse { null as Int? }
-val Event.providedIngredients get() = this.providedIngredients().asJava
 val EventDescriptor.ingredients get() = this.ingredients().asJava
-val EventOutputTransformer.ingredientRenames get() = this.ingredientRenames().asJava
-val EventOutputTransformer.newEventName: String? get() = this.newEventName()
-val CheckPointEvent.requiredOneOfEvents get() = this.requiredOneOfEvents().asJava.map { it.asJava }.toSet()
-val CheckPointEvent.requiredEvents get() = this.requiredEvents().asJava
-val Sieve.inputIngredients get() = this.inputIngredients().asJava
-val Sieve.output get() = this.output().asJava
+
+
