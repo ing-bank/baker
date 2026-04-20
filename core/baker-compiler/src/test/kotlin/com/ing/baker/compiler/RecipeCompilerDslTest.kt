@@ -1,11 +1,12 @@
 package com.ing.baker.compiler
 
 import com.ing.baker.recipe.javadsl.Interaction
+import com.ing.baker.recipe.kotlindsl.ExperimentalDsl
 import com.ing.baker.recipe.kotlindsl.recipe
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
-class RecipeCompilerTest {
+class RecipeCompilerDslTest {
 
     class EventA
 
@@ -21,6 +22,7 @@ class RecipeCompilerTest {
     }
 
     @Test
+    @OptIn(ExperimentalDsl::class)
     fun `should compile dsl to recipe`() {
 
         val recipe = recipe("recipe") {
@@ -32,11 +34,12 @@ class RecipeCompilerTest {
 
         val compiled = RecipeCompiler.compileRecipe(recipe)
 
-        assertEquals("796a3cb3eb68b35d", compiled.recipeId())
+        assertEquals("9b2bc4caf5752697", compiled.recipeId())
     }
 
 
     @Test
+    @OptIn(ExperimentalDsl::class)
     fun `should compile dsl to recipe ingredient`() {
 
         val recipe = recipe("recipe") {
@@ -44,12 +47,12 @@ class RecipeCompilerTest {
                 event<EventA>()
             }
             interaction<InteractionA>()
-            ingredient<String, String>("extract") @JvmSerializableLambda {"Hello123"}
+            ingredient<String, String>("extract") @JvmSerializableLambda { "Hello123" }
         }
 
         val compiled = RecipeCompiler.compileRecipe(recipe)
 
-        assertEquals("ec448bcd08163a73", compiled.recipeId())
+        assertEquals("4e146307a299c515", compiled.recipeId())
     }
 
 }

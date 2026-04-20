@@ -11,7 +11,7 @@ import examples.kotlin.interactions.CheckStockImpl
 import examples.kotlin.interactions.ShipOrderImpl
 import examples.kotlin.recipes.WebShopRecipe
 import kotlinx.coroutines.runBlocking
-import java.util.*
+import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
 
 @ExperimentalDsl

@@ -96,7 +96,7 @@ trait BakerModelSpecSetupTests {
       for {
         baker <- context.buildBaker(mockImplementations)
         _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe))).attempt.map {
-          case Left(e) => e should have('message("Recipe NonProvidedIngredient:68b775e508fc6877 has validation errors: Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction"))
+          case Left(e) => e should have('message("Recipe NonProvidedIngredient:f31b181c8e36a5c3 has validation errors: Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction"))
           case Right(_) => fail("Adding a recipe should fail")
         }
       } yield succeed
@@ -111,7 +111,7 @@ trait BakerModelSpecSetupTests {
       for {
         baker <- context.buildBaker(List.empty)
         _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe))).attempt.map {
-          case Left(e) => e should have('message("Recipe MissingImplementation:dc3970efc8837e64 has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(NameNotFound)"))
+          case Left(e) => e should have('message("Recipe MissingImplementation:e1b92d7afa5609d5 has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(NameNotFound)"))
           case Right(_) => fail("Adding a recipe should fail")
         }
       } yield succeed
@@ -126,7 +126,7 @@ trait BakerModelSpecSetupTests {
       for {
         baker <- context.buildBaker(List(InteractionInstance.unsafeFrom(new InteractionOneWrongApply())))
         _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe))).attempt.map {
-          case Left(e) => e should have('message("Recipe WrongImplementation:8e2745de0bb0bde5 has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(InteractionOne input size differs: transition expects 2, implementation provides 1)"))
+          case Left(e) => e should have('message("Recipe WrongImplementation:7fcdb6b8feb8aa87 has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(InteractionOne input size differs: transition expects 2, implementation provides 1)"))
           case Right(_) => fail("Adding an interaction should fail")
         }
       } yield succeed
