@@ -5,11 +5,13 @@ import com.ing.baker.il.EventDescriptor
 import com.ing.baker.il.IngredientDescriptor
 import com.ing.baker.il.petrinet.EventTransition
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.recipe.common.Event
-import com.ing.baker.recipe.common.Ingredient
-import com.ing.baker.recipe.common.InteractionDescriptor
+import com.ing.baker.recipe.Interaction
+import com.ing.baker.recipe.Event
+import com.ing.baker.recipe.Ingredient
+import com.ing.baker.recipe.InteractionDescriptor
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.types.`Int32$`
+import com.ing.baker.types.Value
 import scala.Option
 
 /**
@@ -85,28 +87,28 @@ object TestDataBuilders {
         val events = outputEventNames.map { eventName ->
             val eventIngredients = outputEventIngredients[eventName] ?: emptyList()
             val ingredientList = eventIngredients.map { Ingredient(it, `Int32$`.`MODULE$`) }
-            com.ing.baker.recipe.scaladsl.Event(
+            Event(
                 eventName,
-                ingredientList.asScala,
-                Option.empty()
+                ingredientList,
+                null
             )
         }
         
         // Create minimal InteractionDescriptor using Interaction.apply
-        val descriptor = com.ing.baker.recipe.scaladsl.Interaction.apply(
+        val descriptor = Interaction(
             name,
-            ingredients.asScala,
-            events.asScala,
-            emptySet<String>().asScala,
-            emptySet<scala.collection.immutable.Set<String>>().asScala,
-            emptyMap<String, com.ing.baker.types.Value>().asScala,
-            emptyMap<String, String>().asScala,
-            Option.empty(),
-            Option.empty(),
-            Option.empty(),
-            emptyMap<Event, com.ing.baker.recipe.common.EventOutputTransformer>().asScala,
+            null,
+            ingredients,
+            events,
+            emptySet<String>(),
+            emptySet<Set<String>>(),
+            emptyMap<String, com.ing.baker.types.Value>(),
+            emptyMap<String, String>(),
+            null,
+            emptyMap(),
+            null,
+            null,
             false,
-            Option.empty()
         )
         
         // Reuse RecipeCompiler.interactionTransitionOf
@@ -154,22 +156,20 @@ object TestDataBuilders {
         requiredEvents: Set<String> = emptySet(),
         requiredOneOfEvents: Set<Set<String>> = emptySet()
     ): InteractionDescriptor {
-        val scalaRequiredOneOfEvents = requiredOneOfEvents.map { it.asScala }.toSet().asScala
-        
-        return com.ing.baker.recipe.scaladsl.Interaction.apply(
+        return Interaction(
             name,
-            emptyList<Ingredient>().asScala,
-            emptyList<Event>().asScala,
-            requiredEvents.asScala,
-            scalaRequiredOneOfEvents,
-            emptyMap<String, com.ing.baker.types.Value>().asScala,
-            emptyMap<String, String>().asScala,
-            Option.empty(),
-            Option.empty(),
-            Option.empty(),
-            emptyMap<Event, com.ing.baker.recipe.common.EventOutputTransformer>().asScala,
-            false,
-            Option.empty()
+            null,
+            emptyList<Ingredient>(),
+            emptyList<Event>(),
+            requiredEvents,
+            requiredOneOfEvents,
+            emptyMap<String, Value>(),
+            emptyMap<String, String>(),
+            null,
+            emptyMap(),
+            null,
+            null,
+            false
         )
     }
 }
