@@ -82,6 +82,26 @@ typealias MultiSet<X> = Map<X, Int>
  */
 typealias Marking<X> = Map<X, MultiSet<Any?>>
 
+/**
+ * Holds all components prepared from the recipe during the preparation phase.
+ */
+internal data class RecipeComponents(
+    val actionDescriptors: List<InteractionDescriptor>,
+    val sensoryEvents: Set<Event>,
+    val allIngredientNames: Set<String>
+)
+
+/**
+ * Holds all transition types built during the transition building phase.
+ */
+internal data class TransitionCollections(
+    val allInteractionTransitions: List<InteractionTransition>,
+    val sensoryEventTransitions: List<EventTransition>,
+    val interactionEventTransitions: List<EventTransition>,
+    val allEventTransitions: List<EventTransition>,
+    val multipleOutputFacilitatorTransitions: List<Transition>
+)
+
 object RecipeCompiler {
 
     /**
@@ -109,6 +129,25 @@ object RecipeCompiler {
 
         val precompileErrors: List<String> = preCompileAssertions(recipe).asJava
 
+        val (actionDescriptors, sensoryEvents, allIngredientNames) = prepareRecipeComponents(recipe)
+
+        val transitions = buildAllTransitions(
+            actionDescriptors,
+            allIngredientNames,
+            sensoryEvents,
+            recipe.defaultFailureStrategy()
+        )
+
+        val arcs = buildAllPetriNetArcs(actionDescriptors, transitions)
+
+        val preconditionErrors = buildPreconditionErrors(transitions, actionDescriptors)
+
+        return assemblePetriNetAndValidate(recipe, arcs, precompileErrors, preconditionErrors, validationSettings)
+    }
+    /**
+     * Gathers all components from the recipe including action descriptors, sensory events, and ingredient names.
+     */
+    internal fun prepareRecipeComponents(recipe: Recipe): RecipeComponents {
         // Extend the interactions with the checkpoint event interactions and sub-recipes
         val actionDescriptors: List<InteractionDescriptor> = recipe.interactions +
                 recipe.checkpointEvents.map(::convertCheckpointEventToInteraction) +
@@ -134,10 +173,22 @@ object RecipeCompiler {
                         }
                     }
 
+        return RecipeComponents(actionDescriptors, sensoryEvents, allIngredientNames)
+    }
+
+    /**
+     * Creates interaction transitions, event transitions, and facilitator transitions.
+     */
+    internal fun buildAllTransitions(
+        actionDescriptors: List<InteractionDescriptor>,
+        allIngredientNames: Set<String>,
+        sensoryEvents: Set<Event>,
+        failureStrategy: InteractionFailureStrategy,
+    ): TransitionCollections {
         // For inputs for which no matching output cannot be found, we do not want to generate a place.
         // It should be provided at runtime from outside the active petri net (marking)
         val allInteractionTransitions: List<InteractionTransition> =
-            actionDescriptors.map { interactionTransitionOf(it, recipe.defaultFailureStrategy(), allIngredientNames) }
+            actionDescriptors.map { interactionTransitionOf(it, failureStrategy, allIngredientNames) }
 
         // events provided from outside
         val sensoryEventTransitions: List<EventTransition> = sensoryEvents.map { event ->
@@ -156,6 +207,25 @@ object RecipeCompiler {
 
         val allEventTransitions: List<EventTransition> = sensoryEventTransitions + interactionEventTransitions
 
+        val multipleOutputFacilitatorTransitions: List<Transition> =
+            buildMultipleOutputFacilitatorTransitions(allInteractionTransitions)
+
+        return TransitionCollections(
+            allInteractionTransitions,
+            sensoryEventTransitions,
+            interactionEventTransitions,
+            allEventTransitions,
+            multipleOutputFacilitatorTransitions
+        )
+    }
+
+    /**
+     * Builds internal event arcs that connect interaction transitions to ingredient places.
+     */
+    internal fun buildInternalEventArcs(
+        allInteractionTransitions: List<InteractionTransition>,
+        interactionEventTransitions: List<EventTransition>
+    ): List<Arc> {
         // Given the event classes, it is creating the ingredient places and
         // connecting a transition to a ingredient place.
         val internalEventArcs: List<Arc> = allInteractionTransitions.flatMap { t ->
@@ -168,15 +238,31 @@ object RecipeCompiler {
                 }
             }
         }
+        return internalEventArcs
+    }
 
-        //Create event limiter places so that events can only fire x amount of times.
-        val eventLimiterArcs: List<Arc> = sensoryEventTransitions.flatMap { t ->
+    /**
+     * Builds event limiter arcs for sensory events with firing limits.
+     */
+    internal fun buildEventLimiterArcs(sensoryEventTransitions: List<EventTransition>): List<Arc> {
+        val eventLimiterArcs = sensoryEventTransitions.flatMap { t ->
             when (val n = t.maxFiringLimit().getOrElse { null as Int? }) {
                 null -> emptyList()
                 else -> listOf(arc(createPlace("limit:${t.label()}", FiringLimiterPlace(n)), t))
             }
         }
 
+        return eventLimiterArcs
+    }
+
+    /**
+     * Builds event precondition arcs (AND and OR) for all interactions.
+     */
+    internal fun buildEventPreconditionArcs(
+        allEventTransitions: List<EventTransition>,
+        allInteractionTransitions: List<InteractionTransition>,
+        actionDescriptors: List<InteractionDescriptor>
+    ): List<Arc> {
         fun findEventTransitionByEventName(eventName: String) =
             allEventTransitions.find { it.event().name() == eventName }
 
@@ -184,19 +270,28 @@ object RecipeCompiler {
             allInteractionTransitions.find { it.label() == label } ?: throw RecipeValidationException()
 
         // This generates precondition arcs for Required Events (AND).
-        val (eventPreconditionArcs, preconditionANDErrors) = actionDescriptors.map { t ->
+        val eventPreconditionArcs = actionDescriptors.flatMap { t ->
             buildEventAndPreconditionArcs(
                 t,
                 ::findEventTransitionByEventName,
                 ::findInteractionByLabel
             )
-        }.unzipFlatten()
+        }
 
         // This generates precondition arcs for Required Events (OR).
-        val (eventOrPreconditionArcs, preconditionORErrors) = actionDescriptors.map { t ->
+        val eventOrPreconditionArcs = actionDescriptors.flatMap { t ->
             buildEventORPreconditionArcs(t, ::findEventTransitionByEventName, ::findInteractionByLabel)
-        }.unzipFlatten()
+        }
+        return eventPreconditionArcs + eventOrPreconditionArcs
+    }
 
+    /**
+     * Builds sensory event arcs connecting sensory events to ingredient places or empty places.
+     */
+    internal fun buildSensoryEventArcs(
+        sensoryEventTransitions: List<EventTransition>,
+        actionDescriptors: List<InteractionDescriptor>
+    ): List<Arc> {
         val (sensoryEventWithoutIngredients, sensoryEventWithIngredients) = sensoryEventTransitions.partition { it.event().ingredients.isEmpty() }
 
         // It connects a sensory event to an ingredient places
@@ -217,39 +312,92 @@ object RecipeCompiler {
             .map { sensoryEvent ->
                 arc(sensoryEvent, createPlace(sensoryEvent.label(), EmptyEventIngredientPlace))
             }
+        return sensoryEventArcs + sensoryEventArcsNoIngredientsArcs
+    }
 
+
+    /**
+     * Builds facilitator transitions for ingredients with multiple consumers.
+     */
+    internal fun buildMultipleOutputFacilitatorTransitions(allInteractionTransitions: List<InteractionTransition>): List<Transition> {
         // First find the cases where multiple transitions depend on the same ingredient place
         val ingredientsWithMultipleConsumers: Map<String, List<InteractionTransition>> =
             getIngredientsWithMultipleConsumers(allInteractionTransitions)
 
         // Add one new transition for each duplicate input (the newly added one in the image above)
-        val multipleConsumerFacilitatorTransitions: List<Transition> =
+        val multipleOutputFacilitatorTransitions: List<Transition> =
             ingredientsWithMultipleConsumers.keys.map(::MultiFacilitatorTransition)
+        return multipleOutputFacilitatorTransitions
+    }
 
-        val multipleOutputFacilitatorArcs: List<Arc> =
-            multipleConsumerFacilitatorTransitions.map { t ->
-                arc(createPlace(t.label(), IngredientPlace), t)
-            }
+    /**
+     * Builds facilitator arcs for ingredients with multiple consumers.
+     */
+    internal fun buildMultipleOutputFacilitatorArcs(multipleOutputFacilitatorTransitions: List<Transition>): List<Arc> =
+        multipleOutputFacilitatorTransitions.map { t ->
+            arc(createPlace(t.label(), IngredientPlace), t)
+        }
 
-        val interactionArcs: List<Arc> =
-            allInteractionTransitions.flatMap { interactionTransition ->
-                buildInteractionArcs(
-                    multipleConsumerFacilitatorTransitions,
-                    ingredientsWithMultipleConsumers,
-                    interactionEventTransitions,
-                    interactionTransition
-                )
-            }
+    /**
+     * Builds interaction arcs for all interactions in the recipe.
+     */
+    internal fun buildInteractionArcs(
+        allInteractionTransitions: List<InteractionTransition>,
+        multipleOutputFacilitatorTransitions: List<Transition>,
+        interactionEventTransitions: List<EventTransition>
+    ): List<Arc> {
+        val ingredientsWithMultipleConsumers = getIngredientsWithMultipleConsumers(allInteractionTransitions)
+
+        return allInteractionTransitions.flatMap { interactionTransition ->
+            buildInteractionArcs(
+                multipleOutputFacilitatorTransitions,
+                ingredientsWithMultipleConsumers,
+                interactionEventTransitions,
+                interactionTransition
+            )
+        }
+    }
+
+    /**
+     * Consolidates all arc building logic. Arc order is preserved for backward compatibility.
+     */
+    internal fun buildAllPetriNetArcs(
+        actionDescriptors: List<InteractionDescriptor>,
+        transitions: TransitionCollections,
+    ): List<Arc> {
+        val (allInteractionTransitions, sensoryEventTransitions, interactionEventTransitions, allEventTransitions, multipleOutputFacilitatorTransitions) = transitions
+
+        val interactionArcs = buildInteractionArcs(allInteractionTransitions, multipleOutputFacilitatorTransitions, interactionEventTransitions)
+
+        val eventPreconditionArcs = buildEventPreconditionArcs(allEventTransitions, allInteractionTransitions, actionDescriptors)
+
+        val eventLimiterArcs: List<Arc> = buildEventLimiterArcs(sensoryEventTransitions)
+
+        val sensoryEventArcs = buildSensoryEventArcs(sensoryEventTransitions, actionDescriptors)
+
+        val internalEventArcs: List<Arc> = buildInternalEventArcs(allInteractionTransitions, interactionEventTransitions)
+
+        val multipleOutputFacilitatorArcs = buildMultipleOutputFacilitatorArcs(multipleOutputFacilitatorTransitions)
 
         val arcs = (interactionArcs +
                 eventPreconditionArcs +
-                eventOrPreconditionArcs +
                 eventLimiterArcs +
                 sensoryEventArcs +
-                sensoryEventArcsNoIngredientsArcs +
                 internalEventArcs +
                 multipleOutputFacilitatorArcs)
+        return arcs
+    }
 
+    /**
+     * Constructs the final Petri net from transitions, arcs, places, and initial marking.
+     */
+    internal fun assemblePetriNetAndValidate(
+        recipe: Recipe,
+        arcs: List<Arc>,
+        precompileErrors: List<String>,
+        preconditionErrors: List<String>,
+        validationSettings: ValidationSettings
+    ): CompiledRecipe {
         val petriNet = PetriNet(graph(arcs))
 
         val initialMarking: Marking<Place> = petriNet.places().asJava.mapNotNull { p ->
@@ -259,7 +407,7 @@ object RecipeCompiler {
             }
         }.toMap()
 
-        val errors = preconditionORErrors + preconditionANDErrors + precompileErrors
+        val errors = preconditionErrors + precompileErrors
 
         val compiledRecipe = CompiledRecipe.build(
             recipe.name(),
@@ -274,10 +422,6 @@ object RecipeCompiler {
         return RecipeValidations.postCompileValidations(compiledRecipe, validationSettings)
     }
 
-    fun <A, B> List<Pair<List<A>, List<B>>>.unzipFlatten() = this.unzip().let { pair ->
-        pair.first.flatten() to pair.second.flatten()
-    }
-
     private fun transition(transition: Transition) = Right<Place, Transition>(transition)
     private fun place(place: Place) = Left<Place, Transition>(place)
 
@@ -289,8 +433,84 @@ object RecipeCompiler {
 
     /**
      * Creates a transition for a missing event in the recipe.
+     * Creates a missing event transition placeholder.
+     * Used when an interaction requires an event that doesn't exist in the recipe.
      */
-    private fun missingEventTransition(eventName: String) = MissingEventTransition(eventName)
+    internal fun missingEventTransition(eventName: String) = MissingEventTransition(eventName)
+
+    private fun buildEventAndPreconditionErrors(
+        interaction: InteractionDescriptor,
+        preconditionTransition: (String) -> Transition?,
+        interactionTransition: (String) -> Transition
+    ) =
+        // Find the event in available events
+        interaction.requiredEvents.flatMap { eventName ->
+            buildEventPreconditionErrors(
+                eventName,
+                preconditionTransition,
+                interactionTransition(interaction.name())
+            )
+        }
+
+    private fun buildEventORPreconditionErrors(
+        interaction: InteractionDescriptor,
+        preconditionTransition: (String) -> Transition?,
+        interactionTransition: (String) -> Transition
+    ) = interaction.requiredOneOfEvents.flatMapIndexed { index: Int, orGroup: Set<String> ->
+        orGroup.flatMap { eventName ->
+            buildEventPreconditionErrors(
+                eventName,
+                preconditionTransition,
+                interactionTransition(interaction.name())
+            )
+        }
+    }
+
+    private fun buildEventPreconditionErrors(
+        eventName: String,
+        preconditionTransition: (String) -> Transition?,
+        interactionTransition: Transition
+    ): List<String> {
+
+        val eventTransition = preconditionTransition(eventName)
+
+        val notProvidedError = when (eventTransition) {
+            null -> listOf("Event '$eventName' for '$interactionTransition' is not provided in the recipe")
+            else -> emptyList()
+        }
+
+        return notProvidedError
+    }
+
+    /**
+     * Builds a list of error messages for missing required events.
+     * Validates that all event preconditions (AND and OR) are satisfied.
+     *
+     * @param transitions All transitions in the recipe
+     * @param actionDescriptors All interaction descriptors in the recipe
+     * @return List of error messages for missing required events
+     */
+    internal fun buildPreconditionErrors(
+        transitions: TransitionCollections,
+        actionDescriptors: List<InteractionDescriptor>
+    ): List<String> {
+        fun findEventTransitionByEventName(eventName: String) =
+            transitions.allEventTransitions.find { it.event().name() == eventName }
+
+        fun findInteractionByLabel(label: String) =
+            transitions.allInteractionTransitions.find { it.label() == label } ?: throw RecipeValidationException()
+
+        // This generates precondition errors for Required Events (AND).
+        val preconditionANDErrors = actionDescriptors.flatMap { t ->
+            buildEventAndPreconditionErrors(t, ::findEventTransitionByEventName, ::findInteractionByLabel)
+        }
+
+        // This generates precondition errors for Required Events (OR).
+        val preconditionORErrors = actionDescriptors.flatMap { t ->
+            buildEventORPreconditionErrors(t, ::findEventTransitionByEventName, ::findInteractionByLabel)
+        }
+        return preconditionORErrors + preconditionANDErrors
+    }
 
     private fun buildEventAndPreconditionArcs(
         interaction: InteractionDescriptor,
@@ -298,7 +518,7 @@ object RecipeCompiler {
         interactionTransition: (String) -> Transition
     ) =
         // Find the event in available events
-        interaction.requiredEvents.map { eventName ->
+        interaction.requiredEvents.flatMap { eventName ->
             // a new `Place` generated for each AND events
             val eventPreconditionPlace =
                 createPlace(
@@ -311,48 +531,43 @@ object RecipeCompiler {
                 preconditionTransition,
                 interactionTransition(interaction.name())
             )
-        }.unzipFlatten()
+        }
 
     private fun buildEventORPreconditionArcs(
         interaction: InteractionDescriptor,
         preconditionTransition: (String) -> Transition?,
         interactionTransition: (String) -> Transition
-    ) = interaction.requiredOneOfEvents.mapIndexed { index: Int, orGroup: Set<String> ->
+    ) = interaction.requiredOneOfEvents.flatMapIndexed { index: Int, orGroup: Set<String> ->
         // only one `Place` for all the OR events
         val eventPreconditionPlace = createPlace(
             label = "${interaction.name()}-or-$index",
             placeType = EventPreconditionPlace
         )
-        orGroup.map { eventName ->
+        orGroup.flatMap { eventName ->
             buildEventPreconditionArcs(
                 eventName,
                 eventPreconditionPlace,
                 preconditionTransition,
                 interactionTransition(interaction.name())
             )
-        }.unzipFlatten()
-    }.unzipFlatten()
+        }
+    }
 
     private fun buildEventPreconditionArcs(
         eventName: String,
         preconditionPlace: Place,
         preconditionTransition: (String) -> Transition?,
         interactionTransition: Transition
-    ): Pair<List<Arc>, List<String>> {
+    ): List<Arc> {
 
         val eventTransition = preconditionTransition(eventName)
-
-        val notProvidedError = when (eventTransition) {
-            null -> listOf("Event '$eventName' for '$interactionTransition' is not provided in the recipe")
-            else -> emptyList()
-        }
 
         val arcs = listOf(
             arc(eventTransition ?: missingEventTransition(eventName), preconditionPlace),
             arc(preconditionPlace, interactionTransition)
         )
 
-        return arcs to notProvidedError
+        return arcs
     }
 
     // the (possible) event output arcs / places
@@ -404,7 +619,7 @@ object RecipeCompiler {
      */
     private fun buildInteractionInputArcs(
         t: InteractionTransition,
-        multipleConsumerFacilitatorTransitions: List<Transition>,
+        multipleOutputFacilitatorTransitions: List<Transition>,
         ingredientsWithMultipleConsumers: Map<String, List<InteractionTransition>>
     ): List<Arc> {
 
@@ -418,7 +633,7 @@ object RecipeCompiler {
                 createPlace("${t.label()}-$fieldName", placeType = MultiTransitionPlace)
             listOf(
                 // one arc from multiplier place to the transition
-                arc(getMultiTransition(fieldName, multipleConsumerFacilitatorTransitions), multiTransitionPlace),
+                arc(getMultiTransition(fieldName, multipleOutputFacilitatorTransitions), multiTransitionPlace),
                 // one arc from extra added place to transition
                 arc(multiTransitionPlace, t)
             )
@@ -463,6 +678,9 @@ object RecipeCompiler {
             eventTransitions
         )
 
+    /**
+     * Finds a multi-transition (facilitator transition) by its internal representation name.
+     */
     private fun getMultiTransition(internalRepresentationName: String, transitions: List<Transition>) =
         transitions.find { it.label().equals(internalRepresentationName) }
             ?: throw NoSuchElementException("No multi transition found with name $internalRepresentationName")
@@ -485,9 +703,19 @@ object RecipeCompiler {
             // Only keep those place names which have more than one out-adjacent transition
             .filter { (_, interactions) -> interactions.size >= 2 }
 
-    private fun createPlace(label: String, placeType: Place.PlaceType): Place =
+    /**
+     * Creates a Place with the given label and type.
+     * The label is prefixed with the place type's prefix.
+     * Creates a Place in the Petri net with the appropriate label prefix.
+     */
+    internal fun createPlace(label: String, placeType: Place.PlaceType): Place =
         Place("${placeType.labelPrepend()}$label", placeType)
 
+    /**
+     * Converts a CheckPointEvent into an InteractionDescriptor.
+     * Checkpoint events are special events that can be used to track progress in a recipe.
+     * They are converted to interactions with no input ingredients.
+     */
     private fun convertCheckpointEventToInteraction(e: CheckPointEvent) =
         interaction(
             name = "${`package$`.`MODULE$`.checkpointEventInteractionPrefix()}${e.name()}",
@@ -497,6 +725,10 @@ object RecipeCompiler {
             requiredOneOfEvents = e.requiredOneOfEvents
         )
 
+    /**
+     * Converts a Sieve into an InteractionDescriptor.
+     * Sieves are interactions that filter/transform ingredients without requiring specific events.
+     */
     private fun convertSieveToInteraction(s: Sieve) =
         interaction(
             name = "${`package$`.`MODULE$`.sieveInteractionPrefix()}${s.name()}",
@@ -504,6 +736,10 @@ object RecipeCompiler {
             output = s.output,
         )
 
+    /**
+     * Flattens sub-recipes into InteractionDescriptors.
+     * Each interaction in a sub-recipe is copied and prefixed to avoid name conflicts.
+     */
     private fun flattenSubRecipesToInteraction(recipe: Recipe): Set<InteractionDescriptor> {
         fun copyInteraction(i: InteractionDescriptor) = Interaction.apply(
             $$"$${`package$`.`MODULE$`.subRecipePrefix()}$${recipe.name()}$$${i.name()}",
@@ -526,9 +762,16 @@ object RecipeCompiler {
                 recipe.sieves.map(::convertSieveToInteraction)
     }
 
+    /**
+     * Flattens sensory events from a recipe including events from sub-recipes recursively.
+     */
     private fun flattenSensoryEvents(recipe: Recipe): Set<Event> =
         recipe.sensoryEvents + recipe.subRecipes.flatMap(::flattenSensoryEvents)
 
+    /**
+     * Creates a Petri net graph from a list of arcs.
+     * Uses the Scala graph library to construct the graph structure.
+     */
     private fun graph(arcs: List<Arc>): Graph<Node, WLDiEdge<Any>> =
         `Graph$`.`MODULE$`.from(
             arcs.map { it as WLDiEdge<Any> }.asScala,
@@ -536,10 +779,20 @@ object RecipeCompiler {
             CoreConfig(GraphConfig.defaultOrder(), ArraySet.`Hints$`.`MODULE$`.apply(16, 32, 48, 80))
         ) as Graph<Node, WLDiEdge<Any>>
 
+    /**
+     * Creates a weighted labeled directed edge between two nodes.
+     * Used to create arcs in the Petri net graph.
+     */
     private fun <N, L> wlDiEdge(node1: Node, node2: Node, label: L): WLDiEdge<N> =
         `WLDiEdge$`.`MODULE$`.newEdge(GraphEdge.`NodeProduct$`.`MODULE$`.apply(node1, node2), 1.0, label)
 
-    private fun interactionTransitionOf(
+    /**
+     * Converts an InteractionDescriptor to an InteractionTransition for use in the Petri net.
+     *
+     * This function transforms recipe-level interaction descriptors into IL-level transitions,
+     * handling event transformations, ingredient mapping, optional ingredients, and failure strategies.
+     */
+    internal fun interactionTransitionOf(
         interactionDescriptor: InteractionDescriptor,
         defaultFailureStrategy: InteractionFailureStrategy,
         allIngredientNames: Set<String>
@@ -691,6 +944,12 @@ object RecipeCompiler {
         )
     }
 
+    /**
+     * Creates an Interaction descriptor with the specified configuration.
+     *
+     * Helper function that constructs a Scala Interaction object from Kotlin/Java types,
+     * converting collections and options to their Scala equivalents.
+     */
     private fun interaction(
         name: String?,
         inputIngredients: List<Ingredient>,
