@@ -126,11 +126,14 @@
         <module>bakery/bakery-interaction</module>
         <module>bakery/bakery-interaction-protocol</module>
 
+        <module>core/baker-wirespec</module>
+
         <!-- Example modules -->
         <module>examples/baker-example</module>
         <module>examples/bakery-client-example</module>
         <module>examples/bakery-kafka-listener-example</module>
         <module>examples/docs-code-snippets</module>
+        <module>examples/baker-wirespec-example</module>
     </modules>
 
     <dependencyManagement>
