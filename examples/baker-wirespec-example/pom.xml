@@ -16,7 +16,7 @@
     <description>Example module demonstrating wirespec-baker integration</description>
 
     <properties>
-        <wirespec.version>0.17.20</wirespec.version>
+        <wirespec.version>0.18.1-RC.2</wirespec.version>
     </properties>
 
     <dependencies>

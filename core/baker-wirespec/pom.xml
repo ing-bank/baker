@@ -16,25 +16,25 @@
     <description>Wirespec emitters that generate Baker Interaction interfaces from API endpoint definitions</description>
 
     <properties>
-        <wirespec.version>0.17.20</wirespec.version>
+        <wirespec.version>0.18.1-RC.2</wirespec.version>
     </properties>
 
     <dependencies>
-        <!-- Wirespec compiler core — LanguageEmitter, AST nodes -->
+        <!-- Wirespec IR module — IrEmitter, IR DSL, language Generators -->
+        <dependency>
+            <groupId>community.flock.wirespec.ir</groupId>
+            <artifactId>ir-jvm</artifactId>
+            <version>${wirespec.version}</version>
+        </dependency>
+
+        <!-- Wirespec compiler core — AST nodes (transitively included via ir-jvm but declared explicitly for compile scope) -->
         <dependency>
             <groupId>community.flock.wirespec.compiler</groupId>
             <artifactId>core-jvm</artifactId>
             <version>${wirespec.version}</version>
         </dependency>
 
-        <!-- JetBrains annotations for @NotNull/@Nullable -->
-        <dependency>
-            <groupId>org.jetbrains</groupId>
-            <artifactId>annotations</artifactId>
-            <version>13.0</version>
-        </dependency>
-
-        <!-- Kotlin stdlib — required at compile time for iterating wirespec AST collections (NonEmptyList) -->
+        <!-- Kotlin stdlib -->
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
@@ -49,16 +49,9 @@
     </dependencies>
 
     <build>
+        <sourceDirectory>src/main/kotlin</sourceDirectory>
         <testSourceDirectory>src/test/kotlin</testSourceDirectory>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>${jvm.target}</source>
-                    <target>${jvm.target}</target>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
@@ -68,7 +61,15 @@
                 </configuration>
                 <executions>
                     <execution>
+                        <id>compile</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
                         <id>test-compile</id>
+                        <phase>process-test-sources</phase>
                         <goals>
                             <goal>test-compile</goal>
                         </goals>
