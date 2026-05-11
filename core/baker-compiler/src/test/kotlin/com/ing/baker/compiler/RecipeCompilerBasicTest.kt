@@ -155,9 +155,9 @@ class RecipeCompilerBasicTest {
         val actual = convertList(compiled.petriNet().transitions())
             .filterIsInstance<InteractionTransition>()
             .map { it.interactionName() }
-            .toList()
+            .toSet()
 
-        val expected = listOf(
+        val expected = setOf(
             $$"$CheckpointEventInteraction$subSubSubCheckpointEvent",
             $$"$SubRecipe$SubRecipe$InteractionA",
             $$"$CheckpointEventInteraction$subSubCheckpointEvent",

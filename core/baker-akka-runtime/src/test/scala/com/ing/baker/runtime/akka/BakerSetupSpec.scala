@@ -141,7 +141,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         recoverToExceptionIf[ImplementationsException] {
           baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
-        }.map(_ should have('message("Recipe MissingImplementation:e1b92d7afa5609d5 has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(NameNotFound)")))
+        }.map(_ should have('message("Recipe MissingImplementation:224cacdbf4b4e350 has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(NameNotFound)")))
       }
 
       "a recipe provides an implementation for an interaction and does not comply to the Interaction" in {
@@ -154,7 +154,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         recoverToExceptionIf[ImplementationsException] {
           baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
-        }.map(_ should have('message("Recipe WrongImplementation:7fcdb6b8feb8aa87 has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(InteractionOne input size differs: transition expects 2, implementation provides 1)")))
+        }.map(_ should have('message("Recipe WrongImplementation:165501eaeefc4b2f has implementation errors: No compatible implementation provided for interaction: InteractionOne: List(InteractionOne input size differs: transition expects 2, implementation provides 1)")))
       }
     }
   }

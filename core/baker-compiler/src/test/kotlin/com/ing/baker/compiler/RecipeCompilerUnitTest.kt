@@ -7,6 +7,7 @@ import com.ing.baker.recipe.annotations.RequiresIngredient
 import com.ing.baker.recipe.javadsl.Interaction
 import com.ing.baker.recipe.javadsl.InteractionDescriptor
 import com.ing.baker.recipe.javadsl.Recipe
+import com.ing.baker.recipe.toKotlin
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import scala.jdk.javaapi.CollectionConverters
@@ -58,12 +59,12 @@ class RecipeCompilerUnitTest {
             .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
             .withInteraction(InteractionDescriptor.of(ProcessPayment::class.java))
 
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
+        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe.toKotlin())
 
         assertEquals(2, actionDescriptors.size, "Should extract 2 interactions")
         assertEquals(1, sensoryEvents.count(), "Should extract 1 sensory event")
-        assertTrue(actionDescriptors.any { it.name() == "ReserveItems" })
-        assertTrue(actionDescriptors.any { it.name() == "ProcessPayment" })
+        assertTrue(actionDescriptors.any { it.name == "ReserveItems" })
+        assertTrue(actionDescriptors.any { it.name == "ProcessPayment" })
     }
 
     @Test
@@ -72,7 +73,7 @@ class RecipeCompilerUnitTest {
             .withSensoryEvent(OrderPlaced::class.java)
             .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
 
-        val (_, _, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
+        val (_, _, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe.toKotlin())
 
         assertTrue(allIngredientNames.contains("orderId"), "Should include orderId from OrderPlaced")
         assertTrue(allIngredientNames.contains("items"), "Should include items from OrderPlaced")
@@ -83,7 +84,7 @@ class RecipeCompilerUnitTest {
     fun `prepareRecipeComponents handles empty recipe`() {
         val recipe = Recipe("EmptyRecipe")
 
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
+        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe.toKotlin())
 
         assertEquals(0, actionDescriptors.size)
         assertEquals(0, sensoryEvents.count())
@@ -96,7 +97,7 @@ class RecipeCompilerUnitTest {
             .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
             .withInteraction(InteractionDescriptor.of(ProcessPayment::class.java))
 
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
+        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe.toKotlin())
         val transitions = RecipeCompiler.buildAllTransitions(
             actionDescriptors,
             allIngredientNames,
@@ -115,7 +116,7 @@ class RecipeCompilerUnitTest {
             .withSensoryEvent(OrderPlaced::class.java)
             .withSensoryEvent(PaymentMade::class.java)
 
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
+        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe.toKotlin())
         val transitions = RecipeCompiler.buildAllTransitions(
             actionDescriptors,
             allIngredientNames,
@@ -135,7 +136,7 @@ class RecipeCompilerUnitTest {
             .withSensoryEvent(OrderPlaced::class.java)
             .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
 
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
+        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe.toKotlin())
         val transitions = RecipeCompiler.buildAllTransitions(
             actionDescriptors,
             allIngredientNames,
@@ -155,7 +156,7 @@ class RecipeCompilerUnitTest {
             .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
             .withInteraction(InteractionDescriptor.of(ProcessPayment::class.java))
 
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
+        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe.toKotlin())
         val transitions = RecipeCompiler.buildAllTransitions(
             actionDescriptors,
             allIngredientNames,
@@ -177,7 +178,7 @@ class RecipeCompilerUnitTest {
             .withSensoryEvent(OrderPlaced::class.java)
             .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
 
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
+        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe.toKotlin())
         val transitions = RecipeCompiler.buildAllTransitions(
             actionDescriptors,
             allIngredientNames,
@@ -195,7 +196,7 @@ class RecipeCompilerUnitTest {
             .withSensoryEvent(OrderPlaced::class.java)
             .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
 
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
+        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe.toKotlin())
         val transitions = RecipeCompiler.buildAllTransitions(
             actionDescriptors,
             allIngredientNames,
@@ -214,7 +215,7 @@ class RecipeCompilerUnitTest {
             .withSensoryEvent(OrderPlaced::class.java)
             .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
 
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
+        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe.toKotlin())
         val transitions = RecipeCompiler.buildAllTransitions(
             actionDescriptors,
             allIngredientNames,
@@ -224,7 +225,7 @@ class RecipeCompilerUnitTest {
         val arcs = RecipeCompiler.buildAllPetriNetArcs(actionDescriptors, transitions)
         
         val compiledRecipe = RecipeCompiler.assemblePetriNetAndValidate(
-            recipe,
+            recipe.toKotlin(),
             arcs,
             emptyList(),
             emptyList(),
@@ -242,7 +243,7 @@ class RecipeCompilerUnitTest {
         val recipe = Recipe("TestRecipe")
             .withSensoryEvent(OrderPlaced::class.java)
 
-        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe)
+        val (actionDescriptors, sensoryEvents, allIngredientNames) = RecipeCompiler.prepareRecipeComponents(recipe.toKotlin())
         val transitions = RecipeCompiler.buildAllTransitions(
             actionDescriptors,
             allIngredientNames,
@@ -254,7 +255,7 @@ class RecipeCompilerUnitTest {
         val precompileErrors = listOf("Test error 1")
         val preconditionErrors = listOf("Test error 2")
         val compiledRecipe = RecipeCompiler.assemblePetriNetAndValidate(
-            recipe,
+            recipe.toKotlin(),
             arcs,
             precompileErrors,
             preconditionErrors,
