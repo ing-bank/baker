@@ -35,7 +35,7 @@ fun ScalaRecipe.toKotlin(): Recipe =
 fun ScalaInteraction.toKotlin(): Interaction =
     Interaction(
         name = name().orEmpty(),
-        originalName = originalName().orEmpty(),
+        oldName = originalName().orEmpty(),
         inputIngredients = inputIngredients().toKotlinIngredients(),
         output = output().toKotlinEvents(),
         requiredEvents = requiredEvents().toKotlin(),
