@@ -3,7 +3,7 @@ package com.ing.baker.runtime
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction}
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance, InteractionInstanceInput}
 import com.ing.baker.types.Converters.toJava
-import com.ing.baker.types.{Converters, Type, Value}
+import com.ing.baker.types.{Converters, Value}
 
 import scala.concurrent.Future
 import scala.reflect.runtime.universe.TypeTag

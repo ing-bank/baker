@@ -10,7 +10,6 @@ import akka.util.Timeout
 import cats.data.NonEmptyList
 import cats.effect.IO
 import com.ing.baker.il.sha256HashCode
-import com.ing.baker.runtime.akka.AkkaBakerConfig
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.{ActorMetadata, StopProcessIndexShard}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
