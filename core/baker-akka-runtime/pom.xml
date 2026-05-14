@@ -18,6 +18,11 @@
     <dependencies>
         <dependency>
             <groupId>com.ing.baker</groupId>
+            <artifactId>baker-recipe-manager</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
             <artifactId>baker-types</artifactId>
             <version>${project.version}</version>
         </dependency>
