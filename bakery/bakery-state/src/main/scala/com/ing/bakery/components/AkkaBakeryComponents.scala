@@ -3,7 +3,7 @@ package com.ing.bakery.components
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.akka.AkkaBakerConfig
-import com.ing.baker.runtime.akka.actor.BakerActorProvider
+import com.ing.baker.runtime.akka.actor.{BakerActorProvider, Timeouts}
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.{ActorBasedRecipeManager, RecipeManager}
 import com.ing.bakery.metrics.MetricService
@@ -54,8 +54,8 @@ class AkkaBakeryComponents(optionalConfig: Option[Config] = None,
 
   def ec(actorSystem: ActorSystem): Resource[IO, ExecutionContext] = Resource.pure[IO, ExecutionContext](actorSystem.dispatcher)
 
-  def akkaBakerTimeoutsResource(config: Config): Resource[IO, AkkaBakerConfig.Timeouts] =
-    Resource.pure[IO, AkkaBakerConfig.Timeouts](AkkaBakerConfig.Timeouts(config)).logResourceLifecycle("Timeouts")
+  def akkaBakerTimeoutsResource(config: Config): Resource[IO, Timeouts] =
+    Resource.pure[IO, Timeouts](Timeouts(config)).logResourceLifecycle("Timeouts")
 
   def akkaBakerConfigValidationSettingsResource(config: Config): Resource[IO, AkkaBakerConfig.BakerValidationSettings] =
     Resource.pure[IO, AkkaBakerConfig.BakerValidationSettings](AkkaBakerConfig.BakerValidationSettings.from(config)).logResourceLifecycle("BakerValidationSettings")

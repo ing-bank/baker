@@ -5,8 +5,8 @@ import _root_.akka.pattern._
 import _root_.akka.util.Timeout
 import akka.cluster.Cluster
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
-import com.ing.baker.runtime.akka.AkkaBakerConfig._
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.recipeManagerName
+import com.ing.baker.runtime.akka.actor.Timeouts
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.common.RecipeRecord

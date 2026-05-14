@@ -3,7 +3,7 @@ package com.ing.baker.runtime.recipe_manager
 import _root_.akka.actor.ActorSystem
 import _root_.akka.testkit.{TestKit, TestProbe}
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.akka.AkkaBakerConfig.Timeouts
+import com.ing.baker.runtime.akka.actor.Timeouts
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.common.RecipeRecord
 import org.mockito.Mockito.when

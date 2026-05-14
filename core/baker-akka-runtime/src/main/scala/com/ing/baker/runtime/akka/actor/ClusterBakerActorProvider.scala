@@ -72,7 +72,6 @@ class ClusterBakerActorProvider(
                                  getIngredientsFilter: List[String],
                                  providedIngredientFilter: List[String],
                                  configuredEncryption: Encryption,
-                                 timeouts: AkkaBakerConfig.Timeouts,
                                  blacklistedProcesses: List[String],
                                  rememberProcessDuration: Option[Duration]) extends BakerActorProvider with LazyLogging {
 

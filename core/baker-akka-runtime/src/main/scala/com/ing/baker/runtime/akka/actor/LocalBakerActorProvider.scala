@@ -21,7 +21,6 @@ class LocalBakerActorProvider(
                                providedIngredientFilter: List[String],
                                actorIdleTimeout: Option[FiniteDuration],
                                configuredEncryption: Encryption,
-                               timeouts: AkkaBakerConfig.Timeouts,
                                blacklistedProcesses: List[String],
                                rememberProcessDuration: Option[Duration]
                              ) extends BakerActorProvider {
