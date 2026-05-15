@@ -1,11 +1,24 @@
 package com.ing.baker.runtime.akka.actor
 
+import akka.actor.ActorSystem
+import akka.testkit.TestKit
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.wordspec.AnyWordSpecLike
+import org.scalatest.matchers.should.Matchers
+
 import scala.collection.immutable.List
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import org.scalatest.matchers.should.Matchers._
 
-class UtilSpec extends AkkaTestBase("UtilSpec") {
+class UtilSpec extends TestKit(ActorSystem("UtilSpec"))
+  with AnyWordSpecLike
+  with Matchers
+  with BeforeAndAfterAll {
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+    shutdown(system)
+  }
 
   implicit def ec: ExecutionContext = system.dispatcher
 

@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.akka.actor.serialization
+package com.ing.baker.runtime.serialization
 
 import com.ing.baker.runtime.serialization.Encryption._
 import org.scalacheck.Gen._
