@@ -118,6 +118,7 @@
         <module>core/baker-akka-actors-common</module>
         <module>core/baker-akka-actors-protocols</module>
         <module>core/baker-akka-actors-recipe-manager</module>
+        <module>core/baker-akka-actors-listener-manager</module>
         <module>core/baker-akka-actors-process-instance</module>
         <module>core/baker-akka-actors-delayed-transition</module>
         <module>core/baker-akka-actors-process-index</module>
