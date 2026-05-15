@@ -17,7 +17,7 @@ import java.util.UUID
 object DelayedTransitionActorSpec {
   val config: Config = ConfigFactory.parseString(
     """
-      |akka.actor.allow-java-serialization = off
+      |akka.actor.allow-java-serialization = on
       |baker.actor.snapshot-interval = 1
       |akka.persistence.journal.plugin = "inmemory-journal"
       |akka.persistence.snapshot-store.plugin = "inmemory-snapshot-store"
