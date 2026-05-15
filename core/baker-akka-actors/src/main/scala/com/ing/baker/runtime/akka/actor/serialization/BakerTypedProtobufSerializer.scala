@@ -2,15 +2,14 @@ package com.ing.baker.runtime.akka.actor.serialization
 
 import akka.actor.{ActorRefProvider, ExtendedActorSystem}
 import com.ing.baker.il
-import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor._
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionProto._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
-import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceEventSourcing, ProcessInstanceProtocol}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
-import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManagerActor, RecipeManagerProtocol}
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.serialization.SerializedDataProto.akkaAnyRefMapping
 import com.ing.baker.runtime.akka.actor.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata, RecipeInstanceState}
@@ -47,19 +46,19 @@ object BakerTypedProtobufSerializer {
 
   def processIndexEntries(implicit ev0: AkkaSerializerProvider, actorRefProvider: ActorRefProvider): List[BinarySerializable] =
     List(
-      forType[ClusterBakerActorProvider.GetShardIndex]
+      forType[ProcessIndexProtocol.GetShardIndex]
         .register("ProcessIndex.GetShardIndex"),
-      forType[ProcessIndex.ActorCreated]
+      forType[ProcessIndexProtocol.ActorCreated]
         .register("ProcessIndex.ActorCreated"),
-      forType[ProcessIndex.ActorDeleted]
+      forType[ProcessIndexProtocol.ActorDeleted]
         .register("ProcessIndex.ActorDeleted"),
-      forType[ProcessIndex.ActorPassivated]
+      forType[ProcessIndexProtocol.ActorPassivated]
         .register("ProcessIndex.ActorPassivated"),
-      forType[ProcessIndex.ActorActivated]
+      forType[ProcessIndexProtocol.ActorActivated]
         .register("ProcessIndex.ActorActivated"),
-      forType[ProcessIndex.ProcessIndexSnapShot]
+      forType[ProcessIndexProtocol.ProcessIndexSnapShot]
         .register("ProcessIndex.ProcessIndexSnapShot"),
-      forType[ProcessIndex.ActorMetadata]
+      forType[ProcessIndexProtocol.ActorMetadata]
         .register("ProcessIndex.ActorMetadata"),
       forType[ProcessIndexProtocol.GetIndex.type]
         .register("ProcessIndexProtocol.GetIndex"),
@@ -210,19 +209,19 @@ object BakerTypedProtobufSerializer {
         .register("RecipeManagerProtocol.GetAllRecipes"),
       forType[RecipeManagerProtocol.AllRecipes]
         .register("RecipeManagerProtocol.AllRecipes"),
-      forType[RecipeManagerActor.RecipeAdded]
+      forType[RecipeManagerProtocol.RecipeAdded]
         .register("RecipeManager.RecipeAdded")
     )
 
   def delayedTransitionEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] = {
     List(
-      forType[DelayedTransitionInstance]
+      forType[DelayedTransitionActorProtocol.DelayedTransitionInstance]
         .register("DelayedTransitionInstance"),
-      forType[DelayedTransitionScheduled]
+      forType[DelayedTransitionActorProtocol.DelayedTransitionScheduled]
         .register("DelayedTransitionScheduled"),
-      forType[DelayedTransitionExecuted]
+      forType[DelayedTransitionActorProtocol.DelayedTransitionExecuted]
         .register("DelayedTransitionExecuted"),
-      forType[DelayedTransitionSnapshot]
+      forType[DelayedTransitionActorProtocol.DelayedTransitionSnapshot]
         .register("DelayedTransitionSnapshot")
     )
   }

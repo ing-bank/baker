@@ -6,16 +6,14 @@ import akka.testkit.TestKit
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.petrinet.api.{Id, Marking, MultiSet}
-import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
-import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.{CompletionListenerAdded, CompletionListenersRemoved, EventListenerAdded, EventListenersRemoved}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor.RecipeAdded
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.{RecipeAdded, GetRecipe}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
-import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManagerActor, RecipeManagerProtocol}
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState, SensoryEventResult}
 import com.ing.baker.runtime.serialization.Encryption.{AESEncryption, NoEncryption}
@@ -78,19 +76,19 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
 
   checkFor[RecipeInstanceState].run
 
-  checkFor[GetShardIndex].run
+  checkFor[ProcessIndexProtocol.GetShardIndex].run
 
-  checkFor[ProcessIndex.ActorCreated].run
+  checkFor[ProcessIndexProtocol.ActorCreated].run
 
-  checkFor[ProcessIndex.ActorDeleted].run
+  checkFor[ProcessIndexProtocol.ActorDeleted].run
 
-  checkFor[ProcessIndex.ActorPassivated].run
+  checkFor[ProcessIndexProtocol.ActorPassivated].run
 
-  checkFor[ProcessIndex.ActorActivated].run
+  checkFor[ProcessIndexProtocol.ActorActivated].run
 
-  checkFor[ProcessIndex.ActorMetadata].run
+  checkFor[ProcessIndexProtocol.ActorMetadata].run
 
-  checkFor[ProcessIndex.ProcessIndexSnapShot].run
+  checkFor[ProcessIndexProtocol.ProcessIndexSnapShot].run
 
   test("ProcessIndexProtocol.GetIndex typed serialization") {
     val m = ProcessIndexProtocol.GetIndex
@@ -162,7 +160,7 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
       ctxFromProto(ctxToProto(m)) === Success(m)
   }
 
-  checkFor[RecipeManagerActor.RecipeAdded].run
+  checkFor[RecipeManagerProtocol.RecipeAdded].run
 
   checkFor[ProcessInstanceProtocol.Stop].run
 
@@ -347,7 +345,6 @@ object SerializationSpec {
 
   object ProcessIndex {
 
-    import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
     import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 
     implicit val processStatusGen: Gen[ProcessStatus] = Gen.oneOf(Active, Deleted)
@@ -527,7 +524,7 @@ object SerializationSpec {
 
   object ProcessInstance {
 
-    import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
+    import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{CompletionListenerAdded => _, CompletionListenersRemoved => _, EventListenerAdded => _, EventListenersRemoved => _, _}
 
     implicit val transitionIdGen: Gen[Id] = Gen.posNum[Long]
     implicit val placeIdGen: Gen[Id] = Gen.posNum[Long]

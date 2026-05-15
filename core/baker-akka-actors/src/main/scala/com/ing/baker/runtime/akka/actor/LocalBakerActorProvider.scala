@@ -5,8 +5,7 @@ import akka.pattern.{BackoffOpts, BackoffSupervisor}
 import cats.effect.IO
 import com.ing.baker.runtime.akka._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{GetIndex, Index}
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{ActorMetadata, GetIndex, Index}
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.serialization.Encryption

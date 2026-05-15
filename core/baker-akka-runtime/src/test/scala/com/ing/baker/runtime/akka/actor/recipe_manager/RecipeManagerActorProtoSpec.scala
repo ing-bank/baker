@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.akka.actor.recipe_manager
 
 import com.ing.baker.BakerRuntimeTestBase
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor.RecipeAdded
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeAdded
 import com.ing.baker.runtime.akka.actor.serialization.{AkkaSerializerProvider, SerializationSpec}
 import com.ing.baker.runtime.serialization.Encryption
 import org.scalatest.TryValues._

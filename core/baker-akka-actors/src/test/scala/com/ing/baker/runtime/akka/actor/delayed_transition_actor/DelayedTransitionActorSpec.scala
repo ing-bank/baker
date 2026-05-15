@@ -3,8 +3,7 @@ package com.ing.baker.runtime.akka.actor.delayed_transition_actor
 import akka.actor.{ActorSystem, Props}
 import akka.persistence.{SaveSnapshotSuccess, SnapshotMetadata}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.DelayedTransitionSnapshot
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransition, FireDelayedTransitionAck, ScheduleDelayedTransition, StartTimer}
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{DelayedTransitionSnapshot, FireDelayedTransition, FireDelayedTransitionAck, ScheduleDelayedTransition, StartTimer}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.TransitionDelayed
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.concurrent.Eventually

@@ -11,8 +11,7 @@ import cats.data.NonEmptyList
 import cats.effect.IO
 import com.ing.baker.il.sha256HashCode
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider._
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.{ActorMetadata, StopProcessIndexShard}
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{GetIndex, GetShardIndex, Index, ProcessIndexMessage, StopProcessIndexShard, ActorMetadata}
 import com.ing.baker.runtime.akka.actor.process_index._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.model.InteractionManager
@@ -25,8 +24,6 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, TimeoutException}
 
 object ClusterBakerActorProvider {
-
-  case class GetShardIndex(entityId: String) extends BakerSerializable
 
   sealed trait ClusterBootstrapMode
 
@@ -58,8 +55,6 @@ object ClusterBakerActorProvider {
     case ShardRegion.StartEntity(entityId) => entityId.split(s"index-").last
     case msg => throw new IllegalArgumentException(s"Message of type ${msg.getClass} not recognized")
   }
-
-  val recipeManagerName = "RecipeManager"
 }
 
 class ClusterBakerActorProvider(
