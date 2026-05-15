@@ -28,9 +28,7 @@ case class Instance[S](
     delayedTransitionIds: Map[Id, Int],
     state: S,
     jobs: Map[Long, Job[S]],
-    receivedCorrelationIds: Set[String],
-    completionListenerPaths: Set[String] = Set.empty,
-    eventListenerPaths: Map[String, Set[String]] = Map.empty
+    receivedCorrelationIds: Set[String]
 ) {
 
   /**

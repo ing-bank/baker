@@ -11,6 +11,7 @@ import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, checkpointEventInteractionPrefix}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransitionAck, ScheduleDelayedTransition}
+import com.ing.baker.runtime.akka.actor.listener_manager.ListenerManagerActor
 import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstance._
@@ -146,6 +147,10 @@ class ProcessInstance(
   val recipeInstanceId: String = context.self.path.name
 
   private val executor = runtime.jobExecutor(petriNet)
+  
+  // Create per-instance listener manager actor
+  private lazy val listenerManager: ActorRef = 
+    context.actorOf(ListenerManagerActor.props(recipeInstanceId), "listener-manager")
 
   override def persistenceId: String = recipeInstanceId2PersistenceId(processType, recipeInstanceId)
 
@@ -268,29 +273,23 @@ class ProcessInstance(
   }
 
   /**
-   * Checks for and sends all required notifications, returning a list of
-   * cleanup events that should be persisted.
+   * Checks for and sends all required notifications to the ListenerManagerActor.
+   * No longer returns cleanup events as listener state is managed by ListenerManagerActor.
    */
   private def handleNotifications(instance: Instance[RecipeInstanceState], firedEvent: Option[EventInstance]): List[Event] = {
 
-    val eventListenerCleanup = firedEvent.toList.flatMap { event =>
-      instance.eventListenerPaths.get(event.name).filter(_.nonEmpty).map { listenerPaths =>
-        // Side Effect: Notify listeners that the event occurred
-        listenerPaths.foreach(path => context.actorSelection(path) ! EventOccurred)
-        EventListenersRemoved(event.name)
-      }
+    // Notify ListenerManagerActor of event occurrence
+    firedEvent.foreach { event =>
+      listenerManager ! ListenerManagerActor.NotifyEventOccurred(event.name)
     }
 
-    val completionListenerCleanup =
-      if (instance.hasCompletedExecution && instance.completionListenerPaths.nonEmpty) {
-        // Side Effect: Notify listeners that the recipe completed
-        instance.completionListenerPaths.foreach(path => context.actorSelection(path) ! Completed)
-        List(CompletionListenersRemoved())
-      } else {
-        List.empty
-      }
+    // Notify ListenerManagerActor if recipe execution completed
+    if (instance.hasCompletedExecution) {
+      listenerManager ! ListenerManagerActor.NotifyCompleted
+    }
 
-    eventListenerCleanup ++ completionListenerCleanup
+    // No cleanup events needed - listener state is managed by ListenerManagerActor
+    List.empty
   }
 
   def running(instance: Instance[RecipeInstanceState],
@@ -319,29 +318,18 @@ class ProcessInstance(
       }
 
     case ProcessInstanceProtocol.AwaitCompleted =>
-      if (instance.hasCompletedExecution) {
-        sender() ! ProcessInstanceProtocol.Completed
-      } else {
-        // Persist the listener addition
-        val event = CompletionListenerAdded(sender().path.toSerializationFormat)
-        // This persist is sync so no race conditions to worry about
-        persistEvent(instance, event) { _ =>
-          val updatedInstance = eventSource.apply(instance)(event)
-          // Update actor's state
-          context.become(running(updatedInstance, scheduledRetries))
-        }
-      }
+      // Delegate to ListenerManagerActor
+      listenerManager.tell(
+        ListenerManagerActor.RegisterCompletionListener(sender().path.toSerializationFormat),
+        sender()
+      )
 
     case ProcessInstanceProtocol.AwaitEvent(eventName, waitForNext) =>
-      if (!waitForNext && instance.state.eventNames.contains(eventName)) {
-        sender() ! ProcessInstanceProtocol.EventOccurred
-      } else {
-        val event = EventListenerAdded(eventName, sender().path.toSerializationFormat)
-        persistEvent(instance, event) { _ =>
-          val updatedInstance = eventSource.apply(instance)(event)
-          context.become(running(updatedInstance, scheduledRetries))
-        }
-      }
+      // Delegate to ListenerManagerActor
+      listenerManager.tell(
+        ListenerManagerActor.RegisterEventListener(eventName, sender().path.toSerializationFormat, waitForNext),
+        sender()
+      )
 
     case GetState =>
       sender() ! mapStateToProtocol(instance)

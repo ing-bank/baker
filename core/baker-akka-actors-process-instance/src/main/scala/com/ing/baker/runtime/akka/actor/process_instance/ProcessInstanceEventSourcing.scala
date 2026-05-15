@@ -237,26 +237,24 @@ object ProcessInstanceEventSourcing extends LazyLogging {
       instance.copy[S](state = newState)
 
     case e: CompletionListenerAdded =>
-      instance.copy(
-        completionListenerPaths = instance.completionListenerPaths + e.listenerPath
-      )
+      // Deprecated: Listener management moved to ListenerManagerActor
+      // Keep for backward compatibility with existing journals
+      instance
 
     case e: EventListenerAdded =>
-      val currentListeners = instance.eventListenerPaths.getOrElse(e.eventName, Set.empty)
-      val updatedListeners = currentListeners + e.listenerPath
-      instance.copy(
-        eventListenerPaths = instance.eventListenerPaths + (e.eventName -> updatedListeners)
-      )
+      // Deprecated: Listener management moved to ListenerManagerActor
+      // Keep for backward compatibility with existing journals
+      instance
 
     case _: CompletionListenersRemoved =>
-      instance.copy(
-        completionListenerPaths = Set.empty
-      )
+      // Deprecated: Listener management moved to ListenerManagerActor
+      // Keep for backward compatibility with existing journals
+      instance
 
     case e: EventListenersRemoved =>
-      instance.copy(
-        eventListenerPaths = instance.eventListenerPaths - e.eventName
-      )
+      // Deprecated: Listener management moved to ListenerManagerActor
+      // Keep for backward compatibility with existing journals
+      instance
   }
 
   def eventsForInstance(
