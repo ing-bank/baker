@@ -2,33 +2,65 @@ package com.ing.baker.runtime.akka.actor.serialization
 
 import akka.actor.{ActorRefProvider, ExtendedActorSystem}
 import com.ing.baker.il
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionProto._
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
-import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceEventSourcing, ProcessInstanceProtocol}
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
-import com.ing.baker.runtime.akka.actor.serialization.SerializedDataProto.akkaAnyRefMapping
 import com.ing.baker.runtime.akka.actor.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata, RecipeInstanceState}
-import com.ing.baker.runtime.serialization.ProtoMap
+import com.ing.baker.runtime.akka.actor.process_index.serialization.ProcessIndexSerialization
+import com.ing.baker.runtime.akka.actor.process_instance.serialization.ProcessInstanceSerialization
+import com.ing.baker.runtime.akka.actor.recipe_manager.serialization.RecipeManagerSerialization
+import com.ing.baker.runtime.akka.actor.delayed_transition_actor.serialization.DelayedTransitionSerialization
 
+/**
+ * Main serializer for all Baker actor messages.
+ * 
+ * This serializer acts as a proxy that delegates to module-specific serialization
+ * providers while maintaining a single serializer ID (101) for backward compatibility
+ * with persisted events in the journal.
+ * 
+ * Architecture:
+ * - Common entries (shared types) defined locally
+ * - Actor-specific entries delegated to their respective modules:
+ *   - ProcessIndexSerialization (process-index module)
+ *   - ProcessInstanceSerialization (process-instance module)
+ *   - RecipeManagerSerialization (recipe-manager module)
+ *   - DelayedTransitionSerialization (delayed-transition module)
+ */
 object BakerTypedProtobufSerializer {
 
+  /**
+   * Aggregates all serialization entries from common types and actor modules.
+   * 
+   * @param actorRefProvider Provides actor reference resolution capabilities
+   * @param serializersProvider Provides access to Akka's serialization system
+   * @return Complete list of all serialization entries for Baker
+   */
   def entries(actorRefProvider: ActorRefProvider)(serializersProvider: AkkaSerializerProvider): List[BinarySerializable] = {
     implicit val ev0 = serializersProvider
     implicit val ev1 = actorRefProvider
-    commonEntries ++ processIndexEntries ++ processInstanceEntries ++ recipeManagerEntries ++ delayedTransitionEntries
+    
+    // Aggregate entries from all modules
+    commonEntries ++
+    ProcessIndexSerialization.entries ++
+    ProcessInstanceSerialization.entries ++
+    RecipeManagerSerialization.entries ++
+    DelayedTransitionSerialization.entries
   }
 
-  /** Hardcoded serializerId for this serializer. This should not conflict with other serializers.
+  /**
+   * Hardcoded serializerId for this serializer. This should not conflict with other serializers.
    * Values from 0 to 40 are reserved for Akka internal usage.
+   * 
+   * This ID (101) must remain constant to maintain backward compatibility with
+   * persisted events in the journal.
    */
   val identifier = 101
 
-  def commonEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] =
+  /**
+   * Common serialization entries for shared Baker types.
+   * 
+   * These types are used across multiple actor modules and are defined here
+   * in the integration module for convenience.
+   */
+  private def commonEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] =
     List(
       forType[com.ing.baker.types.Value]
         .register("baker.types.Value"),
@@ -43,188 +75,13 @@ object BakerTypedProtobufSerializer {
       forType[il.CompiledRecipe]
         .register("il.CompiledRecipe")
     )
-
-  def processIndexEntries(implicit ev0: AkkaSerializerProvider, actorRefProvider: ActorRefProvider): List[BinarySerializable] =
-    List(
-      forType[ProcessIndexProtocol.GetShardIndex]
-        .register("ProcessIndex.GetShardIndex"),
-      forType[ProcessIndexProtocol.ActorCreated]
-        .register("ProcessIndex.ActorCreated"),
-      forType[ProcessIndexProtocol.ActorDeleted]
-        .register("ProcessIndex.ActorDeleted"),
-      forType[ProcessIndexProtocol.ActorPassivated]
-        .register("ProcessIndex.ActorPassivated"),
-      forType[ProcessIndexProtocol.ActorActivated]
-        .register("ProcessIndex.ActorActivated"),
-      forType[ProcessIndexProtocol.ProcessIndexSnapShot]
-        .register("ProcessIndex.ProcessIndexSnapShot"),
-      forType[ProcessIndexProtocol.ActorMetadata]
-        .register("ProcessIndex.ActorMetadata"),
-      forType[ProcessIndexProtocol.GetIndex.type]
-        .register("ProcessIndexProtocol.GetIndex"),
-      forType[ProcessIndexProtocol.Index]
-        .register("ProcessIndexProtocol.Index"),
-      forType[ProcessIndexProtocol.CreateProcess]
-        .register("ProcessIndexProtocol.CreateProcess"),
-      forType[ProcessIndexProtocol.NoSuchProcess]
-        .register("ProcessIndex.NoSuchProcess"),
-      forType[ProcessIndexProtocol.ProcessDeleted]
-        .register("ProcessIndex.ProcessDeleted"),
-      forType[ProcessIndexProtocol.ProcessAlreadyExists]
-        .register("ProcessIndex.ProcessAlreadyExists"),
-      forType[ProcessIndexProtocol.RetryBlockedInteraction]
-        .register("ProcessIndexProtocol.RetryBlockedInteraction"),
-      forType[ProcessIndexProtocol.ResolveBlockedInteraction]
-        .register("ProcessIndexProtocol.ResolveBlockedInteraction"),
-      forType[ProcessIndexProtocol.StopRetryingInteraction]
-        .register("ProcessIndexProtocol.StopRetryingInteraction"),
-      forType[ProcessIndexProtocol.ProcessEventResponse]
-        .register("ProcessIndexProtocol.ProcessEventResponse"),
-      forType[ProcessIndexProtocol.HasRecipeInstance]
-        .register("ProcessIndexProtocol.HasRecipeInstance"),
-      forType[ProcessIndexProtocol.RecipeInstanceExists]
-        .register("ProcessIndexProtocol.RecipeInstanceExists"),
-      forType[ProcessIndexProtocol.GetProcessState]
-        .register("ProcessIndexProtocol.GetProcessState"),
-      forType[ProcessIndexProtocol.DeleteProcess]
-        .register("ProcessIndexProtocol.DeleteProcess"),
-      forType[ProcessIndexProtocol.GetProcessIngredient]
-        .register("ProcessIndexProtocol.GetProcessIngredientc"),
-      forType[ProcessIndexProtocol.GetCompiledRecipe]
-        .register("ProcessIndexProtocol.GetCompiledRecipe"),
-      forType[ProcessIndexProtocol.ProcessEvent]
-        .register("ProcessIndexProtocol.ProcessEvent"),
-      forType[ProcessIndexProtocol.ProcessSensoryEvent]
-        .register("ProcessIndexProtocol.ProcessSensoryEvent"),
-      forType[ProcessIndexProtocol.AwaitCompleted]
-        .register("ProcessIndexProtocol.AwaitCompleted"),
-      forType[ProcessIndexProtocol.AwaitEvent]
-        .register("ProcessIndexProtocol.AwaitEvent"),
-      forType[ProcessIndexProtocol.ProcessEventReceivedResponse]
-        .register("ProcessIndexProtocol.ProcessEventReceivedResponse"),
-      forType[ProcessIndexProtocol.ProcessEventCompletedResponse]
-        .register("ProcessIndexProtocol.ProcessEventCompletedResponse"),
-      forType[ProcessIndexProtocol.FireSensoryEventRejection.ReceivePeriodExpired]
-        .register("ProcessIndexProtocol.FireSensoryEventRejection.ReceivePeriodExpired"),
-      forType[ProcessIndexProtocol.FireSensoryEventRejection.InvalidEvent]
-        .register("ProcessIndexProtocol.FireSensoryEventRejection.InvalidEvent"),
-      forType[ProcessIndexProtocol.FireSensoryEventRejection.RecipeInstanceDeleted]
-        .register("ProcessIndexProtocol.FireSensoryEventRejection.RecipeInstanceDeleted"),
-      forType[ProcessIndexProtocol.FireSensoryEventRejection.NoSuchRecipeInstance]
-        .register("ProcessIndexProtocol.FireSensoryEventRejection.NoSuchProcess"),
-      forType[ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived]
-        .register("ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived"),
-      forType[ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet]
-        .register("ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet"),
-      forType[ProcessIndexProtocol.AddRecipeInstanceMetaData]
-        .register("ProcessIndexProtocol.AddRecipeInstanceMetaData")
-    )
-
-  def processInstanceEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] =
-    List(
-      forType[ProcessInstanceProtocol.AwaitEvent]
-        .register("ProcessInstanceProtocol.AwaitEvent"),
-      forType[ProcessInstanceProtocol.EventOccurred.type]
-        .register("ProcessInstanceProtocol.EventOccurred"),
-      forType[ProcessInstanceProtocol.AwaitCompleted.type]
-        .register("ProcessInstanceProtocol.AwaitCompleted"),
-      forType[ProcessInstanceProtocol.Completed.type ]
-        .register("ProcessInstanceProtocol.Completed"),
-
-      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.CompletionListenerAdded]
-        .register("CompletionListenerAdded")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.CompletionListenerAdded)),
-      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.EventListenerAdded]
-        .register("EventListenerAdded")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.EventListenerAdded)),
-      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.CompletionListenersRemoved]
-        .register("CompletionListenersRemoved")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.CompletionListenersRemoved)),
-      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.EventListenersRemoved]
-        .register("EventListenersRemoved")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.EventListenersRemoved)),
-
-      forType[ProcessInstanceProtocol.Stop]
-        .register("ProcessInstanceProtocol.Stop"),
-      forType[ProcessInstanceProtocol.GetState.type]
-        .register("ProcessInstanceProtocol.GetState"),
-      forType[ProcessInstanceProtocol.InstanceState]
-        .register("ProcessInstanceProtocol.InstanceState"),
-      forType[ProcessInstanceProtocol.IngredientFound]
-        .register("ProcessInstanceProtocol.IngredientFound"),
-      forType[ProcessInstanceProtocol.IngredientNotFound.type]
-        .register("ProcessInstanceProtocol.IngredientNotFound"),
-      forType[ProcessInstanceProtocol.Initialize]
-        .register("ProcessInstanceProtocol.Initialize"),
-      forType[ProcessInstanceProtocol.Initialized]
-        .register("ProcessInstanceProtocol.Initialized"),
-      forType[ProcessInstanceProtocol.Uninitialized]
-        .register("ProcessInstanceProtocol.Uninitialized"),
-      forType[ProcessInstanceProtocol.AlreadyInitialized]
-        .register("ProcessInstanceProtocol.AlreadyInitialized"),
-      forType[ProcessInstanceProtocol.FireTransition]
-        .register("ProcessInstanceProtocol.FireTransition"),
-      forType[ProcessInstanceProtocol.OverrideExceptionStrategy]
-        .register("ProcessInstanceProtocol.OverrideExceptionStrategy"),
-      forType[ProcessInstanceProtocol.InvalidCommand]
-        .register("ProcessInstanceProtocol.InvalidCommand"),
-      forType[ProcessInstanceProtocol.AlreadyReceived]
-        .register("ProcessInstanceProtocol.AlreadyReceived"),
-      forType[ProcessInstanceProtocol.TransitionNotEnabled]
-        .register("ProcessInstanceProtocol.TransitionNotEnabled"),
-      forType[ProcessInstanceProtocol.TransitionFailed]
-        .register("ProcessInstanceProtocol.TransitionFailed"),
-      forType[ProcessInstanceProtocol.TransitionFired]
-        .register("ProcessInstanceProtocol.TransitionFired"),
-      forType[ProcessInstanceProtocol.MetaDataAdded.type]
-        .register("ProcessInstanceProtocol.MetaDataAdded"),
-
-      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFired]
-        .register("TransitionFired")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFired)),
-      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailedWithOutput]
-        .register("TransitionFailedWithOutput")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailedWithOutput)),
-      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailedWithFunctionalOutput]
-        .register("TransitionFailedWithFunctionalOutput")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailedWithFunctionalOutput)),
-      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailed]
-        .register("TransitionFailed")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailed)),
-      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.Initialized]
-        .register("Initialized")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.Initialized)),
-      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.MetaDataAdded]
-        .register("MetaDataAdded")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.MetaDataAdded)),
-      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionDelayed]
-        .register("TransitionDelayed")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionDelayed)),
-      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.DelayedTransitionFired]
-        .register("DelayedTransitionFired")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.DelayedTransitionFired)),
-    )
-
-  def recipeManagerEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] =
-    List(
-      forType[RecipeManagerProtocol.AddRecipe]
-        .register("RecipeManagerProtocol.AddRecipe"),
-      forType[RecipeManagerProtocol.AddRecipeResponse]
-        .register("RecipeManagerProtocol.AddRecipeResponse"),
-      forType[RecipeManagerProtocol.GetRecipe]
-        .register("RecipeManagerProtocol.GetRecipe"),
-      forType[RecipeManagerProtocol.RecipeFound]
-        .register("RecipeManagerProtocol.RecipeFound"),
-      forType[RecipeManagerProtocol.NoRecipeFound]
-        .register("RecipeManagerProtocol.NoRecipeFound"),
-      forType[RecipeManagerProtocol.GetAllRecipes.type]
-        .register("RecipeManagerProtocol.GetAllRecipes"),
-      forType[RecipeManagerProtocol.AllRecipes]
-        .register("RecipeManagerProtocol.AllRecipes"),
-      forType[RecipeManagerProtocol.RecipeAdded]
-        .register("RecipeManager.RecipeAdded")
-    )
-
-  def delayedTransitionEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] = {
-    List(
-      forType[DelayedTransitionActorProtocol.DelayedTransitionInstance]
-        .register("DelayedTransitionInstance"),
-      forType[DelayedTransitionActorProtocol.DelayedTransitionScheduled]
-        .register("DelayedTransitionScheduled"),
-      forType[DelayedTransitionActorProtocol.DelayedTransitionExecuted]
-        .register("DelayedTransitionExecuted"),
-      forType[DelayedTransitionActorProtocol.DelayedTransitionSnapshot]
-        .register("DelayedTransitionSnapshot")
-    )
-  }
 }
 
-class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends TypedProtobufSerializer(system, BakerTypedProtobufSerializer.identifier, BakerTypedProtobufSerializer.entries(system.provider))
+/**
+ * Akka serializer implementation that extends TypedProtobufSerializer.
+ * 
+ * This class is instantiated by Akka during actor system initialization based
+ * on the configuration in reference.conf.
+ */
+class BakerTypedProtobufSerializer(system: ExtendedActorSystem) 
+  extends TypedProtobufSerializer(system, BakerTypedProtobufSerializer.identifier, BakerTypedProtobufSerializer.entries(system.provider))
