@@ -318,18 +318,28 @@ class ProcessInstance(
       }
 
     case ProcessInstanceProtocol.AwaitCompleted =>
-      // Delegate to ListenerManagerActor
-      listenerManager.tell(
-        ListenerManagerActor.RegisterCompletionListener(sender().path.toSerializationFormat),
-        sender()
-      )
+      // Check current state first for immediate response
+      if (instance.hasCompletedExecution) {
+        sender() ! ProcessInstanceProtocol.Completed
+      } else {
+        // Not yet completed - delegate to ListenerManagerActor
+        listenerManager.tell(
+          ListenerManagerActor.RegisterCompletionListener(sender().path.toSerializationFormat),
+          sender()
+        )
+      }
 
     case ProcessInstanceProtocol.AwaitEvent(eventName, waitForNext) =>
-      // Delegate to ListenerManagerActor
-      listenerManager.tell(
-        ListenerManagerActor.RegisterEventListener(eventName, sender().path.toSerializationFormat, waitForNext),
-        sender()
-      )
+      // Check current state first for immediate response (unless waitForNext is true)
+      if (!waitForNext && instance.state.eventNames.contains(eventName)) {
+        sender() ! ProcessInstanceProtocol.EventOccurred
+      } else {
+        // Event not yet fired (or waiting for next) - delegate to ListenerManagerActor
+        listenerManager.tell(
+          ListenerManagerActor.RegisterEventListener(eventName, sender().path.toSerializationFormat, waitForNext),
+          sender()
+        )
+      }
 
     case GetState =>
       sender() ! mapStateToProtocol(instance)
