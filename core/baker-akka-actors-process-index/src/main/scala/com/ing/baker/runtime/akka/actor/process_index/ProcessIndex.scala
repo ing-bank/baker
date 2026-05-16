@@ -19,14 +19,13 @@ import com.ing.baker.runtime.akka.actor.Util.logging._
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransition, StartTimer}
 import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceLogger._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.RecipeRecord

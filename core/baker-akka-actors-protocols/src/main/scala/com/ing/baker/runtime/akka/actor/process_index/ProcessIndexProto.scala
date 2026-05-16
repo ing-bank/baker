@@ -147,10 +147,11 @@ object ProcessIndexProto {
           processStatus = readStatus(isDeleted, isPassivated)
         } yield ActorMetadata(recipeId, recipeInstanceId, createdDateTime, processStatus)
 
-      def readStatus(isDeleted: Boolean, isPassivated: Boolean): ProcessStatus =
+      private def readStatus(isDeleted: Boolean, isPassivated: Boolean): ProcessStatus = {
         if (isDeleted) Deleted
         else if (isPassivated) Passivated
         else Active
+      }
     }
 
   implicit def getIndexProto: ProtoMap[GetIndex.type, protobuf.GetIndex] =

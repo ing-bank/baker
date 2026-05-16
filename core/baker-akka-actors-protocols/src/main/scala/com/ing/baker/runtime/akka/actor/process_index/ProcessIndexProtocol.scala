@@ -13,8 +13,13 @@ object ProcessIndexProtocol {
 
   sealed trait ProcessStatus
 
+  //The process is created and not deleted
   case object Active extends ProcessStatus
+
+  //The process was deleted
   case object Deleted extends ProcessStatus
+
+  //The process was passivated
   case object Passivated extends ProcessStatus
 
   case class ActorMetadata(recipeId: String,
@@ -27,14 +32,25 @@ object ProcessIndexProtocol {
     def isPassivated: Boolean = processStatus == Passivated
   }
 
-  // Event sourcing events
+  // --- Events
+
+  // when an actor is requested again after passivation
   case class ActorActivated(recipeInstanceId: String) extends BakerSerializable
+
+  // when an actor is passivated
   case class ActorPassivated(recipeInstanceId: String) extends BakerSerializable
+
+  // when an actor is deleted
   case class ActorDeleted(recipeInstanceId: String, removedFromIndex: Boolean) extends BakerSerializable
+
+  // when an actor is created
   case class ActorCreated(recipeId: String, recipeInstanceId: String, createdDateTime: Long) extends BakerSerializable
+
+  // Used for creating a snapshot of the index.
   case class ProcessIndexSnapShot(index: Map[String, ActorMetadata]) extends BakerSerializable
-  
+
   case object StopProcessIndexShard extends BakerSerializable
+
   case class GetShardIndex(entityId: String) extends BakerSerializable
 
   // --- Protocol Messages ---

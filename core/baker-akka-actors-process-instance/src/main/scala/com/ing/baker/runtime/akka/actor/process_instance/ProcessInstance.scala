@@ -14,7 +14,7 @@ import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransiti
 import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstance._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.{CompletionListenerAdded, CompletionListenersRemoved, EventListenerAdded, EventListenersRemoved, Event => ESEvent, _}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.{CompletionListenerAdded, CompletionListenersRemoved, EventListenerAdded, EventListenersRemoved, Event, _}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceLogger._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{CompletionListenerAdded => _, CompletionListenersRemoved => _, EventListenerAdded => _, EventListenersRemoved => _, _}
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{Continue, ContinueAsFunctionalEvent, RetryWithDelay}
@@ -271,7 +271,7 @@ class ProcessInstance(
    * Checks for and sends all required notifications, returning a list of
    * cleanup events that should be persisted.
    */
-  private def handleNotifications(instance: Instance[RecipeInstanceState], firedEvent: Option[EventInstance]): List[ESEvent] = {
+  private def handleNotifications(instance: Instance[RecipeInstanceState], firedEvent: Option[EventInstance]): List[Event] = {
 
     val eventListenerCleanup = firedEvent.toList.flatMap { event =>
       instance.eventListenerPaths.get(event.name).filter(_.nonEmpty).map { listenerPaths =>

@@ -26,7 +26,8 @@ object RecipeManagerProtocol {
 
   case class AllRecipes(recipes: Seq[RecipeInformation]) extends RecipeManagerProtocol
 
-  // Event sourcing event
+  //Events
+  //When a recipe is added
   case class RecipeAdded(compiledRecipe: CompiledRecipe, timeStamp: Long) extends BakerSerializable
 
 }

@@ -5,7 +5,6 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.Rec
 import com.ing.baker.runtime.akka.actor.serialization.{AkkaSerializerProvider, SerializationSpec}
 import com.ing.baker.runtime.serialization.Encryption
 import org.scalatest.TryValues._
-import com.ing.baker.runtime.akka.actor.serialization.SerializedDataProto._
 
 class RecipeManagerActorProtoSpec extends BakerRuntimeTestBase {
 

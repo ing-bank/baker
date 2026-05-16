@@ -45,12 +45,8 @@ object BakerTypedProtobufSerializer {
     DelayedTransitionSerialization.entries
   }
 
-  /**
-   * Hardcoded serializerId for this serializer. This should not conflict with other serializers.
+  /** Hardcoded serializerId for this serializer. This should not conflict with other serializers.
    * Values from 0 to 40 are reserved for Akka internal usage.
-   * 
-   * This ID (101) must remain constant to maintain backward compatibility with
-   * persisted events in the journal.
    */
   val identifier = 101
 
@@ -79,9 +75,8 @@ object BakerTypedProtobufSerializer {
 
 /**
  * Akka serializer implementation that extends TypedProtobufSerializer.
- * 
+ *
  * This class is instantiated by Akka during actor system initialization based
  * on the configuration in reference.conf.
  */
-class BakerTypedProtobufSerializer(system: ExtendedActorSystem) 
-  extends TypedProtobufSerializer(system, BakerTypedProtobufSerializer.identifier, BakerTypedProtobufSerializer.entries(system.provider))
+class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends TypedProtobufSerializer(system, BakerTypedProtobufSerializer.identifier, BakerTypedProtobufSerializer.entries(system.provider))

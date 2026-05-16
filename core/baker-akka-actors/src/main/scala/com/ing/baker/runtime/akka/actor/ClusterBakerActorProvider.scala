@@ -13,7 +13,6 @@ import com.ing.baker.il.sha256HashCode
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{GetIndex, GetShardIndex, Index, ProcessIndexMessage, StopProcessIndexShard, ActorMetadata}
 import com.ing.baker.runtime.akka.actor.process_index._
-import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.serialization.Encryption

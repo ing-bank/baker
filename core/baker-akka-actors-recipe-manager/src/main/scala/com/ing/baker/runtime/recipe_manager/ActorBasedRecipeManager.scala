@@ -5,7 +5,6 @@ import _root_.akka.pattern._
 import _root_.akka.util.Timeout
 import akka.cluster.Cluster
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
-import com.ing.baker.runtime.akka.actor.BakerActorNames.recipeManagerName
 import com.ing.baker.runtime.akka.actor.Timeouts
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
@@ -62,6 +61,11 @@ private class ActorBasedRecipeManager(actor: ActorRef, timeouts: Timeouts)(impli
 }
 
 object ActorBasedRecipeManager {
+  /**
+   * The name of the recipe manager actor.
+   */
+  private val recipeManagerName: String = "RecipeManager"
+
   def pollingAware(actor: ActorRef, timeouts: Timeouts)
            (implicit ex: ExecutionContext): RecipeManager = new ActorBasedRecipeManager(actor, timeouts) with PollingAware
 

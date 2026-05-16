@@ -109,23 +109,27 @@ object ProcessInstanceEventSourcing extends LazyLogging {
   case class MetaDataAdded(metaData: Map[String, String]) extends Event
 
   /**
-    * An event that describes a completion listener being added
-    */
+   * An event that describes a listener being added for process completion.
+   * @param listenerPath The serialized path of the listener actor.
+   */
   case class CompletionListenerAdded(listenerPath: String) extends Event
 
   /**
-    * An event that describes an event listener being added for a specific event
-    */
+   * An event that describes a listener being added for a specific event occurrence.
+   * @param eventName The name of the event to listen for.
+   * @param listenerPath The serialized path of the listener actor.
+   */
   case class EventListenerAdded(eventName: String, listenerPath: String) extends Event
 
   /**
-    * An event that describes all completion listeners being removed
-    */
+   * An event that signifies that all completion listeners have been notified and should be removed.
+   */
   case class CompletionListenersRemoved() extends Event
 
   /**
-    * An event that describes event listeners being removed for a specific event
-    */
+   * An event that signifies that all listeners for a specific event have been notified and should be removed.
+   * @param eventName The event for which listeners are removed.
+   */
   case class EventListenersRemoved(eventName: String) extends Event
 
   def apply[S, E](sourceFn: (Long, Transition) => (S => E => S)): Instance[S] => Event => Instance[S] = instance => {

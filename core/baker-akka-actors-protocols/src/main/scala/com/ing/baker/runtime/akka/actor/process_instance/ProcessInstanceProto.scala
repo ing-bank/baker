@@ -4,10 +4,7 @@ import akka.actor.{ActorRef, ActorRefProvider}
 import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.traverse._
-import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, MissingEventTransition, MultiFacilitatorTransition}
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{CompletionListenerAdded, CompletionListenersRemoved, EventListenerAdded, EventListenersRemoved}
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, ContinueAsFunctional, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.protobuf.FailureStrategyMessage.StrategyTypeMessage
 import com.ing.baker.runtime.serialization.ProtoMap

@@ -12,7 +12,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSou
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.{RecipeAdded, GetRecipe}
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState, SensoryEventResult}

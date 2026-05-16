@@ -6,7 +6,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatest.matchers.should.Matchers
 
-import scala.collection.immutable.List
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
