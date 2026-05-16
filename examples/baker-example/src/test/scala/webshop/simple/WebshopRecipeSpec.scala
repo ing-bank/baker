@@ -88,7 +88,9 @@ class WebshopRecipeSpec extends TestKit(ActorSystem("baker-webshop-system")) wit
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, orderPlaced)
         _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, paymentMade)
-        _ <- baker.awaitCompleted(recipeInstanceId, timeout = 5.seconds)
+        // Wait for the ItemsReserved event instead of awaitCompleted to avoid race condition
+        // where the interaction completes but the output event hasn't been fully processed yet
+        _ <- baker.awaitEvent(recipeInstanceId, "ItemsReserved", timeout = 5.seconds)
         state <- baker.getRecipeInstanceState(recipeInstanceId)
         provided = state
           .ingredients
