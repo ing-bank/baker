@@ -196,7 +196,20 @@ object ProcessInstanceEventSourcing extends LazyLogging {
       })
       val failureCount = job.failureCount + 1
       val updatedJob: Job[S] = job.copy(failure = Some(ExceptionState(e.timeFailed, failureCount, e.failureReason, e.exceptionStrategy)))
-      instance.copy[S](jobs = instance.jobs + (job.id -> updatedJob))
+      
+      // Decrement counter for event transitions that are NOT retrying
+      // Retrying transitions are still "in-flight" so counter should remain
+      val isEventTransition = transition.isInstanceOf[EventTransition]
+      val isRetrying = e.exceptionStrategy.isInstanceOf[ExceptionStrategy.RetryWithDelay]
+      val updatedCounter = if (isEventTransition && !isRetrying)
+        math.max(0, instance.inFlightEventTransitions - 1)
+      else
+        instance.inFlightEventTransitions
+      
+      instance.copy[S](
+        jobs = instance.jobs + (job.id -> updatedJob),
+        inFlightEventTransitions = updatedCounter
+      )
 
     case e: TransitionDelayed =>
       val consumed: Marking[Place] = e.consumed.unmarshall(instance.petriNet.places)
