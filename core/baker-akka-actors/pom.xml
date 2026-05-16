@@ -12,21 +12,40 @@
     </parent>
 
     <artifactId>baker-akka-actors</artifactId>
-    <name>Baker Akka Actor System</name>
-    <description>Akka-based Actor System for Baker</description>
+    <name>Baker Akka Actors Integration</name>
+    <description>Integration module bringing together all Baker Akka actor components</description>
 
     <dependencies>
+        <!-- Baker Akka Actor Modules -->
         <dependency>
             <groupId>com.ing.baker</groupId>
-            <artifactId>baker-recipe-manager</artifactId>
+            <artifactId>baker-akka-actors-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.ing.baker</groupId>
-            <artifactId>baker-recipe-dsl</artifactId>
+            <artifactId>baker-akka-actors-protocols</artifactId>
             <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-akka-actors-recipe-manager</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-akka-actors-process-instance</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-akka-actors-delayed-transition</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-akka-actors-process-index</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -34,114 +53,24 @@
             <artifactId>scala-library</artifactId>
         </dependency>
 
-        <!-- Akka dependencies -->
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-stream_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-protobuf-v3_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-persistence_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-persistence-query_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-cluster_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-cluster-tools_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-cluster-sharding_${scala.compat.version}</artifactId>
-        </dependency>
+        <!-- Akka management for cluster bootstrap (integration-specific) -->
         <dependency>
             <groupId>com.lightbend.akka.management</groupId>
             <artifactId>akka-management-cluster-bootstrap_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-discovery_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.github.dnvriend</groupId>
             <artifactId>akka-persistence-inmemory_${scala.compat.version}</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor-typed_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-cluster-typed_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-persistence-typed_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-stream-typed_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-slf4j_${scala.compat.version}</artifactId>
-        </dependency>
-
-        <!-- Other dependencies -->
-        <dependency>
-            <groupId>com.iheart</groupId>
-            <artifactId>ficus_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.typelevel</groupId>
-            <artifactId>cats-core_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.typelevel</groupId>
-            <artifactId>cats-effect_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.thesamet.scalapb</groupId>
-            <artifactId>scalapb-runtime_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.scala-logging</groupId>
-            <artifactId>scala-logging_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>nl.pragmasoft.sensors</groupId>
-            <artifactId>sensors-core_${scala.compat.version}</artifactId>
-        </dependency>
 
         <!-- Test dependencies -->
-<!--        <dependency>-->
-<!--            <groupId>com.ing.baker</groupId>-->
-<!--            <artifactId>baker-types</artifactId>-->
-<!--            <version>${project.version}</version>-->
-<!--            <type>test-jar</type>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-recipe-dsl</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>com.ing.baker</groupId>
             <artifactId>baker-compiler</artifactId>
@@ -185,33 +114,6 @@
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>org.xolstice.maven.plugins</groupId>
-                <artifactId>protobuf-maven-plugin</artifactId>
-                <configuration>
-                    <protoSourceRoot>${basedir}/src/main/protobuf</protoSourceRoot>
-                    <outputDirectory>${basedir}/target/generated-sources/protobuf/scala</outputDirectory>
-                    <clearOutputDirectory>false</clearOutputDirectory>
-                    <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
-                    <protocPlugins>
-                        <protocPlugin>
-                            <id>scalapb</id>
-                            <groupId>com.thesamet.scalapb</groupId>
-                            <artifactId>compilerplugin_${scala.compat.version}</artifactId>
-                            <version>${scalapb.version}</version>
-                            <mainClass>scalapb.ScalaPbCodeGenerator</mainClass>
-                        </protocPlugin>
-                    </protocPlugins>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>

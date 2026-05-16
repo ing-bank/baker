@@ -113,7 +113,16 @@
         <module>core/baker-recipe-dsl</module>
         <module>core/baker-recipe-dsl-kotlin</module>
         <module>core/baker-compiler</module>
+        
+        <!-- Baker Akka Actor Modules (in dependency order) -->
+        <module>core/baker-akka-actors-common</module>
+        <module>core/baker-akka-actors-protocols</module>
+        <module>core/baker-akka-actors-recipe-manager</module>
+        <module>core/baker-akka-actors-process-instance</module>
+        <module>core/baker-akka-actors-delayed-transition</module>
+        <module>core/baker-akka-actors-process-index</module>
         <module>core/baker-akka-actors</module>
+        
         <module>core/baker-akka-runtime</module>
         <module>core/baker-recipe-manager</module>
         <module>core/baker-test</module>
