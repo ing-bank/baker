@@ -7,7 +7,7 @@ import akka.persistence.query.scaladsl.CurrentEventsByPersistenceIdQuery
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.sensors.actor.PersistentActorMetrics
 import akka.stream.scaladsl.Source
-import com.ing.baker.il.petrinet.{Place, Transition}
+import com.ing.baker.il.petrinet.{EventTransition, Place, Transition}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.Event
 import com.ing.baker.runtime.akka.actor.process_instance.internal.{ExceptionState, ExceptionStrategy, Instance, Job}
@@ -145,12 +145,20 @@ object ProcessInstanceEventSourcing extends LazyLogging {
       val consumed: Marking[Place] = e.consumed.unmarshall(instance.petriNet.places)
       val produced: Marking[Place] = e.produced.unmarshall(instance.petriNet.places)
 
+      // Decrement counter for event transitions (with safeguard to prevent negative)
+      val isEventTransition = transition.isInstanceOf[EventTransition]
+      val updatedCounter = if (isEventTransition)
+        math.max(0, instance.inFlightEventTransitions - 1)
+      else
+        instance.inFlightEventTransitions
+
       instance.copy[S](
         sequenceNr = instance.sequenceNr + 1,
         marking = (instance.marking |-| consumed) |+| produced,
         receivedCorrelationIds = instance.receivedCorrelationIds ++ e.correlationId,
         state = newState,
-        jobs = instance.jobs - e.jobId
+        jobs = instance.jobs - e.jobId,
+        inFlightEventTransitions = updatedCounter
       )
 
     case e: TransitionFailedWithOutputEvent =>
@@ -178,12 +186,20 @@ object ProcessInstanceEventSourcing extends LazyLogging {
       val consumed: Marking[Place] = e.consumed.unmarshall(instance.petriNet.places)
       val produced: Marking[Place] = e.produced.unmarshall(instance.petriNet.places)
 
+      // Decrement counter for event transitions (with safeguard to prevent negative)
+      val isEventTransition = transition.isInstanceOf[EventTransition]
+      val updatedCounter = if (isEventTransition)
+        math.max(0, instance.inFlightEventTransitions - 1)
+      else
+        instance.inFlightEventTransitions
+
       instance.copy[S](
         sequenceNr = instance.sequenceNr + 1,
         marking = (instance.marking |-| consumed) |+| produced,
         receivedCorrelationIds = instance.receivedCorrelationIds ++ e.correlationId,
         state = newState,
-        jobs = instance.jobs - e.jobId
+        jobs = instance.jobs - e.jobId,
+        inFlightEventTransitions = updatedCounter
       )
 
     case e: TransitionFailedEvent =>
