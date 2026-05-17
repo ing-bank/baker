@@ -1720,7 +1720,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         })
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
-        _ = baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), Option.apply("correlationId"))
+        _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), Option.apply("correlationId"))
 
         startTime = System.currentTimeMillis()
         status <- baker.awaitCompleted(recipeInstanceId, timeout = 1.seconds)
