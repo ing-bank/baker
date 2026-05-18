@@ -1,8 +1,5 @@
 package com.ing.baker.runtime.akka
 
-import java.net.MalformedURLException
-import java.util.concurrent.TimeUnit
-import java.util.{Optional, UUID}
 import akka.actor.ActorSystem
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.testkit.{TestDuration, TestKit, TestProbe}
@@ -11,7 +8,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAndBlock
-import com.ing.baker.recipe.scaladsl.{CheckPointEvent, Event, Ingredient, Interaction, Recipe}
+import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
@@ -20,10 +17,13 @@ import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance
 import com.ing.baker.types.{CharArray, Int32, PrimitiveValue, Value}
 import com.typesafe.config.{Config, ConfigFactory}
 import io.prometheus.client.CollectorRegistry
-import org.mockito.ArgumentMatchers.{any, anyMap, anyString, argThat, eq => mockitoEq}
+import org.mockito.ArgumentMatchers.{any, anyString, eq => mockitoEq}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 
+import java.net.MalformedURLException
+import java.util.concurrent.TimeUnit
+import java.util.{Optional, UUID}
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps

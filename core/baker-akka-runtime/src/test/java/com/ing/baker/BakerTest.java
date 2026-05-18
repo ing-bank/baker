@@ -30,7 +30,7 @@ import static org.junit.Assert.*;
 public class BakerTest {
 
     private InteractionInstance interactionOneInstance = InteractionInstance.from(new JavaCompiledRecipeTest.InteractionOneImpl());
-    private java.util.List<Object> implementationsList = ImmutableList.of(
+    private List<Object> implementationsList = ImmutableList.of(
             interactionOneInstance,
             InteractionInstance.from(new JavaCompiledRecipeTest.InteractionTwo()),
             InteractionInstance.from(new JavaCompiledRecipeTest.InteractionThreeImpl()),
@@ -61,7 +61,7 @@ public class BakerTest {
 
         String recipeInstanceId = UUID.randomUUID().toString();
         Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
-        java.util.Map<String, Value> ingredients = jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false, true))
+        Map<String, Value> ingredients = jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false, true))
                 .thenCompose(recipeId -> {
                     assertEquals(compiledRecipe.getValidationErrors().size(), 0);
                     return jBaker.bake(recipeId, recipeInstanceId);
@@ -89,7 +89,7 @@ public class BakerTest {
         String requestId = UUID.randomUUID().toString();
         jBaker.bake(recipeId, requestId).get();
         jBaker.fireEventAndResolveWhenCompleted(requestId, EventInstance.from(new JavaCompiledRecipeTest.EventOne())).get();
-        java.util.Map<String, Value> ingredients = jBaker.getRecipeInstanceState(requestId).get().getIngredients();
+        Map<String, Value> ingredients = jBaker.getRecipeInstanceState(requestId).get().getIngredients();
 
         assertEquals(1, ingredients.size());
 

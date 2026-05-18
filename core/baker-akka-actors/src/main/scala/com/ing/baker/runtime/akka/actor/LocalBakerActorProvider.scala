@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.actor
 import akka.actor.{ActorRef, ActorSystem}
 import akka.pattern.{BackoffOpts, BackoffSupervisor}
 import cats.effect.IO
-import com.ing.baker.runtime.akka.{AkkaBakerConfig, _}
+import com.ing.baker.runtime.akka._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{GetIndex, Index}
@@ -21,7 +21,6 @@ class LocalBakerActorProvider(
                                providedIngredientFilter: List[String],
                                actorIdleTimeout: Option[FiniteDuration],
                                configuredEncryption: Encryption,
-                               timeouts: AkkaBakerConfig.Timeouts,
                                blacklistedProcesses: List[String],
                                rememberProcessDuration: Option[Duration]
                              ) extends BakerActorProvider {
