@@ -23,6 +23,6 @@
         <module>baker-openapi-dsl</module>
         <module>baker-openapi-emitter</module>
         <module>baker-openapi-plugin</module>
-        <module>baker-openapi-transportation</module>
+        <module>baker-openapi-wirespec</module>
     </modules>
 </project>

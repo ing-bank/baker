@@ -24,7 +24,7 @@
         </dependency>
         <dependency>
             <groupId>com.ing.baker</groupId>
-            <artifactId>baker-openapi-transportation</artifactId>
+            <artifactId>baker-openapi-wirespec</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

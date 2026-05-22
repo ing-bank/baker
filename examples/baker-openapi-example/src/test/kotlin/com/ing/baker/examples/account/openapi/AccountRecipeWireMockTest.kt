@@ -11,8 +11,8 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.examples.account.openapi.generated.api.CreateAccount
 import com.ing.baker.examples.account.openapi.generated.endpoint.CreateAccount as CreateAccountEndpoint
-import com.ing.baker.openapi.transportation.Transportation
-import com.ing.baker.openapi.transportation.javaHttpTransportation
+import com.ing.baker.openapi.wirespec.Transportation
+import com.ing.baker.openapi.wirespec.javaHttpTransportation
 import com.ing.baker.recipe.kotlindsl.ExperimentalDsl
 import com.ing.baker.runtime.javadsl.EventInstance
 import com.ing.baker.runtime.kotlindsl.InMemoryBaker

@@ -1,4 +1,4 @@
-package com.ing.baker.openapi.transportation
+package com.ing.baker.openapi.wirespec
 
 import community.flock.wirespec.kotlin.Wirespec
 import java.net.URI

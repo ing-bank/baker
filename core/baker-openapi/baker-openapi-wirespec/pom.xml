@@ -11,9 +11,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>baker-openapi-transportation</artifactId>
-    <name>Baker OpenAPI Transportation</name>
-    <description>Default HTTP transport (java.net.http.HttpClient) bridging wirespec RawRequest/RawResponse</description>
+    <artifactId>baker-openapi-wirespec</artifactId>
+    <name>Baker OpenAPI Wirespec</name>
+    <description>Wirespec-integration runtime for baker-openapi: default HTTP transport (java.net.http.HttpClient) bridging Wirespec.RawRequest/RawResponse</description>
 
     <dependencies>
         <dependency>
