@@ -7,13 +7,13 @@ import com.ing.baker.runtime.javadsl.InteractionInstance
 import community.flock.wirespec.kotlin.Wirespec
 
 /**
- * A [Recipe] paired with the response mappers configured by `api(...) { on(...) { ... } }`
- * blocks. The mappers are the recipe's responsibility — startup code only needs to
- * supply the underlying wirespec handlers.
+ * A [Recipe] paired with the per-operation configuration declared inside
+ * `api(...) { ... }` blocks (response mappers, ingredient name overrides).
+ * Startup code only needs to supply the transport + serialization.
  */
 class ApiRecipe internal constructor(
     val recipe: Recipe,
-    internal val mappersByOperation: Map<String, Pair<ApiOperation, Map<Int, (Wirespec.Response<*>) -> Any>>>,
+    internal val configsByOperation: Map<String, ApiInteractionConfig>,
 ) {
     /**
      * Builds an [InteractionInstance] for every API operation in the recipe using
@@ -24,14 +24,14 @@ class ApiRecipe internal constructor(
         transport: suspend (Wirespec.RawRequest) -> Wirespec.RawResponse,
         serialization: Wirespec.Serialization,
     ): List<InteractionInstance> =
-        mappersByOperation.values.map { (op, mappers) ->
-            val handler = op.buildHandler(transport, serialization)
-            ApiOperationBinding(op, handler, mappers).toInteractionInstance()
+        configsByOperation.values.map { cfg ->
+            val handler = cfg.operation.buildHandler(transport, serialization)
+            ApiOperationBinding(cfg.operation, handler, cfg.mappers, cfg.nameOverrides).toInteractionInstance()
         }
 
     /**
      * Overload for callers who want to supply a handler explicitly per operation
-     * (e.g. tests with custom fakes). Operations not in [handlers] fall back to
+     * (e.g. tests with custom fakes). Operations not in [overrides] fall back to
      * the descriptor's default handler built from (transport, serialization).
      */
     fun toInteractionInstances(
@@ -39,28 +39,28 @@ class ApiRecipe internal constructor(
         serialization: Wirespec.Serialization,
         overrides: Map<ApiOperation, Wirespec.Handler>,
     ): List<InteractionInstance> =
-        mappersByOperation.values.map { (op, mappers) ->
-            val handler = overrides[op] ?: op.buildHandler(transport, serialization)
-            ApiOperationBinding(op, handler, mappers).toInteractionInstance()
+        configsByOperation.values.map { cfg ->
+            val handler = overrides[cfg.operation] ?: cfg.operation.buildHandler(transport, serialization)
+            ApiOperationBinding(cfg.operation, handler, cfg.mappers, cfg.nameOverrides).toInteractionInstance()
         }
 }
 
 /**
  * Builds an [ApiRecipe] — same shape as `recipe(name) { ... }` but the returned
- * wrapper carries the response mappers configured inside `api(...)` blocks so the
- * runtime can construct interaction instances without re-declaring them.
+ * wrapper carries the configuration collected from `api(...)` blocks so the
+ * runtime can construct interaction instances without re-declaring it.
  */
 @OptIn(ExperimentalDsl::class)
 fun apiRecipe(name: String, configure: RecipeBuilder.() -> Unit): ApiRecipe {
-    val collector = mutableMapOf<String, Pair<ApiOperation, Map<Int, (Wirespec.Response<*>) -> Any>>>()
-    apiMappersCollector.set(collector)
+    val collector = mutableMapOf<String, ApiInteractionConfig>()
+    apiInteractionConfigCollector.set(collector)
     try {
         val recipe = com.ing.baker.recipe.kotlindsl.recipe(name, configure)
         return ApiRecipe(recipe, collector.toMap())
     } finally {
-        apiMappersCollector.remove()
+        apiInteractionConfigCollector.remove()
     }
 }
 
-internal val apiMappersCollector: ThreadLocal<MutableMap<String, Pair<ApiOperation, Map<Int, (Wirespec.Response<*>) -> Any>>>?> =
+internal val apiInteractionConfigCollector: ThreadLocal<MutableMap<String, ApiInteractionConfig>?> =
     ThreadLocal.withInitial { null }

@@ -17,7 +17,16 @@ class ApiOperationInteraction(
     private val operation: ApiOperation,
     private val handler: Wirespec.Handler,
     private val mappers: kotlin.collections.Map<Int, ResponseMapper>,
+    /**
+     * Map from API field name → recipe ingredient name. At runtime Baker passes
+     * IngredientInstances using the recipe-side names; we reverse the map to
+     * present the API-named map to [ApiOperation.buildRequest].
+     */
+    private val nameOverrides: kotlin.collections.Map<String, String> = emptyMap(),
 ) : InteractionInstance() {
+
+    private val recipeToApi: kotlin.collections.Map<String, String> =
+        nameOverrides.entries.associate { (api, recipe) -> recipe to api }
 
     override fun name(): String = operation.operationName
 
@@ -43,7 +52,10 @@ class ApiOperationInteraction(
     override fun run(input: MutableList<IngredientInstance>): CompletableFuture<Optional<EventInstance>> {
         return try {
             val ingredientMap: kotlin.collections.Map<String, Any?> =
-                input.associate { it.name to it.value.`as`(operation.inputFieldType(it.name)) }
+                input.associate { instance ->
+                    val apiName = recipeToApi[instance.name] ?: instance.name
+                    apiName to instance.value.`as`(operation.inputFieldType(apiName))
+                }
             val request = operation.buildRequest(ingredientMap)
             val response = runBlocking { operation.invoke(handler, request) }
             val mapper = mappers[response.status]

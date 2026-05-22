@@ -25,8 +25,17 @@ fun RecipeBuilder.api(
 ) {
     val scope = ApiInteractionScope(operation).apply(configure)
     addInteraction(scope.buildInteraction())
-    apiMappersCollector.get()?.put(operation.operationName, operation to scope.configuredMappers)
+    apiInteractionConfigCollector.get()?.put(
+        operation.operationName,
+        ApiInteractionConfig(operation, scope.configuredMappers, scope.configuredNameOverrides),
+    )
 }
+
+internal data class ApiInteractionConfig(
+    val operation: ApiOperation,
+    val mappers: Map<Int, (Wirespec.Response<*>) -> Any>,
+    val nameOverrides: Map<String, String>,
+)
 
 @ApiDslMarker
 class ApiInteractionScope internal constructor(private val operation: ApiOperation) {
@@ -62,12 +71,24 @@ class ApiInteractionScope internal constructor(private val operation: ApiOperati
         maxInteractionCount = n
     }
 
-    fun ingredientNameOverrides(block: MutableMap<String, String>.() -> Unit) {
-        ingredientNameOverridesMap.apply(block)
+    /**
+     * Maps API input field names (left) to recipe ingredient names (right).
+     * Use this when the recipe's ingredient name doesn't match the API contract
+     * (e.g. domain calls it `customerId`, the OpenAPI doc calls it `userId`).
+     *
+     * The wirespec request DTO itself is never an ingredient — only flat values
+     * (path / query / header / flattened body fields) flow through Baker.
+     */
+    fun ingredientNameOverrides(block: IngredientNameOverridesScope.() -> Unit) {
+        val scope = IngredientNameOverridesScope().apply(block)
+        ingredientNameOverridesMap.putAll(scope.entries)
     }
 
     /** Read-only view of configured mappers, useful for app-startup binding. */
     val configuredMappers: Map<Int, (Wirespec.Response<*>) -> Any> get() = mappers.toMap()
+
+    /** Read-only view of API field → ingredient overrides. */
+    val configuredNameOverrides: Map<String, String> get() = ingredientNameOverridesMap.toMap()
 
     internal fun buildInteraction(): Interaction {
         val inputIngredients: Set<Ingredient> = operation.inputFields
@@ -91,6 +112,13 @@ class ApiInteractionScope internal constructor(private val operation: ApiOperati
             false,
         )
     }
+}
+
+@ApiDslMarker
+class IngredientNameOverridesScope internal constructor() {
+    internal val entries = mutableMapOf<String, String>()
+    /** Maps the API input field name (receiver) to the recipe ingredient name. */
+    infix fun String.to(other: String) { entries[this] = other }
 }
 
 private fun KClass<*>.toEvent(): Event {

@@ -63,12 +63,24 @@ class AccountRecipeWireMockTest {
         baker.bake(recipeId, rid)
         baker.fireSensoryEventAndAwaitReceived(
             rid,
-            EventInstance.from(CreateAccountCommand("u1", "p1", "CURRENT", "EUR")),
+            EventInstance.from(
+                CreateAccountCommand(
+                    customerId = "u1",
+                    profileId = "p1",
+                    accountType = "CURRENT",
+                    currency = "EUR",
+                )
+            ),
         )
         baker.awaitCompleted(rid, timeout = 10.seconds)
 
         val events = baker.getRecipeInstanceState(rid).events.map { it.name }
         assertTrue(events.contains("AccountCreated"), "events were: $events")
-        server.verify(postRequestedFor(urlEqualTo("/accounts")))
+        // The customerId ingredient was renamed to userId for the API call —
+        // proves ingredientNameOverrides wired the value through.
+        server.verify(
+            postRequestedFor(urlEqualTo("/accounts"))
+                .withRequestBody(com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath("$.userId", com.github.tomakehurst.wiremock.client.WireMock.equalTo("u1")))
+        )
     }
 }
