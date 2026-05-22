@@ -31,8 +31,19 @@ interface ApiOperation {
     /** The wirespec handler class this operation expects. The plugin generates this. */
     val handlerClass: KClass<out Wirespec.Handler>
 
-    /** Builds the wirespec Request from a name → value ingredient map. */
+    /**
+     * Builds the wirespec Request from a name → value ingredient map. Used by the
+     * default flat-ingredient flow when the recipe didn't declare an explicit
+     * typed `inputFrom<E, R>(...)` mapper.
+     */
     fun buildRequest(ingredients: Map<String, Any?>): Any
+
+    /**
+     * Wraps a wirespec body DTO into the operation's Request envelope. Used by
+     * the typed `inputFrom<E, R>(...)` flow — the user lambda produces the body
+     * DTO and the descriptor knows how to put it into the Endpoint.Request.
+     */
+    fun buildRequestFromBody(body: Any): Any
 
     /** Invokes the underlying wirespec handler. The handler must be of the operation's expected type. */
     suspend fun invoke(handler: Wirespec.Handler, request: Any): Wirespec.Response<*>

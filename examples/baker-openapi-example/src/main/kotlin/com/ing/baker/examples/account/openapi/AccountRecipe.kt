@@ -5,6 +5,7 @@ import com.ing.baker.openapi.dsl.apiRecipe
 import com.ing.baker.recipe.kotlindsl.ExperimentalDsl
 import com.ing.baker.examples.account.openapi.generated.api.CreateAccount
 import com.ing.baker.examples.account.openapi.generated.endpoint.CreateAccount as CreateAccountEndpoint
+import com.ing.baker.examples.account.openapi.generated.model.CreateAccountRequest
 
 @OptIn(ExperimentalDsl::class)
 object AccountRecipe {
@@ -12,13 +13,18 @@ object AccountRecipe {
         sensoryEvents { event<CreateAccountCommand>() }
 
         api(CreateAccount) {
-            // CreateAccountCommand is this API's input event — its fields populate
-            // the API request. The wirespec CreateAccountRequest DTO never appears
-            // in the recipe; only the domain event does. Fields match by name
-            // (profileId, accountType, currency); the one mismatch is declared
-            // with the symmetric "apiField from eventField" syntax.
-            inputFrom<CreateAccountCommand> {
-                "userId" from "customerId"
+            // The DSL is symmetric on both sides — the wirespec request/response
+            // DTOs appear inside the mapping lambdas only, never as ingredients.
+            //
+            //   Input :  inputFrom<EventType, RequestType>(...)
+            //   Output:  on<ResponseType, EventType>(N, ...)
+            inputFrom<CreateAccountCommand, CreateAccountRequest> { cmd ->
+                CreateAccountRequest(
+                    userId = cmd.customerId,
+                    profileId = cmd.profileId,
+                    accountType = cmd.accountType,
+                    currency = cmd.currency,
+                )
             }
 
             on<CreateAccountEndpoint.Response201, AccountCreated>(201) { resp ->

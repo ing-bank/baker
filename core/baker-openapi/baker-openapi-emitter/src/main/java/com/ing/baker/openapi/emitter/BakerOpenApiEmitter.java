@@ -127,6 +127,21 @@ public class BakerOpenApiEmitter extends LanguageEmitter {
         sb.append("            ").append(String.join(",\n            ", ctorArgs)).append("\n");
         sb.append("        )\n\n");
 
+        // buildRequestFromBody — used by the typed inputFrom<E, R>(mapper) DSL.
+        // The user-provided lambda returns the body DTO; this wraps it in the
+        // Endpoint.Request envelope. Body-only operations have a trivial wrapper;
+        // operations with path/query/header params reject the typed flow in v1.
+        boolean bodyOnly = bodyTypeName != null
+            && endpoint.getQueries().isEmpty()
+            && endpoint.getHeaders().isEmpty()
+            && endpoint.getPath().stream().noneMatch(s -> s instanceof Endpoint.Segment.Param);
+        sb.append("    override fun buildRequestFromBody(body: Any): Any =\n");
+        if (bodyOnly) {
+            sb.append("        ").append(name).append(".Request(body as ").append(bodyTypeName).append(")\n\n");
+        } else {
+            sb.append("        error(\"inputFrom<E, R>(mapper) is not supported for operations with path/query/header params; use ingredientNameOverrides with the flat flow instead.\")\n\n");
+        }
+
         // invoke
         String handlerMethod = Character.toLowerCase(name.charAt(0)) + name.substring(1);
         sb.append("    override suspend fun invoke(handler: Wirespec.Handler, request: Any): Wirespec.Response<*> =\n");

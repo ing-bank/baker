@@ -27,7 +27,13 @@ fun RecipeBuilder.api(
     addInteraction(scope.buildInteraction())
     apiInteractionConfigCollector.get()?.put(
         operation.operationName,
-        ApiInteractionConfig(operation, scope.configuredMappers, scope.configuredNameOverrides),
+        ApiInteractionConfig(
+            operation = operation,
+            mappers = scope.configuredMappers,
+            nameOverrides = scope.configuredNameOverrides,
+            inputEventClass = scope.configuredInputEventClass,
+            inputMapper = scope.configuredInputMapper,
+        ),
     )
 }
 
@@ -35,6 +41,10 @@ internal data class ApiInteractionConfig(
     val operation: ApiOperation,
     val mappers: Map<Int, (Wirespec.Response<*>) -> Any>,
     val nameOverrides: Map<String, String>,
+    /** Set when the recipe declared `inputFrom<E, R>(mapper)`. */
+    val inputEventClass: KClass<*>? = null,
+    /** Reconstructed-event → wirespec body. Set when [inputEventClass] is set. */
+    val inputMapper: ((Any) -> Any)? = null,
 )
 
 @ApiDslMarker
@@ -51,6 +61,12 @@ class ApiInteractionScope internal constructor(private val operation: ApiOperati
 
     @PublishedApi
     internal val ingredientNameOverridesMap = mutableMapOf<String, String>()
+
+    @PublishedApi
+    internal var inputEventClass: KClass<*>? = null
+
+    @PublishedApi
+    internal var inputMapper: ((Any) -> Any)? = null
 
     private var maxInteractionCount: Int? = null
 
@@ -89,23 +105,29 @@ class ApiInteractionScope internal constructor(private val operation: ApiOperati
     }
 
     /**
-     * Declares that [T] is the canonical input event for this API operation —
-     * its constructor fields populate the API request. The block lets the
-     * recipe author rename fields where event names don't match API names:
+     * Typed input mapping — symmetric to the response side's `on<R, E>(N) { ... }`.
+     * Declares that event [E] populates the API request body [R] via the given
+     * lambda:
      *
-     *   inputFrom<CreateAccountCommand> {
-     *       "userId" from "customerId"   // API field ← event field
+     *   inputFrom<CreateAccountCommand, CreateAccountRequest> { cmd ->
+     *       CreateAccountRequest(
+     *           userId = cmd.customerId,
+     *           profileId = cmd.profileId,
+     *           ...
+     *       )
      *   }
      *
-     * Equivalent to `requires(T::class) + ingredientNameOverrides { ... }` with
-     * the inverted-arrow `from` infix making the intent clearer (read as:
-     * "the API's userId comes from the event's customerId field"). The wirespec
-     * request DTO itself never appears in the recipe — only the event does.
+     * The wirespec request DTO appears inside the lambda only — never as a
+     * Baker ingredient. The runtime reconstructs an [E] instance from Baker
+     * ingredients (E's primary constructor parameters), calls the mapper, and
+     * lets the descriptor wrap the returned body into the operation's Request
+     * envelope.
      */
-    inline fun <reified T : Any> inputFrom(noinline configure: InputFromScope.() -> Unit = {}) {
-        requiredEvents.add(T::class.simpleName!!)
-        val scope = InputFromScope().apply(configure)
-        ingredientNameOverridesMap.putAll(scope.entries)
+    inline fun <reified E : Any, reified R : Any> inputFrom(noinline mapper: (E) -> R) {
+        requiredEvents.add(E::class.simpleName!!)
+        inputEventClass = E::class
+        @Suppress("UNCHECKED_CAST")
+        inputMapper = { event -> mapper(event as E) }
     }
 
     /** Read-only view of configured mappers, useful for app-startup binding. */
@@ -114,8 +136,22 @@ class ApiInteractionScope internal constructor(private val operation: ApiOperati
     /** Read-only view of API field → ingredient overrides. */
     val configuredNameOverrides: Map<String, String> get() = ingredientNameOverridesMap.toMap()
 
+    /** Set when `inputFrom<E, R>(mapper)` was used. */
+    val configuredInputEventClass: KClass<*>? get() = inputEventClass
+
+    /** Set when `inputFrom<E, R>(mapper)` was used. */
+    val configuredInputMapper: ((Any) -> Any)? get() = inputMapper
+
     internal fun buildInteraction(): Interaction {
-        val inputIngredients: Set<Ingredient> = operation.inputFields
+        // When inputFrom<E, R> was declared, the interaction's required ingredients
+        // are E's primary-constructor parameters (each becomes an ingredient that
+        // Baker fills from the fired E event). Otherwise fall back to the API
+        // descriptor's flat inputFields.
+        val inputIngredients: Set<Ingredient> = inputEventClass?.let { evt ->
+            evt.primaryConstructor?.parameters?.map { p ->
+                Ingredient(p.name!!, p.type.javaType)
+            }?.toSet()
+        } ?: operation.inputFields
             .map { Ingredient(it.name, it.type.java) }
             .toSet()
         val events: Set<Event> = outputEventClasses
@@ -143,13 +179,6 @@ class IngredientNameOverridesScope internal constructor() {
     internal val entries = mutableMapOf<String, String>()
     /** Maps the API input field name (receiver) to the recipe ingredient name. */
     infix fun String.to(other: String) { entries[this] = other }
-}
-
-@ApiDslMarker
-class InputFromScope {
-    @PublishedApi internal val entries = mutableMapOf<String, String>()
-    /** Reads as: API field [receiver] comes from event field [eventField]. */
-    infix fun String.from(eventField: String) { entries[this] = eventField }
 }
 
 private fun KClass<*>.toEvent(): Event {

@@ -26,7 +26,7 @@ class ApiRecipe internal constructor(
     ): List<InteractionInstance> =
         configsByOperation.values.map { cfg ->
             val handler = cfg.operation.buildHandler(transport, serialization)
-            ApiOperationBinding(cfg.operation, handler, cfg.mappers, cfg.nameOverrides).toInteractionInstance()
+            ApiOperationBinding(cfg.operation, handler, cfg.mappers, cfg.nameOverrides, cfg.inputEventClass, cfg.inputMapper).toInteractionInstance()
         }
 
     /**
@@ -41,7 +41,7 @@ class ApiRecipe internal constructor(
     ): List<InteractionInstance> =
         configsByOperation.values.map { cfg ->
             val handler = overrides[cfg.operation] ?: cfg.operation.buildHandler(transport, serialization)
-            ApiOperationBinding(cfg.operation, handler, cfg.mappers, cfg.nameOverrides).toInteractionInstance()
+            ApiOperationBinding(cfg.operation, handler, cfg.mappers, cfg.nameOverrides, cfg.inputEventClass, cfg.inputMapper).toInteractionInstance()
         }
 }
 

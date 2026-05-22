@@ -33,6 +33,7 @@ private object CreateUser : ApiOperation {
     )
     override val handlerClass = DslFakeHandler::class
     override fun buildRequest(ingredients: Map<String, Any?>): Any = ingredients
+    override fun buildRequestFromBody(body: Any): Any = body
     override suspend fun invoke(handler: Wirespec.Handler, request: Any): Wirespec.Response<*> =
         DslFakeResponse(201)
     override fun buildHandler(

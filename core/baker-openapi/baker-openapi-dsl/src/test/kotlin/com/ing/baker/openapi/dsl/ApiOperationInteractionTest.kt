@@ -42,6 +42,7 @@ private class FakeOperation(
         capturedRequest = ingredients
         return ingredients
     }
+    override fun buildRequestFromBody(body: Any): Any = body
     override suspend fun invoke(handler: Wirespec.Handler, request: Any): Wirespec.Response<*> = nextResponse
     override fun buildHandler(
         transport: suspend (Wirespec.RawRequest) -> Wirespec.RawResponse,

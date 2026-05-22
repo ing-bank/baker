@@ -18,6 +18,7 @@ private object StubOp : ApiOperation {
     override val responseTypes: Map<Int, KClass<*>> = mapOf(200 to BindingStubResponse::class)
     override val handlerClass = BindingStubHandler::class
     override fun buildRequest(ingredients: Map<String, Any?>): Any = Unit
+    override fun buildRequestFromBody(body: Any): Any = Unit
     override suspend fun invoke(handler: Wirespec.Handler, request: Any): Wirespec.Response<*> =
         BindingStubResponse(200)
     override fun buildHandler(
