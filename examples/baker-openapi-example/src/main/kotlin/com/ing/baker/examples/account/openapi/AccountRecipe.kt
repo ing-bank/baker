@@ -12,20 +12,13 @@ object AccountRecipe {
         sensoryEvents { event<CreateAccountCommand>() }
 
         api(CreateAccount) {
-            // The wirespec CreateAccountRequest DTO is never an ingredient — only
-            // flat values (path / query / header / flattened body fields) flow
-            // through Baker. Each is matched to a recipe ingredient by name:
-            //
-            //   API field    →   ingredient
-            //   profileId    →   profileId    (auto, name matches)
-            //   accountType  →   accountType  (auto)
-            //   currency     →   currency     (auto)
-            //   userId       →   customerId   (override declared below)
-            //
-            // The descriptor's buildRequest reassembles the DTO inside the
-            // generic interaction implementation — out of sight from the recipe.
-            ingredientNameOverrides {
-                "userId" to "customerId"
+            // CreateAccountCommand is this API's input event — its fields populate
+            // the API request. The wirespec CreateAccountRequest DTO never appears
+            // in the recipe; only the domain event does. Fields match by name
+            // (profileId, accountType, currency); the one mismatch is declared
+            // with the symmetric "apiField from eventField" syntax.
+            inputFrom<CreateAccountCommand> {
+                "userId" from "customerId"
             }
 
             on<CreateAccountEndpoint.Response201, AccountCreated>(201) { resp ->

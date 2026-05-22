@@ -46,8 +46,12 @@ class ApiInteractionScope internal constructor(private val operation: ApiOperati
     @PublishedApi
     internal val outputEventClasses = mutableSetOf<KClass<*>>()
 
-    private val requiredEvents = mutableSetOf<String>()
-    private val ingredientNameOverridesMap = mutableMapOf<String, String>()
+    @PublishedApi
+    internal val requiredEvents = mutableSetOf<String>()
+
+    @PublishedApi
+    internal val ingredientNameOverridesMap = mutableMapOf<String, String>()
+
     private var maxInteractionCount: Int? = null
 
     /**
@@ -81,6 +85,26 @@ class ApiInteractionScope internal constructor(private val operation: ApiOperati
      */
     fun ingredientNameOverrides(block: IngredientNameOverridesScope.() -> Unit) {
         val scope = IngredientNameOverridesScope().apply(block)
+        ingredientNameOverridesMap.putAll(scope.entries)
+    }
+
+    /**
+     * Declares that [T] is the canonical input event for this API operation —
+     * its constructor fields populate the API request. The block lets the
+     * recipe author rename fields where event names don't match API names:
+     *
+     *   inputFrom<CreateAccountCommand> {
+     *       "userId" from "customerId"   // API field ← event field
+     *   }
+     *
+     * Equivalent to `requires(T::class) + ingredientNameOverrides { ... }` with
+     * the inverted-arrow `from` infix making the intent clearer (read as:
+     * "the API's userId comes from the event's customerId field"). The wirespec
+     * request DTO itself never appears in the recipe — only the event does.
+     */
+    inline fun <reified T : Any> inputFrom(noinline configure: InputFromScope.() -> Unit = {}) {
+        requiredEvents.add(T::class.simpleName!!)
+        val scope = InputFromScope().apply(configure)
         ingredientNameOverridesMap.putAll(scope.entries)
     }
 
@@ -119,6 +143,13 @@ class IngredientNameOverridesScope internal constructor() {
     internal val entries = mutableMapOf<String, String>()
     /** Maps the API input field name (receiver) to the recipe ingredient name. */
     infix fun String.to(other: String) { entries[this] = other }
+}
+
+@ApiDslMarker
+class InputFromScope {
+    @PublishedApi internal val entries = mutableMapOf<String, String>()
+    /** Reads as: API field [receiver] comes from event field [eventField]. */
+    infix fun String.from(eventField: String) { entries[this] = eventField }
 }
 
 private fun KClass<*>.toEvent(): Event {
