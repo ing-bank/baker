@@ -35,6 +35,10 @@ private object CreateUser : ApiOperation {
     override fun buildRequest(ingredients: Map<String, Any?>): Any = ingredients
     override suspend fun invoke(handler: Wirespec.Handler, request: Any): Wirespec.Response<*> =
         DslFakeResponse(201)
+    override fun buildHandler(
+        transport: suspend (Wirespec.RawRequest) -> Wirespec.RawResponse,
+        serialization: Wirespec.Serialization,
+    ): Wirespec.Handler = DslFakeHandler()
 }
 
 @OptIn(ExperimentalDsl::class)

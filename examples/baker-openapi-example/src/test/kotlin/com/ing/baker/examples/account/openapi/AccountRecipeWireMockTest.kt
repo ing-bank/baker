@@ -9,8 +9,6 @@ import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.examples.account.openapi.generated.api.CreateAccount
-import com.ing.baker.examples.account.openapi.generated.endpoint.CreateAccount as CreateAccountEndpoint
 import com.ing.baker.openapi.wirespec.Transportation
 import com.ing.baker.openapi.wirespec.javaHttpTransportation
 import com.ing.baker.recipe.kotlindsl.ExperimentalDsl
@@ -39,15 +37,6 @@ class AccountRecipeWireMockTest {
     }
     @AfterEach fun tearDown() { server.stop() }
 
-    private fun createAccountHandler(): CreateAccountEndpoint.Handler {
-        val edge = CreateAccountEndpoint.Handler.client(serialization)
-        return object : CreateAccountEndpoint.Handler {
-            override suspend fun createAccount(
-                request: CreateAccountEndpoint.Request
-            ): CreateAccountEndpoint.Response<*> = edge.from(transport(edge.to(request)))
-        }
-    }
-
     @Test
     fun `recipe fires AccountCreated on 201`() = runBlocking {
         server.stubFor(
@@ -62,7 +51,8 @@ class AccountRecipeWireMockTest {
 
         val baker = InMemoryBaker.kotlin(
             implementations = AccountRecipe.apiRecipe.toInteractionInstances(
-                handlers = mapOf(CreateAccount to createAccountHandler()),
+                transport = transport,
+                serialization = serialization,
             ),
         )
         val recipeId = baker.addRecipe(

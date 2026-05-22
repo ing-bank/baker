@@ -43,6 +43,10 @@ private class FakeOperation(
         return ingredients
     }
     override suspend fun invoke(handler: Wirespec.Handler, request: Any): Wirespec.Response<*> = nextResponse
+    override fun buildHandler(
+        transport: suspend (Wirespec.RawRequest) -> Wirespec.RawResponse,
+        serialization: Wirespec.Serialization,
+    ): Wirespec.Handler = FakeHandler()
 }
 
 private val emptyScalaMetadata: scala.collection.immutable.Map<String, String> =

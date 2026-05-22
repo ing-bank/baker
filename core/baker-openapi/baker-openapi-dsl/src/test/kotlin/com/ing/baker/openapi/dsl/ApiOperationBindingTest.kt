@@ -20,6 +20,10 @@ private object StubOp : ApiOperation {
     override fun buildRequest(ingredients: Map<String, Any?>): Any = Unit
     override suspend fun invoke(handler: Wirespec.Handler, request: Any): Wirespec.Response<*> =
         BindingStubResponse(200)
+    override fun buildHandler(
+        transport: suspend (Wirespec.RawRequest) -> Wirespec.RawResponse,
+        serialization: Wirespec.Serialization,
+    ): Wirespec.Handler = BindingStubHandler()
 }
 
 class ApiOperationBindingTest {

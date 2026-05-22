@@ -16,15 +16,31 @@ class ApiRecipe internal constructor(
     internal val mappersByOperation: Map<String, Pair<ApiOperation, Map<Int, (Wirespec.Response<*>) -> Any>>>,
 ) {
     /**
-     * Builds an [InteractionInstance] for every operation declared in the recipe by
-     * pairing each operation with its handler from [handlers]. Throws if any
-     * operation lacks a handler.
+     * Builds an [InteractionInstance] for every API operation in the recipe using
+     * the supplied [transport] and [serialization]. Every descriptor knows how to
+     * build its own wirespec handler — callers register nothing per operation.
      */
-    fun toInteractionInstances(handlers: Map<ApiOperation, Wirespec.Handler>): List<InteractionInstance> =
+    fun toInteractionInstances(
+        transport: suspend (Wirespec.RawRequest) -> Wirespec.RawResponse,
+        serialization: Wirespec.Serialization,
+    ): List<InteractionInstance> =
         mappersByOperation.values.map { (op, mappers) ->
-            val handler = handlers[op]
-                ?: error("No handler provided for operation '${op.operationName}'. " +
-                    "Pass it via handlers = mapOf(${op.operationName} to <handler>)")
+            val handler = op.buildHandler(transport, serialization)
+            ApiOperationBinding(op, handler, mappers).toInteractionInstance()
+        }
+
+    /**
+     * Overload for callers who want to supply a handler explicitly per operation
+     * (e.g. tests with custom fakes). Operations not in [handlers] fall back to
+     * the descriptor's default handler built from (transport, serialization).
+     */
+    fun toInteractionInstances(
+        transport: suspend (Wirespec.RawRequest) -> Wirespec.RawResponse,
+        serialization: Wirespec.Serialization,
+        overrides: Map<ApiOperation, Wirespec.Handler>,
+    ): List<InteractionInstance> =
+        mappersByOperation.values.map { (op, mappers) ->
+            val handler = overrides[op] ?: op.buildHandler(transport, serialization)
             ApiOperationBinding(op, handler, mappers).toInteractionInstance()
         }
 }

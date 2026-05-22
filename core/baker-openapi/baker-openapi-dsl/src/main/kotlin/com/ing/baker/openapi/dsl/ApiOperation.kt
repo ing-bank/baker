@@ -36,4 +36,15 @@ interface ApiOperation {
 
     /** Invokes the underlying wirespec handler. The handler must be of the operation's expected type. */
     suspend fun invoke(handler: Wirespec.Handler, request: Any): Wirespec.Response<*>
+
+    /**
+     * Builds the wirespec handler for this operation from a generic transport and
+     * serialization. The default implementation lets the runtime construct handlers
+     * for every API operation in a recipe from just (transport, serialization) —
+     * the caller doesn't need to register handlers per operation.
+     */
+    fun buildHandler(
+        transport: suspend (Wirespec.RawRequest) -> Wirespec.RawResponse,
+        serialization: Wirespec.Serialization,
+    ): Wirespec.Handler
 }

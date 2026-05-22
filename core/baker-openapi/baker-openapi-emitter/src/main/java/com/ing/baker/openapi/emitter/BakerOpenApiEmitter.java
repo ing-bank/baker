@@ -131,7 +131,23 @@ public class BakerOpenApiEmitter extends LanguageEmitter {
         String handlerMethod = Character.toLowerCase(name.charAt(0)) + name.substring(1);
         sb.append("    override suspend fun invoke(handler: Wirespec.Handler, request: Any): Wirespec.Response<*> =\n");
         sb.append("        (handler as ").append(name).append(".Handler).").append(handlerMethod)
-          .append("(request as ").append(name).append(".Request)\n");
+          .append("(request as ").append(name).append(".Request)\n\n");
+
+        // buildHandler — wraps the operation's wirespec ClientEdge in a Handler that
+        // routes through the supplied transport. Lets callers register no per-operation
+        // factories — only (transport, serialization) at startup.
+        sb.append("    override fun buildHandler(\n");
+        sb.append("        transport: suspend (Wirespec.RawRequest) -> Wirespec.RawResponse,\n");
+        sb.append("        serialization: Wirespec.Serialization,\n");
+        sb.append("    ): Wirespec.Handler {\n");
+        sb.append("        val edge = ").append(name).append(".Handler.client(serialization)\n");
+        sb.append("        return object : ").append(name).append(".Handler {\n");
+        sb.append("            override suspend fun ").append(handlerMethod)
+          .append("(request: ").append(name).append(".Request): ")
+          .append(name).append(".Response<*> =\n");
+        sb.append("                edge.from(transport(edge.to(request)))\n");
+        sb.append("        }\n");
+        sb.append("    }\n");
         sb.append("}\n");
 
         return sb.toString();
