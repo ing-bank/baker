@@ -18,7 +18,7 @@ object AccountRecipe {
             //
             //   Input :  inputFrom<EventType, RequestType>(...)
             //   Output:  on<ResponseType, EventType>(N, ...)
-            inputFrom<CreateAccountCommand, CreateAccountRequest> { cmd ->
+            inputFrom<CreateAccountCommand> { cmd ->
                 CreateAccountRequest(
                     userId = cmd.customerId,
                     profileId = cmd.profileId,

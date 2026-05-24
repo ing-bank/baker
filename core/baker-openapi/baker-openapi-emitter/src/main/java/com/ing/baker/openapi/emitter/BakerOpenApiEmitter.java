@@ -72,7 +72,11 @@ public class BakerOpenApiEmitter extends LanguageEmitter {
         sb.append("import community.flock.wirespec.kotlin.Wirespec\n");
         sb.append("import kotlin.reflect.KClass\n\n");
 
-        sb.append("object ").append(name).append(" : ApiOperation {\n");
+        // Parameterize ApiOperation by the request body type. Operations without
+        // a body use Unit.
+        String requestBodyType = bodyTypeName(endpoint);
+        if (requestBodyType == null) requestBodyType = "Unit";
+        sb.append("object ").append(name).append(" : ApiOperation<").append(requestBodyType).append("> {\n");
         sb.append("    override val operationName = \"").append(name).append("\"\n\n");
 
         // Input fields: path + query + headers + flattened body fields.
@@ -135,11 +139,13 @@ public class BakerOpenApiEmitter extends LanguageEmitter {
             && endpoint.getQueries().isEmpty()
             && endpoint.getHeaders().isEmpty()
             && endpoint.getPath().stream().noneMatch(s -> s instanceof Endpoint.Segment.Param);
-        sb.append("    override fun buildRequestFromBody(body: Any): Any =\n");
+        sb.append("    override fun buildRequestFromBody(body: ").append(requestBodyType).append("): Any =\n");
         if (bodyOnly) {
-            sb.append("        ").append(name).append(".Request(body as ").append(bodyTypeName).append(")\n\n");
+            sb.append("        ").append(name).append(".Request(body)\n\n");
+        } else if (bodyTypeName == null) {
+            sb.append("        error(\"Operation ").append(name).append(" has no request body; inputFrom is not applicable.\")\n\n");
         } else {
-            sb.append("        error(\"inputFrom<E, R>(mapper) is not supported for operations with path/query/header params; use ingredientNameOverrides with the flat flow instead.\")\n\n");
+            sb.append("        error(\"inputFrom { ... } is not supported for operations with path/query/header params; use ingredientNameOverrides with the flat flow instead.\")\n\n");
         }
 
         // invoke

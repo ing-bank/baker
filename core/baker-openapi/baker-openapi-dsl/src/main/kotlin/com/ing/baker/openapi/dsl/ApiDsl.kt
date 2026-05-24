@@ -19,9 +19,9 @@ annotation class ApiDslMarker
  * The [configure] block declares status → user-event mappers and optional Baker
  * controls (required events, ingredient name overrides, maximumInteractionCount).
  */
-fun RecipeBuilder.api(
-    operation: ApiOperation,
-    configure: ApiInteractionScope.() -> Unit,
+fun <RequestBody : Any> RecipeBuilder.api(
+    operation: ApiOperation<RequestBody>,
+    configure: ApiInteractionScope<RequestBody>.() -> Unit,
 ) {
     val scope = ApiInteractionScope(operation).apply(configure)
     addInteraction(scope.buildInteraction())
@@ -38,17 +38,17 @@ fun RecipeBuilder.api(
 }
 
 internal data class ApiInteractionConfig(
-    val operation: ApiOperation,
+    val operation: ApiOperation<*>,
     val mappers: Map<Int, (Wirespec.Response<*>) -> Any>,
     val nameOverrides: Map<String, String>,
-    /** Set when the recipe declared `inputFrom<E, R>(mapper)`. */
+    /** Set when the recipe declared `inputFrom<E> { ... }`. */
     val inputEventClass: KClass<*>? = null,
     /** Reconstructed-event → wirespec body. Set when [inputEventClass] is set. */
     val inputMapper: ((Any) -> Any)? = null,
 )
 
 @ApiDslMarker
-class ApiInteractionScope internal constructor(private val operation: ApiOperation) {
+class ApiInteractionScope<RequestBody : Any> internal constructor(private val operation: ApiOperation<RequestBody>) {
 
     @PublishedApi
     internal val mappers = mutableMapOf<Int, (Wirespec.Response<*>) -> Any>()
@@ -106,10 +106,11 @@ class ApiInteractionScope internal constructor(private val operation: ApiOperati
 
     /**
      * Typed input mapping — symmetric to the response side's `on<R, E>(N) { ... }`.
-     * Declares that event [E] populates the API request body [R] via the given
-     * lambda:
+     * Declares that event [E] populates the API request body via the given lambda.
+     * The body type is fixed by the operation (each API operation has exactly one
+     * request body type), so only [E] needs to be supplied:
      *
-     *   inputFrom<CreateAccountCommand, CreateAccountRequest> { cmd ->
+     *   inputFrom<CreateAccountCommand> { cmd ->
      *       CreateAccountRequest(
      *           userId = cmd.customerId,
      *           profileId = cmd.profileId,
@@ -123,7 +124,7 @@ class ApiInteractionScope internal constructor(private val operation: ApiOperati
      * lets the descriptor wrap the returned body into the operation's Request
      * envelope.
      */
-    inline fun <reified E : Any, reified R : Any> inputFrom(noinline mapper: (E) -> R) {
+    inline fun <reified E : Any> inputFrom(noinline mapper: (E) -> RequestBody) {
         requiredEvents.add(E::class.simpleName!!)
         inputEventClass = E::class
         @Suppress("UNCHECKED_CAST")

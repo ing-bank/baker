@@ -37,7 +37,7 @@ class ApiRecipe internal constructor(
     fun toInteractionInstances(
         transport: suspend (Wirespec.RawRequest) -> Wirespec.RawResponse,
         serialization: Wirespec.Serialization,
-        overrides: Map<ApiOperation, Wirespec.Handler>,
+        overrides: Map<ApiOperation<*>, Wirespec.Handler>,
     ): List<InteractionInstance> =
         configsByOperation.values.map { cfg ->
             val handler = overrides[cfg.operation] ?: cfg.operation.buildHandler(transport, serialization)

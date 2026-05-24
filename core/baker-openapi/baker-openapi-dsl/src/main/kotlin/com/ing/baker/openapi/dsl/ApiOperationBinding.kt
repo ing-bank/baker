@@ -20,7 +20,7 @@ import kotlin.reflect.KClass
  * body DTO, which the descriptor wraps via [ApiOperation.buildRequestFromBody].
  */
 class ApiOperationBinding(
-    private val operation: ApiOperation,
+    private val operation: ApiOperation<*>,
     private val handler: Wirespec.Handler,
     private val mappers: Map<Int, (Wirespec.Response<*>) -> Any>,
     private val nameOverrides: Map<String, String> = emptyMap(),

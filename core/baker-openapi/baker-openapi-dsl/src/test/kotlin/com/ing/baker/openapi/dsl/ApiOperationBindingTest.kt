@@ -12,13 +12,13 @@ private class BindingStubResponse(override val status: Int) : Wirespec.Response<
     override val headers: Wirespec.Response.Headers = BindingStubHeaders
 }
 
-private object StubOp : ApiOperation {
+private object StubOp : ApiOperation<Unit> {
     override val operationName = "Stub"
     override val inputFields: List<InputField> = emptyList()
     override val responseTypes: Map<Int, KClass<*>> = mapOf(200 to BindingStubResponse::class)
     override val handlerClass = BindingStubHandler::class
     override fun buildRequest(ingredients: Map<String, Any?>): Any = Unit
-    override fun buildRequestFromBody(body: Any): Any = Unit
+    override fun buildRequestFromBody(body: Unit): Any = Unit
     override suspend fun invoke(handler: Wirespec.Handler, request: Any): Wirespec.Response<*> =
         BindingStubResponse(200)
     override fun buildHandler(

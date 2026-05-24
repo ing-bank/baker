@@ -21,7 +21,7 @@ private class DslFakeResponse(override val status: Int) : Wirespec.Response<Unit
     override val headers: Wirespec.Response.Headers = DslFakeHeaders
 }
 
-private object CreateUser : ApiOperation {
+private object CreateUser : ApiOperation<Unit> {
     override val operationName = "CreateUser"
     override val inputFields = listOf(
         InputField("firstName", String::class),
@@ -33,7 +33,7 @@ private object CreateUser : ApiOperation {
     )
     override val handlerClass = DslFakeHandler::class
     override fun buildRequest(ingredients: Map<String, Any?>): Any = ingredients
-    override fun buildRequestFromBody(body: Any): Any = body
+    override fun buildRequestFromBody(body: Unit): Any = body
     override suspend fun invoke(handler: Wirespec.Handler, request: Any): Wirespec.Response<*> =
         DslFakeResponse(201)
     override fun buildHandler(

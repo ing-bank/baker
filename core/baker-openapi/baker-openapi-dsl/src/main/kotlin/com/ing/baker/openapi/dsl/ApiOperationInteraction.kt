@@ -17,7 +17,7 @@ import kotlin.reflect.jvm.javaType
 typealias ResponseMapper = (Wirespec.Response<*>) -> Any
 
 class ApiOperationInteraction(
-    private val operation: ApiOperation,
+    private val operation: ApiOperation<*>,
     private val handler: Wirespec.Handler,
     private val mappers: kotlin.collections.Map<Int, ResponseMapper>,
     /**
@@ -72,7 +72,8 @@ class ApiOperationInteraction(
             val request: Any = if (inputEventClass != null && inputMapper != null) {
                 val event = reconstructInputEvent(inputEventClass, input)
                 val body = inputMapper.invoke(event)
-                operation.buildRequestFromBody(body)
+                @Suppress("UNCHECKED_CAST")
+                (operation as ApiOperation<Any>).buildRequestFromBody(body)
             } else {
                 val ingredientMap: kotlin.collections.Map<String, Any?> =
                     input.associate { instance ->
@@ -104,5 +105,5 @@ private fun reconstructInputEvent(eventClass: KClass<*>, input: List<IngredientI
     return ctor.call(*args.toTypedArray())
 }
 
-private fun ApiOperation.inputFieldType(name: String): java.lang.reflect.Type =
+private fun ApiOperation<*>.inputFieldType(name: String): java.lang.reflect.Type =
     inputFields.first { it.name == name }.type.java

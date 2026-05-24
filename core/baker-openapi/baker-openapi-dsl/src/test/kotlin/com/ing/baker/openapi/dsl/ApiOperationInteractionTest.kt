@@ -26,7 +26,7 @@ private data class UserCreated(val id: String, val email: String)
 
 private class FakeOperation(
     private val nextResponse: Wirespec.Response<*>,
-) : ApiOperation {
+) : ApiOperation<Unit> {
     override val operationName: String = "CreateUser"
     override val inputFields = listOf(
         InputField("firstName", String::class),
@@ -42,7 +42,7 @@ private class FakeOperation(
         capturedRequest = ingredients
         return ingredients
     }
-    override fun buildRequestFromBody(body: Any): Any = body
+    override fun buildRequestFromBody(body: Unit): Any = body
     override suspend fun invoke(handler: Wirespec.Handler, request: Any): Wirespec.Response<*> = nextResponse
     override fun buildHandler(
         transport: suspend (Wirespec.RawRequest) -> Wirespec.RawResponse,
