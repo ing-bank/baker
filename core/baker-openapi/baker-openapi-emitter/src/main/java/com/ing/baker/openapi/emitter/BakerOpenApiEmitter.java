@@ -82,12 +82,16 @@ public class BakerOpenApiEmitter extends LanguageEmitter {
         // Input fields: path + query + headers + flattened body fields.
         // For ::class references we strip nullability — KClass has no nullable variant.
         List<String[]> inputs = collectInputs(endpoint);
-        sb.append("    override val inputFields = listOf(\n");
-        for (String[] f : inputs) {
-            String classRef = f[1].endsWith("?") ? f[1].substring(0, f[1].length() - 1) : f[1];
-            sb.append("        InputField(\"").append(f[0]).append("\", ").append(classRef).append("::class),\n");
+        if (inputs.isEmpty()) {
+            sb.append("    override val inputFields: List<InputField> = emptyList()\n\n");
+        } else {
+            sb.append("    override val inputFields = listOf(\n");
+            for (String[] f : inputs) {
+                String classRef = f[1].endsWith("?") ? f[1].substring(0, f[1].length() - 1) : f[1];
+                sb.append("        InputField(\"").append(f[0]).append("\", ").append(classRef).append("::class),\n");
+            }
+            sb.append("    )\n\n");
         }
-        sb.append("    )\n\n");
 
         // Response types
         sb.append("    override val responseTypes: Map<Int, KClass<*>> = mapOf(\n");
@@ -127,9 +131,15 @@ public class BakerOpenApiEmitter extends LanguageEmitter {
             ctorArgs.add(bodyCtor.toString());
         }
         sb.append("    override fun buildRequest(ingredients: Map<String, Any?>): Any =\n");
-        sb.append("        ").append(name).append(".Request(\n");
-        sb.append("            ").append(String.join(",\n            ", ctorArgs)).append("\n");
-        sb.append("        )\n\n");
+        if (ctorArgs.isEmpty()) {
+            // wirespec emits `object Request` for endpoints with no inputs;
+            // reference it as a singleton, not a constructor call.
+            sb.append("        ").append(name).append(".Request\n\n");
+        } else {
+            sb.append("        ").append(name).append(".Request(\n");
+            sb.append("            ").append(String.join(",\n            ", ctorArgs)).append("\n");
+            sb.append("        )\n\n");
+        }
 
         // buildRequestFromBody — used by the typed inputFrom<E, R>(mapper) DSL.
         // The user-provided lambda returns the body DTO; this wraps it in the
