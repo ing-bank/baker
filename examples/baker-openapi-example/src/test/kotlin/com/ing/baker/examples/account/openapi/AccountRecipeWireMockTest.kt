@@ -3,18 +3,21 @@ package com.ing.baker.examples.account.openapi
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.github.tomakehurst.wiremock.client.WireMock.post
+import com.github.tomakehurst.wiremock.client.WireMock.equalTo
+import com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath
 import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.examples.account.openapi.generated.endpoint.CreateAccount as CreateAccountEndpoint
+import com.ing.baker.examples.account.openapi.generated.model.AccountDto
 import com.ing.baker.openapi.wirespec.Transportation
 import com.ing.baker.openapi.wirespec.javaHttpTransportation
 import com.ing.baker.recipe.kotlindsl.ExperimentalDsl
 import com.ing.baker.runtime.javadsl.EventInstance
 import com.ing.baker.runtime.kotlindsl.InMemoryBaker
 import community.flock.wirespec.integration.jackson.kotlin.WirespecSerialization
+import community.flock.wirespec.integration.wiremock.kotlin.wirespec
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -39,13 +42,22 @@ class AccountRecipeWireMockTest {
 
     @Test
     fun `recipe fires AccountCreated on 201`() = runBlocking {
+        // wirespec<EndpointType>() drives the WireMock matcher from the endpoint's
+        // method + path template; willReturn(...) takes the typed Wirespec.Response
+        // directly — no manual JSON body assembly.
         server.stubFor(
-            post(urlEqualTo("/accounts")).willReturn(
-                aResponse().withStatus(201).withHeader("Content-Type", "application/json")
-                    .withBody(objectMapper.writeValueAsString(mapOf(
-                        "accountId" to "a1", "userId" to "u1", "profileId" to "p1",
-                        "iban" to "NL00", "accountType" to "CURRENT", "currency" to "EUR",
-                    )))
+            wirespec<CreateAccountEndpoint>().willReturn(
+                CreateAccountEndpoint.Response201(
+                    AccountDto(
+                        accountId = "a1",
+                        userId = "u1",
+                        profileId = "p1",
+                        iban = "NL00",
+                        accountType = "CURRENT",
+                        currency = "EUR",
+                    )
+                ),
+                serialization,
             )
         )
 
@@ -77,10 +89,10 @@ class AccountRecipeWireMockTest {
         val events = baker.getRecipeInstanceState(rid).events.map { it.name }
         assertTrue(events.contains("AccountCreated"), "events were: $events")
         // The customerId ingredient was renamed to userId for the API call —
-        // proves ingredientNameOverrides wired the value through.
+        // proves the inputFrom mapper wired the value through.
         server.verify(
             postRequestedFor(urlEqualTo("/accounts"))
-                .withRequestBody(com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath("$.userId", com.github.tomakehurst.wiremock.client.WireMock.equalTo("u1")))
+                .withRequestBody(matchingJsonPath("$.userId", equalTo("u1")))
         )
     }
 }

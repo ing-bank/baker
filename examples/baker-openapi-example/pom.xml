@@ -13,7 +13,7 @@
     <name>Baker OpenAPI Example</name>
 
     <properties>
-        <wirespec.version>0.17.20</wirespec.version>
+        <wirespec.version>0.18.11</wirespec.version>
     </properties>
 
     <dependencies>
@@ -84,6 +84,12 @@
             <groupId>org.wiremock</groupId>
             <artifactId>wiremock</artifactId>
             <version>3.12.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>community.flock.wirespec.integration</groupId>
+            <artifactId>wiremock-jvm</artifactId>
+            <version>${wirespec.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
