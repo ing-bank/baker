@@ -13,7 +13,7 @@
     <name>Baker OpenAPI Example</name>
 
     <properties>
-        <wirespec.version>0.18.11</wirespec.version>
+        <wirespec.version>0.18.13</wirespec.version>
     </properties>
 
     <dependencies>

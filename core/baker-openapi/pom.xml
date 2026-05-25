@@ -16,7 +16,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <wirespec.version>0.17.20</wirespec.version>
+        <wirespec.version>0.18.13</wirespec.version>
     </properties>
 
     <modules>

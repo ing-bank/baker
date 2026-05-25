@@ -45,16 +45,9 @@
     </dependencies>
 
     <build>
+        <sourceDirectory>src/main/kotlin</sourceDirectory>
         <testSourceDirectory>src/test/kotlin</testSourceDirectory>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>${jvm.target}</source>
-                    <target>${jvm.target}</target>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
@@ -63,6 +56,11 @@
                     <jvmTarget>${jvm.target}</jvmTarget>
                 </configuration>
                 <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>process-sources</phase>
+                        <goals><goal>compile</goal></goals>
+                    </execution>
                     <execution>
                         <id>test-compile</id>
                         <goals><goal>test-compile</goal></goals>

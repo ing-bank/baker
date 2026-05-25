@@ -4,7 +4,7 @@ import arrow.core.nonEmptySetOf
 import com.ing.baker.openapi.emitter.BakerOpenApiEmitter
 import community.flock.wirespec.compiler.core.emit.EmitShared
 import community.flock.wirespec.compiler.core.emit.PackageName
-import community.flock.wirespec.emitters.kotlin.KotlinEmitter
+import community.flock.wirespec.emitters.kotlin.KotlinIrEmitter
 import community.flock.wirespec.compiler.utils.Logger
 import community.flock.wirespec.plugin.ConverterArguments
 import community.flock.wirespec.plugin.Format
@@ -61,7 +61,7 @@ class GenerateFromOpenApiMojo : AbstractMojo() {
         )
 
         val emitters = nonEmptySetOf(
-            KotlinEmitter(pkg, EmitShared(false)) as community.flock.wirespec.compiler.core.emit.Emitter,
+            KotlinIrEmitter(pkg, EmitShared(false)) as community.flock.wirespec.compiler.core.emit.Emitter,
             BakerOpenApiEmitter(pkg) as community.flock.wirespec.compiler.core.emit.Emitter,
         )
 
@@ -83,6 +83,9 @@ class GenerateFromOpenApiMojo : AbstractMojo() {
             logger = logger,
             shared = false,
             strict = true,
+            // We supply KotlinIrEmitter explicitly above; convert() ignores this
+            // flag, but ConverterArguments requires it since wirespec 0.18.x.
+            ir = true,
         )
 
         try {
