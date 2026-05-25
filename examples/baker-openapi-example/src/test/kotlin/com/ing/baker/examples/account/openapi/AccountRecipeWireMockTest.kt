@@ -42,10 +42,7 @@ class AccountRecipeWireMockTest {
 
     @Test
     fun `recipe fires AccountCreated on 201`() = runBlocking {
-        // wirespec(Endpoint.api) drives the WireMock matcher from the endpoint's
-        // method + path template; willReturn(...) takes the typed Wirespec.Response
-        // directly — no manual JSON body assembly. The api server instance makes
-        // willReturn reject responses from any other endpoint at compile time.
+
         server.stubFor(
             wirespec(CreateAccountEndpoint.api).willReturn(
                 CreateAccountEndpoint.Response201(
@@ -57,8 +54,7 @@ class AccountRecipeWireMockTest {
                         accountType = "CURRENT",
                         currency = "EUR",
                     )
-                ),
-                serialization,
+                )
             )
         )
 
