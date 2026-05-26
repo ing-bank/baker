@@ -32,7 +32,7 @@ class RecipeCompilerDslTest {
             interaction<InteractionA>()
         }
 
-        val compiled = RecipeCompiler.compileRecipe(recipe)
+        val compiled = RecipeCompilerKotlin.compileRecipe(recipe)
 
         assertEquals("9b2bc4caf5752697", compiled.recipeId())
     }
@@ -50,7 +50,7 @@ class RecipeCompilerDslTest {
             ingredient<String, String>("extract") @JvmSerializableLambda { "Hello123" }
         }
 
-        val compiled = RecipeCompiler.compileRecipe(recipe)
+        val compiled = RecipeCompilerKotlin.compileRecipe(recipe)
 
         assertEquals("4e146307a299c515", compiled.recipeId())
     }

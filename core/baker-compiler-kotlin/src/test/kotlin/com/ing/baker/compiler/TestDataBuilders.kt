@@ -112,7 +112,7 @@ object TestDataBuilders {
         )
         
         // Reuse RecipeCompiler.interactionTransitionOf
-        return RecipeCompiler.interactionTransitionOf(
+        return RecipeCompilerKotlin.interactionTransitionOf(
             descriptor,
             InteractionFailureStrategy.BlockInteraction(),
             inputIngredientNames.toSet()

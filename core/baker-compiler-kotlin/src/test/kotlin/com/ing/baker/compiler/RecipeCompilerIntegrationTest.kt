@@ -6,11 +6,9 @@ import com.ing.baker.recipe.annotations.RequiresIngredient
 import com.ing.baker.recipe.javadsl.Interaction
 import com.ing.baker.recipe.javadsl.InteractionDescriptor
 import com.ing.baker.recipe.javadsl.Recipe
-import com.ing.baker.types.Converters
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import scala.jdk.javaapi.CollectionConverters
-import scala.jdk.javaapi.OptionConverters
 
 /**
  * Integration tests for the refactored RecipeCompiler.
@@ -58,7 +56,7 @@ class RecipeCompilerIntegrationTest {
             .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
             .withInteraction(InteractionDescriptor.of(ProcessPayment::class.java))
 
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         // Verify that the recipe compiled successfully
         assertNotNull(compiledRecipe)
@@ -80,7 +78,7 @@ class RecipeCompilerIntegrationTest {
             .withSensoryEvent(PaymentMade::class.java)
             .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
 
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         val petriNet = compiledRecipe.petriNet()
         
@@ -108,7 +106,7 @@ class RecipeCompilerIntegrationTest {
             .withSensoryEvent(OrderPlaced::class.java)
             .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
 
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         val petriNet = compiledRecipe.petriNet()
         
@@ -127,7 +125,7 @@ class RecipeCompilerIntegrationTest {
             .withSensoryEvent(OrderPlaced::class.java)
             .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
 
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         // Verify basic properties
         assertNotNull(compiledRecipe)
@@ -152,7 +150,7 @@ class RecipeCompilerIntegrationTest {
                     .withRequiredEvents(OrderConfirmed::class.java)
             )
 
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         // Should compile despite missing OrderConfirmed event (validation will catch it)
         assertNotNull(compiledRecipe)
@@ -170,7 +168,7 @@ class RecipeCompilerIntegrationTest {
             .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
             .withInteraction(InteractionDescriptor.of(ProcessPayment::class.java))
 
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         // Both interactions use orderId - should create facilitator transition
         val petriNet = compiledRecipe.petriNet()
@@ -194,7 +192,7 @@ class RecipeCompilerIntegrationTest {
             .withInteraction(InteractionDescriptor.of(ReserveItems::class.java))
             .withInteraction(InteractionDescriptor.of(ProcessPayment::class.java))
 
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         // Verify structure
         assertNotNull(compiledRecipe)
@@ -214,7 +212,7 @@ class RecipeCompilerIntegrationTest {
     fun `empty recipe should compile without errors`() {
         val recipe = Recipe("EmptyRecipe")
 
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         assertNotNull(compiledRecipe)
         assertEquals("EmptyRecipe", compiledRecipe.name())
