@@ -113,6 +113,7 @@
         <module>core/baker-recipe-dsl</module>
         <module>core/baker-recipe-dsl-kotlin</module>
         <module>core/baker-compiler</module>
+        <module>core/baker-compiler-scala</module>
         <module>core/baker-compiler-kotlin</module>
         <module>core/baker-akka-actors</module>
         <module>core/baker-akka-runtime</module>
