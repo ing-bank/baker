@@ -12,8 +12,8 @@
     </parent>
 
     <artifactId>baker-compiler-scala</artifactId>
-    <name>Baker Recipe Compiler</name>
-    <description>Compiler for Baker recipes</description>
+    <name>Baker Scala Recipe Compiler</name>
+    <description>Scala Compiler for Baker recipes</description>
 
     <dependencies>
         <dependency>
