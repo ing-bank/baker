@@ -16,7 +16,7 @@ import scalax.collection.immutable.Graph
 import scala.annotation.nowarn
 import scala.language.postfixOps
 
-object RecipeCompiler {
+object RecipeCompilerScala {
 
   implicit class TupleSeqOps[A, B](seq: Seq[(Seq[A], Seq[B])]) {
     def unzipFlatten: (Seq[A], Seq[B]) = seq.unzip match {

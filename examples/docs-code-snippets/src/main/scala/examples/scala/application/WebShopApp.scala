@@ -30,7 +30,7 @@ class WebShopApp {
     val sensoryEvent = EventInstance.unsafeFrom(orderPlaced)
 
     for {
-      recipeId <- bakerF.addRecipe(RecipeCompiler.compileRecipe(recipe = WebShopRecipe.recipe), validate = true)
+      recipeId <- bakerF.addRecipe(RecipeCompiler.compileRecipe(WebShopRecipe.recipe), validate = true)
       _ <- bakerF.bake(recipeId, recipeInstanceId)
       _ <- bakerF.fireSensoryEventAndAwaitReceived(recipeInstanceId, sensoryEvent)
       _ <- bakerF.awaitCompleted(recipeInstanceId, timeout = 5.seconds)

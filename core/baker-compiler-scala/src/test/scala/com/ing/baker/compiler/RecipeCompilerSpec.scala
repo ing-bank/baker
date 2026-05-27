@@ -22,7 +22,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
 
     "not have validation errors for a valid recipe" in {
       val recipe: Recipe = getRecipe("ValidRecipe")
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
       compiledRecipe.validationErrors shouldBe List.empty
 
       // dumpToFile("TestRecipe.svg", compiledRecipe.getVisualRecipeAsSVG)
@@ -33,7 +33,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         .withSensoryEvent(initialEvent)
         .withInteractions(interactionOne.withFailureStrategy(
           InteractionFailureStrategy.FireEventAfterFailure(Some(exhaustedEvent.name))))
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
       compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
 
@@ -42,7 +42,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         .withSensoryEvent(initialEvent)
         .withInteractions(interactionOne.withFailureStrategy(
           InteractionFailureStrategy.FireEventAfterFailure(None)))
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
       compiledRecipe.allEvents.map(_.name) should contain("InteractionOneRetryExhausted")
     }
 
@@ -51,7 +51,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         .withSensoryEvent(initialEvent)
         .withInteractions(interactionOne.withFailureStrategy(
           InteractionFailureStrategy.FireEventAndBlock(Some(exhaustedEvent.name))))
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
       compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
 
@@ -60,7 +60,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         .withSensoryEvent(initialEvent)
         .withInteractions(interactionOne.withFailureStrategy(
           InteractionFailureStrategy.FireEventAndBlock(None)))
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
       compiledRecipe.allEvents.map(_.name) should contain("InteractionOneRetryExhausted")
     }
 
@@ -69,7 +69,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         .withSensoryEvent(initialEvent)
         .withInteractions(interactionOne.withFailureStrategy(
           InteractionFailureStrategy.FireEventAndResolve(Some(exhaustedEvent.name))))
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
       compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
 
@@ -78,7 +78,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         .withSensoryEvent(initialEvent)
         .withInteractions(interactionOne.withFailureStrategy(
           InteractionFailureStrategy.FireEventAndResolve(None)))
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
       compiledRecipe.allEvents.map(_.name) should contain("InteractionOneFunctionalFailed")
     }
 
@@ -92,7 +92,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
             .withFireRetryExhaustedEvent(exhaustedEvent)
             .build()))
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
 
       compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
@@ -107,7 +107,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
             .withFireRetryExhaustedEvent(Some("RetryExhausted"))
             .build()))
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
 
       compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
@@ -122,7 +122,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
             .withFireRetryExhaustedEvent()
             .build()))
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
 
       compiledRecipe.allEvents.map(_.name) should contain("InteractionOneRetryExhausted")
     }
@@ -138,7 +138,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
             .withFireEventAndBlock(exhaustedEvent)
             .build()))
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
 
       compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
@@ -153,7 +153,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
             .withFireEventAndBlock(Some("RetryExhausted"))
             .build()))
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
 
       compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
@@ -168,7 +168,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
             .withFireEventAndBlock()
             .build()))
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
 
       compiledRecipe.allEvents.map(_.name) should contain("InteractionOneRetryExhausted")
     }
@@ -184,7 +184,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
             .withFireEventAndResolve(exhaustedEvent)
             .build()))
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
 
       compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
@@ -199,7 +199,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
             .withFireEventAndResolve(Some("RetryExhausted"))
             .build()))
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
 
       compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
@@ -214,16 +214,16 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
             .withFireEventAndResolve()
             .build()))
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
 
       compiledRecipe.allEvents.map(_.name) should contain("InteractionOneFunctionalFailed")
     }
 
     "generate the same id for the same recipe" in {
-      val first = RecipeCompiler.compileRecipe(getRecipe("ValidRecipe")).recipeId
+      val first = RecipeCompilerScala.compileRecipe(getRecipe("ValidRecipe")).recipeId
       (1 to 10)
         .map(_ => getRecipe("ValidRecipe"))
-        .map(RecipeCompiler.compileRecipe(_).recipeId)
+        .map(RecipeCompilerScala.compileRecipe(_).recipeId)
         .foreach(_ shouldBe first)
     }
 
@@ -234,7 +234,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
       val name = "RecipeName"
       val recipe1 = Recipe(name).withInteraction(interaction.withPredefinedIngredients(input.name -> 1))
       val recipe2 = Recipe(name).withInteraction(interaction.withPredefinedIngredients(input.name -> 2))
-      RecipeCompiler.compileRecipe(recipe1).recipeId shouldNot be(RecipeCompiler.compileRecipe(recipe2).recipeId)
+      RecipeCompilerScala.compileRecipe(recipe1).recipeId shouldNot be(RecipeCompilerScala.compileRecipe(recipe2).recipeId)
     }
 
     "give a list of missing ingredients if an interaction has an ingredient that is not provided by any other event or interaction" in {
@@ -242,7 +242,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         .withSensoryEvent(secondEvent)
         .withInteractions(interactionOne)
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
       compiledRecipe.validationErrors should contain("Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction")
     }
 
@@ -257,7 +257,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         .withSensoryEvent(initialEvent)
         .withInteractions(wrongrecipeInstanceIdInteraction)
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
       compiledRecipe.validationErrors should contain("Non supported process id type: Int32 on interaction: 'wrongrecipeInstanceIdInteraction'")
     }
 
@@ -272,7 +272,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         .withSensoryEvent(initialEvent)
         .withInteractions(wrongMetaDataInteraction)
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
       compiledRecipe.validationErrors should contain("Non supported MetaData type: Int32 on interaction: 'wrongMetaDataInteraction'")
     }
 
@@ -297,7 +297,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         .withSensoryEvents(initialEvent, wrongDateEvent)
         .withInteractions(wrongMetaDataInteraction)
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
       compiledRecipe.validationErrors shouldBe List(
         "Ingredient 'recipeInstanceId' is provided and this is a reserved name for internal use in Baker",
         "Ingredient 'RecipeInstanceMetaData' is provided and this is a reserved name for internal use in Baker",
@@ -315,7 +315,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
             interactionOne)
           .withSensoryEvent(initialEventInt)
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
         compiledRecipe.validationErrors should contain("Interaction 'InteractionOne' expects ingredient 'initialIngredient:CharArray', however incompatible type: 'Record(data: Int32)' was provided")
       }
 
@@ -337,7 +337,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
             interactionOptional)
           .withSensoryEvents(initialEventIntOptional, initialEventIntOption)
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
         compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionalInt:Option[Int32]', however incompatible type: 'Option[CharArray]' was provided")
         compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionInt:Option[List[Int32]]', however incompatible type: 'Option[List[CharArray]]' was provided")
       }
@@ -357,7 +357,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           interactionOptional)
         .withSensoryEvent(initialEventInt)
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
       compiledRecipe.validationErrors shouldBe empty
     }
 
@@ -369,7 +369,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
             .withPredefinedIngredients(("initialIngredient", Integer.valueOf(12))))
         .withSensoryEvent(initialEvent)
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
       compiledRecipe.validationErrors should contain("Predefined argument 'initialIngredient' is not of type: CharArray on interaction: 'InteractionOne'")
     }
 
@@ -380,7 +380,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
             .withPredefinedIngredients(("WrongIngredient", null)))
         .withSensoryEvent(initialEvent)
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
       compiledRecipe.validationErrors should contain("Predefined argument 'WrongIngredient' is not defined on interaction: 'InteractionOne'")
     }
 
@@ -389,7 +389,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         .withInteractions(interactionSeven.withMaximumInteractionCount(1), interactionEight)
         .withSensoryEvent(initialEvent)
 
-      val compiledRecipe = RecipeCompiler.compileRecipe(recipe,
+      val compiledRecipe = RecipeCompilerScala.compileRecipe(recipe,
         ValidationSettings(allowNonExecutableInteractions = false))
 
       compiledRecipe.validationErrors should contain("InteractionEight is not executable")
@@ -401,7 +401,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           val invalidInteraction = Interaction(name, Seq.empty, Seq())
           val recipe = Recipe("InteractionNameTest").withInteractions(invalidInteraction).withSensoryEvent(initialEvent)
 
-          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)).getMessage.shouldBe("Interaction with a null or empty name found")
+          intercept[IllegalArgumentException](RecipeCompilerScala.compileRecipe(recipe)).getMessage.shouldBe("Interaction with a null or empty name found")
         }
       }
 
@@ -411,7 +411,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           val invalidEvent = Event(name)
           val recipe = Recipe("EventNameTest").withSensoryEvent(invalidEvent).withInteraction(interactionOne)
 
-          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)).getMessage.shouldBe("Event with a null or empty name found")
+          intercept[IllegalArgumentException](RecipeCompilerScala.compileRecipe(recipe)).getMessage.shouldBe("Event with a null or empty name found")
         }
       }
 
@@ -420,7 +420,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           val invalidIngredient = Ingredient[String](name)
           val recipe = Recipe("IngredientNameTest").withSensoryEvent(Event("someEvent", invalidIngredient)).withInteraction(interactionOne)
 
-          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)).getMessage.shouldBe("Ingredient with a null or empty name found")
+          intercept[IllegalArgumentException](RecipeCompilerScala.compileRecipe(recipe)).getMessage.shouldBe("Ingredient with a null or empty name found")
         }
       }
 
@@ -428,7 +428,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         List("", null) foreach { name =>
           val recipe = Recipe(name)
 
-          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)).getMessage.shouldBe("Recipe with a null or empty name found")
+          intercept[IllegalArgumentException](RecipeCompilerScala.compileRecipe(recipe)).getMessage.shouldBe("Recipe with a null or empty name found")
         }
       }
 
@@ -436,7 +436,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         val recipe: Recipe = Recipe("LoopingWithReprovider")
           .withInteraction(interactionOne.isReprovider(true))
           .withSensoryEvents(initialEvent)
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
         compiledRecipe.validationErrors shouldBe List("Reprovider interaction InteractionOne needs to have a event precondition")
       }
     }
@@ -447,7 +447,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           .withInteraction(interactionWithOptionalIngredients)
           .withSensoryEvent(initialEvent)
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
         compiledRecipe.validationErrors shouldBe List.empty
         compiledRecipe.interactionTransitions
           .map(it =>
@@ -469,7 +469,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           .withInteraction(interactionWithOptionalIngredients)
           .withSensoryEvents(initialEvent, optionalProviderEvent)
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
         compiledRecipe.validationErrors shouldBe List.empty
         compiledRecipe.interactionTransitions
           .map(it =>
@@ -497,7 +497,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
             .withEventOutputTransformer(eventWithOptionIngredient, "RenamedEventWithOptionIngredient", Map("stringOptionIngredient" -> "renamedStringOptionIngredient")))
           .withInteraction(secondInteraction)
 
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
         compiledRecipe.validationErrors shouldBe empty
 
         val transition = compiledRecipe.interactionTransitions.find(_.interactionName == "secondInteraction").get
@@ -513,7 +513,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           )
           .withSensoryEvents(initialEvent)
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
         compiledRecipe.validationErrors shouldBe List.empty
         compiledRecipe.interactionTransitions
           .map(it =>
@@ -533,7 +533,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           .withInteraction(interactionWithOptionalIngredients)
           .withSensoryEvents(initialEvent, optionalProviderEvent)
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
         compiledRecipe.validationErrors shouldBe List.empty
         compiledRecipe.interactionTransitions
           .map(it =>
@@ -549,7 +549,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
     "give the correct id" when {
       "it compiles a java recipe" in {
         val recipe = TestRecipeJava.getRecipe("id-test-recipe")
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
         compiledRecipe.recipeId shouldBe "220827c42a75b3f8"
       }
     }
@@ -557,7 +557,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
     "give the interaction with Reprovider enabled" when {
       "it compiles a java recipe and changes recipeId" in {
         val recipe = TestRecipeJava.getRecipeReprovider("id-test-recipe")
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
         compiledRecipe.recipeId shouldBe "416e8abc02abcbee"
       }
     }
@@ -567,7 +567,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         val recipe = TestRecipeJava.getRecipe("id-test-recipe")
           .withCheckpointEvent(CheckPointEvent("Success")
             .withRequiredEvent(initialEvent))
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
         compiledRecipe.recipeId shouldBe "469441173f91869a"
         compiledRecipe.petriNet.transitions.count { case i: InteractionTransition => i.interactionName.contains(s"${checkpointEventInteractionPrefix}Success") case _ => false } shouldBe 1
       }
@@ -609,7 +609,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           )
           .withSubRecipe(subRecipe)
 
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerScala.compileRecipe(recipe)
 
         val res = compiledRecipe.petriNet.transitions
           .flatMap {
