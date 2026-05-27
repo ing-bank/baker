@@ -55,6 +55,7 @@ import com.ing.baker.il.CompiledRecipe.`Scala212CompatibleScala$`.`MODULE$` as S
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy as ILInteractionFailureStrategy
 import com.ing.baker.il.`package$`.`MODULE$` as ILPackage
 import com.ing.baker.il.petrinet.Place.`EmptyEventIngredientPlace$`.`MODULE$` as EmptyEventIngredientPlace
+import com.ing.baker.il.petrinet.Place.`EventOrPreconditionPlace$`.`MODULE$` as EventOrPreconditionPlace
 import com.ing.baker.il.petrinet.Place.`EventPreconditionPlace$`.`MODULE$` as EventPreconditionPlace
 import com.ing.baker.il.petrinet.Place.`IngredientPlace$`.`MODULE$` as IngredientPlace
 import com.ing.baker.il.petrinet.Place.`InteractionEventOutputPlace$`.`MODULE$` as InteractionEventOutputPlace
@@ -489,7 +490,7 @@ object RecipeCompilerKotlin {
         val eventTransition = preconditionTransition(eventName)
 
         val notProvidedError = when (eventTransition) {
-            null -> listOf("Event '$eventName' for '$interactionTransition' is not provided in the recipe")
+            null -> listOf("Event '$eventName' for '${interactionTransition.label()}' is not provided in the recipe")
             else -> emptyList()
         }
 
@@ -555,7 +556,7 @@ object RecipeCompilerKotlin {
         // only one `Place` for all the OR events
         val eventPreconditionPlace = createPlace(
             label = "${interaction.name}-or-$index",
-            placeType = EventPreconditionPlace
+            placeType = EventOrPreconditionPlace
         )
         orGroup.flatMap { eventName ->
             buildEventPreconditionArcs(

@@ -4,14 +4,8 @@ import com.ing.baker.recipe.Event
 import com.ing.baker.recipe.Ingredient
 import com.ing.baker.recipe.Interaction
 import com.ing.baker.recipe.Recipe
-import com.ing.baker.recipe.toKotlin
-import scala.jdk.javaapi.CollectionConverters
-import com.ing.baker.recipe.common.Recipe as ScalaRecipe
 
 object PreCompileValidations {
-
-    fun preCompileAssertions(recipe: ScalaRecipe): scala.collection.immutable.Seq<String> =
-        CollectionConverters.asScala(preCompileAssertions(recipe.toKotlin())).toSeq()
 
     fun preCompileAssertions(recipe: Recipe): List<String> {
         assertValidNames(Recipe::name, listOf(recipe), "Recipe")

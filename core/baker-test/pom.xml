@@ -59,6 +59,13 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-compiler-kotlin</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.scalatest</groupId>

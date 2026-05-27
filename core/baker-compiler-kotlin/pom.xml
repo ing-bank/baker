@@ -12,8 +12,8 @@
     </parent>
 
     <artifactId>baker-compiler-kotlin</artifactId>
-    <name>Baker Recipe Compiler</name>
-    <description>Compiler for Baker recipes</description>
+    <name>Baker Kotlin Recipe Compiler</name>
+    <description>Kotlin Compiler for Baker recipes</description>
 
     <dependencies>
         <dependency>
