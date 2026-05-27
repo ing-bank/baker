@@ -1,4 +1,4 @@
-import com.ing.baker.compiler.RecipeCompiler;
+import com.ing.baker.compiler.RecipeCompilerScala;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.il.EventDescriptor;
 import com.ing.baker.il.petrinet.InteractionTransition;
@@ -99,7 +99,7 @@ public class RecipeCompilerTests {
     public void shouldCompileSimpleRecipe() {
         Recipe recipe = new Recipe("recipe")
                 .withSensoryEvents(EventA.class);
-        CompiledRecipe compiled = RecipeCompiler.compileRecipe(recipe);
+        CompiledRecipe compiled = RecipeCompilerScala.compileRecipe(recipe);
 
         Assertions.assertEquals("8682aa9310e38509", compiled.recipeId());
 
@@ -111,7 +111,7 @@ public class RecipeCompilerTests {
         Recipe recipe = new Recipe("recipe")
                 .withSensoryEvents(EventA.class)
                 .withInteraction(InteractionDescriptor.of(InteractionA.class));
-        CompiledRecipe compiled = RecipeCompiler.compileRecipe(recipe);
+        CompiledRecipe compiled = RecipeCompilerScala.compileRecipe(recipe);
 
         Assertions.assertEquals("796a3cb3eb68b35d", compiled.recipeId());
 
@@ -132,10 +132,10 @@ public class RecipeCompilerTests {
                 .withSensoryEventsNoFiringLimit(EventA.class);
 
         Assertions.assertThrows(IllegalStateException.class, () ->
-                RecipeCompiler.compileRecipe(recipe1));
+                RecipeCompilerScala.compileRecipe(recipe1));
 
         Assertions.assertThrows(IllegalStateException.class, () ->
-                RecipeCompiler.compileRecipe(recipe2));
+                RecipeCompilerScala.compileRecipe(recipe2));
     }
 
     @Test
@@ -148,7 +148,7 @@ public class RecipeCompilerTests {
                         .withRequiredEvents(EventB.class, EventC.class));
 
 
-        CompiledRecipe compiled = RecipeCompiler.compileRecipe(recipe);
+        CompiledRecipe compiled = RecipeCompilerScala.compileRecipe(recipe);
 
         Object actual = convertList(compiled.petriNet().transitions())
                 .stream()
@@ -198,7 +198,7 @@ public class RecipeCompilerTests {
                 .withCheckpointEvent(new CheckPointEvent("checkpointEvent"));
 
 
-        CompiledRecipe compiled = RecipeCompiler.compileRecipe(recipe);
+        CompiledRecipe compiled = RecipeCompilerScala.compileRecipe(recipe);
 
         Object actualSensoryEvents = convertList(compiled.sensoryEvents()).stream().map(i -> ((EventDescriptor) i).name()).collect(Collectors.toUnmodifiableList());
         List<String> expectedSensoryEvents = java.util.List.of("SubSubEvent", "SubEvent", "SubSubSubEvent", "Event");

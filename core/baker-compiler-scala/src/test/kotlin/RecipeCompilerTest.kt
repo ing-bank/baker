@@ -30,7 +30,7 @@ class RecipeCompilerTest {
             interaction<InteractionA>()
         }
 
-        val compiled = RecipeCompiler.compileRecipe(recipe)
+        val compiled = RecipeCompilerScala.compileRecipe(recipe)
 
         assertEquals("796a3cb3eb68b35d", compiled.recipeId())
     }
@@ -47,7 +47,7 @@ class RecipeCompilerTest {
             ingredient<String, String>("extract") @JvmSerializableLambda {"Hello123"}
         }
 
-        val compiled = RecipeCompiler.compileRecipe(recipe)
+        val compiled = RecipeCompilerScala.compileRecipe(recipe)
 
         assertEquals("ec448bcd08163a73", compiled.recipeId())
     }
