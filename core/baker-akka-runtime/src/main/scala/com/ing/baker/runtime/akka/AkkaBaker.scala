@@ -111,9 +111,12 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
         getImplementationErrors(recipe).flatMap { implementationErrors =>
           if (implementationErrors.nonEmpty) {
             Future.failed(ImplementationsException(s"Recipe ${recipe.name}:${recipe.recipeId} has implementation errors: ${implementationErrors.mkString(", ")}"))
-          } else if (recipe.validationErrors.nonEmpty) {
+          } else if (recipe.criticalValidationErrors.nonEmpty) {
             Future.failed(RecipeValidationException(s"Recipe ${recipe.name}:${recipe.recipeId} has validation errors: ${recipe.validationErrors.mkString(", ")}"))
           } else {
+            if (recipe.nonCriticalValidationErrors.nonEmpty) {
+              logger.warn(s"Recipe ${recipe.name}:${recipe.recipeId} has validation warnings: ${recipe.nonCriticalValidationErrors.mkString(", ")}")
+            }
             recipeManager.put(recipeRecord.copy(updated = updated))
           }
         }

@@ -58,7 +58,7 @@ class RecipeCompilerBasicTest {
     fun shouldCompileSimpleRecipe() {
         val recipe = Recipe("recipe")
             .withSensoryEvents(EventA::class.java)
-        val compiled = RecipeCompiler.compileRecipe(recipe)
+        val compiled = RecipeCompilerKotlin.compileRecipe(recipe)
 
         Assertions.assertEquals("ed72cc8637c9cd07", compiled.recipeId())
     }
@@ -68,7 +68,7 @@ class RecipeCompilerBasicTest {
         val recipe = Recipe("recipe")
             .withSensoryEvents(EventA::class.java)
             .withInteraction(InteractionDescriptor.of(InteractionA::class.java))
-        val compiled = RecipeCompiler.compileRecipe(recipe)
+        val compiled = RecipeCompilerKotlin.compileRecipe(recipe)
 
         Assertions.assertEquals("9b2bc4caf5752697", compiled.recipeId())
     }
@@ -85,7 +85,7 @@ class RecipeCompilerBasicTest {
             .withSensoryEventsNoFiringLimit(EventA::class.java)
 
         Assertions.assertThrows(RecipeValidationException::class.java) {
-            RecipeCompiler.compileRecipe(recipe)
+            RecipeCompilerKotlin.compileRecipe(recipe)
         }
     }
 
@@ -99,7 +99,7 @@ class RecipeCompilerBasicTest {
                     .withRequiredEvents(EventB::class.java, EventC::class.java)
             )
 
-        val compiled = RecipeCompiler.compileRecipe(recipe)
+        val compiled = RecipeCompilerKotlin.compileRecipe(recipe)
 
         val actual = convertList(compiled.petriNet().transitions())
             .filterIsInstance<InteractionTransition>()
@@ -142,7 +142,7 @@ class RecipeCompilerBasicTest {
             .withSubRecipe(subRecipe)
             .withCheckpointEvent(CheckPointEvent("checkpointEvent"))
 
-        val compiled = RecipeCompiler.compileRecipe(recipe)
+        val compiled = RecipeCompilerKotlin.compileRecipe(recipe)
 
         val actualSensoryEvents = convertList(compiled.sensoryEvents())
             .map { (it as com.ing.baker.il.EventDescriptor).name() }

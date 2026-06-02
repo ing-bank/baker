@@ -4,11 +4,13 @@ import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.petrinet.api._
 import com.ing.baker.types
 
+import scala.reflect.runtime.universe.This
+
 object RecipeValidations {
 
   private def validateInteraction(compiledRecipe: CompiledRecipe)(interactionTransition: InteractionTransition): Seq[String] = {
     val interactionWithNoRequirementsValidation : Seq[String] =
-      Some(s"Interaction $interactionTransition does not have any requirements (ingredients or preconditions)! This will result in an infinite execution loop.")
+      Some(s"Interaction ${interactionTransition.label} does not have any requirements (ingredients or preconditions)! This will result in an infinite execution loop.")
         .filter(_ => compiledRecipe.petriNet.inMarking(interactionTransition).isEmpty).toIndexedSeq
 
     // check if the process id argument type is correct

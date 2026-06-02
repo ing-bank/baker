@@ -54,7 +54,14 @@
         </dependency>
         <dependency>
             <groupId>com.ing.baker</groupId>
-            <artifactId>baker-compiler</artifactId>
+            <artifactId>baker-compiler-scala</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-compiler-kotlin</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

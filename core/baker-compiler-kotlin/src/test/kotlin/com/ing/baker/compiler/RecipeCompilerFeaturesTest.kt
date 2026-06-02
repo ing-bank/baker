@@ -66,7 +66,7 @@ class RecipeCompilerFeaturesTest {
     @Test
     fun `The recipe compiler should not have validation errors for a valid recipe`() {
         val recipe: Recipe = getRecipe("ValidRecipe")
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertTrue(compiledRecipe.validationErrors.isEmpty())
     }
 
@@ -79,7 +79,7 @@ class RecipeCompilerFeaturesTest {
                     com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure(Some(exhaustedEvent().name()))
                 )
             )
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertTrue(exhaustedEvent().name() in compiledRecipe.allEvents.map(EventDescriptor::name))
     }
 
@@ -92,7 +92,7 @@ class RecipeCompilerFeaturesTest {
                     com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure(Option.empty())
                 )
             )
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertTrue("InteractionOneRetryExhausted" in compiledRecipe.allEvents.map(EventDescriptor::name))
     }
 
@@ -105,7 +105,7 @@ class RecipeCompilerFeaturesTest {
                     com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAndBlock(Some(exhaustedEvent().name()))
                 )
             )
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertTrue(exhaustedEvent().name() in compiledRecipe.allEvents.map(EventDescriptor::name))
     }
 
@@ -118,7 +118,7 @@ class RecipeCompilerFeaturesTest {
                     com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAndBlock(Option.empty())
                 )
             )
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertTrue("InteractionOneRetryExhausted" in compiledRecipe.allEvents.map(EventDescriptor::name))
     }
 
@@ -131,7 +131,7 @@ class RecipeCompilerFeaturesTest {
                     com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAndResolve(Some(exhaustedEvent().name()))
                 )
             )
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertTrue(exhaustedEvent().name() in compiledRecipe.allEvents.map(EventDescriptor::name))
     }
 
@@ -144,7 +144,7 @@ class RecipeCompilerFeaturesTest {
                     com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAndResolve(Option.empty())
                 )
             )
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertTrue("InteractionOneFunctionalFailed" in compiledRecipe.allEvents.map(EventDescriptor::name))
     }
 
@@ -162,7 +162,7 @@ class RecipeCompilerFeaturesTest {
                 )
             )
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         assertTrue(exhaustedEvent().name() in compiledRecipe.allEvents.map(EventDescriptor::name))
     }
@@ -181,7 +181,7 @@ class RecipeCompilerFeaturesTest {
                 )
             )
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         assertTrue(exhaustedEvent().name() in compiledRecipe.allEvents.map(EventDescriptor::name))
     }
@@ -200,7 +200,7 @@ class RecipeCompilerFeaturesTest {
                 )
             )
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         assertTrue("InteractionOneRetryExhausted" in compiledRecipe.allEvents.map(EventDescriptor::name))
     }
@@ -219,7 +219,7 @@ class RecipeCompilerFeaturesTest {
                 )
             )
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         assertTrue(exhaustedEvent().name() in compiledRecipe.allEvents.map(EventDescriptor::name))
     }
@@ -238,7 +238,7 @@ class RecipeCompilerFeaturesTest {
                 )
             )
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         assertTrue(exhaustedEvent().name() in compiledRecipe.allEvents.map(EventDescriptor::name))
     }
@@ -257,7 +257,7 @@ class RecipeCompilerFeaturesTest {
                 )
             )
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         assertTrue("InteractionOneRetryExhausted" in compiledRecipe.allEvents.map(EventDescriptor::name))
     }
@@ -276,7 +276,7 @@ class RecipeCompilerFeaturesTest {
                 )
             )
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         assertTrue(exhaustedEvent().name() in compiledRecipe.allEvents.map(EventDescriptor::name))
     }
@@ -295,7 +295,7 @@ class RecipeCompilerFeaturesTest {
                 )
             )
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         assertTrue(exhaustedEvent().name() in compiledRecipe.allEvents.map(EventDescriptor::name))
     }
@@ -314,17 +314,17 @@ class RecipeCompilerFeaturesTest {
                 )
             )
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         assertTrue("InteractionOneFunctionalFailed" in compiledRecipe.allEvents.map(EventDescriptor::name))
     }
 
     @Test
     fun `The recipe compiler should generate the same id for the same recipe`() {
-        val first = RecipeCompiler.compileRecipe(getRecipe("ValidRecipe")).recipeId()
+        val first = RecipeCompilerKotlin.compileRecipe(getRecipe("ValidRecipe")).recipeId()
         (1..10)
             .map { getRecipe("ValidRecipe") }
-            .map { RecipeCompiler.compileRecipe(it).recipeId() }
+            .map { RecipeCompilerKotlin.compileRecipe(it).recipeId() }
             .forEach { assertEquals(first, it) }
     }
 
@@ -336,7 +336,7 @@ class RecipeCompilerFeaturesTest {
         val name = "RecipeName"
         val recipe1 = recipe(name).withInteraction(interaction.withPredefinedIngredients(input.name() to 1))
         val recipe2 = recipe(name).withInteraction(interaction.withPredefinedIngredients(input.name() to 2))
-        assertTrue(RecipeCompiler.compileRecipe(recipe1).recipeId() != RecipeCompiler.compileRecipe(recipe2).recipeId())
+        assertTrue(RecipeCompilerKotlin.compileRecipe(recipe1).recipeId() != RecipeCompilerKotlin.compileRecipe(recipe2).recipeId())
     }
 
     @Test
@@ -345,7 +345,7 @@ class RecipeCompilerFeaturesTest {
             .withSensoryEvent(secondEvent())
             .withInteractions(interactionOne())
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertTrue("Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction" in compiledRecipe.validationErrors)
     }
 
@@ -362,7 +362,7 @@ class RecipeCompilerFeaturesTest {
             .withSensoryEvent(initialEvent())
             .withInteractions(wrongrecipeInstanceIdInteraction)
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertTrue("Non supported process id type: Int32 on interaction: 'wrongrecipeInstanceIdInteraction'" in compiledRecipe.validationErrors)
     }
 
@@ -379,7 +379,7 @@ class RecipeCompilerFeaturesTest {
             .withSensoryEvent(initialEvent())
             .withInteractions(wrongMetaDataInteraction)
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertTrue("Non supported MetaData type: Int32 on interaction: 'wrongMetaDataInteraction'" in compiledRecipe.validationErrors)
     }
 
@@ -411,7 +411,7 @@ class RecipeCompilerFeaturesTest {
             .withSensoryEvents(initialEvent(), wrongDateEvent)
             .withInteractions(wrongMetaDataInteraction)
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertEquals(
             listOf(
                 "Ingredient 'RecipeInstanceMetaData' is provided and this is a reserved name for internal use in Baker",
@@ -439,7 +439,7 @@ class RecipeCompilerFeaturesTest {
             )
             .withSensoryEvent(initialEventInt)
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertTrue("Interaction 'InteractionOne' expects ingredient 'initialIngredient:CharArray', however incompatible type: 'Record(data: Int32)' was provided" in compiledRecipe.validationErrors)
     }
 
@@ -464,7 +464,7 @@ class RecipeCompilerFeaturesTest {
             )
             .withSensoryEvents(initialEventIntOptional, initialEventIntOption)
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertTrue("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionalInt:Option[Int32]', however incompatible type: 'Option[CharArray]' was provided" in compiledRecipe.validationErrors)
         assertTrue("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionInt:Option[List[Int32]]', however incompatible type: 'Option[List[CharArray]]' was provided" in compiledRecipe.validationErrors)
     }
@@ -486,7 +486,7 @@ class RecipeCompilerFeaturesTest {
             )
             .withSensoryEvent(initialEventInt)
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertTrue(compiledRecipe.validationErrors.isEmpty())
     }
 
@@ -500,7 +500,7 @@ class RecipeCompilerFeaturesTest {
             )
             .withSensoryEvent(initialEvent())
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertTrue("Predefined argument 'initialIngredient' is not of type: CharArray on interaction: 'InteractionOne'" in compiledRecipe.validationErrors)
     }
 
@@ -513,7 +513,7 @@ class RecipeCompilerFeaturesTest {
             )
             .withSensoryEvent(initialEvent())
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertTrue("Predefined argument 'WrongIngredient' is not defined on interaction: 'InteractionOne'" in compiledRecipe.validationErrors)
     }
 
@@ -523,7 +523,7 @@ class RecipeCompilerFeaturesTest {
             .withInteractions(interactionSeven().withMaximumInteractionCount(1), interactionEight())
             .withSensoryEvent(initialEvent())
 
-        val compiledRecipe = RecipeCompiler.compileRecipe(
+        val compiledRecipe = RecipeCompilerKotlin.compileRecipe(
             recipe,
             ValidationSettings(true, true , false)
         )
@@ -539,7 +539,7 @@ class RecipeCompilerFeaturesTest {
                 recipe("InteractionNameTest").withInteractions(invalidInteraction).withSensoryEvent(initialEvent())
 
             assertFailsWith<RecipeValidationException>(exceptionMessage = "Interaction with a null or empty name found") {
-                RecipeCompiler.compileRecipe(recipe)
+                RecipeCompilerKotlin.compileRecipe(recipe)
             }
         }
     }
@@ -551,7 +551,7 @@ class RecipeCompilerFeaturesTest {
             val recipe = recipe("EventNameTest").withSensoryEvent(invalidEvent).withInteraction(interactionOne())
 
             assertFailsWith<RecipeValidationException>(exceptionMessage = "Event with a null or empty name found") {
-                RecipeCompiler.compileRecipe(recipe)
+                RecipeCompilerKotlin.compileRecipe(recipe)
             }
         }
     }
@@ -564,7 +564,7 @@ class RecipeCompilerFeaturesTest {
                 .withInteraction(interactionOne())
 
             assertFailsWith<RecipeValidationException>(exceptionMessage = "Ingredient with a null or empty name found") {
-                RecipeCompiler.compileRecipe(recipe)
+                RecipeCompilerKotlin.compileRecipe(recipe)
             }
         }
     }
@@ -575,7 +575,7 @@ class RecipeCompilerFeaturesTest {
             val recipe = recipe(name)
 
             assertFailsWith<RecipeValidationException>(exceptionMessage = "Recipe with a null or empty name found") {
-                RecipeCompiler.compileRecipe(recipe)
+                RecipeCompilerKotlin.compileRecipe(recipe)
             }
         }
     }
@@ -586,7 +586,7 @@ class RecipeCompilerFeaturesTest {
             .withInteraction(interactionOne().isReprovider(true))
             .withSensoryEvents(initialEvent())
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertEquals(
             listOf("Reprovider interaction InteractionOne needs to have a event precondition"),
             compiledRecipe.validationErrors
@@ -599,7 +599,7 @@ class RecipeCompilerFeaturesTest {
             .withInteraction(interactionWithOptionalIngredients())
             .withSensoryEvent(initialEvent())
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         assertTrue(compiledRecipe.validationErrors.isEmpty())
         compiledRecipe.interactionTransitions().foreach { transition ->
@@ -621,7 +621,7 @@ class RecipeCompilerFeaturesTest {
             .withInteraction(interactionWithOptionalIngredients())
             .withSensoryEvents(initialEvent(), optionalProviderEvent)
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         assertTrue(compiledRecipe.validationErrors.isEmpty())
         compiledRecipe.interactionTransitions().foreach { transition ->
@@ -658,7 +658,7 @@ class RecipeCompilerFeaturesTest {
             )
             .withInteraction(secondInteraction)
 
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertTrue(compiledRecipe.validationErrors.isEmpty())
 
         val transition =
@@ -680,7 +680,7 @@ class RecipeCompilerFeaturesTest {
             )
             .withSensoryEvents(initialEvent())
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         assertTrue(compiledRecipe.validationErrors.isEmpty())
         compiledRecipe.interactionTransitions().foreach { transition ->
@@ -702,7 +702,7 @@ class RecipeCompilerFeaturesTest {
             .withInteraction(interactionWithOptionalIngredients())
             .withSensoryEvents(initialEvent(), optionalProviderEvent)
 
-        val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe: CompiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         assertTrue(compiledRecipe.validationErrors.isEmpty())
         compiledRecipe.interactionTransitions().foreach { transition ->
@@ -718,8 +718,8 @@ class RecipeCompilerFeaturesTest {
     @Test
     fun `The recipe compiler should give the correct id when it compiles a java recipe`() {
         val recipe = TestRecipeJava.getRecipe("id-test-recipe")
-        val compiledRecipeKotlin = RecipeCompiler.compileRecipe(recipe)
-        val compiledRecipeScala = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipeKotlin = RecipeCompilerKotlin.compileRecipe(recipe)
+        val compiledRecipeScala = RecipeCompilerKotlin.compileRecipe(recipe)
         assertEquals(compiledRecipeScala.recipeId(), compiledRecipeKotlin.recipeId())
 
         assertEquals("9a7f1374762c9b0e", compiledRecipeKotlin.recipeId())
@@ -728,7 +728,7 @@ class RecipeCompilerFeaturesTest {
     @Test
     fun `The recipe compiler should give the interaction with Reprovider enabled when it compiles a java recipe and changes recipeId`() {
         val recipe = TestRecipeJava.getRecipeReprovider("id-test-recipe")
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertEquals("8a9d731ed4dae89e", compiledRecipe.recipeId())
     }
 
@@ -742,7 +742,7 @@ class RecipeCompilerFeaturesTest {
                     emptySet<scala.collection.immutable.Set<String>>().asScala
                 ).withRequiredEvent(initialEvent())
             )
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
         assertEquals("5c6aab1ddb03521f", compiledRecipe.recipeId())
         assertEquals(1, compiledRecipe.petriNet().transitions().count {
             it is InteractionTransition && it.interactionName()
@@ -794,7 +794,7 @@ class RecipeCompilerFeaturesTest {
             )
             .withSubRecipe(subRecipe)
 
-        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        val compiledRecipe = RecipeCompilerKotlin.compileRecipe(recipe)
 
         val res = compiledRecipe.petriNet().transitions().asJava
             .flatMap {
