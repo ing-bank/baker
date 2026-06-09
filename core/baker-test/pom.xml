@@ -18,7 +18,7 @@
     <dependencies>
         <dependency>
             <groupId>com.ing.baker</groupId>
-            <artifactId>baker-interface</artifactId>
+            <artifactId>baker-runtime</artifactId>
             <version>${project.version}</version>
         </dependency>
 
