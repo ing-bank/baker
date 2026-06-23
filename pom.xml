@@ -28,7 +28,7 @@
         <akka.version>2.10.17</akka.version>
         <cassandra.driver.version>4.17.0</cassandra.driver.version>
         <cats.core.version>2.13.0</cats.core.version>
-        <cats.effect.version>3.6.3</cats.effect.version>
+        <cats.effect.version>3.7.0</cats.effect.version>
         <cats.retry.version>3.1.3</cats.retry.version>
         <circe.generic.extras.version>0.14.4</circe.generic.extras.version>
         <circe.version>0.14.14</circe.version>
@@ -44,7 +44,7 @@
         <joda.time.version>2.14.0</joda.time.version>
         <jsr305.version>3.0.2</jsr305.version>
         <kafka.version>4.2.0</kafka.version>
-        <kotlin.version>2.2.20</kotlin.version>
+        <kotlin.version>2.3.21</kotlin.version>
         <kotlinx.coroutines.version>1.10.2</kotlinx.coroutines.version>
         <log4s.version>1.10.0</log4s.version>
         <logback.version>1.5.32</logback.version>
@@ -109,6 +109,7 @@
         <module>core/baker-intermediate-language</module>
         <module>core/baker-interface</module>
         <module>core/baker-interface-kotlin</module>
+        <module>core/baker-interface-in-memory</module>
         <module>core/baker-annotations</module>
         <module>core/baker-recipe-dsl</module>
         <module>core/baker-recipe-dsl-kotlin</module>

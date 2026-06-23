@@ -1,12 +1,11 @@
-package com.ing.baker.runtime.javadsl
+package com.ing.baker.runtime.model
 
-import com.ing.baker.runtime.model.BakerF
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstanceConfig
 
 import java.time.Duration
-import scala.concurrent.duration.{FiniteDuration, NANOSECONDS}
 
 object BakerConfig {
-  def defaults(): BakerConfig = {
+  def default(): BakerConfig = {
     new BakerConfig(
       false,
       RecipeInstanceConfig(),
@@ -23,16 +22,16 @@ object BakerConfig {
 }
 
 case class BakerConfig(
-                   val allowAddingRecipeWithoutRequiringInstances: Boolean,
-                   val recipeInstanceConfig: RecipeInstanceConfig,
-                   val idleTimeout: Duration,
-                   val retentionPeriodCheckInterval: Duration,
-                   val bakeTimeout: Duration,
-                   val processEventTimeout: Duration,
-                   val inquireTimeout: Duration,
-                   val shutdownTimeout: Duration,
-                   val addRecipeTimeout: Duration,
-                   val executeSingleInteractionTimeout: Duration) {
+                   allowAddingRecipeWithoutRequiringInstances: Boolean,
+                   recipeInstanceConfig: RecipeInstanceConfig,
+                   idleTimeout: Duration,
+                   retentionPeriodCheckInterval: Duration,
+                   bakeTimeout: Duration,
+                   processEventTimeout: Duration,
+                   inquireTimeout: Duration,
+                   shutdownTimeout: Duration,
+                   addRecipeTimeout: Duration,
+                   executeSingleInteractionTimeout: Duration) {
   def withAllowAddingRecipeWithoutRequiringInstances(allowAddingRecipeWithoutRequiringInstances: Boolean): BakerConfig =
     copy(allowAddingRecipeWithoutRequiringInstances = allowAddingRecipeWithoutRequiringInstances)
 
@@ -62,21 +61,4 @@ case class BakerConfig(
 
   def withExecuteSingleInteractionTimeout(executeSingleInteractionTimeout: Duration): BakerConfig =
     copy(executeSingleInteractionTimeout = executeSingleInteractionTimeout)
-
-  def toBakerFConfig(): BakerF.Config = {
-    implicit def toScalaDuration(duration: Duration): FiniteDuration = FiniteDuration.apply(duration.toNanos, NANOSECONDS)
-
-    BakerF.Config(
-      allowAddingRecipeWithoutRequiringInstances,
-      recipeInstanceConfig.toBakerFRecipeInstanceConfig(),
-      idleTimeout,
-      retentionPeriodCheckInterval,
-      bakeTimeout,
-      processEventTimeout,
-      inquireTimeout,
-      shutdownTimeout,
-      addRecipeTimeout,
-      executeSingleInteractionTimeout
-    )
-  }
 }

@@ -4,7 +4,7 @@ import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.runtime.inmemory.InMemoryBaker
-import com.ing.baker.runtime.model.InteractionInstance
+import com.ing.baker.runtime.model.{BakerF, InteractionInstance}
 import com.ing.baker.runtime.scaladsl.EventInstance
 import examples.scala.events.OrderPlaced
 import examples.scala.ingredients.Address
@@ -13,9 +13,13 @@ import examples.scala.recipes.WebShopRecipe
 
 import java.util.UUID
 import scala.concurrent.duration.DurationInt
+import scala.reflect.ClassTag
 
 class WebShopApp {
   def main(args: Array[String]): Unit = {
+
+    // Required implicits for InteractionInstance.unsafeFrom[IO]
+    implicit val ioClassTag: ClassTag[IO[Any]] = ClassTag(classOf[IO[_]])
 
     val interactions = List(
       new CancelOrderImpl(),
@@ -23,7 +27,8 @@ class WebShopApp {
       new CheckStockImpl(),
     )
 
-    val bakerF = InMemoryBaker.build(implementations = interactions.map(InteractionInstance.unsafeFrom[IO]))
+    val bakerF = InMemoryBaker.build(interactions.map(InteractionInstance.unsafeFrom[IO]))
+      .asInstanceOf[IO[BakerF[IO]]]
       .unsafeRunSync()
 
     val recipeInstanceId = UUID.randomUUID().toString

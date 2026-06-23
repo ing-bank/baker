@@ -11,36 +11,21 @@ import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.BakerException.NoSuchIngredientException
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.common.{BakerException, InteractionExecutionFailureReason, RecipeRecord, SensoryEventStatus}
-import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
 import com.ing.baker.runtime.scaladsl.{Baker => DeprecatedBaker, _}
 import com.ing.baker.types.Value
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.jdk.DurationConverters._
 
 /**
   * TODO create a Resource based runtime execution which runs the retention period stream and allocates a Blocker context
   */
-object BakerF {
-
-  case class Config(allowAddingRecipeWithoutRequiringInstances: Boolean = false,
-                    recipeInstanceConfig: RecipeInstance.Config = RecipeInstance.Config(),
-                    idleTimeout: FiniteDuration = 60 seconds,
-                    retentionPeriodCheckInterval: FiniteDuration = 10.seconds,
-                    bakeTimeout: FiniteDuration = 10.seconds,
-                    processEventTimeout: FiniteDuration = 10.seconds,
-                    inquireTimeout: FiniteDuration = 60.seconds,
-                    shutdownTimeout: FiniteDuration = 10.seconds,
-                    addRecipeTimeout: FiniteDuration = 10.seconds,
-                    executeSingleInteractionTimeout: FiniteDuration = 60.seconds,
-                   )
-}
-
 abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[F], async: Async[F]) extends common.Baker[F] with ScalaApi with LazyLogging {
   self =>
 
-  val config: BakerF.Config
+  val config: BakerConfig
 
   override type SensoryEventResultType = SensoryEventResult
 
@@ -70,6 +55,8 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
 
   override type DurationType = FiniteDuration
 
+  override type UnitType = Unit
+
   private def javaTimeoutToBakerTimeout[A](operationName: String) : PartialFunction[Throwable, F[A]] = {
     case _ : java.util.concurrent.TimeoutException => sync.raiseError(BakerException.TimeoutException(operationName))
   }
@@ -86,7 +73,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
     components
       .recipeManager
       .addRecipe(recipeRecord.recipe, !recipeRecord.validate || config.allowAddingRecipeWithoutRequiringInstances)
-      .timeout(config.addRecipeTimeout)
+      .timeout(config.addRecipeTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("addRecipe"))
 
   /**
@@ -97,7 +84,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
     */
   override def getRecipe(recipeId: String): F[RecipeInformation] =
     components.recipeManager.getRecipe(recipeId)
-      .timeout(config.inquireTimeout)
+      .timeout(config.inquireTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("getRecipe"))
 
 
@@ -112,7 +99,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
     */
   override def getAllRecipes: F[Map[String, RecipeInformation]] =
     components.recipeManager.getAllRecipes
-      .timeout(config.inquireTimeout)
+      .timeout(config.inquireTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("getAllRecipes"))
 
 
@@ -143,7 +130,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
                 Some(interactionInstance.name),
                 Some(s"Interaction execution failed. Interaction threw ${e.getClass.getSimpleName} with message ${e.getMessage}."))))
             }
-            .timeoutTo(config.executeSingleInteractionTimeout, sync.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
+            .timeoutTo(config.executeSingleInteractionTimeout.toScala, sync.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
               InteractionExecutionFailureReason.TIMEOUT, Some(interactionInstance.name), None)))))
             .recoverWith(javaTimeoutToBakerTimeout("executeSingleInteraction"))
       }
@@ -163,7 +150,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
     */
   override def bake(recipeId: String, recipeInstanceId: String): F[Unit] =
     components.recipeInstanceManager.bake(recipeId, recipeInstanceId, config.recipeInstanceConfig)
-      .timeout(config.bakeTimeout)
+      .timeout(config.bakeTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("bake"))
 
   /**
@@ -175,7 +162,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
     */
   override def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): F[Unit] =
     components.recipeInstanceManager.bake(recipeId, recipeInstanceId, config.recipeInstanceConfig)
-      .timeout(config.bakeTimeout)
+      .timeout(config.bakeTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("bake"))
       .flatMap(_ => components.recipeInstanceManager.addMetaData(recipeInstanceId, metadata))
 
@@ -203,7 +190,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
   override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventStatus] =
     components.recipeInstanceManager
       .fireEventAndResolveWhenReceived(recipeInstanceId, event, correlationId)
-      .timeout(config.processEventTimeout)
+      .timeout(config.processEventTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("fireEventAndResolveWhenReceived"))
 
   /**
@@ -220,7 +207,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
   override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventResult] =
     components.recipeInstanceManager
       .fireEventAndResolveWhenCompleted(recipeInstanceId, event, correlationId)
-      .timeout(config.processEventTimeout)
+      .timeout(config.processEventTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("fireEventAndResolveWhenCompleted"))
 
   /**
@@ -238,7 +225,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
   override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): F[SensoryEventResult] =
     components.recipeInstanceManager
       .fireEventAndResolveOnEvent(recipeInstanceId, event, onEvent, correlationId)
-      .timeout(config.processEventTimeout)
+      .timeout(config.processEventTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("fireEventAndResolveOnEvent"))
 
   /**
@@ -264,16 +251,16 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
 
       new EventResolutionsF[F] {
         override def resolveWhenReceived: F[SensoryEventStatus] =
-          ioCAST._1.timeout(config.processEventTimeout).recoverWith(javaTimeoutToBakerTimeout("fireEvent"))
+          ioCAST._1.timeout(config.processEventTimeout.toScala).recoverWith(javaTimeoutToBakerTimeout("fireEvent"))
         override def resolveWhenCompleted: F[SensoryEventResult] =
-          ioCAST._2.timeout(config.processEventTimeout).recoverWith(javaTimeoutToBakerTimeout("fireEvent"))
+          ioCAST._2.timeout(config.processEventTimeout.toScala).recoverWith(javaTimeoutToBakerTimeout("fireEvent"))
       }
     } else {
       new EventResolutionsF[F] {
         override def resolveWhenReceived: F[SensoryEventStatus] =
-          result._1F.timeout(config.processEventTimeout).recoverWith(javaTimeoutToBakerTimeout("fireEvent")).flatten
+          result._1F.timeout(config.processEventTimeout.toScala).recoverWith(javaTimeoutToBakerTimeout("fireEvent")).flatten
         override def resolveWhenCompleted: F[SensoryEventResult] =
-          result._2F.timeout(config.processEventTimeout).recoverWith(javaTimeoutToBakerTimeout("fireEvent")).flatten
+          result._2F.timeout(config.processEventTimeout.toScala).recoverWith(javaTimeoutToBakerTimeout("fireEvent")).flatten
       }
     }
   }
@@ -308,7 +295,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
   override def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[SensoryEventStatus] =
     components.recipeInstanceManager
       .fireSensoryEventAndAwaitReceived(recipeInstanceId, event, correlationId)
-      .timeout(config.processEventTimeout)
+      .timeout(config.processEventTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("fireSensoryEventAndAwaitReceived"))
 
   override def awaitCompleted(recipeInstanceId: String, timeout: FiniteDuration): F[SensoryEventStatus] =
@@ -335,7 +322,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
     */
   override def getAllRecipeInstancesMetadata: F[Set[RecipeInstanceMetadata]] =
     components.recipeInstanceManager.getAllRecipeInstancesMetadata
-      .timeout(config.inquireTimeout)
+      .timeout(config.inquireTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("getAllRecipeInstancesMetadata"))
 
   /**
@@ -346,7 +333,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
    */
   override def hasRecipeInstance(recipeInstanceId: String): F[Boolean] =
     components.recipeInstanceManager.hasRecipeInstance(recipeInstanceId)
-      .timeout(config.inquireTimeout)
+      .timeout(config.inquireTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("hasRecipeInstance"))
 
   /**
@@ -357,7 +344,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
     */
   override def getRecipeInstanceState(recipeInstanceId: String): F[RecipeInstanceState] =
     components.recipeInstanceManager.getRecipeInstanceState(recipeInstanceId)
-      .timeout(config.inquireTimeout)
+      .timeout(config.inquireTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("getRecipeInstanceState"))
 
   /**
@@ -409,7 +396,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
     */
   override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): F[String] =
     components.recipeInstanceManager.getVisualState(recipeInstanceId, style)
-      .timeout(config.inquireTimeout)
+      .timeout(config.inquireTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("getVisualState"))
 
   private def doRegisterEventListener(listenerFunction: (RecipeEventMetadata, String) => Unit, processFilter: String => Boolean): F[Unit] =
@@ -451,7 +438,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
     */
   override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): F[Unit] =
     components.eventStream.subscribe(listenerFunction)
-      .timeout(config.inquireTimeout)
+      .timeout(config.inquireTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("registerBakerEventListener"))
 
   /**
@@ -462,7 +449,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
   override def retryInteraction(recipeInstanceId: String, interactionName: String): F[Unit] =
     components.recipeInstanceManager.retryBlockedInteraction(recipeInstanceId, interactionName)
       .flatMap(_.compile.drain)
-      .timeout(config.processEventTimeout)
+      .timeout(config.processEventTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("retryInteraction"))
 
   /**
@@ -475,7 +462,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
   override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): F[Unit] =
     components.recipeInstanceManager.resolveBlockedInteraction(recipeInstanceId, interactionName, event)
       .flatMap(_.compile.drain)
-      .timeout(config.processEventTimeout)
+      .timeout(config.processEventTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("resolveInteraction"))
 
   /**
@@ -485,12 +472,12 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
     */
   override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): F[Unit] =
     components.recipeInstanceManager.stopRetryingInteraction(recipeInstanceId, interactionName)
-      .timeout(config.processEventTimeout)
+      .timeout(config.processEventTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("stopRetryingInteraction"))
 
   def translate[G[_]](mapK: F ~> G, comapK: G ~> F)(implicit components: BakerComponents[G], async: Async[G]): BakerF[G] =
     new BakerF[G] {
-      override val config: BakerF.Config =
+      override val config: BakerConfig =
         self.config
       override def addRecipe(recipeRecord: RecipeRecord): G[String] =
         mapK(self.addRecipe(recipeRecord))

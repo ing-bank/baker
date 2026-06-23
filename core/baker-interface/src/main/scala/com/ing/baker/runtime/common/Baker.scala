@@ -39,6 +39,8 @@ trait Baker[F[_]] extends LanguageApi {
   type InteractionExecutionResultType <: InteractionExecutionResult { type Language <: self.Language }
 
   type DurationType
+  
+  type UnitType
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -97,7 +99,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param recipeInstanceId The identifier for the newly baked process
     * @return
     */
-  def bake(recipeId: String, recipeInstanceId: String): F[Unit]
+  def bake(recipeId: String, recipeInstanceId: String): F[UnitType]
 
 
   /**
@@ -106,10 +108,10 @@ trait Baker[F[_]] extends LanguageApi {
     * This is similar to calling addMetaData after doing the regular bake but depending on the implementation this can be more optimized.
     * @param recipeId         The recipeId for the recipe to bake
     * @param recipeInstanceId The identifier for the newly baked process
-    * @param metadata
+    * @param metadata         Metadata
     * @return
     */
-  def bake(recipeId: String, recipeInstanceId: String, metadata: language.Map[String, String]): F[Unit]
+  def bake(recipeId: String, recipeInstanceId: String, metadata: language.Map[String, String]): F[UnitType]
 
   /**
    * Deletes a recipeInstance. Once deleted the instance will be marked as `Deleted` in the index and then removed after a while.
@@ -118,7 +120,7 @@ trait Baker[F[_]] extends LanguageApi {
    * @param removeFromIndex If enabled removes all references to the id directly
    * @return
    */
-  def deleteRecipeInstance(recipeInstanceId: String, removeFromIndex: Boolean): F[Unit]
+  def deleteRecipeInstance(recipeInstanceId: String, removeFromIndex: Boolean): F[UnitType]
 
   /**
    * Fires a sensory event for a given recipe instance and waits until it has been accepted and persisted.
@@ -133,13 +135,13 @@ trait Baker[F[_]] extends LanguageApi {
    *                         systems. If a second event with the same ID arrives, the method will fail with
    *                         [[AlreadyReceivedException]].
    * @return A future that resolves to [[SensoryEventStatus.Received]] when the event has been successfully persisted.
-   * @throws NoSuchProcessException                if the recipe instance does not exist.
-   * @throws ProcessDeletedException               if the recipe instance has been deleted.
-   * @throws InvalidEventException                 if the event is not a valid sensory event for the recipe.
-   * @throws AlreadyReceivedException              if an event with the same `correlationId` has already been received.
-   * @throws java.util.concurrent.TimeoutException if the request does not complete within the configured `baker.process-event-timeout`.
-   *                                               Note that a timeout does NOT mean the event was not processed; it may still be
-   *                                               processed later.
+   * @throws com.ing.baker.runtime.common.BakerException.NoSuchProcessException  if the recipe instance does not exist.
+   * @throws com.ing.baker.runtime.common.BakerException.ProcessDeletedException if the recipe instance has been deleted.
+   * @throws InvalidEventException                                               if the event is not a valid sensory event for the recipe.
+   * @throws AlreadyReceivedException                                            if an event with the same `correlationId` has already been received.
+   * @throws java.util.concurrent.TimeoutException                               if the request does not complete within the configured `baker.process-event-timeout`.
+   *                                                                             Note that a timeout does NOT mean the event was not processed; it may still be
+   *                                                                             processed later.
    */
   def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstanceType, correlationId: language.Option[String]): F[SensoryEventStatus]
 
@@ -161,7 +163,7 @@ trait Baker[F[_]] extends LanguageApi {
    * @throws ProcessDeletedException if the recipe instance has been deleted.
    * @throws TimeoutException        if the event does not occur within the specified `timeout`.
    */
-  def awaitEvent(recipeInstanceId: String, eventName: String, timeout: DurationType, waitForNext: Boolean = false): F[Unit]
+  def awaitEvent(recipeInstanceId: String, eventName: String, timeout: DurationType, waitForNext: Boolean = false): F[UnitType]
 
   /**
    * Waits until a recipe instance completes execution.
@@ -220,7 +222,7 @@ trait Baker[F[_]] extends LanguageApi {
     * These cannot be ingredients already found in your recipe.
     * @param metadata
     */
-  def addMetaData(recipeInstanceId: String, metadata: language.Map[String, String]): F[Unit]
+  def addMetaData(recipeInstanceId: String, metadata: language.Map[String, String]): F[UnitType]
 
   /**
     * Returns an index of all running processes.
@@ -296,14 +298,14 @@ trait Baker[F[_]] extends LanguageApi {
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  def registerEventListener(recipeName: String, listenerFunction: language.BiConsumerFunction[RecipeMetadataType, String]): F[Unit]
+  def registerEventListener(recipeName: String, listenerFunction: language.BiConsumerFunction[RecipeMetadataType, String]): F[UnitType]
 
   /**
     * Registers a listener to all runtime events for all recipes that run in this Baker instance.
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  def registerEventListener(listenerFunction: language.BiConsumerFunction[RecipeMetadataType, String]): F[Unit]
+  def registerEventListener(listenerFunction: language.BiConsumerFunction[RecipeMetadataType, String]): F[UnitType]
 
   /**
     * Registers a listener function that listens to all BakerEvents
@@ -313,19 +315,19 @@ trait Baker[F[_]] extends LanguageApi {
     * @param listenerFunction
     * @return
     */
-  def registerBakerEventListener(listenerFunction: language.ConsumerFunction[BakerEventType]): F[Unit]
+  def registerBakerEventListener(listenerFunction: language.ConsumerFunction[BakerEventType]): F[UnitType]
 
   /**
     * Attempts to gracefully shutdown the baker system.
     */
-  def gracefulShutdown(): F[Unit]
+  def gracefulShutdown(): F[UnitType]
 
   /**
     * Retries a blocked interaction.
     *
     * @return
     */
-  def retryInteraction(recipeInstanceId: String, interactionName: String): F[Unit]
+  def retryInteraction(recipeInstanceId: String, interactionName: String): F[UnitType]
 
   /**
     * Resolves a blocked interaction by specifying it's output.
@@ -334,14 +336,14 @@ trait Baker[F[_]] extends LanguageApi {
     *
     * @return
     */
-  def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstanceType): F[Unit]
+  def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstanceType): F[UnitType]
 
   /**
     * Stops the retrying of an interaction.
     *
     * @return
     */
-  def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): F[Unit]
+  def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): F[UnitType]
 }
 
 case class RecipeRecord(

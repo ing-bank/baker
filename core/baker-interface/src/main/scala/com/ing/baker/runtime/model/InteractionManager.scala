@@ -10,9 +10,51 @@ import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.{FatalInteracti
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
 import com.ing.baker.types.Type
 import com.typesafe.config.ConfigFactory
+import InteractionManager._
 
-import scala.collection.immutable.Seq
+object InteractionManager {
 
+  private lazy val AllowSupersetForOutputTypes: Boolean =
+    ConfigFactory.load().getBoolean("baker.interactions.allow-superset-for-output-types")
+
+  sealed trait InteractionIncompatible
+  case object NameNotFound extends InteractionIncompatible
+  case class InteractionMatchInputSizeFailed(
+                                              interactionName: String,
+                                              transitionArgsSize: Int,
+                                              implementationArgsSize: Int
+                                            ) extends InteractionIncompatible {
+    override def toString: String =
+      s"$interactionName input size differs: transition expects $transitionArgsSize, implementation provides $implementationArgsSize"
+  }
+
+  case class InteractionMatchInputFailed(
+                                          interactionName: String,
+                                          transitionInputTypesMissing: Seq[IngredientDescriptor],
+                                          implementationInputTypesExtra: Seq[InteractionInstanceInput]
+                                        ) extends InteractionIncompatible {
+    override def toString: String =
+      s"$interactionName input types mismatch: transition expects $transitionInputTypesMissing, not provided by implementation, implementation provides extra: $implementationInputTypesExtra"
+  }
+
+  case class InteractionMatchOutputSizeFailed(interactionName: String,
+                                              transitionArgsSize: Int,
+                                              implementationArgsSize: Int) extends InteractionIncompatible {
+    override def toString: String =
+      s"$interactionName output size differs: transition expects $transitionArgsSize, implementation provides $implementationArgsSize"
+  }
+
+  case class InteractionMatchOutputNotFound(interactionName: String,
+                                            eventDescriptors: Seq[EventDescriptor]) extends InteractionIncompatible {
+    override def toString: String =
+      s"$interactionName ouput mismatch: transition expects $eventDescriptors, not provided by implementation"
+  }
+
+  case class UnknownReason(interactionName: String) extends InteractionIncompatible {
+    override def toString: String =
+      s"$interactionName: unknown reason for no interaction matched"
+  }
+}
 /**
   * The InteractionManager is responsible for keeping and calling al InteractionInstances.
   * The other components of Baker will not call InteractionInstances and will always go through the InteractionManager.
@@ -28,8 +70,6 @@ trait InteractionManager[F[_]] {
     * If this new value is given from the implementation this will result in te runtime error and a technical failure of the interaction.
     */
   def allowSupersetForOutputTypes: Boolean = AllowSupersetForOutputTypes
-  private lazy val AllowSupersetForOutputTypes: Boolean =
-    ConfigFactory.load().getBoolean("baker.interactions.allow-superset-for-output-types")
 
   def listAll: F[List[InteractionInstance[F]]]
 
@@ -100,44 +140,6 @@ trait InteractionManager[F[_]] {
           (transitionIngredient.`type`.isAssignableFrom(implementationIngredient._2) ||
             allowSupersetForOutputTypes && implementationIngredient._2.isAssignableFrom(transitionIngredient.`type`))
       ))
-  }
-
-  sealed trait InteractionIncompatible
-  case object NameNotFound extends InteractionIncompatible
-  case class InteractionMatchInputSizeFailed(
-                                              interactionName: String,
-                                              transitionArgsSize: Int,
-                                              implementationArgsSize: Int
-                                            ) extends InteractionIncompatible {
-    override def toString: String =
-      s"$interactionName input size differs: transition expects $transitionArgsSize, implementation provides $implementationArgsSize"
-  }
-
-  case class InteractionMatchInputFailed(
-                                         interactionName: String,
-                                         transitionInputTypesMissing: Seq[IngredientDescriptor],
-                                         implementationInputTypesExtra: Seq[InteractionInstanceInput]
-                                       ) extends InteractionIncompatible {
-    override def toString: String =
-      s"$interactionName input types mismatch: transition expects $transitionInputTypesMissing, not provided by implementation, implementation provides extra: $implementationInputTypesExtra"
-  }
-
-  case class InteractionMatchOutputSizeFailed(interactionName: String,
-                                              transitionArgsSize: Int,
-                                              implementationArgsSize: Int) extends InteractionIncompatible {
-    override def toString: String =
-      s"$interactionName output size differs: transition expects $transitionArgsSize, implementation provides $implementationArgsSize"
-  }
-
-  case class InteractionMatchOutputNotFound(interactionName: String,
-                                            eventDescriptors: Seq[EventDescriptor]) extends InteractionIncompatible {
-    override def toString: String =
-      s"$interactionName ouput mismatch: transition expects $eventDescriptors, not provided by implementation"
-  }
-
-  case class UnknownReason(interactionName: String) extends InteractionIncompatible {
-    override def toString: String =
-      s"$interactionName: unknown reason for no interaction matched"
   }
 
   def incompatibilities(transition: InteractionTransition)(implicit sync: Sync[F]): F[Seq[InteractionIncompatible]] = for {
