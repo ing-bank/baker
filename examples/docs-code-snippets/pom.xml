@@ -23,7 +23,7 @@
         </dependency>
         <dependency>
             <groupId>com.ing.baker</groupId>
-            <artifactId>baker-runtime-kotlin</artifactId>
+            <artifactId>baker-interface-kotlin</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

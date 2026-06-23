@@ -33,7 +33,7 @@
         </dependency>
         <dependency>
             <groupId>com.ing.baker</groupId>
-            <artifactId>baker-runtime-in-memory</artifactId>
+            <artifactId>baker-interface-in-memory</artifactId>
             <version>${project.version}</version>
         </dependency>
 

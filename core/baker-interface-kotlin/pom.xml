@@ -11,14 +11,14 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>baker-runtime-kotlin</artifactId>
+    <artifactId>baker-interface-kotlin</artifactId>
     <name>Baker Runtime Kotlin</name>
     <description>Kotlin runtime for Baker</description>
 
     <dependencies>
         <dependency>
             <groupId>com.ing.baker</groupId>
-            <artifactId>baker-runtime</artifactId>
+            <artifactId>baker-interface</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
