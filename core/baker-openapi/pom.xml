@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.ing.baker</groupId>
+        <artifactId>baker</artifactId>
+        <version>5.1.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>baker-openapi</artifactId>
+    <name>Baker OpenAPI (aggregator)</name>
+    <packaging>pom</packaging>
+
+    <properties>
+        <wirespec.version>0.18.13</wirespec.version>
+    </properties>
+
+    <modules>
+        <module>baker-openapi-dsl</module>
+        <module>baker-openapi-emitter</module>
+        <module>baker-openapi-plugin</module>
+        <module>baker-openapi-wirespec</module>
+    </modules>
+</project>
