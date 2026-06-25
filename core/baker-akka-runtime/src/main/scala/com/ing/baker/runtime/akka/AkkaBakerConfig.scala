@@ -4,7 +4,7 @@ import akka.actor.{ActorSystem, Address, AddressFromURIString}
 import cats.data.NonEmptyList
 import cats.effect.IO
 import com.ing.baker.runtime.akka.AkkaBakerConfig.BakerValidationSettings
-import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider}
+import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider, Timeouts}
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.{ActorBasedRecipeManager, DefaultRecipeManager, RecipeManager}
@@ -19,7 +19,7 @@ case class AkkaBakerConfig(
                             bakerActorProvider: BakerActorProvider,
                             interactions: InteractionManager[IO],
                             recipeManager: RecipeManager,
-                            timeouts: AkkaBakerConfig.Timeouts,
+                            timeouts: Timeouts,
                             bakerValidationSettings: BakerValidationSettings,
                             terminateActorSystem: Boolean = true,
                           )(implicit val system: ActorSystem)
@@ -37,36 +37,6 @@ object AkkaBakerConfig extends LazyLogging {
       BakerValidationSettings(config.getOrElse[Boolean]("baker.allow-adding-recipe-without-requiring-instances", false))
   }
 
-  case class Timeouts(defaultBakeTimeout: FiniteDuration,
-                       defaultProcessEventTimeout: FiniteDuration,
-                       defaultInquireTimeout: FiniteDuration,
-                       defaultShutdownTimeout: FiniteDuration,
-                       defaultAddRecipeTimeout: FiniteDuration,
-                      defaultExecuteSingleInteractionTimeout: FiniteDuration)
-
-  object Timeouts {
-
-    def default: Timeouts =
-      Timeouts(
-        defaultBakeTimeout = 10.seconds,
-        defaultProcessEventTimeout = 10.seconds,
-        defaultInquireTimeout = 10.seconds,
-        defaultShutdownTimeout = 30.seconds,
-        defaultAddRecipeTimeout = 10.seconds,
-        defaultExecuteSingleInteractionTimeout = 60.seconds,
-      )
-
-    def apply(config: Config): Timeouts =
-      Timeouts(
-        defaultBakeTimeout = config.as[FiniteDuration]("baker.bake-timeout"),
-        defaultProcessEventTimeout = config.as[FiniteDuration]("baker.process-event-timeout"),
-        defaultInquireTimeout = config.as[FiniteDuration]("baker.process-inquire-timeout"),
-        defaultShutdownTimeout = config.as[FiniteDuration]("baker.shutdown-timeout"),
-        defaultAddRecipeTimeout = config.as[FiniteDuration]("baker.add-recipe-timeout"),
-        defaultExecuteSingleInteractionTimeout = config.as[FiniteDuration]("baker.execute-single-interaction-timeout"),
-      )
-  }
-
   def localDefault(actorSystem: ActorSystem): AkkaBakerConfig = {
     localDefault(actorSystem, CachingInteractionManager())
   }
@@ -81,7 +51,6 @@ object AkkaBakerConfig extends LazyLogging {
         providedIngredientFilter = List.empty,
         actorIdleTimeout = Some(5.minutes),
         configuredEncryption = Encryption.NoEncryption,
-        timeouts = defaultTimeouts,
         blacklistedProcesses = List.empty,
         rememberProcessDuration = None
       )
@@ -122,7 +91,6 @@ object AkkaBakerConfig extends LazyLogging {
           providedIngredientFilter = config.as[List[String]]("baker.filtered-ingredient-values") ++ config.as[List[String]]("baker.filtered-ingredient-values-for-stream"),
           actorIdleTimeout = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout"),
           configuredEncryption = encryption,
-          Timeouts.apply(config),
           blacklistedProcesses = config.as[List[String]]("baker.blacklisted-processes"),
           rememberProcessDuration = config.as[Option[FiniteDuration]]("baker.process-index.remember-process-duration")
         )
@@ -142,7 +110,6 @@ object AkkaBakerConfig extends LazyLogging {
           getIngredientsFilter = config.as[List[String]]("baker.filtered-ingredient-values") ++ config.as[List[String]]("baker.filtered-ingredient-values-for-get"),
           providedIngredientFilter = config.as[List[String]]("baker.filtered-ingredient-values") ++ config.as[List[String]]("baker.filtered-ingredient-values-for-stream"),
           configuredEncryption = encryption,
-          Timeouts.apply(config),
           blacklistedProcesses = config.as[List[String]]("baker.blacklisted-processes"),
           rememberProcessDuration = config.as[Option[FiniteDuration]]("baker.process-index.remember-process-duration")
         )

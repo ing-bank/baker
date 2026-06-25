@@ -33,9 +33,12 @@ trait RecipeManager[F[_]] extends LazyLogging {
       _ <-
         if (implementationErrors.nonEmpty)
           Sync[F].raiseError(ImplementationsException(s"Recipe ${compiledRecipe.name}:${compiledRecipe.recipeId} has implementation errors: ${implementationErrors.mkString(", ")}"))
-        else if (compiledRecipe.validationErrors.nonEmpty)
+        else if (compiledRecipe.criticalValidationErrors.nonEmpty)
           Sync[F].raiseError(RecipeValidationException(s"Recipe ${compiledRecipe.name}:${compiledRecipe.recipeId} has validation errors: ${compiledRecipe.validationErrors.mkString(", ")}"))
-        else
+        else {
+          if (compiledRecipe.nonCriticalValidationErrors.nonEmpty) {
+            logger.warn(s"Recipe ${compiledRecipe.name}:${compiledRecipe.recipeId} has validation warnings: ${compiledRecipe.nonCriticalValidationErrors.mkString(", ")}")
+          }
           for {
             timestamp <- async.pure(System.currentTimeMillis())
             _ <- store(compiledRecipe, timestamp)
@@ -43,6 +46,7 @@ trait RecipeManager[F[_]] extends LazyLogging {
             _ <- sync.delay(components.logging.addedRecipe(recipeAdded))
             _ <- components.eventStream.publish(recipeAdded)
           } yield ()
+        }
     } yield compiledRecipe.recipeId
 
   def getRecipe(recipeId: String)(implicit components: BakerComponents[F], sync: Sync[F]): F[RecipeInformation] =

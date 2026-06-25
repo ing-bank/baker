@@ -8,8 +8,7 @@ import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl.{CheckPointEvent, Event, Recipe}
 import com.ing.baker.runtime.common.RejectReason._
-import com.ing.baker.runtime.scaladsl.{EventInstance, _}
-import com.ing.baker.types.PrimitiveValue
+import com.ing.baker.runtime.scaladsl._
 import com.typesafe.scalalogging.LazyLogging
 
 import java.util.UUID

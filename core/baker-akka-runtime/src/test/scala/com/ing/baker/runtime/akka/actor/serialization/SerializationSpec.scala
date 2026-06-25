@@ -20,9 +20,9 @@ import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState, SensoryEventResult}
 import com.ing.baker.runtime.serialization.Encryption.{AESEncryption, NoEncryption}
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto}
+import com.ing.baker.{AllTypeRecipe, types}
 import com.ing.baker.types._
 import com.ing.baker.types.modules.PrimitiveModuleSpec._
-import com.ing.baker.{AllTypeRecipe, types}
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalacheck._

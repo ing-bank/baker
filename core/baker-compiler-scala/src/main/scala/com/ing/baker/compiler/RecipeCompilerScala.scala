@@ -79,7 +79,7 @@ object RecipeCompilerScala {
     val eventTransition = preconditionTransition(eventName)
 
     val notProvidedError = eventTransition match {
-      case None => Seq(s"Event '$eventName' for '$interactionTransition' is not provided in the recipe")
+      case None => Seq(s"Event '$eventName' for '${interactionTransition.label}' is not provided in the recipe")
       case Some(_) => Seq.empty
     }
 

@@ -183,7 +183,7 @@ public class JavaCompiledRecipeTest {
 
         class Nothing {}
 
-        @FiresEvent(oneOf = {InteractionThree.Nothing.class})
+        @FiresEvent(oneOf = {Nothing.class})
         Nothing apply(@RequiresIngredient("RequestIDStringOne") String requestIDStringOne,
                    @RequiresIngredient("RequestIDStringTwo") String requestIDStringTwo);
     }
