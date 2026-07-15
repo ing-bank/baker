@@ -77,6 +77,9 @@ object ProcessIndex {
   //The process was deleted
   case object Deleted extends ProcessStatus
 
+  //The deletion of the process events was durably requested but has not completed yet
+  case object Deleting extends ProcessStatus
+
   //The process was passivated
   case object Passivated extends ProcessStatus
 
@@ -86,6 +89,8 @@ object ProcessIndex {
                            processStatus: ProcessStatus) extends BakerSerializable {
 
     def isDeleted: Boolean = processStatus == Deleted
+
+    def isDeleting: Boolean = processStatus == Deleting
 
     def isPassivated: Boolean = processStatus == Passivated
   }
@@ -97,6 +102,9 @@ object ProcessIndex {
 
   // when an actor is passivated
   case class ActorPassivated(recipeInstanceId: String) extends BakerSerializable
+
+  // when the deletion of an actor's events is durably requested, before the events are actually deleted
+  case class ActorDeletionStarted(recipeInstanceId: String, removeFromIndex: Boolean) extends BakerSerializable
 
   // when an actor is deleted
   case class ActorDeleted(recipeInstanceId: String, removedFromIndex: Boolean) extends BakerSerializable
@@ -165,6 +173,12 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   private val DelayedTransitionActorRestartRandomFactor: Double =  config.getDouble("baker.delayed-transition.restart-randomFactor")
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
+
+  // recipeInstanceIds with a deleteAllEvents call currently in flight, to dedupe retention-sweep retries
+  private val inFlightDeletions: mutable.Set[String] = mutable.Set.empty
+
+  // removeFromIndex flags of ActorDeletionStarted events replayed during recovery, consumed on RecoveryCompleted
+  private val pendingDeletions: mutable.Map[String, Boolean] = mutable.Map.empty
 
   //TODO chose if to use the CassandraBakerCleanup or the ActorBasedBakerCleanup
   val cleanup: BakerCleanup = {
@@ -259,8 +273,11 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     processActor
   }
 
-  def shouldDelete(meta: ActorMetadata): Boolean = {
-    if(meta.processStatus != Deleted)
+  def shouldDelete(meta: ActorMetadata): Boolean = meta.processStatus match {
+    case Deleted => false
+    // deletion was durably requested but has not completed yet, retry regardless of the retention period
+    case Deleting => true
+    case _ =>
       getCompiledRecipe(meta.recipeId, reactivate = false) match {
         case Some(recipe) =>
           recipe.retentionPeriod.exists { p => meta.createdDateTime + p.toMillis < System.currentTimeMillis() }
@@ -268,7 +285,6 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           log.error(s"Could not find recipe: ${meta.recipeId} during deletion for recipeInstanceId: ${meta.recipeInstanceId} using default 14 days")
           meta.createdDateTime + (14 days).toMillis < System.currentTimeMillis()
       }
-    else false
   }
 
   private def deleteProcess(meta: ActorMetadata, replyToOptional: Option[ActorRef] = None, removeFromIndex: Boolean = false): Unit = {
@@ -294,13 +310,18 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
             case Some(compiledRecipe) =>
               val persistenceId = ProcessInstance.recipeInstanceId2PersistenceId(compiledRecipe.name, meta.recipeInstanceId)
               log.debug(s"Deleting with persistenceId: ${persistenceId}")
-              // ActorDeleted is persisted only after the deletion succeeds (in the ProcessEventsDeletionSucceeded
-              // handler), so a failed deletion leaves the journal untouched and the retention sweep retries it.
-              //Using deleteAllEvents since we do not use Snapshots for ProcessInstances
-              cleanup.deleteAllEvents(persistenceId, neverUsePersistenceIdAgain = false)
-                .map(_ => ProcessEventsDeletionSucceeded(meta, removeFromIndex, replyToOptional))
-                .recover { case NonFatal(e) => ProcessEventsDeletionFailed(meta, removeFromIndex, replyToOptional, e) }
-                .pipeTo(self)
+              // Two-phase deletion: ActorDeletionStarted is journaled before the events are deleted and
+              // ActorDeleted only after, so a deletion interrupted by a crash is resumed on recovery and
+              // a failed deletion is retried by the retention sweep or a client retry.
+              if (meta.isDeleting) {
+                // the intent is already journaled (retry or recovery resume), only relaunch the deletion
+                deleteProcessEvents(persistenceId, meta, removeFromIndex, replyToOptional)
+              } else {
+                persistWithSnapshot(ActorDeletionStarted(meta.recipeInstanceId, removeFromIndex)) { _ =>
+                  index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleting))
+                  deleteProcessEvents(persistenceId, meta, removeFromIndex, replyToOptional)
+                }
+              }
             case None =>
               log.debug(s"Recipe not found for ${meta.recipeInstanceId}, marking as deleted")
               persistWithSnapshot(ActorDeleted(meta.recipeInstanceId, removeFromIndex)) { _ =>
@@ -342,6 +363,18 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     }
   }
 
+  // Skips duplicate launches from the retention sweep while a deletion is already in flight;
+  // client-initiated retries (replyTo defined) still launch so every caller receives a reply.
+  private def deleteProcessEvents(persistenceId: String, meta: ActorMetadata, removeFromIndex: Boolean, replyTo: Option[ActorRef]): Unit =
+    if (replyTo.nonEmpty || !inFlightDeletions.contains(meta.recipeInstanceId)) {
+      inFlightDeletions += meta.recipeInstanceId
+      //Using deleteAllEvents since we do not use Snapshots for ProcessInstances
+      cleanup.deleteAllEvents(persistenceId, neverUsePersistenceIdAgain = false)
+        .map(_ => ProcessEventsDeletionSucceeded(meta, removeFromIndex, replyTo))
+        .recover { case NonFatal(e) => ProcessEventsDeletionFailed(meta, removeFromIndex, replyTo, e) }
+        .pipeTo(self)
+    }
+
   // This util function is used only for delete process functionality, therefore passing reactivateRecipe=false to avoid reactivating the recipe
   private def getOrCreateProcessActor(recipeInstanceId: String): Option[ActorRef] =
     context.child(recipeInstanceId).orElse(createProcessActor(recipeInstanceId, reactivateRecipe = false))
@@ -360,7 +393,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   private def withActiveProcess(recipeInstanceId: String)(fn: ActorRef => Unit): Unit = {
     context.child(recipeInstanceId) match {
       case None if !index.contains(recipeInstanceId) => sender() ! NoSuchProcess(recipeInstanceId)
-      case None if index(recipeInstanceId).isDeleted => sender() ! ProcessDeleted(recipeInstanceId)
+      case None if index(recipeInstanceId).isDeleted || index(recipeInstanceId).isDeleting => sender() ! ProcessDeleted(recipeInstanceId)
       case None =>
         persistWithSnapshot(ActorActivated(recipeInstanceId)) { _ =>
           updateWithStatus(recipeInstanceId, Active)
@@ -497,7 +530,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       val originalSender = sender()
 
       index.get(recipeInstanceId) match {
-        case Some(metadata) if metadata.isDeleted =>
+        case Some(metadata) if metadata.isDeleted || metadata.isDeleting =>
           originalSender ! ProcessDeleted(recipeInstanceId)
 
         case Some(_) =>
@@ -537,6 +570,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       msg.originalSender ! akka.actor.Status.Failure(msg.cause)
 
     case ProcessEventsDeletionSucceeded(meta, removeFromIndex, replyTo) =>
+      inFlightDeletions -= meta.recipeInstanceId
       log.processHistoryDeletionSuccessful(meta.recipeInstanceId, 0)
       persistWithSnapshot(ActorDeleted(meta.recipeInstanceId, removeFromIndex)) { _ =>
         if(removeFromIndex) {
@@ -549,6 +583,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       }
 
     case ProcessEventsDeletionFailed(meta, _, replyTo, cause) =>
+      // the instance stays in the Deleting status, so the retention sweep or a client retry re-attempts the deletion
+      inFlightDeletions -= meta.recipeInstanceId
       log.processHistoryDeletionFailed(meta.recipeInstanceId, 0, cause)
       replyTo.foreach(_ ! Status.Failure(cause))
 
@@ -720,7 +756,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
     case GetCompiledRecipe(recipeInstanceId) =>
       index.get(recipeInstanceId) match {
-        case Some(processMetadata) if processMetadata.isDeleted => sender() ! ProcessDeleted(recipeInstanceId)
+        case Some(processMetadata) if processMetadata.isDeleted || processMetadata.isDeleting => sender() ! ProcessDeleted(recipeInstanceId)
         case Some(processMetadata) =>
           getRecipeRecord(processMetadata.recipeId, reactivate = true) match {
             case Some(RecipeRecord(_, _, updated, recipe, _, _)) => sender() ! RecipeFound(recipe, updated)
@@ -782,7 +818,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         accept(process -> index(recipeInstanceId))
       case None if !index.contains(recipeInstanceId) =>
         reject(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId))
-      case None if index(recipeInstanceId).isDeleted =>
+      case None if index(recipeInstanceId).isDeleted || index(recipeInstanceId).isDeleting =>
         reject(FireSensoryEventRejection.RecipeInstanceDeleted(recipeInstanceId))
       case None =>
         accept {
@@ -894,13 +930,27 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       updateWithStatus(recipeInstanceId, Passivated)
     case ActorActivated(recipeInstanceId) =>
       updateWithStatus(recipeInstanceId, Active)
+    case ActorDeletionStarted(recipeInstanceId, removeFromIndex) =>
+      updateWithStatus(recipeInstanceId, Deleting)
+      pendingDeletions.update(recipeInstanceId, removeFromIndex)
     case ActorDeleted(recipeInstanceId, removedFromIndex) =>
+      pendingDeletions.remove(recipeInstanceId)
       if(removedFromIndex) {
         index.remove(recipeInstanceId)
       } else {
         updateWithStatus(recipeInstanceId, Deleted)
       }
     case RecoveryCompleted =>
+      // Resume deletions that were durably started but never completed, e.g. because the node
+      // crashed between deleting the instance events and journaling ActorDeleted.
+      // If the ActorDeletionStarted event was compacted into a snapshot the removeFromIndex flag
+      // is unknown and defaults to false, leaving a Deleted marker instead of removing the entry.
+      index.values.filter(_.isDeleting).toSeq.foreach { meta =>
+        log.info(s"Resuming interrupted deletion of ${meta.recipeInstanceId} after recovery")
+        deleteProcess(meta, None, pendingDeletions.getOrElse(meta.recipeInstanceId, false))
+      }
+      pendingDeletions.clear()
+
       // Delete all blacklisted processes if configured.
       if(blacklistedProcesses.nonEmpty) {
         index.foreach(process =>

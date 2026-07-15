@@ -80,6 +80,21 @@ object ProcessIndexProto {
         } yield ActorDeleted(recipeInstanceId, removedFromIndex = removedFromIndex)
     }
 
+  implicit def actorDeletionStartedProto: ProtoMap[ActorDeletionStarted, protobuf.ActorDeletionStarted] =
+    new ProtoMap[ActorDeletionStarted, protobuf.ActorDeletionStarted] {
+
+      val companion = protobuf.ActorDeletionStarted
+
+      def toProto(a: ActorDeletionStarted): protobuf.ActorDeletionStarted =
+        protobuf.ActorDeletionStarted(Some(a.recipeInstanceId), Some(a.removeFromIndex))
+
+      def fromProto(message: protobuf.ActorDeletionStarted): Try[ActorDeletionStarted] =
+        for {
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+          removeFromIndex = versionedOptional[Boolean](message.removeFromIndex, false)
+        } yield ActorDeletionStarted(recipeInstanceId, removeFromIndex = removeFromIndex)
+    }
+
   implicit def actorPassivatedProto: ProtoMap[ActorPassivated, protobuf.ActorPassivated] =
     new ProtoMap[ActorPassivated, protobuf.ActorPassivated] {
 
@@ -135,7 +150,8 @@ object ProcessIndexProto {
           Some(a.recipeInstanceId),
           Some(a.createdDateTime),
           Some(a.processStatus == ProcessIndex.Deleted),
-          Some(a.processStatus == ProcessIndex.Passivated)
+          Some(a.processStatus == ProcessIndex.Passivated),
+          Some(a.processStatus == ProcessIndex.Deleting)
         )
 
       def fromProto(message: protobuf.ActorMetaData): Try[ActorMetadata] =
@@ -145,11 +161,13 @@ object ProcessIndexProto {
           createdDateTime <- versioned(message.createdTime, "createdTime")
           isDeleted <- versioned(message.isDeleted, "createdTime")
           isPassivated = versionedOptional(message.isPassivated, false)
-          processStatus = readStatus(isDeleted, isPassivated)
+          isDeleting = versionedOptional(message.isDeleting, false)
+          processStatus = readStatus(isDeleted, isPassivated, isDeleting)
         } yield ActorMetadata(recipeId, recipeInstanceId, createdDateTime, processStatus)
 
-      private def readStatus(isDeleted: Boolean, isPassivated: Boolean): ProcessStatus = {
+      private def readStatus(isDeleted: Boolean, isPassivated: Boolean, isDeleting: Boolean): ProcessStatus = {
         if (isDeleted) ProcessIndex.Deleted
+        else if (isDeleting) ProcessIndex.Deleting
         else if (isPassivated) ProcessIndex.Passivated
         else ProcessIndex.Active
       }
@@ -173,26 +191,11 @@ object ProcessIndexProto {
       val companion = protobuf.Index
 
       def toProto(a: Index): protobuf.Index =
-        protobuf.Index(a.entries.map { e =>
-          protobuf.ActorMetaData(
-            Some(e.recipeId),
-            Some(e.recipeInstanceId),
-            Some(e.createdDateTime),
-            Some(e.processStatus == ProcessIndex.Deleted)
-          )
-        })
+        protobuf.Index(a.entries.map(e => ctxToProto(e)))
 
       def fromProto(message: protobuf.Index): Try[Index] =
         for {
-          entries <- message.entries.toList.traverse[Try, ActorMetadata] { e =>
-            for {
-              recipeId <- versioned(e.recipeId, "recipeId")
-              recipeInstanceId <- versioned(e.recipeInstanceId, "RecipeInstanceId")
-              createdDateTime <- versioned(e.createdTime, "createdTime")
-              isDeleted <- versioned(e.isDeleted, "createdTime")
-              processStatus = if (isDeleted) ProcessIndex.Deleted else ProcessIndex.Active
-            } yield ActorMetadata(recipeId, recipeInstanceId, createdDateTime, processStatus)
-          }
+          entries <- message.entries.toList.traverse[Try, ActorMetadata](e => ctxFromProto(e))
         } yield Index(entries)
     }
 

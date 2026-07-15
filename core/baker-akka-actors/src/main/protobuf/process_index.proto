@@ -22,6 +22,7 @@ message ActorMetaData {
     optional int64 createdTime = 3;
     optional bool isDeleted = 4;
     optional bool isPassivated = 5;
+    optional bool isDeleting = 6;
 }
 
 message ActorCreated {
@@ -41,6 +42,11 @@ message ActorActivated {
 message ActorDeleted {
     optional string recipeInstanceId = 1;
     optional bool removedFromIndex = 2;
+}
+
+message ActorDeletionStarted {
+    optional string recipeInstanceId = 1;
+    optional bool removeFromIndex = 2;
 }
 
 message ProcessIndexSnapShot {
