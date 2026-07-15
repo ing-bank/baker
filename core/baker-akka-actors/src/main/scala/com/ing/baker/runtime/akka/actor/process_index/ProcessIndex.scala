@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props}
+import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, Status}
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.{BackoffOpts, BackoffSupervisor, ask, pipe}
@@ -132,6 +132,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   // --- Internal messages for the asynchronous initialization flow ---
   private case class InitializationConfirmed(originalSender: ActorRef, recipeId: String, recipeInstanceId: String, compiledRecipe: CompiledRecipe, createdTime: Long) extends NoSerializationVerificationNeeded
   private case class InitializationRejected(originalSender: ActorRef, recipeInstanceId: String, cause: Throwable) extends NoSerializationVerificationNeeded
+
+  private case class ProcessEventsDeletionSucceeded(meta: ActorMetadata, removeFromIndex: Boolean, replyTo: Option[ActorRef]) extends NoSerializationVerificationNeeded
+  private case class ProcessEventsDeletionFailed(meta: ActorMetadata, removeFromIndex: Boolean, replyTo: Option[ActorRef], cause: Throwable) extends NoSerializationVerificationNeeded
 
   private val startTime = System.currentTimeMillis()
 
@@ -291,24 +294,13 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
             case Some(compiledRecipe) =>
               val persistenceId = ProcessInstance.recipeInstanceId2PersistenceId(compiledRecipe.name, meta.recipeInstanceId)
               log.debug(s"Deleting with persistenceId: ${persistenceId}")
-              persistWithSnapshot(ActorDeleted(meta.recipeInstanceId, removeFromIndex)) { _ =>
-                //Using deleteAllEvents since we do not use Snapshots for ProcessInstances
-                cleanup.deleteAllEvents(persistenceId, neverUsePersistenceIdAgain = false)
-                  .map(_ -> {
-                    log.processHistoryDeletionSuccessful(meta.recipeInstanceId, 0)
-                    if(removeFromIndex) {
-                      index.remove(meta.recipeInstanceId)
-                    }
-                    else {
-                      index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
-                    }
-                    replyToOptional match {
-                      case Some(replyTo) =>
-                        replyTo ! ProcessDeleted(meta.recipeInstanceId)
-                      case None =>
-                    }
-                  })
-              }
+              // ActorDeleted is persisted only after the deletion succeeds (in the ProcessEventsDeletionSucceeded
+              // handler), so a failed deletion leaves the journal untouched and the retention sweep retries it.
+              //Using deleteAllEvents since we do not use Snapshots for ProcessInstances
+              cleanup.deleteAllEvents(persistenceId, neverUsePersistenceIdAgain = false)
+                .map(_ => ProcessEventsDeletionSucceeded(meta, removeFromIndex, replyToOptional))
+                .recover { case NonFatal(e) => ProcessEventsDeletionFailed(meta, removeFromIndex, replyToOptional, e) }
+                .pipeTo(self)
             case None =>
               log.debug(s"Recipe not found for ${meta.recipeInstanceId}, marking as deleted")
               persistWithSnapshot(ActorDeleted(meta.recipeInstanceId, removeFromIndex)) { _ =>
@@ -543,6 +535,22 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     case msg: InitializationRejected =>
       log.error(msg.cause, s"Initialization of process ${msg.recipeInstanceId} failed.")
       msg.originalSender ! akka.actor.Status.Failure(msg.cause)
+
+    case ProcessEventsDeletionSucceeded(meta, removeFromIndex, replyTo) =>
+      log.processHistoryDeletionSuccessful(meta.recipeInstanceId, 0)
+      persistWithSnapshot(ActorDeleted(meta.recipeInstanceId, removeFromIndex)) { _ =>
+        if(removeFromIndex) {
+          index.remove(meta.recipeInstanceId)
+        }
+        else {
+          index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleted))
+        }
+        replyTo.foreach(_ ! ProcessDeleted(meta.recipeInstanceId))
+      }
+
+    case ProcessEventsDeletionFailed(meta, _, replyTo, cause) =>
+      log.processHistoryDeletionFailed(meta.recipeInstanceId, 0, cause)
+      replyTo.foreach(_ ! Status.Failure(cause))
 
     case command@ProcessEvent(recipeInstanceId, event, correlationId, _, _) =>
       run ({ responseHandler =>

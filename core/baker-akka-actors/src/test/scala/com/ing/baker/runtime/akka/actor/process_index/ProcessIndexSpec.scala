@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
 import akka.Done
-import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props}
+import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props, Status}
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.pattern.ask
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
@@ -350,6 +350,41 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       probe2.send(actorIndex, DeleteProcess(recipeInstanceId, removeFromIndex = false))
 
       processProbe.expectNoMessage(1.seconds)
+      probe2.expectMsg(ProcessDeleted(recipeInstanceId))
+
+      probe2.send(actorIndex, GetProcessState(recipeInstanceId))
+      probe2.expectMsg(10.seconds, ProcessDeleted(recipeInstanceId))
+    }
+
+    "reply with a failure and keep the process deletable when BakerCleanup fails to delete the events" in {
+      val recipeInstanceId = UUID.randomUUID().toString
+      val processProbe: TestProbe = TestProbe(recipeInstanceId)
+
+      val recipeManagerMock = mock[RecipeManager]
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(baseRecipe, updated = 0L))))
+
+      val cleanupFailure = new RuntimeException("event deletion failed")
+      val bakerCleanup = mock[BakerCleanup]
+      when(bakerCleanup.supportsCleanupOfStoppedActors).thenReturn(true)
+      when(bakerCleanup.deleteAllEvents(anyString(), anyBoolean()))
+        .thenReturn(Future.failed(cleanupFailure))
+        .thenReturn(Future.successful(Done))
+      when(bakerCleanup.deleteEventsAndSnapshotBeforeSnapshot(anyString(), anyInt())(any())).thenReturn(Future.successful(Done))
+
+      val actorIndex = createActorIndex(processProbe.ref, recipeManagerMock, bakerCleanup = bakerCleanup)
+      createProcessAndWait(actorIndex, processProbe, recipeId, recipeInstanceId)
+
+      // Passivate the process
+      processProbe.send(actorIndex, Passivate(ProcessInstanceProtocol.Stop))
+      processIsStopped = true
+      processProbe.ref ! PoisonPill
+
+      val probe2 = TestProbe()
+      probe2.send(actorIndex, DeleteProcess(recipeInstanceId, removeFromIndex = false))
+      probe2.expectMsg(Status.Failure(cleanupFailure))
+
+      // the process is not marked as deleted, so the deletion can be retried
+      probe2.send(actorIndex, DeleteProcess(recipeInstanceId, removeFromIndex = false))
       probe2.expectMsg(ProcessDeleted(recipeInstanceId))
 
       probe2.send(actorIndex, GetProcessState(recipeInstanceId))
