@@ -1,17 +1,18 @@
 package com.ing.baker.runtime.defaultinteractions
 
-import cats.effect.IO
+import cats.effect.Async
+import cats.syntax.all._
 
 import scala.concurrent.duration.FiniteDuration
 
-class TimerInteraction(skipWait: Boolean) {
+class TimerInteraction[F[_]](skipWait: Boolean)(implicit F: Async[F]) {
 
   class TimeWaited()
 
-  def apply(WaitTime: FiniteDuration): IO[TimeWaited] = {
+  def apply(WaitTime: FiniteDuration): F[TimeWaited] = {
     if(skipWait)
-      IO.pure(new TimeWaited)
+      F.pure(new TimeWaited)
     else
-      IO.sleep(WaitTime) *> IO(new TimeWaited)
+      F.sleep(WaitTime).as(new TimeWaited)
   }
 }
