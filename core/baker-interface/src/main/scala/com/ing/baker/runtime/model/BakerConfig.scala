@@ -5,7 +5,7 @@ import com.ing.baker.runtime.model.recipeinstance.RecipeInstanceConfig
 import java.time.Duration
 
 object BakerConfig {
-  def default(): BakerConfig = {
+  private def defaultInstance: BakerConfig =
     new BakerConfig(
       false,
       RecipeInstanceConfig(),
@@ -18,7 +18,11 @@ object BakerConfig {
       Duration.ofSeconds(10),
       Duration.ofSeconds(60)
     )
-  }
+
+  def default(): BakerConfig = defaultInstance
+
+  // Java cannot call a method named `default`, so expose a Java-friendly alias.
+  def defaults(): BakerConfig = defaultInstance
 }
 
 case class BakerConfig(
