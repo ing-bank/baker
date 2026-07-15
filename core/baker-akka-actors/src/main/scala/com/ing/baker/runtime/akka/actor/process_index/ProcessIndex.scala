@@ -113,7 +113,10 @@ object ProcessIndex {
   case class ActorCreated(recipeId: String, recipeInstanceId: String, createdDateTime: Long) extends BakerSerializable
 
   // Used for creating a snapshot of the index.
-  case class ProcessIndexSnapShot(index: Map[String, ActorMetadata]) extends BakerSerializable
+  // pendingDeletions holds the removeFromIndex flag of every instance in the Deleting status,
+  // so the intent survives snapshots that compact the ActorDeletionStarted event away.
+  case class ProcessIndexSnapShot(index: Map[String, ActorMetadata],
+                                  pendingDeletions: Map[String, Boolean] = Map.empty) extends BakerSerializable
 
   case object StopProcessIndexShard extends BakerSerializable
 
@@ -177,7 +180,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   // recipeInstanceIds with a deleteAllEvents call currently in flight, to dedupe retention-sweep retries
   private val inFlightDeletions: mutable.Set[String] = mutable.Set.empty
 
-  // removeFromIndex flags of ActorDeletionStarted events replayed during recovery, consumed on RecoveryCompleted
+  // removeFromIndex flag of every instance in the Deleting status; maintained alongside the
+  // ActorDeletionStarted/ActorDeleted events and included in snapshots
   private val pendingDeletions: mutable.Map[String, Boolean] = mutable.Map.empty
 
   //TODO chose if to use the CassandraBakerCleanup or the ActorBasedBakerCleanup
@@ -319,12 +323,14 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
               } else {
                 persistWithSnapshot(ActorDeletionStarted(meta.recipeInstanceId, removeFromIndex)) { _ =>
                   index.update(meta.recipeInstanceId, meta.copy(processStatus = Deleting))
+                  pendingDeletions.update(meta.recipeInstanceId, removeFromIndex)
                   deleteProcessEvents(persistenceId, meta, removeFromIndex, replyToOptional)
                 }
               }
             case None =>
               log.debug(s"Recipe not found for ${meta.recipeInstanceId}, marking as deleted")
               persistWithSnapshot(ActorDeleted(meta.recipeInstanceId, removeFromIndex)) { _ =>
+                pendingDeletions.remove(meta.recipeInstanceId)
                 if(removeFromIndex) {
                   index.remove(meta.recipeInstanceId)
                 }
@@ -502,6 +508,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       index.get(recipeInstanceId) match {
         case Some(meta) if (deleteInstance || shouldDelete(meta)) =>
           persistWithSnapshot(ActorDeleted(recipeInstanceId, removeFromIndex)) { _ =>
+            pendingDeletions.remove(recipeInstanceId)
             if(removeFromIndex) {
               index.remove(recipeInstanceId)
             }
@@ -573,6 +580,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       inFlightDeletions -= meta.recipeInstanceId
       log.processHistoryDeletionSuccessful(meta.recipeInstanceId, 0)
       persistWithSnapshot(ActorDeleted(meta.recipeInstanceId, removeFromIndex)) { _ =>
+        pendingDeletions.remove(meta.recipeInstanceId)
         if(removeFromIndex) {
           index.remove(meta.recipeInstanceId)
         }
@@ -770,6 +778,16 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
     case DeleteProcess(recipeInstanceId, removeFromIndex) =>
       index.get(recipeInstanceId) match {
+        case Some(processState) if processState.isDeleted =>
+          // The events are already deleted, only the index entry may still need to be removed.
+          if (removeFromIndex) {
+            persistWithSnapshot(ActorDeleted(recipeInstanceId, removedFromIndex = true)) { _ =>
+              index.remove(recipeInstanceId)
+              sender() ! ProcessDeleted(recipeInstanceId)
+            }
+          } else {
+            sender() ! ProcessDeleted(recipeInstanceId)
+          }
         case Some(processState) =>
           // The process exists, so we can delete it.
           deleteProcess(processState, Some(sender()), removeFromIndex)
@@ -920,6 +938,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       log.info(s"ProcessIndex: Starting receiveRecover from snapshot message")
       index.clear()
       index ++= processIndexSnapShot.index
+      pendingDeletions.clear()
+      pendingDeletions ++= processIndexSnapShot.pendingDeletions
     case SnapshotOffer(_, _) =>
       val message = "could not load snapshot because snapshot was not of type ProcessIndexSnapShot"
       log.error(message)
@@ -943,13 +963,10 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     case RecoveryCompleted =>
       // Resume deletions that were durably started but never completed, e.g. because the node
       // crashed between deleting the instance events and journaling ActorDeleted.
-      // If the ActorDeletionStarted event was compacted into a snapshot the removeFromIndex flag
-      // is unknown and defaults to false, leaving a Deleted marker instead of removing the entry.
       index.values.filter(_.isDeleting).toSeq.foreach { meta =>
         log.info(s"Resuming interrupted deletion of ${meta.recipeInstanceId} after recovery")
         deleteProcess(meta, None, pendingDeletions.getOrElse(meta.recipeInstanceId, false))
       }
-      pendingDeletions.clear()
 
       // Delete all blacklisted processes if configured.
       if(blacklistedProcesses.nonEmpty) {
@@ -977,7 +994,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   def persistWithSnapshot[A](event: A)(handler: A => Unit): Unit = {
     persist(event)(handler)
     if (lastSequenceNr % snapShotInterval == 0 && lastSequenceNr != 0) {
-      saveSnapshot(ProcessIndexSnapShot(index.toMap))
+      saveSnapshot(ProcessIndexSnapShot(index.toMap, pendingDeletions.toMap))
     }
   }
 

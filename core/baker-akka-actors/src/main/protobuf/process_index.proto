@@ -51,6 +51,7 @@ message ActorDeletionStarted {
 
 message ProcessIndexSnapShot {
     map<string, ActorMetaData> index = 1;
+    map<string, bool> pendingDeletions = 2;
 }
 
 // Protocol

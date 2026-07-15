@@ -391,6 +391,44 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       probe2.expectMsg(10.seconds, ProcessDeleted(recipeInstanceId))
     }
 
+    "reply with ProcessDeleted without re-deleting when the process is already deleted" in {
+      val recipeInstanceId = UUID.randomUUID().toString
+      val processProbe: TestProbe = TestProbe(recipeInstanceId)
+
+      val recipeManagerMock = mock[RecipeManager]
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(baseRecipe, updated = 0L))))
+
+      val bakerCleanup = mock[BakerCleanup]
+      when(bakerCleanup.supportsCleanupOfStoppedActors).thenReturn(true)
+      when(bakerCleanup.deleteAllEvents(anyString(), anyBoolean())).thenReturn(Future.successful(Done))
+      when(bakerCleanup.deleteEventsAndSnapshotBeforeSnapshot(anyString(), anyInt())(any())).thenReturn(Future.successful(Done))
+
+      val actorIndex = createActorIndex(processProbe.ref, recipeManagerMock, bakerCleanup = bakerCleanup)
+      createProcessAndWait(actorIndex, processProbe, recipeId, recipeInstanceId)
+
+      // Passivate the process
+      processProbe.send(actorIndex, Passivate(ProcessInstanceProtocol.Stop))
+      processIsStopped = true
+      processProbe.ref ! PoisonPill
+
+      val probe2 = TestProbe()
+      probe2.send(actorIndex, DeleteProcess(recipeInstanceId, removeFromIndex = false))
+      probe2.expectMsg(ProcessDeleted(recipeInstanceId))
+
+      // a repeated delete replies directly without re-running the deletion
+      probe2.send(actorIndex, DeleteProcess(recipeInstanceId, removeFromIndex = false))
+      probe2.expectMsg(ProcessDeleted(recipeInstanceId))
+      Mockito.verify(bakerCleanup, Mockito.times(1)).deleteAllEvents(anyString(), anyBoolean())
+
+      // a repeated delete with removeFromIndex removes the index entry without re-running the deletion
+      probe2.send(actorIndex, DeleteProcess(recipeInstanceId, removeFromIndex = true))
+      probe2.expectMsg(ProcessDeleted(recipeInstanceId))
+      Mockito.verify(bakerCleanup, Mockito.times(1)).deleteAllEvents(anyString(), anyBoolean())
+
+      probe2.send(actorIndex, GetProcessState(recipeInstanceId))
+      probe2.expectMsg(10.seconds, NoSuchProcess(recipeInstanceId))
+    }
+
     "resume an interrupted deletion after recovery" in {
       val recipeInstanceId = UUID.randomUUID().toString
       val processProbe: TestProbe = TestProbe(recipeInstanceId)
@@ -433,6 +471,52 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       probe2.send(restartedIndex, GetProcessState(recipeInstanceId))
       probe2.expectMsg(10.seconds, ProcessDeleted(recipeInstanceId))
       Mockito.verify(bakerCleanup, Mockito.times(2)).deleteAllEvents(anyString(), anyBoolean())
+    }
+
+    "preserve the removeFromIndex intent when resuming an interrupted deletion from a snapshot" in {
+      val recipeInstanceId = UUID.randomUUID().toString
+      val processProbe: TestProbe = TestProbe(recipeInstanceId)
+
+      val recipeManagerMock = mock[RecipeManager]
+      when(recipeManagerMock.get(anyString())).thenReturn(Future.successful(Some(RecipeRecord.of(baseRecipe, updated = 0L))))
+
+      // the first deletion never completes, simulating a crash between deleting
+      // the instance events and journaling ActorDeleted
+      val interruptedDeletion = Promise[Done]()
+      val bakerCleanup = mock[BakerCleanup]
+      when(bakerCleanup.supportsCleanupOfStoppedActors).thenReturn(true)
+      when(bakerCleanup.deleteAllEvents(anyString(), anyBoolean()))
+        .thenReturn(interruptedDeletion.future)
+        .thenReturn(Future.successful(Done))
+      when(bakerCleanup.deleteEventsAndSnapshotBeforeSnapshot(anyString(), anyInt())(any())).thenReturn(Future.successful(Done))
+
+      val indexName = s"actorIndex-${UUID.randomUUID().toString}"
+      val actorIndex = createActorIndex(processProbe.ref, recipeManagerMock, bakerCleanup = bakerCleanup, actorName = indexName)
+      createProcessAndWait(actorIndex, processProbe, recipeId, recipeInstanceId)
+
+      // Passivate the process
+      processProbe.send(actorIndex, Passivate(ProcessInstanceProtocol.Stop))
+      processIsStopped = true
+      processProbe.ref ! PoisonPill
+
+      val probe2 = TestProbe()
+      probe2.send(actorIndex, DeleteProcess(recipeInstanceId, removeFromIndex = true))
+
+      probe2.watch(actorIndex)
+      probe2.send(actorIndex, ProcessIndex.StopProcessIndexShard)
+      probe2.expectTerminated(actorIndex)
+
+      // recovery is snapshot-based (snapshot-interval = 1), so the removeFromIndex intent
+      // must survive via the snapshot; the resumed deletion removes the entry completely
+      val restartedIndex = awaitAssert(
+        createActorIndex(processProbe.ref, recipeManagerMock, bakerCleanup = bakerCleanup, actorName = indexName),
+        5.seconds)
+
+      awaitAssert({
+        val probe = TestProbe()
+        probe.send(restartedIndex, GetProcessState(recipeInstanceId))
+        probe.expectMsg(NoSuchProcess(recipeInstanceId))
+      }, 10.seconds)
     }
 
     "delete a process if the DeleteProcess is received (removeFromIndex true) with BakerCleanup and actor stopped" in {

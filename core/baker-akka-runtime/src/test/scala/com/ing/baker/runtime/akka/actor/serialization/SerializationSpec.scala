@@ -477,7 +477,10 @@ object SerializationSpec {
     }
 
     implicit val processIndexSnapShotGen: Gen[ProcessIndexSnapShot] =
-      Gen.mapOf(GenUtil.tuple(identifierGen, actorMetadataGen)).map(ProcessIndexSnapShot)
+      for {
+        index <- Gen.mapOf(GenUtil.tuple(identifierGen, actorMetadataGen))
+        pendingDeletions <- Gen.mapOf(GenUtil.tuple(identifierGen, Gen.oneOf(true, false)))
+      } yield ProcessIndexSnapShot(index, pendingDeletions)
 
     implicit val resolveBlockedInteractionGen: Gen[ResolveBlockedInteraction] =
       for {
