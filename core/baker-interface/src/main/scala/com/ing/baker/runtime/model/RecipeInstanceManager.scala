@@ -1,6 +1,5 @@
 package com.ing.baker.runtime.model
 
-import cats.Foldable.ops.toAllFoldableOps
 import cats.data.EitherT
 import cats.effect.implicits.{genSpawnOps, genTemporalOps_}
 import cats.effect.Async
@@ -10,24 +9,20 @@ import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common.BakerException.{ProcessAlreadyExistsException, ProcessDeletedException}
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.model.RecipeInstanceManager.RecipeInstanceStatus
-import com.ing.baker.runtime.model.recipeinstance.RecipeInstance
+import com.ing.baker.runtime.model.recipeinstance.{RecipeInstance, RecipeInstanceConfig}
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
 import fs2.{Pipe, Stream}
 
 import scala.concurrent.duration.FiniteDuration
 import java.util.concurrent.TimeoutException
 
-object RecipeInstanceManager {
+sealed trait RecipeInstanceStatus[F[_]]
 
-  sealed trait RecipeInstanceStatus[F[_]]
+object RecipeInstanceStatus {
 
-  object RecipeInstanceStatus {
+  case class Active[F[_]](recipeInstance: RecipeInstance[F], lastModified: Long) extends RecipeInstanceStatus[F]
 
-    case class Active[F[_]](recipeInstance: RecipeInstance[F], lastModified: Long) extends RecipeInstanceStatus[F]
-
-    case class Deleted[F[_]](recipeId: String, createdOn: Long, deletedOn: Long) extends RecipeInstanceStatus[F]
-  }
+  case class Deleted[F[_]](recipeId: String, createdOn: Long, deletedOn: Long) extends RecipeInstanceStatus[F]
 }
 
 trait RecipeInstanceManager[F[_]] {
@@ -53,7 +48,7 @@ trait RecipeInstanceManager[F[_]] {
       }
     } yield ()
 
-  def bake(recipeId: String, recipeInstanceId: String, config: RecipeInstance.Config)(implicit components: BakerComponents[F], async: Async[F]): F[Unit] =
+  def bake(recipeId: String, recipeInstanceId: String, config: RecipeInstanceConfig)(implicit components: BakerComponents[F], async: Async[F]): F[Unit] =
     for {
       _ <- fetch(recipeInstanceId).flatMap[Unit] {
         case Some(RecipeInstanceStatus.Active(_, _)) =>

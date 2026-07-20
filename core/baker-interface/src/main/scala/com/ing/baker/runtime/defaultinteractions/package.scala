@@ -10,7 +10,7 @@ package object defaultinteractions {
     val config = ConfigFactory.load()
     val skipWait = config.hasPath(path) && config.getBoolean(path)
     List(
-      InteractionInstance.unsafeFrom(new TimerInteraction(skipWait)),
-      InteractionInstance.unsafeFrom(new TimerInteractionJava(skipWait)))
+      InteractionInstance.unsafeFrom[IO](new TimerInteraction[IO](skipWait)),
+      InteractionInstance.unsafeFrom[IO](new TimerInteractionJava[IO](skipWait)))
   }
 }

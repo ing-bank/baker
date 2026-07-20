@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.model
 
-import cats.effect.{Async, Clock, Sync}
+import cats.effect.{Async, Sync}
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.BakerException.{ImplementationsException, NoSuchRecipeException, RecipeValidationException}

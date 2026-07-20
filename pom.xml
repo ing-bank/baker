@@ -27,7 +27,7 @@
         <akka.version>2.10.20</akka.version>
         <cassandra.driver.version>4.17.0</cassandra.driver.version>
         <cats.core.version>2.13.0</cats.core.version>
-        <cats.effect.version>3.6.3</cats.effect.version>
+        <cats.effect.version>3.7.0</cats.effect.version>
         <cats.retry.version>3.1.3</cats.retry.version>
         <circe.generic.extras.version>0.14.4</circe.generic.extras.version>
         <circe.version>0.14.14</circe.version>
@@ -109,6 +109,7 @@
         <module>core/baker-intermediate-language</module>
         <module>core/baker-interface</module>
         <module>core/baker-interface-kotlin</module>
+        <module>core/baker-interface-in-memory</module>
         <module>core/baker-annotations</module>
         <module>core/baker-recipe-dsl</module>
         <module>core/baker-recipe-dsl-kotlin</module>
