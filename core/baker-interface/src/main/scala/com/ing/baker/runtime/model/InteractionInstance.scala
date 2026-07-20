@@ -2,6 +2,7 @@ package com.ing.baker.runtime.model
 
 import cats.implicits._
 import cats.{Applicative, ~>}
+import cats.effect.Sync
 import com.ing.baker.recipe.annotations.{FiresEvent, RequiresIngredient}
 import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
@@ -77,11 +78,22 @@ object InteractionInstance {
       override val output: Option[Map[String, Map[String, Type]]] = _output
     }
 
-  def unsafeFromList[F[_]](implementations: List[AnyRef])(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): List[InteractionInstance[F]] = {
+  def unsafeFromList[F[_]](implementations: List[AnyRef])(implicit effect: Sync[F], classTag: ClassTag[F[Any]]): List[InteractionInstance[F]] = {
     implementations.map(unsafeFrom[F](_))
   }
 
-  def unsafeFrom[F[_]](implementation: AnyRef)(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): InteractionInstance[F] = {
+  def unsafeFromListApplicative[F[_]](implementations: List[AnyRef])(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): List[InteractionInstance[F]] = {
+    implementations.map(unsafeFromApplicative[F](_))
+  }
+
+  private case class ReflectionMetadata(
+    method: Method,
+    name: String,
+    input: Seq[InteractionInstanceInput],
+    output: Option[Map[String, Map[String, Type]]]
+  )
+
+  private def extractReflectionMetadata(implementation: AnyRef): ReflectionMetadata = {
     val method: Method = {
       val unmockedClass = common.unmock(implementation.getClass)
       unmockedClass.getMethods.count(_.getName == "apply") match {
@@ -192,22 +204,61 @@ object InteractionInstance {
       }
     }
 
+    ReflectionMetadata(method, name, input, output)
+  }
+
+  def unsafeFrom[F[_]](implementation: AnyRef)(implicit effect: Sync[F], classTag: ClassTag[F[Any]]): InteractionInstance[F] = {
+    val metadata = extractReflectionMetadata(implementation)
+    val method = metadata.method
+
     val run: Seq[IngredientInstance] => F[Option[EventInstance]] = runtimeInput => {
-      // Translate the Value objects to the expected runtimeInput types
+      val futureClass: ClassTag[CompletableFuture[Any]] = implicitly[ClassTag[CompletableFuture[Any]]]
+
+      effect.blocking {
+        val inputArgs: Seq[AnyRef] = runtimeInput.zip(method.getGenericParameterTypes).map {
+          case (value, targetType) => value.value.as(targetType).asInstanceOf[AnyRef]
+        }
+        method.invoke(implementation, inputArgs: _*)
+      }.flatMap { callOutput =>
+        Option(callOutput) match {
+          case Some(event) =>
+            event match {
+              case runtimeEventAsyncJava if futureClass.runtimeClass.isInstance(runtimeEventAsyncJava) =>
+                effect.blocking(
+                  runtimeEventAsyncJava.asInstanceOf[CompletableFuture[Any]].get()
+                ).map(ev => Some(EventInstance.unsafeFrom(ev)))
+              case runtimeEventAsync if classTag.runtimeClass.isInstance(runtimeEventAsync) =>
+                runtimeEventAsync
+                  .asInstanceOf[F[Any]]
+                  .map(event0 => Some(EventInstance.unsafeFrom(event0)))
+              case other =>
+                effect.pure(Some(EventInstance.unsafeFrom(other)))
+            }
+          case None =>
+            effect.pure(None)
+        }
+      }
+    }
+    build[F](metadata.name, metadata.input, run, metadata.output)
+  }
+
+  def unsafeFromApplicative[F[_]](implementation: AnyRef)(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): InteractionInstance[F] = {
+    val metadata = extractReflectionMetadata(implementation)
+    val method = metadata.method
+
+    val run: Seq[IngredientInstance] => F[Option[EventInstance]] = runtimeInput => {
+      val futureClass: ClassTag[CompletableFuture[Any]] = implicitly[ClassTag[CompletableFuture[Any]]]
+
       val inputArgs: Seq[AnyRef] = runtimeInput.zip(method.getGenericParameterTypes).map {
         case (value, targetType) => value.value.as(targetType).asInstanceOf[AnyRef]
       }
       val callOutput = method.invoke(implementation, inputArgs: _*)
-      val futureClass: ClassTag[CompletableFuture[Any]] = implicitly[ClassTag[CompletableFuture[Any]]]
 
       Option(callOutput) match {
         case Some(event) =>
           event match {
-            // Async interactions using java CompletableFuture
-            // TODO rewrite this to not block in in case of java CompletableFutures.
             case runtimeEventAsyncJava if futureClass.runtimeClass.isInstance(runtimeEventAsyncJava) =>
               effect.pure(Some(EventInstance.unsafeFrom(runtimeEventAsyncJava.asInstanceOf[CompletableFuture[Any]].get())))
-            // Async interactions using F
             case runtimeEventAsync if classTag.runtimeClass.isInstance(runtimeEventAsync) =>
               runtimeEventAsync
                 .asInstanceOf[F[Any]]
@@ -219,6 +270,6 @@ object InteractionInstance {
           effect.pure(None)
       }
     }
-    build[F](name, input, run, output)
+    build[F](metadata.name, metadata.input, run, metadata.output)
   }
 }

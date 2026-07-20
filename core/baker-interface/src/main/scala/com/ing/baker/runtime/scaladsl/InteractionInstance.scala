@@ -23,6 +23,6 @@ object InteractionInstance {
   }
 
   def unsafeFrom(implementation: AnyRef)(implicit ec: ExecutionContext): InteractionInstance = {
-    fromFutureF(model.InteractionInstance.unsafeFrom[Future](implementation))
+    fromFutureF(model.InteractionInstance.unsafeFromApplicative[Future](implementation))
   }
 }

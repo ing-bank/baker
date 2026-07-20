@@ -108,7 +108,7 @@ abstract class InteractionExecutor extends LazyLogging {
     interactions.find(_.shaBase64 == request.id) match {
       case Some(interaction) =>
         bakerLogging.withMDC(metadata, _.info(s"Executing interaction: ${interaction.name}"))
-        IO.fromFuture(IO(interaction.execute(request.ingredients, request.metaData.getOrElse(Map())))).attempt.flatMap {
+        IO.fromFuture(IO.blocking(interaction.execute(request.ingredients, request.metaData.getOrElse(Map())))).attempt.flatMap {
           case Right(value) =>
             bakerLogging.withMDC(metadata, _.info(s"Interaction ${interaction.name} executed correctly"))
             IO(I.ExecutionResult(Right(I.Success(value))))
@@ -124,7 +124,6 @@ abstract class InteractionExecutor extends LazyLogging {
       case None =>
         bakerLogging.withMDC(metadata, _.error(s"No implementation found for execution for id: ${request.id}"))
         IO(I.ExecutionResult(Left(I.Failure(I.NoInstanceFound))))
-
     }
   }
 }
