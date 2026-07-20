@@ -93,7 +93,6 @@ trait InteractionManager[F[_]] {
           case None => effect.raiseError(new FatalInteractionException(s"No implementation available for interaction ${interaction.interactionName}"))
         }
     }
-
   }
 
   private def interactionNameMatches(transition: InteractionTransition, implementation: InteractionInstance[F]): Boolean =

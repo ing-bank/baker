@@ -124,6 +124,7 @@ abstract class InteractionExecutor extends LazyLogging {
       case None =>
         bakerLogging.withMDC(metadata, _.error(s"No implementation found for execution for id: ${request.id}"))
         IO(I.ExecutionResult(Left(I.Failure(I.NoInstanceFound))))
+
     }
   }
 }
