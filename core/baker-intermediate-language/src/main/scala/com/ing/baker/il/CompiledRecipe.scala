@@ -1,5 +1,6 @@
 package com.ing.baker.il
 
+import com.ing.baker.il.CompiledRecipe.NON_CRITICAL_VALIDATION_MESSAGE_PREFIX
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, RecipePetriNet}
 import com.ing.baker.petrinet.api.Marking
 
@@ -8,6 +9,8 @@ import scala.jdk.CollectionConverters._
 import scala.concurrent.duration.FiniteDuration
 
 object CompiledRecipe {
+
+  final val NON_CRITICAL_VALIDATION_MESSAGE_PREFIX = "Non critical validation error"
 
   sealed trait RecipeIdVariant
   sealed trait OldRecipeIdVariant extends RecipeIdVariant
@@ -166,4 +169,16 @@ case class CompiledRecipe(name: String,
 
   @nowarn
   def getAllIngredients: java.util.Set[IngredientDescriptor] = allIngredients.asJava
+
+  val criticalValidationErrors: Seq[String] =
+    validationErrors.filterNot(_.startsWith(NON_CRITICAL_VALIDATION_MESSAGE_PREFIX))
+
+  val nonCriticalValidationErrors: Seq[String] =
+    validationErrors.filter(_.startsWith(NON_CRITICAL_VALIDATION_MESSAGE_PREFIX))
+
+  @nowarn
+  def getCriticalValidationErrors: java.util.List[String] = criticalValidationErrors.toList.asJava
+
+  @nowarn
+  def getNonCriticalValidationErrors: java.util.List[String] = nonCriticalValidationErrors.toList.asJava
 }

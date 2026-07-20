@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.ing.baker</groupId>
         <artifactId>baker</artifactId>
-        <version>5.1.0-SNAPSHOT</version>
+        <version>6.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -79,6 +79,19 @@
         <dependency>
             <groupId>com.ing.baker</groupId>
             <artifactId>baker-compiler</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-compiler-scala</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-compiler-kotlin</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

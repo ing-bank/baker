@@ -1,21 +1,19 @@
 package com.ing.baker.runtime
 
-import cats.effect.IO
 import com.ing.baker.BakerRuntimeTestBase
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.runtime.ScalaDSLRuntime._
-import com.ing.baker.runtime.scaladsl.Baker
-import com.typesafe.config.ConfigFactory
-
-import java.util.UUID
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.common.RecipeRecord
+import com.typesafe.config.ConfigFactory
 
-import scala.concurrent.{ExecutionContext, Future}
+import java.util.UUID
+import scala.concurrent.Future
 
-class ExamplesSpec extends BakerRuntimeTestBase  {
+class
+ExamplesSpec extends BakerRuntimeTestBase  {
   override def actorSystemName = "ExamplesSpec"
 
   "The WebShop recipe" should {

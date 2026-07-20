@@ -41,6 +41,8 @@ trait Baker extends common.Baker[Future] with ScalaApi {
 
   override type DurationType = FiniteDuration
 
+  override type UnitType = Unit
+
   @deprecated("This method is deprecated and will be removed after December 1st, 2026. Please use fireSensoryEventAndAwaitReceived instead.", "5.1.0")
   override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance): Future[SensoryEventStatus] =
     fireEventAndResolveWhenReceived(recipeInstanceId, event, None)

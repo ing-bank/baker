@@ -2,8 +2,7 @@ package com.ing.baker.runtime.model.recipeinstance
 
 import cats.data.EitherT
 import cats.effect.kernel.Ref
-import cats.effect.std.Dispatcher
-import cats.effect.{Async, Deferred, IO, Sync}
+import cats.effect.{Async, Deferred, Sync}
 import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -13,14 +12,13 @@ import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, EventReject
 import com.typesafe.scalalogging.LazyLogging
 import fs2.Stream
 
+import scala.jdk.OptionConverters.RichOptional
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.DurationConverters._
 import scala.concurrent.duration._
 
 object RecipeInstance {
-
-  case class Config(idleTTL: Option[FiniteDuration] = Some(5.seconds),
-                    ingredientsFilter: Seq[String] = Seq.empty)
-
-  def empty[F[_]](recipe: CompiledRecipe, recipeInstanceId: String, settings: Config)(implicit components: BakerComponents[F], async: Async[F]): F[RecipeInstance[F]] =
+  def empty[F[_]](recipe: CompiledRecipe, recipeInstanceId: String, settings: RecipeInstanceConfig)(implicit components: BakerComponents[F], async: Async[F]): F[RecipeInstance[F]] =
     for {
       timestamp <- async.pure(System.currentTimeMillis())
       state <- Ref.of[F, RecipeInstanceState[F]](RecipeInstanceState.empty(recipeInstanceId, recipe, timestamp))
@@ -32,7 +30,7 @@ object RecipeInstance {
   class FatalInteractionException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
 }
 
-case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance.Config, state: Ref[F, RecipeInstanceState[F]]) extends LazyLogging {
+case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstanceConfig, state: Ref[F, RecipeInstanceState[F]]) extends LazyLogging {
 
   private def updateStateAndNotify[A](update: RecipeInstanceState[F] => (RecipeInstanceState[F], A))(implicit async: Async[F]): F[A] =
     for {
@@ -71,7 +69,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
         }
       _ <- EitherT.liftF(components.eventStream.publish(EventReceived(currentTime, currentState.recipe.name, currentState.recipe.recipeId, recipeInstanceId, correlationId, input.name)))
     } yield baseCase(initialExecution)
-      .collect { case Some(output) => output.filterNot(config.ingredientsFilter) }
+      .collect { case Some(output) => output.filterNot(config.ingredientsFilter.asScala.toSeq) }
 
   def stopRetryingInteraction(interactionName: String)(implicit components: BakerComponents[F], async: Async[F]): F[Unit] =
     for {
@@ -174,9 +172,9 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
   private def scheduleIdleStop(implicit components: BakerComponents[F], async: Async[F]): F[Unit] = {
     def schedule: F[Unit] =
       state.get.flatMap { currentState =>
-        config.idleTTL match {
+        config.idleTTL.toScala match {
           case Some(idleTTL) if currentState.isInactive =>
-            async.sleep(idleTTL) *> confirmIdleStop(currentState.sequenceNumber, idleTTL)
+            async.sleep(idleTTL.toScala) *> confirmIdleStop(currentState.sequenceNumber, idleTTL.toScala)
           case _ => async.unit
         }
       }
@@ -188,10 +186,10 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
             async.delay(components.logging.idleStop(recipeInstanceId, originalIdleTTL))
         else async.unit
       }
-    val scheduled: IO[Unit] = Dispatcher.parallel[IO](await = true).map { dispatcher: Dispatcher[IO] =>
-      dispatcher.unsafeRunAndForget(IO.delay(schedule))
-    }.use(_ => IO.unit)
-    Async[F].delay(scheduled)
+
+    // Start the schedule computation in the background as a fiber and discard the result
+    // This allows the idle stop to happen asynchronously without blocking
+    async.start(schedule).void
   }
 
   private def getInteractionTransitionExecution(interactionName: String)(implicit effect: Sync[F]): F[TransitionExecution] =

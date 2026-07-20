@@ -1,8 +1,9 @@
-import org.junit.Assert.fail
-import org.junit.Test
+
+import org.junit.jupiter.api.Test
 import java.lang.reflect.Method
 import kotlin.math.pow
 import kotlin.reflect.full.declaredFunctions
+import kotlin.test.fail
 
 class BakerInterfaceTest {
 

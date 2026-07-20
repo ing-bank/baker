@@ -37,7 +37,7 @@ class KotlinDslTest {
             }
 
             // Ingredient definition failed with optionals
-            ingredient("test") @JvmSerializableLambda { test: Optional<String> -> "" }
+            ingredient("test", @JvmSerializableLambda { test: Optional<String> -> "" })
 
             sensoryEvents {
                 eventWithoutFiringLimit<Events.OrderPlaced>()
