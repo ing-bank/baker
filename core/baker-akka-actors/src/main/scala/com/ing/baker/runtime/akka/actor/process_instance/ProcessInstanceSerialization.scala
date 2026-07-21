@@ -176,6 +176,7 @@ class ProcessInstanceSerialization[S, E](provider: AkkaSerializerProvider) {
 
     protobuf.TransitionFailed(
       jobId = Some(e.jobId),
+      correlationId = e.correlationId,
       transitionId = Some(e.transitionId),
       timeStarted = Some(e.timeStarted),
       timeFailed = Some(e.timeFailed),
@@ -192,6 +193,7 @@ class ProcessInstanceSerialization[S, E](provider: AkkaSerializerProvider) {
 
     protobuf.TransitionFired(
       jobId = Some(e.jobId),
+      correlationId = e.correlationId,
       transitionId = Some(e.transitionId),
       timeStarted = Some(e.timeStarted),
       timeCompleted = Some(e.timeCompleted),
@@ -207,6 +209,7 @@ class ProcessInstanceSerialization[S, E](provider: AkkaSerializerProvider) {
 
     protobuf.TransitionFailedWithOutput(
       jobId = Some(e.jobId),
+      correlationId = e.correlationId,
       transitionId = Some(e.transitionId),
       timeStarted = Some(e.timeStarted),
       timeCompleted = Some(e.timeCompleted),
@@ -222,6 +225,7 @@ class ProcessInstanceSerialization[S, E](provider: AkkaSerializerProvider) {
 
     protobuf.TransitionFailedWithFunctionalOutput(
       jobId = Some(e.jobId),
+      correlationId = e.correlationId,
       transitionId = Some(e.transitionId),
       timeStarted = Some(e.timeStarted),
       timeCompleted = Some(e.timeCompleted),
