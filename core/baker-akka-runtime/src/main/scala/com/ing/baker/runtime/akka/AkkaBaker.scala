@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.pattern.{FutureRef, ask}
 import akka.util.Timeout
-import cats.data.NonEmptyList
+import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import cats.implicits._
 import com.ing.baker.il._
@@ -12,7 +12,7 @@ import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{EventOccurred, IngredientFound, IngredientNotFound, Initialized, InstanceState, MetaDataAdded, TransitionFired, Uninitialized}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
@@ -184,23 +184,24 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       .listAll
       .map(interactionsList => interactionsList.find(_.shaBase64 == interactionId))
       .flatMap {
-        case None => cats.effect.IO.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
+        case None => IO.pure(InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
           InteractionExecutionFailureReason.INTERACTION_NOT_FOUND, None, None))))
         case Some(interactionInstance) =>
-          interactionInstance.execute(
-              ingredients.filter(ingredientInstance => ingredientInstance.name != RecipeInstanceMetadataName),
-              getMetaDataFromIngredients(ingredients).getOrElse(Map.empty))
-            .map(executionSuccess => InteractionExecutionResult(Right(InteractionExecutionResult.Success(executionSuccess))))
-            .recover {
-              case e => InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
-                InteractionExecutionFailureReason.INTERACTION_EXECUTION_ERROR,
-                Some(interactionInstance.name),
-                Some(s"Interaction execution failed. Interaction threw ${e.getClass.getSimpleName} with message ${e.getMessage}."))))
-            }
-            .timeoutTo(duration = config.timeouts.defaultExecuteSingleInteractionTimeout,
-              fallback = cats.effect.IO.pure(
-                InteractionExecutionResult(Left(
-                  InteractionExecutionResult.Failure(InteractionExecutionFailureReason.TIMEOUT, Some(interactionInstance.name), None)))))
+          IO.blocking {
+              interactionInstance.execute(
+                ingredients.filter(ingredientInstance => ingredientInstance.name != RecipeInstanceMetadataName),
+                getMetaDataFromIngredients(ingredients).getOrElse(Map.empty))
+            }.flatten.map(executionSuccess => InteractionExecutionResult(Right(InteractionExecutionResult.Success(executionSuccess))))
+              .recover {
+                case e => InteractionExecutionResult(Left(InteractionExecutionResult.Failure(
+                  InteractionExecutionFailureReason.INTERACTION_EXECUTION_ERROR,
+                  Some(interactionInstance.name),
+                  Some(s"Interaction execution failed. Interaction threw ${e.getClass.getSimpleName} with message ${e.getMessage}."))))
+              }
+              .timeoutTo(duration = config.timeouts.defaultExecuteSingleInteractionTimeout,
+                fallback = IO.pure(
+                  InteractionExecutionResult(Left(
+                    InteractionExecutionResult.Failure(InteractionExecutionFailureReason.TIMEOUT, Some(interactionInstance.name), None)))))
       }
       .unsafeToFuture()(IORuntime.global).javaTimeoutToBakerTimeout("executeSingleInteraction")
 
