@@ -14,7 +14,8 @@ object Instance {
       delayedTransitionIds = Map.empty,
       state = null.asInstanceOf[S],
       jobs = Map.empty,
-      receivedCorrelationIds = Set.empty
+      receivedCorrelationIds = Set.empty,
+      inFlightEventTransitions = 0
     )
 }
 
@@ -30,7 +31,8 @@ case class Instance[S](
     jobs: Map[Long, Job[S]],
     receivedCorrelationIds: Set[String],
     completionListenerPaths: Set[String] = Set.empty,
-    eventListenerPaths: Map[String, Set[String]] = Map.empty
+    eventListenerPaths: Map[String, Set[String]] = Map.empty,
+    inFlightEventTransitions: Int = 0
 ) {
 
   /**
@@ -52,7 +54,7 @@ case class Instance[S](
   def activeJobs: Iterable[Job[S]] = jobs.values.filter(_.isActive)
 
   def hasCompletedExecution: Boolean =
-    activeJobs.isEmpty && delayedTransitionIds.values.forall(_ <= 0)
+    activeJobs.isEmpty && delayedTransitionIds.values.forall(_ <= 0) && inFlightEventTransitions == 0
 
   /**
     * Checks whether a transition is blocked by a previous failure.
