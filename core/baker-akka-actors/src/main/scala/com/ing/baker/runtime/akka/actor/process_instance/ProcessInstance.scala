@@ -681,10 +681,16 @@ class ProcessInstance(
 
     runtime.allEnabledJobs.run(instance).value match {
       case (updatedInstance, jobs) =>
-        if (jobs.isEmpty && updatedInstance.activeJobs.isEmpty)
-          startIdleStop(updatedInstance.sequenceNr)
+        // Count event transitions and increment the counter
+        val eventTransitionCount = jobs.count(_.transition.isInstanceOf[EventTransition])
+        val instanceWithCounter = updatedInstance.copy(
+          inFlightEventTransitions = updatedInstance.inFlightEventTransitions + eventTransitionCount
+        )
+        
+        if (jobs.isEmpty && instanceWithCounter.activeJobs.isEmpty)
+          startIdleStop(instanceWithCounter.sequenceNr)
         jobs.foreach(job => executeJob(job, sender()))
-        (updatedInstance, jobs)
+        (instanceWithCounter, jobs)
     }
   }
 
