@@ -416,6 +416,38 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       expectMsgType[FireSensoryEventRejection.AlreadyReceived]
     }
 
+    "Respond with a AlreadyReceived rejection message if the given corellation id was received before restoring from persistent storage" in new TestSequenceNet {
+
+      val testCorrelationId = "abc"
+
+      override val sequence = Seq(
+        transition()(_ => Added(1))
+      )
+
+      val actorName = UUID.randomUUID().toString
+
+      val actor = createProcessInstance(petriNet, runtime, actorName)
+
+      // initialize the petri net with 2 tokens in the first place
+      val marking: Marking[Place] = place(1).markWithN(2)
+
+      actor ! Initialize(marking, RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq.empty))
+      expectMsgClass(classOf[Initialized])
+
+      actor ! FireTransition(transitionId = 1, input = null, correlationId = Some(testCorrelationId))
+
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) => }
+
+      // terminate the actor and re-create it with the same persistent identifier
+      syncKillActorWithPoisonPill(actor)
+
+      val newActor = createProcessInstance(petriNet, runtime, actorName)
+
+      newActor ! FireTransition(transitionId = 1, input = null, correlationId = Some(testCorrelationId))
+
+      expectMsgType[FireSensoryEventRejection.AlreadyReceived]
+    }
+
     "Respond with a FiringLimitMet rejection message if a transition is not enabled because of a previous failure" in new TestSequenceNet {
 
       override val sequence = Seq(
