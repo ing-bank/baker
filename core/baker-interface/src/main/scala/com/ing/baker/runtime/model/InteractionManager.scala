@@ -86,11 +86,13 @@ trait InteractionManager[F[_]] {
     } else{
       findFor(interaction)
         .flatMap {
-          case Some(implementation) => implementation.execute(input, metadata.getOrElse(Map()))
+          case Some(implementation) => {
+            // Interaction implementations are often reflection/IO heavy; shift invocation to the blocking pool.
+            sync.blocking(implementation.execute(input, metadata.getOrElse(Map()))).flatten
+          }
           case None => effect.raiseError(new FatalInteractionException(s"No implementation available for interaction ${interaction.interactionName}"))
         }
     }
-
   }
 
   private def interactionNameMatches(transition: InteractionTransition, implementation: InteractionInstance[F]): Boolean =
