@@ -1,8 +1,8 @@
 package com.ing.baker.runtime.akka.actor.delayed_transition_actor
 
-import akka.actor.{ActorSystem, Props}
-import akka.persistence.{SaveSnapshotSuccess, SnapshotMetadata}
-import akka.testkit.{ImplicitSender, TestKit, TestProbe}
+import org.apache.pekko.actor.{ActorSystem, Props}
+import org.apache.pekko.persistence.{SaveSnapshotSuccess, SnapshotMetadata}
+import org.apache.pekko.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.DelayedTransitionSnapshot
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.{FireDelayedTransition, FireDelayedTransitionAck, ScheduleDelayedTransition, StartTimer}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.TransitionDelayed
@@ -18,11 +18,11 @@ import java.util.UUID
 object DelayedTransitionActorSpec {
   val config: Config = ConfigFactory.parseString(
     """
-      |akka.actor.allow-java-serialization = off
+      |pekko.actor.allow-java-serialization = off
       |baker.actor.snapshot-interval = 1
-      |akka.persistence.journal.plugin = "inmemory-journal"
-      |akka.persistence.snapshot-store.plugin = "inmemory-snapshot-store"
-      |akka.test.timefactor = 3.0
+      |pekko.persistence.journal.plugin = "inmemory-journal"
+      |pekko.persistence.snapshot-store.plugin = "inmemory-snapshot-store"
+      |pekko.test.timefactor = 3.0
   """.stripMargin)
 }
 

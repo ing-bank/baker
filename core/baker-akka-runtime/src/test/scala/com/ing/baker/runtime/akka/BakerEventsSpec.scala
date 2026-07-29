@@ -1,15 +1,16 @@
 package com.ing.baker.runtime.akka
 
-import akka.actor.ActorRef
-import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
-import akka.testkit.TestProbe
+import org.apache.pekko.actor.{ActorRef, Status}
+import org.apache.pekko.testkit.TestProbe
 import com.ing.baker._
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl.{CheckPointEvent, Event, Recipe}
 import com.ing.baker.runtime.common.RejectReason._
 import com.ing.baker.runtime.scaladsl._
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import io.github.alstanchev.pekko.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtensionProvider}
 
 import java.util.UUID
 import scala.concurrent.Future
@@ -75,14 +76,16 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
 
   private val eventReceiveTimeout = 1 seconds
 
+  val config = ConfigFactory.load()
+
   before {
     resetMocks()
     setupMockResponse()
 
     // Clean inmemory-journal before each test
     val tp = TestProbe()
-    tp.send(StorageExtension(defaultActorSystem).journalStorage, InMemoryJournalStorage.ClearJournal)
-    tp.expectMsg(akka.actor.Status.Success(""))
+    tp.send(StorageExtensionProvider(defaultActorSystem).journalStorage(config), InMemoryJournalStorage.ClearJournal)
+    tp.expectMsg(Status.Success(""))
   }
 
   "Baker" should {

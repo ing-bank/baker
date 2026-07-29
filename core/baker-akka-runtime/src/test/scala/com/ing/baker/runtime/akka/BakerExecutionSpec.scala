@@ -1,8 +1,7 @@
 package com.ing.baker.runtime.akka
 
-import akka.actor.ActorSystem
-import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
-import akka.testkit.{TestDuration, TestKit, TestProbe}
+import org.apache.pekko.actor.{ActorSystem, Status}
+import org.apache.pekko.testkit.{TestDuration, TestKit, TestProbe}
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe._
@@ -16,6 +15,7 @@ import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance, InteractionInstanceInput, RecipeEventMetadata}
 import com.ing.baker.types.{CharArray, Int32, PrimitiveValue, Value}
 import com.typesafe.config.{Config, ConfigFactory}
+import io.github.alstanchev.pekko.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtensionProvider}
 import io.prometheus.client.CollectorRegistry
 import org.mockito.ArgumentMatchers.{any, anyString, eq => mockitoEq}
 import org.mockito.Mockito._
@@ -34,6 +34,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
   override def actorSystemName = "BakerExecutionSpec"
 
+  val config = ConfigFactory.load()
+
   before {
     TestKit.shutdownActorSystem(defaultActorSystem)
     defaultActorSystem = ActorSystem(UUID.randomUUID().toString)
@@ -42,23 +44,23 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
     CollectorRegistry.defaultRegistry.clear()
     //clean the in-memory journal before each test
     val tp = TestProbe()
-    tp.send(StorageExtension(defaultActorSystem).journalStorage, InMemoryJournalStorage.ClearJournal)
-    tp.expectMsg(akka.actor.Status.Success(""))
+    tp.send(StorageExtensionProvider(defaultActorSystem).journalStorage(config), InMemoryJournalStorage.ClearJournal)
+    tp.expectMsg(Status.Success(""))
   }
 
   "The baker setup" should {
-    "use akka service discovery" in {
+    "use pekko service discovery" in {
       val config = ConfigFactory.parseString(
         """
           |include "baker.conf"
           |
-          |akka.actor.provider = "cluster"
+          |pekko.actor.provider = "cluster"
           |
           |baker.actor.provider = "cluster-sharded"
           |
           |baker.recipe-manager-type = "actor"
           |
-          |akka.management {
+          |pekko.management {
           |  cluster.bootstrap {
           |    contact-point-discovery {
           |      # For the kubernetes API this value is substributed into the %s in pod-label-selector
@@ -78,16 +80,16 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           }
         }
         _ <- setupActorSystem.terminate()
-      } yield assert(exception.getMessage contains "akka.discovery.kubernetes-api.class must point to a FQN of a `akka.discovery.ServiceDiscovery` implementation")
+      } yield assert(exception.getMessage contains "pekko.discovery.kubernetes-api.class must point to a FQN of a `org.apache.pekko.discovery.ServiceDiscovery` implementation")
     }
 
 
-    "use akka seed node list" in {
+    "use pekko seed node list" in {
       val config = ConfigFactory.parseString(
         """
           |include "baker.conf"
           |
-          |akka.actor.provider = "cluster"
+          |pekko.actor.provider = "cluster"
           |
           |baker.actor.provider = "cluster-sharded"
           |
@@ -108,7 +110,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         """
           |include "baker.conf"
           |
-          |akka.actor.provider = "cluster"
+          |pekko.actor.provider = "cluster"
           |
           |baker.actor.provider = "cluster-sharded"
           |
@@ -121,7 +123,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           intercept[IllegalArgumentException](AkkaBaker(config, setupActorSystem, CachingInteractionManager()))
         }
         _ <- setupActorSystem.terminate()
-      } yield assert(exception.getMessage contains "No default service discovery implementation configured in `akka.discovery.method`")
+      } yield assert(exception.getMessage contains "No default service discovery implementation configured in `pekko.discovery.method`")
     }
   }
 
@@ -380,7 +382,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           |  }
           |
           |  cluster {
-          |    seed-nodes = ["akka://remoteTest@127.0.0.1:2555"]
+          |    seed-nodes = ["pekko://remoteTest@127.0.0.1:2555"]
           |    auto-down-unreachable-after = 10s
           |  }
           |}

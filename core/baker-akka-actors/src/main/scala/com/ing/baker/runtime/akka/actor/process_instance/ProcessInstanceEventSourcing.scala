@@ -1,12 +1,11 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
-import akka.NotUsed
-import akka.actor.{ActorSystem, NoSerializationVerificationNeeded}
-import akka.event.{DiagnosticLoggingAdapter, Logging}
-import akka.persistence.query.scaladsl.CurrentEventsByPersistenceIdQuery
-import akka.persistence.{PersistentActor, RecoveryCompleted}
-import akka.sensors.actor.PersistentActorMetrics
-import akka.stream.scaladsl.Source
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.{ActorSystem, NoSerializationVerificationNeeded}
+import org.apache.pekko.event.{DiagnosticLoggingAdapter, Logging}
+import org.apache.pekko.persistence.query.scaladsl.CurrentEventsByPersistenceIdQuery
+import org.apache.pekko.persistence.{PersistentActor, RecoveryCompleted}
+import org.apache.pekko.stream.scaladsl.Source
 import com.ing.baker.il.petrinet.{EventTransition, Place, Transition}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.Event
@@ -17,6 +16,7 @@ import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.Value
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.sensors.actor.PersistentActorMetrics
 import scalapb.GeneratedMessage
 
 object ProcessInstanceEventSourcing extends LazyLogging {

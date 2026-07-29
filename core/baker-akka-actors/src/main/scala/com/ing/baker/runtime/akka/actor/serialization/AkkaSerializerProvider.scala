@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.akka.actor.serialization
 
-import akka.actor.ActorSystem
-import akka.serialization.{Serialization, SerializationExtension, Serializer}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.serialization.{Serialization, SerializationExtension, Serializer}
 import com.ing.baker.runtime.serialization.Encryption
 
 case class AkkaSerializerProvider(getSerializerFor: AnyRef => Serializer, serializerByIdentity: Int => Option[Serializer], encryption: Encryption)

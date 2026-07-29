@@ -1,7 +1,7 @@
 package com.ing.bakery
 
-import akka.actor.ActorSystem
-import akka.cluster.Cluster
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.cluster.Cluster
 import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.akka.actor.LocalBakerActorProvider
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}

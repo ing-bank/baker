@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.actor.delayed_transition_actor
 
-import akka.actor.ActorRef
+import org.apache.pekko.actor.ActorRef
 import com.ing.baker.petrinet.api.{Id, Marking}
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 

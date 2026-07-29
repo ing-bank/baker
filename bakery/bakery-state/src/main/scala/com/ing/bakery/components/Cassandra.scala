@@ -1,6 +1,6 @@
 package com.ing.bakery.components
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import com.datastax.oss.driver.api.core.CqlSession
 import com.typesafe.config.Config

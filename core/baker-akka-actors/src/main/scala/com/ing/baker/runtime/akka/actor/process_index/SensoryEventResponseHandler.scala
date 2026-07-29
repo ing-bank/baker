@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props, ReceiveTimeout}
-import akka.sensors.actor.ActorMetrics
+import org.apache.pekko.actor.{Actor, ActorLogging, ActorRef, Props, ReceiveTimeout}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
@@ -9,7 +8,6 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, EventRejected, SensoryEventResult}
-import com.ing.baker.types.{PrimitiveValue, Value}
 
 object SensoryEventResponseHandler {
 
@@ -24,7 +22,7 @@ object SensoryEventResponseHandler {
  * - Does involving logging
  */
 class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent)
-  extends Actor with ActorMetrics with ActorLogging {
+  extends Actor with ActorLogging {
 
   context.setReceiveTimeout(command.timeout)
 
