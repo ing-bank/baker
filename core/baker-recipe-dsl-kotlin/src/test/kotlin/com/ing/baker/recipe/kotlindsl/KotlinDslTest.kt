@@ -102,6 +102,7 @@ class KotlinDslTest {
                     "reservedItems" to "krakaka"
                 }
             }
+            interaction<Interactions.InteractionWithNameField> {}
         }
 
         assertEquals("Name", recipe.name())
@@ -255,6 +256,10 @@ class KotlinDslTest {
             assertEquals("krakaka", overriddenIngredientNames().get("reservedItems").get())
 
             assertTrue(failureStrategy().isEmpty)
+        }
+
+        with(recipe.interactions().toList().apply(6)) {
+            assertEquals("nameField", name())
         }
 
         with(recipe.sensoryEvents()) {
@@ -600,6 +605,7 @@ class KotlinDslTest {
     object Interactions {
 
         interface MakePayment : Interaction {
+
             sealed interface MakePaymentOutcome
             object PaymentSuccessful : MakePaymentOutcome
             object PaymentFailed : MakePaymentOutcome
@@ -609,6 +615,15 @@ class KotlinDslTest {
                 paymentInformation: Ingredients.PaymentInformation
             ): MakePaymentOutcome
         }
+
+        interface InteractionWithNameField : Interaction {
+            companion object {
+                const val name = "nameField"
+            }
+            object InteractionWithNameFieldDone
+            fun apply(): InteractionWithNameFieldDone
+        }
+
 
         interface ShipItems : Interaction {
             object ShippingConfirmed

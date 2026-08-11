@@ -245,10 +245,22 @@ class RecipeBuilder(private val name: String) {
 
 @RecipeDslMarker
 class InteractionBuilder(private val interactionClass: KClass<out com.ing.baker.recipe.javadsl.Interaction>) {
+
+    private fun getNameFieldName(): Option<String> {
+        val field = runCatching { interactionClass.java.getDeclaredField("name") }.getOrNull()
+
+        return if (field != null && field.type == String::class.java) {
+            field.isAccessible = true
+            Option.apply(field.get(null) as? String)
+        } else {
+            Option.empty()
+        }
+    }
+
     /**
      * The name of the interaction. Defaults to the name of the interaction class.
      */
-    var name: String = interactionClass.simpleName!! // Not null assertion is okay, will never be an anonymous class.
+    var name: String = getNameFieldName().getOrElse { interactionClass.simpleName!! } // Not null assertion is okay, will never be an anonymous class.
 
     /**
      * The maximum number of times this interaction can be invoked.

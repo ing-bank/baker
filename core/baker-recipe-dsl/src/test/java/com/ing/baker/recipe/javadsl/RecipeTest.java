@@ -3,6 +3,7 @@ package com.ing.baker.recipe.javadsl;
 import com.ing.baker.recipe.javadsl.events.SensoryEventWithIngredient;
 import com.ing.baker.recipe.javadsl.events.SensoryEventWithoutIngredient;
 import com.ing.baker.recipe.javadsl.interactions.FiresTwoEventInteraction;
+import com.ing.baker.recipe.javadsl.interactions.InteractionWithNameField;
 import com.ing.baker.recipe.javadsl.interactions.SimpleInteraction;
 import com.ing.baker.recipe.javadsl.interactions.RequiresRecipeInstanceIdStringInteraction;
 import org.junit.Rule;
@@ -161,5 +162,12 @@ public class RecipeTest {
                 .withSubRecipe(subRecipe);
         assertEquals(recipe.getEvents().size(), 0);
         assertEquals(recipe.getSubRecipes().size(), 1);
+    }
+
+    @Test
+    public void shouldSetupRecipeWithInteractionNameFromField() {
+        Recipe recipe = new Recipe("OneInteractionRecipe")
+                .withInteraction(of(InteractionWithNameField.class));
+        assertEquals(recipe.getInteractions().getFirst().name(), "NameField");
     }
 }
