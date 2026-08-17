@@ -16,6 +16,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
+import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.{InteractionExecutionFailureReason, RecipeRecord, SensoryEventStatus}
@@ -33,6 +34,7 @@ import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
+import scala.util.control.NonFatal
 import scala.language.postfixOps
 import scala.util.Try
 
@@ -252,6 +254,11 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       .javaTimeoutToBakerTimeout("deleteRecipeInstance").flatMap {
         case ProcessDeleted(_) => Future.successful(())
         case NoSuchProcess(_) => Future.failed(NoSuchProcessException(recipeInstanceId))
+      }
+      .recoverWith {
+        // a failed event deletion replies with the raw cause, wrap it so callers (and the http layer) see a BakerException
+        case e: BakerException => Future.failed(e)
+        case NonFatal(e) => Future.failed(UnknownBakerException(s"Failed to delete recipe instance '$recipeInstanceId': ${e.getMessage}"))
       }
   }
 

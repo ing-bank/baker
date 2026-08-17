@@ -53,6 +53,8 @@ object BakerTypedProtobufSerializer {
         .register("ProcessIndex.ActorCreated"),
       forType[ProcessIndex.ActorDeleted]
         .register("ProcessIndex.ActorDeleted"),
+      forType[ProcessIndex.ActorDeletionStarted]
+        .register("ProcessIndex.ActorDeletionStarted"),
       forType[ProcessIndex.ActorPassivated]
         .register("ProcessIndex.ActorPassivated"),
       forType[ProcessIndex.ActorActivated]
