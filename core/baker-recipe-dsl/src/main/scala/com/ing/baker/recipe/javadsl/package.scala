@@ -2,11 +2,11 @@ package com.ing.baker.recipe
 
 import java.lang.reflect.Method
 import java.util.concurrent.CompletableFuture
-
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
 import com.ing.baker.types.{Converters, Type}
 
 import scala.reflect.ClassTag
+import scala.util.Try
 
 package object javadsl {
 
@@ -30,7 +30,19 @@ package object javadsl {
 
   def interactionClassToCommonInteraction(interactionClass: Class[_], newName: Option[String]): InteractionDescriptor = {
 
-    val name: String = interactionClass.getSimpleName
+    def getNameFieldName: Option[String] = {
+      Try {
+        interactionClass.getDeclaredField("name")
+      }.toOption match {
+        // In case a specific 'name' field was found, this is used
+        case Some(field) if field.getType == classOf[String] =>
+          field.setAccessible(true)
+          Some(field.get(interactionClass).asInstanceOf[String])
+        case _ => None
+      }
+    }
+1
+    val name: String = getNameFieldName.getOrElse(interactionClass.getSimpleName)
 
     val method: Method = interactionClass.getDeclaredMethods
       .find(_.getName == interactionMethodName)
