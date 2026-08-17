@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.actor.serialization
 
-import akka.serialization.{Serializer, SerializerWithStringManifest}
+import org.apache.pekko.serialization.{Serializer, SerializerWithStringManifest}
 import com.google.protobuf.ByteString
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.serialization.ProtoMap.versioned

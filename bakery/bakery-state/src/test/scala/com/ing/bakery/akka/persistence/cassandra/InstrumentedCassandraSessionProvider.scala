@@ -1,7 +1,7 @@
 package com.ing.bakery.akka.persistence.cassandra
 
-import akka.actor.ActorSystem
-import akka.stream.alpakka.cassandra.{CqlSessionProvider, DefaultSessionProvider, DriverConfigLoaderFromConfig}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.connectors.cassandra.{CqlSessionProvider, DefaultSessionProvider, DriverConfigLoaderFromConfig}
 import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.jmx.JmxReporter
 import com.datastax.oss.driver.api.core.CqlSession

@@ -1,17 +1,16 @@
 package com.ing.bakery.components
 
-import akka.actor.{ActorLogging, ActorRef, ActorSystem, NoSerializationVerificationNeeded, Props}
-import akka.pattern.ask
-import akka.persistence.PersistentActor
-import akka.sensors.actor.PersistentActorMetrics
-import akka.util.Timeout
+import org.apache.pekko.actor.{ActorLogging, ActorRef, ActorSystem, NoSerializationVerificationNeeded, Props}
+import org.apache.pekko.pattern.ask
+import org.apache.pekko.persistence.PersistentActor
+import org.apache.pekko.util.Timeout
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.querybuilder.QueryBuilder._
 import com.datastax.oss.driver.api.querybuilder.term.Term
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.scalalogging.LazyLogging
-import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.exporter.common.TextFormat
+import org.apache.pekko.sensors.actor.PersistentActorMetrics
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper._
 import org.scalatest.{BeforeAndAfterAll, Ignore}
 import org.scalatest.concurrent.Eventually

@@ -1,11 +1,13 @@
 package com.ing.baker.runtime.akka
 
-import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
-import akka.testkit.TestProbe
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe.getRecipe
 import com.ing.baker.runtime.common.RecipeRecord
+import com.typesafe.config.ConfigFactory
+import io.github.alstanchev.pekko.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtensionProvider}
+import org.apache.pekko.actor.Status
+import org.apache.pekko.testkit.TestProbe
 
 import scala.language.postfixOps
 
@@ -13,14 +15,16 @@ class BakerInquireSpec extends BakerRuntimeTestBase {
 
   override def actorSystemName = "BakerInquireSpec"
 
+  val config = ConfigFactory.load()
+
   before {
     resetMocks()
     setupMockResponse()
 
-    // Clean inmemory-journal before each test
+    //clean the in-memory journal before each test
     val tp = TestProbe()
-    tp.send(StorageExtension(defaultActorSystem).journalStorage, InMemoryJournalStorage.ClearJournal)
-    tp.expectMsg(akka.actor.Status.Success(""))
+    tp.send(StorageExtensionProvider(defaultActorSystem).journalStorage(config), InMemoryJournalStorage.ClearJournal)
+    tp.expectMsg(Status.Success(""))
   }
 
   "Baker" should {

@@ -78,8 +78,8 @@
 
         <!-- Test dependencies -->
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-testkit_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-testkit_${scala.compat.version}</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

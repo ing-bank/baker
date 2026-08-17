@@ -1,8 +1,8 @@
 package com.ing.baker.runtime.akka
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import akka.pattern.{FutureRef, ask}
-import akka.util.Timeout
+import org.apache.pekko.actor.{Actor, ActorRef, ActorSystem, Props}
+import org.apache.pekko.pattern.{FutureRef, ask}
+import org.apache.pekko.util.Timeout
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import cats.implicits._

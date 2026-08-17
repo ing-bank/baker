@@ -1,9 +1,9 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
-import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props, Terminated}
-import akka.event.DiagnosticLoggingAdapter
-import akka.testkit.{TestDuration, TestProbe}
-import akka.util.Timeout
+import org.apache.pekko.actor.{ActorRef, ActorSystem, PoisonPill, Props, Terminated}
+import org.apache.pekko.event.DiagnosticLoggingAdapter
+import org.apache.pekko.testkit.{TestDuration, TestProbe}
+import org.apache.pekko.util.Timeout
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import com.ing.baker.il.failurestrategy.{BlockInteraction, FireEventAfterFailure, InteractionFailureStrategy, RetryWithIncrementalBackoff}
@@ -136,7 +136,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val initialState = RecipeInstanceState(UUID.randomUUID().toString, UUID.randomUUID().toString, Map.empty, Map.empty, Seq(EventMoment("1", 0), EventMoment("2", 0), EventMoment("3", 0)))
 
-      val actor = createProcessInstance(petriNet, runtime)
+      val actor: ActorRef = createProcessInstance(petriNet, runtime)
 
       actor ! Initialize(initialMarking, initialState)
       expectMsg(Initialized(initialMarking, initialState))

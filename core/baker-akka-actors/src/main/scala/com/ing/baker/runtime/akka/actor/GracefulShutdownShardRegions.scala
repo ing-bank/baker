@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.akka.actor
 
-import akka.actor._
-import akka.cluster.sharding.{ClusterSharding, ShardRegion}
+import org.apache.pekko.actor._
+import org.apache.pekko.cluster.sharding.{ClusterSharding, ShardRegion}
 import com.ing.baker.runtime.akka.actor.GracefulShutdownShardRegions.{GracefulShutdownSuccessful, GracefulShutdownTimedOut, InitiateGracefulShutdown}
 
 import scala.annotation.nowarn

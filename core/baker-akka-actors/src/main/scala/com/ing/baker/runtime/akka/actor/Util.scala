@@ -1,11 +1,12 @@
 package com.ing.baker.runtime.akka.actor
 
-import akka.actor.{ActorLogging, ActorSystem, NoSerializationVerificationNeeded, PoisonPill, Props}
-import akka.event.DiagnosticLoggingAdapter
-import akka.event.Logging.LogLevel
-import akka.pattern.ask
-import akka.persistence.PersistentActor
-import akka.util.Timeout
+import org.apache.pekko.actor.{ActorLogging, ActorSystem, NoSerializationVerificationNeeded, PoisonPill, Props, Scheduler}
+import org.apache.pekko.event.DiagnosticLoggingAdapter
+import org.apache.pekko.event.Logging.LogLevel
+import org.apache.pekko.pattern
+import org.apache.pekko.pattern.ask
+import org.apache.pekko.persistence.PersistentActor
+import org.apache.pekko.util.Timeout
 
 import java.util.UUID
 import java.util.concurrent.LinkedBlockingQueue
@@ -56,13 +57,13 @@ object Util {
     * Returns a future that returns a default value after a specified timeout.
 
     */
-  def futureWithTimeout[T](future: Future[T], timeout: FiniteDuration, default: T, scheduler: akka.actor.Scheduler)(implicit ec: ExecutionContext): Future[T] = {
-    val timeoutFuture = akka.pattern.after(timeout, scheduler)(Future.successful(default))
+  def futureWithTimeout[T](future: Future[T], timeout: FiniteDuration, default: T, scheduler: Scheduler)(implicit ec: ExecutionContext): Future[T] = {
+    val timeoutFuture = pattern.after(timeout, scheduler)(Future.successful(default))
     Future.firstCompletedOf(Seq(future, timeoutFuture))
   }
 
   @nowarn
-  def collectFuturesWithin[T, M[X] <: scala.TraversableOnce[X]](futures: M[Future[T]], timeout: FiniteDuration, scheduler: akka.actor.Scheduler)(implicit ec: ExecutionContext): Seq[T] = {
+  def collectFuturesWithin[T, M[X] <: scala.TraversableOnce[X]](futures: M[Future[T]], timeout: FiniteDuration, scheduler: Scheduler)(implicit ec: ExecutionContext): Seq[T] = {
 
     val size = futures.size
     val queue = new LinkedBlockingQueue[T](size)

@@ -1,8 +1,8 @@
 package com.ing.baker.runtime.akka.journal
 
-import akka.persistence.{AtomicWrite, PersistentRepr, SelectedSnapshot, SnapshotMetadata, SnapshotSelectionCriteria}
-import akka.persistence.journal.AsyncWriteJournal
-import akka.persistence.snapshot.SnapshotStore
+import org.apache.pekko.persistence.{AtomicWrite, PersistentRepr, SelectedSnapshot, SnapshotMetadata, SnapshotSelectionCriteria}
+import org.apache.pekko.persistence.journal.AsyncWriteJournal
+import org.apache.pekko.persistence.snapshot.SnapshotStore
 
 
 import scala.collection.immutable

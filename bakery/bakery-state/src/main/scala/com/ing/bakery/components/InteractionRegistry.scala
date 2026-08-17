@@ -1,6 +1,6 @@
 package com.ing.bakery.components
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import cats.Traverse
 import cats.effect.{IO, Resource}
 import cats.syntax.all._
