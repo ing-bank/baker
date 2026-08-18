@@ -24,7 +24,7 @@ object RecipeInstance {
       state <- Ref.of[F, RecipeInstanceState[F]](RecipeInstanceState.empty(recipeInstanceId, recipe, timestamp))
       recipeInstanceCreated = RecipeInstanceCreated(timestamp, recipe.recipeId, recipe.name, recipeInstanceId)
       _ <- async.delay(components.logging.recipeInstanceCreated(recipeInstanceCreated))
-      _ <- components.eventStream.publish(recipeInstanceCreated)
+      _ <- async.delay(components.eventStream.publish(recipeInstanceCreated))
     } yield RecipeInstance(recipeInstanceId, settings, state)
 
   class FatalInteractionException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
@@ -64,10 +64,10 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
           for {
             eventRejected <- async.delay(EventRejected(currentTime, recipeInstanceId, correlationId, input.name, rejection.asReason))
             _ <- async.delay(components.logging.eventRejected(eventRejected))
-            _ <- components.eventStream.publish(eventRejected)
+            _ <- async.delay(components.eventStream.publish(eventRejected))
           } yield rejection
         }
-      _ <- EitherT.liftF(components.eventStream.publish(EventReceived(currentTime, currentState.recipe.name, currentState.recipe.recipeId, recipeInstanceId, correlationId, input.name)))
+      _ <- EitherT.liftF(async.delay(components.eventStream.publish(EventReceived(currentTime, currentState.recipe.name, currentState.recipe.recipeId, recipeInstanceId, correlationId, input.name))))
     } yield baseCase(initialExecution)
       .collect { case Some(output) => output.filterNot(config.ingredientsFilter.asScala.toSeq) }
 
