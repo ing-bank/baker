@@ -437,7 +437,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
     * @return
     */
   override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): F[Unit] =
-    components.eventStream.subscribe(listenerFunction)
+    sync.delay(components.eventStream.subscribe(listenerFunction))
       .timeout(config.inquireTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("registerBakerEventListener"))
 

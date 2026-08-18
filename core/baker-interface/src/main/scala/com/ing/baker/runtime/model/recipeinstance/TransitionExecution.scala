@@ -104,8 +104,10 @@ private[recipeinstance] case class TransitionExecution(
                 _ <- input match {
                   case Some(event) =>
                     val eventFired = EventFired(endTime, recipe.name, recipe.recipeId, recipeInstanceId, event.name)
-                    components.logging.eventFired(eventFired)
-                    components.eventStream.publish(eventFired)
+                    async.delay {
+                      components.logging.eventFired(eventFired)
+                      components.eventStream.publish(eventFired)
+                    }
                   case None => async.unit
                 }
               } yield input
@@ -178,7 +180,7 @@ private[recipeinstance] case class TransitionExecution(
         for {
           interactionStarted <- async.delay(InteractionStarted(startTime, recipe.name, recipe.recipeId, recipeInstanceId, interactionTransition.interactionName))
           _ <- async.delay(components.logging.interactionStarted(interactionStarted))
-          _ <- components.eventStream.publish(interactionStarted)
+          _ <- async.delay(components.eventStream.publish(interactionStarted))
           interactionOutput <-
             setupMdc.map(_ => execute).flatMap(x => {
               cleanMdc
@@ -193,13 +195,15 @@ private[recipeinstance] case class TransitionExecution(
             endTime, endTime - startTime, recipe.name, recipe.recipeId, recipeInstanceId,
             interactionTransition.interactionName, transformedOutput.map(_.name))
           _ <- async.delay(components.logging.interactionFinished(interactionCompleted))
-          _ <- components.eventStream.publish(interactionCompleted)
+          _ <- async.delay(components.eventStream.publish(interactionCompleted))
 
           _ <- transformedOutput match {
               case Some(event) =>
                 val eventFired = EventFired(endTime, recipe.name, recipe.recipeId, recipeInstanceId, event.name)
-                components.logging.eventFired(eventFired)
-                components.eventStream.publish(eventFired)
+                async.delay {
+                  components.logging.eventFired(eventFired)
+                  components.eventStream.publish(eventFired)
+                }
               case None => async.unit
             }
         } yield transformedOutput
@@ -216,7 +220,7 @@ private[recipeinstance] case class TransitionExecution(
             endTime, endTime - startTime, recipe.name, recipe.recipeId, recipeInstanceId,
             transition.label, failureCount, throwable.getMessage, interactionTransition.failureStrategy.apply(failureCount + 1))
           _ <- async.delay(components.logging.interactionFailed(interactionFailed, throwable))
-          _ <- components.eventStream.publish(interactionFailed)
+          _ <- async.delay(components.eventStream.publish(interactionFailed))
         } yield ()
 
       }
