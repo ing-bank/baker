@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.common
+package com.ing.baker.runtime.catseffect
 
 import cats.Applicative
 

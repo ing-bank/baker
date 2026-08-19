@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.common
+package com.ing.baker.runtime.catseffect
 
 import cats.effect.Async
 import fs2.Stream

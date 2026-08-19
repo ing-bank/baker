@@ -2,7 +2,7 @@ package com.ing.baker.runtime.akka.internal
 
 import cats.effect.{IO, Ref, Resource}
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.common.SyncSupport
+import com.ing.baker.runtime.catseffect.SyncSupport
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.baker.runtime.{model, scaladsl}
 

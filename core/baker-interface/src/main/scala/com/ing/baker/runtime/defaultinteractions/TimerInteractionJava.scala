@@ -1,9 +1,8 @@
 package com.ing.baker.runtime.defaultinteractions
 
+import com.ing.baker.runtime.catseffect.AsyncSupport
 import java.time.Duration
 import java.util.concurrent.TimeUnit
-
-import com.ing.baker.runtime.common.AsyncSupport
 
 import scala.concurrent.duration.FiniteDuration
 

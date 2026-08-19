@@ -1,9 +1,10 @@
 package com.ing.baker.runtime.model
 
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.catseffect.{AsyncSupport, SyncSupport}
 import com.ing.baker.runtime.common.BakerException.{ImplementationsException, NoSuchRecipeException, RecipeValidationException}
-import com.ing.baker.runtime.common.{AsyncSupport, RecipeRecord, SyncSupport}
-import com.ing.baker.runtime.common.SyncSupport.syntax._
+import com.ing.baker.runtime.common.RecipeRecord
+import SyncSupport.syntax._
 import com.ing.baker.runtime.scaladsl.{RecipeAdded, RecipeInformation}
 import com.typesafe.scalalogging.LazyLogging
 

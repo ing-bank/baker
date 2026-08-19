@@ -2,9 +2,9 @@ package com.ing.baker.runtime.model.recipeinstance
 
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
-import com.ing.baker.runtime.common.AsyncSupport.toAsync
-import com.ing.baker.runtime.common.SyncSupport.syntax._
-import com.ing.baker.runtime.common.{AsyncSupport, RefState, RefSupport, SyncSupport}
+import com.ing.baker.runtime.catseffect.{AsyncSupport, RefState, RefSupport, SyncSupport}
+import com.ing.baker.runtime.catseffect.AsyncSupport.toAsync
+import com.ing.baker.runtime.catseffect.SyncSupport.syntax._
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.model.{BakerComponents, FireSensoryEventRejection}
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, EventRejected, RecipeInstanceCreated}

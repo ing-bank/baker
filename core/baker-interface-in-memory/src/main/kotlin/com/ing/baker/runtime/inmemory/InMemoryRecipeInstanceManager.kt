@@ -3,7 +3,7 @@ package com.ing.baker.runtime.inmemory
 import cats.effect.IO
 import cats.effect.kernel.Async
 import cats.effect.unsafe.IORuntime
-import com.ing.baker.runtime.common.AsyncSupport
+import com.ing.baker.runtime.catseffect.AsyncSupport
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.RecipeInstanceManager
 import com.ing.baker.runtime.model.RecipeInstanceStatus

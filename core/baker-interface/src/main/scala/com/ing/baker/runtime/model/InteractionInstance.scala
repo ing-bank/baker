@@ -1,8 +1,9 @@
 package com.ing.baker.runtime.model
 
 import com.ing.baker.recipe.annotations.{FiresEvent, RequiresIngredient}
+import com.ing.baker.runtime.catseffect.EffectSupport
 import com.ing.baker.runtime.common
-import com.ing.baker.runtime.common.{EffectSupport, FunctionK}
+import com.ing.baker.runtime.common.FunctionK
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
 import com.ing.baker.types.{Converters, Type}
