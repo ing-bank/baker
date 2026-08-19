@@ -1,19 +1,25 @@
 package com.ing.baker.runtime.model
 
+import com.ing.baker.runtime.common.AsyncSupport
 import com.ing.baker.runtime.scaladsl.BakerEvent
 
-import scala.util.Try
+trait EventStream[F[_]] {
 
-trait EventStream {
+  protected def fetchListeners: F[List[BakerEvent => scala.Unit]]
 
-  protected def fetchListeners: List[BakerEvent => Unit]
+  def subscribe(listenerFunction: BakerEvent => scala.Unit): F[scala.Unit]
 
-  def subscribe(listenerFunction: BakerEvent => Unit): Unit
+  def publish(event: BakerEvent)(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[scala.Unit] = {
+    def notifyListeners(listeners: List[BakerEvent => scala.Unit]): F[scala.Unit] = listeners match {
+      case Nil => async.unit
+      case listener :: tail =>
+        async.flatMap(
+          async.handleErrorWith(async.delay(listener(event))) { e =>
+            async.delay(components.logging.exceptionOnEventListener(e))
+          }
+        )(_ => notifyListeners(tail))
+    }
 
-  def publish[F[_]](event: BakerEvent)(implicit components: BakerComponents[F]): Unit = {
-    fetchListeners.foreach(listener =>
-      Try(listener(event))
-        .recover { case e => components.logging.exceptionOnEventListener(e) }
-    )
+    async.flatMap(fetchListeners)(notifyListeners)
   }
 }

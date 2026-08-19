@@ -1,11 +1,10 @@
 package com.ing.baker.runtime.model.recipeinstance
 
 import cats.effect.kernel.Ref
-import cats.syntax.flatMap._
-import cats.syntax.functor._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.common.AsyncSupport.toAsync
+import com.ing.baker.runtime.common.SyncSupport.syntax._
 import com.ing.baker.runtime.common.{AsyncSupport, RefSupport, SyncSupport}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.model.{BakerComponents, FireSensoryEventRejection}
@@ -25,7 +24,7 @@ object RecipeInstance {
       state <- refSupport.of[RecipeInstanceState[F]](RecipeInstanceState.empty[F](recipeInstanceId, recipe, timestamp))
       recipeInstanceCreated = RecipeInstanceCreated(timestamp, recipe.recipeId, recipe.name, recipeInstanceId)
       _ <- async.delay(components.logging.recipeInstanceCreated(recipeInstanceCreated))
-      _ <- async.delay(components.eventStream.publish(recipeInstanceCreated))
+      _ <- components.eventStream.publish(recipeInstanceCreated)
     } yield RecipeInstance(recipeInstanceId, settings, state)
 
   class FatalInteractionException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
@@ -67,7 +66,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
           for {
             eventRejected <- async.delay(EventRejected(currentTime, recipeInstanceId, correlationId, input.name, rejection.asReason))
             _ <- async.delay(components.logging.eventRejected(eventRejected))
-            _ <- async.delay(components.eventStream.publish(eventRejected))
+            _ <- components.eventStream.publish(eventRejected)
           } yield Left(rejection)
         case Right(execution) =>
           async.pure(Right(execution))
@@ -76,7 +75,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
         case Left(rejection) =>
           async.pure(Left(rejection))
         case Right(initialExecution) =>
-          async.delay(components.eventStream.publish(EventReceived(currentTime, currentState.recipe.name, currentState.recipe.recipeId, recipeInstanceId, correlationId, input.name)))
+          components.eventStream.publish(EventReceived(currentTime, currentState.recipe.name, currentState.recipe.recipeId, recipeInstanceId, correlationId, input.name))
             .map(_ => Right(baseCase(initialExecution)
               .collect { case Some(output) => output.filterNot(config.ingredientsFilter.asScala.toSeq) }))
       }

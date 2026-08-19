@@ -16,6 +16,16 @@ trait SyncSupport[F[_]] {
 }
 
 object SyncSupport {
+  object syntax {
+    implicit final class SyncEffectOps[F[_], A](private val fa: F[A]) {
+      def map[B](f: A => B)(implicit sync: SyncSupport[F]): F[B] =
+        sync.map(fa)(f)
+
+      def flatMap[B](f: A => F[B])(implicit sync: SyncSupport[F]): F[B] =
+        sync.flatMap(fa)(f)
+    }
+  }
+
   implicit def fromSync[F[_]](implicit sync: Sync[F]): SyncSupport[F] =
     new SyncSupport[F] {
       override def pure[A](value: A): F[A] = sync.pure(value)

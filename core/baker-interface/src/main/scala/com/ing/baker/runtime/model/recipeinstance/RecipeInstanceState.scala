@@ -221,7 +221,7 @@ case class RecipeInstanceState[F[_]](
           }
           (place, count, consumableTokens)
       }
-      // check if any any places have an insufficient number of tokens
+      // check if any places have an insufficient number of tokens
       if (consumable.exists { case (_, count, tokens) => tokens.multisetSize < count })
         Seq.empty
       else {
