@@ -1,9 +1,5 @@
 package com.ing.baker.runtime.model
 
-import cats.effect.unsafe.IORuntime
-import cats.effect.IO
-import cats.syntax.flatMap._
-import cats.syntax.functor._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common
@@ -13,6 +9,7 @@ import com.ing.baker.runtime.common.FunctionK
 import com.ing.baker.runtime.common.BakerException.NoSuchIngredientException
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.common.SyncSupport
+import com.ing.baker.runtime.common.SyncSupport.syntax._
 import com.ing.baker.runtime.common.{BakerException, InteractionExecutionFailureReason, RecipeRecord, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{Baker => DeprecatedBaker, _}
 import com.ing.baker.types.Value
@@ -247,26 +244,13 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: SyncS
     */
   override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): EventResolutionsF[F] = {
     val result: F[(F[SensoryEventStatus], F[SensoryEventResult])] =
-      components.recipeInstanceManager.fireEvent(recipeInstanceId, event, correlationId)
+      async.eager(components.recipeInstanceManager.fireEvent(recipeInstanceId, event, correlationId))
 
-    if(result.isInstanceOf[IO[_]]) {
-      // We are casting to IO and running it to ensure the eventStream is executed if we have an IO implementation
-      val ioCAST: (F[SensoryEventStatus], F[SensoryEventResult]) =
-        result.asInstanceOf[IO[(F[SensoryEventStatus], F[SensoryEventResult])]].unsafeRunSync()(IORuntime.global)
-
-      new EventResolutionsF[F] {
-        override def resolveWhenReceived: F[SensoryEventStatus] =
-          timeoutAsBaker(ioCAST._1, config.processEventTimeout.toScala, "fireEvent")
-        override def resolveWhenCompleted: F[SensoryEventResult] =
-          timeoutAsBaker(ioCAST._2, config.processEventTimeout.toScala, "fireEvent")
-      }
-    } else {
-      new EventResolutionsF[F] {
-        override def resolveWhenReceived: F[SensoryEventStatus] =
-          timeoutAsBaker(result.flatMap(_._1), config.processEventTimeout.toScala, "fireEvent")
-        override def resolveWhenCompleted: F[SensoryEventResult] =
-          timeoutAsBaker(result.flatMap(_._2), config.processEventTimeout.toScala, "fireEvent")
-      }
+    new EventResolutionsF[F] {
+      override def resolveWhenReceived: F[SensoryEventStatus] =
+        timeoutAsBaker(result.flatMap(_._1), config.processEventTimeout.toScala, "fireEvent")
+      override def resolveWhenCompleted: F[SensoryEventResult] =
+        timeoutAsBaker(result.flatMap(_._2), config.processEventTimeout.toScala, "fireEvent")
     }
   }
 

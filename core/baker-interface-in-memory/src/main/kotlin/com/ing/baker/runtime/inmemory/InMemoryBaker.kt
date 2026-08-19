@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.inmemory
 
 import cats.effect.IO
-import cats.effect.kernel.Async
 import cats.effect.unsafe.IORuntime
 import com.ing.baker.runtime.common.AsyncSupport
 import com.ing.baker.runtime.common.EffectSupport
@@ -30,7 +29,11 @@ import scala.collection.immutable.List as ScalaList
 class InMemoryBaker(
     private val bakerConfig: BakerConfig,
     components: BakerComponents<IO<Any>>
-) : BakerF<IO<Any>>(components, AsyncSupport.fromAsync(IO.asyncForIO() as Async<IO<Any>>), AsyncSupport.fromAsync(IO.asyncForIO() as Async<IO<Any>>)) {
+) : BakerF<IO<Any>>(
+    components,
+    AsyncSupport.fromIO(IORuntime.global()) as AsyncSupport<IO<Any>>,
+    AsyncSupport.fromIO(IORuntime.global()) as AsyncSupport<IO<Any>>
+) {
 
     companion object {
 
@@ -43,13 +46,20 @@ class InMemoryBaker(
             config: BakerConfig,
             implementations: ScalaList<*>
         ): IO<BakerF<IO<*>>> {
+            val ioAsyncSupport =
+                AsyncSupport.fromIO(IORuntime.global()) as AsyncSupport<IO<Any>>
+            val ioClassTag =
+                `ClassTag$`.`MODULE$`.apply<IO<Any>>(IO::class.java as Class<IO<Any>>)
+            val builtinInteractions =
+                defaultinteractions.all<IO<Any>>(ioAsyncSupport, ioClassTag) as ScalaList<InteractionInstance<IO<*>>>
+
             val recipeInstanceManager =
                 InMemoryRecipeInstanceManager(
                     config.retentionPeriodCheckInterval(),
                     config.idleTimeout()
                 )
             val interactionInstances =
-                implementations.concat(defaultinteractions.all()) as ScalaList<InteractionInstance<IO<*>>>
+                implementations.concat(builtinInteractions) as ScalaList<InteractionInstance<IO<*>>>
             val recipeManager = InMemoryRecipeManager()
             val eventStream = InMemoryEventStream()
             val interactions = InMemoryInteractionManager(interactionInstances)

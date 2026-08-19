@@ -1,11 +1,10 @@
 package com.ing.baker.runtime.model.recipeinstance
 
-import cats.effect.kernel.Ref
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.common.AsyncSupport.toAsync
 import com.ing.baker.runtime.common.SyncSupport.syntax._
-import com.ing.baker.runtime.common.{AsyncSupport, RefSupport, SyncSupport}
+import com.ing.baker.runtime.common.{AsyncSupport, RefState, RefSupport, SyncSupport}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.model.{BakerComponents, FireSensoryEventRejection}
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, EventRejected, RecipeInstanceCreated}
@@ -30,7 +29,7 @@ object RecipeInstance {
   class FatalInteractionException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
 }
 
-case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstanceConfig, state: Ref[F, RecipeInstanceState[F]]) extends LazyLogging {
+case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstanceConfig, state: RefState[F, RecipeInstanceState[F]]) extends LazyLogging {
 
   private def updateStateAndNotify[A](update: RecipeInstanceState[F] => (RecipeInstanceState[F], A))(implicit async: AsyncSupport[F]): F[A] =
     for {

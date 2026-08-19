@@ -1,5 +1,7 @@
 # Can we implement `Baker[F[_]]` in Kotlin with coroutines and no Cats dependency?
 
+If you are changing code in `core/baker-interface/src/main/scala/com/ing/baker/runtime/model`, see `core/baker-interface/EFFECT-ABSTRACTION.md` for the local effect-abstraction contract.
+
 Yes — with one important constraint: **not directly as `suspend` methods**.
 
 ### Quick answer
