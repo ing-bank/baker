@@ -107,6 +107,7 @@
         <!-- Core modules -->
         <module>core/baker-types</module>
         <module>core/baker-intermediate-language</module>
+        <module>core/baker-runtime</module>
         <module>core/baker-interface</module>
         <module>core/baker-interface-kotlin</module>
         <module>core/baker-interface-in-memory</module>
