@@ -1,8 +1,7 @@
 package com.ing.baker.runtime.model
 
-import cats.syntax.flatMap._
-import cats.syntax.functor._
 import com.ing.baker.runtime.common.AsyncSupport.toAsync
+import com.ing.baker.runtime.common.SyncSupport.syntax._
 import com.ing.baker.runtime.common.{AsyncSupport, Fs2Support}
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common.BakerException.{ProcessAlreadyExistsException, ProcessDeletedException}

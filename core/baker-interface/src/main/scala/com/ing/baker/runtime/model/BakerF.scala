@@ -432,7 +432,11 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: SyncS
     * @return
     */
   override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): F[Unit] =
-    timeoutAsBaker(sync.delay(components.eventStream.subscribe(listenerFunction)), config.inquireTimeout.toScala, "registerBakerEventListener")
+    timeoutAsBaker(
+      components.eventStream.subscribe(listenerFunction),
+      config.inquireTimeout.toScala,
+      "registerBakerEventListener"
+    )
 
   /**
     * Retries a blocked interaction.

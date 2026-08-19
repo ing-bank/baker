@@ -1,7 +1,5 @@
 package com.ing.baker.runtime.model.recipeinstance
 
-import cats.syntax.flatMap._
-import cats.syntax.functor._
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
@@ -9,6 +7,7 @@ import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.common.AsyncSupport.toAsync
 import com.ing.baker.runtime.common.AsyncSupport
+import com.ing.baker.runtime.common.SyncSupport.syntax._
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl._
@@ -106,10 +105,10 @@ private[recipeinstance] case class TransitionExecution(
                 _ <- input match {
                   case Some(event) =>
                     val eventFired = EventFired(endTime, recipe.name, recipe.recipeId, recipeInstanceId, event.name)
-                    async.delay {
-                      components.logging.eventFired(eventFired)
-                      components.eventStream.publish(eventFired)
-                    }
+                    for {
+                      _ <- async.delay(components.logging.eventFired(eventFired))
+                      _ <- components.eventStream.publish(eventFired)
+                    } yield ()
                   case None => async.unit
                 }
               } yield input
@@ -182,7 +181,7 @@ private[recipeinstance] case class TransitionExecution(
         for {
           interactionStarted <- async.delay(InteractionStarted(startTime, recipe.name, recipe.recipeId, recipeInstanceId, interactionTransition.interactionName))
           _ <- async.delay(components.logging.interactionStarted(interactionStarted))
-          _ <- async.delay(components.eventStream.publish(interactionStarted))
+          _ <- components.eventStream.publish(interactionStarted)
           interactionOutput <-
             setupMdc.map(_ => execute).flatMap(x => {
               cleanMdc
@@ -197,15 +196,15 @@ private[recipeinstance] case class TransitionExecution(
             endTime, endTime - startTime, recipe.name, recipe.recipeId, recipeInstanceId,
             interactionTransition.interactionName, transformedOutput.map(_.name))
           _ <- async.delay(components.logging.interactionFinished(interactionCompleted))
-          _ <- async.delay(components.eventStream.publish(interactionCompleted))
+          _ <- components.eventStream.publish(interactionCompleted)
 
           _ <- transformedOutput match {
               case Some(event) =>
                 val eventFired = EventFired(endTime, recipe.name, recipe.recipeId, recipeInstanceId, event.name)
-                async.delay {
-                  components.logging.eventFired(eventFired)
-                  components.eventStream.publish(eventFired)
-                }
+                for {
+                  _ <- async.delay(components.logging.eventFired(eventFired))
+                  _ <- components.eventStream.publish(eventFired)
+                } yield ()
               case None => async.unit
             }
         } yield transformedOutput
@@ -222,7 +221,7 @@ private[recipeinstance] case class TransitionExecution(
             endTime, endTime - startTime, recipe.name, recipe.recipeId, recipeInstanceId,
             transition.label, failureCount, throwable.getMessage, interactionTransition.failureStrategy.apply(failureCount + 1))
           _ <- async.delay(components.logging.interactionFailed(interactionFailed, throwable))
-          _ <- async.delay(components.eventStream.publish(interactionFailed))
+          _ <- components.eventStream.publish(interactionFailed)
         } yield ()
         logFailure.flatMap(_ => async.raiseError[Option[EventInstance]](e))
       }
