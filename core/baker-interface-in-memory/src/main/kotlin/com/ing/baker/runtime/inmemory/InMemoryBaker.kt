@@ -3,6 +3,7 @@ package com.ing.baker.runtime.inmemory
 import cats.effect.IO
 import cats.effect.kernel.Async
 import cats.effect.unsafe.IORuntime
+import com.ing.baker.runtime.common.AsyncSupport
 import com.ing.baker.runtime.common.EffectSupport
 import com.ing.baker.runtime.common.FunctionK
 import com.ing.baker.runtime.model.BakerComponents
@@ -25,11 +26,11 @@ import scala.collection.immutable.List as ScalaList
  * The compiler may report unimplemented abstract members or type mismatches, but these are false positives.
  * All required functionality is properly implemented in the parent BakerF class.
  */
-@Suppress("ABSTRACT_MEMBER_NOT_IMPLEMENTED")
+@Suppress("ABSTRACT_MEMBER_NOT_IMPLEMENTED", "UNCHECKED_CAST")
 class InMemoryBaker(
     private val bakerConfig: BakerConfig,
     components: BakerComponents<IO<Any>>
-) : BakerF<IO<Any>>(components, IO.asyncForIO() as Async<IO<Any>>, IO.asyncForIO() as Async<IO<Any>>) {
+) : BakerF<IO<Any>>(components, AsyncSupport.fromAsync(IO.asyncForIO() as Async<IO<Any>>), AsyncSupport.fromAsync(IO.asyncForIO() as Async<IO<Any>>)) {
 
     companion object {
 

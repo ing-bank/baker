@@ -1,10 +1,9 @@
 package com.ing.baker.runtime.model
 
-import cats.data.EitherT
-import cats.effect.implicits.{genSpawnOps, genTemporalOps_}
-import cats.effect.Async
-import cats.effect.kernel.Deferred
-import cats.implicits._
+import cats.syntax.flatMap._
+import cats.syntax.functor._
+import com.ing.baker.runtime.common.AsyncSupport.toAsync
+import com.ing.baker.runtime.common.{AsyncSupport, Fs2Support}
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common.BakerException.{ProcessAlreadyExistsException, ProcessDeletedException}
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
@@ -14,6 +13,7 @@ import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceMetadata, Re
 import fs2.{Pipe, Stream}
 
 import scala.concurrent.duration.FiniteDuration
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeoutException
 
 sealed trait RecipeInstanceStatus[F[_]]
@@ -27,6 +27,17 @@ object RecipeInstanceStatus {
 
 trait RecipeInstanceManager[F[_]] {
 
+  private final class OneShotSignal[A](future: CompletableFuture[A]) {
+    def complete(value: A)(implicit async: AsyncSupport[F]): F[Unit] =
+      async.map(async.delay(future.complete(value)))(_ => ())
+
+    def get(implicit async: AsyncSupport[F]): F[A] =
+      async.fromCompletableFuture(async.delay(future))
+  }
+
+  private def oneShotSignal[A](implicit async: AsyncSupport[F]): F[OneShotSignal[A]] =
+    async.delay(new OneShotSignal[A](new CompletableFuture[A]()))
+
   protected def store(newRecipeInstance: RecipeInstance[F])(implicit components: BakerComponents[F]): F[Unit]
 
   protected def fetch(recipeInstanceId: String): F[Option[RecipeInstanceStatus[F]]]
@@ -39,16 +50,17 @@ trait RecipeInstanceManager[F[_]] {
 
   def getAllRecipeInstancesMetadata: F[Set[RecipeInstanceMetadata]]
 
-  protected def cleanupRecipeInstances(idleTimeOut: FiniteDuration)(implicit async: Async[F]): F[Unit] =
+  protected def cleanupRecipeInstances(idleTimeOut: FiniteDuration)(implicit async: AsyncSupport[F]): F[Unit] =
     for {
       allRecipeInstances <- fetchAll
-      _ <- allRecipeInstances.toList.traverse { case (recipeInstanceId, instance) =>
-        computeShouldDelete(instance, idleTimeOut).flatMap(shouldDelete =>
-          if (shouldDelete) remove(recipeInstanceId) else async.unit)
+      _ <- allRecipeInstances.toList.foldLeft(async.unit) { case (acc, (recipeInstanceId, instance)) =>
+        acc.flatMap(_ =>
+          computeShouldDelete(instance, idleTimeOut).flatMap(shouldDelete =>
+            if (shouldDelete) remove(recipeInstanceId) else async.unit))
       }
     } yield ()
 
-  def bake(recipeId: String, recipeInstanceId: String, config: RecipeInstanceConfig)(implicit components: BakerComponents[F], async: Async[F]): F[Unit] =
+  def bake(recipeId: String, recipeInstanceId: String, config: RecipeInstanceConfig)(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Unit] =
     for {
       _ <- fetch(recipeInstanceId).flatMap[Unit] {
         case Some(RecipeInstanceStatus.Active(_, _)) =>
@@ -63,10 +75,10 @@ trait RecipeInstanceManager[F[_]] {
       _ <- store(newRecipeInstance)
     } yield ()
 
-  def hasRecipeInstance(recipeInstanceId: String)(implicit async: Async[F]): F[Boolean] =
+  def hasRecipeInstance(recipeInstanceId: String)(implicit async: AsyncSupport[F]): F[Boolean] =
     fetch(recipeInstanceId).map(_.nonEmpty)
 
-  def getRecipeInstanceState(recipeInstanceId: String)(implicit async: Async[F]): F[RecipeInstanceState] =
+  def getRecipeInstanceState(recipeInstanceId: String)(implicit async: AsyncSupport[F]): F[RecipeInstanceState] =
     getExistent(recipeInstanceId).flatMap(
       _.state.get.map { currentState =>
         RecipeInstanceState(
@@ -78,7 +90,7 @@ trait RecipeInstanceManager[F[_]] {
         )
       })
 
-  def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle = RecipeVisualStyle.default)(implicit async: Async[F]): F[String] =
+  def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle = RecipeVisualStyle.default)(implicit async: AsyncSupport[F]): F[String] =
     for {
       recipeInstance <- getExistent(recipeInstanceId)
       currentState <- recipeInstance.state.get
@@ -89,128 +101,136 @@ trait RecipeInstanceManager[F[_]] {
       ingredientNames = currentState.ingredients.keySet
     )
 
-  def fireEventStream(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: Async[F]): EitherT[F, FireSensoryEventRejection, Stream[F, EventInstance]] = {
-    EitherT(fetch(recipeInstanceId).map {
+  def fireEventStream(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Either[FireSensoryEventRejection, Stream[F, EventInstance]]] =
+    fetch(recipeInstanceId).flatMap {
       case None =>
-        Left(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId))
+        async.pure(Left(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId)))
       case Some(RecipeInstanceStatus.Deleted(_, _, _)) =>
-        Left(FireSensoryEventRejection.RecipeInstanceDeleted(recipeInstanceId))
+        async.pure(Left(FireSensoryEventRejection.RecipeInstanceDeleted(recipeInstanceId)))
       case Some(RecipeInstanceStatus.Active(recipeInstance, _)) =>
-        Right(recipeInstance)
-    }).flatMap(_.fireEventStream(event, correlationId))
-  }
+        recipeInstance.fireEventStream(event, correlationId)
+    }
 
-  def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: Async[F]): F[SensoryEventStatus] = {
+  def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F], fs2Support: Fs2Support[F]): F[SensoryEventStatus] = {
     def awaitFirst(stream: Stream[F, EventInstance]): F[Unit] =
-      Deferred[F, Unit].flatMap { firstEventProcessed =>
+      oneShotSignal[Unit].flatMap { firstEventProcessed =>
         val signalingStream = stream.zipWithIndex.evalTap { case (_, index) =>
-          if (index == 0) firstEventProcessed.complete(()).attempt.void
+          if (index == 0) firstEventProcessed.complete(())
           else async.unit
         }.map(_._1)
 
         for {
-          _ <- signalingStream.compile.drain.start
+          _ <- async.startAndForget(fs2Support.drain(signalingStream))
           _ <- firstEventProcessed.get
         } yield ()
       }
 
     fireEventStream(recipeInstanceId, event, correlationId)
-      .value.flatMap(foldToStatus(awaitFirst))
+      .flatMap(foldToStatus(awaitFirst))
   }
 
-  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: Async[F]): F[SensoryEventStatus] =
+  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F], fs2Support: Fs2Support[F]): F[SensoryEventStatus] =
     fireEventStream(recipeInstanceId, event, correlationId)
-      .value.flatMap(foldToStatus(_.compile.drain))
+      .flatMap(foldToStatus(fs2Support.drain))
 
-  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: Async[F]): F[SensoryEventResult] = {
+  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F], fs2Support: Fs2Support[F]): F[SensoryEventResult] = {
     def awaitForCompletion(stream: Stream[F, EventInstance]): F[SensoryEventResult] =
-      stream.through(aggregateResult).compile.lastOrError
+      fs2Support.lastOrError(stream.through(aggregateResult))
     fireEventStream(recipeInstanceId, event, correlationId)
-      .value.flatMap(foldToResult(awaitForCompletion))
+      .flatMap(foldToResult(awaitForCompletion))
   }
 
-  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String])(implicit components: BakerComponents[F], async: Async[F]): F[SensoryEventResult] = {
+  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F], fs2Support: Fs2Support[F]): F[SensoryEventResult] = {
     def awaitForEvent(stream: Stream[F, EventInstance]): F[SensoryEventResult] =
-      Deferred[F, SensoryEventResult].flatMap { eventDeferred =>
-        stream.through(aggregateResult).evalTap(intermediateResult =>
+      oneShotSignal[SensoryEventResult].flatMap { eventDeferred =>
+        fs2Support.drain(stream.through(aggregateResult).evalTap(intermediateResult =>
           if(intermediateResult.eventNames.contains(onEvent))
-            async.attempt(eventDeferred.complete(intermediateResult)).void
+            eventDeferred.complete(intermediateResult)
           else async.unit
-        ).compile.drain *> eventDeferred.get
+        )).flatMap(_ => eventDeferred.get)
       }
     fireEventStream(recipeInstanceId, event, correlationId)
-      .value.flatMap(foldToResult(awaitForEvent))
+      .flatMap(foldToResult(awaitForEvent))
   }
 
-  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: Async[F]): F[(F[SensoryEventStatus], F[SensoryEventResult])] =
+  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F], fs2Support: Fs2Support[F]): F[(F[SensoryEventStatus], F[SensoryEventResult])] =
     fireEventStream(recipeInstanceId, event, correlationId)
-      .value.flatMap(outcome =>
+      .flatMap(outcome =>
         for {
-          received <- Deferred[F, Unit]
-          completed <- Deferred[F, SensoryEventResult]
+          received <- oneShotSignal[Unit]
+          completed <- oneShotSignal[SensoryEventResult]
           _ <- outcome match {
             case Left(_) =>
               async.unit
             case Right(stream) =>
-              stream
-                .through(aggregateResult)
-                .last.evalTap(r => completed.complete(r.get))
-                .compile.drain *> received.complete(())
+              fs2Support.drain(
+                stream
+                  .through(aggregateResult)
+                  .last.evalTap(r => completed.complete(r.get))
+              ).flatMap(_ => received.complete(()))
           }
         } yield (
           foldToStatus((_: Unit) => received.get)(outcome.map(_ => ())),
           foldToResult((_: Unit) => completed.get)(outcome.map(_ => ()))))
 
-  def addMetaData(recipeInstanceId: String, metadata: Map[String, String])(implicit components: BakerComponents[F], async: Async[F]): F[Unit] = {
-    getExistent(recipeInstanceId).map((recipeInstance: RecipeInstance[F]) => {
+  def addMetaData(recipeInstanceId: String, metadata: Map[String, String])(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Unit] = {
+    getExistent(recipeInstanceId).flatMap((recipeInstance: RecipeInstance[F]) => {
       recipeInstance.state.update(currentState => {
         val newRecipeInstanceMetaData = currentState.recipeInstanceMetadata ++ metadata
         currentState.copy(
           ingredients = currentState.ingredients + (RecipeInstanceMetadataName -> com.ing.baker.types.Converters.toValue(newRecipeInstanceMetaData)),
           recipeInstanceMetadata = newRecipeInstanceMetaData)
       })
-    }).flatten
+    })
   }
 
-  def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration, waitForNext: Boolean = false)(implicit async: Async[F]): F[Unit] =
+  def awaitEvent(recipeInstanceId: String, eventName: String, timeout: FiniteDuration, waitForNext: Boolean = false)(implicit async: AsyncSupport[F]): F[Unit] =
     getExistent(recipeInstanceId).flatMap { recipeInstance =>
-      Deferred[F, Unit].flatMap { listener =>
-        recipeInstance.state.modify { currentState =>
-          // If waitForNext is false, check if the event has already occurred
-          if (!waitForNext && currentState.events.exists(_.name == eventName)) {
-            (currentState, async.unit) // Already happened, resolve immediately
-          } else {
-            // Not yet happened (or waitForNext=true), add listener and wait on it
-            (currentState.addEventListener(eventName, listener), listener.get)
-          }
-        }.flatten.timeoutTo(timeout, async.raiseError(new TimeoutException(s"Timed out after $timeout waiting for event '$eventName' in instance '$recipeInstanceId'")))
+      oneShotSignal[Unit].flatMap { listener =>
+        async.timeoutTo(
+          recipeInstance.state.modify { currentState =>
+            // If waitForNext is false, check if the event has already occurred
+            if (!waitForNext && currentState.events.exists(_.name == eventName)) {
+              (currentState, async.unit) // Already happened, resolve immediately
+            } else {
+              // Not yet happened (or waitForNext=true), add listener and wait on it
+              (currentState.addEventListener(eventName, com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.Listener(listener.complete(()))), listener.get)
+            }
+          }.flatMap(x => x),
+          timeout,
+          async.raiseError(new TimeoutException(s"Timed out after $timeout waiting for event '$eventName' in instance '$recipeInstanceId'"))
+        )
       }
     }
 
-  def stopRetryingInteraction(recipeInstanceId: String, interactionName: String)(implicit components: BakerComponents[F], async: Async[F]): F[Unit] =
+  def stopRetryingInteraction(recipeInstanceId: String, interactionName: String)(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Unit] =
     getExistent(recipeInstanceId).flatMap(_.stopRetryingInteraction(interactionName))
 
-  def retryBlockedInteraction(recipeInstanceId: String, interactionName: String)(implicit components: BakerComponents[F], async: Async[F]): F[Stream[F, EventInstance]] =
+  def retryBlockedInteraction(recipeInstanceId: String, interactionName: String)(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Stream[F, EventInstance]] =
     getExistent(recipeInstanceId).map(_.retryBlockedInteraction(interactionName))
 
-  def resolveBlockedInteraction(recipeInstanceId: String, interactionName: String, eventInstance: EventInstance)(implicit components: BakerComponents[F], async: Async[F]): F[Stream[F, EventInstance]] =
+  def resolveBlockedInteraction(recipeInstanceId: String, interactionName: String, eventInstance: EventInstance)(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Stream[F, EventInstance]] =
     getExistent(recipeInstanceId).map(_.resolveBlockedInteraction(interactionName, eventInstance))
 
-  def awaitCompleted(recipeInstanceId: String, timeout: FiniteDuration)(implicit async: Async[F]): F[SensoryEventStatus] =
+  def awaitCompleted(recipeInstanceId: String, timeout: FiniteDuration)(implicit async: AsyncSupport[F]): F[SensoryEventStatus] =
     getExistent(recipeInstanceId).flatMap { recipeInstance =>
-      Deferred[F, Unit].flatMap { listener =>
-        recipeInstance.state.modify { currentState =>
-          if (currentState.isInactive) {
-            (currentState, async.pure(SensoryEventStatus.Completed)) // Already idle
-          } else {
-            // Not idle, add listener and then wait on it
-            (currentState.addIdleListener(listener), listener.get.as(SensoryEventStatus.Completed))
-          }
-        }.flatten.timeoutTo(timeout, async.raiseError(new java.util.concurrent.TimeoutException(s"Timed out after $timeout waiting for instance '$recipeInstanceId' to become idle.")))
+      oneShotSignal[Unit].flatMap { listener =>
+        async.timeoutTo(
+          recipeInstance.state.modify { currentState =>
+            if (currentState.isInactive) {
+              (currentState, async.pure(SensoryEventStatus.Completed)) // Already idle
+            } else {
+              // Not idle, add listener and then wait on it
+              (currentState.addIdleListener(com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.Listener(listener.complete(()))), listener.get.map(_ => SensoryEventStatus.Completed))
+            }
+          }.flatMap(x => x),
+          timeout,
+          async.raiseError(new java.util.concurrent.TimeoutException(s"Timed out after $timeout waiting for instance '$recipeInstanceId' to become idle."))
+        )
       }
     }
 
-  private def getExistent(recipeInstanceId: String)(implicit async: Async[F]): F[RecipeInstance[F]] =
+  private def getExistent(recipeInstanceId: String)(implicit async: AsyncSupport[F]): F[RecipeInstance[F]] =
     fetch(recipeInstanceId).flatMap {
       case Some(RecipeInstanceStatus.Active(recipeInstance, _)) => async.pure(recipeInstance)
       case Some(RecipeInstanceStatus.Deleted(_, _, _)) => async.raiseError(BakerException.ProcessDeletedException(recipeInstanceId))
@@ -226,7 +246,7 @@ trait RecipeInstanceManager[F[_]] {
     )
   }
 
-  private def foldToStatus[A](f: A => F[Unit])(outcome: Either[FireSensoryEventRejection, A])(implicit async: Async[F]): F[SensoryEventStatus] =
+  private def foldToStatus[A](f: A => F[Unit])(outcome: Either[FireSensoryEventRejection, A])(implicit async: AsyncSupport[F]): F[SensoryEventStatus] =
     outcome match {
       case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
         async.raiseError(BakerException.IllegalEventException(message))
@@ -241,10 +261,10 @@ trait RecipeInstanceManager[F[_]] {
       case Left(_: FireSensoryEventRejection.RecipeInstanceDeleted) =>
         async.pure(SensoryEventStatus.RecipeInstanceDeleted)
       case Right(a) =>
-        f(a).as(SensoryEventStatus.Received)
+        f(a).map(_ => SensoryEventStatus.Received)
     }
 
-  private def foldToResult[A](f: A => F[SensoryEventResult])(outcome: Either[FireSensoryEventRejection, A])(implicit async: Async[F]): F[SensoryEventResult] =
+  private def foldToResult[A](f: A => F[SensoryEventResult])(outcome: Either[FireSensoryEventRejection, A])(implicit async: AsyncSupport[F]): F[SensoryEventResult] =
     outcome match {
       case Left(FireSensoryEventRejection.InvalidEvent(_, message)) =>
         async.raiseError(BakerException.IllegalEventException(message))
@@ -262,7 +282,7 @@ trait RecipeInstanceManager[F[_]] {
         f(a)
     }
 
-  private def computeShouldDelete(status: RecipeInstanceStatus[F], idleTimeOut: FiniteDuration)(implicit async: Async[F]): F[Boolean] =
+  private def computeShouldDelete(status: RecipeInstanceStatus[F], idleTimeOut: FiniteDuration)(implicit async: AsyncSupport[F]): F[Boolean] =
     for {
       currentTime <- async.pure(System.currentTimeMillis())
       result <- status match {
