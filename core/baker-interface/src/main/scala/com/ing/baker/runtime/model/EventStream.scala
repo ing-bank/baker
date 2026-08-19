@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.model
 
-import com.ing.baker.runtime.common.AsyncSupport
+import com.ing.baker.runtime.catseffect.AsyncSupport
 import com.ing.baker.runtime.scaladsl.BakerEvent
 
 trait EventStream[F[_]] {

@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.common
+package com.ing.baker.runtime.catseffect
 
 import cats.effect.Sync
 import cats.effect.kernel.Ref

@@ -1,9 +1,9 @@
 package com.ing.baker.runtime.model
 
-import com.ing.baker.runtime.common.AsyncSupport.toAsync
-import com.ing.baker.runtime.common.SyncSupport.syntax._
-import com.ing.baker.runtime.common.{AsyncSupport, Fs2Support}
+import com.ing.baker.runtime.catseffect.AsyncSupport.toAsync
+import com.ing.baker.runtime.catseffect.SyncSupport.syntax._
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
+import com.ing.baker.runtime.catseffect.{AsyncSupport, Fs2Support}
 import com.ing.baker.runtime.common.BakerException.{ProcessAlreadyExistsException, ProcessDeletedException}
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}

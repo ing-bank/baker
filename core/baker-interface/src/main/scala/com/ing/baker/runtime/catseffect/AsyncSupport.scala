@@ -1,7 +1,6 @@
-package com.ing.baker.runtime.common
+package com.ing.baker.runtime.catseffect
 
-import cats.effect.Async
-import cats.effect.IO
+import cats.effect.{Async, IO}
 import cats.effect.unsafe.IORuntime
 
 import java.util.concurrent.CompletableFuture

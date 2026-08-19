@@ -2,12 +2,13 @@ package com.ing.baker.runtime.model
 
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor, checkpointEventInteractionPrefix}
-import com.ing.baker.runtime.common.{RecipeRecord, SyncSupport}
+import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
 import com.ing.baker.types.Type
 import com.typesafe.config.ConfigFactory
 import InteractionManager._
+import com.ing.baker.runtime.catseffect.SyncSupport
 
 object InteractionManager {
 

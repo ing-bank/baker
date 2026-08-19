@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.defaultinteractions
 
-import com.ing.baker.runtime.common.AsyncSupport
-
+import com.ing.baker.runtime.catseffect.AsyncSupport
 import scala.concurrent.duration.FiniteDuration
 
 class TimerInteraction[F[_]](skipWait: Boolean)(implicit F: AsyncSupport[F]) {

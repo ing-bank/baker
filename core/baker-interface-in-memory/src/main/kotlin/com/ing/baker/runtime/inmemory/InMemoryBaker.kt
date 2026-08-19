@@ -2,8 +2,8 @@ package com.ing.baker.runtime.inmemory
 
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
-import com.ing.baker.runtime.common.AsyncSupport
-import com.ing.baker.runtime.common.EffectSupport
+import com.ing.baker.runtime.catseffect.AsyncSupport
+import com.ing.baker.runtime.catseffect.EffectSupport
 import com.ing.baker.runtime.common.FunctionK
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.BakerConfig

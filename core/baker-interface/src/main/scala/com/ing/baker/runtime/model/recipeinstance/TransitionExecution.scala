@@ -5,9 +5,9 @@ import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor}
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.common.AsyncSupport.toAsync
-import com.ing.baker.runtime.common.AsyncSupport
-import com.ing.baker.runtime.common.SyncSupport.syntax._
+import com.ing.baker.runtime.catseffect.AsyncSupport
+import com.ing.baker.runtime.catseffect.AsyncSupport.toAsync
+import com.ing.baker.runtime.catseffect.SyncSupport.syntax._
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl._

@@ -1,6 +1,6 @@
 package com.ing.baker.runtime
 
-import com.ing.baker.runtime.common.{AsyncSupport, EffectSupport}
+import com.ing.baker.runtime.catseffect.{AsyncSupport, EffectSupport}
 import com.ing.baker.runtime.model.InteractionInstance
 import com.typesafe.config.ConfigFactory
 
