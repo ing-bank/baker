@@ -1,7 +1,8 @@
 package com.ing.baker.runtime.akka.internal
 
-import cats.effect.{IO, Ref, Resource, Sync}
+import cats.effect.{IO, Ref, Resource}
 import com.ing.baker.il.petrinet.InteractionTransition
+import com.ing.baker.runtime.common.SyncSupport
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.baker.runtime.{model, scaladsl}
 
@@ -96,7 +97,7 @@ trait CachingTransitionLookups {
     _ = cache.clear()
   } yield ()
 
-  override def findFor(transition: InteractionTransition)(implicit sync: Sync[IO]): IO[Option[model.InteractionInstance[IO]]] =
+  override def findFor(transition: InteractionTransition)(implicit sync: SyncSupport[IO]): IO[Option[model.InteractionInstance[IO]]] =
     for {
       cache <- transitionCache
       instances <- self.listAll
