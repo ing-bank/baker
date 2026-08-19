@@ -1,8 +1,5 @@
 package com.ing.baker.runtime.inmemory
 
-import cats.effect.IO
-import cats.effect.kernel.Async
-import cats.effect.unsafe.IORuntime
 import com.ing.baker.runtime.catseffect.AsyncSupport
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.RecipeInstanceManager
@@ -35,11 +32,11 @@ import scala.collection.immutable.Set as ScalaSet
 class InMemoryRecipeInstanceManager(
     retentionPeriodCheckInterval: Duration,
     private val idleTimeOut: Duration
-) : RecipeInstanceManager<IO<*>>, AutoCloseable {
+) : RecipeInstanceManager<InMemoryEffect<*>>, AutoCloseable {
 
     private val logger = LoggerFactory.getLogger(javaClass.name)
 
-    private val store = ConcurrentHashMap<String, RecipeInstanceStatus<IO<*>>>()
+    private val store = ConcurrentHashMap<String, RecipeInstanceStatus<InMemoryEffect<*>>>()
     private val scheduler: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
 
     init {
@@ -50,8 +47,8 @@ class InMemoryRecipeInstanceManager(
                     @Suppress("UNCHECKED_CAST")
                     cleanupRecipeInstances(
                         toScala(idleTimeOut),
-                        AsyncSupport.fromAsync(IO.asyncForIO() as Async<IO<*>>)
-                    ).unsafeRunSync(IORuntime.global())
+                        InMemoryEffects.asyncSupportAny() as AsyncSupport<InMemoryEffect<*>>
+                    ).let { InMemoryEffects.runSync(it) }
                 } catch (e: Exception) {
                     // Log error but don't stop the scheduler
                     // Errors are expected and handled silently to avoid stopping the cleanup task
@@ -65,14 +62,14 @@ class InMemoryRecipeInstanceManager(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun fetch(recipeInstanceId: String): IO<Option<RecipeInstanceStatus<IO<*>>>> =
-        IO.delay {
+    override fun fetch(recipeInstanceId: String): InMemoryEffect<Option<RecipeInstanceStatus<InMemoryEffect<*>>>> =
+        InMemoryEffects.delay {
             Option.apply(
                 store.compute(recipeInstanceId) { _, status ->
                     when (status) {
                         is Active<*> -> {
                             Active(
-                                status.recipeInstance() as RecipeInstance<IO<*>>,
+                                status.recipeInstance() as RecipeInstance<InMemoryEffect<*>>,
                                 System.currentTimeMillis()
                             )
                         }
@@ -81,26 +78,30 @@ class InMemoryRecipeInstanceManager(
                     }
                 }
             )
-        } as IO<Option<RecipeInstanceStatus<IO<*>>>>
+        } as InMemoryEffect<Option<RecipeInstanceStatus<InMemoryEffect<*>>>>
 
-    override fun store(recipeInstance: RecipeInstance<IO<*>>, components: BakerComponents<IO<*>>): IO<BoxedUnit> =
-        IO.delay {
+    override fun store(
+        recipeInstance: RecipeInstance<InMemoryEffect<*>>,
+        components: BakerComponents<InMemoryEffect<*>>
+    ): InMemoryEffect<BoxedUnit> =
+        InMemoryEffects.delay {
             val status = Active(
                 recipeInstance,
                 System.currentTimeMillis()
-            ) as RecipeInstanceStatus<IO<*>>
+            ) as RecipeInstanceStatus<InMemoryEffect<*>>
             store[recipeInstance.recipeInstanceId()] = status
         }.map { BoxedUnit.UNIT }
 
-    override fun idleStop(recipeInstanceId: String): IO<BoxedUnit> = IO.unit()
+    override fun idleStop(recipeInstanceId: String): InMemoryEffect<BoxedUnit> =
+        InMemoryEffects.unit().map { BoxedUnit.UNIT }
 
     @Suppress("UNCHECKED_CAST")
-    override fun getAllRecipeInstancesMetadata(): IO<ScalaSet<RecipeInstanceMetadata>> =
-        IO.defer {
+    override fun getAllRecipeInstancesMetadata(): InMemoryEffect<ScalaSet<RecipeInstanceMetadata>> =
+        InMemoryEffects.defer {
             store.entries.map { (recipeInstanceId, status) ->
                 when (status) {
                     is Active<*> -> {
-                        val recipeInstance = status.recipeInstance() as RecipeInstance<IO<*>>
+                        val recipeInstance = status.recipeInstance() as RecipeInstance<InMemoryEffect<*>>
                         recipeInstance.state().get().map { currentState ->
                             RecipeInstanceMetadata(
                                 (currentState as RecipeInstanceState<*>).recipe().recipeId(),
@@ -111,7 +112,7 @@ class InMemoryRecipeInstanceManager(
                     }
 
                     is Deleted<*> -> {
-                        IO.pure(
+                        InMemoryEffects.pure(
                             RecipeInstanceMetadata(
                                 status.recipeId(),
                                 recipeInstanceId,
@@ -120,27 +121,27 @@ class InMemoryRecipeInstanceManager(
                         )
                     }
                 }
-            }.fold(IO.pure(emptyList<RecipeInstanceMetadata>())) { acc, io ->
+            }.fold(InMemoryEffects.pure(emptyList<RecipeInstanceMetadata>())) { acc, io ->
                 // Sequence all IO operations and convert to Set
                 acc.flatMap { list ->
-                    (io as IO<RecipeInstanceMetadata>).map { metadata: RecipeInstanceMetadata -> list + metadata }
+                    (io as InMemoryEffect<RecipeInstanceMetadata>).map { metadata: RecipeInstanceMetadata -> list + metadata }
                 }
             }.map { list: List<RecipeInstanceMetadata> ->
                 scala.collection.immutable.`Set$`.`MODULE$`.from(
                     scala.jdk.CollectionConverters.IterableHasAsScala(list).asScala()
                 ) as ScalaSet<RecipeInstanceMetadata>
             }
-        } as IO<ScalaSet<RecipeInstanceMetadata>>
+        } as InMemoryEffect<ScalaSet<RecipeInstanceMetadata>>
 
-    override fun fetchAll(): IO<ScalaMap<String, RecipeInstanceStatus<IO<*>>>> =
-        IO.delay {
+    override fun fetchAll(): InMemoryEffect<ScalaMap<String, RecipeInstanceStatus<InMemoryEffect<*>>>> =
+        InMemoryEffects.delay {
             ScalaMapObject.from(MapHasAsScala(store).asScala())
-                    as ScalaMap<String, RecipeInstanceStatus<IO<*>>>
-        } as IO<ScalaMap<String, RecipeInstanceStatus<IO<*>>>>
+                    as ScalaMap<String, RecipeInstanceStatus<InMemoryEffect<*>>>
+        } as InMemoryEffect<ScalaMap<String, RecipeInstanceStatus<InMemoryEffect<*>>>>
 
-    override fun remove(recipeInstanceId: String): IO<BoxedUnit> =
+    override fun remove(recipeInstanceId: String): InMemoryEffect<BoxedUnit> =
         idleStop(recipeInstanceId).flatMap {
-            IO.delay {
+            InMemoryEffects.delay {
                 store.remove(recipeInstanceId)
             }
         }.map { BoxedUnit.UNIT }
