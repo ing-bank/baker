@@ -51,7 +51,7 @@ class InMemoryBaker(
             val ioClassTag =
                 `ClassTag$`.`MODULE$`.apply<IO<Any>>(IO::class.java as Class<IO<Any>>)
             val builtinInteractions =
-                defaultinteractions.all<IO<Any>>(ioAsyncSupport, ioClassTag) as ScalaList<InteractionInstance<IO<*>>>
+                defaultinteractions.all(ioAsyncSupport, ioClassTag) as ScalaList<InteractionInstance<IO<*>>>
 
             val recipeInstanceManager =
                 InMemoryRecipeInstanceManager(
