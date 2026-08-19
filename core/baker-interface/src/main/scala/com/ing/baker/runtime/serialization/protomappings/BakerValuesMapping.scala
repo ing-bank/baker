@@ -1,9 +1,9 @@
 package com.ing.baker.runtime.serialization.protomappings
 
-import cats.implicits._
 import com.google.protobuf.ByteString
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.akka.actor.protobuf.Value.OneofValue._
+import com.ing.baker.runtime.common.TryOps.syntax._
 import com.ing.baker.runtime.serialization.ProtoMap
 import com.ing.baker.types
 import org.joda.time.format.ISODateTimeFormat
@@ -18,7 +18,7 @@ class BakerValuesMapping extends ProtoMap[types.Value, protobuf.Value] {
   def toProto(t: types.Value): protobuf.Value = protobuf.Value(t match {
 
     case types.NullValue =>
-      NullValue(true)
+      protobuf.Value.OneofValue.NullValue(true)
 
     case types.PrimitiveValue(value: Boolean) =>
       BooleanValue(value)
@@ -74,7 +74,7 @@ class BakerValuesMapping extends ProtoMap[types.Value, protobuf.Value] {
   })
 
   def fromProto(message: protobuf.Value): Try[types.Value] = message.oneofValue match {
-    case NullValue(_) =>
+    case protobuf.Value.OneofValue.NullValue(_) =>
       Success(types.NullValue)
 
     case BooleanValue(bool) =>
@@ -120,13 +120,13 @@ class BakerValuesMapping extends ProtoMap[types.Value, protobuf.Value] {
       Success(types.PrimitiveValue(byteArray.toByteArray))
 
     case RecordValue(protobuf.Record(fields)) =>
-      fields.toList.traverse[Try, (String, types.Value)] {
+      fields.toList.traverseTry {
         case (key, value) => fromProto(value).map(key -> _)
       }.map(inner => types.RecordValue(inner.toMap))
 
     // deprecated fields
     case ListValue(protobuf.List(entries)) =>
-      entries.toList.traverse[Try, types.Value](fromProto).map(types.ListValue)
+      entries.toList.traverseTry(fromProto).map(types.ListValue)
 
     case JodaDatetimeValue(date) =>
       val dateTime = ISODateTimeFormat.dateTime().parseDateTime(date)
@@ -145,4 +145,3 @@ class BakerValuesMapping extends ProtoMap[types.Value, protobuf.Value] {
   }
 
 }
-

@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.serialization.protomappings
 
-import cats.implicits._
 import com.ing.baker.runtime.akka.actor.protobuf
+import com.ing.baker.runtime.common.TryOps.syntax._
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.runtime.serialization.ProtoMap
@@ -23,7 +23,7 @@ class RuntimeEventMapping extends ProtoMap[EventInstance, protobuf.RuntimeEvent]
   override def fromProto(message: protobuf.RuntimeEvent): Try[EventInstance] =
     for {
       name <- versioned(message.name, "name")
-      ingredients <- message.providedIngredients.toList.traverse[Try, (String, Value)] { i =>
+      ingredients <- message.providedIngredients.toList.traverseTry { i =>
         for {
           name <- versioned(i.name, "name")
           protoValue <- versioned(i.value, "value")

@@ -8,10 +8,7 @@ import scala.reflect.ClassTag
 
 package object defaultinteractions {
   def all[F[_]](implicit async: AsyncSupport[F], classTag: ClassTag[F[Any]]): List[InteractionInstance[F]] = {
-    implicit val effect: EffectSupport[F] = new EffectSupport[F] {
-      override def pure[A](value: A): F[A] = async.pure(value)
-      override def map[A, B](fa: F[A])(f: A => B): F[B] = async.map(fa)(f)
-    }
+    implicit val effect: EffectSupport[F] = EffectSupport.fromApplicative[F](async.asyncInstance)
 
     val path = "baker.default-interactions.timer.skip"
     val config = ConfigFactory.load()

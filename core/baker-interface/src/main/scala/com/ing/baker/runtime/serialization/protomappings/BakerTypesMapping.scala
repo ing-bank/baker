@@ -1,11 +1,11 @@
 package com.ing.baker.runtime.serialization.protomappings
 
-import cats.implicits._
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.akka.actor.protobuf.PrimitiveType._
 import com.ing.baker.runtime.akka.actor.protobuf.Type.OneofType
 import com.ing.baker.runtime.akka.actor.protobuf.Type.OneofType.Primitive
 import com.ing.baker.runtime.akka.actor.protobuf._
+import com.ing.baker.runtime.common.TryOps.syntax._
 import com.ing.baker.runtime.serialization.ProtoMap
 import com.ing.baker.types
 
@@ -122,7 +122,7 @@ class BakerTypesMapping extends ProtoMap[types.Type, protobuf.Type] {
         fromProto(value).map(types.ListType)
 
       case OneofType.Record(RecordType(fields)) =>
-        val record = fields.toList.traverse[Try, types.RecordField] {
+        val record = fields.toList.traverseTry {
           case protobuf.RecordField(Some(name), Some(fieldType)) =>
             fromProto(fieldType).map(types.RecordField(name, _))
           case _ =>

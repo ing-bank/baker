@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.serialization.protomappings
 
-import cats.implicits._
 import com.ing.baker.runtime.akka.actor.protobuf
+import com.ing.baker.runtime.common.TryOps.syntax._
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.scaladsl.SensoryEventResult
 import com.ing.baker.runtime.serialization.ProtoMap
@@ -27,8 +27,8 @@ class SensoryEventResultMapping(implicit valueProto: ProtoMap[Value, protobuf.Va
       protoStatus <- versioned(message.status, "status")
       status <- SensoryEventStatusMappingHelper.fromProto(protoStatus)
       events = message.events.toIndexedSeq
-      ingredients <- message.ingredients.toList.traverse { case (name, value) =>
-        ctxFromProto(value).map(name -> _)
+      ingredients <- message.ingredients.toList.traverseTry { case (name, value) =>
+        ctxFromProto(value).map(deserializedValue => (name, deserializedValue))
       }
     } yield SensoryEventResult(status, events, ingredients.toMap)
 }
