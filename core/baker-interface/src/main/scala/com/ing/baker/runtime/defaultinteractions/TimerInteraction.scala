@@ -1,11 +1,10 @@
 package com.ing.baker.runtime.defaultinteractions
 
-import cats.effect.Async
-import cats.syntax.all._
+import com.ing.baker.runtime.common.AsyncSupport
 
 import scala.concurrent.duration.FiniteDuration
 
-class TimerInteraction[F[_]](skipWait: Boolean)(implicit F: Async[F]) {
+class TimerInteraction[F[_]](skipWait: Boolean)(implicit F: AsyncSupport[F]) {
 
   class TimeWaited
 
@@ -13,6 +12,6 @@ class TimerInteraction[F[_]](skipWait: Boolean)(implicit F: Async[F]) {
     if(skipWait)
       F.pure(new TimeWaited)
     else
-      F.sleep(WaitTime).as(new TimeWaited)
+      F.map(F.sleep(WaitTime))(_ => new TimeWaited)
   }
 }

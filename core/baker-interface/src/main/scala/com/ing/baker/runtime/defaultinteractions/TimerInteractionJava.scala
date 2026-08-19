@@ -3,12 +3,11 @@ package com.ing.baker.runtime.defaultinteractions
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
-import cats.effect.Async
-import cats.syntax.all._
+import com.ing.baker.runtime.common.AsyncSupport
 
 import scala.concurrent.duration.FiniteDuration
 
-class TimerInteractionJava[F[_]](skipWait: Boolean)(implicit F: Async[F]) {
+class TimerInteractionJava[F[_]](skipWait: Boolean)(implicit F: AsyncSupport[F]) {
 
   class TimeWaited
 
@@ -18,6 +17,6 @@ class TimerInteractionJava[F[_]](skipWait: Boolean)(implicit F: Async[F]) {
     if(skipWait)
       F.pure(new TimeWaited)
     else
-      F.sleep(FiniteDuration.apply(WaitTime.toMillis, TimeUnit.MILLISECONDS)).as(new TimeWaited)
+      F.map(F.sleep(FiniteDuration.apply(WaitTime.toMillis, TimeUnit.MILLISECONDS)))(_ => new TimeWaited)
   }
 }
