@@ -3,6 +3,7 @@ package com.ing.baker.runtime.inmemory
 import cats.effect.IO
 import cats.effect.kernel.Async
 import cats.effect.unsafe.IORuntime
+import com.ing.baker.runtime.common.EffectSupport
 import com.ing.baker.runtime.common.FunctionK
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.BakerConfig
@@ -79,7 +80,8 @@ class InMemoryBaker(
 
                             else -> InteractionInstance.unsafeFrom(
                                 item,
-                                IO.asyncForIO(),
+                                @Suppress("UNCHECKED_CAST")
+                                EffectSupport.fromApplicative(IO.asyncForIO()) as EffectSupport<IO<Any>>,
                                 `ClassTag$`.`MODULE$`.apply(IO::class.java)
                             )
                         }

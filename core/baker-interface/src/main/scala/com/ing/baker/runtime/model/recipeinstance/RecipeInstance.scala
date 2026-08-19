@@ -60,7 +60,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
       currentTime <- EitherT.liftF(async.pure(System.currentTimeMillis()))
       currentState <- EitherT.liftF(state.get)
       initialExecution <- EitherT.fromEither[F](currentState.validateExecution(input, correlationId, currentTime))
-        .leftSemiflatMap { case (rejection, reason)  =>
+        .leftSemiflatMap { case (rejection, _)  =>
           for {
             eventRejected <- async.delay(EventRejected(currentTime, recipeInstanceId, correlationId, input.name, rejection.asReason))
             _ <- async.delay(components.logging.eventRejected(eventRejected))
@@ -71,7 +71,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
     } yield baseCase(initialExecution)
       .collect { case Some(output) => output.filterNot(config.ingredientsFilter.asScala.toSeq) }
 
-  def stopRetryingInteraction(interactionName: String)(implicit components: BakerComponents[F], async: Async[F]): F[Unit] =
+  def stopRetryingInteraction(interactionName: String)(implicit async: Async[F]): F[Unit] =
     for {
       transitionExecution <- getInteractionTransitionExecution(interactionName)
       _ <- updateStateAndNotify { s =>

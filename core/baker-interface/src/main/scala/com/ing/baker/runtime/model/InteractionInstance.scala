@@ -1,9 +1,8 @@
 package com.ing.baker.runtime.model
 
-import cats.Applicative
 import com.ing.baker.recipe.annotations.{FiresEvent, RequiresIngredient}
 import com.ing.baker.runtime.common
-import com.ing.baker.runtime.common.FunctionK
+import com.ing.baker.runtime.common.{EffectSupport, FunctionK}
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
 import com.ing.baker.types.{Converters, Type}
@@ -61,6 +60,7 @@ abstract class InteractionInstance[F[_]] extends common.InteractionInstance[F] w
 
 object InteractionInstance {
 
+
   type Constructor[F[_]] = (
     String,
       Seq[Type],
@@ -75,11 +75,11 @@ object InteractionInstance {
       override val output: Option[Map[String, Map[String, Type]]] = _output
     }
 
-  def unsafeFromList[F[_]](implementations: List[AnyRef])(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): List[InteractionInstance[F]] = {
+  def unsafeFromList[F[_]](implementations: List[AnyRef])(implicit effect: EffectSupport[F], classTag: ClassTag[F[Any]]): List[InteractionInstance[F]] = {
     implementations.map(unsafeFrom[F](_))
   }
 
-  def unsafeFrom[F[_]](implementation: AnyRef)(implicit effect: Applicative[F], classTag: ClassTag[F[Any]]): InteractionInstance[F] = {
+  def unsafeFrom[F[_]](implementation: AnyRef)(implicit effect: EffectSupport[F], classTag: ClassTag[F[Any]]): InteractionInstance[F] = {
     val method: Method = {
       val unmockedClass = common.unmock(implementation.getClass)
       unmockedClass.getMethods.count(_.getName == "apply") match {
