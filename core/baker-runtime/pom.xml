@@ -11,9 +11,9 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>baker-interface</artifactId>
-    <name>Baker Runtime Interface</name>
-    <description>Baker runtime interface definitions and core API</description>
+    <artifactId>baker-runtime</artifactId>
+    <name>Baker Runtime</name>
+    <description>Baker runtime definitions and core API</description>
 
     <dependencies>
         <dependency>
@@ -24,11 +24,6 @@
         <dependency>
             <groupId>com.ing.baker</groupId>
             <artifactId>baker-annotations</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.ing.baker</groupId>
-            <artifactId>baker-runtime</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -54,19 +49,6 @@
             <artifactId>circe-generic-extras_${scala.compat.version}</artifactId>
         </dependency>
 
-        <!-- Note: cats-effect is provided transitively via fs2-core -->
-        <dependency>
-            <groupId>org.typelevel</groupId>
-            <artifactId>cats-effect_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>co.fs2</groupId>
-            <artifactId>fs2-core_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>co.fs2</groupId>
-            <artifactId>fs2-io_${scala.compat.version}</artifactId>
-        </dependency>
         <!-- -->
         <dependency>
             <groupId>javax.inject</groupId>
@@ -75,12 +57,6 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-        </dependency>
-
-        <!-- ScalaPB runtime for protobuf -->
-        <dependency>
-            <groupId>com.thesamet.scalapb</groupId>
-            <artifactId>scalapb-runtime_${scala.compat.version}</artifactId>
         </dependency>
 
         <!-- SLF4J for logging -->
@@ -152,33 +128,6 @@
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>org.xolstice.maven.plugins</groupId>
-                <artifactId>protobuf-maven-plugin</artifactId>
-                <configuration>
-                    <protoSourceRoot>${basedir}/src/main/protobuf</protoSourceRoot>
-                    <outputDirectory>${basedir}/target/generated-sources/protobuf/scala</outputDirectory>
-                    <clearOutputDirectory>false</clearOutputDirectory>
-                    <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
-                    <protocPlugins>
-                        <protocPlugin>
-                            <id>scalapb</id>
-                            <groupId>com.thesamet.scalapb</groupId>
-                            <artifactId>compilerplugin_${scala.compat.version}</artifactId>
-                            <version>${scalapb.version}</version>
-                            <mainClass>scalapb.ScalaPbCodeGenerator</mainClass>
-                        </protocPlugin>
-                    </protocPlugins>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>

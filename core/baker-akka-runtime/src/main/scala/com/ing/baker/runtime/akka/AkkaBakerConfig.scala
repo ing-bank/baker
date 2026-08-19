@@ -1,13 +1,13 @@
 package com.ing.baker.runtime.akka
 
-import akka.actor.{ActorSystem, Address, AddressFromURIString}
+import akka.actor.{ActorSystem, AddressFromURIString}
 import cats.data.NonEmptyList
 import cats.effect.IO
 import com.ing.baker.runtime.akka.AkkaBakerConfig.BakerValidationSettings
 import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider, Timeouts}
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager
 import com.ing.baker.runtime.model.InteractionManager
-import com.ing.baker.runtime.recipe_manager.{ActorBasedRecipeManager, DefaultRecipeManager, RecipeManager}
+import com.ing.baker.runtime.recipe_manager.{DefaultRecipeManager, RecipeManager}
 import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
