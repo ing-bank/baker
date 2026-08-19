@@ -3,6 +3,7 @@ package com.ing.baker.runtime.inmemory
 import cats.effect.IO
 import cats.effect.kernel.Async
 import cats.effect.unsafe.IORuntime
+import com.ing.baker.runtime.common.AsyncSupport
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.RecipeInstanceManager
 import com.ing.baker.runtime.model.RecipeInstanceStatus
@@ -49,7 +50,7 @@ class InMemoryRecipeInstanceManager(
                     @Suppress("UNCHECKED_CAST")
                     cleanupRecipeInstances(
                         toScala(idleTimeOut),
-                        IO.asyncForIO() as Async<IO<*>>
+                        AsyncSupport.fromAsync(IO.asyncForIO() as Async<IO<*>>)
                     ).unsafeRunSync(IORuntime.global())
                 } catch (e: Exception) {
                     // Log error but don't stop the scheduler
