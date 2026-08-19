@@ -7,7 +7,7 @@ import scala.concurrent.duration.FiniteDuration
 
 class TimerInteraction[F[_]](skipWait: Boolean)(implicit F: Async[F]) {
 
-  class TimeWaited()
+  class TimeWaited
 
   def apply(WaitTime: FiniteDuration): F[TimeWaited] = {
     if(skipWait)

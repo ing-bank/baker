@@ -4,10 +4,10 @@ import cats.effect.implicits._
 import cats.effect.unsafe.IORuntime
 import cats.effect.{Async, IO, Sync}
 import cats.implicits._
-import cats.~>
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.common
+import com.ing.baker.runtime.common.FunctionK
 import com.ing.baker.runtime.common.BakerException.NoSuchIngredientException
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.common.{BakerException, InteractionExecutionFailureReason, RecipeRecord, SensoryEventStatus}
@@ -258,9 +258,9 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
     } else {
       new EventResolutionsF[F] {
         override def resolveWhenReceived: F[SensoryEventStatus] =
-          result._1F.timeout(config.processEventTimeout.toScala).recoverWith(javaTimeoutToBakerTimeout("fireEvent")).flatten
+          result.map(_._1).timeout(config.processEventTimeout.toScala).recoverWith(javaTimeoutToBakerTimeout("fireEvent")).flatten
         override def resolveWhenCompleted: F[SensoryEventResult] =
-          result._2F.timeout(config.processEventTimeout.toScala).recoverWith(javaTimeoutToBakerTimeout("fireEvent")).flatten
+          result.map(_._2).timeout(config.processEventTimeout.toScala).recoverWith(javaTimeoutToBakerTimeout("fireEvent")).flatten
       }
     }
   }
@@ -475,7 +475,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
       .timeout(config.processEventTimeout.toScala)
       .recoverWith(javaTimeoutToBakerTimeout("stopRetryingInteraction"))
 
-  def translate[G[_]](mapK: F ~> G, comapK: G ~> F)(implicit components: BakerComponents[G], async: Async[G]): BakerF[G] =
+  def translate[G[_]](mapK: FunctionK[F, G], comapK: FunctionK[G, F])(implicit components: BakerComponents[G], async: Async[G]): BakerF[G] =
     new BakerF[G] {
       override val config: BakerConfig =
         self.config
@@ -539,7 +539,7 @@ abstract class BakerF[F[_]](implicit components: BakerComponents[F], sync: Sync[
         mapK(self.awaitCompleted(recipeInstanceId, timeout))
     }
 
-  def asDeprecatedFutureImplementation(mapK: F ~> Future, comapK: Future ~> F): DeprecatedBaker =
+  def asDeprecatedFutureImplementation(mapK: FunctionK[F, Future], comapK: FunctionK[Future, F]): DeprecatedBaker =
     new DeprecatedBaker {
       override def addRecipe(recipeRecord: RecipeRecord): Future[String] =
         mapK(self.addRecipe(recipeRecord))

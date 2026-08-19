@@ -1,9 +1,9 @@
 package com.ing.baker.runtime.model
 
-import cats.implicits._
-import cats.{Applicative, ~>}
+import cats.Applicative
 import com.ing.baker.recipe.annotations.{FiresEvent, RequiresIngredient}
 import com.ing.baker.runtime.common
+import com.ing.baker.runtime.common.FunctionK
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
 import com.ing.baker.types.{Converters, Type}
@@ -16,8 +16,6 @@ import scala.concurrent.Future
 import scala.reflect.ClassTag
 import scala.util.Try
 
-import scala.runtime.ScalaRunTime
-
 abstract class InteractionInstance[F[_]] extends common.InteractionInstance[F] with ScalaApi {
   self =>
 
@@ -29,7 +27,7 @@ abstract class InteractionInstance[F[_]] extends common.InteractionInstance[F] w
 
   override type Input = InteractionInstanceInput
 
-  //By default the metadata is not used but is given so implementation can overwrite it
+  //By default, the metadata is not used but is given so implementation can overwrite it
   override def execute(input: Seq[IngredientInstance], metadata: Map[String, String]): F[Option[Event]] =
     run(input)
 
@@ -42,7 +40,7 @@ abstract class InteractionInstance[F[_]] extends common.InteractionInstance[F] w
     new String(base64)
   }
 
-  def translate[G[_]](mapK: F ~> G): InteractionInstance[G] =
+  def translate[G[_]](mapK: FunctionK[F, G]): InteractionInstance[G] =
     new InteractionInstance[G] {
       override val run: Seq[IngredientInstance] => G[Option[EventInstance]] =
         (i: Seq[IngredientInstance]) => mapK(self.run(i))
@@ -54,7 +52,7 @@ abstract class InteractionInstance[F[_]] extends common.InteractionInstance[F] w
         self.output
     }
 
-  def asDeprecatedFutureImplementation(transform: F ~> Future): com.ing.baker.runtime.scaladsl.InteractionInstance = {
+  def asDeprecatedFutureImplementation(transform: FunctionK[F, Future]): com.ing.baker.runtime.scaladsl.InteractionInstance = {
     val transformedRun = (in: Seq[IngredientInstance]) => transform(run(in))
     com.ing.baker.runtime.scaladsl.InteractionInstance(
       name = name, input = input, run = transformedRun, output = output)
@@ -209,9 +207,7 @@ object InteractionInstance {
               effect.pure(Some(EventInstance.unsafeFrom(runtimeEventAsyncJava.asInstanceOf[CompletableFuture[Any]].get())))
             // Async interactions using F
             case runtimeEventAsync if classTag.runtimeClass.isInstance(runtimeEventAsync) =>
-              runtimeEventAsync
-                .asInstanceOf[F[Any]]
-                .map(event0 => Some(EventInstance.unsafeFrom(event0)))
+              effect.map(runtimeEventAsync.asInstanceOf[F[Any]])(event0 => Some(EventInstance.unsafeFrom(event0)))
             case other =>
               effect.pure(Some(EventInstance.unsafeFrom(other)))
           }
