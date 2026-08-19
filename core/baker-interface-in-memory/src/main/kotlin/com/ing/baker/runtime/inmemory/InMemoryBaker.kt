@@ -1,9 +1,9 @@
 package com.ing.baker.runtime.inmemory
 
-import cats.arrow.FunctionK
 import cats.effect.IO
 import cats.effect.kernel.Async
 import cats.effect.unsafe.IORuntime
+import com.ing.baker.runtime.common.FunctionK
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.BakerConfig
 import com.ing.baker.runtime.model.BakerF

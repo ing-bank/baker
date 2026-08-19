@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.scaladsl
 
-import cats.~>
 import com.ing.baker.runtime.common
+import com.ing.baker.runtime.common.FunctionK
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.common.SensoryEventStatus
 
@@ -11,7 +11,7 @@ abstract class EventResolutionsF[F[_]] extends common.EventResolutions[F] with S
 
   type SensoryEventResultType = SensoryEventResult
 
-  def translate[G[_]](mapK: F ~> G): EventResolutionsF[G] =
+  def translate[G[_]](mapK: FunctionK[F, G]): EventResolutionsF[G] =
     new EventResolutionsF[G] {
       override def resolveWhenReceived: G[SensoryEventStatus] =
         mapK(self.resolveWhenReceived)
@@ -19,6 +19,6 @@ abstract class EventResolutionsF[F[_]] extends common.EventResolutions[F] with S
         mapK(self.resolveWhenCompleted)
     }
 
-  def asDeprecatedFutureImplementation(transform: F ~> Future): EventResolutions =
+  def asDeprecatedFutureImplementation(transform: FunctionK[F, Future]): EventResolutions =
     EventResolutions(transform(self.resolveWhenReceived), transform(self.resolveWhenCompleted))
 }

@@ -10,7 +10,7 @@ import scala.concurrent.duration.FiniteDuration
 
 class TimerInteractionJava[F[_]](skipWait: Boolean)(implicit F: Async[F]) {
 
-  class TimeWaited()
+  class TimeWaited
 
   val name = "TimerInteraction"
 
