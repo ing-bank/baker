@@ -14,8 +14,6 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.DurationConverters._
 import scala.concurrent.duration._
 import scala.collection.mutable.ListBuffer
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicInteger
 
 object RecipeInstance {
   def empty[F[_]](recipe: CompiledRecipe, recipeInstanceId: String, settings: RecipeInstanceConfig)(implicit components: BakerComponents[F], async: AsyncSupport[F], refSupport: RefSupport[F]): F[RecipeInstance[F]] =
@@ -139,23 +137,19 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
         async.unit
       case _ =>
         for {
-          remaining <- async.delay(new AtomicInteger(tasks.size))
-          done <- async.delay(new CompletableFuture[Unit]())
-          _ <- tasks.foldLeft(async.unit) { (acc, task) =>
-            acc.flatMap(_ => {
-              val wrappedTask =
-                async.attempt(task).flatMap {
-                  case Left(error) =>
-                    async.delay(done.completeExceptionally(error)).map(_ => ())
-                  case Right(_) =>
-                    async.delay {
-                      if (remaining.decrementAndGet() == 0) done.complete(())
-                    }.map(_ => ())
-                }
-              async.startAndForget(wrappedTask)
-            })
+          // Start all tasks and collect their fibers
+          fibers <- tasks.foldLeft(async.pure(Vector.empty[F[Unit]])) { (acc, task) =>
+            acc.flatMap(existing => async.start(task).map(existing :+ _))
           }
-          _ <- async.fromCompletableFuture(async.delay(done))
+          // Wait for all fibers to complete and collect outcomes
+          outcomes <- fibers.foldLeft(async.pure(Vector.empty[Either[Throwable, Unit]])) { (acc, fiber) =>
+            acc.flatMap(existing => async.attempt(fiber).map(existing :+ _))
+          }
+          // If any failed, raise the first error
+          _ <- outcomes.collectFirst { case Left(error) => error } match {
+            case Some(error) => async.raiseError(error)
+            case None => async.unit
+          }
         } yield ()
     }
 

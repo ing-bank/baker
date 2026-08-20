@@ -5,13 +5,10 @@ import cats.effect.unsafe.implicits.global
 import com.ing.baker.runtime.catseffect.AsyncSupport
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.model.FireSensoryEventRejection.AlreadyReceived
-import com.ing.baker.runtime.model.recipeinstance.RecipeInstanceConfig
-import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstanceDescriptor, RecipeInformation, RecipeInstanceMetadata, SensoryEventResult}
+import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceMetadata}
 import com.ing.baker.types.PrimitiveValue
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-
-import scala.concurrent.duration.FiniteDuration
 
 class RecipeInstanceManagerCallbackSpec extends AnyFunSpec with Matchers {
 
