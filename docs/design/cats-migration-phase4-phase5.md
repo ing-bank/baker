@@ -9,7 +9,7 @@ This document captures the remaining work to move from "adapter-based IO interna
 
 ### Goal
 
-Make shared runtime abstractions in `core/baker-interface` backend-neutral so in-memory runtime can run on `CompletableFuture` without relying on `cats-effect` semantics.
+Make shared runtime abstractions in `../../core/baker-interface` backend-neutral so in-memory runtime can run on `CompletableFuture` without relying on `cats-effect` semantics.
 
 ### Why this is hard
 
@@ -56,7 +56,7 @@ Today the runtime depends on semantics not provided by plain `CompletableFuture`
 
 ### Deliverables
 
-- New backend-neutral effect interfaces in `core/baker-interface`.
+- New backend-neutral effect interfaces in `../../core/baker-interface`.
 - fs2/Cats backend implementation retained.
 - CompletableFuture backend implementation added.
 - Test matrix that runs model-level behavior tests on both backends for parity.
