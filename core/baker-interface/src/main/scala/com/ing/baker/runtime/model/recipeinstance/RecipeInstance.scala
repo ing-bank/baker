@@ -3,18 +3,19 @@ package com.ing.baker.runtime.model.recipeinstance
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.catseffect.{AsyncSupport, RefState, RefSupport, SyncSupport}
-import com.ing.baker.runtime.catseffect.AsyncSupport.toAsync
 import com.ing.baker.runtime.catseffect.SyncSupport.syntax._
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.model.{BakerComponents, FireSensoryEventRejection}
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, EventRejected, RecipeInstanceCreated}
 import com.typesafe.scalalogging.LazyLogging
-import fs2.Stream
 
 import scala.jdk.OptionConverters.RichOptional
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.DurationConverters._
 import scala.concurrent.duration._
+import scala.collection.mutable.ListBuffer
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicInteger
 
 object RecipeInstance {
   def empty[F[_]](recipe: CompiledRecipe, recipeInstanceId: String, settings: RecipeInstanceConfig)(implicit components: BakerComponents[F], async: AsyncSupport[F], refSupport: RefSupport[F]): F[RecipeInstance[F]] =
@@ -56,7 +57,13 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
       }
     } yield result
 
-  def fireEventStream(input: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Either[FireSensoryEventRejection, Stream[F, EventInstance]]] =
+  def fireEventStream(input: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Either[FireSensoryEventRejection, Vector[EventInstance]]] =
+    async.delay(ListBuffer.empty[EventInstance]).flatMap { events =>
+      fireEventAndProcess(input, correlationId)(event => async.delay(events += event).map(_ => ()))
+        .map(_.map(_ => events.toVector))
+    }
+
+  def fireEventAndProcess(input: EventInstance, correlationId: Option[String])(onEvent: EventInstance => F[Unit])(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Either[FireSensoryEventRejection, Unit]] =
     for {
       currentTime <- async.pure(System.currentTimeMillis())
       currentState <- state.get
@@ -74,9 +81,11 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
         case Left(rejection) =>
           async.pure(Left(rejection))
         case Right(initialExecution) =>
-          components.eventStream.publish(EventReceived(currentTime, currentState.recipe.name, currentState.recipe.recipeId, recipeInstanceId, correlationId, input.name))
-            .map(_ => Right(baseCase(initialExecution)
-              .collect { case Some(output) => output.filterNot(config.ingredientsFilter.asScala.toSeq) }))
+          val filteredOnEvent: EventInstance => F[Unit] =
+            event => onEvent(event.filterNot(config.ingredientsFilter.asScala.toSeq))
+          components.eventStream
+            .publish(EventReceived(currentTime, currentState.recipe.name, currentState.recipe.recipeId, recipeInstanceId, correlationId, input.name))
+            .flatMap(_ => baseCaseAndProcess(initialExecution, filteredOnEvent).map(_ => Right(())))
       }
     } yield result
 
@@ -91,43 +100,80 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
       }
     } yield ()
 
-  def retryBlockedInteraction(interactionName: String)(implicit components: BakerComponents[F], async: AsyncSupport[F]): Stream[F, EventInstance] =
-    Stream.force {
-        for {
-          transitionExecution <- getInteractionTransitionExecution(interactionName)
-        } yield inductionStep(transitionExecution, Left(ExceptionStrategyOutcome.RetryWithDelay(0)))
-      }
-      .collect { case Some(output) => output }
+  def retryBlockedInteraction(interactionName: String)(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Vector[EventInstance]] =
+    async.delay(ListBuffer.empty[EventInstance]).flatMap { events =>
+      retryBlockedInteractionAndProcess(interactionName)(event => async.delay(events += event).map(_ => ()))
+        .map(_ => events.toVector)
+    }
 
-  def resolveBlockedInteraction(interactionName: String, eventInstance: EventInstance)(implicit components: BakerComponents[F], async: AsyncSupport[F]): Stream[F, EventInstance] =
-    Stream.force {
-        for {
-          transitionExecution <- getInteractionTransitionExecution(interactionName)
-          newOutcome <- transitionExecution.validateEventForResolvingBlockedInteraction(eventInstance)
-        } yield inductionStep(transitionExecution, Right(Some(newOutcome)))
-      }
-      .collect { case Some(output) => output }
-
-  /** The "base case" is the very 1st step in the stream of executing transitions that create EventInstances  */
-  private def baseCase(transitionExecution: TransitionExecution)(implicit components: BakerComponents[F], async: AsyncSupport[F]): Stream[F, Option[EventInstance]] =
+  def retryBlockedInteractionAndProcess(interactionName: String)(onEvent: EventInstance => F[Unit])(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Unit] =
     for {
-      _ <- Stream.eval(state.update(_.addExecution(transitionExecution)))
-      outcome <- Stream.eval(transitionExecution.execute)
-      output <- inductionStep(transitionExecution, outcome)
-    } yield output
+      transitionExecution <- getInteractionTransitionExecution(interactionName)
+      _ <- inductionStepAndProcess(transitionExecution, Left(ExceptionStrategyOutcome.RetryWithDelay(0)), onEvent)
+    } yield ()
 
-  /** The "induction step" is the "repeating" 2nd, 3rd... nth step in the stream of executing transitions that create
-    * EventInstances, notice the recursion when there exist enabled transitions, which are outcome of executing this step
+  def resolveBlockedInteraction(interactionName: String, eventInstance: EventInstance)(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Vector[EventInstance]] =
+    async.delay(ListBuffer.empty[EventInstance]).flatMap { events =>
+      resolveBlockedInteractionAndProcess(interactionName, eventInstance)(event => async.delay(events += event).map(_ => ()))
+        .map(_ => events.toVector)
+    }
+
+  def resolveBlockedInteractionAndProcess(interactionName: String, eventInstance: EventInstance)(onEvent: EventInstance => F[Unit])(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Unit] =
+    for {
+      transitionExecution <- getInteractionTransitionExecution(interactionName)
+      newOutcome <- transitionExecution.validateEventForResolvingBlockedInteraction(eventInstance)
+      _ <- inductionStepAndProcess(transitionExecution, Right(Some(newOutcome)), onEvent)
+    } yield ()
+
+  /** The "base case" is the very 1st step in transition execution that may create EventInstances. */
+  private def baseCaseAndProcess(transitionExecution: TransitionExecution, onEvent: EventInstance => F[Unit])(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Unit] =
+    for {
+      _ <- state.update(_.addExecution(transitionExecution))
+      outcome <- transitionExecution.execute
+      _ <- inductionStepAndProcess(transitionExecution, outcome, onEvent)
+    } yield ()
+
+  private def runInParallel(tasks: List[F[Unit]])(implicit async: AsyncSupport[F]): F[Unit] =
+    tasks match {
+      case Nil =>
+        async.unit
+      case _ =>
+        for {
+          remaining <- async.delay(new AtomicInteger(tasks.size))
+          done <- async.delay(new CompletableFuture[Unit]())
+          _ <- tasks.foldLeft(async.unit) { (acc, task) =>
+            acc.flatMap(_ => {
+              val wrappedTask =
+                async.attempt(task).flatMap {
+                  case Left(error) =>
+                    async.delay(done.completeExceptionally(error)).map(_ => ())
+                  case Right(_) =>
+                    async.delay {
+                      if (remaining.decrementAndGet() == 0) done.complete(())
+                    }.map(_ => ())
+                }
+              async.startAndForget(wrappedTask)
+            })
+          }
+          _ <- async.fromCompletableFuture(async.delay(done))
+        } yield ()
+    }
+
+  /** The "induction step" is the "repeating" 2nd, 3rd... nth step in transition execution.
+    *
+    * This executes enabled transitions depth-first and emits events through the callback.
     */
-  private def inductionStep(finishedExecution: TransitionExecution, outcome: TransitionExecution.Outcome)(implicit components: BakerComponents[F], async: AsyncSupport[F]): Stream[F, Option[EventInstance]] =
-    for {
-      outputAndEnabledExecutions <- Stream.eval(handleExecutionOutcome(finishedExecution)(outcome))
-      (first, enabledExecutions) = outputAndEnabledExecutions
-      next <- enabledExecutions.foldLeft(Stream.emit(first).covary[F]) { (stream, enabled) =>
-        stream merge Stream.force(
-          enabled.execute.map(inductionStep(enabled, _)))
+  private def inductionStepAndProcess(finishedExecution: TransitionExecution, outcome: TransitionExecution.Outcome, onEvent: EventInstance => F[Unit])(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Unit] =
+    handleExecutionOutcome(finishedExecution)(outcome).flatMap { case (first, enabledExecutions) =>
+      val processFirst = first match {
+        case Some(output) => onEvent(output)
+        case None => async.unit
       }
-    } yield next
+      val enabledTasks = enabledExecutions.toList.map { enabled =>
+        enabled.execute.flatMap(enabledOutcome => inductionStepAndProcess(enabled, enabledOutcome, onEvent))
+      }
+      processFirst.flatMap(_ => runInParallel(enabledTasks))
+    }
 
   private def handleExecutionOutcome(finishedExecution: TransitionExecution)(outcome: TransitionExecution.Outcome)(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[(Option[EventInstance], Set[TransitionExecution])] =
     outcome match {
