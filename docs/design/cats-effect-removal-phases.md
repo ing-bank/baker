@@ -2,7 +2,7 @@
 
 ## Context
 
-Phases 2 and 3 isolate most in-memory runtime effect wiring behind local adapters and start incremental replacement.
+Previous phases 1, 2 and 3 isolate most in-memory runtime effect wiring behind local adapters and start incremental replacement.
 This document captures the remaining work to move from "adapter-based IO internals" to "first-class CompletableFuture backend".
 
 ## Phase 4 - Core Model Convergence
@@ -23,7 +23,7 @@ Today the runtime depends on semantics not provided by plain `CompletableFuture`
 ### Scope
 
 1. **Effect capability split**
-   - Audit `AsyncSupport`, `SyncSupport`, `Fs2Support`, `RefSupport` and classify required operations.
+   - Audit `AsyncSupport`, `SyncSupport`, `RefSupport` and classify required operations.
    - Split contracts into:
      - minimal synchronous core (`map`, `flatMap`, `delay`, `raiseError`)
      - async timing core (`sleep`, `timeoutTo`)
@@ -38,7 +38,7 @@ Today the runtime depends on semantics not provided by plain `CompletableFuture`
 
 3. **Ref/state abstraction hardening**
    - Refactor stateful paths in `recipeinstance` package to rely only on local abstractions (not direct Cats constraints).
-   - Ensure listener signaling (`awaitEvent`, `awaitCompleted`) does not assume fiber cancelation behavior unavailable in `CompletableFuture`.
+   - Ensure listener signaling (`awaitEvent`, `awaitCompleted`) does not assume fiber cancellation behavior unavailable in `CompletableFuture`.
 
 4. **Timeout and scheduler unification**
    - Centralize timeout/sleep/scheduled retry in one backend-aware scheduler adapter.
