@@ -4,7 +4,7 @@ This module keeps effect-system coupling out of `com.ing.baker.runtime.model` as
 
 ## Rule
 
-Code in `../core/baker-interface/src/main/scala/com/ing/baker/runtime/model` should depend on runtime support traits from `com.ing.baker.runtime.common`, not directly on Cats Effect types.
+Code in `../../core/baker-interface/src/main/scala/com/ing/baker/runtime/model` should depend on runtime support traits from `com.ing.baker.runtime.common`, not directly on Cats Effect types.
 
 Use:
 

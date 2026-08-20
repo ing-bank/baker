@@ -3,7 +3,7 @@ package com.ing.baker.runtime.model
 import com.ing.baker.runtime.catseffect.AsyncSupport.toAsync
 import com.ing.baker.runtime.catseffect.SyncSupport.syntax._
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
-import com.ing.baker.runtime.catseffect.{AsyncSupport, Fs2Support}
+import com.ing.baker.runtime.catseffect.AsyncSupport
 import com.ing.baker.runtime.common.BakerException.{ProcessAlreadyExistsException, ProcessDeletedException}
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
@@ -14,6 +14,7 @@ import fs2.{Pipe, Stream}
 import scala.concurrent.duration.FiniteDuration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicReference
 
 sealed trait RecipeInstanceStatus[F[_]]
 
@@ -110,7 +111,7 @@ trait RecipeInstanceManager[F[_]] {
         recipeInstance.fireEventStream(event, correlationId)
     }
 
-  def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F], fs2Support: Fs2Support[F]): F[SensoryEventStatus] = {
+  def fireSensoryEventAndAwaitReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[SensoryEventStatus] = {
     def awaitFirst(stream: Stream[F, EventInstance]): F[Unit] =
       oneShotSignal[Unit].flatMap { firstEventProcessed =>
         val signalingStream = stream.zipWithIndex.evalTap { case (_, index) =>
@@ -119,7 +120,7 @@ trait RecipeInstanceManager[F[_]] {
         }.map(_._1)
 
         for {
-          _ <- async.startAndForget(fs2Support.drain(signalingStream))
+          _ <- async.startAndForget(signalingStream.compile.drain)
           _ <- firstEventProcessed.get
         } yield ()
       }
@@ -128,31 +129,38 @@ trait RecipeInstanceManager[F[_]] {
       .flatMap(foldToStatus(awaitFirst))
   }
 
-  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F], fs2Support: Fs2Support[F]): F[SensoryEventStatus] =
+  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[SensoryEventStatus] =
     fireEventStream(recipeInstanceId, event, correlationId)
-      .flatMap(foldToStatus(fs2Support.drain))
+      .flatMap(foldToStatus(_.compile.drain))
 
-  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F], fs2Support: Fs2Support[F]): F[SensoryEventResult] = {
+  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[SensoryEventResult] = {
     def awaitForCompletion(stream: Stream[F, EventInstance]): F[SensoryEventResult] =
-      fs2Support.lastOrError(stream.through(aggregateResult))
+      async.delay(new AtomicReference[SensoryEventResult](SensoryEventResult(SensoryEventStatus.Completed, Seq.empty, Map.empty))).flatMap { latestResult =>
+        stream
+          .through(aggregateResult)
+          .evalTap(result => async.delay(latestResult.set(result)))
+          .compile
+          .drain
+          .flatMap(_ => async.pure(latestResult.get))
+      }
     fireEventStream(recipeInstanceId, event, correlationId)
       .flatMap(foldToResult(awaitForCompletion))
   }
 
-  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F], fs2Support: Fs2Support[F]): F[SensoryEventResult] = {
+  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[SensoryEventResult] = {
     def awaitForEvent(stream: Stream[F, EventInstance]): F[SensoryEventResult] =
       oneShotSignal[SensoryEventResult].flatMap { eventDeferred =>
-        fs2Support.drain(stream.through(aggregateResult).evalTap(intermediateResult =>
+        stream.through(aggregateResult).evalTap(intermediateResult =>
           if(intermediateResult.eventNames.contains(onEvent))
             eventDeferred.complete(intermediateResult)
           else async.unit
-        )).flatMap(_ => eventDeferred.get)
+        ).compile.drain.flatMap(_ => eventDeferred.get)
       }
     fireEventStream(recipeInstanceId, event, correlationId)
       .flatMap(foldToResult(awaitForEvent))
   }
 
-  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F], fs2Support: Fs2Support[F]): F[(F[SensoryEventStatus], F[SensoryEventResult])] =
+  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String])(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[(F[SensoryEventStatus], F[SensoryEventResult])] =
     fireEventStream(recipeInstanceId, event, correlationId)
       .flatMap(outcome =>
         for {
@@ -162,11 +170,13 @@ trait RecipeInstanceManager[F[_]] {
             case Left(_) =>
               async.unit
             case Right(stream) =>
-              fs2Support.drain(
-                stream
-                  .through(aggregateResult)
-                  .last.evalTap(r => completed.complete(r.get))
-              ).flatMap(_ => received.complete(()))
+              stream
+                .through(aggregateResult)
+                .last
+                .evalTap(r => completed.complete(r.get))
+                .compile
+                .drain
+                .flatMap(_ => received.complete(()))
           }
         } yield (
           foldToStatus((_: Unit) => received.get)(outcome.map(_ => ())),
