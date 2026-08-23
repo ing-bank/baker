@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.ing.baker</groupId>
+        <artifactId>baker</artifactId>
+        <version>5.1.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>baker-wirespec-example</artifactId>
+    <name>Baker Wirespec Example</name>
+    <description>Example module demonstrating wirespec-baker integration</description>
+
+    <properties>
+        <wirespec.version>0.17.20</wirespec.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-interface-kotlin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-recipe-dsl-kotlin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-compiler</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-test</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-coroutines-core</artifactId>
+        </dependency>
+        <!-- Wirespec JVM integration for generated code runtime -->
+        <dependency>
+            <groupId>community.flock.wirespec.integration</groupId>
+            <artifactId>wirespec-jvm</artifactId>
+            <version>${wirespec.version}</version>
+        </dependency>
+        <!-- Jackson for Wirespec serialization -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.18.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-kotlin</artifactId>
+            <version>2.18.2</version>
+        </dependency>
+        <!-- Wirespec Jackson integration (provides WirespecSerialization) -->
+        <dependency>
+            <groupId>community.flock.wirespec.integration</groupId>
+            <artifactId>jackson-jvm</artifactId>
+            <version>${wirespec.version}</version>
+        </dependency>
+        <!-- WireMock for HTTP stubbing in tests -->
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock</artifactId>
+            <version>3.12.1</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Test -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <version>1.13.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-test-junit5</artifactId>
+            <version>${kotlin.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>community.flock.wirespec.plugin.maven</groupId>
+                <artifactId>wirespec-maven-plugin</artifactId>
+                <version>${wirespec.version}</version>
+                <executions>
+                    <!-- Compile wirespec: standard Kotlin emitter (types + endpoint classes) -->
+                    <execution>
+                        <id>compile-wirespec-kotlin</id>
+                        <goals><goal>compile</goal></goals>
+                        <configuration>
+                            <input>${project.basedir}/src/main/wirespec</input>
+                            <output>${project.build.directory}/generated-sources/wirespec</output>
+                            <languages><language>Kotlin</language></languages>
+                            <packageName>com.ing.baker.examples.account.generated</packageName>
+                        </configuration>
+                    </execution>
+                    <!-- Compile wirespec: Baker emitter (interaction interfaces + impls) -->
+                    <execution>
+                        <id>compile-wirespec-baker</id>
+                        <goals><goal>compile</goal></goals>
+                        <configuration>
+                            <input>${project.basedir}/src/main/wirespec</input>
+                            <output>${project.build.directory}/generated-sources/wirespec</output>
+                            <emitterClass>com.ing.baker.recipe.wirespec.BakerKotlinEmitter</emitterClass>
+                            <packageName>com.ing.baker.examples.account.generated</packageName>
+                        </configuration>
+                    </execution>
+                    <!-- Convert OpenAPI: standard Kotlin emitter -->
+                    <execution>
+                        <id>convert-openapi-kotlin</id>
+                        <goals><goal>convert</goal></goals>
+                        <configuration>
+                            <input>${project.basedir}/src/main/openapi/profile-api.json</input>
+                            <output>${project.build.directory}/generated-sources/wirespec</output>
+                            <format>OpenAPIV3</format>
+                            <languages><language>Kotlin</language></languages>
+                            <packageName>com.ing.baker.examples.account.generated</packageName>
+                            <shared>false</shared>
+                        </configuration>
+                    </execution>
+                    <!-- Convert OpenAPI: Baker emitter -->
+                    <execution>
+                        <id>convert-openapi-baker</id>
+                        <goals><goal>convert</goal></goals>
+                        <configuration>
+                            <input>${project.basedir}/src/main/openapi/profile-api.json</input>
+                            <output>${project.build.directory}/generated-sources/wirespec</output>
+                            <format>OpenAPIV3</format>
+                            <emitterClass>com.ing.baker.recipe.wirespec.BakerKotlinEmitter</emitterClass>
+                            <packageName>com.ing.baker.examples.account.generated</packageName>
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.ing.baker</groupId>
+                        <artifactId>baker-wirespec</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>add-source</goal></goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-sources/wirespec</source>
+                                <source>src/main/kotlin</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-test-source</id>
+                        <phase>generate-test-sources</phase>
+                        <goals><goal>add-test-source</goal></goals>
+                        <configuration>
+                            <sources>
+                                <source>src/test/kotlin</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <version>${kotlin.version}</version>
+                <configuration>
+                    <jvmTarget>${jvm.target}</jvmTarget>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>test-compile</id>
+                        <phase>process-test-sources</phase>
+                        <goals>
+                            <goal>test-compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skipTests>false</skipTests>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

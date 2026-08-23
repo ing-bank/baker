@@ -98,6 +98,14 @@ class RecipeBuilder(private val name: String) {
         interactions.add(InteractionBuilder(T::class).apply(configuration).build())
     }
 
+    /**
+     * Adds a pre-built [Interaction] directly. Intended for DSL extensions that
+     * construct their own [Interaction] (e.g. baker-openapi-dsl's `api(...)`).
+     */
+    fun addInteraction(interaction: Interaction) {
+        interactions.add(interaction)
+    }
+
 
     /**
      * Registers a sieve [T1, R] to the recipe.
