@@ -27,26 +27,6 @@
             <artifactId>scala-library</artifactId>
         </dependency>
 
-        <!-- Note: cats-effect is provided transitively via fs2-core -->
-        <dependency>
-            <groupId>org.typelevel</groupId>
-            <artifactId>cats-effect_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>co.fs2</groupId>
-            <artifactId>fs2-core_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>co.fs2</groupId>
-            <artifactId>fs2-io_${scala.compat.version}</artifactId>
-        </dependency>
-
-        <!-- ScalaPB runtime for protobuf -->
-        <dependency>
-            <groupId>com.thesamet.scalapb</groupId>
-            <artifactId>scalapb-runtime_${scala.compat.version}</artifactId>
-        </dependency>
-
         <!-- SLF4J for logging -->
         <dependency>
             <groupId>org.slf4j</groupId>

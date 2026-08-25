@@ -4,7 +4,6 @@ import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.catseffect.{AsyncSupport, SyncSupport}
 import com.ing.baker.runtime.common
-import com.ing.baker.runtime.catseffect.AsyncSupport.toAsync
 import com.ing.baker.runtime.common.FunctionK
 import com.ing.baker.runtime.common.BakerException.NoSuchIngredientException
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi

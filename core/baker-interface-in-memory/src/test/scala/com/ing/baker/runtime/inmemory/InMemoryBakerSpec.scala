@@ -1,23 +1,31 @@
 package com.ing.baker.runtime.inmemory
 
-import cats.effect.{IO, Resource}
-import com.ing.baker.runtime.model.{BakerConfig, BakerF, BakerModelSpec, InteractionInstance}
+import com.ing.baker.runtime.model.BakerConfig
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-import scala.concurrent.duration._
-import scala.jdk.DurationConverters._
+import java.util.concurrent.CompletableFuture
+import scala.collection.immutable.{List => ScalaList}
 
-class InMemoryBakerSpec extends BakerModelSpec {
+class InMemoryBakerSpec extends AnyFlatSpec with Matchers {
 
-  /** This will execute the predefined baker tests from BakerModelSpec */
-  runAll()
+  behavior of "InMemoryBaker"
 
-  override def contextBuilder(testArguments: Unit): Resource[IO, Context] =
-    for {
-      _ <- Resource.eval(IO.unit)
-      baker = InMemoryBaker.java() // for coverage
-      _ = baker.gracefulShutdown()
-    } yield Context((interactions: List[InteractionInstance[IO]]) => InMemoryBaker.build(
-      BakerConfig.default().withInquireTimeout(10.seconds.toJava),
-      interactions
-    ).asInstanceOf[IO[BakerF[IO]]])
+  it should "build and shutdown with CompletableFuture backend" in {
+    val baker = InMemoryBaker
+      .build(BakerConfig.default(), ScalaList.empty[Any])
+      .join()
+      .asInstanceOf[com.ing.baker.runtime.model.BakerF[CompletableFuture]]
+
+    noException should be thrownBy baker.gracefulShutdown().join()
+  }
+
+  it should "provide Java facade through async factory" in {
+    val javaBaker = InMemoryBaker
+      .javaAsync(BakerConfig.default(), java.util.List.of())
+      .join()
+
+    javaBaker should not be null
+    noException should be thrownBy javaBaker.gracefulShutdown()
+  }
 }

@@ -6,7 +6,6 @@ import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.catseffect.AsyncSupport
-import com.ing.baker.runtime.catseffect.AsyncSupport.toAsync
 import com.ing.baker.runtime.catseffect.SyncSupport.syntax._
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException

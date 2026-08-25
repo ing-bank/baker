@@ -1,6 +1,5 @@
 package com.ing.baker.runtime.inmemory
 
-import cats.effect.IO
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.BakerConfig
 import com.ing.baker.runtime.model.BakerF
@@ -21,8 +20,8 @@ import scala.collection.immutable.List as ScalaList
 @Suppress("ABSTRACT_MEMBER_NOT_IMPLEMENTED", "UNCHECKED_CAST")
 class InMemoryBaker(
     private val bakerConfig: BakerConfig,
-    components: BakerComponents<IO<Any>>
-) : BakerF<IO<Any>>(
+    components: BakerComponents<CompletableFuture<Any>>
+) : BakerF<CompletableFuture<Any>>(
     components,
     InMemoryEffects.asyncSupportAny(),
     InMemoryEffects.asyncSupportAny()
@@ -31,18 +30,19 @@ class InMemoryBaker(
     companion object {
 
         @JvmStatic
-        fun build(implementations: ScalaList<*>): IO<BakerF<IO<*>>> = build(BakerConfig.default(), implementations)
+        fun build(implementations: ScalaList<*>): CompletableFuture<BakerF<CompletableFuture<*>>> =
+            build(BakerConfig.default(), implementations)
 
         @JvmStatic
         @Suppress("UNCHECKED_CAST")
         fun build(
             config: BakerConfig,
             implementations: ScalaList<*>
-        ): IO<BakerF<IO<*>>> {
+        ): CompletableFuture<BakerF<CompletableFuture<*>>> {
             val ioAsyncSupport = InMemoryEffects.asyncSupportAny()
             val ioClassTag = InMemoryEffects.classTagAny()
             val builtinInteractions =
-                defaultinteractions.all(ioAsyncSupport, ioClassTag) as ScalaList<InteractionInstance<IO<*>>>
+                defaultinteractions.all(ioAsyncSupport, ioClassTag) as ScalaList<InteractionInstance<CompletableFuture<*>>>
 
             val recipeInstanceManager =
                 InMemoryRecipeInstanceManager(
@@ -50,7 +50,7 @@ class InMemoryBaker(
                     config.idleTimeout()
                 )
             val interactionInstances =
-                implementations.concat(builtinInteractions) as ScalaList<InteractionInstance<IO<*>>>
+                implementations.concat(builtinInteractions) as ScalaList<InteractionInstance<CompletableFuture<*>>>
             val recipeManager = InMemoryRecipeManager()
             val eventStream = InMemoryEventStream()
             val interactions = InMemoryInteractionManager(interactionInstances)
@@ -62,19 +62,19 @@ class InMemoryBaker(
                 BakerLogging.default()
             )
             return InMemoryEffects.pure(
-                InMemoryBaker(config, components as BakerComponents<IO<Any>>) as BakerF<IO<*>>
+                InMemoryBaker(config, components as BakerComponents<CompletableFuture<Any>>) as BakerF<CompletableFuture<*>>
             )
         }
 
         @JvmStatic
         fun java(config: BakerConfig, implementations: List<Any>): JavaBaker {
-            val futureToIO = InMemoryEffects.futureToIO()
-            val ioToFuture = InMemoryEffects.ioToFuture()
-            val scalaInteractions = InMemoryEffects.toScalaIoInteractions(implementations)
+            val futureToCompletableFuture = InMemoryEffects.futureToCompletableFuture()
+            val completableFutureToFuture = InMemoryEffects.completableFutureToFuture()
+            val scalaInteractions = InMemoryEffects.toScalaCompletableFutureInteractions(implementations)
 
             return build(config, scalaInteractions)
                 .let { InMemoryEffects.runSync(it) }
-                .asDeprecatedFutureImplementation(ioToFuture, futureToIO)
+                .asDeprecatedFutureImplementation(completableFutureToFuture, futureToCompletableFuture)
                 .let { JavaBaker(it) }
         }
 
@@ -83,13 +83,13 @@ class InMemoryBaker(
          */
         @JvmStatic
         fun javaAsync(config: BakerConfig, implementations: List<Any>): CompletableFuture<JavaBaker> {
-            val futureToIO = InMemoryEffects.futureToIO()
-            val ioToFuture = InMemoryEffects.ioToFuture()
-            val scalaInteractions = InMemoryEffects.toScalaIoInteractions(implementations)
+            val futureToCompletableFuture = InMemoryEffects.futureToCompletableFuture()
+            val completableFutureToFuture = InMemoryEffects.completableFutureToFuture()
+            val scalaInteractions = InMemoryEffects.toScalaCompletableFutureInteractions(implementations)
 
-            return InMemoryEffects.ioToCompletableFuture(build(config, scalaInteractions))
+            return build(config, scalaInteractions)
                 .thenApply { bakerF ->
-                    JavaBaker(bakerF.asDeprecatedFutureImplementation(ioToFuture, futureToIO))
+                    JavaBaker(bakerF.asDeprecatedFutureImplementation(completableFutureToFuture, futureToCompletableFuture))
                 }
         }
 
@@ -115,5 +115,5 @@ class InMemoryBaker(
     /**
      * Attempts to gracefully shutdown the baker system.
      */
-    override fun gracefulShutdown(): IO<Any> = InMemoryEffects.unit() as IO<Any>
+    override fun gracefulShutdown(): CompletableFuture<Any> = InMemoryEffects.unit()
 }
