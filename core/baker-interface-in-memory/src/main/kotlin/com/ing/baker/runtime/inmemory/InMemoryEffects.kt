@@ -1,7 +1,5 @@
 package com.ing.baker.runtime.inmemory
 
-import cats.effect.IO
-import cats.effect.unsafe.IORuntime
 import com.ing.baker.runtime.catseffect.AsyncSupport
 import com.ing.baker.runtime.catseffect.EffectSupport
 import com.ing.baker.runtime.common.FunctionK
@@ -9,66 +7,86 @@ import com.ing.baker.runtime.model.InteractionInstance
 import scala.concurrent.Future
 import scala.jdk.javaapi.CollectionConverters.asScala
 import scala.reflect.`ClassTag$`
+import java.util.concurrent.CompletableFuture
 import scala.collection.immutable.List as ScalaList
 import scala.jdk.javaapi.FutureConverters.asJava as futureAsJava
+import scala.jdk.javaapi.FutureConverters.asScala as futureAsScala
+import scala.runtime.BoxedUnit
 
-internal typealias InMemoryEffect<A> = IO<A>
+internal typealias InMemoryEffect<A> = CompletableFuture<A>
+
+internal fun <A, B> InMemoryEffect<A>.map(f: (A) -> B): InMemoryEffect<B> =
+    thenApply { value -> f(value) }
+
+internal fun <A, B> InMemoryEffect<A>.flatMap(f: (A) -> InMemoryEffect<B>): InMemoryEffect<B> =
+    thenCompose { value -> f(value) }
 
 internal object InMemoryEffects {
 
-    private val runtime: IORuntime = IORuntime.global()
-
     @Suppress("UNCHECKED_CAST")
     fun asyncSupportAny(): AsyncSupport<InMemoryEffect<Any>> =
-        AsyncSupport.fromIO(runtime) as AsyncSupport<InMemoryEffect<Any>>
+        AsyncSupport.completableFutureSupport() as AsyncSupport<InMemoryEffect<Any>>
 
     @Suppress("UNCHECKED_CAST")
     fun effectSupportAny(): EffectSupport<InMemoryEffect<Any>> =
-        EffectSupport.fromApplicative(IO.asyncForIO()) as EffectSupport<InMemoryEffect<Any>>
+        EffectSupport.fromCompletableFuture() as EffectSupport<InMemoryEffect<Any>>
 
     @Suppress("UNCHECKED_CAST")
     fun classTagAny() = `ClassTag$`.`MODULE$`.apply<InMemoryEffect<Any>>(
-        IO::class.java as Class<InMemoryEffect<Any>>
+        CompletableFuture::class.java as Class<InMemoryEffect<Any>>
     )
 
-    fun <A> pure(value: A): InMemoryEffect<A> = IO.pure(value)
+    fun <A> pure(value: A): InMemoryEffect<A> = CompletableFuture.completedFuture(value)
 
     @Suppress("UNCHECKED_CAST")
-    fun unit(): InMemoryEffect<Any> = IO.unit() as InMemoryEffect<Any>
+    fun unit(): InMemoryEffect<Any> = pure(BoxedUnit.UNIT) as InMemoryEffect<Any>
 
-    fun <A> delay(thunk: () -> A): InMemoryEffect<A> = IO.delay { thunk() }
+    fun <A> delay(thunk: () -> A): InMemoryEffect<A> =
+        try {
+            pure(thunk())
+        } catch (throwable: Throwable) {
+            val failed = CompletableFuture<A>()
+            failed.completeExceptionally(throwable)
+            failed
+        }
 
-    fun <A> defer(thunk: () -> InMemoryEffect<A>): InMemoryEffect<A> = IO.defer { thunk() }
+    fun <A> defer(thunk: () -> InMemoryEffect<A>): InMemoryEffect<A> =
+        try {
+            thunk()
+        } catch (throwable: Throwable) {
+            val failed = CompletableFuture<A>()
+            failed.completeExceptionally(throwable)
+            failed
+        }
 
-    fun <A> runSync(io: InMemoryEffect<A>): A = io.unsafeRunSync(runtime)
+    fun <A> runSync(io: InMemoryEffect<A>): A = io.join()
 
-    fun futureToIO(): FunctionK<Future<*>, InMemoryEffect<*>> =
+    fun futureToCompletableFuture(): FunctionK<Future<*>, InMemoryEffect<*>> =
         object : FunctionK<Future<*>, InMemoryEffect<*>> {
-            override fun <A> apply(fa: Future<*>): InMemoryEffect<*> = IO.fromFuture(IO.pure(fa))
+            override fun <A> apply(fa: Future<*>): InMemoryEffect<*> =
+                futureAsJava(fa as Future<Any>).toCompletableFuture()
         }
 
-    fun ioToFuture(): FunctionK<InMemoryEffect<*>, Future<*>> =
+    fun completableFutureToFuture(): FunctionK<InMemoryEffect<*>, Future<*>> =
         object : FunctionK<InMemoryEffect<*>, Future<*>> {
-            override fun <A> apply(fa: InMemoryEffect<*>): Future<*> = fa.unsafeToFuture(runtime)
+            override fun <A> apply(fa: InMemoryEffect<*>): Future<*> =
+                futureAsScala(fa as CompletableFuture<Any>)
         }
-
-    fun <A> ioToCompletableFuture(io: InMemoryEffect<A>) =
-        futureAsJava(io.unsafeToFuture(runtime)).toCompletableFuture()
 
     @Suppress("UNCHECKED_CAST")
-    fun toScalaIoInteractions(implementations: List<Any>): ScalaList<InteractionInstance<InMemoryEffect<*>>> {
-        val futureToIO = futureToIO()
+    fun toScalaCompletableFutureInteractions(implementations: List<Any>): ScalaList<InteractionInstance<InMemoryEffect<*>>> {
+        val futureToCompletableFuture = futureToCompletableFuture()
         return implementations
             .map { item ->
                 when (item) {
                     is InteractionInstance<*> -> item
                     is com.ing.baker.runtime.javadsl.InteractionInstance ->
-                        item.asScala().translate(futureToIO) as InteractionInstance<InMemoryEffect<*>>
+                        item.asScala().translate(futureToCompletableFuture) as InteractionInstance<InMemoryEffect<*>>
 
                     else -> InteractionInstance.unsafeFrom(
                         item,
                         effectSupportAny(),
-                        `ClassTag$`.`MODULE$`.apply(IO::class.java)
+                        `ClassTag$`.`MODULE$`.apply(CompletableFuture::class.java)
                     )
                 }
             }

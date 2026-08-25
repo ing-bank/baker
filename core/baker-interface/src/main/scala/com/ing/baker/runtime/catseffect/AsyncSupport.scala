@@ -3,8 +3,10 @@ package com.ing.baker.runtime.catseffect
 import cats.effect.{Async, Deferred, IO}
 import cats.effect.unsafe.IORuntime
 
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.{CompletableFuture, CompletionException, ExecutionException, ScheduledExecutorService, ScheduledFuture, ScheduledThreadPoolExecutor, TimeUnit}
+import java.util.function.{BiConsumer, Function}
 import scala.concurrent.duration.FiniteDuration
+import scala.util.control.NonFatal
 
 /**
   * A one-shot signal that can be completed once and then observed by multiple fibers.
@@ -33,6 +35,36 @@ trait AsyncSupport[F[_]] extends SyncSupport[F] {
 }
 
 object AsyncSupport {
+  private val scheduler: ScheduledExecutorService = {
+    val executor = new ScheduledThreadPoolExecutor(1, (r: Runnable) => {
+      val thread = new Thread(r)
+      thread.setName("baker-async-support-scheduler")
+      thread.setDaemon(true)
+      thread
+    })
+    executor.setRemoveOnCancelPolicy(true)
+    executor
+  }
+
+  private def failedFuture[A](throwable: Throwable): CompletableFuture[A] = {
+    val future = new CompletableFuture[A]()
+    future.completeExceptionally(throwable)
+    future
+  }
+
+  private def unwrap(throwable: Throwable): Throwable = throwable match {
+    case completionException: CompletionException if completionException.getCause != null => completionException.getCause
+    case executionException: ExecutionException if executionException.getCause != null => executionException.getCause
+    case other => other
+  }
+
+  private def completeFrom[A](target: CompletableFuture[A], source: CompletableFuture[A]): Unit =
+    source.whenComplete(new BiConsumer[A, Throwable] {
+      override def accept(value: A, throwable: Throwable): Unit =
+        if (throwable == null) target.complete(value)
+        else target.completeExceptionally(unwrap(throwable))
+    })
+
   implicit def toAsync[F[_]](implicit asyncSupport: AsyncSupport[F]): Async[F] =
     asyncSupport.asyncInstance
 
@@ -67,5 +99,119 @@ object AsyncSupport {
       override def startAndForget[A](fa: IO[A]): IO[Unit] = start(fa).void
       override def eager[A](fa: IO[A]): IO[A] = IO.pure(fa.unsafeRunSync()(runtime))
     }
+
+  implicit val fromCompletableFuture: AsyncSupport[SyncSupport.CompletableFutureF] =
+    new AsyncSupport[SyncSupport.CompletableFutureF] {
+      override def asyncInstance: Async[CompletableFuture] =
+        throw new UnsupportedOperationException("cats Async is not available for CompletableFuture backend")
+
+      override def pure[A](value: A): CompletableFuture[A] = SyncSupport.fromCompletableFuture.pure(value)
+      override def map[A, B](fa: CompletableFuture[A])(f: A => B): CompletableFuture[B] = SyncSupport.fromCompletableFuture.map(fa)(f)
+      override def flatMap[A, B](fa: CompletableFuture[A])(f: A => CompletableFuture[B]): CompletableFuture[B] = SyncSupport.fromCompletableFuture.flatMap(fa)(f)
+      override def raiseError[A](throwable: Throwable): CompletableFuture[A] = SyncSupport.fromCompletableFuture.raiseError(throwable)
+      override def delay[A](thunk: => A): CompletableFuture[A] = SyncSupport.fromCompletableFuture.delay(thunk)
+      override def blocking[A](thunk: => A): CompletableFuture[A] = SyncSupport.fromCompletableFuture.blocking(thunk)
+      override def unit: CompletableFuture[Unit] = SyncSupport.fromCompletableFuture.unit
+
+      override def attempt[A](fa: CompletableFuture[A]): CompletableFuture[Either[Throwable, A]] = {
+        val result = new CompletableFuture[Either[Throwable, A]]()
+        fa.whenComplete(new BiConsumer[A, Throwable] {
+          override def accept(value: A, throwable: Throwable): Unit = {
+            val completed =
+              if (throwable == null) result.complete(Right(value))
+              else result.complete(Left(unwrap(throwable)))
+            if (!completed && throwable != null) result.completeExceptionally(unwrap(throwable))
+          }
+        })
+        result
+      }
+
+      override def handleErrorWith[A](fa: CompletableFuture[A])(f: Throwable => CompletableFuture[A]): CompletableFuture[A] = {
+        val result = new CompletableFuture[A]()
+        fa.whenComplete(new BiConsumer[A, Throwable] {
+          override def accept(value: A, throwable: Throwable): Unit =
+            if (throwable == null) result.complete(value)
+            else {
+              val recovered: CompletableFuture[A] =
+                try f(unwrap(throwable))
+                catch {
+                  case NonFatal(exception) => failedFuture[A](exception)
+                }
+              completeFrom(result, recovered)
+            }
+        })
+        result
+      }
+
+      override def handleError[A](fa: CompletableFuture[A])(f: Throwable => A): CompletableFuture[A] =
+        handleErrorWith(fa)(throwable =>
+          try pure(f(throwable))
+          catch {
+            case NonFatal(exception) => raiseError(exception)
+          }
+        )
+
+      override def timeoutTo[A](fa: CompletableFuture[A], duration: FiniteDuration, fallback: CompletableFuture[A]): CompletableFuture[A] = {
+        val result = new CompletableFuture[A]()
+        val timeoutTask: ScheduledFuture[_] = scheduler.schedule(
+          new Runnable {
+            override def run(): Unit = completeFrom(result, fallback)
+          },
+          duration.toMillis,
+          TimeUnit.MILLISECONDS
+        )
+
+        fa.whenComplete(new BiConsumer[A, Throwable] {
+          override def accept(value: A, throwable: Throwable): Unit = {
+            timeoutTask.cancel(false)
+            if (throwable == null) result.complete(value)
+            else result.completeExceptionally(unwrap(throwable))
+          }
+        })
+        result
+      }
+
+      override def sleep(duration: FiniteDuration): CompletableFuture[Unit] = {
+        val result = new CompletableFuture[Unit]()
+        scheduler.schedule(
+          new Runnable {
+            override def run(): Unit = result.complete(())
+          },
+          duration.toMillis,
+          TimeUnit.MILLISECONDS
+        )
+        result
+      }
+
+      override def signal[A]: CompletableFuture[Signal[CompletableFuture, A]] = {
+        val gate = new CompletableFuture[A]()
+        pure(new Signal[CompletableFuture, A] {
+          override def complete(value: A)(implicit async: AsyncSupport[CompletableFuture]): CompletableFuture[Unit] = {
+            gate.complete(value)
+            async.unit
+          }
+
+          override def get(implicit async: AsyncSupport[CompletableFuture]): CompletableFuture[A] = gate
+        })
+      }
+
+      override def fromCompletableFuture[A](future: CompletableFuture[CompletableFuture[A]]): CompletableFuture[A] =
+        future.thenCompose(new Function[CompletableFuture[A], CompletableFuture[A]] {
+          override def apply(next: CompletableFuture[A]): CompletableFuture[A] = next
+        })
+
+      override def start[A](fa: CompletableFuture[A]): CompletableFuture[CompletableFuture[A]] = pure(fa)
+
+      override def startAndForget[A](fa: CompletableFuture[A]): CompletableFuture[Unit] = {
+        fa.whenComplete(new BiConsumer[A, Throwable] {
+          override def accept(value: A, throwable: Throwable): Unit = ()
+        })
+        unit
+      }
+
+      override def eager[A](fa: CompletableFuture[A]): CompletableFuture[A] = fa
+    }
+
+  def completableFutureSupport: AsyncSupport[SyncSupport.CompletableFutureF] = fromCompletableFuture
 }
 

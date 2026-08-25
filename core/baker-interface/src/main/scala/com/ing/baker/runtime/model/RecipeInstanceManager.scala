@@ -1,6 +1,5 @@
 package com.ing.baker.runtime.model
 
-import com.ing.baker.runtime.catseffect.AsyncSupport.toAsync
 import com.ing.baker.runtime.catseffect.SyncSupport.syntax._
 import com.ing.baker.il.{RecipeVisualStyle, RecipeVisualizer}
 import com.ing.baker.runtime.catseffect.AsyncSupport
