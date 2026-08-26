@@ -1,6 +1,5 @@
 package com.ing.baker.runtime.model.recipeinstance
 
-import cats.effect.Deferred
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet.Place.IngredientPlace
@@ -12,6 +11,8 @@ import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment}
 import com.ing.baker.types.{CharArray, MapType, Value}
 
 object RecipeInstanceState {
+
+  final case class Listener[F[_]](complete: F[Unit])
 
   def getMetaDataFromIngredients(ingredients: Map[String, Value]): Option[Map[String, String]] = {
     ingredients.get(RecipeInstanceMetadataName).flatMap(value => {
@@ -38,8 +39,8 @@ object RecipeInstanceState {
       completedCorrelationIds = Set.empty,
       executions = Map.empty,
       retryingExecutions = Set.empty,
-      idleListeners = Set.empty[Deferred[F, Unit]],
-      eventListeners = Map.empty[String, Set[Deferred[F, Unit]]]
+      idleListeners = Set.empty[Listener[F]],
+      eventListeners = Map.empty[String, Set[Listener[F]]]
     )
 }
 
@@ -55,17 +56,17 @@ case class RecipeInstanceState[F[_]](
                                       completedCorrelationIds: Set[String],
                                       executions: Map[Long, TransitionExecution],
                                       retryingExecutions: Set[Long],
-                                      idleListeners: Set[Deferred[F, Unit]] = Set.empty[Deferred[F, Unit]],
-                                      eventListeners: Map[String, Set[Deferred[F, Unit]]] = Map.empty[String, Set[Deferred[F, Unit]]]
+                                      idleListeners: Set[RecipeInstanceState.Listener[F]] = Set.empty[RecipeInstanceState.Listener[F]],
+                                      eventListeners: Map[String, Set[RecipeInstanceState.Listener[F]]] = Map.empty[String, Set[RecipeInstanceState.Listener[F]]]
                                     ) extends RecipeInstanceEventValidation[F] {
 
   def isInactive: Boolean =
     executions.values.forall(_.isInactive)
 
-  def addIdleListener(listener: Deferred[F, Unit]): RecipeInstanceState[F] =
+  def addIdleListener(listener: RecipeInstanceState.Listener[F]): RecipeInstanceState[F] =
     this.copy(idleListeners = idleListeners + listener)
 
-  def addEventListener(eventName: String, listener: Deferred[F, Unit]): RecipeInstanceState[F] = {
+  def addEventListener(eventName: String, listener: RecipeInstanceState.Listener[F]): RecipeInstanceState[F] = {
     val currentListeners = eventListeners.getOrElse(eventName, Set.empty)
     this.copy(eventListeners = eventListeners + (eventName -> (currentListeners + listener)))
   }
@@ -220,7 +221,7 @@ case class RecipeInstanceState[F[_]](
           }
           (place, count, consumableTokens)
       }
-      // check if any any places have an insufficient number of tokens
+      // check if any places have an insufficient number of tokens
       if (consumable.exists { case (_, count, tokens) => tokens.multisetSize < count })
         Seq.empty
       else {

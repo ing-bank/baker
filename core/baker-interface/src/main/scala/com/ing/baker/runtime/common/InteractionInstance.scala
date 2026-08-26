@@ -1,9 +1,9 @@
 package com.ing.baker.runtime.common
 
 import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
-import com.ing.baker.types.{Type, Value}
+import com.ing.baker.types.Type
 
-// no logging of exception stack trackes for remote interactions
+// no logging of exception stack tracks for remote interactions
 final class RemoteInteractionExecutionException(val message: String) extends RuntimeException(message)
 
 /**

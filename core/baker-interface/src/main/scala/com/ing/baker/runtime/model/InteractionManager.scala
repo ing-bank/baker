@@ -1,16 +1,14 @@
 package com.ing.baker.runtime.model
 
-import cats.MonadError
-import cats.effect.Sync
-import cats.implicits._
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor, checkpointEventInteractionPrefix}
 import com.ing.baker.runtime.common.RecipeRecord
-import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.{FatalInteractionException, empty}
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
 import com.ing.baker.types.Type
 import com.typesafe.config.ConfigFactory
 import InteractionManager._
+import com.ing.baker.runtime.catseffect.SyncSupport
 
 object InteractionManager {
 
@@ -73,24 +71,24 @@ trait InteractionManager[F[_]] {
 
   def listAll: F[List[InteractionInstance[F]]]
 
-  def recipeAdded(recipeRecord: RecipeRecord)(implicit sync: Sync[F]): F[Unit] = Sync[F].unit
+  def recipeAdded(recipeRecord: RecipeRecord)(implicit sync: SyncSupport[F]): F[Unit] = sync.unit
 
-  def findFor(transition: InteractionTransition)(implicit sync: Sync[F]): F[Option[InteractionInstance[F]]] =
-    listAll.flatMap(all => sync.delay(all.find(compatible(transition, _))))
+  def findFor(transition: InteractionTransition)(implicit sync: SyncSupport[F]): F[Option[InteractionInstance[F]]] =
+    sync.flatMap(listAll)(all => sync.delay(all.find(compatible(transition, _))))
 
-  def existsFor(interaction: InteractionTransition)(implicit sync: Sync[F]): F[Boolean] = findFor(interaction).map(_.nonEmpty)
+  def existsFor(interaction: InteractionTransition)(implicit sync: SyncSupport[F]): F[Boolean] =
+    sync.map(findFor(interaction))(_.nonEmpty)
 
-  def execute(interaction: InteractionTransition, input: Seq[IngredientInstance], metadata: Option[Map[String, String]])(implicit sync: Sync[F], effect: MonadError[F, Throwable]): F[Option[EventInstance]] = {
+  def execute(interaction: InteractionTransition, input: Seq[IngredientInstance], metadata: Option[Map[String, String]])(implicit sync: SyncSupport[F]): F[Option[EventInstance]] = {
     if(interaction.interactionName.startsWith(checkpointEventInteractionPrefix)){
-      effect.pure(Some(EventInstance(interaction.interactionName.stripPrefix(checkpointEventInteractionPrefix))))
+      sync.pure(Some(EventInstance(interaction.interactionName.stripPrefix(checkpointEventInteractionPrefix))))
     } else{
-      findFor(interaction)
-        .flatMap {
+      sync.flatMap(findFor(interaction)) {
           case Some(implementation) => {
             // Interaction implementations are often reflection/IO heavy; shift invocation to the blocking pool.
-            sync.blocking(implementation.execute(input, metadata.getOrElse(Map()))).flatten
+            sync.flatMap(sync.blocking(implementation.execute(input, metadata.getOrElse(Map()))))(identity)
           }
-          case None => effect.raiseError(new FatalInteractionException(s"No implementation available for interaction ${interaction.interactionName}"))
+          case None => sync.raiseError(new FatalInteractionException(s"No implementation available for interaction ${interaction.interactionName}"))
         }
     }
   }
@@ -144,21 +142,20 @@ trait InteractionManager[F[_]] {
       ))
   }
 
-  def incompatibilities(transition: InteractionTransition)(implicit sync: Sync[F]): F[Seq[InteractionIncompatible]] = for {
-    all <- listAll
-  } yield {
-    if(transition.originalInteractionName.startsWith(checkpointEventInteractionPrefix))
-      Seq.empty
-    else if (all.exists(compatible(transition, _)))
-      Seq.empty
-    else {
-      all
-        .filter(_.name == transition.originalInteractionName) match {
-        case Nil => Seq(NameNotFound)
-        case sameName => sameName.flatMap(incompatibilityReason(transition, _))
+  def incompatibilities(transition: InteractionTransition)(implicit sync: SyncSupport[F]): F[Seq[InteractionIncompatible]] =
+    sync.map(listAll) { all =>
+      if(transition.originalInteractionName.startsWith(checkpointEventInteractionPrefix))
+        Seq.empty
+      else if (all.exists(compatible(transition, _)))
+        Seq.empty
+      else {
+        all
+          .filter(_.name == transition.originalInteractionName) match {
+          case Nil => Seq(NameNotFound)
+          case sameName => sameName.flatMap(incompatibilityReason(transition, _))
+        }
       }
     }
-  }
 
   def incompatibilityReason(transition: InteractionTransition, implementation: InteractionInstance[F]): Option[InteractionIncompatible] =
     if (!inputSizeMatches(transition, implementation))

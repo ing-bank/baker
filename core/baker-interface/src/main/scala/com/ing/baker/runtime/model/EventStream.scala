@@ -1,25 +1,25 @@
 package com.ing.baker.runtime.model
 
-import cats.effect.Async
-import cats.syntax.all._
+import com.ing.baker.runtime.catseffect.AsyncSupport
 import com.ing.baker.runtime.scaladsl.BakerEvent
 
 trait EventStream[F[_]] {
 
-  protected def fetchListeners: F[List[BakerEvent => Unit]]
+  protected def fetchListeners: F[List[BakerEvent => scala.Unit]]
 
-  def subscribe(listenerFunction: BakerEvent => Unit): F[Unit]
+  def subscribe(listenerFunction: BakerEvent => scala.Unit): F[scala.Unit]
 
-  def publish(event: BakerEvent)(implicit components: BakerComponents[F], async: Async[F]): F[Unit] = {
-    for {
-      listeners <- fetchListeners
-      _ <- listeners.traverse { listener =>
-        async
-          .delay(listener(event))
-          .handleErrorWith { e =>
+  def publish(event: BakerEvent)(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[scala.Unit] = {
+    def notifyListeners(listeners: List[BakerEvent => scala.Unit]): F[scala.Unit] = listeners match {
+      case Nil => async.unit
+      case listener :: tail =>
+        async.flatMap(
+          async.handleErrorWith(async.delay(listener(event))) { e =>
             async.delay(components.logging.exceptionOnEventListener(e))
           }
-      }
-    } yield ()
+        )(_ => notifyListeners(tail))
+    }
+
+    async.flatMap(fetchListeners)(notifyListeners)
   }
 }

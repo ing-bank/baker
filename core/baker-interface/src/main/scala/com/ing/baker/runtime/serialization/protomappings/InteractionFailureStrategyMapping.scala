@@ -2,10 +2,10 @@ package com.ing.baker.runtime.serialization.protomappings
 
 import java.util.concurrent.TimeUnit
 
-import cats.implicits._
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
 import com.ing.baker.runtime.akka.actor.protobuf
+import com.ing.baker.runtime.common.TryOps.syntax._
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.serialization.ProtoMap
 
@@ -69,8 +69,8 @@ class InteractionFailureStrategyMapping extends ProtoMap[il.failurestrategy.Inte
           initialTimeout <- versioned(incremental.initialTimeout, "initialTimeout")
           backoff <- versioned(incremental.backoffFactor, "backoffFactor")
           maximumRetries <- versioned(incremental.maximumRetries, "maximumRetries")
-          retryExhausted <- incremental.retryExhaustedEvent.traverse[Try, il.EventDescriptor](ctxFromProto(_))
-          retryFunctionalEvent <- incremental.retryFunctionalEvent.traverse[Try, il.EventDescriptor](ctxFromProto(_))
+          retryExhausted <- incremental.retryExhaustedEvent.traverseTry(ctxFromProto(_))
+          retryFunctionalEvent <- incremental.retryFunctionalEvent.traverseTry(ctxFromProto(_))
         } yield il.failurestrategy.RetryWithIncrementalBackoff(
           initialTimeout = Duration(initialTimeout, TimeUnit.MILLISECONDS),
           backoffFactor = backoff,
