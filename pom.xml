@@ -27,17 +27,17 @@
         <akka.version>2.10.20</akka.version>
         <cassandra.driver.version>4.17.0</cassandra.driver.version>
         <cats.core.version>2.13.0</cats.core.version>
-        <cats.effect.version>3.7.0</cats.effect.version>
+        <cats.effect.version>3.7.1</cats.effect.version>
         <cats.retry.version>3.1.3</cats.retry.version>
         <circe.generic.extras.version>0.14.4</circe.generic.extras.version>
         <circe.version>0.14.14</circe.version>
         <ficus.version>1.5.2</ficus.version>
         <fs2.kafka.version>3.9.1</fs2.kafka.version>
-        <fs2.version>3.12.2</fs2.version>
+        <fs2.version>3.14.0</fs2.version>
         <guava.version>33.6.0-jre</guava.version>
         <http4s.blaze.version>0.23.18</http4s.blaze.version>
         <http4s.prometheus.version>0.25.0</http4s.prometheus.version>
-        <http4s.version>0.23.32</http4s.version>
+        <http4s.version>0.23.37</http4s.version>
         <jackson.version>2.18.2</jackson.version>
         <javax.inject.version>1</javax.inject.version>
         <joda.time.version>2.14.2</joda.time.version>
