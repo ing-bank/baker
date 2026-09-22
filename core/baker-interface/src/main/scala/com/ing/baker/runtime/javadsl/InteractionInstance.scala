@@ -1,8 +1,5 @@
 package com.ing.baker.runtime.javadsl
 
-import cats.effect.IO
-import cats.effect.unsafe.implicits.global
-import cats.~>
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.{common, javadsl, model, scaladsl}
 import com.ing.baker.types.Type
@@ -12,6 +9,7 @@ import java.util.Optional
 import java.util.concurrent.CompletableFuture
 import scala.annotation.nowarn
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters.FutureOps
 
@@ -31,7 +29,7 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
 
   def run(input: util.List[IngredientInstance]): CompletableFuture[Optional[EventInstance]]
 
-  override def execute(input: util.List[IngredientInstance], metadata: Map[String, String]): CompletableFuture[Optional[EventInstance]]
+  override def execute(input: language.Seq[Ingredient], metaData: scala.collection.immutable.Map[String, String]): CompletableFuture[language.Option[Event]]
 
   private def wrapRunToFuture(input: Seq[scaladsl.IngredientInstance]): Future[Option[scaladsl.EventInstance]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,27 +41,15 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
     }
   }
 
-  @nowarn
   private def outputOrNone: Option[Map[String, Map[String, Type]]] = {
     if (output.isPresent) Some(output.get.asScala.view.map { case (key, value) => (key, value.asScala.toMap)}.toMap) else None
   }
 
-  @nowarn
   def asScala: scaladsl.InteractionInstance = {
     scaladsl.InteractionInstance(
       name,
       input.asScala.map(input => input.asScala).toIndexedSeq,
       input => wrapRunToFuture(input),
-      outputOrNone
-    )
-  }
-
-  @nowarn
-  def asEffectful(): common.InteractionInstance[IO] = {
-    model.InteractionInstance.build(
-      name,
-      input.asScala.map(input => input.asScala).toIndexedSeq,
-      input => IO.fromFuture(IO(wrapRunToFuture(input))),
       outputOrNone
     )
   }
@@ -77,14 +63,10 @@ object InteractionInstance {
   }
 
   def from(implementation: AnyRef): InteractionInstance = {
-    fromModel(model.InteractionInstance.unsafeFrom[IO](implementation))
+    fromModel(model.InteractionInstance.unsafeFrom[Future](implementation))
   }
 
-  @nowarn
-  def fromModel(common: model.InteractionInstance[IO]): InteractionInstance = {
-    val converter = new (IO ~> CompletableFuture) {
-      def apply[A](fa: IO[A]): CompletableFuture[A] = fa.unsafeToFuture().asJava.toCompletableFuture
-    }
+  private def fromModel(common: model.InteractionInstance[Future]): InteractionInstance = {
     new javadsl.InteractionInstance {
       override val name: String =
         common.name
@@ -97,12 +79,14 @@ object InteractionInstance {
         }
 
       override def run(input: util.List[javadsl.IngredientInstance]): CompletableFuture[Optional[javadsl.EventInstance]] =
-        converter(common.run(input.asScala.map(_.asScala).toIndexedSeq))
+        common.run(input.asScala.map(_.asScala).toIndexedSeq)
+          .asJava
+          .toCompletableFuture
           .thenApply(
             _.fold(Optional.empty[javadsl.EventInstance]())(
               e => Optional.of(e.asJava)))
 
-      override def execute(input: util.List[javadsl.IngredientInstance], metadata: Map[String, String]): CompletableFuture[Optional[javadsl.EventInstance]] =
+      override def execute(input: language.Seq[Ingredient], metaData: scala.collection.immutable.Map[String, String]): CompletableFuture[language.Option[Event]] =
         run(input)
     }
   }

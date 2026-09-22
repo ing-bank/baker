@@ -1,12 +1,12 @@
 package com.ing.baker.runtime.model.recipeinstance
 
-import cats.effect.Async
-import cats.implicits._
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor}
 import com.ing.baker.petrinet.api._
+import com.ing.baker.runtime.catseffect.AsyncSupport
+import com.ing.baker.runtime.catseffect.SyncSupport.syntax._
 import com.ing.baker.runtime.model.BakerComponents
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl._
@@ -92,7 +92,7 @@ private[recipeinstance] case class TransitionExecution(
   def toFailedState(failureStrategy: ExceptionStrategyOutcome): TransitionExecution =
     copy(state = TransitionExecution.State.Failed(failureCount + 1, failureStrategy))
 
-  def execute[F[_]](implicit components: BakerComponents[F], async: Async[F]): F[TransitionExecution.Outcome] =
+  def execute[F[_]](implicit components: BakerComponents[F], async: AsyncSupport[F]): F[TransitionExecution.Outcome] =
     for {
       result <- async.attempt {
         transition match {
@@ -104,8 +104,10 @@ private[recipeinstance] case class TransitionExecution(
                 _ <- input match {
                   case Some(event) =>
                     val eventFired = EventFired(endTime, recipe.name, recipe.recipeId, recipeInstanceId, event.name)
-                    components.logging.eventFired(eventFired)
-                    components.eventStream.publish(eventFired)
+                    for {
+                      _ <- async.delay(components.logging.eventFired(eventFired))
+                      _ <- components.eventStream.publish(eventFired)
+                    } yield ()
                   case None => async.unit
                 }
               } yield input
@@ -113,7 +115,7 @@ private[recipeinstance] case class TransitionExecution(
             async.pure(None)
         }
       }
-      outcome = result.leftMap { e =>
+      outcome = result.left.map { e =>
         val throwable = e match {
           case e: InvocationTargetException => e.getCause
           case e => e
@@ -129,7 +131,7 @@ private[recipeinstance] case class TransitionExecution(
       }
     } yield outcome
 
-  private def executeInteractionInstance[F[_]](interactionTransition: InteractionTransition)(implicit components: BakerComponents[F], async: Async[F]): F[Option[EventInstance]] = {
+  private def executeInteractionInstance[F[_]](interactionTransition: InteractionTransition)(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Option[EventInstance]] = {
 
     def buildInteractionInput: Seq[IngredientInstance] = {
       val recipeInstanceIdIngredient: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(recipeInstanceId)
@@ -174,7 +176,7 @@ private[recipeinstance] case class TransitionExecution(
 
     for {
       startTime <-  async.pure(System.currentTimeMillis())
-      outcome <- {
+      runInteraction = {
         for {
           interactionStarted <- async.delay(InteractionStarted(startTime, recipe.name, recipe.recipeId, recipeInstanceId, interactionTransition.interactionName))
           _ <- async.delay(components.logging.interactionStarted(interactionStarted))
@@ -198,19 +200,21 @@ private[recipeinstance] case class TransitionExecution(
           _ <- transformedOutput match {
               case Some(event) =>
                 val eventFired = EventFired(endTime, recipe.name, recipe.recipeId, recipeInstanceId, event.name)
-                components.logging.eventFired(eventFired)
-                components.eventStream.publish(eventFired)
+                for {
+                  _ <- async.delay(components.logging.eventFired(eventFired))
+                  _ <- components.eventStream.publish(eventFired)
+                } yield ()
               case None => async.unit
             }
         } yield transformedOutput
 
-      }.onError { case e: Throwable =>
-
+      }
+      outcome <- async.handleErrorWith(runInteraction) { e =>
         val throwable = e match {
-          case e: InvocationTargetException => e.getCause
-          case e => e
+          case invocationTargetException: InvocationTargetException => invocationTargetException.getCause
+          case other => other
         }
-        for {
+        val logFailure = for {
           endTime <- async.pure(System.currentTimeMillis())
           interactionFailed = InteractionFailed(
             endTime, endTime - startTime, recipe.name, recipe.recipeId, recipeInstanceId,
@@ -218,23 +222,23 @@ private[recipeinstance] case class TransitionExecution(
           _ <- async.delay(components.logging.interactionFailed(interactionFailed, throwable))
           _ <- components.eventStream.publish(interactionFailed)
         } yield ()
-
+        logFailure.flatMap(_ => async.raiseError[Option[EventInstance]](e))
       }
     } yield outcome
   }
 
-  def validateEventForResolvingBlockedInteraction[F[_]](eventInstance: EventInstance)(implicit async: Async[F]): F[EventInstance] =
+  def validateEventForResolvingBlockedInteraction[F[_]](eventInstance: EventInstance)(implicit async: AsyncSupport[F]): F[EventInstance] =
     (isBlocked, transition) match {
       case (true, interactionTransition: InteractionTransition) =>
         validateInteractionOutput[F](interactionTransition, Some(eventInstance))
-          .as(eventInstance.transformWith(interactionTransition))
+          .map(_ => eventInstance.transformWith(interactionTransition))
       case (false, _) =>
         async.raiseError(new FatalInteractionException("Interaction is not blocked"))
       case _ =>
         async.raiseError(new FatalInteractionException("TransitionExecution is not for an Interaction"))
     }
 
-  private def validateInteractionOutput[F[_]](interactionTransition: InteractionTransition, interactionOutput: Option[EventInstance])(implicit async: Async[F]): F[Unit] = {
+  private def validateInteractionOutput[F[_]](interactionTransition: InteractionTransition, interactionOutput: Option[EventInstance])(implicit async: AsyncSupport[F]): F[Unit] = {
     def fail(message: String): F[Unit] =
       async.raiseError(new FatalInteractionException(message))
     interactionOutput match {

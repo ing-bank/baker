@@ -1,9 +1,9 @@
 package com.ing.baker.runtime.serialization.protomappings
 
-import cats.implicits._
 import com.ing.baker.il
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.akka.actor.protobuf
+import com.ing.baker.runtime.common.TryOps.syntax._
 import com.ing.baker.runtime.serialization.ProtoMap
 
 import scala.util.Try
@@ -20,7 +20,7 @@ class EventDescriptorMapping extends ProtoMap[il.EventDescriptor, protobuf.Event
   def fromProto(message: protobuf.EventDescriptor): Try[il.EventDescriptor] =
     for {
       name <- versioned(message.name, "name")
-      ingredients <- message.ingredients.toList.traverse[Try, il.IngredientDescriptor](ctxFromProto(_))
+      ingredients <- message.ingredients.toList.traverseTry(ctxFromProto(_))
     } yield il.EventDescriptor(name, ingredients)
 
 }

@@ -1,11 +1,11 @@
 package com.ing.baker.runtime.serialization.protomappings
 
-import cats.implicits._
 import com.ing.baker.il
 import com.ing.baker.il.CompiledRecipe.Scala212CompatibleJava
 import com.ing.baker.il.petrinet.{Node, Place, RecipePetriNet, Transition}
 import com.ing.baker.petrinet.api.{Marking, _}
 import com.ing.baker.runtime.akka.actor.protobuf
+import com.ing.baker.runtime.common.TryOps.syntax._
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned, versionedOptional}
 import com.ing.baker.runtime.serialization.{ProtoMap, TokenIdentifier}
 import com.ing.baker.types.Value
@@ -135,7 +135,7 @@ class CompiledRecipeMapping extends ProtoMap[il.CompiledRecipe, protobuf.Compile
 
   @nowarn
   def fromProtoGraph(net: protobuf.PetriNet): Try[Graph[Node, WLDiEdge]] = {
-    val tryNodes = net.nodes.toList.traverse[Try, Either[Place, Transition]] { n =>
+    val tryNodes = net.nodes.toList.traverseTry { n =>
 
       import protobuf.Node.OneofNode
       n.oneofNode match {
@@ -172,28 +172,28 @@ class CompiledRecipeMapping extends ProtoMap[il.CompiledRecipe, protobuf.Compile
             // in 1.3.x an interaction could directly provide an ingredient
             providedIngredientEvent <- transition.value
               .providedIngredientEvent
-              .traverse(ctxFromProto(_))
+              .traverseTry(ctxFromProto(_))
             eventDescriptor <- transition.value
               .eventsToFire.toList
-              .traverse(ctxFromProto(_))
+              .traverseTry(ctxFromProto(_))
             originalEvents <- transition.value
               .originalEvents.toList
-              .traverse(ctxFromProto(_))
+              .traverseTry(ctxFromProto(_))
             requiredIngredients <- transition.value
               .requiredIngredients.toList
-              .traverse(ctxFromProto(_))
+              .traverseTry(ctxFromProto(_))
             interactionName <- versioned(transition.value.interactionName, "interactionName")
             originalInteractionName <- versioned(transition.value.originalInteractionName, "originalInteractionName")
             predefinedparameters <- transition.value
               .predefinedParameters.toList
-              .traverse[Try, (String, Value)]
+              .traverseTry
                 { case (k, v) => ctxFromProto(v).map(k -> _) }
               .map(_.toMap)
             failureStrategyProto <- versioned(transition.value.failureStrategy, "failureStrategy")
             failureStrategy <- ctxFromProto(failureStrategyProto)
             eventOutputTransformers <- transition.value
               .eventOutputTransformers.toList
-              .traverse[Try, (String, il.EventOutputTransformer)]
+              .traverseTry
               { case (k, v) => ctxFromProto(v).map(k -> _) }
               .map(_.toMap)
             isReprovider = versionedOptional(transition.value.isReprovider, false)
@@ -217,7 +217,7 @@ class CompiledRecipeMapping extends ProtoMap[il.CompiledRecipe, protobuf.Compile
       }
     }
 
-    val params = net.edges.toList.traverse[Try, WLDiEdge[Node] with GraphEdge.EdgeCopy[WLDiEdge]] { protoEdge =>
+    val params = net.edges.toList.traverseTry { protoEdge =>
       for {
         from <- versioned(protoEdge.from, "from")
         to <- versioned(protoEdge.to, "to")

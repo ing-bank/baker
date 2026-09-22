@@ -12,8 +12,8 @@
     </parent>
 
     <artifactId>baker-interface</artifactId>
-    <name>Baker Runtime</name>
-    <description>Baker runtime definitions and core API</description>
+    <name>Baker Runtime Interface</name>
+    <description>Baker runtime interface definitions and core API</description>
 
     <dependencies>
         <dependency>
@@ -49,18 +49,10 @@
             <artifactId>circe-generic-extras_${scala.compat.version}</artifactId>
         </dependency>
 
-        <!-- Note: cats-effect is provided transitively via fs2-core -->
+        <!-- Effect runtime -->
         <dependency>
             <groupId>org.typelevel</groupId>
             <artifactId>cats-effect_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>co.fs2</groupId>
-            <artifactId>fs2-core_${scala.compat.version}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>co.fs2</groupId>
-            <artifactId>fs2-io_${scala.compat.version}</artifactId>
         </dependency>
         <!-- -->
         <dependency>
