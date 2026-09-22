@@ -198,7 +198,7 @@ trait RecipeInstanceManager[F[_]] {
               (currentState, async.unit) // Already happened, resolve immediately
             } else {
               // Not yet happened (or waitForNext=true), add listener and wait on it
-              (currentState.addEventListener(eventName, com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.Listener(listener.complete(()))), listener.get)
+              (currentState.addEventListener(eventName, com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.Listener(() => listener.complete(()))), listener.get)
             }
           }.flatMap(x => x),
           timeout,
@@ -237,7 +237,7 @@ trait RecipeInstanceManager[F[_]] {
               (currentState, async.pure(SensoryEventStatus.Completed)) // Already idle
             } else {
               // Not idle, add listener and then wait on it
-              (currentState.addIdleListener(com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.Listener(listener.complete(()))), listener.get.map(_ => SensoryEventStatus.Completed))
+              (currentState.addIdleListener(com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.Listener(() => listener.complete(()))), listener.get.map(_ => SensoryEventStatus.Completed))
             }
           }.flatMap(x => x),
           timeout,

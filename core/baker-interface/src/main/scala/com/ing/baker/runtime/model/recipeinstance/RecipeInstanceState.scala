@@ -12,7 +12,16 @@ import com.ing.baker.types.{CharArray, MapType, Value}
 
 object RecipeInstanceState {
 
-  final case class Listener[F[_]](complete: F[Unit])
+  /**
+    * IMPORTANT: `complete` must be a *deferred* thunk (`() => F[Unit]`), NOT an already evaluated `F[Unit]`.
+    *
+    * For eager backends (e.g. the CompletableFuture based `F`), constructing an `F[Unit]` value (such as
+    * calling `Signal.complete(...)`) executes its side effect immediately. If a `Listener` stored an
+    * already-evaluated `F[Unit]`, then simply *registering* the listener (e.g. via `addIdleListener`)
+    * would immediately resolve it, instead of only resolving it later when it is actually notified
+    * (e.g. when the recipe instance becomes idle).
+    */
+  final case class Listener[F[_]](complete: () => F[Unit])
 
   def getMetaDataFromIngredients(ingredients: Map[String, Value]): Option[Map[String, String]] = {
     ingredients.get(RecipeInstanceMetadataName).flatMap(value => {

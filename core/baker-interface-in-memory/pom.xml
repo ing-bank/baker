@@ -27,6 +27,20 @@
             <artifactId>scala-library</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib-jdk8</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-coroutines-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-coroutines-jdk8</artifactId>
+        </dependency>
+
         <!-- SLF4J for logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -101,17 +115,20 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jdk8</artifactId>
-            <version>${kotlin.version}</version>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jetbrains.kotlinx</groupId>
-            <artifactId>kotlinx-coroutines-core</artifactId>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>${mockito.core.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jetbrains.kotlinx</groupId>
-            <artifactId>kotlinx-coroutines-jdk8</artifactId>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -213,16 +230,16 @@
                         <goals>
                             <goal>test-compile</goal>
                         </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <sourceDir>src/test/kotlin</sourceDir>
-                                <sourceDir>src/test/scala</sourceDir>
-                            </sourceDirs>
-                        </configuration>
+                <configuration>
+                    <sourceDirs>
+                        <sourceDir>src/test/kotlin</sourceDir>
+                        <sourceDir>src/test/scala</sourceDir>
+                    </sourceDirs>
+                </configuration>
                     </execution>
                 </executions>
                 <configuration>
-                    <jvmTarget>1.8</jvmTarget>
+                    <jvmTarget>21</jvmTarget>
                 </configuration>
             </plugin>
         </plugins>

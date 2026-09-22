@@ -51,7 +51,7 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
       }
       (result, listenersToNotify) = resultAndListeners
       _ <- listenersToNotify.toList.foldLeft(async.unit) { (acc, listener) =>
-        acc.flatMap(_ => listener.complete)
+         acc.flatMap(_ => listener.complete())
       }
     } yield result
 
@@ -236,9 +236,8 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
         else async.unit
       }
 
-    // Start the schedule computation in the background as a fiber and discard the result
-    // This allows the idle stop to happen asynchronously without blocking
-    async.startAndForget(schedule)
+    // Fire-and-forget the schedule in the background, but ensure proper async chaining
+    async.start(schedule).flatMap(_ => async.unit)
   }
 
   private def getInteractionTransitionExecution(interactionName: String)(implicit effect: SyncSupport[F]): F[TransitionExecution] =

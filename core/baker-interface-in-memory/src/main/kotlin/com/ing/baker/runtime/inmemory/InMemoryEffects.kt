@@ -7,40 +7,46 @@ import com.ing.baker.runtime.model.InteractionInstance
 import scala.concurrent.Future
 import scala.jdk.javaapi.CollectionConverters.asScala
 import scala.reflect.`ClassTag$`
+import scala.runtime.BoxedUnit
 import java.util.concurrent.CompletableFuture
 import scala.collection.immutable.List as ScalaList
 import scala.jdk.javaapi.FutureConverters.asJava as futureAsJava
 import scala.jdk.javaapi.FutureConverters.asScala as futureAsScala
-import scala.runtime.BoxedUnit
 
-internal typealias InMemoryEffect<A> = CompletableFuture<A>
+typealias InMemoryEffect<A> = CompletableFuture<A>
 
-internal fun <A, B> InMemoryEffect<A>.map(f: (A) -> B): InMemoryEffect<B> =
+fun <A, B> InMemoryEffect<A>.map(f: (A) -> B): InMemoryEffect<B> =
     thenApply { value -> f(value) }
 
-internal fun <A, B> InMemoryEffect<A>.flatMap(f: (A) -> InMemoryEffect<B>): InMemoryEffect<B> =
+fun <A, B> InMemoryEffect<A>.flatMap(f: (A) -> InMemoryEffect<B>): InMemoryEffect<B> =
     thenCompose { value -> f(value) }
 
-internal object InMemoryEffects {
+object InMemoryEffects {
 
+    @JvmStatic
     @Suppress("UNCHECKED_CAST")
     fun asyncSupportAny(): AsyncSupport<InMemoryEffect<Any>> =
         AsyncSupport.completableFutureSupport() as AsyncSupport<InMemoryEffect<Any>>
 
+    @JvmStatic
     @Suppress("UNCHECKED_CAST")
     fun effectSupportAny(): EffectSupport<InMemoryEffect<Any>> =
         EffectSupport.fromCompletableFuture() as EffectSupport<InMemoryEffect<Any>>
 
+    @JvmStatic
     @Suppress("UNCHECKED_CAST")
     fun classTagAny() = `ClassTag$`.`MODULE$`.apply<InMemoryEffect<Any>>(
         CompletableFuture::class.java as Class<InMemoryEffect<Any>>
     )
 
+    @JvmStatic
     fun <A> pure(value: A): InMemoryEffect<A> = CompletableFuture.completedFuture(value)
 
+    @JvmStatic
     @Suppress("UNCHECKED_CAST")
     fun unit(): InMemoryEffect<Any> = pure(BoxedUnit.UNIT) as InMemoryEffect<Any>
 
+    @JvmStatic
     fun <A> delay(thunk: () -> A): InMemoryEffect<A> =
         try {
             pure(thunk())
@@ -50,6 +56,7 @@ internal object InMemoryEffects {
             failed
         }
 
+    @JvmStatic
     fun <A> defer(thunk: () -> InMemoryEffect<A>): InMemoryEffect<A> =
         try {
             thunk()
@@ -59,20 +66,24 @@ internal object InMemoryEffects {
             failed
         }
 
+    @JvmStatic
     fun <A> runSync(io: InMemoryEffect<A>): A = io.join()
 
+    @JvmStatic
     fun futureToCompletableFuture(): FunctionK<Future<*>, InMemoryEffect<*>> =
         object : FunctionK<Future<*>, InMemoryEffect<*>> {
             override fun <A> apply(fa: Future<*>): InMemoryEffect<*> =
                 futureAsJava(fa as Future<Any>).toCompletableFuture()
         }
 
+    @JvmStatic
     fun completableFutureToFuture(): FunctionK<InMemoryEffect<*>, Future<*>> =
         object : FunctionK<InMemoryEffect<*>, Future<*>> {
             override fun <A> apply(fa: InMemoryEffect<*>): Future<*> =
                 futureAsScala(fa as CompletableFuture<Any>)
         }
 
+    @JvmStatic
     @Suppress("UNCHECKED_CAST")
     fun toScalaCompletableFutureInteractions(implementations: List<Any>): ScalaList<InteractionInstance<InMemoryEffect<*>>> {
         val futureToCompletableFuture = futureToCompletableFuture()

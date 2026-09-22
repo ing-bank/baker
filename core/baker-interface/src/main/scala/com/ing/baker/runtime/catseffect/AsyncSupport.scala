@@ -30,7 +30,6 @@ trait AsyncSupport[F[_]] extends SyncSupport[F] {
   def signal[A]: F[Signal[F, A]]
   def fromCompletableFuture[A](future: F[CompletableFuture[A]]): F[A]
   def start[A](fa: F[A]): F[F[A]]
-  def startAndForget[A](fa: F[A]): F[Unit]
   def eager[A](fa: F[A]): F[A]
 }
 
@@ -96,7 +95,6 @@ object AsyncSupport {
         }
       override def fromCompletableFuture[A](future: IO[CompletableFuture[A]]): IO[A] = IO.fromCompletableFuture(future)
       override def start[A](fa: IO[A]): IO[IO[A]] = fa.start.map(_.joinWithNever)
-      override def startAndForget[A](fa: IO[A]): IO[Unit] = start(fa).void
       override def eager[A](fa: IO[A]): IO[A] = IO.pure(fa.unsafeRunSync()(runtime))
     }
 
@@ -201,13 +199,6 @@ object AsyncSupport {
         })
 
       override def start[A](fa: CompletableFuture[A]): CompletableFuture[CompletableFuture[A]] = pure(fa)
-
-      override def startAndForget[A](fa: CompletableFuture[A]): CompletableFuture[Unit] = {
-        fa.whenComplete(new BiConsumer[A, Throwable] {
-          override def accept(value: A, throwable: Throwable): Unit = ()
-        })
-        unit
-      }
 
       override def eager[A](fa: CompletableFuture[A]): CompletableFuture[A] = fa
     }

@@ -7,8 +7,8 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 
 /**
-  * Minimal Ref allocation capability used by model components.
-  */
+ * Minimal Ref allocation capability used by model components.
+ */
 trait RefState[F[_], A] {
   def get: F[A]
   def update(f: A => A): F[Unit]
@@ -32,16 +32,21 @@ object RefSupport {
 
     override def get: CompletableFuture[A] = CompletableFuture.completedFuture(state.get())
 
-    override def update(f: A => A): CompletableFuture[Unit] = {
-      state.updateAndGet(value => f(value))
-      CompletableFuture.completedFuture(())
-    }
+    // NOTE: `update` must be mutually exclusive with `modify`. Both methods read-then-write the
+    // same underlying AtomicReference, so both must go through the SAME synchronization mechanism
+    // (the `this` monitor).
+    override def update(f: A => A): CompletableFuture[Unit] =
+      this.synchronized {
+        state.updateAndGet(value => f(value))
+        CompletableFuture.completedFuture(())
+      }
 
-    override def modify[B](f: A => (A, B)): CompletableFuture[B] = this.synchronized {
-      val (next, out) = f(state.get())
-      state.set(next)
-      CompletableFuture.completedFuture(out)
-    }
+    override def modify[B](f: A => (A, B)): CompletableFuture[B] =
+      this.synchronized {
+        val (next, out) = f(state.get())
+        state.set(next)
+        CompletableFuture.completedFuture(out)
+      }
   }
 
   implicit def fromSync[F[_]](implicit sync: Sync[F]): RefSupport[F] =
