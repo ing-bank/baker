@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.internal
 
-import akka.event.EventStream
+import org.apache.pekko.event.EventStream
 import cats.effect.IO
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome

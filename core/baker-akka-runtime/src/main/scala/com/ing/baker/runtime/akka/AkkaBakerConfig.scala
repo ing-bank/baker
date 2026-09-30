@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka
 
-import akka.actor.{ActorSystem, Address, AddressFromURIString}
+import org.apache.pekko.actor.{ActorSystem, Address, AddressFromURIString}
 import cats.data.NonEmptyList
 import cats.effect.IO
 import com.ing.baker.runtime.akka.AkkaBakerConfig.BakerValidationSettings

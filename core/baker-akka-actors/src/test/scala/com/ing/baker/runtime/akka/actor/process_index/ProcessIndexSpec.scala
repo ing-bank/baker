@@ -1,11 +1,11 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.Done
-import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props}
-import akka.cluster.sharding.ShardRegion.Passivate
-import akka.pattern.ask
-import akka.testkit.{ImplicitSender, TestKit, TestProbe}
-import akka.util.Timeout
+import org.apache.pekko.Done
+import org.apache.pekko.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props}
+import org.apache.pekko.cluster.sharding.ShardRegion.Passivate
+import org.apache.pekko.pattern.ask
+import org.apache.pekko.testkit.{ImplicitSender, TestKit, TestProbe}
+import org.apache.pekko.util.Timeout
 import com.ing.baker.il.petrinet.{EventTransition, Place, RecipePetriNet, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
 import com.ing.baker.petrinet.api.{Marking, PetriNet}
@@ -44,11 +44,13 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 object ProcessIndexSpec {
   val config: Config = ConfigFactory.parseString(
     """
-      |akka.actor.allow-java-serialization = off
+      |pekko.actor.allow-java-serialization = off
       |baker.actor.snapshot-interval = 1
-      |akka.persistence.journal.plugin = "inmemory-journal"
-      |akka.persistence.snapshot-store.plugin = "inmemory-snapshot-store"
-      |akka.test.timefactor = 3.0
+      |pekko.persistence.journal.plugin = "inmemory-journal"
+      |pekko.persistence.snapshot-store.plugin = "inmemory-snapshot-store"
+      |pekko.persistence.testkit.events.serialize = false
+      |pekko.persistence.testkit.snapshots.serialize = false
+      |pekko.test.timefactor = 3.0
     """.stripMargin)
 
   var processIsStopped: Boolean = false

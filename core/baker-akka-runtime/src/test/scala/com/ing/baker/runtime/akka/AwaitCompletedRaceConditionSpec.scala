@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.akka
 
-import akka.actor.ActorSystem
-import akka.testkit.TestKit
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.testkit.TestKit
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.runtime.akka.internal.CachingInteractionManager

@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.actor.{ActorRef, ActorRefProvider}
+import org.apache.pekko.actor.{ActorRef, ActorRefProvider}
 import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.traverse._
@@ -13,6 +13,7 @@ import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
 import com.ing.baker.runtime.serialization.ProtoMap
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned, versionedOptional}
 import com.ing.baker.runtime.serialization.protomappings.SensoryEventStatusMappingHelper
+import org.apache.pekko.serialization.Serialization
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
@@ -26,7 +27,7 @@ object ProcessIndexProto {
       val companion = protobuf.ActorRefId
 
       override def toProto(a: ActorRef): protobuf.ActorRefId =
-        protobuf.ActorRefId(Some(akka.serialization.Serialization.serializedActorPath(a)))
+        protobuf.ActorRefId(Some(Serialization.serializedActorPath(a)))
 
       override def fromProto(message: ActorRefId): Try[ActorRef] =
         for {

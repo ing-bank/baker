@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.akka.actor
 
-import akka.actor.{ActorRef, ActorSystem}
-import akka.pattern.{BackoffOpts, BackoffSupervisor}
+import org.apache.pekko.actor.{ActorRef, ActorSystem}
+import org.apache.pekko.pattern.{BackoffOpts, BackoffSupervisor}
 import cats.effect.IO
 import com.ing.baker.runtime.akka._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex
@@ -11,6 +11,7 @@ import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
 import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.config.Config
+import org.apache.pekko.util.Timeout
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -55,9 +56,9 @@ class LocalBakerActorProvider(
   }
 
   override def getAllProcessesMetadata(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata] = {
-    import akka.pattern.ask
+    import org.apache.pekko.pattern.ask
     import system.dispatcher
-    implicit val akkaTimeout: akka.util.Timeout = timeout
+    implicit val akkaTimeout: Timeout = timeout
     val future = actorRef.ask(GetIndex).mapTo[Index].map(_.entries)
     Await.result(future, timeout)
   }

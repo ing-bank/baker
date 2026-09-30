@@ -34,71 +34,76 @@
             <artifactId>scala-library</artifactId>
         </dependency>
 
-        <!-- Akka dependencies -->
+        <!-- Pekko dependencies -->
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-actor_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-stream_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-stream_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-protobuf-v3_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-protobuf-v3_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-persistence_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-persistence_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-persistence-query_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-persistence-query_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-cluster_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-cluster_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-cluster-tools_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-cluster-tools_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-cluster-sharding_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-cluster-sharding_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.lightbend.akka.management</groupId>
-            <artifactId>akka-management-cluster-bootstrap_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-management-cluster-bootstrap_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-discovery_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-discovery_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.github.dnvriend</groupId>
-            <artifactId>akka-persistence-inmemory_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-actor-typed_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor-typed_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-cluster-typed_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-cluster-typed_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-persistence-typed_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-persistence-typed_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-stream-typed_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-stream-typed_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-slf4j_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-slf4j_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-persistence-cassandra_${scala.compat.version}</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.github.alstanchev</groupId>
+            <artifactId>pekko-persistence-inmemory_2.13</artifactId>
+        </dependency>
+
 
         <!-- Other dependencies -->
         <dependency>
@@ -130,8 +135,8 @@
             <artifactId>scala-logging_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>nl.pragmasoft.sensors</groupId>
-            <artifactId>sensors-core_${scala.compat.version}</artifactId>
+            <groupId>nl.pragmasoft.pekko</groupId>
+            <artifactId>sensors_${scala.compat.version}</artifactId>
         </dependency>
 
         <!-- Test dependencies -->
@@ -149,13 +154,13 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-testkit_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-testkit_${scala.compat.version}</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-stream-testkit_${scala.compat.version}</artifactId>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-stream-testkit_${scala.compat.version}</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

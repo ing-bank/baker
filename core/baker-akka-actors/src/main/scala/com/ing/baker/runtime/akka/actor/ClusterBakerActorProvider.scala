@@ -1,12 +1,12 @@
 package com.ing.baker.runtime.akka.actor
 
-import akka.actor.{ActorRef, ActorSystem, Address}
-import akka.cluster.Cluster
-import akka.cluster.sharding.ShardRegion._
-import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardCoordinator, ShardRegion}
-import akka.management.cluster.bootstrap.ClusterBootstrap
-import akka.management.scaladsl.AkkaManagement
-import akka.util.Timeout
+import org.apache.pekko.actor.{ActorRef, ActorSystem, Address}
+import org.apache.pekko.cluster.Cluster
+import org.apache.pekko.cluster.sharding.ShardRegion._
+import org.apache.pekko.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardCoordinator, ShardRegion}
+import org.apache.pekko.management.cluster.bootstrap.ClusterBootstrap
+import org.apache.pekko.management.scaladsl.PekkoManagement
+import org.apache.pekko.util.Timeout
 import cats.data.NonEmptyList
 import cats.effect.IO
 import com.ing.baker.il.sha256HashCode
@@ -89,7 +89,7 @@ class ClusterBakerActorProvider(
       case SeedNodesList(nel) =>
         Cluster.get(system).joinSeedNodes(nel.toList)
       case ServiceDiscovery =>
-        AkkaManagement(system).start()
+        PekkoManagement(system).start()
         ClusterBootstrap(system).start()
     }
   }
@@ -139,7 +139,7 @@ class ClusterBakerActorProvider(
 
   def startAllIndexShard(actor: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[_] = {
 
-    import akka.pattern.ask
+    import org.apache.pekko.pattern.ask
     import system.dispatcher
     implicit val akkaTimeout: Timeout = timeout
 
@@ -154,7 +154,7 @@ class ClusterBakerActorProvider(
 
   def getAllProcessesMetadata(actor: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata] = {
 
-    import akka.pattern.ask
+    import org.apache.pekko.pattern.ask
     import system.dispatcher
     implicit val akkaTimeout: Timeout = timeout
 

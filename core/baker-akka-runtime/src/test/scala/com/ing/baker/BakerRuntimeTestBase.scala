@@ -1,7 +1,7 @@
 package com.ing.baker
 
-import akka.actor.ActorSystem
-import akka.testkit.TestKit
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.testkit.TestKit
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.CaseClassIngredient
@@ -129,36 +129,36 @@ trait BakerRuntimeTestBase
       s"""
          |include "baker.conf"
          |
-         |akka {
+         |pekko {
          |
          |  actor {
-         |    provider = "akka.actor.LocalActorRefProvider"
+         |    provider = "org.apache.pekko.actor.LocalActorRefProvider"
          |    allow-java-serialization = off
          |    serialize-messages = off
          |    serialize-creators = off
          |  }
          |
          |  persistence {
-         |     journal.plugin = "akka.persistence.journal.leveldb"
+         |     journal.plugin = "pekko.persistence.journal.leveldb"
          |     journal.leveldb.dir = "$journalPath"
          |
-         |     snapshot-store.plugin = "akka.persistence.snapshot-store.local"
+         |     snapshot-store.plugin = "pekko.persistence.snapshot-store.local"
          |     snapshot-store.local.dir = "$snapshotsPath"
          |
-         |     auto-start-snapshot-stores = [ "akka.persistence.snapshot-store.local"]
-         |     auto-start-journals = [ "akka.persistence.journal.leveldb" ]
+         |     auto-start-snapshot-stores = [ "pekko.persistence.snapshot-store.local"]
+         |     auto-start-journals = [ "pekko.persistence.journal.leveldb" ]
          |
          |     journal.leveldb.native = off
          |  }
          |
-         |  loggers = ["akka.event.slf4j.Slf4jLogger"]
+         |  loggers = ["org.apache.pekko.event.slf4j.Slf4jLogger"]
          |  loglevel = "DEBUG"
-         |  logging-filter = "akka.event.slf4j.Slf4jLoggingFilter"
+         |  logging-filter = "org.apache.pekko.event.slf4j.Slf4jLoggingFilter"
          |}
          |
          |baker {
          |  actor.provider = "local"
-         |  actor.read-journal-plugin = "akka.persistence.query.journal.leveldb"
+         |  actor.read-journal-plugin = "pekko.persistence.query.journal.leveldb"
          |  journal-initialize-timeout = $journalInitializeTimeout
          |
          |  recipe-manager-type = "actor"
@@ -175,9 +175,9 @@ trait BakerRuntimeTestBase
 
     ConfigFactory.parseString(
       s"""
-         |akka {
+         |pekko {
          |
-         |  actor.provider = "akka.cluster.ClusterActorRefProvider"
+         |  actor.provider = "org.apache.pekko.cluster.ClusterActorRefProvider"
          |
          |  remote.artery {
          |    canonical.hostname = localhost
@@ -187,7 +187,7 @@ trait BakerRuntimeTestBase
          |
          |baker {
          |  actor.provider = "cluster-sharded"
-         |  cluster.seed-nodes = ["akka://$actorSystemName@localhost:$port"]
+         |  cluster.seed-nodes = ["pekko://$actorSystemName@localhost:$port"]
          |}
     """.stripMargin).withFallback(localLevelDBConfig(actorSystemName, journalInitializeTimeout, journalPath, snapshotsPath))
 

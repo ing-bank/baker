@@ -1,9 +1,8 @@
 package com.ing.baker.runtime.akka.actor.logging
 
-import akka.event.EventStream
-import com.ing.baker.il.petrinet.Transition
-import com.ing.baker.runtime.common.{EventFired, EventReceived, EventRejected, InteractionCompleted, InteractionFailed, InteractionStarted, RecipeAdded, RecipeInstanceCreated}
+import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.model.BakerLogging
+import org.apache.pekko.event.EventStream
 
 object LogAndSendEvent {
 

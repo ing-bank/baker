@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.akka.actor.recipe_manager
 
-import akka.actor.{ActorLogging, Props}
-import akka.persistence.PersistentActor
+import org.apache.pekko.actor.{ActorLogging, Props}
+import org.apache.pekko.persistence.PersistentActor
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor._

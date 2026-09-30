@@ -1,14 +1,15 @@
 package com.ing.baker.runtime.akka.actor.delayed_transition_actor
 
-import akka.actor.{ActorRef, Props}
-import akka.persistence._
-import akka.sensors.actor.PersistentActorMetrics
+import org.apache.pekko.actor.{ActorRef, Props}
+import org.apache.pekko.persistence._
 import com.ing.baker.runtime.akka.actor.BakerCleanup
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor._
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{NoSuchProcess, ProcessDeleted}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
+import org.apache.pekko.event.{DiagnosticLoggingAdapter, Logging}
+import org.apache.pekko.sensors.actor.PersistentActorMetrics
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -44,6 +45,8 @@ class DelayedTransitionActor(processIndex: ActorRef,
                              snapshotCount: Int) extends PersistentActor with PersistentActorMetrics {
 
   private var waitingTransitions: Map[String, DelayedTransitionInstance] = Map[String, DelayedTransitionInstance]()
+
+  override val log: DiagnosticLoggingAdapter = Logging.getLogger(logSource = this)
 
   import context.dispatcher
 

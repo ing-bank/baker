@@ -1,8 +1,9 @@
 package com.ing.baker.runtime.akka.actor
 
-import akka.Done
-import akka.actor.ActorSystem
-import akka.persistence.{SnapshotMetadata, cassandra}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.persistence.SnapshotMetadata
+import org.apache.pekko.persistence.cassandra.cleanup.Cleanup
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -23,7 +24,7 @@ abstract class BakerCleanup {
 
 class CassandraBakerCleanup(system: ActorSystem) extends BakerCleanup with LazyLogging {
 
-  private val cleanup = new cassandra.cleanup.Cleanup(system)
+  private val cleanup = new Cleanup(system)
 
   override def supportsCleanupOfStoppedActors = true
 

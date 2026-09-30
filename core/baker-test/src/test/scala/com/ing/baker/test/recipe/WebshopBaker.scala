@@ -1,6 +1,6 @@
 package com.ing.baker.test.recipe
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.AkkaBaker

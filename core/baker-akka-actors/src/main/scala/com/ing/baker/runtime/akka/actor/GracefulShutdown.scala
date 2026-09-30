@@ -1,9 +1,9 @@
 package com.ing.baker.runtime.akka.actor
 
-import akka.actor.ActorSystem
-import akka.cluster.Cluster
-import akka.pattern.ask
-import akka.util.Timeout
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.cluster.Cluster
+import org.apache.pekko.pattern.ask
+import org.apache.pekko.util.Timeout
 import com.ing.baker.runtime.akka.actor.GracefulShutdownShardRegions.InitiateGracefulShutdown
 import com.ing.baker.runtime.akka.internal.TimeoutUtil._
 import com.typesafe.scalalogging.Logger
