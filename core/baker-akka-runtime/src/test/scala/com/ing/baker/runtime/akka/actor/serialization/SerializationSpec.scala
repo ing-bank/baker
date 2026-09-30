@@ -84,6 +84,8 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
 
   checkFor[ProcessIndex.ActorDeleted].run
 
+  checkFor[ProcessIndex.ActorDeletionStarted].run
+
   checkFor[ProcessIndex.ActorPassivated].run
 
   checkFor[ProcessIndex.ActorActivated].run
@@ -350,7 +352,7 @@ object SerializationSpec {
     import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
     import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 
-    implicit val processStatusGen: Gen[ProcessStatus] = Gen.oneOf(Active, Deleted)
+    implicit val processStatusGen: Gen[ProcessStatus] = Gen.oneOf(Active, Deleted, Deleting)
     implicit val createdTimeGen: Gen[Long] = Gen.chooseNum[Long](0, Long.MaxValue)
 
     implicit val actorMetadataGen: Gen[ActorMetadata] = for {
@@ -470,8 +472,15 @@ object SerializationSpec {
       identifierGen.map(e => ActorDeleted(e, removedFromIndex = false))
     }
 
+    implicit val actorDeletionStartedGen: Gen[ActorDeletionStarted] = {
+      identifierGen.map(e => ActorDeletionStarted(e, removeFromIndex = false))
+    }
+
     implicit val processIndexSnapShotGen: Gen[ProcessIndexSnapShot] =
-      Gen.mapOf(GenUtil.tuple(identifierGen, actorMetadataGen)).map(ProcessIndexSnapShot)
+      for {
+        index <- Gen.mapOf(GenUtil.tuple(identifierGen, actorMetadataGen))
+        pendingDeletions <- Gen.mapOf(GenUtil.tuple(identifierGen, Gen.oneOf(true, false)))
+      } yield ProcessIndexSnapShot(index, pendingDeletions)
 
     implicit val resolveBlockedInteractionGen: Gen[ResolveBlockedInteraction] =
       for {
