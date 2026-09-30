@@ -1,0 +1,77 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Profile Service",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/profiles": {
+      "post": {
+        "operationId": "CreateProfile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProfileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Profile created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateProfileRequest": {
+        "type": "object",
+        "required": ["userId", "address", "phoneNumber"],
+        "properties": {
+          "userId": { "type": "string" },
+          "address": { "type": "string" },
+          "phoneNumber": { "type": "string" }
+        }
+      },
+      "ProfileDto": {
+        "type": "object",
+        "required": ["profileId", "userId", "address", "phoneNumber"],
+        "properties": {
+          "profileId": { "type": "string" },
+          "userId": { "type": "string" },
+          "address": { "type": "string" },
+          "phoneNumber": { "type": "string" }
+        }
+      },
+      "ProfileErrorResponse": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      }
+    }
+  }
+}
