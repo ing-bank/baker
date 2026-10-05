@@ -20,8 +20,8 @@ import scala.collection.immutable.List as ScalaList
 @Suppress("ABSTRACT_MEMBER_NOT_IMPLEMENTED", "UNCHECKED_CAST")
 class InMemoryBaker(
     private val bakerConfig: BakerConfig,
-    components: BakerComponents<CompletableFuture<Any>>
-) : BakerF<CompletableFuture<Any>>(
+    components: BakerComponents<CompletableFuture<*>>
+) : BakerF<CompletableFuture<*>>(
     components,
     InMemoryEffects.asyncSupportAny(),
     InMemoryEffects.asyncSupportAny()
@@ -62,7 +62,7 @@ class InMemoryBaker(
                 BakerLogging.default()
             )
             return InMemoryEffects.pure(
-                InMemoryBaker(config, components as BakerComponents<CompletableFuture<Any>>) as BakerF<CompletableFuture<*>>
+                InMemoryBaker(config, components)
             )
         }
 

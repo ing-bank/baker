@@ -6,6 +6,7 @@ import com.ing.baker.runtime.common.FunctionK
 import com.ing.baker.runtime.model.InteractionInstance
 import scala.concurrent.Future
 import scala.jdk.javaapi.CollectionConverters.asScala
+import scala.reflect.ClassTag
 import scala.reflect.`ClassTag$`
 import scala.runtime.BoxedUnit
 import java.util.concurrent.CompletableFuture
@@ -25,18 +26,18 @@ object InMemoryEffects {
 
     @JvmStatic
     @Suppress("UNCHECKED_CAST")
-    fun asyncSupportAny(): AsyncSupport<InMemoryEffect<Any>> =
-        AsyncSupport.completableFutureSupport() as AsyncSupport<InMemoryEffect<Any>>
+    fun asyncSupportAny(): AsyncSupport<InMemoryEffect<*>> =
+        AsyncSupport.completableFutureSupport() as AsyncSupport<InMemoryEffect<*>>
 
     @JvmStatic
     @Suppress("UNCHECKED_CAST")
-    fun effectSupportAny(): EffectSupport<InMemoryEffect<Any>> =
-        EffectSupport.fromCompletableFuture() as EffectSupport<InMemoryEffect<Any>>
+    fun effectSupportAny(): EffectSupport<InMemoryEffect<*>> =
+        EffectSupport.fromCompletableFuture() as EffectSupport<InMemoryEffect<*>>
 
     @JvmStatic
     @Suppress("UNCHECKED_CAST")
-    fun classTagAny() = `ClassTag$`.`MODULE$`.apply<InMemoryEffect<Any>>(
-        CompletableFuture::class.java as Class<InMemoryEffect<Any>>
+    fun classTagAny(): ClassTag<InMemoryEffect<*>> = `ClassTag$`.`MODULE$`.apply(
+        CompletableFuture::class.java
     )
 
     @JvmStatic
@@ -73,14 +74,14 @@ object InMemoryEffects {
     fun futureToCompletableFuture(): FunctionK<Future<*>, InMemoryEffect<*>> =
         object : FunctionK<Future<*>, InMemoryEffect<*>> {
             override fun <A> apply(fa: Future<*>): InMemoryEffect<*> =
-                futureAsJava(fa as Future<Any>).toCompletableFuture()
+                futureAsJava(fa).toCompletableFuture()
         }
 
     @JvmStatic
     fun completableFutureToFuture(): FunctionK<InMemoryEffect<*>, Future<*>> =
         object : FunctionK<InMemoryEffect<*>, Future<*>> {
             override fun <A> apply(fa: InMemoryEffect<*>): Future<*> =
-                futureAsScala(fa as CompletableFuture<Any>)
+                futureAsScala(fa)
         }
 
     @JvmStatic
