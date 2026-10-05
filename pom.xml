@@ -30,7 +30,7 @@
         <cats.effect.version>3.7.1</cats.effect.version>
         <cats.retry.version>3.1.3</cats.retry.version>
         <circe.generic.extras.version>0.14.4</circe.generic.extras.version>
-        <circe.version>0.14.14</circe.version>
+        <circe.version>0.14.16</circe.version>
         <ficus.version>1.5.2</ficus.version>
         <fs2.kafka.version>3.9.1</fs2.kafka.version>
         <fs2.version>3.14.0</fs2.version>
