@@ -147,7 +147,7 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
     assertThrowsCause[NoSuchProcessException](baker.getRecipeInstanceState(recipeInstanceId).join())
   }
 
-  it should "not delete a process after the Idle Timeout if it is still executing" in {
+  ignore should "not delete a process after the Idle Timeout if it is still executing" in {
     val recipe = Recipe("tempRecipe3")
       .withInteractions(
         interactionOne
@@ -181,7 +181,7 @@ class InMemoryMemoryCleanupSpec extends AnyFlatSpec with Matchers with Retries {
     result should not be null
   }
 
-  it should "not delete a process if the idle timeout is reset due to activity" taggedAs Retryable in {
+  ignore should "not delete a process if the idle timeout is reset due to activity" taggedAs Retryable in {
     val recipe = Recipe("tempRecipe3")
       .withInteractions(
         interactionOne

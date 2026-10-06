@@ -118,6 +118,8 @@
         <module>core/baker-compiler-kotlin</module>
         <module>core/baker-akka-actors</module>
         <module>core/baker-akka-runtime</module>
+        <module>core/baker-pekko-actors</module>
+        <module>core/baker-pekko-runtime</module>
         <module>core/baker-recipe-manager</module>
         <module>core/baker-test</module>
 
