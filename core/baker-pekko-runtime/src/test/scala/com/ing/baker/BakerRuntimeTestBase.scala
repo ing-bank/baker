@@ -8,7 +8,7 @@ import com.ing.baker.recipe.CaseClassIngredient
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.Recipe
 import com.ing.baker.runtime.akka.AkkaBaker
-import com.ing.baker.runtime.akka.internal.CachingInteractionManager
+import com.ing.baker.runtime.core.util.CachingInteractionManager
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import com.ing.baker.types.{Converters, Value}

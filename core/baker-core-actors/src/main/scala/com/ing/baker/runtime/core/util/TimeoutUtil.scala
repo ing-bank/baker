@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.akka.internal
+package com.ing.baker.runtime.core.util
 
 import java.util.{Timer, TimerTask}
 import scala.concurrent.{ExecutionContext, Future, Promise, TimeoutException}
@@ -57,3 +57,4 @@ private[baker] object TimeoutUtil {
 
 
 }
+

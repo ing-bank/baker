@@ -2,7 +2,7 @@ package com.ing.bakery.components
 
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
-import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
+import com.ing.baker.runtime.core.util.DynamicInteractionManager
 import com.ing.bakery.interaction.RemoteInteractionClient
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging

@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.akka.internal
+package com.ing.baker.runtime.core.util
 
 import cats.effect.{IO, Ref, Resource}
 import com.ing.baker.il.petrinet.InteractionTransition
@@ -136,3 +136,4 @@ trait DynamicInteractionManager extends CachingInteractionManager {
   def resource: Resource[IO, DynamicInteractionManager]
 
 }
+

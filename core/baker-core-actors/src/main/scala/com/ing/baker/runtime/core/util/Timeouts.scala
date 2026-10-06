@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.akka.actor
+package com.ing.baker.runtime.core.util
 
 import com.typesafe.config.Config
 

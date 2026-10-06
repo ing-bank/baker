@@ -116,6 +116,7 @@
         <module>core/baker-compiler</module>
         <module>core/baker-compiler-scala</module>
         <module>core/baker-compiler-kotlin</module>
+        <module>core/baker-core-actors</module>
         <module>core/baker-akka-actors</module>
         <module>core/baker-akka-runtime</module>
         <module>core/baker-pekko-actors</module>

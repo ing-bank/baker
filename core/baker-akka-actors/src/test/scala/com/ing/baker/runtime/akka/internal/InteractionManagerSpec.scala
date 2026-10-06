@@ -4,6 +4,7 @@ import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
+import com.ing.baker.runtime.core.util.CachingInteractionManager
 import com.ing.baker.runtime.scaladsl.{InteractionInstance, InteractionInstanceInput}
 import com.ing.baker.runtime.{defaultinteractions, model}
 import com.ing.baker.types

@@ -23,6 +23,11 @@
         </dependency>
         <dependency>
             <groupId>com.ing.baker</groupId>
+            <artifactId>baker-core-actors</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
             <artifactId>baker-recipe-dsl</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>

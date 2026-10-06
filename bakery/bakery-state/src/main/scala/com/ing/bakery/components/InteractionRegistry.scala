@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import cats.Traverse
 import cats.effect.{IO, Resource}
 import cats.syntax.all._
-import com.ing.baker.runtime.akka.internal.DynamicInteractionManager
+import com.ing.baker.runtime.core.util.DynamicInteractionManager
 import com.ing.baker.runtime.defaultinteractions
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}

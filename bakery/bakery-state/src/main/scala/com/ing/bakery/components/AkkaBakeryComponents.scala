@@ -3,7 +3,8 @@ package com.ing.bakery.components
 import akka.actor.ActorSystem
 import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.akka.AkkaBakerConfig
-import com.ing.baker.runtime.akka.actor.{BakerActorProvider, Timeouts}
+import com.ing.baker.runtime.akka.actor.BakerActorProvider
+import com.ing.baker.runtime.core.util.Timeouts
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.{ActorBasedRecipeManager, RecipeManager}
 import com.ing.bakery.metrics.MetricService

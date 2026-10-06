@@ -13,7 +13,7 @@ import cats.instances.future._
 import com.ing.baker.il.petrinet.{InteractionTransition, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.akka._
+import com.ing.baker.runtime.core.util._
 import com.ing.baker.runtime.akka.actor.{ActorBasedBakerCleanup, BakerCleanup, CassandraBakerCleanup}
 import com.ing.baker.runtime.akka.actor.Util.logging._
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor

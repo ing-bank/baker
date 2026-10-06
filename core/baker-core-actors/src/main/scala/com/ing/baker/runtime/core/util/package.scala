@@ -1,4 +1,4 @@
-package com.ing.baker.runtime
+package com.ing.baker.runtime.core
 
 import java.lang.Thread.UncaughtExceptionHandler
 import java.util.concurrent.atomic.AtomicInteger
@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 import scala.util.control.NonFatal
 
-package object akka {
+package object util {
 
   implicit class IOHandleErrors[T](io: IO[T]) {
 
@@ -58,3 +58,4 @@ package object akka {
     }
   }
 }
+
