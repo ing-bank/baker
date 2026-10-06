@@ -3,7 +3,6 @@ package com.ing.baker.runtime.akka.actor.delayed_transition_actor
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor.{DelayedTransitionExecuted, DelayedTransitionInstance, DelayedTransitionScheduled, DelayedTransitionSnapshot}
 import com.ing.baker.runtime.serialization.ProtoMap
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
-import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionProto._
 
 import scala.util.Try
 

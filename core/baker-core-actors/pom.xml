@@ -80,6 +80,33 @@
             </plugin>
 
             <plugin>
+                <groupId>org.xolstice.maven.plugins</groupId>
+                <artifactId>protobuf-maven-plugin</artifactId>
+                <configuration>
+                    <protoSourceRoot>${basedir}/src/main/protobuf</protoSourceRoot>
+                    <outputDirectory>${basedir}/target/generated-sources/protobuf/scala</outputDirectory>
+                    <clearOutputDirectory>false</clearOutputDirectory>
+                    <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
+                    <protocPlugins>
+                        <protocPlugin>
+                            <id>scalapb</id>
+                            <groupId>com.thesamet.scalapb</groupId>
+                            <artifactId>compilerplugin_${scala.compat.version}</artifactId>
+                            <version>${scalapb.version}</version>
+                            <mainClass>scalapb.ScalaPbCodeGenerator</mainClass>
+                        </protocPlugin>
+                    </protocPlugins>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest-maven-plugin</artifactId>
             </plugin>
