@@ -64,9 +64,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-testkit_${scala.compat.version}</artifactId>
-            <version>${akka.version}</version>
+            <groupId>org.apache.pekko</groupId>
+            <artifactId>pekko-testkit_${scala.compat.version}</artifactId>
+            <version>${pekko.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -147,11 +147,6 @@
             <name>Central Repository</name>
             <url>https://repo1.maven.org/maven2</url>
         </repository>
-        <repository>
-            <id>akka-secure-mvn</id>
-            <name>Akka Secure Repository</name>
-            <url>https://repo.akka.io/${env.AKKA_TOKEN}/secure</url>
-        </repository>
     </repositories>
 
     <pluginRepositories>
@@ -159,11 +154,6 @@
             <id>central</id>
             <name>Central Repository</name>
             <url>https://repo1.maven.org/maven2</url>
-        </pluginRepository>
-        <pluginRepository>
-            <id>akka-secure-mvn</id>
-            <name>Akka Secure Repository</name>
-            <url>https://repo.akka.io/${env.AKKA_TOKEN}/secure</url>
         </pluginRepository>
     </pluginRepositories>
 </project>
