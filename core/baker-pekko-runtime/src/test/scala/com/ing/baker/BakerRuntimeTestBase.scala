@@ -5,7 +5,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.CaseClassIngredient
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.Recipe
-import com.ing.baker.runtime.akka.AkkaBaker
+import com.ing.baker.runtime.akka.PekkoBaker
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.core.util.CachingInteractionManager
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
@@ -216,13 +216,13 @@ trait BakerRuntimeTestBase
 
   protected def setupBakerWithRecipe(recipe: Recipe, implementations: List[InteractionInstance])
                                     (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
-    val baker = AkkaBaker(ConfigFactory.load(), actorSystem, CachingInteractionManager(implementations))
+    val baker = PekkoBaker(ConfigFactory.load(), actorSystem, CachingInteractionManager(implementations))
     baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe))).map(baker -> _)(actorSystem.dispatcher)
   }
 
   protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Future[Baker] = {
     setupMockResponse()
-    Future.successful(AkkaBaker(ConfigFactory.load(), actorSystem, CachingInteractionManager(mockImplementations)))
+    Future.successful(PekkoBaker(ConfigFactory.load(), actorSystem, CachingInteractionManager(mockImplementations)))
   }
 
   protected def setupMockResponse(): Unit = {

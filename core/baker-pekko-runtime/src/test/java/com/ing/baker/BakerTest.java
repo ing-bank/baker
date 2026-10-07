@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.akka.AkkaBaker;
+import com.ing.baker.runtime.akka.PekkoBaker;
 import com.ing.baker.runtime.common.BakerException;
 import com.ing.baker.runtime.common.InteractionExecutionFailureReason;
 import com.ing.baker.runtime.common.RecipeRecord;
@@ -60,7 +60,7 @@ public class BakerTest {
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
 
         String recipeInstanceId = UUID.randomUUID().toString();
-        Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
+        Baker jBaker = PekkoBaker.java(config, actorSystem, implementationsList);
         Map<String, Value> ingredients = jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false, true))
                 .thenCompose(recipeId -> {
                     assertEquals(compiledRecipe.getValidationErrors().size(), 0);
@@ -83,7 +83,7 @@ public class BakerTest {
 
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
 
-        Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
+        Baker jBaker = PekkoBaker.java(config, actorSystem, implementationsList);
         String recipeId = jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), false, true)).get();
 
         String requestId = UUID.randomUUID().toString();
@@ -102,7 +102,7 @@ public class BakerTest {
 
         exception.expect(ExecutionException.class);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
-        Baker jBaker = AkkaBaker.java(config, actorSystem);
+        Baker jBaker = PekkoBaker.java(config, actorSystem);
 
         jBaker.addRecipe(RecipeRecord.of(compiledRecipe, System.currentTimeMillis(), true, true)).get();
     }
@@ -112,7 +112,7 @@ public class BakerTest {
         actorSystem.terminate();
         actorSystem = ActorSystem.apply("shouldExecuteCompleteFlow");
 
-        Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
+        Baker jBaker = PekkoBaker.java(config, actorSystem, implementationsList);
 
         List<BakerEvent> bakerEvents = new LinkedList<>();
         jBaker.registerBakerEventListener(bakerEvents::add);
@@ -221,7 +221,7 @@ public class BakerTest {
 
     @Test
     public void testExecuteSingleInteractionSuccess() throws BakerException, ExecutionException, InterruptedException {
-        Baker jBaker = AkkaBaker.java(config, actorSystem, implementationsList);
+        Baker jBaker = PekkoBaker.java(config, actorSystem, implementationsList);
         List<IngredientInstance> ingredients = new ArrayList<>();
         ingredients.add(new IngredientInstance("requestId", new PrimitiveValue("requestId")));
 
@@ -236,7 +236,7 @@ public class BakerTest {
 
     @Test
     public void testExecuteSingleInteractionNotFound() throws BakerException, ExecutionException, InterruptedException {
-        Baker jBaker = AkkaBaker.java(config, actorSystem);
+        Baker jBaker = PekkoBaker.java(config, actorSystem);
 
         InteractionExecutionResult result = jBaker.executeSingleInteraction("doesnotexist", Collections.emptyList()).get();
         assertEquals(result, new InteractionExecutionResult(
@@ -247,7 +247,7 @@ public class BakerTest {
     @Test
     public void testExecuteSingleInteractionThatFails() throws BakerException, ExecutionException, InterruptedException {
         InteractionInstance interactionThatThrows = InteractionInstance.from(new JavaCompiledRecipeTest.InteractionThatThrowsImpl());
-        Baker jBaker = AkkaBaker.java(config, actorSystem, List.of(interactionThatThrows));
+        Baker jBaker = PekkoBaker.java(config, actorSystem, List.of(interactionThatThrows));
         List<IngredientInstance> ingredients = new ArrayList<>();
         ingredients.add(new IngredientInstance("requestId", new PrimitiveValue("requestId")));
 

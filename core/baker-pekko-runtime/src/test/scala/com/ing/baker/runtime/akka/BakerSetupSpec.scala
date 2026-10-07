@@ -41,7 +41,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent))
 
-        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(mockImplementations))
+        val baker = PekkoBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(mockImplementations))
         when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful("foobar")))
         for {
           recipeId <- baker.addRecipe(RecipeRecord.of(simpleRecipe))
@@ -52,14 +52,14 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
       }
 
       "providing implementations in a sequence" in {
-        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(mockImplementations))
+        val baker = PekkoBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(mockImplementations))
         for {
          _ <- baker.getAllRecipes
         } yield succeed
       }
 
       "providing an implementation with the class simplename same as the interaction" in {
-        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(new implementations.InteractionOne())))
+        val baker = PekkoBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(new implementations.InteractionOne())))
         for {
           _ <- baker.getAllRecipes
         } yield succeed
@@ -71,7 +71,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne.withName("interactionOneRenamed"))
           .withSensoryEvent(initialEvent)
 
-        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(new implementations.InteractionOne())))
+        val baker = PekkoBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(new implementations.InteractionOne())))
 
         for {
           _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
@@ -84,7 +84,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(new InteractionOneFieldName())))
+        val baker = PekkoBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(new InteractionOneFieldName())))
 
         for {
           _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
@@ -97,7 +97,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
+        val baker = PekkoBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation())))
 
         for {
           _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
@@ -109,7 +109,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionWithAComplexIngredient)
           .withSensoryEvent(initialEvent)
 
-        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(mock[ComplexIngredientInteraction])))
+        val baker = PekkoBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(mock[ComplexIngredientInteraction])))
 
         for {
           _ <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
@@ -124,7 +124,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(secondEvent)
 
-        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(mockImplementations))
+        val baker = PekkoBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(mockImplementations))
 
         recoverToExceptionIf[RecipeValidationException] {
           baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
@@ -137,7 +137,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager())
+        val baker = PekkoBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager())
 
         recoverToExceptionIf[ImplementationsException] {
           baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
@@ -150,7 +150,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(new InteractionOneWrongApply())))
+        val baker = PekkoBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(InteractionInstance.unsafeFrom(new InteractionOneWrongApply())))
 
         recoverToExceptionIf[ImplementationsException] {
           baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))

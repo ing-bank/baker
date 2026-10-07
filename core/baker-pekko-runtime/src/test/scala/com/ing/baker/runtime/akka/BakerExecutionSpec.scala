@@ -76,7 +76,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         exception <- Future.successful {
           intercept[IllegalArgumentException] {
-            AkkaBaker(config, setupActorSystem, CachingInteractionManager())
+            PekkoBaker(config, setupActorSystem, CachingInteractionManager())
           }
         }
         _ <- setupActorSystem.terminate()
@@ -99,7 +99,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val setupActorSystem = ActorSystem("setup-actor-system", config)
       for {
         exception <- Future.successful {
-          intercept[MalformedURLException](AkkaBaker(config, setupActorSystem, CachingInteractionManager()))
+          intercept[MalformedURLException](PekkoBaker(config, setupActorSystem, CachingInteractionManager()))
         }
         _ <- setupActorSystem.terminate()
       } yield assert(exception.getMessage contains "wrong-address")
@@ -120,7 +120,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val setupActorSystem = ActorSystem("setup-actor-system", config)
       for {
         exception <- Future.successful {
-          intercept[IllegalArgumentException](AkkaBaker(config, setupActorSystem, CachingInteractionManager()))
+          intercept[IllegalArgumentException](PekkoBaker(config, setupActorSystem, CachingInteractionManager()))
         }
         _ <- setupActorSystem.terminate()
       } yield assert(exception.getMessage contains "No default service discovery implementation configured in `pekko.discovery.method`")
@@ -388,7 +388,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           |}
         """.stripMargin).withFallback(ConfigFactory.load())
 
-      val baker = AkkaBaker(config, ActorSystem.apply("remoteTest", config), CachingInteractionManager(mockImplementations))
+      val baker = PekkoBaker(config, ActorSystem.apply("remoteTest", config), CachingInteractionManager(mockImplementations))
 
       for {
         recipeId <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe)))
@@ -719,7 +719,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
               .withPredefinedIngredients(("missingJavaOptional", ingredientValue)))
           .withSensoryEvent(initialEvent)
 
-      val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(mockImplementations))
+      val baker = PekkoBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(mockImplementations))
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
 
       for {
@@ -1813,7 +1813,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- recoverToSucceededIf[TimeoutException] {
-          baker.asInstanceOf[AkkaBaker].awaitEvent(recipeInstanceId, "SieveInteractionSuccessful", timeout = 1.seconds)
+          baker.asInstanceOf[PekkoBaker].awaitEvent(recipeInstanceId, "SieveInteractionSuccessful", timeout = 1.seconds)
         }
       } yield succeed
     }

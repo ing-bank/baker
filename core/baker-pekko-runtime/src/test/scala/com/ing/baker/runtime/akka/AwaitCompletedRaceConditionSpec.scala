@@ -94,7 +94,7 @@ class AwaitCompletedRaceConditionSpec
 
   "awaitCompleted" should "wait for interaction output events (EventTransitions) to complete" in {
     val reserveItemsInstance = InteractionInstance.unsafeFrom(new ReserveItemsImpl)
-    val baker: Baker = AkkaBaker.localDefault(system, CachingInteractionManager(reserveItemsInstance))
+    val baker: Baker = PekkoBaker.localDefault(system, CachingInteractionManager(reserveItemsInstance))
 
     val compiled = RecipeCompiler.compileRecipe(recipe)
     val recipeInstanceId = UUID.randomUUID().toString
@@ -136,7 +136,7 @@ class AwaitCompletedRaceConditionSpec
 
     Future.sequence((1 to iterations).map { i =>
       val reserveItemsInstance = InteractionInstance.unsafeFrom(new ReserveItemsImpl)
-      val baker: Baker = AkkaBaker.localDefault(system, CachingInteractionManager(reserveItemsInstance))
+      val baker: Baker = PekkoBaker.localDefault(system, CachingInteractionManager(reserveItemsInstance))
 
       val compiled = RecipeCompiler.compileRecipe(recipe)
       val recipeInstanceId = UUID.randomUUID().toString

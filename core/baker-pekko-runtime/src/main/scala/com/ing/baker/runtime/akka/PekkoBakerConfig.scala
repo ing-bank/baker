@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka
 import org.apache.pekko.actor.{ActorSystem, AddressFromURIString}
 import cats.data.NonEmptyList
 import cats.effect.IO
-import com.ing.baker.runtime.akka.AkkaBakerConfig.BakerValidationSettings
+import com.ing.baker.runtime.akka.PekkoBakerConfig.BakerValidationSettings
 import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider}
 import com.ing.baker.runtime.core.util.{CachingInteractionManager, Timeouts}
 import com.ing.baker.runtime.model.InteractionManager
@@ -15,7 +15,7 @@ import net.ceedubs.ficus.Ficus._
 
 import scala.concurrent.duration._
 
-case class AkkaBakerConfig(
+case class PekkoBakerConfig(
                             bakerActorProvider: BakerActorProvider,
                             interactions: InteractionManager[IO],
                             recipeManager: RecipeManager,
@@ -24,7 +24,7 @@ case class AkkaBakerConfig(
                             terminateActorSystem: Boolean = true,
                           )(implicit val system: ActorSystem)
 
-object AkkaBakerConfig extends LazyLogging {
+object PekkoBakerConfig extends LazyLogging {
 
   case class KafkaEventSinkSettings(enabled: Boolean, `bootstrap-servers`: String, `baker-events-topic`: String, `recipe-events-topic`: String)
 
@@ -37,11 +37,11 @@ object AkkaBakerConfig extends LazyLogging {
       BakerValidationSettings(config.getOrElse[Boolean]("baker.allow-adding-recipe-without-requiring-instances", false))
   }
 
-  def localDefault(actorSystem: ActorSystem): AkkaBakerConfig = {
+  def localDefault(actorSystem: ActorSystem): PekkoBakerConfig = {
     localDefault(actorSystem, CachingInteractionManager())
   }
 
-  def localDefault(actorSystem: ActorSystem, interactions: CachingInteractionManager): AkkaBakerConfig = {
+  def localDefault(actorSystem: ActorSystem, interactions: CachingInteractionManager): PekkoBakerConfig = {
     val defaultTimeouts = Timeouts.default
 
     val localProvider =
@@ -55,7 +55,7 @@ object AkkaBakerConfig extends LazyLogging {
         rememberProcessDuration = None
       )
 
-    AkkaBakerConfig(
+    PekkoBakerConfig(
       timeouts = defaultTimeouts,
       bakerValidationSettings = BakerValidationSettings.default,
       bakerActorProvider = localProvider,
@@ -64,11 +64,11 @@ object AkkaBakerConfig extends LazyLogging {
     )(actorSystem)
   }
 
-  def from(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager, recipeManager: RecipeManager): AkkaBakerConfig = {
+  def from(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager, recipeManager: RecipeManager): PekkoBakerConfig = {
     if (!config.getAs[Boolean]("baker.config-file-included").getOrElse(false))
       throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
 
-    AkkaBakerConfig(
+    PekkoBakerConfig(
       timeouts = Timeouts.apply(config),
       bakerValidationSettings = BakerValidationSettings.from(config),
       bakerActorProvider = bakerProviderFrom(config),

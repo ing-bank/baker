@@ -4,7 +4,7 @@ import com.ing.baker.BakerRuntimeTestBase
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.runtime.ScalaDSLRuntime._
-import com.ing.baker.runtime.akka.AkkaBaker
+import com.ing.baker.runtime.akka.PekkoBaker
 import com.ing.baker.runtime.core.util.CachingInteractionManager
 import com.ing.baker.runtime.common.RecipeRecord
 import com.typesafe.config.ConfigFactory
@@ -67,7 +67,7 @@ ExamplesSpec extends BakerRuntimeTestBase  {
       val implementations =
         List(validateOrderImpl, manufactureGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
 
-      val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(implementations))
+      val baker = PekkoBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(implementations))
 
       for {
         recipeId <- baker.addRecipe(RecipeRecord.of(compiledRecipe))

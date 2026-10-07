@@ -36,32 +36,32 @@ import scala.concurrent.duration.FiniteDuration
 import scala.language.postfixOps
 import scala.util.Try
 
-object AkkaBaker {
+object PekkoBaker {
 
   def apply(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager, recipeManager: RecipeManager): scaladsl.Baker =
-    new AkkaBaker(AkkaBakerConfig.from(config, actorSystem, interactions, recipeManager))
+    new PekkoBaker(PekkoBakerConfig.from(config, actorSystem, interactions, recipeManager))
 
   def apply(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
-    new AkkaBaker(AkkaBakerConfig.from(config, actorSystem, interactions, determineRecipeManager(config)(actorSystem)))
+    new PekkoBaker(PekkoBakerConfig.from(config, actorSystem, interactions, determineRecipeManager(config)(actorSystem)))
 
-  def apply(config: AkkaBakerConfig): AkkaBaker =
-    new AkkaBaker(config)
+  def apply(config: PekkoBakerConfig): PekkoBaker =
+    new PekkoBaker(config)
 
   def localDefault(actorSystem: ActorSystem, interactions: CachingInteractionManager): scaladsl.Baker =
-    new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem, interactions))
+    new PekkoBaker(PekkoBakerConfig.localDefault(actorSystem, interactions))
 
   def java(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager, recipeManager: RecipeManager): javadsl.Baker =
-    new javadsl.Baker(com.ing.baker.runtime.akka.AkkaBaker.apply(config, actorSystem, interactions, recipeManager))
+    new javadsl.Baker(com.ing.baker.runtime.akka.PekkoBaker.apply(config, actorSystem, interactions, recipeManager))
 
   def java(config: Config, actorSystem: ActorSystem): javadsl.Baker =
-    new javadsl.Baker(com.ing.baker.runtime.akka.AkkaBaker.apply(config, actorSystem, CachingInteractionManager(), DefaultRecipeManager.pollingAware(actorSystem.dispatcher)))
+    new javadsl.Baker(com.ing.baker.runtime.akka.PekkoBaker.apply(config, actorSystem, CachingInteractionManager(), DefaultRecipeManager.pollingAware(actorSystem.dispatcher)))
 
   def java(config: Config, actorSystem: ActorSystem, interactions: JavaList[AnyRef]): javadsl.Baker =
-    new javadsl.Baker(com.ing.baker.runtime.akka.AkkaBaker.apply(config, actorSystem,
+    new javadsl.Baker(com.ing.baker.runtime.akka.PekkoBaker.apply(config, actorSystem,
       CachingInteractionManager.fromJava(interactions, config.getOrElse[Boolean]("baker.interactions.allow-superset-for-output-types", false))))
 
-  def java(config: AkkaBakerConfig): javadsl.Baker =
-    new javadsl.Baker(com.ing.baker.runtime.akka.AkkaBaker.apply(config))
+  def java(config: PekkoBakerConfig): javadsl.Baker =
+    new javadsl.Baker(com.ing.baker.runtime.akka.PekkoBaker.apply(config))
 
   //Used for backwards compatibility reasons to ensure it works the same as before the RecipeManager was provided
   private def determineRecipeManager(config: Config)(implicit actorSystem: ActorSystem): RecipeManager = {
@@ -75,13 +75,13 @@ object AkkaBaker {
   * The Baker is the component of the Baker library that runs one or multiples recipes.
   * For each recipe a new instance can be baked, sensory events can be send and state can be inquired upon
   */
-class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker with LazyLogging {
+class PekkoBaker private[runtime](config: PekkoBakerConfig) extends scaladsl.Baker with LazyLogging {
   import config.system
 
   /**
    * Useful for users that want to directly use any of the AkkaBaker components
    */
-  def getAkkaBakerConfig: AkkaBakerConfig = config
+  def getAkkaBakerConfig: PekkoBakerConfig = config
 
   config.bakerActorProvider.initialize(system)
 
