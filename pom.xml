@@ -504,10 +504,11 @@
                 <version>${ficus.version}</version>
             </dependency>
             <dependency>
-                <groupId>nl.pragmasoft.sensors</groupId>
-                <artifactId>sensors-core_${scala.compat.version}</artifactId>
-                <version>${sensors-akka.version}</version>
+                <groupId>nl.pragmasoft.pekko</groupId>
+                <artifactId>sensors_${scala.compat.version}</artifactId>
+                <version>${sensors-pekko.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>

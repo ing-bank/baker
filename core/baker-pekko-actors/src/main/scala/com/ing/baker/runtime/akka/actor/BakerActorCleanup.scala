@@ -1,8 +1,8 @@
 package com.ing.baker.runtime.akka.actor
 
-import akka.Done
-import akka.actor.ActorSystem
-import akka.persistence.{SnapshotMetadata, cassandra}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.persistence.{SnapshotMetadata, cassandra}
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.{ExecutionContext, Future}

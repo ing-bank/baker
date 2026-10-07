@@ -1,8 +1,8 @@
 package com.ing.baker.runtime.akka.actor.delayed_transition_actor
 
-import akka.actor.{ActorRef, Props}
-import akka.persistence._
-import akka.sensors.actor.PersistentActorMetrics
+import org.apache.pekko.actor.{ActorRef, Props}
+import org.apache.pekko.persistence._
+import org.apache.pekko.sensors.actor.PersistentActorMetrics
 import com.ing.baker.runtime.akka.actor.BakerCleanup
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor._
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol._

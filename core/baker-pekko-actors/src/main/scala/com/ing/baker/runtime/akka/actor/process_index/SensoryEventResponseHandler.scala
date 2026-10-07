@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props, ReceiveTimeout}
-import akka.sensors.actor.ActorMetrics
+import org.apache.pekko.actor.{Actor, ActorLogging, ActorRef, Props, ReceiveTimeout}
+import org.apache.pekko.sensors.actor.ActorMetrics
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._

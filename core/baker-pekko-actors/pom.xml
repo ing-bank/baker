@@ -264,8 +264,8 @@
             <artifactId>scala-logging_${scala.compat.version}</artifactId>
         </dependency>
         <dependency>
-            <groupId>nl.pragmasoft.sensors</groupId>
-            <artifactId>sensors-core_${scala.compat.version}</artifactId>
+            <groupId>nl.pragmasoft.pekko</groupId>
+            <artifactId>sensors_${scala.compat.version}</artifactId>
         </dependency>
 
         <!-- Test dependencies -->

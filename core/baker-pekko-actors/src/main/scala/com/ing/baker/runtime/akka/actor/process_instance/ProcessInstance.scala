@@ -1,9 +1,9 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
-import akka.actor._
-import akka.cluster.sharding.ShardRegion.Passivate
-import akka.event.{DiagnosticLoggingAdapter, Logging}
-import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
+import org.apache.pekko.actor._
+import org.apache.pekko.cluster.sharding.ShardRegion.Passivate
+import org.apache.pekko.event.{DiagnosticLoggingAdapter, Logging}
+import org.apache.pekko.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import com.ing.baker.il.failurestrategy.{BlockInteraction, FireEventAfterFailure, FireFunctionalEventAfterFailure, RetryWithIncrementalBackoff}

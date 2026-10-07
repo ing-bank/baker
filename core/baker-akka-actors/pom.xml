@@ -290,6 +290,7 @@
         <dependency>
             <groupId>nl.pragmasoft.sensors</groupId>
             <artifactId>sensors-core_${scala.compat.version}</artifactId>
+            <version>${sensors-akka.version}</version>
         </dependency>
 
         <!-- Test dependencies -->

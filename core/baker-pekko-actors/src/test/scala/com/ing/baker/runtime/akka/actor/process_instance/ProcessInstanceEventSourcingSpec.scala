@@ -1,12 +1,5 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
-import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
-import akka.persistence.query.PersistenceQuery
-import akka.persistence.query.scaladsl._
-import akka.stream.testkit.scaladsl.TestSink
-import akka.testkit.TestProbe
-import akka.util.Timeout
-import com.ing.baker.il.petrinet.Place
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.AkkaTestBase
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
@@ -16,6 +9,13 @@ import com.ing.baker.runtime.akka.actor.process_instance.dsl.TestUtils.{PlaceMet
 import com.ing.baker.runtime.akka.actor.process_instance.dsl._
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption.NoEncryption
+import com.typesafe.config.ConfigFactory
+import io.github.alstanchev.pekko.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtensionProvider}
+import org.apache.pekko.persistence.query.PersistenceQuery
+import org.apache.pekko.persistence.query.scaladsl._
+import org.apache.pekko.stream.testkit.scaladsl.TestSink
+import org.apache.pekko.testkit.TestProbe
+import org.apache.pekko.util.Timeout
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers._
 
@@ -30,11 +30,13 @@ class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") 
 
   private implicit val ec: ExecutionContext = system.dispatcher
 
+  val config = ConfigFactory.load()
+
   override protected def beforeEach(): Unit = {
     // Clean the journal before each test
     val tp = TestProbe()
-    tp.send(StorageExtension(system).journalStorage, InMemoryJournalStorage.ClearJournal)
-    tp.expectMsg(akka.actor.Status.Success(""))
+    tp.send(StorageExtensionProvider(system).journalStorage(config), InMemoryJournalStorage.ClearJournal)
+    tp.expectMsg(org.apache.pekko.actor.Status.Success(""))
   }
 
   "The query package" should {

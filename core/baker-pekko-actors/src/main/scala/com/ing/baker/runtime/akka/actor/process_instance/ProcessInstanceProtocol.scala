@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
-import akka.actor.ActorRef
+import org.apache.pekko.actor.ActorRef
 import com.ing.baker.il.petrinet.Place
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable

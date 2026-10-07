@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
-import akka.event.{DiagnosticLoggingAdapter, Logging}
+import org.apache.pekko.event.{DiagnosticLoggingAdapter, Logging}
 import com.ing.baker.il.petrinet.Transition
 import com.ing.baker.runtime.akka.actor.Util.logging._
 import com.ing.baker.runtime.model.BakerLogging

@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.akka.actor.serialization
 
-import akka.actor.ExtendedActorSystem
-import akka.serialization.SerializerWithStringManifest
+import org.apache.pekko.actor.ExtendedActorSystem
+import org.apache.pekko.serialization.SerializerWithStringManifest
 import com.ing.baker.runtime.akka.actor.serialization.TypedProtobufSerializer.BinarySerializable
 import com.ing.baker.runtime.serialization.{Encryption, ProtoMap}
 import org.slf4j.LoggerFactory

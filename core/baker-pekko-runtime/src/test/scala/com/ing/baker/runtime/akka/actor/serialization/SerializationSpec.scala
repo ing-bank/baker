@@ -1,8 +1,8 @@
 package com.ing.baker.runtime.akka.actor.serialization
 
-import akka.actor.{Actor, ActorSystem, Props}
-import akka.serialization.{SerializationExtension, Serializer}
-import akka.testkit.TestKit
+import org.apache.pekko.actor.{Actor, ActorSystem, Props}
+import org.apache.pekko.serialization.{SerializationExtension, Serializer}
+import org.apache.pekko.testkit.TestKit
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.petrinet.api.{Id, Marking, MultiSet}

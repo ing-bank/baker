@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.actor.serialization
 
-import akka.actor.{ActorRefProvider, ExtendedActorSystem}
+import org.apache.pekko.actor.{ActorRefProvider, ExtendedActorSystem}
 import com.ing.baker.il
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor._

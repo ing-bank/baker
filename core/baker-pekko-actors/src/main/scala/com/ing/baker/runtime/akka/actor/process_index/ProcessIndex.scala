@@ -1,11 +1,11 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props}
-import akka.cluster.sharding.ShardRegion.Passivate
-import akka.event.{DiagnosticLoggingAdapter, Logging}
-import akka.pattern.{BackoffOpts, BackoffSupervisor, ask, pipe}
-import akka.persistence._
-import akka.sensors.actor.PersistentActorMetrics
+import org.apache.pekko.actor.{ActorRef, NoSerializationVerificationNeeded, Props}
+import org.apache.pekko.cluster.sharding.ShardRegion.Passivate
+import org.apache.pekko.event.{DiagnosticLoggingAdapter, Logging}
+import org.apache.pekko.pattern.{BackoffOpts, BackoffSupervisor, ask, pipe}
+import org.apache.pekko.persistence._
+import org.apache.pekko.sensors.actor.PersistentActorMetrics
 import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
@@ -542,7 +542,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
     case msg: InitializationRejected =>
       log.error(msg.cause, s"Initialization of process ${msg.recipeInstanceId} failed.")
-      msg.originalSender ! akka.actor.Status.Failure(msg.cause)
+      msg.originalSender ! org.apache.pekko.actor.Status.Failure(msg.cause)
 
     case command@ProcessEvent(recipeInstanceId, event, correlationId, _, _) =>
       run ({ responseHandler =>
@@ -596,7 +596,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         case Left(exception) =>
           // This case represents an unexpected technical error within the IO program itself.
           log.error(exception, s"Unexpected error processing sensory event for recipe instance '$recipeInstanceId'")
-          originalSender ! akka.actor.Status.Failure(exception)
+          originalSender ! org.apache.pekko.actor.Status.Failure(exception)
 
         case Right(Left(rejection)) =>
           // This case represents a controlled, business-logic failure (e.g., validation failed, process not found).
@@ -624,8 +624,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         // we find which job correlates with the interaction
         getInteractionJob(recipeInstanceId, interactionName, processActor).value.onComplete {
           case Success(Some((_, jobId))) => processActor.tell(OverrideExceptionStrategy(jobId, BlockTransition), originalSender)
-          case Success(_) => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not retrying"))
-          case Failure(exception) => originalSender ! akka.actor.Status.Failure(exception)
+          case Success(_) => originalSender ! org.apache.pekko.actor.Status.Failure(new IllegalArgumentException("Interaction is not retrying"))
+          case Failure(exception) => originalSender ! org.apache.pekko.actor.Status.Failure(exception)
         }
       }
 
@@ -637,8 +637,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
         getInteractionJob(recipeInstanceId, interactionName, processActor).value.onComplete {
           case Success(Some((_, jobId))) => processActor.tell(OverrideExceptionStrategy(jobId, RetryWithDelay(0)), originalSender)
-          case Success(_) => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
-          case Failure(exception) => originalSender ! akka.actor.Status.Failure(exception)
+          case Success(_) => originalSender ! org.apache.pekko.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
+          case Failure(exception) => originalSender ! org.apache.pekko.actor.Status.Failure(exception)
         }
       }
 
@@ -662,8 +662,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
                 log.warning("Invalid event given: " + error)
                 originalSender ! InvalidEventWhenResolveBlocked(recipeInstanceId, error)
             }
-          case Success(_) => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
-          case Failure(exception) => originalSender ! akka.actor.Status.Failure(exception)
+          case Success(_) => originalSender ! org.apache.pekko.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
+          case Failure(exception) => originalSender ! org.apache.pekko.actor.Status.Failure(exception)
         }
       }
 
@@ -701,7 +701,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       program.value.unsafeRunAsync{
         case Left(exception) =>
           log.error(exception, s"Unexpected error processing AwaitEvent for recipe instance '$recipeInstanceId'")
-          originalSender ! akka.actor.Status.Failure(exception)
+          originalSender ! org.apache.pekko.actor.Status.Failure(exception)
 
         case Right(Left(rejection)) =>
           originalSender ! rejection

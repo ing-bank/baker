@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.actor.logging
 
-import akka.event.EventStream
+import org.apache.pekko.event.EventStream
 import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.model.BakerLogging
 
