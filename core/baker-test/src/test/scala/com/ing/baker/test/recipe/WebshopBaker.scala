@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.AkkaBaker
-import com.ing.baker.runtime.akka.internal.CachingInteractionManager
+import com.ing.baker.runtime.core.util.CachingInteractionManager
 import com.ing.baker.runtime.javadsl
 import com.ing.baker.runtime.scaladsl.{Baker, InteractionInstance}
 

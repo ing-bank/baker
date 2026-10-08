@@ -66,6 +66,7 @@
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-testkit_${scala.compat.version}</artifactId>
+            <version>${akka.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -139,4 +140,30 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>central</id>
+            <name>Central Repository</name>
+            <url>https://repo1.maven.org/maven2</url>
+        </repository>
+        <repository>
+            <id>akka-secure-mvn</id>
+            <name>Akka Secure Repository</name>
+            <url>https://repo.akka.io/${env.AKKA_TOKEN}/secure</url>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>central</id>
+            <name>Central Repository</name>
+            <url>https://repo1.maven.org/maven2</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>akka-secure-mvn</id>
+            <name>Akka Secure Repository</name>
+            <url>https://repo.akka.io/${env.AKKA_TOKEN}/secure</url>
+        </pluginRepository>
+    </pluginRepositories>
 </project>
