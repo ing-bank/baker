@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.serialization.protomappings
 
-import cats.effect.ExitCode.Success
-import cats.implicits._
+import com.ing.baker.runtime.common.TryOps.syntax._
 import com.ing.baker.types.Value
 import com.ing.baker.runtime.akka.actor.{protobuf => proto}
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
@@ -25,7 +24,7 @@ class ProcessStateMapping extends ProtoMap[RecipeInstanceState, proto.ProcessSta
       for {
         recipeId <- Try(message.recipeId.getOrElse(""))
         recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
-        ingredients <- message.ingredients.toList.traverse[Try, (String, Value)] { i =>
+        ingredients <- message.ingredients.toList.traverseTry { i =>
           for {
             name <- versioned(i.name, "name")
             protoValue <- versioned(i.value, "value")
@@ -33,7 +32,7 @@ class ProcessStateMapping extends ProtoMap[RecipeInstanceState, proto.ProcessSta
           } yield (name, value)
         }
         recipeInstanceMetaData = message.recipeInstanceMetadata
-        events <- message.events.toList.traverse (ctxFromProto(_))
+        events <- message.events.toList.traverseTry(ctxFromProto(_))
 
       } yield RecipeInstanceState(recipeId, recipeInstanceId, ingredients.toMap, recipeInstanceMetaData, events)
 }

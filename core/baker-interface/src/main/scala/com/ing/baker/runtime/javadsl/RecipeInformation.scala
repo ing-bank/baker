@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.javadsl
 
-import com.ing.baker.il.{CompiledRecipe}
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.{common, scaladsl}
 
