@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.recipe_manager
+package com.ing.baker.runtime.akka.recipe_manager
 
 import _root_.akka.actor.ActorSystem
 import _root_.akka.testkit.{TestKit, TestProbe}

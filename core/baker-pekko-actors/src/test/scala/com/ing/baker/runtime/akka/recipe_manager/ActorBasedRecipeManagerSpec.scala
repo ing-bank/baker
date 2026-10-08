@@ -1,7 +1,8 @@
-package com.ing.baker.runtime.recipe_manager
+package com.ing.baker.runtime.akka.recipe_manager
 
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
+import com.ing.baker.runtime.akka.recipe_manager.ActorBasedRecipeManager
 import com.ing.baker.runtime.common.RecipeRecord
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.testkit.{TestKit, TestProbe}

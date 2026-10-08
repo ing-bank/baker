@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.recipe_manager
+package com.ing.baker.runtime.akka.recipe_manager
 
 import org.apache.pekko.cluster.Cluster
 import org.apache.pekko.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
@@ -7,6 +7,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerActor
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.core.util.Timeouts
+import com.ing.baker.runtime.recipe_manager.{PollingAware, RecipeManager}
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.apache.pekko.actor.{ActorRef, ActorSystem, PoisonPill}
