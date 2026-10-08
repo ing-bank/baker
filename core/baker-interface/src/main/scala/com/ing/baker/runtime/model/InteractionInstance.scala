@@ -203,7 +203,7 @@ object InteractionInstance {
         case Some(event) =>
           event match {
             // Async interactions using java CompletableFuture
-            // TODO rewrite this to not block in in case of java CompletableFutures.
+            // TODO rewrite this to not block in case of java CompletableFutures.
             case runtimeEventAsyncJava if futureClass.runtimeClass.isInstance(runtimeEventAsyncJava) =>
               effect.pure(Some(EventInstance.unsafeFrom(runtimeEventAsyncJava.asInstanceOf[CompletableFuture[Any]].get())))
             // Async interactions using F

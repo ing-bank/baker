@@ -169,54 +169,59 @@ case class RecipeInstance[F[_]](recipeInstanceId: String, config: RecipeInstance
       processFirst.flatMap(_ => runInParallel(enabledTasks))
     }
 
-  private def handleExecutionOutcome(finishedExecution: TransitionExecution)(outcome: TransitionExecution.Outcome)(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[(Option[EventInstance], Set[TransitionExecution])] =
-    outcome match {
+  private def handleExecutionOutcome(finishedExecution: TransitionExecution)(outcome: TransitionExecution.Outcome)(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[(Option[EventInstance], Set[TransitionExecution])] = {
+    // We touch the recipe instance to ensure that it is not idle-stopped while we are processing the outcome of a transition execution.
+    // Then we handle the outcome according to the exception strategy and update the state accordingly.
+    components.recipeInstanceManager.touch(recipeInstanceId).flatMap { _ =>
+      outcome match {
 
-      case Right(output) =>
-        for {
-          enabledExecutions <- updateStateAndNotify(_.recordCompletedExecution(finishedExecution, output))
-          _ <- scheduleIdleStop
-        } yield output -> enabledExecutions
+        case Right(output) =>
+          for {
+            enabledExecutions <- updateStateAndNotify(_.recordCompletedExecution(finishedExecution, output))
+            _ <- scheduleIdleStop
+          } yield output -> enabledExecutions
 
-      case Left(ExceptionStrategyOutcome.Continue(eventName)) =>
-        val output: EventInstance = EventInstance(eventName, Map.empty)
-        for {
-          enabledExecutions <- updateStateAndNotify(_.recordFailedWithOutputExecution(finishedExecution, output))
-          _ <- scheduleIdleStop
-        } yield Some(output) -> enabledExecutions
+        case Left(ExceptionStrategyOutcome.Continue(eventName)) =>
+          val output: EventInstance = EventInstance(eventName, Map.empty)
+          for {
+            enabledExecutions <- updateStateAndNotify(_.recordFailedWithOutputExecution(finishedExecution, output))
+            _ <- scheduleIdleStop
+          } yield Some(output) -> enabledExecutions
 
-      case Left(ExceptionStrategyOutcome.ContinueAsFunctionalEvent(eventName)) =>
-        val output: EventInstance = EventInstance(eventName, Map.empty)
-        for {
-          enabledExecutions <- updateStateAndNotify(_.recordFailedWithOutputExecutionAsFunctionalEvent(finishedExecution, output))
-          _ <- scheduleIdleStop
-        } yield Some(output) -> enabledExecutions
+        case Left(ExceptionStrategyOutcome.ContinueAsFunctionalEvent(eventName)) =>
+          val output: EventInstance = EventInstance(eventName, Map.empty)
+          for {
+            enabledExecutions <- updateStateAndNotify(_.recordFailedWithOutputExecutionAsFunctionalEvent(finishedExecution, output))
+            _ <- scheduleIdleStop
+          } yield Some(output) -> enabledExecutions
 
-      case Left(strategy @ ExceptionStrategyOutcome.BlockTransition) =>
-        updateStateAndNotify(s => (s.recordFailedExecution(finishedExecution, strategy), ()))
-          .map(_ => None -> Set.empty[TransitionExecution])
+        case Left(strategy@ExceptionStrategyOutcome.BlockTransition) =>
+          updateStateAndNotify(s => (s.recordFailedExecution(finishedExecution, strategy), ()))
+            .map(_ => None -> Set.empty[TransitionExecution])
 
-      case Left(strategy @ ExceptionStrategyOutcome.RetryWithDelay(delay)) =>
-        for {
-          _ <- state.update(_
-            .recordFailedExecution(finishedExecution, strategy)
-            .addRetryingExecution(finishedExecution.id))
-          _ <- async.delay(components.logging.scheduleRetry(recipeInstanceId, finishedExecution.transition, delay))
-          finalOutcome <- async.sleep(delay.milliseconds).flatMap(_ => {
-            state.get.flatMap { currentState =>
-              if (currentState.retryingExecutions.contains(finishedExecution.id)) {
-                val currentTransitionExecution = currentState.executions(finishedExecution.id)
-                val removeRetryState = updateStateAndNotify(s => (s.removeRetryingExecution(finishedExecution.id), ()))
-                removeRetryState.flatMap(_ =>
-                  currentTransitionExecution
-                    .execute
-                    .flatMap(handleExecutionOutcome(currentTransitionExecution)))
-              } else
-                async.pure[(Option[EventInstance], Set[TransitionExecution])](None -> Set.empty)
-            }
-          })
-        } yield finalOutcome
+        case Left(strategy@ExceptionStrategyOutcome.RetryWithDelay(delay)) =>
+          for {
+            _ <- state.update(_
+              .recordFailedExecution(finishedExecution, strategy)
+              .addRetryingExecution(finishedExecution.id))
+            _ <- async.delay(components.logging.scheduleRetry(recipeInstanceId, finishedExecution.transition, delay))
+            finalOutcome <- async.sleep(delay.milliseconds).flatMap(_ => {
+              state.get.flatMap { currentState =>
+                if (currentState.retryingExecutions.contains(finishedExecution.id)) {
+                  val currentTransitionExecution = currentState.executions(finishedExecution.id)
+                  val removeRetryState = updateStateAndNotify(s => (s.removeRetryingExecution(finishedExecution.id), ()))
+                  removeRetryState.flatMap(_ =>
+                    currentTransitionExecution
+                      .execute
+                      .flatMap(handleExecutionOutcome(currentTransitionExecution)))
+                } else
+                  async.pure[(Option[EventInstance], Set[TransitionExecution])](None -> Set.empty)
+              }
+            })
+          } yield finalOutcome
+      }
     }
+  }
 
   private def scheduleIdleStop(implicit components: BakerComponents[F], async: AsyncSupport[F]): F[Unit] = {
     def schedule: F[Unit] =

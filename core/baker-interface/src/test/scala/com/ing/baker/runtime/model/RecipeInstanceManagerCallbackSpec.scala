@@ -22,6 +22,8 @@ class RecipeInstanceManagerCallbackSpec extends AnyFunSpec with Matchers {
 
     override protected def fetchAll: IO[Map[String, RecipeInstanceStatus[IO]]] = IO.pure(Map.empty)
 
+    override def touch(recipeInstanceId: String): IO[Unit] = IO.unit
+
     override def remove(recipeInstanceId: String): IO[Unit] = IO.unit
 
     override def idleStop(recipeInstanceId: String): IO[Unit] = IO.unit
