@@ -135,7 +135,8 @@
         <module>http/baker-http-dashboard</module>
 
         <!-- Bakery modules -->
-        <module>bakery/bakery-state</module>
+        <module>bakery/bakery-state-akka</module>
+        <module>bakery/bakery-state-pekko</module>
         <module>bakery/bakery-interaction</module>
         <module>bakery/bakery-interaction-protocol</module>
 

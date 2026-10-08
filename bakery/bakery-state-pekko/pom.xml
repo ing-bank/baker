@@ -11,14 +11,14 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>bakery-state</artifactId>
+    <artifactId>bakery-state-pekko</artifactId>
     <name>Bakery State</name>
     <description>State management for Bakery</description>
 
     <dependencies>
         <dependency>
             <groupId>com.ing.baker</groupId>
-            <artifactId>baker-akka-runtime</artifactId>
+            <artifactId>baker-pekko-runtime</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
