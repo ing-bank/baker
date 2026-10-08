@@ -33,6 +33,8 @@ trait RecipeInstanceManager[F[_]] {
 
   protected def fetchAll: F[Map[String, RecipeInstanceStatus[F]]]
 
+  def touch(recipeInstanceId: String): F[Unit]
+
   def remove(recipeInstanceId: String): F[Unit]
 
   def idleStop(recipeInstanceId: String): F[Unit]

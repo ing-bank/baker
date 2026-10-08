@@ -137,7 +137,10 @@ class InMemoryRecipeInstanceManager(
         InMemoryEffects.delay {
             ScalaMapObject.from(MapHasAsScala(store).asScala())
                     as ScalaMap<String, RecipeInstanceStatus<InMemoryEffect<*>>>
-        } as InMemoryEffect<ScalaMap<String, RecipeInstanceStatus<InMemoryEffect<*>>>>
+        }
+
+    override fun touch(recipeInstanceId: String): InMemoryEffect<BoxedUnit> =
+        fetch(recipeInstanceId).map { BoxedUnit.UNIT }
 
     override fun remove(recipeInstanceId: String): InMemoryEffect<BoxedUnit> =
         idleStop(recipeInstanceId).flatMap {
