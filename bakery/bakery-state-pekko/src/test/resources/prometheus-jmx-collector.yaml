@@ -1,0 +1,61 @@
+lowercaseOutputLabelNames: true
+lowercaseOutputName: true
+whitelistObjectNames: ["com.datastax.oss.driver:*", "akka:*"]
+rules:
+  - pattern: com.datastax.oss.driver<name=(s\d).(\S+), type=(\S+)><>Count
+    type: UNTYPED
+    name: cassandra_$2_total
+
+  - pattern: com.datastax.oss.driver<name=(s\d).(\S+), type=(\S+)><>OneMinuteRate
+    type: GAUGE
+    name: cassandra_$2
+    labels:
+      rate: "1min"
+
+  - pattern: com.datastax.oss.driver<name=(s\d).(\S+), type=(\S+)><>FiveMinuteRate
+    type: GAUGE
+    name: cassandra_$2
+    labels:
+      rate: "5min"
+
+  - pattern: com.datastax.oss.driver<name=(s\d).(\S+), type=(\S+)><>FifteenMinuteRate
+    type: GAUGE
+    name: cassandra_$2
+    labels:
+      rate: "15min"
+
+  - pattern: com.datastax.oss.driver<name=(s\d).(\S+), type=(\S+)><>MeanRate
+    type: GAUGE
+    name: cassandra_$2
+    labels:
+      rate: "mean"
+
+  - pattern: com.datastax.oss.driver<name=(s\d).(\S+), type=(\S+)><>(\d+)thPercentile
+    type: GAUGE
+    name: cassandra_$2
+    labels:
+      quantile: "0.$4"
+
+  - pattern: com.datastax.oss.driver<name=(s\d).(\S+), type=(\S+)><>StdDev
+    type: GAUGE
+    name: cassandra_$2
+    labels:
+      value: "stddev"
+
+  - pattern: com.datastax.oss.driver<name=(s\d).(\S+)><>Mean
+    type: GAUGE
+    name: cassandra_$2
+    labels:
+      value: "mean"
+
+  - pattern: com.datastax.oss.driver<name=(s\d).(\S+)><>Max
+    type: GAUGE
+    name: cassandra_$2
+    labels:
+      value: "max"
+
+  - pattern: com.datastax.oss.driver<name=(s\d).(\S+)><>Min
+    type: GAUGE
+    name: cassandra_$2
+    labels:
+      value: "min"

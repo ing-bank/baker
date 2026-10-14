@@ -1,0 +1,6 @@
+{
+  "name": "{{name}}",
+  "protocol": "{{protocol}}",
+  "port": "{{port}}",
+  "targetPort": "{{targetPort}}"
+}

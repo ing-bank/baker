@@ -50,6 +50,10 @@
         <metrics.jmx.version>4.2.39</metrics.jmx.version>
         <objenesis.version>3.5</objenesis.version>
         <paranamer.version>2.8.3</paranamer.version>
+        <pekko.management.version>1.2.1</pekko.management.version>
+        <pekko.persistence.cassandra.version>1.1.0</pekko.persistence.cassandra.version>
+        <pekko.version>1.6.0</pekko.version>
+        <pekko.persistence.inmemory.version>1.3.0</pekko.persistence.inmemory.version>
         <prometheus.client.version>0.16.0</prometheus.client.version>
         <prometheus.jmx.version>0.20.0</prometheus.jmx.version>
         <protobuf.version>4.35.0</protobuf.version>
@@ -59,7 +63,8 @@
         <scala.logging.version>3.9.5</scala.logging.version>
         <scala.version>2.13.18</scala.version>
         <scalapb.version>0.11.18</scalapb.version>
-        <sensors.version>0.4.1</sensors.version>
+        <sensors-akka.version>0.4.1</sensors-akka.version>
+        <sensors-pekko.version>1.0.3</sensors-pekko.version>
         <skuber.version>2.6.7</skuber.version>
         <slf4j.version>2.0.17</slf4j.version>
         <typesafe.config.version>1.4.9</typesafe.config.version>
@@ -116,8 +121,11 @@
         <module>core/baker-compiler</module>
         <module>core/baker-compiler-scala</module>
         <module>core/baker-compiler-kotlin</module>
+        <module>core/baker-core-actors</module>
         <module>core/baker-akka-actors</module>
         <module>core/baker-akka-runtime</module>
+        <module>core/baker-pekko-actors</module>
+        <module>core/baker-pekko-runtime</module>
         <module>core/baker-recipe-manager</module>
         <module>core/baker-test</module>
 
@@ -127,7 +135,8 @@
         <module>http/baker-http-dashboard</module>
 
         <!-- Bakery modules -->
-        <module>bakery/bakery-state</module>
+        <module>bakery/bakery-state-akka</module>
+        <module>bakery/bakery-state-pekko</module>
         <module>bakery/bakery-interaction</module>
         <module>bakery/bakery-interaction-protocol</module>
 
@@ -195,149 +204,6 @@
                 <groupId>org.scala-graph</groupId>
                 <artifactId>graph-core_${scala.compat.version}</artifactId>
                 <version>${scala.graph.version}</version>
-            </dependency>
-
-            <!-- Akka -->
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-actor_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-stream_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-protobuf-v3_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-persistence_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-persistence-query_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-discovery_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-persistence-cassandra_${scala.compat.version}</artifactId>
-                <version>${akka.persistence.cassandra.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-cluster_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-cluster-sharding_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-cluster-tools_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-cluster-metrics_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-slf4j_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-stream-testkit_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-multi-node-testkit_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-pki_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-actor-typed_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-cluster-typed_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-persistence-typed_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-stream-typed_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-            </dependency>
-
-            <!-- Akka Management -->
-            <dependency>
-                <groupId>com.lightbend.akka.management</groupId>
-                <artifactId>akka-management-cluster-http_${scala.compat.version}</artifactId>
-                <version>${akka.management.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.lightbend.akka.management</groupId>
-                <artifactId>akka-management-cluster-bootstrap_${scala.compat.version}</artifactId>
-                <version>${akka.management.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.lightbend.akka.discovery</groupId>
-                <artifactId>akka-discovery-kubernetes-api_${scala.compat.version}</artifactId>
-                <version>${akka.management.version}</version>
-            </dependency>
-
-            <!-- Akka In-memory journal for testing -->
-            <dependency>
-                <groupId>com.github.dnvriend</groupId>
-                <artifactId>akka-persistence-inmemory_${scala.compat.version}</artifactId>
-                <version>${akka.persistence.inmemory.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.typesafe.akka</groupId>
-                        <artifactId>akka-actor</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.typesafe.akka</groupId>
-                        <artifactId>akka-persistence</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.typesafe.akka</groupId>
-                        <artifactId>akka-persistence-query</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.typesafe.akka</groupId>
-                        <artifactId>akka-stream</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.typesafe.akka</groupId>
-                        <artifactId>akka-protobuf</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <!-- HTTP4S -->
@@ -591,12 +457,6 @@
                 <version>${mockito.scala.version}</version>
                 <scope>test</scope>
             </dependency>
-            <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-testkit_${scala.compat.version}</artifactId>
-                <version>${akka.version}</version>
-                <scope>test</scope>
-            </dependency>
 
             <!-- Other dependencies -->
             <dependency>
@@ -645,10 +505,11 @@
                 <version>${ficus.version}</version>
             </dependency>
             <dependency>
-                <groupId>nl.pragmasoft.sensors</groupId>
-                <artifactId>sensors-core_${scala.compat.version}</artifactId>
-                <version>${sensors.version}</version>
+                <groupId>nl.pragmasoft.pekko</groupId>
+                <artifactId>sensors_${scala.compat.version}</artifactId>
+                <version>${sensors-pekko.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
@@ -834,11 +695,6 @@
             <name>Central Repository</name>
             <url>https://repo1.maven.org/maven2</url>
         </repository>
-        <repository>
-            <id>akka-secure-mvn</id>
-            <name>Akka Secure Repository</name>
-            <url>https://repo.akka.io/${env.AKKA_TOKEN}/secure</url>
-        </repository>
     </repositories>
 
     <pluginRepositories>
@@ -846,11 +702,6 @@
             <id>central</id>
             <name>Central Repository</name>
             <url>https://repo1.maven.org/maven2</url>
-        </pluginRepository>
-        <pluginRepository>
-            <id>akka-secure-mvn</id>
-            <name>Akka Secure Repository</name>
-            <url>https://repo.akka.io/${env.AKKA_TOKEN}/secure</url>
         </pluginRepository>
     </pluginRepositories>
 </project>
