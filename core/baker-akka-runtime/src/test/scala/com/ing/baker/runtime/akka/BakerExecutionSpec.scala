@@ -9,12 +9,12 @@ import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAndBlock
 import com.ing.baker.recipe.scaladsl._
-import com.ing.baker.runtime.core.util.CachingInteractionManager
 import com.ing.baker.runtime.common.BakerException._
-import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common._
+import com.ing.baker.runtime.core.util.CachingInteractionManager
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance, InteractionInstanceInput, RecipeEventMetadata}
-import com.ing.baker.types.{CharArray, Int32, PrimitiveValue, Value}
+import com.ing.baker.runtime.testkit.BakerExecutionFireAndAwaitSpecLike
+import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
 import com.typesafe.config.{Config, ConfigFactory}
 import io.prometheus.client.CollectorRegistry
 import org.mockito.ArgumentMatchers.{any, anyString, eq => mockitoEq}
@@ -28,11 +28,27 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-case class SomeNotDefinedEvent(name: String)
-
-class BakerExecutionSpec extends BakerRuntimeTestBase {
+class BakerExecutionSpec extends BakerRuntimeTestBase with BakerExecutionFireAndAwaitSpecLike {
 
   override def actorSystemName = "BakerExecutionSpec"
+
+  override protected def setupBakerWithRecipe(recipeName: String): Future[(Baker, String)] =
+    setupAkkaBakerWithRecipe(recipeName)
+
+  override protected def setupBakerWithRecipe(recipe: com.ing.baker.recipe.common.Recipe, implementations: List[InteractionInstance]): Future[(Baker, String)] =
+    setupAkkaBakerWithRecipe(recipe, implementations)
+
+  override protected def stubInteractionOneWithDelay(interactionDelay: FiniteDuration): Unit = {
+    when(testInteractionOneMock.apply(anyString(), anyString())).thenAnswer((_: InvocationOnMock) => {
+      Future {
+        Thread.sleep(interactionDelay.toMillis)
+        InteractionOneSuccessful(interactionOneIngredientValue)
+      }(defaultActorSystem.dispatcher)
+    })
+  }
+
+  override protected def awaitEventShouldTimeout(baker: Baker, recipeInstanceId: String, eventName: String, timeout: FiniteDuration): Future[Any] =
+    baker.asInstanceOf[AkkaBaker].awaitEvent(recipeInstanceId, eventName, timeout)
 
   before {
     TestKit.shutdownActorSystem(defaultActorSystem)
@@ -127,132 +143,14 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
   "The Baker execution engine" should {
 
-    "bake a process successfully if baking for the first time" in {
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe("FirstTimeBaking")
-        id = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, id)
-        exists <- baker.hasRecipeInstance(id) if exists
-      } yield succeed
-    }
-
-    "bake a process successfully if baking for the first time with MetaData" in {
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe("FirstTimeBaking")
-        id = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, id, Map("key" -> "value"))
-        ingredients: Map[String, Value] <- baker.getIngredients(id)
-        metaData = ingredients(RecipeInstanceMetadataName).asMap(classOf[String], classOf[String])
-      } yield
-        assert(metaData.containsKey("key") && metaData.get("key") == "value")
-    }
-
     "bake and terminate baker successfully" in {
       val terminationActorSystem = ActorSystem("termination-actor-system")
       for {
-        (baker, recipeId) <- setupBakerWithRecipe("FirstTimeBaking")(terminationActorSystem)
+        (baker, recipeId) <- setupAkkaBakerWithRecipe("FirstTimeBaking")(terminationActorSystem)
         id = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, id)
         _ <- baker.gracefulShutdown()
         _ <- terminationActorSystem.whenTerminated
-      } yield succeed
-    }
-
-    "throw an ProcessAlreadyExistsException if baking a process with the same identifier twice" in {
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe("DuplicateIdentifierRecipe")
-        id = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, id)
-        _ <- recoverToSucceededIf[ProcessAlreadyExistsException] {
-          baker.bake(recipeId, id)
-        }
-      } yield succeed
-    }
-
-    "allows adding metadata to an RecipeInstance" in {
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe("MetaDataOne")
-        id = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, id)
-        _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value"))
-        _ <- baker.addMetaData(id, Map.apply[String, String]("key2" -> "value2"))
-        ingredients: Map[String, Value] <- baker.getIngredients(id)
-        metaData = ingredients(RecipeInstanceMetadataName).asMap(classOf[String], classOf[String])
-      } yield assert(
-        metaData.containsKey("key") && metaData.get("key") == "value" &&
-          metaData.containsKey("key2") && metaData.get("key2") == "value2")
-    }
-
-    "allows updating metadata to an RecipeInstance" in {
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe("MetaDataTwo")
-        id = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, id)
-        _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value"))
-        _ <- baker.addMetaData(id, Map.apply[String, String]("key" -> "value2"))
-        ingredients: Map[String, Value] <- baker.getIngredients(id)
-        metaData = ingredients(RecipeInstanceMetadataName).asMap(classOf[String], classOf[String])
-      } yield
-        assert(
-          metaData.containsKey("key") && metaData.get("key") == "value2")
-    }
-
-    "allows empty metadata to an RecipeInstance" in {
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe("MetaDataFour")
-        id = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, id)
-        _ <- baker.addMetaData(id, Map.empty)
-        ingredients: Map[String, Value] <- baker.getIngredients(id)
-        metaData = ingredients(RecipeInstanceMetadataName).asMap(classOf[String], classOf[String])
-      } yield
-        assert(
-          metaData.size() == 0)
-    }
-
-    "has no metaData if not given" in {
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe("MetaDataThree")
-        id = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, id)
-        ingredients: Map[String, Value] <- baker.getIngredients(id)
-      } yield assert(!ingredients.contains(RecipeInstanceMetadataName))
-    }
-
-    "throw a NoSuchProcessException" when {
-      "requesting the process state for a process that does not exist" in {
-        for {
-          (baker, _) <- setupBakerWithRecipe("NonExistingProcessTest")
-          _ <- recoverToSucceededIf[NoSuchProcessException] {
-            baker.getRecipeInstanceState(UUID.randomUUID().toString)
-          }
-        } yield succeed
-      }
-
-      "attempting to fire an event for a process that does not exist" in {
-        for {
-          (baker, _) <- setupBakerWithRecipe("NonExistingProcessEventTest")
-          event = EventInstance.unsafeFrom(InitialEvent("initialIngredient"))
-          response = baker.fireEvent(UUID.randomUUID().toString, event)
-          _ <- recoverToSucceededIf[NoSuchProcessException] {
-            response.resolveWhenReceived
-          }
-          _ <- recoverToSucceededIf[NoSuchProcessException] {
-            response.resolveWhenCompleted
-          }
-        } yield succeed
-      }
-    }
-
-    "throw a IllegalEventException if the event fired is not a valid sensory event" in {
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe("NonExistingProcessEventTest")
-        recipeInstanceId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, recipeInstanceId)
-        intercepted <- recoverToExceptionIf[IllegalEventException] {
-          baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(SomeNotDefinedEvent("bla")))
-        }
-        _ = intercepted.getMessage should startWith("No event with name 'SomeNotDefinedEvent' found in recipe 'NonExistingProcessEventTest")
       } yield succeed
     }
 
@@ -678,7 +576,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         }
 
         (for {
-          (baker, recipeId) <- setupBakerWithRecipe(recipe, implementations)(actorSystem)
+          (baker, recipeId) <- setupAkkaBakerWithRecipe(recipe, implementations)(actorSystem)
           _ <- if (createNewCase) createProcess(baker, recipeId) else Future.unit
 
           expectedIngredients = ingredientMap(
@@ -1334,7 +1232,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         val nrOfProcesses = 200
 
         for {
-          (baker, recipeId) <- setupBakerWithRecipe("IndexTestCluster")(indexTestSystem)
+          (baker, recipeId) <- setupAkkaBakerWithRecipe("IndexTestCluster")(indexTestSystem)
           recipeInstanceIds = (0 to nrOfProcesses).map(_ => java.util.UUID.randomUUID().toString).toSet
           _ <- Future.traverse(recipeInstanceIds)(baker.bake(recipeId, _))
           index <- baker.getAllRecipeInstancesMetadata
@@ -1363,7 +1261,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val compiledRecipe = RecipeCompiler.compileRecipe(getRecipe(recoveryRecipeName))
 
       val first = (for {
-        baker1 <- setupBakerWithNoRecipe()(system1)
+        baker1 <- setupAkkaBakerWithNoRecipe()(system1)
         recipeId <- baker1.addRecipe(RecipeRecord.of(compiledRecipe))
         _ <- baker1.bake(recipeId, recipeInstanceId)
         _ <- baker1.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
@@ -1378,7 +1276,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       def second(recipeId: String) = {
         val system2 = ActorSystem("persistenceTest2", localLevelDBConfig("persistenceTest2"))
         (for {
-          baker2 <- setupBakerWithNoRecipe()(system2)
+          baker2 <- setupAkkaBakerWithNoRecipe()(system2)
           recipeId <- baker2.addRecipe(RecipeRecord.of(compiledRecipe))
           state <- baker2.getRecipeInstanceState(recipeInstanceId)
           recipe <- baker2.getRecipe(recipeId)
@@ -1644,238 +1542,5 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       } yield succeed
 
     }
-
-    "deleting an instance with removeFromIndex enabled allows baking with the same instanceId again" in {
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe("ExampleRecipe")
-        id = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, id)
-        exists <- baker.hasRecipeInstance(id) if exists
-        _ <- baker.deleteRecipeInstance(id, removeFromIndex = true)
-        exists <- baker.hasRecipeInstance(id) if !exists
-        _ <- baker.bake(recipeId, id)
-      } yield succeed
-    }
-
-    "deleting an instance with removeFromIndex disabled will keep it in the index until it expires" in {
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe("ExampleRecipe")
-        id = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, id)
-        exists <- baker.hasRecipeInstance(id) if exists
-        _ <- baker.deleteRecipeInstance(id, removeFromIndex = false)
-        exists <- baker.hasRecipeInstance(id) if exists
-        _ <- recoverToSucceededIf[ProcessDeletedException] {
-          baker.bake(recipeId, id)
-        }
-      } yield succeed
-    }
   }
-
-  "fire and await behaves correctly" should {
-
-    "acknowledge a sensory event by `fireSensoryEventAndAwaitReceived` and wait for persistence" in {
-      val recipe = Recipe("awaitReceivedRecipe")
-        .withInteraction(interactionOne)
-        .withSensoryEvent(initialEvent)
-
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
-        interactionDelay = 500.millis
-        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenAnswer((_: InvocationOnMock) => {
-          Future {
-            Thread.sleep(interactionDelay.toMillis)
-            InteractionOneSuccessful(interactionOneIngredientValue)
-          }(defaultActorSystem.dispatcher)
-        })
-        recipeInstanceId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, recipeInstanceId)
-
-        startTime = System.currentTimeMillis()
-        status <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), Option.apply("correlationId"))
-        endTime = System.currentTimeMillis()
-        duration = (endTime - startTime).millis
-
-        _ = status shouldBe SensoryEventStatus.Received
-        _ = duration should be < interactionDelay
-
-        // Also check that the event is in the list of events, which confirms persistence
-        events <- baker.getEventNames(recipeInstanceId)
-      } yield events should contain("InitialEvent")
-    }
-
-    "wait by `awaitCompleted` for a long-running process to finish" in {
-      val recipe = Recipe("awaitCompletedRecipe")
-        .withInteraction(interactionOne)
-        .withSensoryEvent(initialEvent)
-
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
-        interactionDelay = 500.millis
-        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenAnswer((_: InvocationOnMock) => {
-          Future {
-            Thread.sleep(interactionDelay.toMillis)
-            InteractionOneSuccessful(interactionOneIngredientValue)
-          }(defaultActorSystem.dispatcher)
-        })
-        recipeInstanceId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, recipeInstanceId)
-        _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), Option.apply("correlationId"))
-
-        startTime = System.currentTimeMillis()
-        status <- baker.awaitCompleted(recipeInstanceId, timeout = 1.seconds)
-        endTime = System.currentTimeMillis()
-        duration = (endTime - startTime).millis
-
-        _ = status shouldBe SensoryEventStatus.Completed
-        _ = duration should be > interactionDelay
-
-        state <- baker.getRecipeInstanceState(recipeInstanceId)
-      } yield state.ingredients should contain("interactionOneOriginalIngredient" -> PrimitiveValue(interactionOneIngredientValue))
-    }
-
-    "fail `awaitEvent` for non-existent event name" in {
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe("CheckEventRecipe")
-        recipeInstanceId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, recipeInstanceId)
-
-        // Attempt to await an event that is not part of the recipe definition
-        _ <- recoverToSucceededIf[IllegalEventException] {
-          baker.awaitEvent(recipeInstanceId, "ThisEventDoesNotExist", timeout = 1.second)
-        }
-      } yield succeed
-    }
-
-    "return immediately from `awaitCompleted` when the process is already idle" in {
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe("awaitCompletedAlreadyIdleRecipe")
-        recipeInstanceId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, recipeInstanceId)
-        status <- baker.awaitCompleted(recipeInstanceId, timeout = 1.seconds)
-      } yield status shouldBe SensoryEventStatus.Completed
-    }
-
-    "time out from `awaitCompleted` if the process never becomes idle" in {
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe("SlowInteraction")
-        interactionDelay = 20.seconds
-        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenAnswer((_: InvocationOnMock) => {
-          Future {
-            Thread.sleep(interactionDelay.toMillis)
-            InteractionOneSuccessful(interactionOneIngredientValue)
-          }(defaultActorSystem.dispatcher)
-        })
-        recipeInstanceId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, recipeInstanceId)
-        _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), Option.apply("correlationId"))
-        _ <- recoverToSucceededIf[BakerException.TimeoutException] {
-          baker.awaitCompleted(recipeInstanceId, timeout = 1.seconds)
-        }
-      } yield succeed
-    }
-
-    "wait by `awaitEvent` for a specific event to be fired" in {
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe("CheckEventRecipe")
-        recipeInstanceId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, recipeInstanceId)
-
-        // Fire the event but don't wait for the process to complete
-        _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), Option.apply("correlationId"))
-
-        // Await for an event that happens late in the process
-        _ <- baker.awaitEvent(recipeInstanceId, "InteractionThreeSuccessful", timeout = 1.seconds)
-
-        // Check that the event is now present
-        events <- baker.getEventNames(recipeInstanceId)
-      } yield events should contain("InteractionThreeSuccessful")
-    }
-
-    "return immediately from `awaitEvent` if the event is already present" in {
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe("CheckEventRecipe")
-        recipeInstanceId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, recipeInstanceId)
-        _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), Option.apply("correlationId"))
-
-        // Await for an event that we know has already happened
-        _ <- baker.awaitEvent(recipeInstanceId, "InitialEvent", timeout = 1.seconds)
-        _ <- baker.awaitEvent(recipeInstanceId, "SieveInteractionSuccessful", timeout = 1.seconds)
-      } yield succeed
-    }
-
-    "time out from `awaitEvent` if the event is never fired" in {
-      for {
-        (baker, recipeId) <- setupBakerWithRecipe("CheckEventRecipe")
-        recipeInstanceId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, recipeInstanceId)
-        _ <- recoverToSucceededIf[TimeoutException] {
-          baker.asInstanceOf[AkkaBaker].awaitEvent(recipeInstanceId, "SieveInteractionSuccessful", timeout = 1.seconds)
-        }
-      } yield succeed
-    }
-
-    "fire and await behaves as expected with timerInteraction" should {
-      "wait by `awaitCompleted` for a delayed process to finish" in {
-        val recipeWithTimer = Recipe("TimerRecipeIdle")
-          .withSensoryEvent(delayedEvent)
-          .withInteraction(timerInteraction
-            .withOverriddenIngredientName("WaitTime", "waitTime"))
-
-        for {
-          (baker, recipeId) <- setupBakerWithRecipe(recipeWithTimer, mockImplementations)
-          recipeInstanceId = UUID.randomUUID().toString
-          _ <- baker.bake(recipeId, recipeInstanceId)
-          delay = 500.millis
-
-          // Fire the event but don't wait for the process to complete
-          _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(DelayedEvent(delay)), Option.empty)
-
-          startTime = System.currentTimeMillis()
-          // Await for the process to become idle
-          status <- baker.awaitCompleted(recipeInstanceId, timeout = 5.seconds)
-          endTime = System.currentTimeMillis()
-          duration = (endTime - startTime).millis
-
-          _ = status shouldBe SensoryEventStatus.Completed
-          _ = duration should be > delay
-
-          // Check that the delayed event is now present
-          events <- baker.getEventNames(recipeInstanceId)
-        } yield events should contain("TimeWaited")
-      }
-
-      "wait by `awaitEvent` for a delayed event (TimeWaited) to be fired" in {
-        val recipeWithTimer = Recipe("TimerRecipeEvent")
-          .withSensoryEvent(delayedEvent)
-          .withInteraction(timerInteraction
-            .withOverriddenIngredientName("WaitTime", "waitTime"))
-
-        for {
-          (baker, recipeId) <- setupBakerWithRecipe(recipeWithTimer, mockImplementations)
-          recipeInstanceId = UUID.randomUUID().toString
-          _ <- baker.bake(recipeId, recipeInstanceId)
-          delay = 500.millis
-
-          // Fire the event but don't wait for the process to complete
-          _ <- baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.unsafeFrom(DelayedEvent(delay)), Option.empty)
-
-          startTime = System.currentTimeMillis()
-          // Await for the TimeWaited event specifically
-          _ <- baker.awaitEvent(recipeInstanceId, "TimeWaited", timeout = 5.seconds)
-          endTime = System.currentTimeMillis()
-          duration = (endTime - startTime).millis
-
-          _ = duration should be > delay
-
-          // Check that the event is now present
-          events <- baker.getEventNames(recipeInstanceId)
-        } yield events should contain("TimeWaited")
-      }
-    }
-
-    // TODO: Test cleanup for both listener types
-  }
-
 }

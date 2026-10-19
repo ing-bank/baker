@@ -31,14 +31,14 @@ class BakerInquireSpec extends BakerRuntimeTestBase {
 
     "return recipe if asked" in {
       for {
-        (baker, recipeId) <- setupBakerWithRecipe("returnRecipe", false)
+        (baker, recipeId) <- setupPekkoBakerWithRecipe("returnRecipe", false)
         recipe <- baker.getRecipe(recipeId)
       } yield recipe.compiledRecipe.name shouldBe "returnRecipe"
     }
 
     "return all recipes if asked" in {
       for {
-        (baker, recipeId) <- setupBakerWithRecipe("returnAllRecipes", false)
+        (baker, recipeId) <- setupPekkoBakerWithRecipe("returnAllRecipes", false)
         recipeId2 <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(getRecipe("returnAllRecipes2"))))
         recipes <- baker.getAllRecipes
         _ = recipes.size shouldBe 2
@@ -49,7 +49,7 @@ class BakerInquireSpec extends BakerRuntimeTestBase {
 
     "return no errors of a recipe with no errors if asked" in {
       for {
-        (baker, recipeId) <- setupBakerWithRecipe("returnHealthRecipe", false)
+        (baker, recipeId) <- setupPekkoBakerWithRecipe("returnHealthRecipe", false)
         recipeInformation <- baker.getRecipe(recipeId)
         _ = assert(recipeInformation.compiledRecipe.recipeId == recipeId && recipeInformation.errors.isEmpty)
       } yield succeed
@@ -57,7 +57,7 @@ class BakerInquireSpec extends BakerRuntimeTestBase {
 
     "return no errors of all recipes if none contain errors if asked" in {
       for {
-        (baker, recipeId) <- setupBakerWithRecipe("returnHealthAllRecipe", false)
+        (baker, recipeId) <- setupPekkoBakerWithRecipe("returnHealthAllRecipe", false)
         recipeId2 <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(getRecipe("returnHealthAllRecipe2"))))
         recipeInformations <- baker.getAllRecipes
         _ = recipeInformations.size shouldBe 2

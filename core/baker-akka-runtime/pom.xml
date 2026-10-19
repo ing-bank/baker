@@ -64,6 +64,13 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-runtime-testkit</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-testkit_${scala.compat.version}</artifactId>
             <version>${akka.version}</version>

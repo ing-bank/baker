@@ -206,21 +206,21 @@ trait BakerRuntimeTestBase
    * @param recipeName A unique name that is needed for the recipe to insure that the tests do not interfere with each other
    * @return
    */
-  protected def setupBakerWithRecipe(recipeName: String, appendUUIDToTheRecipeName: Boolean = true)
+  protected def setupPekkoBakerWithRecipe(recipeName: String, appendUUIDToTheRecipeName: Boolean = true)
                                     (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
     val newRecipeName = if (appendUUIDToTheRecipeName) s"$recipeName-${UUID.randomUUID().toString}" else recipeName
     val recipe = getRecipe(newRecipeName)
     setupMockResponse()
-    setupBakerWithRecipe(recipe, mockImplementations)(actorSystem)
+    setupPekkoBakerWithRecipe(recipe, mockImplementations)(actorSystem)
   }
 
-  protected def setupBakerWithRecipe(recipe: Recipe, implementations: List[InteractionInstance])
+  protected def setupPekkoBakerWithRecipe(recipe: Recipe, implementations: List[InteractionInstance])
                                     (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
     val baker = PekkoBaker(ConfigFactory.load(), actorSystem, CachingInteractionManager(implementations))
     baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe))).map(baker -> _)(actorSystem.dispatcher)
   }
 
-  protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Future[Baker] = {
+  protected def setupPekkoBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Future[Baker] = {
     setupMockResponse()
     Future.successful(PekkoBaker(ConfigFactory.load(), actorSystem, CachingInteractionManager(mockImplementations)))
   }

@@ -64,6 +64,13 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-runtime-testkit</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.apache.pekko</groupId>
             <artifactId>pekko-testkit_${scala.compat.version}</artifactId>
             <version>${pekko.version}</version>

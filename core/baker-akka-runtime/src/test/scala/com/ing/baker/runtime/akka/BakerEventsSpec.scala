@@ -91,7 +91,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
       val recipeName = "EventReceivedEventRecipe"
       val recipeInstanceId = UUID.randomUUID().toString
       for {
-        (baker, recipeId) <- setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
+        (baker, recipeId) <- setupAkkaBakerWithRecipe(getRecipe(recipeName), mockImplementations)
         listenerProbe = TestProbe()
         listenerFunction = (bakerEvent: BakerEvent) => listenerProbe.ref ! bakerEvent
         _ <- baker.registerBakerEventListener(listenerFunction)
@@ -126,7 +126,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
       val recipeName = "EventRejectedEventRecipe"
       val recipeInstanceId = UUID.randomUUID().toString
       for {
-        (baker, recipeId) <- setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
+        (baker, recipeId) <- setupAkkaBakerWithRecipe(getRecipe(recipeName), mockImplementations)
         listenerProbe = TestProbe()
         listenerFunction = (bakerEvent: BakerEvent) => listenerProbe.ref ! bakerEvent
         _ <- baker.registerBakerEventListener(listenerFunction)
@@ -144,7 +144,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
       val recipeName = "AlreadyReceivedRecipe"
       val recipeInstanceId = UUID.randomUUID().toString
       for {
-        (baker, recipeId) <- setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
+        (baker, recipeId) <- setupAkkaBakerWithRecipe(getRecipe(recipeName), mockImplementations)
         listenerProbe = TestProbe()
         listenerFunction = (bakerEvent: BakerEvent) => listenerProbe.ref ! bakerEvent
         _ <- baker.registerBakerEventListener(listenerFunction)
@@ -162,7 +162,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
       val recipeName = "FiringLimitMetRecipe"
       val recipeInstanceId = UUID.randomUUID().toString
       for {
-        (baker, recipeId) <- setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
+        (baker, recipeId) <- setupAkkaBakerWithRecipe(getRecipe(recipeName), mockImplementations)
         listenerProbe = TestProbe()
         listenerFunction = (bakerEvent: BakerEvent) => listenerProbe.ref ! bakerEvent
         _ <- baker.registerBakerEventListener(listenerFunction)
@@ -180,7 +180,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
       val recipeName = "ReceivePeriodExpiredRecipe"
       val recipeInstanceId = UUID.randomUUID().toString
       for {
-        (baker, recipeId) <- setupBakerWithRecipe(getRecipe(recipeName).withEventReceivePeriod(eventReceiveTimeout), mockImplementations)
+        (baker, recipeId) <- setupAkkaBakerWithRecipe(getRecipe(recipeName).withEventReceivePeriod(eventReceiveTimeout), mockImplementations)
         listenerProbe = TestProbe()
         listenerFunction = (bakerEvent: BakerEvent) => listenerProbe.ref ! bakerEvent
         _ <- baker.registerBakerEventListener(listenerFunction)
@@ -200,7 +200,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
       val recipeName = "NoSuchProcessRecipe"
       val recipeInstanceId = UUID.randomUUID().toString
       for {
-        (baker, _) <- setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
+        (baker, _) <- setupAkkaBakerWithRecipe(getRecipe(recipeName), mockImplementations)
         listenerProbe = TestProbe()
         listenerFunction = (bakerEvent: BakerEvent) => listenerProbe.ref ! bakerEvent
         _ <- baker.registerBakerEventListener(listenerFunction)
