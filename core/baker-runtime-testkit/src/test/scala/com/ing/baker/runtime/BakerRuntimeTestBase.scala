@@ -1,8 +1,10 @@
 package com.ing.baker.runtime
 
+import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.CaseClassIngredient
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.{Recipe => CommonRecipe}
+import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import com.ing.baker.types.{Converters, Value}
 import org.mockito.ArgumentMatchers._
@@ -12,7 +14,8 @@ import org.scalatest.wordspec.AsyncWordSpecLike
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatestplus.mockito.MockitoSugar
 
-import scala.concurrent.Future
+import java.util.UUID
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -133,11 +136,20 @@ trait BakerRuntimeTestBase
       testInteractionSixMock,
       testNonMatchingReturnTypeInteractionMock)
 
-  protected def setupBakerWithRecipe(recipeName: String): Future[(Baker, String)]
+  protected def setupBakerWithRecipe(recipeName: String): Future[(Baker, String)] = {
+    val newRecipeName = s"$recipeName-${UUID.randomUUID().toString}"
+    setupMockResponse()
+    setupBakerWithRecipe(getRecipe(newRecipeName), mockImplementations)
+  }
 
-  protected def setupBakerWithRecipe(recipe: CommonRecipe, implementations: List[InteractionInstance]): Future[(Baker, String)]
+  protected def setupBakerWithRecipe(recipe: CommonRecipe, implementations: List[InteractionInstance]): Future[(Baker, String)] = {
+    setupBakerWithoutRecipe(implementations).flatMap { baker =>
+      baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(recipe))).map(baker -> _)(ExecutionContext.global)
+    }
+  }
 
-  protected def setupBakerWithoutRecipe(): Future[Baker]
+  protected def setupBakerWithoutRecipe(): Future[Baker] =
+    setupBakerWithoutRecipe(mockImplementations)
 
   protected def setupBakerWithoutRecipe(implementations: List[InteractionInstance]): Future[Baker]
 }

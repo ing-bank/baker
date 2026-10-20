@@ -120,18 +120,8 @@ trait BakerAkkaRuntimeTestBase
   }
 
   protected def setupAkkaBakerWithNoRecipe(implementations: List[InteractionInstance])(implicit actorSystem: ActorSystem): Future[Baker] = {
-    setupMockResponse()
     Future.successful(AkkaBaker(ConfigFactory.load(), actorSystem, CachingInteractionManager(implementations)))
   }
-
-  override protected def setupBakerWithRecipe(recipeName: String): Future[(Baker, String)] =
-    setupAkkaBakerWithRecipe(recipeName)
-
-  override protected def setupBakerWithRecipe(recipe: com.ing.baker.recipe.common.Recipe, implementations: List[InteractionInstance]): Future[(Baker, String)] =
-    setupAkkaBakerWithRecipe(recipe, implementations)
-
-  override protected def setupBakerWithoutRecipe(): Future[Baker] =
-    setupAkkaBakerWithNoRecipe(mockImplementations)
 
   override protected def setupBakerWithoutRecipe(implementations: List[InteractionInstance]): Future[Baker] =
     setupAkkaBakerWithNoRecipe(implementations)
