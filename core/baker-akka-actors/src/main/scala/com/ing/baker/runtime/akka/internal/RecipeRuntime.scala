@@ -32,7 +32,7 @@ object RecipeRuntime {
           events = state.events :+ EventMoment(event.name, occurredOn))
     }
 
-  /**
+  /**RecipeRuntime
     * Creates the produced marking (tokens) given the output (event) of the interaction.
     *
     * It fills a token in the out adjacent place of the transition with the interaction name

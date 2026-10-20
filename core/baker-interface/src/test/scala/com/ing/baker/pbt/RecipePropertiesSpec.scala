@@ -1,7 +1,5 @@
 package com.ing.baker.pbt
 
-import java.io.{File, PrintWriter}
-
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
@@ -12,8 +10,8 @@ import org.scalacheck._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 
+import java.io.{File, PrintWriter}
 import scala.annotation.tailrec
-import scala.collection.immutable.Seq
 import scala.util.Random
 
 class RecipePropertiesSpec extends AnyFunSuite with Checkers {

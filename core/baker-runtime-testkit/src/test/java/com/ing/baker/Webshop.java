@@ -1,28 +1,16 @@
 package com.ing.baker;
 
-import akka.actor.ActorSystem;
-import com.google.common.collect.ImmutableList;
-import com.ing.baker.compiler.RecipeCompiler;
-import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.recipe.annotations.FiresEvent;
 import com.ing.baker.recipe.annotations.RecipeInstanceId;
 import com.ing.baker.recipe.annotations.RequiresIngredient;
 import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy;
 import com.ing.baker.recipe.javadsl.Recipe;
-import com.ing.baker.runtime.akka.AkkaBaker;
-import com.ing.baker.runtime.common.RecipeRecord;
-import com.ing.baker.runtime.javadsl.Baker;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 
 import java.time.Duration;
-import java.util.concurrent.ExecutionException;
 
 import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class Webshop {
 
@@ -131,46 +119,4 @@ public class Webshop {
     SendInvoice sendInvoiceMock = mock(SendInvoice.class);
     ManufactureGoods manufactureGoodsMock = mock(ManufactureGoods.class);
     ValidateOrder validateOrderMock = mock(ValidateOrder.class);
-
-
-    //    @Test
-    public void testWebshop() throws ExecutionException, InterruptedException {
-
-        Config config = ConfigFactory.load("cassandra.conf");
-
-        CompiledRecipe recipe = RecipeCompiler.compileRecipe(webshopRecipe);
-
-        System.out.println(recipe.getRecipeVisualization());
-
-        // test data
-        CustomerInfo customerInfo = new CustomerInfo("klaas", "straat", "email");
-        String order = "123";
-
-        // prepare mocks
-        when(shipGoodsMock.apply(any(), any())).thenReturn(new ShipGoods.GoodsShipped("trackingId"));
-        when(sendInvoiceMock.apply(any())).thenReturn(new SendInvoice.InvoiceWasSent());
-        when(manufactureGoodsMock.apply(any())).thenReturn(new ManufactureGoods.GoodsManufactured("goods"));
-        when(validateOrderMock.apply(any(), any())).thenReturn(new ValidateOrder.Valid());
-
-        ActorSystem system = ActorSystem.create("webshop");
-        Baker baker = AkkaBaker.java(config, system, ImmutableList.of(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock));
-
-        String recipeId = baker.addRecipe(RecipeRecord.of(recipe, System.currentTimeMillis(), false, true)).get();
-
-        String recipeInstanceId = "56a70f82-a24d-497f-b3ac-57366adbb39c"; //UUID.randomUUID().toString();
-
-        System.out.println("recipeId: " + recipeId);
-        System.out.println("RecipeInstanceId: " + recipeInstanceId);
-
-
-//        baker.bake(recipeId, RecipeInstanceId);
-//
-//        baker.processEvent(RecipeInstanceId, new CustomerInfoReceived(customerInfo));
-//        baker.processEvent(RecipeInstanceId, new OrderPlaced(order));
-//        baker.processEvent(RecipeInstanceId, new PaymentMade());
-
-//        System.out.println("ingredients: " + baker.getIngredients(RecipeInstanceId).toString());
-//        System.out.println("events: " + baker.getProcessState(RecipeInstanceId)
-//                .thenApply(ProcessState::events).get().toString());
-    }
 }

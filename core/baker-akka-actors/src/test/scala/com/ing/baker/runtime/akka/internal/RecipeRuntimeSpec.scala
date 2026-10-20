@@ -1,7 +1,5 @@
 package com.ing.baker.runtime.akka.internal
 
-import java.util.UUID
-
 import com.ing.baker.il.IngredientDescriptor
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.scaladsl.RecipeInstanceState
@@ -12,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
 
-import scala.collection.immutable.Seq
+import java.util.UUID
 
 class RecipeRuntimeSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
   "The recipe runtime" should {

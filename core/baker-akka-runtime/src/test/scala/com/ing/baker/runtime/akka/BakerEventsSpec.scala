@@ -67,7 +67,7 @@ object BakerEventsSpec extends LazyLogging {
 
 }
 
-class BakerEventsSpec extends BakerRuntimeTestBase {
+class BakerEventsSpec extends BakerAkkaRuntimeTestBase {
 
   import BakerEventsSpec._
 

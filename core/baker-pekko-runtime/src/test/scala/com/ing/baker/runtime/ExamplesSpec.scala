@@ -1,6 +1,6 @@
 package com.ing.baker.runtime
 
-import com.ing.baker.BakerRuntimeTestBase
+import com.ing.baker.BakerPekkoRuntimeTestBase
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.runtime.ScalaDSLRuntime._
@@ -13,7 +13,7 @@ import java.util.UUID
 import scala.concurrent.Future
 
 class
-ExamplesSpec extends BakerRuntimeTestBase  {
+ExamplesSpec extends BakerPekkoRuntimeTestBase  {
   override def actorSystemName = "ExamplesSpec"
 
   "The WebShop recipe" should {

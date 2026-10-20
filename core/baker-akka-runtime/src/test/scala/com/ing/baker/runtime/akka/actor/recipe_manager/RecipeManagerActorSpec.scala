@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.actor.recipe_manager
 import java.util.UUID
 import akka.actor.ActorRef
 import akka.pattern.ask
-import com.ing.baker.BakerRuntimeTestBase
+import com.ing.baker.BakerAkkaRuntimeTestBase
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
@@ -18,7 +18,7 @@ object RecipeManagerActorSpec {
     """.stripMargin)
 }
 
-class RecipeManagerActorSpec extends BakerRuntimeTestBase {
+class RecipeManagerActorSpec extends BakerAkkaRuntimeTestBase {
 
   override def actorSystemName = "RecipeManagerSpec"
 

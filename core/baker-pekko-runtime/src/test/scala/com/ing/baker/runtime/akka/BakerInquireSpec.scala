@@ -1,9 +1,7 @@
 package com.ing.baker.runtime.akka
 
 import com.ing.baker._
-import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.recipe.TestRecipe.getRecipe
-import com.ing.baker.runtime.common.RecipeRecord
+import com.ing.baker.runtime.testkit.BakerInquireSpecLike
 import com.typesafe.config.ConfigFactory
 import io.github.alstanchev.pekko.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtensionProvider}
 import org.apache.pekko.actor.Status
@@ -11,7 +9,7 @@ import org.apache.pekko.testkit.TestProbe
 
 import scala.language.postfixOps
 
-class BakerInquireSpec extends BakerRuntimeTestBase {
+class BakerInquireSpec extends BakerPekkoRuntimeTestBase with BakerInquireSpecLike {
 
   override def actorSystemName = "BakerInquireSpec"
 
@@ -25,47 +23,5 @@ class BakerInquireSpec extends BakerRuntimeTestBase {
     val tp = TestProbe()
     tp.send(StorageExtensionProvider(defaultActorSystem).journalStorage(config), InMemoryJournalStorage.ClearJournal)
     tp.expectMsg(Status.Success(""))
-  }
-
-  "Baker" should {
-
-    "return recipe if asked" in {
-      for {
-        (baker, recipeId) <- setupPekkoBakerWithRecipe("returnRecipe", false)
-        recipe <- baker.getRecipe(recipeId)
-      } yield recipe.compiledRecipe.name shouldBe "returnRecipe"
-    }
-
-    "return all recipes if asked" in {
-      for {
-        (baker, recipeId) <- setupPekkoBakerWithRecipe("returnAllRecipes", false)
-        recipeId2 <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(getRecipe("returnAllRecipes2"))))
-        recipes <- baker.getAllRecipes
-        _ = recipes.size shouldBe 2
-        _ = recipes(recipeId).compiledRecipe.name shouldBe "returnAllRecipes"
-        _ = recipes(recipeId2).compiledRecipe.name shouldBe "returnAllRecipes2"
-      } yield succeed
-    }
-
-    "return no errors of a recipe with no errors if asked" in {
-      for {
-        (baker, recipeId) <- setupPekkoBakerWithRecipe("returnHealthRecipe", false)
-        recipeInformation <- baker.getRecipe(recipeId)
-        _ = assert(recipeInformation.compiledRecipe.recipeId == recipeId && recipeInformation.errors.isEmpty)
-      } yield succeed
-    }
-
-    "return no errors of all recipes if none contain errors if asked" in {
-      for {
-        (baker, recipeId) <- setupPekkoBakerWithRecipe("returnHealthAllRecipe", false)
-        recipeId2 <- baker.addRecipe(RecipeRecord.of(RecipeCompiler.compileRecipe(getRecipe("returnHealthAllRecipe2"))))
-        recipeInformations <- baker.getAllRecipes
-        _ = recipeInformations.size shouldBe 2
-        _ = recipeInformations.get(recipeId)
-          .foreach(r => assert(r.compiledRecipe.recipeId == recipeId && r.errors.isEmpty))
-        _ = recipeInformations.get(recipeId2)
-          .foreach(r => assert(r.compiledRecipe.recipeId == recipeId2 && r.errors.isEmpty))
-      } yield succeed
-    }
   }
 }
