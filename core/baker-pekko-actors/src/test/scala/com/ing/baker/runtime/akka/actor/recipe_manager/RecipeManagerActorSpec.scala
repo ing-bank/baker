@@ -1,13 +1,18 @@
 package com.ing.baker.runtime.akka.actor.recipe_manager
 
-import java.util.UUID
-import org.apache.pekko.actor.ActorRef
-import org.apache.pekko.pattern.ask
-import com.ing.baker.BakerPekkoRuntimeTestBase
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexSpec
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.typesafe.config.{Config, ConfigFactory}
+import org.apache.pekko.actor.{ActorRef, ActorSystem}
+import org.apache.pekko.pattern.ask
+import org.apache.pekko.testkit.TestKit
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AsyncWordSpecLike
+
+import java.util.UUID
+import scala.concurrent.duration._
 
 object RecipeManagerActorSpec {
   val config: Config = ConfigFactory.parseString(
@@ -20,22 +25,20 @@ object RecipeManagerActorSpec {
     """.stripMargin)
 }
 
-class RecipeManagerActorSpec extends BakerPekkoRuntimeTestBase {
-
-  override def actorSystemName = "RecipeManagerSpec"
+class RecipeManagerActorSpec extends TestKit(ActorSystem("RecipeManagerActorProtoSpec", ProcessIndexSpec.config)) { this: AsyncWordSpecLike with Matchers =>
 
   "The recipe manager" should {
     "add a recipe to the list when an AddRecipe message is received" in {
       val compiledRecipe = RecipeCompiler.compileRecipe(TestRecipe.getRecipe("AddRecipeRecipe"))
-      val recipeManager: ActorRef = defaultActorSystem.actorOf(RecipeManagerActor.props(), s"recipeManager-${UUID.randomUUID().toString}")
+      val recipeManager: ActorRef = system.actorOf(RecipeManagerActor.props(), s"recipeManager-${UUID.randomUUID().toString}")
 
       for {
-        futureAddResult <- recipeManager.ask(AddRecipe(compiledRecipe))(timeout)
+        futureAddResult <- recipeManager.ask(AddRecipe(compiledRecipe))(10 seconds)
         recipeId: String = futureAddResult match {
           case AddRecipeResponse(x) => x
           case _ => fail("Adding recipe failed")
         }
-        futureGetResult <- recipeManager.ask(GetRecipe(recipeId))(timeout)
+        futureGetResult <- recipeManager.ask(GetRecipe(recipeId))(10 seconds)
         _ = futureGetResult match {
           case RecipeFound(_, _) => succeed
           case NoRecipeFound(_) => fail("Recipe not found")

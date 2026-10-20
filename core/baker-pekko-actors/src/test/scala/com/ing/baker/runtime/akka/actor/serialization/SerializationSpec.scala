@@ -1,8 +1,5 @@
 package com.ing.baker.runtime.akka.actor.serialization
 
-import org.apache.pekko.actor.{Actor, ActorSystem, Props}
-import org.apache.pekko.serialization.{SerializationExtension, Serializer}
-import org.apache.pekko.testkit.TestKit
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.petrinet.api.{Id, Marking, MultiSet}
@@ -20,9 +17,12 @@ import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState, SensoryEventResult}
 import com.ing.baker.runtime.serialization.Encryption.{AESEncryption, NoEncryption}
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto}
-import com.ing.baker.{AllTypeRecipe, types}
 import com.ing.baker.types._
 import com.ing.baker.types.modules.PrimitiveModuleSpec._
+import com.ing.baker.{AllTypeRecipe, types}
+import org.apache.pekko.actor.{Actor, ActorSystem, Props}
+import org.apache.pekko.serialization.{SerializationExtension, Serializer}
+import org.apache.pekko.testkit.TestKit
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalacheck._

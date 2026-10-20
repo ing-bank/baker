@@ -25,14 +25,6 @@ trait BakerExecutionSpecLike extends BakerRuntimeTestBase { this: AsyncWordSpecL
 
   final case class SomeNotDefinedEvent(name: String)
 
-  protected def initialIngredientValue: String
-  protected def interactionOneIngredientValue: String
-
-  protected def mockImplementations: List[InteractionInstance]
-
-//  protected def setupBakerWithRecipe(recipeName: String): Future[(Baker, String)]
-//  protected def setupBakerWithRecipe(recipe: CommonRecipe, implementations: List[InteractionInstance]): Future[(Baker, String)]
-
   protected def stubInteractionOneWithDelay(interactionDelay: FiniteDuration): Unit
 
   protected def whenTerminated(): Future[Unit]
