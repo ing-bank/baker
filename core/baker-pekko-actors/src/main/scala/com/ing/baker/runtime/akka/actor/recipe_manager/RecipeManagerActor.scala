@@ -37,7 +37,7 @@ class RecipeManagerActor extends PersistentActor with ActorLogging {
         val timestamp = System.currentTimeMillis()
         persist(RecipeAdded(compiledRecipe, timestamp)) { _ =>
           addRecipe(compiledRecipe, timestamp)
-          LogAndSendEvent.recipeAdded(com.ing.baker.runtime.scaladsl.RecipeAdded(compiledRecipe.name, compiledRecipe.recipeId, timestamp, compiledRecipe), context.system.eventStream)
+          LogAndSendEvent.recipeAdded(com.ing.baker.runtime.scaladsl.RecipeAdded(compiledRecipe.name, compiledRecipe.recipeId, timestamp, compiledRecipe), context.system.eventStream.publish)
           sender() ! AddRecipeResponse(compiledRecipe.recipeId)
         }
       }

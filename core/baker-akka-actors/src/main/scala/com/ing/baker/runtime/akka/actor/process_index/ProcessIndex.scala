@@ -243,7 +243,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   // creates a ProcessInstanceActor, does not do any validation
   def createProcessActor(recipeInstanceId: String, compiledRecipe: CompiledRecipe): ActorRef = {
     val runtime: RecipeRuntime =
-      new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream)
+      new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream.publish)
 
     val processActorProps =
       BackoffSupervisor.props(
@@ -457,7 +457,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       index += recipeInstanceId -> actorMetadata
 
       val creationEvent = RecipeInstanceCreated(createdTime, recipeId, compiledRecipe.name, recipeInstanceId)
-      LogAndSendEvent.recipeInstanceCreated(creationEvent, context.system.eventStream)
+      LogAndSendEvent.recipeInstanceCreated(creationEvent, context.system.eventStream.publish)
 
       originalSender ! Initialized(Marking.empty)
     }
