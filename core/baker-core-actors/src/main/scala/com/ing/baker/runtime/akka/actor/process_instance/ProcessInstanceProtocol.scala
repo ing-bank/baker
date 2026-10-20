@@ -1,6 +1,5 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
-import akka.actor.ActorRef
 import com.ing.baker.il.petrinet.Place
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
@@ -104,22 +103,6 @@ object ProcessInstanceProtocol {
    * @param recipeInstanceId The identifier of the uninitialized actor.
    */
   case class Uninitialized(recipeInstanceId: String) extends Response
-
-  /**
-   * Custom termination message with optional replyTo actor ref in case not only the parent needs to be
-   * informed of node termination.
-   *
-   * @param actorRef        The node that terminated.
-   * @param replyToWhenDone An optional node to inform. This is just a ref you need to send a message to this actor yourself.
-   * @param deleteInstance  If it should mark the process as deleted or not
-   * @param removeFromIndex If it should remove the process completely from the index or not.
-   *
-   */
-  case class TerminatedWithReplyTo(actorRef: ActorRef,
-                                   replyToWhenDone: Option[ActorRef],
-                                   deleteInstance: Boolean,
-                                   removeFromIndex: Boolean
-                                  ) extends Response
 
   /**
    * Returned in case a second Initialize is send after a first is processed

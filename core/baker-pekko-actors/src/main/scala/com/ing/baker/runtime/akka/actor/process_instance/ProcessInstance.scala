@@ -129,7 +129,7 @@ class ProcessInstance(
                        settings: Settings,
                        runtime: ProcessInstanceRuntime,
                        delayedTransitionActor: ActorRef)
-  extends ProcessInstanceEventSourcing(compiledRecipe.petriNet, settings.encryption, runtime.eventSource) {
+  extends ProcessInstanceEventSourcingPekko(compiledRecipe.petriNet, settings.encryption, runtime.eventSource) {
 
   import context.dispatcher
 

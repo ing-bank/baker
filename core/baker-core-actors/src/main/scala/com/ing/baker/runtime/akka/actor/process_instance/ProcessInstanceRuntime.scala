@@ -1,18 +1,19 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
-import java.io.{PrintWriter, StringWriter}
 import cats.data.State
 import cats.effect.IO
 import com.ing.baker.il.petrinet.{Place, Transition}
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.core.util._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.{TransitionEvent, TransitionFailedEvent, TransitionFiredEvent}
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.BlockTransition
 import com.ing.baker.runtime.akka.actor.process_instance.internal.{ExceptionStrategy, Instance, Job}
 import com.ing.baker.runtime.common.RemoteInteractionExecutionException
+import com.ing.baker.runtime.core.util._
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
 import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.{Logger, LoggerFactory}
+
+import java.io.{PrintWriter, StringWriter}
 
 /**
   * Encapsulates all components required to 'run' a Petri net instance

@@ -14,7 +14,7 @@ import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransiti
 import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstance._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.{CompletionListenerAdded, CompletionListenersRemoved, Event, EventListenerAdded, EventListenersRemoved, InitializedEvent, TransitionEvent, TransitionFailedEvent, TransitionFailedWithFunctionalOutputEvent, TransitionFailedWithOutputEvent, TransitionFiredEvent}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceLogger._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{Continue, ContinueAsFunctionalEvent, RetryWithDelay}
@@ -129,7 +129,7 @@ class ProcessInstance(
                        settings: Settings,
                        runtime: ProcessInstanceRuntime,
                        delayedTransitionActor: ActorRef)
-  extends ProcessInstanceEventSourcing(compiledRecipe.petriNet, settings.encryption, runtime.eventSource) {
+  extends ProcessInstanceEventSourcingAkka(compiledRecipe.petriNet, settings.encryption, runtime.eventSource) {
 
   import context.dispatcher
 

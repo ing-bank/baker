@@ -65,7 +65,7 @@ class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") 
       expectMsgPF(timeOut) { case TransitionFired(_, 1, _, _, _, _, _) => }
       expectMsgPF(timeOut) { case TransitionFired(_, 2, _, _, _, _, _) => }
 
-      ProcessInstanceEventSourcing.eventsForInstance(
+      ProcessInstanceEventSourcingPekko.eventsForInstance(
         processTypeName = "test",
         recipeInstanceId = recipeInstanceId,
         topology = petriNet,
