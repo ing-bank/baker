@@ -1,20 +1,18 @@
-package com.ing.baker.runtime
+package com.ing.baker.runtime.testkit
 
-import com.ing.baker.BakerAkkaRuntimeTestBase
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.recipe.scaladsl._
-import com.ing.baker.runtime.ScalaDSLRuntime._
-import com.ing.baker.runtime.akka.AkkaBaker
-import com.ing.baker.runtime.core.util.CachingInteractionManager
+import com.ing.baker.recipe.scaladsl.Examples
+import com.ing.baker.runtime.BakerRuntimeTestBase
+import com.ing.baker.runtime.ScalaDSLRuntime.{EventOps, IngredientMap, InteractionOps}
 import com.ing.baker.runtime.common.RecipeRecord
 import com.typesafe.config.ConfigFactory
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AsyncWordSpecLike
 
 import java.util.UUID
 import scala.concurrent.Future
 
-class ExamplesSpec extends BakerAkkaRuntimeTestBase  {
-  override def actorSystemName = "ExamplesSpec"
-
+trait ExampleSpecLike extends BakerRuntimeTestBase { this: AsyncWordSpecLike with Matchers =>
   "The WebShop recipe" should {
     import Examples.webshop._
 
@@ -23,7 +21,7 @@ class ExamplesSpec extends BakerAkkaRuntimeTestBase  {
       // compiles the recipe
       val compiledRecipe = RecipeCompiler.compileRecipe(webShopRecipe)
 
-//      println(s"Visual recipe: ${compiledRecipe.getRecipeVisualization}")
+      //      println(s"Visual recipe: ${compiledRecipe.getRecipeVisualization}")
 
       // prints any validation errors the compiler found
       Future { compiledRecipe.validationErrors shouldBe empty }
@@ -66,9 +64,8 @@ class ExamplesSpec extends BakerAkkaRuntimeTestBase  {
       val implementations =
         List(validateOrderImpl, manufactureGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
 
-      val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem, CachingInteractionManager(implementations))
-
       for {
+        baker <- setupBakerWithoutRecipe(implementations)
         recipeId <- baker.addRecipe(RecipeRecord.of(compiledRecipe))
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
@@ -110,4 +107,5 @@ class ExamplesSpec extends BakerAkkaRuntimeTestBase  {
       Future { compiledRecipe.validationErrors shouldBe empty }
     }
   }
+
 }
