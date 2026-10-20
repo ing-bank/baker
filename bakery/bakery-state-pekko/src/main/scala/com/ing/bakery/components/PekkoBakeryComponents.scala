@@ -1,0 +1,113 @@
+package com.ing.bakery.components
+
+import cats.effect.{IO, Resource}
+import com.ing.baker.runtime.akka.PekkoBakerConfig
+import com.ing.baker.runtime.akka.actor.BakerActorProvider
+import com.ing.baker.runtime.akka.recipe_manager.ActorBasedRecipeManager
+import com.ing.baker.runtime.core.util.Timeouts
+import com.ing.baker.runtime.model.InteractionManager
+import com.ing.baker.runtime.recipe_manager.RecipeManager
+import com.ing.bakery.metrics.MetricService
+import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.scalalogging.LazyLogging
+import io.prometheus.client.CollectorRegistry
+import org.http4s.metrics.MetricsOps
+import org.http4s.metrics.prometheus.Prometheus
+import org.apache.pekko.actor.ActorSystem
+
+import java.io.File
+import scala.concurrent.ExecutionContext
+
+/**
+  * Contains the subcomponent of a bakery instance run on using the pekko-runtime.
+  * Subcomponents can be overridden to customize the bakery instance.
+  *
+  * @param optionalConfig A config instance used to load properties for the pekko subcomponents.
+  * @param externalContext Context passed to the default interactionManagerResource.
+  */
+class PekkoBakeryComponents(optionalConfig: Option[Config] = None,
+                            externalContext: Option[Any] = None,
+                            metricService: MetricService = new MetricService(CollectorRegistry.defaultRegistry)
+                          ) extends LazyLogging {
+
+  def configResource: Resource[IO, Config] = Resource.eval(IO {
+    val configPath = sys.env.getOrElse("CONFIG_DIRECTORY", "/opt/docker/conf")
+    val config = optionalConfig.getOrElse(ConfigFactory.load(ConfigFactory.parseFile(new File(s"$configPath/application.conf"))))
+
+    val production = config.getBoolean("baker.production-safe-mode")
+    val loggingEnabled = config.getBoolean("baker.api-logging-enabled")
+
+    if (production && loggingEnabled) {
+      logger.error("Logging of API is enabled, but not allowed in production - stopping JVM")
+      System.exit(1)
+    }
+
+    config
+  })
+
+  def externalContextOptionResource: Resource[IO, Option[Any]] =
+    Resource.pure[IO, Option[Any]](externalContext)
+
+  def actorSystemResource(config: Config): Resource[IO, ActorSystem] =
+    Resource.make(
+      acquire = IO(ActorSystem("baker", config)))(
+      release = as => IO.fromFuture(IO(as.terminate())).map(_ => ())
+    ).logResourceLifecycle("ActorSystem")
+
+  def ec(actorSystem: ActorSystem): Resource[IO, ExecutionContext] = Resource.pure[IO, ExecutionContext](actorSystem.dispatcher)
+
+  def akkaBakerTimeoutsResource(config: Config): Resource[IO, Timeouts] =
+    Resource.pure[IO, Timeouts](Timeouts(config)).logResourceLifecycle("Timeouts")
+
+  def akkaBakerConfigValidationSettingsResource(config: Config): Resource[IO, PekkoBakerConfig.BakerValidationSettings] =
+    Resource.pure[IO, PekkoBakerConfig.BakerValidationSettings](PekkoBakerConfig.BakerValidationSettings.from(config)).logResourceLifecycle("BakerValidationSettings")
+
+  def bakerActorProviderResource(config: Config): Resource[IO, BakerActorProvider] =
+    Resource.pure[IO, BakerActorProvider](PekkoBakerConfig.bakerProviderFrom(config)).logResourceLifecycle("BakerActorProvider")
+
+  def maybeCassandraResource(config: Config,
+                             actorSystem: ActorSystem,
+                             ec: ExecutionContext): Resource[IO, Option[Cassandra]] =
+    Cassandra.resource(config, actorSystem)(ec).logResourceLifecycle("Cassandra")
+
+  def watcherResource(config: Config,
+                      actorSystem: ActorSystem,
+                      ec: ExecutionContext,
+                      maybeCassandra: Option[Cassandra]): Resource[IO, Unit] =
+    Watcher.resource(config, actorSystem, maybeCassandra)(ec).logResourceLifecycle("Watcher")
+
+  def metricsOpsResource: Resource[IO, MetricsOps[IO]] =
+    Prometheus.metricsOps[IO](metricService.registry, "http_interactions").logResourceLifecycle("Prometheus")
+
+  def eventSinkResource(config: Config): Resource[IO, EventSink] =
+    EventSink.resource(config).logResourceLifecycle("EventSink")
+
+  def interactionManagerResource(config: Config,
+                                 actorSystem: ActorSystem,
+                                 externalContextOption: Option[Any]
+                                ): Resource[IO, InteractionManager[IO]] =
+    InteractionRegistry.resource(externalContextOption, metricService, config, actorSystem).logResourceLifecycle("InteractionManager")
+
+  def recipeManagerResource(config: Config,
+                            actorSystem: ActorSystem) : Resource[IO, RecipeManager] =
+    Resource.pure[IO, RecipeManager](ActorBasedRecipeManager.getRecipeManagerActor(actorSystem, config)).logResourceLifecycle("RecipeManager")
+
+  implicit class LoggingHelper[A](io: Resource[IO, A]) {
+    def logResourceLifecycle(componentName: String): Resource[IO, A] = {
+      val before = Resource.make(
+        acquire = IO(logger.info(s"Creating $componentName")))(
+        release = _ => IO(logger.info(s"$componentName resource released"))) // release goes backwards (FIFO)
+
+      val after = Resource.make(
+        acquire = IO(logger.info(s"Created $componentName")))(
+        release = _ => IO(logger.info(s"Releasing $componentName resource")))
+
+      for {
+        _ <- before
+        ioResult <- io
+        _ <- after
+      } yield ioResult
+    }
+  }
+
+}

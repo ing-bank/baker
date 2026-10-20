@@ -5,7 +5,7 @@ import akka.testkit.TestKit
 import cats.effect.IO
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.runtime.akka.AkkaBaker
-import com.ing.baker.runtime.akka.internal.CachingInteractionManager
+import com.ing.baker.runtime.core.util.CachingInteractionManager
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import org.scalatest.BeforeAndAfterAll
