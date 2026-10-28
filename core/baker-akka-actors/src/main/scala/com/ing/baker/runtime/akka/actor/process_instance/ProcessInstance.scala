@@ -14,14 +14,15 @@ import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransiti
 import com.ing.baker.runtime.akka.actor.logging.LogAndSendEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstance._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing.{CompletionListenerAdded, CompletionListenersRemoved, Event, EventListenerAdded, EventListenersRemoved, InitializedEvent, TransitionEvent, TransitionFailedEvent, TransitionFailedWithFunctionalOutputEvent, TransitionFailedWithOutputEvent, TransitionFiredEvent}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceLogger._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{Continue, ContinueAsFunctionalEvent, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
-import com.ing.baker.runtime.akka.internal.{FatalInteractionException, RecipeRuntime}
+import com.ing.baker.runtime.akka.internal.RecipeRuntime
 import com.ing.baker.runtime.model.BakerLogging
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl.{EventFired, EventInstance, IngredientInstance, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.{FromValue, PrimitiveValue, Value}
@@ -128,7 +129,7 @@ class ProcessInstance(
                        settings: Settings,
                        runtime: ProcessInstanceRuntime,
                        delayedTransitionActor: ActorRef)
-  extends ProcessInstanceEventSourcing(compiledRecipe.petriNet, settings.encryption, runtime.eventSource) {
+  extends ProcessInstanceEventSourcingAkka(compiledRecipe.petriNet, settings.encryption, runtime.eventSource) {
 
   import context.dispatcher
 
@@ -448,7 +449,7 @@ class ProcessInstance(
         val timestamp = System.currentTimeMillis()
         log.transitionFired(recipeInstanceId, compiledRecipe.recipeId, compiledRecipe.name, transition, jobId, timestamp, timestamp)
 
-        LogAndSendEvent.eventFired(EventFired(timestamp, compiledRecipe.name, compiledRecipe.recipeId, recipeInstanceId, out.name), context.system.eventStream)
+        LogAndSendEvent.eventFired(EventFired(timestamp, compiledRecipe.name, compiledRecipe.recipeId, recipeInstanceId, out.name), context.system.eventStream.publish)
 
         persistEvent(instance, internalEvent)(
           eventSource.apply(instance)
@@ -706,7 +707,7 @@ class ProcessInstance(
         val event: TransitionFiredEvent = jobToFinishedInteraction(job, i.eventsToFire.head.name)
 
         val currentTime = System.currentTimeMillis()
-        LogAndSendEvent.eventFired(EventFired(currentTime, compiledRecipe.name, compiledRecipe.recipeId, recipeInstanceId, i.eventsToFire.head.name), context.system.eventStream)
+        LogAndSendEvent.eventFired(EventFired(currentTime, compiledRecipe.name, compiledRecipe.recipeId, recipeInstanceId, i.eventsToFire.head.name), context.system.eventStream.publish)
 
         self.tell(event, originalSender)
       case _ => executeJobViaExecutor(job, originalSender)

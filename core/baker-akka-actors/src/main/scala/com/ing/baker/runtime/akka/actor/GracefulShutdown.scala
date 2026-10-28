@@ -5,7 +5,7 @@ import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.util.Timeout
 import com.ing.baker.runtime.akka.actor.GracefulShutdownShardRegions.InitiateGracefulShutdown
-import com.ing.baker.runtime.akka.internal.TimeoutUtil._
+import com.ing.baker.runtime.core.util.TimeoutUtil._
 import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
 

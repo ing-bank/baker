@@ -22,8 +22,8 @@ import com.ing.baker.runtime.akka.actor.process_instance.dsl._
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.runtime.akka.actor.process_instance.internal.Job
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
-import com.ing.baker.runtime.akka.internal.FatalInteractionException
-import com.ing.baker.runtime.akka.namedCachedThreadPool
+import com.ing.baker.runtime.core.util.namedCachedThreadPool
+import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption.NoEncryption
 import com.ing.baker.types
