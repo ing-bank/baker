@@ -1,5 +1,6 @@
 package com.ing.bakery
 
+import cats.effect.unsafe.IORuntime
 import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.akka.{PekkoBaker, PekkoBakerConfig}
 import com.ing.baker.runtime.akka.actor.LocalBakerActorProvider
@@ -54,7 +55,9 @@ object PekkoBakery extends LazyLogging {
           )(actorSystem))))(
         release = baker => IO.fromFuture(IO(baker.gracefulShutdown()))
       )
-      _ <- Resource.eval(eventSink.attach(baker))
+      _ <-  Resource.eval(IO.fromFuture(IO{baker.registerBakerEventListener {
+          event => eventSink.fire(event).unsafeRunAndForget()(IORuntime.global)
+        }}))
       _ <- Resource.eval(IO.async_[Unit] { callback =>
         //If using local Baker the registerOnMemberUp is never called, should only be used during local testing.
         if (bakerActorProvider.isInstanceOf[LocalBakerActorProvider])

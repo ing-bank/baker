@@ -7,19 +7,14 @@ import cats.syntax.all._
 import com.ing.baker.runtime.core.util.DynamicInteractionManager
 import com.ing.baker.runtime.defaultinteractions
 import com.ing.baker.runtime.model.{InteractionInstance, InteractionManager}
-import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstanceInput}
-import com.ing.baker.types.Type
 import com.ing.bakery.interaction.{BaseRemoteInteractionClient, RemoteInteractionClient}
 import com.ing.bakery.metrics.MetricService
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import org.http4s.Headers
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.Client
-import org.http4s.{Headers, Uri}
 import scalax.collection.ChainingOps
-
-import java.io.IOException
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 object InteractionRegistry extends LazyLogging {
 
@@ -103,7 +98,7 @@ class BaseInteractionRegistry(config: Config, metricService: MetricService, acto
       }
     }
 
-    val local = new LocalhostInteractions(config, actorSystem, interactionClient)
+    val local = new LocalhostInteractions(config, interactionClient)
 
     val lists = getRemoteInteractions
       .map(r => List(local, r))
@@ -112,57 +107,4 @@ class BaseInteractionRegistry(config: Config, metricService: MetricService, acto
 
     Traverse[List].sequence(lists)
   }
-}
-
-case class RemoteInteractions(startedAt: Long,
-                              interactions: List[InteractionInstance[IO]])
-
-
-/**
-  * Method for resilient/retrying discovery of remote interactions
-  */
-trait RemoteInteractionDiscovery extends LazyLogging {
-
-  def extractInteractions(remoteInteractions: RemoteInteractionClient, uri: Uri): IO[RemoteInteractions] = {
-
-    def within[A](giveUpAfter: FiniteDuration, retries: Int)(f: IO[A]): IO[A] = {
-      def attempt(count: Int, times: FiniteDuration): IO[A] = {
-        if (count < 1) f else f.attempt.flatMap {
-          case Left(e) =>
-            e match {
-              case _: IOException =>
-                logger.info(s"Can't connect to interactions @ ${uri.toString}, the container may still be starting...")
-              case _ =>
-                logger.warn(s"Failed to list interactions @ ${uri.toString}. The list of available interactions will not be updated.", e)
-            }
-            IO.sleep(times) *> attempt(count - 1, times)
-          case Right(a) => IO(a)
-        }
-      }
-
-      attempt(retries, giveUpAfter / retries)
-    }
-
-    within(giveUpAfter = 10 minutes, retries = 40) {
-      // check every 15 seconds for interfaces for 10 minutes
-      logger.debug(s"Extracting interactions @ ${uri.toString}...")
-      remoteInteractions.interfaces(uri).map { response => {
-        val interfaces = response.interactions
-        if (interfaces.isEmpty) logger.warn(s"${uri.toString} provides no interactions")
-        RemoteInteractions(response.startedAt,
-          interfaces.map(interface => {
-            new InteractionInstance[IO] {
-              override val name: String = interface.name
-              override val input: Seq[InteractionInstanceInput] = interface.input
-              override val run: Seq[IngredientInstance] => IO[Option[EventInstance]] = _ => IO.pure(Option.empty) //Ignoring the run since the execute does not use it
-              override val output: Option[Map[String, Map[String, Type]]] = interface.output
-              override def execute(input: Seq[IngredientInstance], metadata: Map[String, String]): IO[Option[EventInstance]] =
-                remoteInteractions.execute(uri, interface.id, input, metadata)
-            }
-          }))
-      }
-      }
-    }
-  }
-
 }
