@@ -7,7 +7,7 @@ import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.catseffect.AsyncSupport
 import com.ing.baker.runtime.catseffect.SyncSupport.syntax._
-import com.ing.baker.runtime.model.BakerComponents
+import com.ing.baker.runtime.model.{BakerComponents, TracingMdcRegistry}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.{ListValue, PrimitiveValue, Value}
@@ -160,11 +160,21 @@ private[recipeinstance] case class TransitionExecution(
     def setupMdc: F[Unit] = async.delay {
       MDC.put("recipeInstanceId", recipeInstanceId)
       MDC.put("recipeName", recipe.name)
+      MDC.put("baker.recipe.instance.id", recipeInstanceId)
+      MDC.put("baker.recipe.name", recipe.name)
+      TracingMdcRegistry.get(recipeInstanceId).ifPresent(context => {
+        MDC.put("trace_id", context.getTraceId)
+        MDC.put("span_id", context.getSpanId)
+      })
     }
 
     def cleanMdc: F[Unit] = async.delay {
       MDC.remove("recipeInstanceId")
       MDC.remove("recipeName")
+      MDC.remove("baker.recipe.instance.id")
+      MDC.remove("baker.recipe.name")
+      MDC.remove("trace_id")
+      MDC.remove("span_id")
     }
 
     def execute: F[Option[EventInstance]] =

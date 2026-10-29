@@ -8,6 +8,7 @@ import org.joda.time.format.{PeriodFormatter, PeriodFormatterBuilder}
 import org.slf4j.MDC
 
 import scala.concurrent.duration.FiniteDuration
+import scala.jdk.OptionConverters._
 
 object BakerLogging {
   lazy val defaultLogger: Logger = Logger("com.ing.baker")
@@ -17,7 +18,7 @@ object BakerLogging {
 
 case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
 
-  val durationFormatter: PeriodFormatter = new PeriodFormatterBuilder()
+  private val durationFormatter: PeriodFormatter = new PeriodFormatterBuilder()
     .appendDays.appendSuffix("d")
     .appendSeparator(" ")
     .appendHours.appendSuffix("h")
@@ -30,10 +31,40 @@ case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
     .appendSeparator(" ")
     .toFormatter
 
+  private val RecipeNameKey = "recipeName"
+  private val RecipeIdKey = "recipeId"
+  private val RecipeInstanceIdKey = "recipeInstanceId"
+
+  private val BakerRecipeNameKey = "baker.recipe.name"
+  private val BakerRecipeIdKey = "baker.recipe.id"
+  private val BakerRecipeInstanceIdKey = "baker.recipe.instance.id"
+  private val TraceIdKey = "trace_id"
+  private val SpanIdKey = "span_id"
+
+  private def enrichMdc(mdc: Map[String, String]): Map[String, String] = {
+    val withRecipeNameAliases = mdc.get(RecipeNameKey)
+      .map(v => mdc + (BakerRecipeNameKey -> v))
+      .getOrElse(mdc)
+
+    val withRecipeIdAliases = withRecipeNameAliases.get(RecipeIdKey)
+      .map(v => withRecipeNameAliases + (BakerRecipeIdKey -> v))
+      .getOrElse(withRecipeNameAliases)
+
+    val withInstanceAliases = withRecipeIdAliases.get(RecipeInstanceIdKey)
+      .map(v => withRecipeIdAliases + (BakerRecipeInstanceIdKey -> v))
+      .getOrElse(withRecipeIdAliases)
+
+    withInstanceAliases.get(RecipeInstanceIdKey)
+      .flatMap(id => TracingMdcRegistry.get(id).toScala)
+      .map(context => withInstanceAliases + (TraceIdKey -> context.getTraceId) + (SpanIdKey -> context.getSpanId))
+      .getOrElse(withInstanceAliases)
+  }
+
   def withMDC(mdc: Map[String, String], log: Logger => Unit): Unit = {
-      mdc.foreach { case (k, v) => MDC.put(k, v) }
+      val effectiveMdc = enrichMdc(mdc)
+      effectiveMdc.foreach { case (k, v) => MDC.put(k, v) }
       log(logger)
-      mdc.keys.foreach(MDC.remove)
+      effectiveMdc.keys.foreach(MDC.remove)
     }
 
   def addedRecipe(recipeAdded: RecipeAdded): Unit = {

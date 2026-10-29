@@ -2,7 +2,7 @@
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %cyan([%-20.20thread]) %highlight(%-5level) %magenta(%-20.20logger{20}) %yellow(recipe=%X{baker.recipe.name:-}) - %msg%nopex%n</pattern>
         </encoder>
     </appender>
 

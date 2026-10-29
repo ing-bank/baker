@@ -37,3 +37,50 @@ fun main() = runBlocking {
 - `KotlinBaker` mirrors the Kotlin adapter shape from `baker-interface-kotlin`.
 - It supports `suspend` APIs and selected `CompletableFuture` wrappers such as `javaAsync`, `bakeAsync`, and `awaitCompletedAsync`.
 
+## OpenTelemetry tracing
+
+The in-memory runtime emits spans using OpenTelemetry when built through `InMemoryBaker`.
+
+### What is traced
+
+- Build lifecycle: `baker.build`
+- Recipe lifecycle: `baker.recipe-instance.created`
+- Event flow: `baker.event.received`, `baker.event.fired`
+- Interaction execution: `baker.interaction.<interactionName>`
+
+Interaction spans are created as children of the latest event span for the same recipe instance.
+
+### Common attributes
+
+- `baker.recipe.id`
+- `baker.recipe.name`
+- `baker.recipe.instance.id`
+
+Depending on the span type, additional attributes are set:
+
+- `baker.event.name`
+- `baker.interaction.name`
+- `baker.correlation.id`
+- `baker.failure.count`
+- `error.type` (for failed interactions)
+
+### Injecting a custom tracer
+
+By default, Baker uses `GlobalOpenTelemetry.getTracer(...)`. You can provide your own tracer:
+
+```kotlin
+import com.ing.baker.runtime.inmemory.InMemoryBaker
+import com.ing.baker.runtime.model.BakerConfig
+import io.opentelemetry.api.GlobalOpenTelemetry
+
+val tracer = GlobalOpenTelemetry.getTracer("my-service.baker")
+val baker = InMemoryBaker.java(BakerConfig.default(), emptyList(), tracer)
+```
+
+For async Java factory usage:
+
+```kotlin
+val tracer = GlobalOpenTelemetry.getTracer("my-service.baker")
+val bakerFuture = InMemoryBaker.javaAsync(BakerConfig.default(), emptyList(), tracer)
+```
+

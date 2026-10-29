@@ -46,6 +46,11 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+            <version>${opentelemetry.version}</version>
+        </dependency>
 
         <!-- Provided dependencies -->
         <dependency>
@@ -118,6 +123,18 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
             <version>${mockito.core.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
+            <version>${opentelemetry.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-testing</artifactId>
+            <version>${opentelemetry.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
