@@ -76,7 +76,10 @@ object AsyncSupport {
       override def flatMap[A, B](fa: IO[A])(f: A => IO[B]): IO[B] = fa.flatMap(f)
       override def raiseError[A](throwable: Throwable): IO[A] = IO.raiseError(throwable)
       override def delay[A](thunk: => A): IO[A] = IO.delay(thunk)
-      override def blocking[A](thunk: => A): IO[A] = IO.blocking(thunk)
+      override def blocking[A](thunk: => A): IO[A] =
+        IO.delay(SyncSupport.captureContext()).flatMap { snapshot =>
+          IO.blocking(SyncSupport.runWithPropagatedContext(snapshot)(thunk))
+        }
       override def unit: IO[Unit] = IO.unit
 
       override def attempt[A](fa: IO[A]): IO[Either[Throwable, A]] = fa.attempt

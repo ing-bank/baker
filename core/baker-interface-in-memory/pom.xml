@@ -51,6 +51,11 @@
             <artifactId>opentelemetry-api</artifactId>
             <version>${opentelemetry.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
+            <artifactId>baker-interface-otel</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Provided dependencies -->
         <dependency>

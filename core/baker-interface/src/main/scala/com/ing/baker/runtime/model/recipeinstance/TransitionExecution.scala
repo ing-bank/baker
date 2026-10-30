@@ -7,7 +7,7 @@ import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.catseffect.AsyncSupport
 import com.ing.baker.runtime.catseffect.SyncSupport.syntax._
-import com.ing.baker.runtime.model.{BakerComponents, TracingMdcRegistry}
+import com.ing.baker.runtime.model.{BakerComponents, InteractionCallContext}
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstance.FatalInteractionException
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.{ListValue, PrimitiveValue, Value}
@@ -157,31 +157,46 @@ private[recipeinstance] case class TransitionExecution(
       }
     }
 
-    def setupMdc: F[Unit] = async.delay {
+    def setupMdc(): Unit = {
       MDC.put("recipeInstanceId", recipeInstanceId)
       MDC.put("recipeName", recipe.name)
       MDC.put("baker.recipe.instance.id", recipeInstanceId)
       MDC.put("baker.recipe.name", recipe.name)
-      TracingMdcRegistry.get(recipeInstanceId).ifPresent(context => {
-        MDC.put("trace_id", context.getTraceId)
-        MDC.put("span_id", context.getSpanId)
-      })
+      MDC.put("baker.recipe.id", recipe.recipeId)
     }
 
-    def cleanMdc: F[Unit] = async.delay {
+    def cleanMdc(): Unit = {
       MDC.remove("recipeInstanceId")
       MDC.remove("recipeName")
       MDC.remove("baker.recipe.instance.id")
       MDC.remove("baker.recipe.name")
-      MDC.remove("trace_id")
-      MDC.remove("span_id")
+      MDC.remove("baker.recipe.id")
     }
 
-    def execute: F[Option[EventInstance]] =
-      components.interactions.execute(
-        interactionTransition,
-        buildInteractionInput,
-        Some(recipeInstanceMetadata))
+    val callContext: InteractionCallContext =
+      new InteractionCallContext(
+        recipe.recipeId,
+        recipe.name,
+        recipeInstanceId,
+        interactionTransition.interactionName,
+        id,
+        correlationId.orNull)
+
+    /** The MDC is set while the interaction effect is built, which is exactly when the invocation is handed to
+      * the blocking pool. The propagators capture it there and re-install it on the executing thread, after
+      * which it is removed again on the thread that built the effect.
+      */
+    def execute: F[Option[EventInstance]] = {
+      setupMdc()
+      try
+        components.interactions.execute(
+          interactionTransition,
+          buildInteractionInput,
+          Some(recipeInstanceMetadata),
+          Some(callContext),
+          components.instrumentation)
+      finally cleanMdc()
+    }
 
 
     for {
@@ -191,11 +206,7 @@ private[recipeinstance] case class TransitionExecution(
           interactionStarted <- async.delay(InteractionStarted(startTime, recipe.name, recipe.recipeId, recipeInstanceId, interactionTransition.interactionName))
           _ <- async.delay(components.logging.interactionStarted(interactionStarted))
           _ <- components.eventStream.publish(interactionStarted)
-          interactionOutput <-
-            setupMdc.map(_ => execute).flatMap(x => {
-              cleanMdc
-              x
-            })
+          interactionOutput <- execute
           _ <- validateInteractionOutput(interactionTransition, interactionOutput)
           transformedOutput: Option[EventInstance] = interactionOutput.map(_.transformWith(interactionTransition))
 

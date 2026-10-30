@@ -50,6 +50,29 @@ The in-memory runtime emits spans using OpenTelemetry when built through `InMemo
 
 Interaction spans are created as children of the latest event span for the same recipe instance.
 
+### Ambient context inside interactions
+
+The interaction span is started on the very thread that invokes your interaction implementation, so
+`Span.current()` and the SLF4J `MDC` are valid and belong to *that* invocation, also under heavy concurrency:
+
+```java
+public class ValidateOrderImpl implements ValidateOrder {
+    @Override
+    public ValidateOrderOutcome apply(String recipeInstanceId, String order) {
+        Span.current().addEvent("validating"); // the baker.interaction.ValidateOrder span
+        log.info("validating"); // MDC contains trace_id, span_id and recipeInstanceId
+        return new OrderValid();
+    }
+}
+```
+
+Baker runs interactions on a shared pool. Before and after every invocation the registered context propagators are
+cleared, so a pooled thread can never expose the context of a previous execution. If your interaction spawns its own
+threads, propagate the context explicitly (for example with `Context.current().wrap(runnable)`).
+
+For a `CompletableFuture`-returning interaction the span is ended when the future completes; for a blocking
+interaction it is ended when the method returns.
+
 ### Common attributes
 
 - `baker.recipe.id`
@@ -84,3 +107,17 @@ val tracer = GlobalOpenTelemetry.getTracer("my-service.baker")
 val bakerFuture = InMemoryBaker.javaAsync(BakerConfig.default(), emptyList(), tracer)
 ```
 
+
+### Where the OpenTelemetry code lives
+
+The OpenTelemetry-specific code is isolated in the `baker-interface-otel` module:
+
+- `OpenTelemetryContextPropagator` — propagates the OTel `Context` to Baker's interaction pool. It is discovered
+  automatically through `META-INF/services`, so simply having the module on the classpath is enough.
+- `OpenTelemetryInteractionInstrumentation` — starts, scopes and ends the `baker.interaction.<name>` span.
+- `RecipeInstanceTraceContexts` — per-baker mapping of recipe instance to the context the interaction span is parented to.
+
+`baker-interface` itself stays free of OpenTelemetry. It only exposes the SPIs
+`com.ing.baker.runtime.model.propagation.ExecutionContextPropagator` (propagate any thread-bound context) and
+`com.ing.baker.runtime.model.InteractionInstrumentation` (wrap every interaction invocation), which you can implement
+to plug in a different tracing or diagnostics stack.

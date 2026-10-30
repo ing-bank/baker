@@ -54,17 +54,31 @@ case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
       .map(v => withRecipeIdAliases + (BakerRecipeInstanceIdKey -> v))
       .getOrElse(withRecipeIdAliases)
 
-    withInstanceAliases.get(RecipeInstanceIdKey)
-      .flatMap(id => TracingMdcRegistry.get(id).toScala)
-      .map(context => withInstanceAliases + (TraceIdKey -> context.getTraceId) + (SpanIdKey -> context.getSpanId))
+    // Trace ids attached to the current thread (set by the interaction instrumentation) are exact, the
+    // per-recipe-instance registry is only a best effort fallback for log lines emitted by Baker itself.
+    val currentThreadTrace = for {
+      traceId <- Option(MDC.get(TraceIdKey))
+      spanId <- Option(MDC.get(SpanIdKey))
+    } yield (traceId, spanId)
+
+    currentThreadTrace
+      .orElse(
+        withInstanceAliases.get(RecipeInstanceIdKey)
+          .flatMap(id => TracingMdcRegistry.get(id).toScala)
+          .map(context => (context.getTraceId, context.getSpanId)))
+      .map { case (traceId, spanId) => withInstanceAliases + (TraceIdKey -> traceId) + (SpanIdKey -> spanId) }
       .getOrElse(withInstanceAliases)
   }
 
   def withMDC(mdc: Map[String, String], log: Logger => Unit): Unit = {
       val effectiveMdc = enrichMdc(mdc)
+      val previous = effectiveMdc.keys.map(key => key -> Option(MDC.get(key))).toList
       effectiveMdc.foreach { case (k, v) => MDC.put(k, v) }
-      log(logger)
-      effectiveMdc.keys.foreach(MDC.remove)
+      try log(logger)
+      finally previous.foreach {
+        case (key, Some(value)) => MDC.put(key, value)
+        case (key, None) => MDC.remove(key)
+      }
     }
 
   def addedRecipe(recipeAdded: RecipeAdded): Unit = {

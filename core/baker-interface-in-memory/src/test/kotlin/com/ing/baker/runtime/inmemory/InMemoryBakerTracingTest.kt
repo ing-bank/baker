@@ -74,11 +74,7 @@ class InMemoryBakerTracingTest {
             Mockito.doReturn(ShipGoods.GoodsShipped(trackingId)).`when`(shipGoods).apply(goods, customerInfo)
 
             val recipeInstanceId = UUID.randomUUID().toString()
-            baker.bake(recipe.recipeId(), recipeInstanceId).get()
-            baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.from(OrderPlaced(order))).get()
-            baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.from(CustomerInfoReceived(customerInfo))).get()
-            baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.from(PaymentMade())).get()
-            baker.awaitCompleted(recipeInstanceId, Duration.ofSeconds(5)).join()
+            runHappyFlow(baker, recipeInstanceId, order, customerInfo)
 
             val spans = fixture.exporter.finishedSpanItems
             val names = spans.map { it.name }
@@ -122,6 +118,71 @@ class InMemoryBakerTracingTest {
     }
 
     @Test
+    fun `assigns a distinct trace to every baker execution`() {
+        TracerFixture.use { fixture ->
+            val baker = InMemoryBaker.java(BakerConfig.default(), setupMockImplementations(), fixture.tracer)
+            baker.addRecipe(RecipeRecord.of(recipe, System.currentTimeMillis(), false, true)).get()
+
+            val goods = "goods"
+            val customerInfo = CustomerInfo("name", "address", "email")
+
+            Mockito.doReturn(ValidateOrder.OrderValid()).`when`(validateOrder).apply(anyString(), anyString())
+            Mockito.doReturn(ManufactureGoods.GoodsManufactured(goods)).`when`(manufactureGoods).apply(anyString())
+            Mockito.doReturn(SendInvoice.InvoiceSent()).`when`(sendInvoice).apply(customerInfo)
+            Mockito.doReturn(ShipGoods.GoodsShipped("trackingId")).`when`(shipGoods).apply(goods, customerInfo)
+
+            val recipeInstanceIds = (1..100).map { UUID.randomUUID().toString() }
+            recipeInstanceIds.forEachIndexed { index, recipeInstanceId ->
+                runHappyFlow(baker, recipeInstanceId, "order-$index", customerInfo)
+            }
+
+            val spans = fixture.exporter.finishedSpanItems
+            val tracesPerInstance = recipeInstanceIds.associateWith { recipeInstanceId ->
+                spans
+                    .filter { it.attributes.get(AttributeKey.stringKey("baker.recipe.instance.id")) == recipeInstanceId }
+                    .map { it.spanContext.traceId }
+                    .toSet()
+            }
+
+            tracesPerInstance.forEach { (recipeInstanceId, traceIds) ->
+                assertTrue(traceIds.isNotEmpty(), "Expected traced spans for execution $recipeInstanceId")
+            }
+
+            recipeInstanceIds.forEach { current ->
+                val otherTraceIds = tracesPerInstance
+                    .filterKeys { it != current }
+                    .values
+                    .flatten()
+                    .toSet()
+
+                assertTrue(
+                    tracesPerInstance.getValue(current).none { otherTraceIds.contains(it) },
+                    "Expected execution $current to use trace ids that are not shared with other executions"
+                )
+            }
+
+            recipeInstanceIds.forEach { recipeInstanceId ->
+                val instanceSpans = spans.filter {
+                    it.attributes.get(AttributeKey.stringKey("baker.recipe.instance.id")) == recipeInstanceId
+                }
+                val eventTraceIdsBySpanId = instanceSpans
+                    .filter { it.name == "baker.event.received" || it.name == "baker.event.fired" }
+                    .associate { it.spanContext.spanId to it.spanContext.traceId }
+
+                val interactionSpans = instanceSpans.filter { it.name.startsWith("baker.interaction.") }
+                assertTrue(interactionSpans.isNotEmpty(), "Expected interaction spans for execution $recipeInstanceId")
+
+                assertTrue(
+                    interactionSpans.all {
+                        eventTraceIdsBySpanId[it.parentSpanContext.spanId] == it.spanContext.traceId
+                    },
+                    "Expected interaction spans of execution $recipeInstanceId to share the trace of their parent event span"
+                )
+            }
+        }
+    }
+
+    @Test
     fun `records failed interaction as error span`() {
         TracerFixture.use { fixture ->
             val baker = InMemoryBaker.java(BakerConfig.default(), setupMockImplementations(), fixture.tracer)
@@ -154,6 +215,19 @@ class InMemoryBakerTracingTest {
                 "Expected failed SendInvoice interaction to be traced as an error span"
             )
         }
+    }
+
+    private fun runHappyFlow(
+        baker: com.ing.baker.runtime.javadsl.Baker,
+        recipeInstanceId: String,
+        order: String,
+        customerInfo: CustomerInfo
+    ) {
+        baker.bake(recipe.recipeId(), recipeInstanceId).get()
+        baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.from(OrderPlaced(order))).get()
+        baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.from(CustomerInfoReceived(customerInfo))).get()
+        baker.fireSensoryEventAndAwaitReceived(recipeInstanceId, EventInstance.from(PaymentMade())).get()
+        baker.awaitCompleted(recipeInstanceId, Duration.ofSeconds(5)).join()
     }
 
     private fun setupMockImplementations(): List<Any> {

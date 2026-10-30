@@ -5,12 +5,13 @@ import com.ing.baker.runtime.model.BakerConfig
 import com.ing.baker.runtime.model.BakerF
 import com.ing.baker.runtime.model.BakerLogging
 import com.ing.baker.runtime.model.InteractionInstance
+import com.ing.baker.runtime.model.InteractionInstrumentation
 import com.ing.baker.runtime.model.TracingMdcRegistry
+import com.ing.baker.runtime.otel.BakerTraceAttributes
+import com.ing.baker.runtime.otel.OpenTelemetryInteractionInstrumentation
+import com.ing.baker.runtime.otel.RecipeInstanceTraceContexts
 import com.ing.baker.runtime.scaladsl.EventFired
 import com.ing.baker.runtime.scaladsl.EventReceived
-import com.ing.baker.runtime.scaladsl.InteractionCompleted
-import com.ing.baker.runtime.scaladsl.InteractionFailed
-import com.ing.baker.runtime.scaladsl.InteractionStarted
 import com.ing.baker.runtime.scaladsl.RecipeInstanceCreated
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.Span
@@ -20,7 +21,6 @@ import io.opentelemetry.context.Context
 import scala.runtime.AbstractFunction1
 import scala.runtime.BoxedUnit
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentHashMap
 import com.ing.baker.runtime.defaultinteractions.`package$`.`MODULE$` as defaultinteractions
 import com.ing.baker.runtime.javadsl.Baker as JavaBaker
 import scala.collection.immutable.List as ScalaList
@@ -36,25 +36,20 @@ import scala.collection.immutable.List as ScalaList
 class InMemoryBaker(
     private val bakerConfig: BakerConfig,
     components: BakerComponents<CompletableFuture<*>>,
-    private val tracer: Tracer = defaultTracer()
+    private val tracer: Tracer = defaultTracer(),
+    private val traceContexts: RecipeInstanceTraceContexts = RecipeInstanceTraceContexts()
 ) : BakerF<CompletableFuture<*>>(
     components,
     InMemoryEffects.asyncSupportAny(),
     InMemoryEffects.asyncSupportAny()
 ) {
 
-    private val interactionSpans: ConcurrentHashMap<String, Span> = ConcurrentHashMap()
-    private val latestRecipeInstanceContexts: ConcurrentHashMap<String, Context> = ConcurrentHashMap()
-
     private object TraceAttributes {
-        const val RECIPE_ID = "baker.recipe.id"
-        const val RECIPE_NAME = "baker.recipe.name"
-        const val RECIPE_INSTANCE_ID = "baker.recipe.instance.id"
-        const val EVENT_NAME = "baker.event.name"
-        const val INTERACTION_NAME = "baker.interaction.name"
-        const val CORRELATION_ID = "baker.correlation.id"
-        const val FAILURE_COUNT = "baker.failure.count"
-        const val ERROR_TYPE = "error.type"
+        const val RECIPE_ID = BakerTraceAttributes.RECIPE_ID
+        const val RECIPE_NAME = BakerTraceAttributes.RECIPE_NAME
+        const val RECIPE_INSTANCE_ID = BakerTraceAttributes.RECIPE_INSTANCE_ID
+        const val EVENT_NAME = BakerTraceAttributes.EVENT_NAME
+        const val CORRELATION_ID = BakerTraceAttributes.CORRELATION_ID
     }
 
     init {
@@ -103,16 +98,20 @@ class InMemoryBaker(
             val recipeManager = InMemoryRecipeManager()
             val eventStream = InMemoryEventStream()
             val interactions = InMemoryInteractionManager(interactionInstances)
+            val traceContexts = RecipeInstanceTraceContexts()
             val components = BakerComponents(
                 interactions,
                 recipeInstanceManager,
                 recipeManager,
                 eventStream,
-                BakerLogging.default()
+                BakerLogging.default(),
+                OpenTelemetryInteractionInstrumentation(tracer, traceContexts) as InteractionInstrumentation
             )
             return try {
                 val bakerFuture: CompletableFuture<BakerF<CompletableFuture<*>>> =
-                    InMemoryEffects.pure(InMemoryBaker(config, components, tracer) as BakerF<CompletableFuture<*>>)
+                    InMemoryEffects.pure(
+                        InMemoryBaker(config, components, tracer, traceContexts) as BakerF<CompletableFuture<*>>
+                    )
 
                 bakerFuture.whenComplete { _, throwable ->
                     if (throwable != null) {
@@ -191,12 +190,7 @@ class InMemoryBaker(
      * Attempts to gracefully shutdown the baker system.
      */
     override fun gracefulShutdown(): CompletableFuture<Any> {
-        interactionSpans.values.forEach { span ->
-            span.setStatus(StatusCode.ERROR)
-            span.end()
-        }
-        interactionSpans.clear()
-        latestRecipeInstanceContexts.clear()
+        traceContexts.clear()
         return InMemoryEffects.unit()
     }
 
@@ -224,7 +218,7 @@ class InMemoryBaker(
                                     setStatus(StatusCode.OK)
                                 }
                             TracingMdcRegistry.put(event.recipeInstanceId(), span.spanContext.traceId, span.spanContext.spanId)
-                            latestRecipeInstanceContexts[event.recipeInstanceId()] = Context.root().with(span)
+                            traceContexts.put(event.recipeInstanceId(), Context.current().with(span))
                             span.end()
                         }
 
@@ -237,44 +231,12 @@ class InMemoryBaker(
                                     setStatus(StatusCode.OK)
                                 }
                             TracingMdcRegistry.put(event.recipeInstanceId(), span.spanContext.traceId, span.spanContext.spanId)
-                            latestRecipeInstanceContexts[event.recipeInstanceId()] = Context.root().with(span)
+                            traceContexts.put(event.recipeInstanceId(), Context.current().with(span))
                             span.end()
 
                             if (event.eventName() == "RecipeSuccessful") {
-                                latestRecipeInstanceContexts.remove(event.recipeInstanceId())
+                                traceContexts.remove(event.recipeInstanceId())
                                 TracingMdcRegistry.remove(event.recipeInstanceId())
-                            }
-                        }
-
-                        is InteractionStarted -> {
-                            val parentContext = latestRecipeInstanceContexts[event.recipeInstanceId()]
-                            val builder = tracer.spanBuilder("baker.interaction.${event.interactionName()}")
-                            if (parentContext != null) {
-                                builder.setParent(parentContext)
-                            }
-                            val span = builder
-                                .startSpan()
-                            span.applyRecipeAttributes(event.recipeId(), event.recipeName(), event.recipeInstanceId())
-                            span.setAttribute(TraceAttributes.INTERACTION_NAME, event.interactionName())
-                            TracingMdcRegistry.put(event.recipeInstanceId(), span.spanContext.traceId, span.spanContext.spanId)
-                            interactionSpans[interactionKey(event.recipeInstanceId(), event.interactionName())] = span
-                        }
-
-                        is InteractionCompleted -> {
-                            interactionSpans.remove(interactionKey(event.recipeInstanceId(), event.interactionName()))?.let { span ->
-                                event.eventName().toNullable()?.let { span.setAttribute(TraceAttributes.EVENT_NAME, it) }
-                                span.setStatus(StatusCode.OK)
-                                span.end()
-                            }
-                        }
-
-                        is InteractionFailed -> {
-                            interactionSpans.remove(interactionKey(event.recipeInstanceId(), event.interactionName()))?.let { span ->
-                                span.setAttribute(TraceAttributes.FAILURE_COUNT, event.failureCount().toLong())
-                                span.setAttribute(TraceAttributes.ERROR_TYPE, "interaction.failure")
-                                span.recordException(RuntimeException(event.errorMessage()))
-                                span.setStatus(StatusCode.ERROR, event.errorMessage())
-                                span.end()
                             }
                         }
 
@@ -290,9 +252,6 @@ class InMemoryBaker(
             // Tracing must never prevent Baker startup.
         }
     }
-
-    private fun interactionKey(recipeInstanceId: String, interactionName: String): String =
-        "$recipeInstanceId::$interactionName"
 
     private fun Span.applyRecipeAttributes(recipeId: String, recipeName: String, recipeInstanceId: String) {
         setAttribute(TraceAttributes.RECIPE_ID, recipeId)

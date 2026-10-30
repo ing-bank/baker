@@ -79,14 +79,27 @@ trait InteractionManager[F[_]] {
   def existsFor(interaction: InteractionTransition)(implicit sync: SyncSupport[F]): F[Boolean] =
     sync.map(findFor(interaction))(_.nonEmpty)
 
-  def execute(interaction: InteractionTransition, input: Seq[IngredientInstance], metadata: Option[Map[String, String]])(implicit sync: SyncSupport[F]): F[Option[EventInstance]] = {
+  def execute(interaction: InteractionTransition,
+              input: Seq[IngredientInstance],
+              metadata: Option[Map[String, String]],
+              callContext: Option[InteractionCallContext] = None,
+              instrumentation: InteractionInstrumentation = InteractionInstrumentation.noop())(implicit sync: SyncSupport[F]): F[Option[EventInstance]] = {
     if(interaction.interactionName.startsWith(checkpointEventInteractionPrefix)){
       sync.pure(Some(EventInstance(interaction.interactionName.stripPrefix(checkpointEventInteractionPrefix))))
     } else{
       sync.flatMap(findFor(interaction)) {
           case Some(implementation) => {
             // Interaction implementations are often reflection/IO heavy; shift invocation to the blocking pool.
-            sync.flatMap(sync.blocking(implementation.execute(input, metadata.getOrElse(Map()))))(identity)
+            // The instrumentation hook runs on that very thread, so tracing context attached by it is strictly
+            // scoped to this single invocation.
+            sync.flatMap(sync.blocking {
+              def invoke: F[Option[EventInstance]] = implementation.execute(input, metadata.getOrElse(Map()))
+              callContext match {
+                case Some(context) =>
+                  instrumentation.aroundInteraction[F[Option[EventInstance]]](context, () => invoke)
+                case None => invoke
+              }
+            })(identity)
           }
           case None => sync.raiseError(new FatalInteractionException(s"No implementation available for interaction ${interaction.interactionName}"))
         }
