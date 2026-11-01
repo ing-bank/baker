@@ -42,7 +42,14 @@ object CachingInteractionManager {
     model.InteractionInstance.build(
       _name = i.name,
       _input = i.input,
-      _run = p => IO.fromFuture(IO(i.run(p))),
+      // The interaction is invoked eagerly, on the thread that asks for the effect. That thread is the blocking
+      // pool thread on which the tracing context and the MDC of this very invocation are installed, so
+      // Span.current() and the MDC are valid inside the interaction. Futures are eager anyway, so suspending the
+      // invocation would only move it to an arbitrary compute thread without any context.
+      _run = p => {
+        val started = i.run(p)
+        IO.fromFuture(IO.pure(started))
+      },
       _output = i.output
     )
   }

@@ -27,7 +27,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceLogger._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
-import com.ing.baker.runtime.akka.internal.RecipeRuntime
+import com.ing.baker.runtime.akka.internal.{BakerInstrumentation, RecipeRuntime}
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.model.InteractionManager
@@ -226,7 +226,8 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   // creates a ProcessInstanceActor, does not do any validation
   def createProcessActor(recipeInstanceId: String, compiledRecipe: CompiledRecipe): ActorRef = {
     val runtime: RecipeRuntime =
-      new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream)
+      new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream,
+        BakerInstrumentation(context.system).instrumentation)
 
     val processActorProps =
       BackoffSupervisor.props(

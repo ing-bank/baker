@@ -11,6 +11,8 @@ import com.ing.baker.runtime.recipe_manager.{DefaultRecipeManager, RecipeManager
 import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.opentelemetry.api.GlobalOpenTelemetry
+import io.opentelemetry.api.trace.Tracer
 import net.ceedubs.ficus.Ficus._
 
 import scala.concurrent.duration._
@@ -22,9 +24,15 @@ case class AkkaBakerConfig(
                             timeouts: Timeouts,
                             bakerValidationSettings: BakerValidationSettings,
                             terminateActorSystem: Boolean = true,
+                            tracer: Tracer = AkkaBakerConfig.defaultTracer,
                           )(implicit val system: ActorSystem)
 
 object AkkaBakerConfig extends LazyLogging {
+
+  /** Instrumentation scope used for the spans emitted by the akka runtime. */
+  val InstrumentationName: String = "com.ing.baker.runtime.akka.AkkaBaker"
+
+  def defaultTracer: Tracer = GlobalOpenTelemetry.getTracer(InstrumentationName)
 
   case class KafkaEventSinkSettings(enabled: Boolean, `bootstrap-servers`: String, `baker-events-topic`: String, `recipe-events-topic`: String)
 
