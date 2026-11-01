@@ -38,6 +38,11 @@
         </dependency>
         <dependency>
             <groupId>com.ing.baker</groupId>
+            <artifactId>baker-interface-otel</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ing.baker</groupId>
             <artifactId>baker-recipe-dsl</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
@@ -94,6 +99,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
+            <version>${opentelemetry.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-testing</artifactId>
+            <version>${opentelemetry.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.compat.version}</artifactId>
             <scope>test</scope>
@@ -106,6 +123,11 @@
         <dependency>
             <groupId>org.scalatestplus</groupId>
             <artifactId>mockito-3-12_${scala.compat.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

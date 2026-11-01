@@ -15,7 +15,8 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
-import com.ing.baker.runtime.akka.internal.CachingInteractionManager
+import com.ing.baker.runtime.akka.internal.{BakerInstrumentation, CachingInteractionManager}
+import com.ing.baker.runtime.otel.{BakerEventTracingListener, OpenTelemetryInteractionInstrumentation, RecipeInstanceTraceContexts}
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.{InteractionExecutionFailureReason, RecipeRecord, SensoryEventStatus}
@@ -83,12 +84,22 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
    */
   def getAkkaBakerConfig: AkkaBakerConfig = config
 
+  /** Shared between the event listener that emits the lifecycle spans and the interaction instrumentation, so
+    * interaction spans are parented to the latest event span of the same recipe instance.
+    */
+  private val traceContexts: RecipeInstanceTraceContexts = new RecipeInstanceTraceContexts()
+
+  // Published before any process actor exists, so every RecipeRuntime picks it up.
+  BakerInstrumentation(system).set(new OpenTelemetryInteractionInstrumentation(config.tracer, traceContexts))
+
   config.bakerActorProvider.initialize(system)
 
   private val recipeManager: RecipeManager = config.recipeManager
 
   private val processIndexActor: ActorRef =
     config.bakerActorProvider.createProcessIndexActor(config.interactions, recipeManager, system.settings.config)
+
+  registerTracingListener()
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -641,7 +652,19 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     * Attempts to gracefully shutdown the baker system.
     */
   @nowarn
-  override def gracefulShutdown(): Future[Unit] =
+  override def gracefulShutdown(): Future[Unit] = {
+    traceContexts.clear()
+    BakerInstrumentation(system).reset()
     GracefulShutdown.gracefulShutdownActorSystem(system, config.timeouts.defaultShutdownTimeout, config.terminateActorSystem)
       .javaTimeoutToBakerTimeout("gracefulShutdown").map(_ => ())
+  }
+
+  private def registerTracingListener(): Unit = {
+    val listener = new BakerEventTracingListener(config.tracer, traceContexts)
+    try registerBakerEventListener((event: BakerEvent) => { listener.apply(event); () })
+    catch {
+      // Tracing must never prevent Baker startup.
+      case e: Throwable => logger.warn("Failed to register the baker tracing listener", e)
+    }
+  }
 }

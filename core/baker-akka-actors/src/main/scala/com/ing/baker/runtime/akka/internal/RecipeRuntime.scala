@@ -13,7 +13,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceRuntime
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Continue, ContinueAsFunctionalEvent, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.internal.RecipeRuntime._
-import com.ing.baker.runtime.model.InteractionManager
+import com.ing.baker.runtime.model.{InteractionCallContext, InteractionInstrumentation, InteractionManager}
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.{ListValue, PrimitiveValue, Value}
 
@@ -133,7 +133,10 @@ object RecipeRuntime {
   }
 }
 
-class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager[IO], eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime {
+class RecipeRuntime(recipe: CompiledRecipe,
+                    interactionManager: InteractionManager[IO],
+                    eventStream: EventStream,
+                    instrumentation: InteractionInstrumentation = InteractionInstrumentation.noop())(implicit ec: ExecutionContext) extends ProcessInstanceRuntime {
 
   /**
     * All transitions except sensory event interactions are auto-fireable by the runtime
@@ -216,7 +219,27 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
     LogAndSendEvent.interactionStarted(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName), eventStream)
 
     // executes the interaction and obtain the (optional) output event
-    interactionManager.execute(interaction, input, Some(processState.recipeInstanceMetadata)).map { interactionOutput =>
+    val callContext: InteractionCallContext =
+      new InteractionCallContext(
+        recipe.recipeId,
+        recipe.name,
+        processState.recipeInstanceId,
+        interaction.interactionName,
+        timeStarted,
+        null)
+
+    /** The interaction manager installs the diagnostic context and the instrumentation scope on the thread that
+      * actually invokes the implementation, so nothing has to be carried over from this dispatcher thread.
+      */
+    def execute: IO[Option[EventInstance]] =
+      interactionManager.execute(
+        interaction,
+        input,
+        Some(processState.recipeInstanceMetadata),
+        Some(callContext),
+        instrumentation)
+
+    execute.map { interactionOutput =>
 
       // validates the event, throws a FatalInteraction exception if invalid
       RecipeRuntime.validateInteractionOutput(interaction, interactionOutput).foreach { validationError =>
