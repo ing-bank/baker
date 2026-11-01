@@ -6,20 +6,12 @@ import com.ing.baker.runtime.model.BakerF
 import com.ing.baker.runtime.model.BakerLogging
 import com.ing.baker.runtime.model.InteractionInstance
 import com.ing.baker.runtime.model.InteractionInstrumentation
-import com.ing.baker.runtime.model.TracingMdcRegistry
-import com.ing.baker.runtime.otel.BakerTraceAttributes
+import com.ing.baker.runtime.otel.BakerEventTracingListener
 import com.ing.baker.runtime.otel.OpenTelemetryInteractionInstrumentation
 import com.ing.baker.runtime.otel.RecipeInstanceTraceContexts
-import com.ing.baker.runtime.scaladsl.EventFired
-import com.ing.baker.runtime.scaladsl.EventReceived
-import com.ing.baker.runtime.scaladsl.RecipeInstanceCreated
 import io.opentelemetry.api.GlobalOpenTelemetry
-import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.StatusCode
 import io.opentelemetry.api.trace.Tracer
-import io.opentelemetry.context.Context
-import scala.runtime.AbstractFunction1
-import scala.runtime.BoxedUnit
 import java.util.concurrent.CompletableFuture
 import com.ing.baker.runtime.defaultinteractions.`package$`.`MODULE$` as defaultinteractions
 import com.ing.baker.runtime.javadsl.Baker as JavaBaker
@@ -43,14 +35,6 @@ class InMemoryBaker(
     InMemoryEffects.asyncSupportAny(),
     InMemoryEffects.asyncSupportAny()
 ) {
-
-    private object TraceAttributes {
-        const val RECIPE_ID = BakerTraceAttributes.RECIPE_ID
-        const val RECIPE_NAME = BakerTraceAttributes.RECIPE_NAME
-        const val RECIPE_INSTANCE_ID = BakerTraceAttributes.RECIPE_INSTANCE_ID
-        const val EVENT_NAME = BakerTraceAttributes.EVENT_NAME
-        const val CORRELATION_ID = BakerTraceAttributes.CORRELATION_ID
-    }
 
     init {
         registerTracingListener()
@@ -196,68 +180,10 @@ class InMemoryBaker(
 
     private fun registerTracingListener() {
         try {
-            val listener = object : AbstractFunction1<com.ing.baker.runtime.scaladsl.BakerEvent, BoxedUnit>() {
-                override fun apply(event: com.ing.baker.runtime.scaladsl.BakerEvent): BoxedUnit {
-                    when (event) {
-                        is RecipeInstanceCreated ->
-                            tracer.spanBuilder("baker.recipe-instance.created")
-                                .startSpan()
-                                .apply {
-                                    applyRecipeAttributes(event.recipeId(), event.recipeName(), event.recipeInstanceId())
-                                    setStatus(StatusCode.OK)
-                                    end()
-                                }
-
-                        is EventReceived -> {
-                            val span = tracer.spanBuilder("baker.event.received")
-                                .startSpan()
-                                .apply {
-                                    applyRecipeAttributes(event.recipeId(), event.recipeName(), event.recipeInstanceId())
-                                    setAttribute(TraceAttributes.EVENT_NAME, event.eventName())
-                                    event.correlationId().toNullable()?.let { setAttribute(TraceAttributes.CORRELATION_ID, it) }
-                                    setStatus(StatusCode.OK)
-                                }
-                            TracingMdcRegistry.put(event.recipeInstanceId(), span.spanContext.traceId, span.spanContext.spanId)
-                            traceContexts.put(event.recipeInstanceId(), Context.current().with(span))
-                            span.end()
-                        }
-
-                        is EventFired -> {
-                            val span = tracer.spanBuilder("baker.event.fired")
-                                .startSpan()
-                                .apply {
-                                    applyRecipeAttributes(event.recipeId(), event.recipeName(), event.recipeInstanceId())
-                                    setAttribute(TraceAttributes.EVENT_NAME, event.eventName())
-                                    setStatus(StatusCode.OK)
-                                }
-                            TracingMdcRegistry.put(event.recipeInstanceId(), span.spanContext.traceId, span.spanContext.spanId)
-                            traceContexts.put(event.recipeInstanceId(), Context.current().with(span))
-                            span.end()
-
-                            if (event.eventName() == "RecipeSuccessful") {
-                                traceContexts.remove(event.recipeInstanceId())
-                                TracingMdcRegistry.remove(event.recipeInstanceId())
-                            }
-                        }
-
-                        else -> Unit
-                    }
-
-                    return BoxedUnit.UNIT
-                }
-            }
-
-            InMemoryEffects.runSync(registerBakerEventListener(listener))
+            InMemoryEffects.runSync(registerBakerEventListener(BakerEventTracingListener(tracer, traceContexts)))
         } catch (_: Throwable) {
             // Tracing must never prevent Baker startup.
         }
     }
 
-    private fun Span.applyRecipeAttributes(recipeId: String, recipeName: String, recipeInstanceId: String) {
-        setAttribute(TraceAttributes.RECIPE_ID, recipeId)
-        setAttribute(TraceAttributes.RECIPE_NAME, recipeName)
-        setAttribute(TraceAttributes.RECIPE_INSTANCE_ID, recipeInstanceId)
-    }
-
-    private fun <T> scala.Option<T>.toNullable(): T? = if (isDefined) get() else null
 }

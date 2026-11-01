@@ -96,7 +96,9 @@ trait InteractionManager[F[_]] {
               def invoke: F[Option[EventInstance]] = implementation.execute(input, metadata.getOrElse(Map()))
               callContext match {
                 case Some(context) =>
-                  instrumentation.aroundInteraction[F[Option[EventInstance]]](context, () => invoke)
+                  val mdcScope = InteractionMdc.install(context)
+                  try instrumentation.aroundInteraction[F[Option[EventInstance]]](context, () => invoke)
+                  finally mdcScope.close()
                 case None => invoke
               }
             })(identity)
