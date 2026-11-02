@@ -13,6 +13,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManagerActor, RecipeManagerProtocol}
 import com.ing.baker.runtime.akka.actor.serialization.SerializedDataProto.akkaAnyRefMapping
 import com.ing.baker.runtime.akka.actor.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
+import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.ProtoMap
 
@@ -42,7 +43,12 @@ object BakerTypedProtobufSerializer {
       forType[RecipeEventMetadata]
         .register("core.RecipeEventMetadata"),
       forType[il.CompiledRecipe]
-        .register("il.CompiledRecipe")
+        .register("il.CompiledRecipe"),
+      // Registered so that BakerExceptions sent inside a Status.Failure can be serialized to remote nodes.
+      // Java serialization is disabled, so without this entry the exception is replaced by a
+      // ThrowableNotSerializableException.
+      forType[BakerException]
+        .register("common.BakerException")
     )
 
   def processIndexEntries(implicit ev0: AkkaSerializerProvider, actorRefProvider: ActorRefProvider): List[BinarySerializable] =

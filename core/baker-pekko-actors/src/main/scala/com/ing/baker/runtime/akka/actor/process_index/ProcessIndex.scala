@@ -29,6 +29,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
+import com.ing.baker.runtime.common.BakerException.IllegalInteractionStateException
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
@@ -640,7 +641,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         // we find which job correlates with the interaction
         getInteractionJob(recipeInstanceId, interactionName, processActor).value.onComplete {
           case Success(Some((_, jobId))) => processActor.tell(OverrideExceptionStrategy(jobId, BlockTransition), originalSender)
-          case Success(_) => originalSender ! org.apache.pekko.actor.Status.Failure(new IllegalArgumentException("Interaction is not retrying"))
+          case Success(_) => originalSender ! org.apache.pekko.actor.Status.Failure(new IllegalInteractionStateException("Interaction is not retrying"))
           case Failure(exception) => originalSender ! org.apache.pekko.actor.Status.Failure(exception)
         }
       }
@@ -653,7 +654,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
         getInteractionJob(recipeInstanceId, interactionName, processActor).value.onComplete {
           case Success(Some((_, jobId))) => processActor.tell(OverrideExceptionStrategy(jobId, RetryWithDelay(0)), originalSender)
-          case Success(_) => originalSender ! org.apache.pekko.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
+          case Success(_) => originalSender ! org.apache.pekko.actor.Status.Failure(new IllegalInteractionStateException("Interaction is not blocked"))
           case Failure(exception) => originalSender ! org.apache.pekko.actor.Status.Failure(exception)
         }
       }
@@ -678,7 +679,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
                 log.warning("Invalid event given: " + error)
                 originalSender ! InvalidEventWhenResolveBlocked(recipeInstanceId, error)
             }
-          case Success(_) => originalSender ! org.apache.pekko.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
+          case Success(_) => originalSender ! org.apache.pekko.actor.Status.Failure(new IllegalInteractionStateException("Interaction is not blocked"))
           case Failure(exception) => originalSender ! org.apache.pekko.actor.Status.Failure(exception)
         }
       }

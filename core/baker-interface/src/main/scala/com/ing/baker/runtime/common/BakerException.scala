@@ -50,6 +50,11 @@ object BakerException {
   case class NoSuchIngredientException(name: String, disableStackTrace: Boolean = false)
     extends BakerException(s"Ingredient '$name' not found", 12, disableStackTrace = disableStackTrace)
 
+  // Thrown when an interaction is not in the state required for the requested operation, e.g. retrying an
+  // interaction that is not blocked.
+  case class IllegalInteractionStateException(reason: String, disableStackTrace: Boolean = false)
+    extends BakerException(reason, 13, disableStackTrace = disableStackTrace)
+
   // To be used if a serialized baker exception cannot be deserialized into a specific exception.
   // This can happen when a bakery-state version is higher and contains more exceptions than the bakery-client.
   case class UnknownBakerException(underlyingErrorMessage: String, disableStackTrace: Boolean = false)
@@ -69,6 +74,7 @@ object BakerException {
       case e @ TimeoutException(operationName, _) => (operationName, e.`enum`)
       case e @ UnknownBakerException(underlyingErrorMessage, _) => (underlyingErrorMessage, e.`enum`)
       case e @ NoSuchIngredientException(underlyingErrorMessage, _) => (underlyingErrorMessage, e.`enum`)
+      case e @ IllegalInteractionStateException(reason, _) => (reason, e.`enum`)
       case be if be.isInstanceOf[BakerException] => (be.message, be.`enum`)
     }
 
@@ -86,6 +92,7 @@ object BakerException {
       case 10 => Success(TimeoutException(message, disableStackTrace = true))
       case 11 => Success(UnknownBakerException(message, disableStackTrace = true))
       case 12 => Success(NoSuchIngredientException(message, disableStackTrace = true))
+      case 13 => Success(IllegalInteractionStateException(message, disableStackTrace = true))
       case _ => Failure(new IllegalArgumentException(s"No BakerException with enum flag $enum"))
     }
 
