@@ -6,7 +6,6 @@ import com.ing.baker.runtime.scaladsl.EventFired
 import com.ing.baker.runtime.scaladsl.EventReceived
 import com.ing.baker.runtime.scaladsl.RecipeInstanceCreated
 import io.opentelemetry.api.trace.Span
-import io.opentelemetry.api.trace.SpanBuilder
 import io.opentelemetry.api.trace.StatusCode
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.Context
@@ -89,6 +88,7 @@ class BakerEventTracingListener(
 
     private fun newSpan(name: String, recipeId: String, recipeName: String, recipeInstanceId: String): Span {
         val builder = tracer.spanBuilder(name)
+            .setParent(traceContexts.parentOf(recipeInstanceId))
         val span = builder.startSpan()
         span.setAttribute(BakerTraceAttributes.RECIPE_ID, recipeId)
         span.setAttribute(BakerTraceAttributes.RECIPE_NAME, recipeName)
@@ -102,7 +102,7 @@ class BakerEventTracingListener(
             span.spanContext.traceId,
             span.spanContext.spanId
         )
-        traceContexts.put(recipeInstanceId, Context.current().with(span))
+        traceContexts.putIfAbsent(recipeInstanceId, Context.current().with(span))
     }
 
     companion object {

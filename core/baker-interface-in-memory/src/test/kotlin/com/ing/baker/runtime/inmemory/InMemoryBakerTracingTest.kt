@@ -24,6 +24,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -183,6 +184,51 @@ class InMemoryBakerTracingTest {
     }
 
     @Test
+    fun `keeps existing trace id for complete happy flow`() {
+        TracerFixture.use { fixture ->
+            val baker = InMemoryBaker.java(BakerConfig.default(), setupMockImplementations(), fixture.tracer)
+            baker.addRecipe(RecipeRecord.of(recipe, System.currentTimeMillis(), false, true)).get()
+
+            val goods = "goods"
+            val order = "order"
+            val customerInfo = CustomerInfo("name", "address", "email")
+
+            Mockito.doReturn(ValidateOrder.OrderValid()).`when`(validateOrder).apply(anyString(), anyString())
+            Mockito.doReturn(ManufactureGoods.GoodsManufactured(goods)).`when`(manufactureGoods).apply(anyString())
+            Mockito.doReturn(SendInvoice.InvoiceSent()).`when`(sendInvoice).apply(customerInfo)
+            Mockito.doReturn(ShipGoods.GoodsShipped("trackingId")).`when`(shipGoods).apply(goods, customerInfo)
+
+            val recipeInstanceId = UUID.randomUUID().toString()
+            val parentSpan = fixture.tracer.spanBuilder("upstream.request").startSpan()
+            val expectedTraceId = parentSpan.spanContext.traceId
+            parentSpan.makeCurrent().use {
+                runHappyFlow(baker, recipeInstanceId, order, customerInfo)
+            }
+            parentSpan.end()
+
+            val instanceSpans = fixture.exporter.finishedSpanItems.filter {
+                it.attributes.get(AttributeKey.stringKey("baker.recipe.instance.id")) == recipeInstanceId
+            }
+
+            assertTrue(instanceSpans.isNotEmpty(), "Expected traced spans for execution $recipeInstanceId")
+            assertTrue(
+                instanceSpans.all { it.spanContext.traceId == expectedTraceId },
+                "Expected all spans of execution $recipeInstanceId to keep the upstream trace id"
+            )
+
+            val interactionSpan = instanceSpans.firstOrNull { it.name == "baker.interaction.ValidateOrder" }
+            assertTrue(interactionSpan != null, "Expected ValidateOrder interaction span")
+            interactionSpan?.let {
+                assertEquals(
+                    expectedTraceId,
+                    it.spanContext.traceId,
+                    "Expected interaction span to keep the upstream trace id"
+                )
+            }
+        }
+    }
+
+    @Test
     fun `records failed interaction as error span`() {
         TracerFixture.use { fixture ->
             val baker = InMemoryBaker.java(BakerConfig.default(), setupMockImplementations(), fixture.tracer)
@@ -264,4 +310,3 @@ class InMemoryBakerTracingTest {
         }
     }
 }
-

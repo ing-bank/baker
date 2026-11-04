@@ -19,6 +19,12 @@ class RecipeInstanceTraceContexts {
         }
     }
 
+    fun putIfAbsent(recipeInstanceId: String?, context: Context?) {
+        if (recipeInstanceId != null && context != null) {
+            contexts.putIfAbsent(recipeInstanceId, context)
+        }
+    }
+
     /**
      * Returns the parent context for the given recipe instance, falling back to the context currently
      * attached to the calling thread.
