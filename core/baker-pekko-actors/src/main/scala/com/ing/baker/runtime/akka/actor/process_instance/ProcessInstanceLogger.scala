@@ -9,21 +9,6 @@ import scala.concurrent.duration._
 
 object ProcessInstanceLogger {
 
-  import org.joda.time.format.PeriodFormatterBuilder
-
-  val durationFormatter = new PeriodFormatterBuilder()
-    .appendDays.appendSuffix("d")
-    .appendSeparator(" ")
-    .appendHours.appendSuffix("h")
-    .appendSeparator(" ")
-    .appendMinutes.appendSuffix("m")
-    .appendSeparator(" ")
-    .appendSeconds.appendSuffix("s")
-    .appendSeparator(" ")
-    .appendMillis.appendSuffix("ms")
-    .appendSeparator(" ")
-    .toFormatter
-
   implicit class LoggingAdapterFns(log: DiagnosticLoggingAdapter) {
 
     val bakerLogging: BakerLogging = BakerLogging.default
