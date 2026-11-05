@@ -34,7 +34,7 @@
         <ficus.version>1.5.2</ficus.version>
         <fs2.kafka.version>3.9.1</fs2.kafka.version>
         <fs2.version>3.14.0</fs2.version>
-        <guava.version>33.6.0-jre</guava.version>
+        <guava.version>33.7.1-jre</guava.version>
         <http4s.blaze.version>0.23.18</http4s.blaze.version>
         <http4s.prometheus.version>0.25.0</http4s.prometheus.version>
         <http4s.version>0.23.37</http4s.version>
