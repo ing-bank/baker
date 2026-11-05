@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.catseffect
 
 import cats.effect.Sync
+import com.ing.baker.runtime.model.propagation.{ContextSnapshot, ExecutionContextPropagators}
 
 import java.util.concurrent.{CompletableFuture, CompletionStage, Executor, Executors}
 import java.util.function.{Function, Supplier}
@@ -32,6 +33,36 @@ object SyncSupport {
       thread
     })
 
+  /**
+    * Runs the given thunk on the blocking pool while propagating the ambient context (MDC, tracing context)
+    * of the submitting thread. The context is installed and removed on the executing thread itself, and any
+    * ambient context is cleared at both task boundaries so a pooled thread never exposes the context of
+    * another in-flight execution.
+    */
+  private def supplyAsyncWithPropagation[A](thunk: => A): CompletableFuture[A] = {
+    val snapshot = ExecutionContextPropagators.capture()
+    CompletableFuture.supplyAsync(new Supplier[A] {
+      override def get(): A = runWithPropagatedContext(snapshot)(thunk)
+    }, blockingExecutor)
+  }
+
+  /**
+    * Installs a previously captured context on the current thread, runs the thunk and removes it again.
+    * Ambient context is cleared at both task boundaries, so a pooled thread never exposes the context of
+    * another in-flight execution.
+    */
+  def runWithPropagatedContext[A](snapshot: ContextSnapshot)(thunk: => A): A = {
+    ExecutionContextPropagators.clear()
+    val scope = snapshot.restore()
+    try thunk
+    finally {
+      scope.close()
+      ExecutionContextPropagators.clear()
+    }
+  }
+
+  def captureContext(): ContextSnapshot = ExecutionContextPropagators.capture()
+
   private def failedFuture[A](throwable: Throwable): CompletableFuture[A] = {
     val future = new CompletableFuture[A]()
     future.completeExceptionally(throwable)
@@ -56,9 +87,7 @@ object SyncSupport {
           case NonFatal(exception) => raiseError(exception)
         }
       override def blocking[A](thunk: => A): CompletionStage[A] =
-        CompletableFuture.supplyAsync(new Supplier[A] {
-          override def get(): A = thunk
-        }, blockingExecutor)
+        supplyAsyncWithPropagation(thunk)
       override def unit: CompletionStage[Unit] = pure(())
     }
 
@@ -80,9 +109,7 @@ object SyncSupport {
           case NonFatal(exception) => raiseError(exception)
         }
       override def blocking[A](thunk: => A): CompletableFuture[A] =
-        CompletableFuture.supplyAsync(new Supplier[A] {
-          override def get(): A = thunk
-        }, blockingExecutor)
+        supplyAsyncWithPropagation(thunk)
       override def unit: CompletableFuture[Unit] = pure(())
     }
 
