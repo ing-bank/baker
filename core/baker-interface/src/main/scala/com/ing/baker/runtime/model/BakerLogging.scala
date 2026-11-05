@@ -8,6 +8,7 @@ import org.joda.time.format.{PeriodFormatter, PeriodFormatterBuilder}
 import org.slf4j.MDC
 
 import scala.concurrent.duration.FiniteDuration
+import scala.jdk.OptionConverters._
 
 object BakerLogging {
   lazy val defaultLogger: Logger = Logger("com.ing.baker")
@@ -17,7 +18,7 @@ object BakerLogging {
 
 case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
 
-  val durationFormatter: PeriodFormatter = new PeriodFormatterBuilder()
+  private val durationFormatter: PeriodFormatter = new PeriodFormatterBuilder()
     .appendDays.appendSuffix("d")
     .appendSeparator(" ")
     .appendHours.appendSuffix("h")
@@ -30,10 +31,54 @@ case class BakerLogging(logger: Logger = BakerLogging.defaultLogger) {
     .appendSeparator(" ")
     .toFormatter
 
+  private val RecipeNameKey = "recipeName"
+  private val RecipeIdKey = "recipeId"
+  private val RecipeInstanceIdKey = "recipeInstanceId"
+
+  private val BakerRecipeNameKey = "baker.recipe.name"
+  private val BakerRecipeIdKey = "baker.recipe.id"
+  private val BakerRecipeInstanceIdKey = "baker.recipe.instance.id"
+  private val TraceIdKey = "trace_id"
+  private val SpanIdKey = "span_id"
+
+  private def enrichMdc(mdc: Map[String, String]): Map[String, String] = {
+    val withRecipeNameAliases = mdc.get(RecipeNameKey)
+      .map(v => mdc + (BakerRecipeNameKey -> v))
+      .getOrElse(mdc)
+
+    val withRecipeIdAliases = withRecipeNameAliases.get(RecipeIdKey)
+      .map(v => withRecipeNameAliases + (BakerRecipeIdKey -> v))
+      .getOrElse(withRecipeNameAliases)
+
+    val withInstanceAliases = withRecipeIdAliases.get(RecipeInstanceIdKey)
+      .map(v => withRecipeIdAliases + (BakerRecipeInstanceIdKey -> v))
+      .getOrElse(withRecipeIdAliases)
+
+    // Trace ids attached to the current thread (set by the interaction instrumentation) are exact, the
+    // per-recipe-instance registry is only a best effort fallback for log lines emitted by Baker itself.
+    val currentThreadTrace = for {
+      traceId <- Option(MDC.get(TraceIdKey))
+      spanId <- Option(MDC.get(SpanIdKey))
+    } yield (traceId, spanId)
+
+    currentThreadTrace
+      .orElse(
+        withInstanceAliases.get(RecipeInstanceIdKey)
+          .flatMap(id => TracingMdcRegistry.get(id).toScala)
+          .map(context => (context.getTraceId, context.getSpanId)))
+      .map { case (traceId, spanId) => withInstanceAliases + (TraceIdKey -> traceId) + (SpanIdKey -> spanId) }
+      .getOrElse(withInstanceAliases)
+  }
+
   def withMDC(mdc: Map[String, String], log: Logger => Unit): Unit = {
-      mdc.foreach { case (k, v) => MDC.put(k, v) }
-      log(logger)
-      mdc.keys.foreach(MDC.remove)
+      val effectiveMdc = enrichMdc(mdc)
+      val previous = effectiveMdc.keys.map(key => key -> Option(MDC.get(key))).toList
+      effectiveMdc.foreach { case (k, v) => MDC.put(k, v) }
+      try log(logger)
+      finally previous.foreach {
+        case (key, Some(value)) => MDC.put(key, value)
+        case (key, None) => MDC.remove(key)
+      }
     }
 
   def addedRecipe(recipeAdded: RecipeAdded): Unit = {
