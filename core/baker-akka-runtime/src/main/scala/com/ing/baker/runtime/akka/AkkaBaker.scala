@@ -15,12 +15,13 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.RecipeFound
-import com.ing.baker.runtime.akka.internal.CachingInteractionManager
+import com.ing.baker.runtime.akka.recipe_manager.ActorBasedRecipeManager
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.{InteractionExecutionFailureReason, RecipeRecord, SensoryEventStatus}
+import com.ing.baker.runtime.core.util.CachingInteractionManager
 import com.ing.baker.runtime.model.recipeinstance.RecipeInstanceState.getMetaDataFromIngredients
-import com.ing.baker.runtime.recipe_manager.{ActorBasedRecipeManager, DefaultRecipeManager, RecipeManager}
+import com.ing.baker.runtime.recipe_manager.{DefaultRecipeManager, RecipeManager}
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.{javadsl, scaladsl}
 import com.ing.baker.types.Value
@@ -227,7 +228,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     * @return
     */
   override def bake(recipeId: String, recipeInstanceId: String, metadata: Map[String, String]): Future[Unit] = {
-    val eventualBake = processIndexActor.ask(CreateProcess(recipeId, recipeInstanceId, metadata))(config.timeouts.defaultBakeTimeout).javaTimeoutToBakerTimeout("bake").flatMap {
+    processIndexActor.ask(CreateProcess(recipeId, recipeInstanceId, metadata))(config.timeouts.defaultBakeTimeout).javaTimeoutToBakerTimeout("bake").flatMap {
       case _: Initialized =>
         Future.successful(())
       case ProcessDeleted(_) =>
@@ -236,13 +237,6 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
         Future.failed(ProcessAlreadyExistsException(recipeInstanceId))
       case RecipeManagerProtocol.NoRecipeFound(_) =>
         Future.failed(NoSuchRecipeException(recipeId))
-    }
-
-    // TODO This is a temporary backwards compatibility logic to support the old way of adding metadata during rollout, to be removed in the future release
-    if (metadata.nonEmpty) {
-      eventualBake.map(_ => addMetaData(recipeInstanceId, metadata))
-    } else {
-      eventualBake
     }
   }
 

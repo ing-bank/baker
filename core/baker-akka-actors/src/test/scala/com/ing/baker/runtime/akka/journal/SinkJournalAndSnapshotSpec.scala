@@ -3,8 +3,6 @@ package com.ing.baker.runtime.akka.journal
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should
 
-import scala.collection.immutable.Seq
-
 class SinkJournalAndSnapshotSpec extends AnyFlatSpec with should.Matchers {
 
   "SinkJournalWriter" should "not crash" in {

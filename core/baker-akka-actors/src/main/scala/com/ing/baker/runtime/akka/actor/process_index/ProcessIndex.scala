@@ -13,7 +13,7 @@ import cats.instances.future._
 import com.ing.baker.il.petrinet.{InteractionTransition, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.akka._
+import com.ing.baker.runtime.core.util._
 import com.ing.baker.runtime.akka.actor.{ActorBasedBakerCleanup, BakerCleanup, CassandraBakerCleanup}
 import com.ing.baker.runtime.akka.actor.Util.logging._
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActor
@@ -29,6 +29,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.RecipeRuntime
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
+import com.ing.baker.runtime.common.BakerException.IllegalInteractionStateException
 import com.ing.baker.runtime.common.RecipeRecord
 import com.ing.baker.runtime.model.InteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
@@ -114,6 +115,23 @@ object ProcessIndex {
   private val ioSchedular = IORuntime.createDefaultScheduler()
 
   private val bakerIORuntime: IORuntime = IORuntime.apply(bakerExecutionContext, bakerExecutionContext, ioSchedular._1, () => ioSchedular._2(), IORuntime.global.config)
+
+  /**
+   * Custom termination message with optional replyTo actor ref in case not only the parent needs to be
+   * informed of node termination.
+   *
+   * @param actorRef        The node that terminated.
+   * @param replyToWhenDone An optional node to inform. This is just a ref you need to send a message to this actor yourself.
+   * @param deleteInstance  If it should mark the process as deleted or not
+   * @param removeFromIndex If it should remove the process completely from the index or not.
+   *
+   */
+  case class TerminatedWithReplyTo(actorRef: ActorRef,
+                                   replyToWhenDone: Option[ActorRef],
+                                   deleteInstance: Boolean,
+                                   removeFromIndex: Boolean
+                                  ) extends BakerSerializable
+
 }
 
 //noinspection ActorMutableStateInspection
@@ -226,7 +244,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
   // creates a ProcessInstanceActor, does not do any validation
   def createProcessActor(recipeInstanceId: String, compiledRecipe: CompiledRecipe): ActorRef = {
     val runtime: RecipeRuntime =
-      new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream)
+      new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream.publish)
 
     val processActorProps =
       BackoffSupervisor.props(
@@ -440,7 +458,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
       index += recipeInstanceId -> actorMetadata
 
       val creationEvent = RecipeInstanceCreated(createdTime, recipeId, compiledRecipe.name, recipeInstanceId)
-      LogAndSendEvent.recipeInstanceCreated(creationEvent, context.system.eventStream)
+      LogAndSendEvent.recipeInstanceCreated(creationEvent, context.system.eventStream.publish)
 
       originalSender ! Initialized(Marking.empty)
     }
@@ -624,7 +642,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
         // we find which job correlates with the interaction
         getInteractionJob(recipeInstanceId, interactionName, processActor).value.onComplete {
           case Success(Some((_, jobId))) => processActor.tell(OverrideExceptionStrategy(jobId, BlockTransition), originalSender)
-          case Success(_) => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not retrying"))
+          case Success(_) => originalSender ! akka.actor.Status.Failure(new IllegalInteractionStateException("Interaction is not retrying"))
           case Failure(exception) => originalSender ! akka.actor.Status.Failure(exception)
         }
       }
@@ -637,7 +655,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
         getInteractionJob(recipeInstanceId, interactionName, processActor).value.onComplete {
           case Success(Some((_, jobId))) => processActor.tell(OverrideExceptionStrategy(jobId, RetryWithDelay(0)), originalSender)
-          case Success(_) => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
+          case Success(_) => originalSender ! akka.actor.Status.Failure(new IllegalInteractionStateException("Interaction is not blocked"))
           case Failure(exception) => originalSender ! akka.actor.Status.Failure(exception)
         }
       }
@@ -662,7 +680,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
                 log.warning("Invalid event given: " + error)
                 originalSender ! InvalidEventWhenResolveBlocked(recipeInstanceId, error)
             }
-          case Success(_) => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
+          case Success(_) => originalSender ! akka.actor.Status.Failure(new IllegalInteractionStateException("Interaction is not blocked"))
           case Failure(exception) => originalSender ! akka.actor.Status.Failure(exception)
         }
       }

@@ -9,19 +9,19 @@ import akka.util.Timeout
 import com.ing.baker.il.petrinet.{EventTransition, Place, RecipePetriNet, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
 import com.ing.baker.petrinet.api.{Marking, PetriNet}
-import com.ing.baker.runtime.akka.actor.{ActorBasedBakerCleanup, BakerCleanup}
 import com.ing.baker.runtime.akka.actor.delayed_transition_actor.DelayedTransitionActorProtocol.FireDelayedTransition
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.CheckForProcessesToBeDeleted
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.{CheckForProcessesToBeDeleted, TerminatedWithReplyTo}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.NotifyWhenReceived
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexSpec.processIsStopped
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.akka.internal.CachingInteractionManager
+import com.ing.baker.runtime.akka.actor.{ActorBasedBakerCleanup, BakerCleanup}
 import com.ing.baker.runtime.common.RecipeInstanceState.RecipeInstanceMetadataName
 import com.ing.baker.runtime.common.RecipeRecord
+import com.ing.baker.runtime.core.util.CachingInteractionManager
 import com.ing.baker.runtime.recipe_manager.RecipeManager
-import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
+import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types
 import com.ing.baker.types.Value
@@ -39,7 +39,7 @@ import scalax.collection.immutable.Graph
 
 import java.util.UUID
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, Future}
 
 object ProcessIndexSpec {
   val config: Config = ConfigFactory.parseString(

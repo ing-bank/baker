@@ -1,0 +1,119 @@
+package com.ing.baker.runtime.akka
+
+import org.apache.pekko.actor.{ActorSystem, AddressFromURIString}
+import cats.data.NonEmptyList
+import cats.effect.IO
+import com.ing.baker.runtime.akka.PekkoBakerConfig.BakerValidationSettings
+import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider}
+import com.ing.baker.runtime.core.util.{CachingInteractionManager, Timeouts}
+import com.ing.baker.runtime.model.InteractionManager
+import com.ing.baker.runtime.recipe_manager.{DefaultRecipeManager, RecipeManager}
+import com.ing.baker.runtime.serialization.Encryption
+import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
+import net.ceedubs.ficus.Ficus._
+
+import scala.concurrent.duration._
+
+case class PekkoBakerConfig(
+                            bakerActorProvider: BakerActorProvider,
+                            interactions: InteractionManager[IO],
+                            recipeManager: RecipeManager,
+                            timeouts: Timeouts,
+                            bakerValidationSettings: BakerValidationSettings,
+                            terminateActorSystem: Boolean = true,
+                          )(implicit val system: ActorSystem)
+
+object PekkoBakerConfig extends LazyLogging {
+
+  case class KafkaEventSinkSettings(enabled: Boolean, `bootstrap-servers`: String, `baker-events-topic`: String, `recipe-events-topic`: String)
+
+  case class BakerValidationSettings(allowAddingRecipeWithoutRequiringInstances: Boolean)
+
+  object BakerValidationSettings {
+    def default: BakerValidationSettings = BakerValidationSettings(false)
+
+    def from(config: Config): BakerValidationSettings =
+      BakerValidationSettings(config.getOrElse[Boolean]("baker.allow-adding-recipe-without-requiring-instances", false))
+  }
+
+  def localDefault(actorSystem: ActorSystem): PekkoBakerConfig = {
+    localDefault(actorSystem, CachingInteractionManager())
+  }
+
+  def localDefault(actorSystem: ActorSystem, interactions: CachingInteractionManager): PekkoBakerConfig = {
+    val defaultTimeouts = Timeouts.default
+
+    val localProvider =
+      new LocalBakerActorProvider(
+        retentionCheckInterval = 1.minute,
+        getIngredientsFilter = List.empty,
+        providedIngredientFilter = List.empty,
+        actorIdleTimeout = Some(5.minutes),
+        configuredEncryption = Encryption.NoEncryption,
+        blacklistedProcesses = List.empty,
+        rememberProcessDuration = None
+      )
+
+    PekkoBakerConfig(
+      timeouts = defaultTimeouts,
+      bakerValidationSettings = BakerValidationSettings.default,
+      bakerActorProvider = localProvider,
+      interactions = interactions,
+      recipeManager = DefaultRecipeManager.pollingAware(actorSystem.dispatcher)
+    )(actorSystem)
+  }
+
+  def from(config: Config, actorSystem: ActorSystem, interactions: CachingInteractionManager, recipeManager: RecipeManager): PekkoBakerConfig = {
+    if (!config.getAs[Boolean]("baker.config-file-included").getOrElse(false))
+      throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
+
+    PekkoBakerConfig(
+      timeouts = Timeouts.apply(config),
+      bakerValidationSettings = BakerValidationSettings.from(config),
+      bakerActorProvider = bakerProviderFrom(config),
+      interactions = interactions,
+      recipeManager = recipeManager
+    )(actorSystem)
+  }
+
+  def bakerProviderFrom(config: Config): BakerActorProvider = {
+    val encryption = {
+      val encryptionEnabled = config.getAs[Boolean]("baker.encryption.enabled").getOrElse(false)
+      if (encryptionEnabled) new Encryption.AESEncryption(config.as[String]("baker.encryption.secret"))
+      else Encryption.NoEncryption
+    }
+    config.as[Option[String]]("baker.actor.provider") match {
+      case None | Some("local") =>
+        new LocalBakerActorProvider(
+          retentionCheckInterval = config.as[FiniteDuration]("baker.actor.retention-check-interval"),
+          getIngredientsFilter =  config.as[List[String]]("baker.filtered-ingredient-values") ++ config.as[List[String]]("baker.filtered-ingredient-values-for-get"),
+          providedIngredientFilter = config.as[List[String]]("baker.filtered-ingredient-values") ++ config.as[List[String]]("baker.filtered-ingredient-values-for-stream"),
+          actorIdleTimeout = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout"),
+          configuredEncryption = encryption,
+          blacklistedProcesses = config.as[List[String]]("baker.blacklisted-processes"),
+          rememberProcessDuration = config.as[Option[FiniteDuration]]("baker.process-index.remember-process-duration")
+        )
+      case Some("cluster-sharded") =>
+        new ClusterBakerActorProvider(
+          nrOfShards = config.as[Int]("baker.actor.cluster.nr-of-shards"),
+          retentionCheckInterval = config.as[FiniteDuration]("baker.actor.retention-check-interval"),
+          actorIdleTimeout = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout"),
+          journalInitializeTimeout = config.as[FiniteDuration]("baker.journal-initialize-timeout"),
+          seedNodes = {
+            val seedList = config.as[Option[List[String]]]("baker.cluster.seed-nodes")
+            if (seedList.isDefined)
+              ClusterBakerActorProvider.SeedNodesList(NonEmptyList.fromListUnsafe(seedList.get.map(AddressFromURIString.parse)))
+            else
+              ClusterBakerActorProvider.ServiceDiscovery
+          },
+          getIngredientsFilter = config.as[List[String]]("baker.filtered-ingredient-values") ++ config.as[List[String]]("baker.filtered-ingredient-values-for-get"),
+          providedIngredientFilter = config.as[List[String]]("baker.filtered-ingredient-values") ++ config.as[List[String]]("baker.filtered-ingredient-values-for-stream"),
+          configuredEncryption = encryption,
+          blacklistedProcesses = config.as[List[String]]("baker.blacklisted-processes"),
+          rememberProcessDuration = config.as[Option[FiniteDuration]]("baker.process-index.remember-process-duration")
+        )
+      case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
+    }
+  }
+}

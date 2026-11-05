@@ -42,7 +42,11 @@ package object javadsl {
       }
     }
 1
-    val name: String = getNameFieldName.getOrElse(interactionClass.getSimpleName)
+    val name: String = try {
+      getNameFieldName.getOrElse(interactionClass.getSimpleName)
+    } catch {
+      case _: IllegalArgumentException => interactionClass.getSimpleName
+    }
 
     val method: Method = interactionClass.getDeclaredMethods
       .find(_.getName == interactionMethodName)

@@ -6,4 +6,4 @@ the running of an akka cluster and managing of the persistence from using baker 
 A bakery team can provide baker clusters as a service (which requires specific knowledge about akka clusters).
 A client team can focus on creating recipes based on actual business processes.
 
-The `bakery-state` module is the entry point for bakery.
+The `bakery-state-akka` & `bakery-state-pekko` modules are the entry point for bakery.
